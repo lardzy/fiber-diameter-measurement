@@ -777,6 +777,8 @@ MeasurementSpatialIndex = MeasurementSceneIndex
 
 @dataclass(slots=True)
 class PromptSegmentationSession:
+    session_token: str = field(default_factory=lambda: uuid4().hex)
+    roi_workspaces: dict[str, tuple[tuple[int, int, int, int], tuple[object, ...]]] = field(default_factory=dict)
     active_stage: str = MagicSegmentOperationMode.ADD
     subtract_input_mode: str = MagicSegmentSubtractInputMode.SMART
     primary_prompt_type: str = "positive"
@@ -1105,6 +1107,7 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
         self._fiber_quick_request_serial = 0
+        self._magic_segment_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
         self._measurement_hit_index: MeasurementSceneIndex | None = None
@@ -1360,6 +1363,7 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
         self._fiber_quick_request_serial = 0
+        self._magic_segment_request_serial = 0
         self._measurement_hit_index = None
         self._measurement_hit_index_revision = -1
         self._measurement_display_index = None
@@ -1431,6 +1435,7 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
         self._fiber_quick_request_serial = 0
+        self._magic_segment_request_serial = 0
         self._measurement_hit_index = None
         self._measurement_hit_index_revision = -1
         self._measurement_display_index = None
@@ -3032,16 +3037,43 @@ class DocumentCanvas(QWidget):
             self._cancel_area_drawing()
         return True
 
+    def magic_segment_session_token(self) -> str:
+        return self._magic_segment.session_token
+
+    def magic_segment_roi_workspace(self, stage: str, context: tuple[object, ...]):
+        workspace = self._magic_segment.roi_workspaces.get(stage)
+        return workspace[0] if workspace is not None and workspace[1] == context else None
+
+    def clear_magic_segment_roi_workspaces(self) -> None:
+        self._magic_segment.roi_workspaces.clear()
+
+    def invalidate_magic_segment_model(self) -> None:
+        """Keep the editable draft, but detach pending work from the old model."""
+        self.clear_magic_segment_roi_workspaces()
+        self._magic_segment.small_object_workspace_box = None
+        self._magic_segment.session_token = uuid4().hex
+        self._magic_segment_request_serial = max(
+            self._magic_segment_request_serial, self._magic_segment.request_id,
+        ) + 1
+        self._magic_segment.request_id = self._magic_segment_request_serial
+        self._magic_segment.inflight_request_id = 0
+        self._magic_segment.pending_recompute = False
+        self._magic_segment.busy = False
+        self.update()
+        self._emit_magic_segment_session_changed()
+
     def _begin_magic_segment_request(self, stage: str) -> dict[str, object] | None:
         positive_points = list(self._magic_segment.positive_points_for_stage(stage))
         if not positive_points:
             return None
-        self._magic_segment.request_id += 1
+        self._magic_segment_request_serial = max(self._magic_segment_request_serial, self._magic_segment.request_id) + 1
+        self._magic_segment.request_id = self._magic_segment_request_serial
         self._magic_segment.inflight_request_id = self._magic_segment.request_id
         self._magic_segment.pending_stage = stage
         self._magic_segment.pending_recompute = False
         self._magic_segment.busy = True
         return {
+            "session_token": self._magic_segment.session_token,
             "request_id": self._magic_segment.request_id,
             "positive_points": positive_points,
             "negative_points": list(self._magic_segment.negative_points_for_stage(stage)),
@@ -3174,6 +3206,7 @@ class DocumentCanvas(QWidget):
         return result
 
     def _clear_current_magic_subtract_draft(self) -> None:
+        self._magic_segment.roi_workspaces.pop(MagicSegmentOperationMode.SUBTRACT, None)
         self._magic_segment.subtract_positive_points.clear()
         self._magic_segment.subtract_negative_points.clear()
         self._magic_segment.subtract_prompt_type = "positive"
@@ -3190,11 +3223,19 @@ class DocumentCanvas(QWidget):
         polygon_points: list[Point] | None = None,
         area_rings_points: list[list[Point]] | None = None,
         debug_payload: dict[str, object] | None = None,
+        *,
+        roi_workspace_box: tuple[int, int, int, int] | None = None,
+        roi_workspace_context: tuple[object, ...] | None = None,
+        session_token: str = "",
     ) -> dict[str, object] | None:
-        if request_id != self._magic_segment.request_id:
+        if request_id != self._magic_segment.request_id or (session_token and session_token != self._magic_segment.session_token):
             return None
         self._magic_segment.busy = False
         stage = self._magic_segment.pending_stage
+        if roi_workspace_box is not None and roi_workspace_context is not None:
+            self._magic_segment.roi_workspaces[stage] = (roi_workspace_box, roi_workspace_context)
+        else:
+            self._magic_segment.roi_workspaces.pop(stage, None)
         debug_payload = dict(debug_payload or {})
         origin_x, origin_y = self._magic_source_origin(debug_payload)
         if stage == MagicSegmentOperationMode.SUBTRACT:

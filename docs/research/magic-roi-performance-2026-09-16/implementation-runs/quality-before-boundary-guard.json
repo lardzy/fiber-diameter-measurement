@@ -1,0 +1,135 @@
+{
+  "note": "Initial replay exposed internal single-edge truncation; these results precede the workspace eligibility guard.",
+  "quality": {
+    "circle": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 6318,
+        "new_area": 6318,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.997158193874329,
+        "pixel_equal": false,
+        "old_area": 6328,
+        "new_area": 6322,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9973160719924219,
+        "pixel_equal": false,
+        "old_area": 6329,
+        "new_area": 6322,
+        "old_rings": 1,
+        "new_rings": 1
+      }
+    ],
+    "hole": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 5480,
+        "new_area": 5480,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9920174165457184,
+        "pixel_equal": false,
+        "old_area": 5489,
+        "new_area": 5491,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9987270412802328,
+        "pixel_equal": false,
+        "old_area": 5495,
+        "new_area": 5496,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ],
+    "microscopy_fragment": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 2414,
+        "new_area": 2414,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9941348973607038,
+        "pixel_equal": false,
+        "old_area": 2380,
+        "new_area": 2380,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.974241794765268,
+        "pixel_equal": false,
+        "old_area": 2356,
+        "new_area": 2396,
+        "old_rings": 1,
+        "new_rings": 1
+      }
+    ],
+    "microscopy_background_gap": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 30122,
+        "new_area": 30122,
+        "old_rings": 8,
+        "new_rings": 8
+      },
+      {
+        "iou": 0.9486303536407921,
+        "pixel_equal": false,
+        "old_area": 31593,
+        "new_area": 30011,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9070838288659165,
+        "pixel_equal": false,
+        "old_area": 32233,
+        "new_area": 30306,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ],
+    "microscopy_fiber": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11188,
+        "new_area": 11188,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9550078933520435,
+        "pixel_equal": false,
+        "old_area": 11292,
+        "new_area": 10999,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9416842847075405,
+        "pixel_equal": false,
+        "old_area": 11257,
+        "new_area": 10785,
+        "old_rings": 2,
+        "new_rings": 1
+      }
+    ]
+  }
+}

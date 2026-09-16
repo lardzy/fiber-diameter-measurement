@@ -559,6 +559,20 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
         (sys.platform.startswith("win") and getattr(sys, "frozen", False))
         or os.environ.get("FDM_SELF_CHECK_EXECUTE", "").strip() == "1"
     )
+    if "magic-segmentation" not in features:
+        functional_checks["magic_segmentation"] = "skipped_feature_disabled"
+    elif execute_runtime_probe:
+        try:
+            magic_probe = _probe_magic_segmentation(root)
+            functional_checks["magic_segmentation"] = magic_probe
+            if magic_probe.get("ok") is not True:
+                errors.append("magic segmentation functional self-check returned a failure")
+        except Exception as exc:  # noqa: BLE001 - includes missing models/native runtime
+            functional_checks["magic_segmentation"] = {"ok": False}
+            errors.append(f"magic segmentation functional self-check failed: {exc}")
+    else:
+        functional_checks["magic_segmentation"] = "skipped_non_windows"
+        warnings.append("Windows frozen magic-segmentation execution probe skipped on this host")
     # Canvas rendering is a core capability, including builds that exclude
     # inference models. Import checks alone cannot exercise the windowed
     # spawn initializer, Qt platform plugin or serialized drawing commands.
@@ -591,6 +605,12 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
 
     report["ok"] = not errors
     return report
+
+
+def _probe_magic_segmentation(root: Path) -> dict[str, Any]:
+    from fdm.services.magic_segmentation_self_check import run_magic_segmentation_self_check
+
+    return run_magic_segmentation_self_check(root)
 
 
 def _probe_overlay_renderer() -> dict[str, Any]:

@@ -1,0 +1,638 @@
+{
+  "fixture": "synthetic horizontal strip, actual ONNX inference",
+  "cases": [
+    {
+      "name": "real_model_cross_frame_strip_first",
+      "wall_ms": 556.0495419995277,
+      "process_cpu_ms": 4098.242,
+      "stage_ms": {
+        "full_qimage_rgb": 0.43279200326651335,
+        "session_init": 52.54304200207116,
+        "encoder_ort": 364.5442919951165,
+        "embedding_inclusive": 453.65175000188174,
+        "decoder_ort": 50.315458996919915,
+        "decoder_and_postprocess": 70.78283400187502,
+        "geometry": 27.392705997044686
+      },
+      "encoder_calls": 5,
+      "decoder_calls": 5,
+      "cache_hits": 0,
+      "cache_misses": 5,
+      "round": 4,
+      "fallback": true,
+      "crop": [
+        0,
+        0,
+        2048,
+        1536
+      ],
+      "area": 159685.0,
+      "rings": 1,
+      "polygon_vertices": 4,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.43279200326651335
+        },
+        {
+          "stage": "session_init",
+          "ms": 52.54304200207116
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 88.26037499966333,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 150.25500000047032,
+          "hit": false,
+          "key": "synthetic|roi=896:640:1152:896",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 11.160916998051107,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 12.898875000246335,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 74.72137500008103,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 82.33908400143264,
+          "hit": false,
+          "key": "synthetic|roi=794:538:1255:999",
+          "crop_hw": [
+            461,
+            461
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 10.275000000547152,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 13.510374999896158,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 67.52895899990108,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 74.95145800203318,
+          "hit": false,
+          "key": "synthetic|roi=610:354:1439:1183",
+          "crop_hw": [
+            829,
+            829
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.85608399787452,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 12.33233400125755,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 67.26533299661241,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 73.28962499741465,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.42258299619425,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 18.065958000079263,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 66.76824999885866,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 72.81658300053095,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536|fallback",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.600875004252885,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 13.975292000395712,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.9502920001978055
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.8203329998650588
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.168832997791469
+        },
+        {
+          "stage": "geometry",
+          "ms": 2.3333330027526245
+        },
+        {
+          "stage": "geometry",
+          "ms": 2.612124997540377
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.7078329983633012
+        },
+        {
+          "stage": "geometry",
+          "ms": 4.984915998647921
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.790999995544553
+        },
+        {
+          "stage": "geometry",
+          "ms": 5.629875005979557
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.39416600036202
+        }
+      ]
+    },
+    {
+      "name": "real_model_cross_frame_strip_repeat",
+      "wall_ms": 472.10687500046333,
+      "process_cpu_ms": 3773.44,
+      "stage_ms": {
+        "full_qimage_rgb": 0.5395830012275837,
+        "encoder_ort": 338.77674900577404,
+        "embedding_inclusive": 375.5257510129013,
+        "decoder_ort": 48.46233400166966,
+        "decoder_and_postprocess": 65.46954200894106,
+        "geometry": 26.47616600006586
+      },
+      "encoder_calls": 5,
+      "decoder_calls": 5,
+      "cache_hits": 0,
+      "cache_misses": 5,
+      "round": 4,
+      "fallback": true,
+      "crop": [
+        0,
+        0,
+        2048,
+        1536
+      ],
+      "area": 159685.0,
+      "rings": 1,
+      "polygon_vertices": 4,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.5395830012275837
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 70.31575000291923,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 78.38770800299244,
+          "hit": false,
+          "key": "synthetic|roi=896:640:1152:896",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.02966700232355,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 10.625709001033101,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 67.20783300261246,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 75.11520900152391,
+          "hit": false,
+          "key": "synthetic|roi=794:538:1255:999",
+          "crop_hw": [
+            461,
+            461
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.740458001033403,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 12.890416001027916,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 67.38566599960905,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 75.42570800433168,
+          "hit": false,
+          "key": "synthetic|roi=610:354:1439:1183",
+          "crop_hw": [
+            829,
+            829
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 8.924166999349836,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 11.405750003177673,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 66.11895799869671,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 72.70320899988292,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.715499996673316,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 15.11200000095414,
+          "candidates": 4
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 67.74854200193658,
+          "input_shapes": {
+            "image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 73.89391700417036,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536|fallback",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 11.052542002289556,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 15.435667002748232,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.8182919991668314
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.6875830003991723
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.596458001586143
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.997958006337285
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.9771250008489005
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.689917000476271
+        },
+        {
+          "stage": "geometry",
+          "ms": 5.452332996355835
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.349832993990276
+        },
+        {
+          "stage": "geometry",
+          "ms": 5.893125002330635
+        },
+        {
+          "stage": "geometry",
+          "ms": 4.01354199857451
+        }
+      ]
+    }
+  ]
+}

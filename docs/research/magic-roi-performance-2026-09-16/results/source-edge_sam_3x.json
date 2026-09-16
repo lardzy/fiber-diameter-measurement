@@ -1,0 +1,71 @@
+{
+  "env": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "ort": "1.24.4",
+    "providers_available": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "cv2": "4.13.0",
+    "cv2_threads": 18,
+    "cpu": "Apple M5 Pro",
+    "head": "d9a0dd75d125c8d70bc23f066e364787c31589da"
+  },
+  "mode": "source",
+  "variant": "edge_sam_3x",
+  "source_sweep": [
+    {
+      "image_wh": [
+        2048,
+        1536
+      ],
+      "hash_median_ms": 3.9750840005581267,
+      "rgb_median_ms": 0.3398749977350235,
+      "trials": [
+        {
+          "hash_ms": 4.350041999714449,
+          "rgb_ms": 2.227999997558072
+        },
+        {
+          "hash_ms": 3.9750840005581267,
+          "rgb_ms": 0.3398749977350235
+        },
+        {
+          "hash_ms": 3.860958000586834,
+          "rgb_ms": 0.3121250047115609
+        },
+        {
+          "hash_ms": 4.049333001603372,
+          "rgb_ms": 0.36099999852012843
+        }
+      ]
+    },
+    {
+      "image_wh": [
+        6000,
+        4000
+      ],
+      "hash_median_ms": 34.29983399837511,
+      "rgb_median_ms": 5.500958002812695,
+      "trials": [
+        {
+          "hash_ms": 35.20458300044993,
+          "rgb_ms": 5.335499998182058
+        },
+        {
+          "hash_ms": 34.29983399837511,
+          "rgb_ms": 5.581790996075142
+        },
+        {
+          "hash_ms": 34.21154199895682,
+          "rgb_ms": 5.500958002812695
+        },
+        {
+          "hash_ms": 34.71904199977871,
+          "rgb_ms": 5.348541999410372
+        }
+      ]
+    }
+  ]
+}

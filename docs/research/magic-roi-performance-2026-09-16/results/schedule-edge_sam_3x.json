@@ -1,0 +1,366 @@
+{
+  "env": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "ort": "1.24.4",
+    "providers_available": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "cv2": "4.13.0",
+    "cv2_threads": 18,
+    "cpu": "Apple M5 Pro",
+    "head": "d9a0dd75d125c8d70bc23f066e364787c31589da"
+  },
+  "mode": "schedule",
+  "variant": "edge_sam_3x",
+  "synthetic_control_flow_only": true,
+  "cases": [
+    {
+      "name": "all_edges_first",
+      "wall_ms": 73.82145799783757,
+      "process_cpu_ms": 164.226,
+      "stage_ms": {
+        "full_qimage_rgb": 0.1708330019027926,
+        "encoder_ort": 0.0,
+        "embedding_inclusive": 0.049000009312294424,
+        "decoder_ort": 0.0,
+        "geometry": 48.63441400084412
+      },
+      "encoder_calls": 5,
+      "decoder_calls": 5,
+      "cache_hits": 0,
+      "cache_misses": 5,
+      "round": 4,
+      "fallback": true,
+      "crop": [
+        0,
+        0,
+        2048,
+        1536
+      ],
+      "area": 3145728.0,
+      "rings": 1,
+      "polygon_vertices": 4,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.1708330019027926
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.012542004697024822,
+          "hit": false,
+          "key": "synthetic|roi=896:640:1152:896",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.006458001735154539,
+          "hit": false,
+          "key": "synthetic|roi=794:538:1255:999",
+          "crop_hw": [
+            461,
+            461
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.005207999492995441,
+          "hit": false,
+          "key": "synthetic|roi=610:354:1439:1183",
+          "crop_hw": [
+            829,
+            829
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.006499998562503606,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.018292004824616015,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536|fallback",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "geometry",
+          "ms": 2.9245830010040663
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.0729159985203296
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.7245830022147857
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.731208001729101
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.333499997097533
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.6590000017895363
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.623957997770049
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.377833000849932
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.490792002703529
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.696040997165255
+        }
+      ]
+    },
+    {
+      "name": "all_edges_repeat",
+      "wall_ms": 71.40029199945275,
+      "process_cpu_ms": 142.40000000000003,
+      "stage_ms": {
+        "full_qimage_rgb": 0.504916999489069,
+        "encoder_ort": 0.0,
+        "embedding_inclusive": 0.05508400499820709,
+        "decoder_ort": 0.0,
+        "geometry": 47.08508398471167
+      },
+      "encoder_calls": 5,
+      "decoder_calls": 5,
+      "cache_hits": 0,
+      "cache_misses": 5,
+      "round": 4,
+      "fallback": true,
+      "crop": [
+        0,
+        0,
+        2048,
+        1536
+      ],
+      "area": 3145728.0,
+      "rings": 1,
+      "polygon_vertices": 4,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.504916999489069
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.009000003046821803,
+          "hit": false,
+          "key": "synthetic|roi=896:640:1152:896",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.005792004230897874,
+          "hit": false,
+          "key": "synthetic|roi=794:538:1255:999",
+          "crop_hw": [
+            461,
+            461
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.008000002708286047,
+          "hit": false,
+          "key": "synthetic|roi=610:354:1439:1183",
+          "crop_hw": [
+            829,
+            829
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.011124997399747372,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.021166997612453997,
+          "hit": false,
+          "key": "synthetic|roi=0:0:2048:1536|fallback",
+          "crop_hw": [
+            1536,
+            2048
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 0.0,
+          "mock": true
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.3961660006316379
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.1319589975755662
+        },
+        {
+          "stage": "geometry",
+          "ms": 1.7458329966757447
+        },
+        {
+          "stage": "geometry",
+          "ms": 2.3261669994099066
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.32091699965531
+        },
+        {
+          "stage": "geometry",
+          "ms": 3.2921659949352033
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.207250000850763
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.677833997353446
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.26299999607727
+        },
+        {
+          "stage": "geometry",
+          "ms": 8.723792001546826
+        }
+      ]
+    }
+  ]
+}

@@ -133,6 +133,26 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
         or geometry.get("compiled_extension") is not True
     ):
         return ["packaged self-check did not pass the compiled quick diameter probe"]
+    if "magic-segmentation" in payload.get("features", []):
+        magic = checks.get("magic_segmentation")
+        models = magic.get("models") if isinstance(magic, dict) else None
+        if (
+            not isinstance(magic, dict) or magic.get("ok") is not True
+            or magic.get("backend") != "onnxruntime" or not magic.get("backend_version")
+            or not isinstance(models, dict)
+            or any(
+                not isinstance(models.get(variant), dict)
+                or models[variant].get("ok") is not True
+                or models[variant].get("encoder_calls_first") != 1
+                or models[variant].get("encoder_calls_repeat") != 0
+                or models[variant].get("decoder_calls_repeat") != 1
+                or models[variant].get("mask_equal") is not True
+                or not isinstance(models[variant].get("providers"), list)
+                or "CPUExecutionProvider" not in models[variant].get("providers", [])
+                for variant in ("edge_sam", "edge_sam_3x")
+            )
+        ):
+            return ["packaged self-check did not pass the magic segmentation ROI/cache probe"]
     return []
 
 

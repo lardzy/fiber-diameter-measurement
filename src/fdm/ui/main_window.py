@@ -252,7 +252,9 @@ from fdm.services.prompt_segmentation import (
     qimage_to_rgb_array,
     resolve_interactive_segmentation_backend,
 )
+from fdm.services.segmentation_performance import log_slow_segmentation
 from fdm.services.segmentation_source import (
+    ImageSourceVersionCache,
     SegmentationSourceSnapshot,
     digital_slide_segmentation_snapshot,
     image_segmentation_snapshot,
@@ -2019,6 +2021,7 @@ class MainWindow(QMainWindow):
         self._digital_slide_boundary_controls: list[QWidget] = []
         self._group_header_labels: list[QLabel] = []
         self._prompt_request_tool_modes: dict[tuple[str, int], str] = {}
+        self._segmentation_image_versions = ImageSourceVersionCache()
         self._segmentation_source_sessions: dict[
             tuple[str, str], SegmentationSourceSnapshot
         ] = {}
@@ -6147,6 +6150,11 @@ class MainWindow(QMainWindow):
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
+        if mode == MagicSegmentToolMode.STANDARD:
+            self._ensure_prompt_segmentation_worker()
+            warmup = getattr(self._prompt_seg_worker, "warmupRequested", None)
+            if warmup is not None:
+                warmup.emit(self._app_settings.magic_segment_model_variant)
         if is_fiber_quick_tool_mode(mode):
             self._ensure_fiber_quick_geometry_worker()
         for canvas in self._canvases.values():
@@ -21253,7 +21261,19 @@ class MainWindow(QMainWindow):
 
     def _activate_app_settings(self, settings: AppSettings) -> None:
         settings = settings.normalized_copy()
+        magic_model_changed = settings.magic_segment_model_variant != self._app_settings.magic_segment_model_variant
         self._app_settings = settings
+        if magic_model_changed:
+            for document_id, canvas in self._canvases.items():
+                if canvas.has_magic_segment_session() and self._prompt_seg_worker is not None:
+                    self._prompt_seg_worker.cancel_document(document_id)
+                canvas.invalidate_magic_segment_model()
+            for key, mode in list(self._prompt_request_tool_modes.items()):
+                if mode == MagicSegmentToolMode.STANDARD:
+                    self._prompt_request_tool_modes.pop(key, None)
+                    self._prompt_request_sources.pop(key, None)
+            if self._tool_mode == MagicSegmentToolMode.STANDARD and self._prompt_seg_worker is not None:
+                self._prompt_seg_worker.warmupRequested.emit(settings.magic_segment_model_variant)
         if self._object_snap_status_button is not None:
             self._object_snap_status_button.setSnapState(
                 settings.object_snap_enabled,
@@ -22366,7 +22386,9 @@ class MainWindow(QMainWindow):
         existing = self._segmentation_source_sessions.get(session_key)
         if existing is not None:
             if (
-                not document.is_digital_slide()
+                (not document.is_digital_slide()
+                 and self._images.get(document.id) is not None
+                 and int(self._images[document.id].cacheKey()) == int(existing.image.cacheKey()))
                 or (
                     isinstance(canvas, DigitalSlideCanvas)
                     and existing.focus_index == canvas.focus_index()
@@ -22394,7 +22416,10 @@ class MainWindow(QMainWindow):
             image = self._images.get(document.id)
             if image is None or image.isNull():
                 raise ValueError("当前图片还未完成加载。")
-            snapshot = image_segmentation_snapshot(document, image)
+            snapshot = image_segmentation_snapshot(
+                document, image,
+                source_version=self._segmentation_image_versions.version(document.id, image),
+            )
         self._segmentation_source_sessions[session_key] = snapshot
         return snapshot
 
@@ -22403,6 +22428,11 @@ class MainWindow(QMainWindow):
         document_id: str,
         tool_mode: str | None = None,
     ) -> None:
+        if tool_mode is None:
+            self._segmentation_image_versions.discard(document_id)
+        canvas = self._canvases.get(document_id)
+        if canvas is not None and tool_mode in (None, MagicSegmentToolMode.STANDARD):
+            canvas.clear_magic_segment_roi_workspaces()
         for key in list(self._segmentation_source_sessions):
             if key[0] == document_id and (tool_mode is None or key[1] == tool_mode):
                 self._segmentation_source_sessions.pop(key, None)
@@ -22427,6 +22457,7 @@ class MainWindow(QMainWindow):
         return metadata
 
     def _on_canvas_magic_segment_requested(self, document_id: str, payload: object) -> None:
+        prepare_started = perf_counter()
         canvas = self._canvases.get(document_id)
         document = self.project.get_document(document_id)
         if canvas is None or document is None or not isinstance(payload, dict):
@@ -22441,6 +22472,9 @@ class MainWindow(QMainWindow):
         tool_mode = str(payload.get("tool_mode", self._tool_mode) or self._tool_mode)
         if not is_magic_toolbar_tool_mode(tool_mode):
             tool_mode = MagicSegmentToolMode.STANDARD
+        session_token = canvas.magic_segment_session_token() if is_magic_segment_tool_mode(tool_mode) else ""
+        if payload.get("session_token") and payload["session_token"] != session_token:
+            return
         tool_label = self._magic_tool_label(tool_mode)
         source: SegmentationSourceSnapshot | None = None
         if is_reference_propagation_tool_mode(tool_mode):
@@ -22621,9 +22655,15 @@ class MainWindow(QMainWindow):
                 canvas.fail_magic_segment_result(request_id)
             self._update_magic_segment_controls()
             return
+        roi_context = (
+            source.cache_key, resolved_variant, active_stage, roi_constraint_box,
+            bool(small_object_enhancement_enabled),
+            int(self._app_settings.magic_segment_small_object_roi_area_threshold_px),
+        ) if tool_mode == MagicSegmentToolMode.STANDARD and roi_enabled else None
+        roi_workspace_box = source.to_local_box(canvas.magic_segment_roi_workspace(active_stage, roi_context)) if roi_context is not None else None
         self._prompt_request_tool_modes[(document_id, request_id)] = tool_mode
         self._prompt_request_sources[(document_id, request_id)] = source
-        self._prompt_seg_worker.register_request(document_id, request_id)
+        generation = self._prompt_seg_worker.register_request(document_id, request_id)
         self._prompt_seg_worker.requested.emit(
             PromptSegmentationRequest(
                 document_id=document_id,
@@ -22637,6 +22677,12 @@ class MainWindow(QMainWindow):
                 model_variant=requested_variant,
                 roi_enabled=roi_enabled,
                 roi_constraint_box=roi_constraint_box,
+                roi_workspace_box=roi_workspace_box,
+                roi_workspace_context=roi_context,
+                session_token=session_token,
+                generation=int(generation or 0),
+                source_prepare_ms=(perf_counter() - prepare_started) * 1000.0,
+                submitted_at=perf_counter(),
                 small_object_enhancement_enabled=small_object_enhancement_enabled,
                 small_object_roi_area_threshold_px=self._app_settings.magic_segment_small_object_roi_area_threshold_px,
                 small_object_workspace_box=small_object_workspace_box,
@@ -22685,12 +22731,40 @@ class MainWindow(QMainWindow):
         return True
 
     def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None:
+        received = perf_counter()
+        metadata = result.metadata if isinstance(result, PromptSegmentationResult) else {}
+        performance = metadata.pop("segmentation_performance", None)
+        emitted = float(metadata.pop("_segmentation_emitted_at", received))
+        try:
+            self._apply_prompt_segmentation_succeeded(document_id, request_id, result)
+        finally:
+            if isinstance(performance, dict):
+                stages = dict(performance.get("stages_ms", {}))
+                stages["ui_delivery_ms"] = max(0.0, (received - emitted) * 1000.0)
+                stages["ui_apply_ms"] = (perf_counter() - received) * 1000.0
+                performance["stages_ms"] = stages
+                performance["total_ms"] = float(performance.get("total_ms", performance.get("service_ms", 0.0))) + stages["ui_delivery_ms"] + stages["ui_apply_ms"]
+                log_slow_segmentation(
+                    performance, document_id=document_id, request_id=request_id,
+                    source_token=metadata.get("source_token", ""),
+                    session_token=metadata.get("session_token", ""),
+                    model=metadata.get("resolved_model_variant", metadata.get("model_variant", "")),
+                    tool_mode=metadata.get("tool_mode", ""), active_stage=metadata.get("active_stage", ""),
+                    status="received",
+                )
+
+    def _apply_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None:
+        canvas = self._canvases.get(document_id)
+        if canvas is not None and isinstance(result, PromptSegmentationResult):
+            token = str(result.metadata.get("session_token", ""))
+            if token and token != canvas.magic_segment_session_token():
+                return
         tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), None)
         source = self._prompt_request_sources.pop((document_id, request_id), None)
-        canvas = self._canvases.get(document_id)
         if canvas is None:
             return
         if isinstance(result, PromptSegmentationResult):
+            session_token = str(result.metadata.get("session_token", ""))
             tool_mode = str(tool_mode or result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
             document = self.project.get_document(document_id)
             if source is None and document is not None and not document.is_digital_slide():
@@ -22707,6 +22781,11 @@ class MainWindow(QMainWindow):
                 and not source_token
             ):
                 source_mismatch = True
+            if source is not None and source.source_kind == "image":
+                current_image = self._images.get(document_id)
+                source_mismatch |= current_image is None or int(current_image.cacheKey()) != int(source.image.cacheKey())
+            if source is not None and isinstance(canvas, DigitalSlideCanvas):
+                source_mismatch |= source.focus_index != canvas.focus_index()
             if source_mismatch:
                 if is_fiber_quick_tool_mode(tool_mode):
                     canvas.fail_fiber_quick_result(request_id, stage="segmentation")
@@ -22813,6 +22892,16 @@ class MainWindow(QMainWindow):
                     )
                 else:
                     self._hide_small_object_preview()
+                roi_workspace_box = None
+                crop_box = result.metadata.get("segmentation_crop_box")
+                roi_context = result.metadata.get("roi_workspace_context")
+                if (
+                    not small_object_used and roi_context is not None
+                    and result.metadata.get("segmentation_workspace_reusable", True)
+                    and isinstance(crop_box, (tuple, list)) and len(crop_box) == 4
+                ):
+                    ox, oy = int(round(source.origin_px.x)), int(round(source.origin_px.y))
+                    roi_workspace_box = (int(crop_box[0]) + ox, int(crop_box[1]) + oy, int(crop_box[2]) + ox, int(crop_box[3]) + oy)
                 apply_result = canvas.apply_magic_segment_result(
                     request_id,
                     result.mask,
@@ -22841,6 +22930,9 @@ class MainWindow(QMainWindow):
                         "holes_processed": result.metadata.get("holes_processed", False),
                         "geometry_final": result.metadata.get("geometry_final", False),
                     },
+                    roi_workspace_box=roi_workspace_box,
+                    roi_workspace_context=roi_context,
+                    session_token=session_token,
                 )
                 if apply_result is None:
                     self._update_magic_segment_controls()
@@ -28307,6 +28399,7 @@ class MainWindow(QMainWindow):
             self._fiber_quick_background_jobs.clear()
             self._prompt_request_tool_modes.clear()
             self._segmentation_source_sessions.clear()
+            self._segmentation_image_versions.clear()
             self._prompt_request_sources.clear()
             self._fiber_quick_geometry_sources.clear()
         return results

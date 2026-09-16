@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import dataclass
+from contextlib import nullcontext
+from functools import wraps
 from pathlib import Path
 from time import perf_counter
 from typing import Callable
@@ -11,6 +13,7 @@ import cv2
 from fdm.geometry import Point, clean_ring, distance, point_in_polygon, ring_signed_area
 from fdm.runtime_logging import append_runtime_log
 from fdm.services.mask_region import MaskRegion, mask_region, subtract_regions
+from fdm.services.segmentation_performance import SegmentationPerformance
 from fdm.settings import (
     ComplexMagicSegmentModelVariant,
     MagicSegmentToolMode,
@@ -592,6 +595,28 @@ def _roi_result_needs_expansion(
         return True
     crop_area = max(1, (x1 - x0) * (y1 - y0))
     return (magic_mask_area_px(selected_mask) / crop_area) >= ROI_CROP_ACCEPT_AREA_RATIO
+
+
+def _roi_workspace_is_reusable(selected_mask, *, crop_box, bounds) -> bool:
+    """Do not pin a crop that cuts the target at an internal boundary.
+
+    The existing expansion rule permits one touched edge. Keep that rule and
+    its current result, but let subsequent prompts use the original crop planner
+    in this case. Image/constraint edges cannot reveal more pixels by recentering.
+    """
+    if crop_box == bounds:
+        return True
+    component = _component_bounds(selected_mask)
+    if component is None:
+        return False
+    x0, y0, x1, y1 = crop_box
+    left, top, right, bottom = component
+    return not (
+        (left <= x0 and x0 > bounds[0])
+        or (top <= y0 and y0 > bounds[1])
+        or (right >= x1 - 1 and x1 < bounds[2])
+        or (bottom >= y1 - 1 and y1 < bounds[3])
+    )
 
 
 def qimage_to_rgb_array(image):
@@ -1190,6 +1215,42 @@ def _keep_largest_component(mask):
     return labels == largest_label, True
 
 
+@dataclass(slots=True)
+class _RgbCrop:
+    """Defer pixel access until the embedding cache has missed."""
+
+    shape: tuple[int, int, int]
+    load: Callable[[], object]
+
+
+def _profile_prediction(method):
+    @wraps(method)
+    def measured(self, *args, **kwargs):
+        performance = SegmentationPerformance()
+        self._performance = performance
+        self._cancel_check = kwargs.get("cancel_check")
+        started = perf_counter()
+        result = None
+        try:
+            self._check_cancelled()
+            result = method(self, *args, **kwargs)
+            performance.stop_reason = str(result.metadata.get("reason", performance.stop_reason))
+            return result
+        except Exception:
+            performance.stop_reason = "cancelled" if self._cancel_check and self._cancel_check() else "failed"
+            raise
+        finally:
+            self.last_performance = performance.snapshot(
+                total_ms=(perf_counter() - started) * 1000.0,
+                cache_bytes=self.embedding_cache_bytes,
+            )
+            if result is not None:
+                result.metadata["segmentation_performance"] = self.last_performance
+            self._performance = None
+            self._cancel_check = None
+    return measured
+
+
 class PromptSegmentationService:
     def __init__(
         self,
@@ -1199,6 +1260,7 @@ class PromptSegmentationService:
         model_variant: str = MagicSegmentModelVariant.EDGE_SAM,
         target_length: int = EDGE_SAM_TARGET_LENGTH,
         max_cache_entries: int = 2,
+        max_cache_bytes: int = 32 * 1024 * 1024,
     ) -> None:
         normalized_variant = _normalize_model_variant(model_variant)
         default_encoder, default_decoder = edge_sam_model_paths(normalized_variant)
@@ -1207,6 +1269,10 @@ class PromptSegmentationService:
         self._decoder_path = Path(decoder_path) if decoder_path is not None else default_decoder
         self._target_length = target_length
         self._max_cache_entries = max(1, int(max_cache_entries))
+        self._max_cache_bytes = max(0, int(max_cache_bytes))
+        self._performance: SegmentationPerformance | None = None
+        self._cancel_check: Callable[[], bool] | None = None
+        self.last_performance: dict[str, object] = {}
         self._encoder_session = None
         self._decoder_session = None
         self._encoder_input_name = ""
@@ -1220,9 +1286,13 @@ class PromptSegmentationService:
         encoder_path, decoder_path = edge_sam_model_paths(model_variant)
         return encoder_path.exists() and decoder_path.exists()
 
+    def warmup(self) -> None:
+        self._ensure_sessions()
+
     def clear_cache(self) -> None:
         self._embedding_cache.clear()
 
+    @_profile_prediction
     def predict_polygon(
         self,
         *,
@@ -1234,6 +1304,7 @@ class PromptSegmentationService:
         active_stage: str | None = None,
         roi_enabled: bool = False,
         roi_constraint_box: tuple[int, int, int, int] | None = None,
+        roi_workspace_box: tuple[int, int, int, int] | None = None,
         small_object_enhancement_enabled: bool = False,
         small_object_roi_area_threshold_px: int = 160000,
         small_object_workspace_box: tuple[int, int, int, int] | None = None,
@@ -1247,7 +1318,16 @@ class PromptSegmentationService:
                 area_px=0.0,
                 metadata={"reason": "missing_positive_prompt"},
             )
-        cv_image = self._image_to_rgb_array(image)
+        # Keep QImage immutable and lazy. Array input also supports internal callers.
+        if hasattr(image, "isNull"):
+            if image.isNull():
+                raise RuntimeError("无法读取图片: 当前图像为空。")
+            cv_image = image
+        elif hasattr(image, "shape"):
+            cv_image = image
+        else:
+            cv_image = self._image_to_rgb_array(image)
+        cache_key = f"{cache_key}|encoder={self._model_variant}:rgb-v1:target={self._target_length}"
         if _tool_mode_uses_auto_roi(tool_mode, roi_enabled=roi_enabled):
             return self._predict_polygon_auto_roi(
                 cv_image,
@@ -1257,13 +1337,15 @@ class PromptSegmentationService:
                 tool_mode=tool_mode,
                 active_stage=active_stage,
                 roi_constraint_box=roi_constraint_box,
+                roi_workspace_box=roi_workspace_box,
                 small_object_enhancement_enabled=small_object_enhancement_enabled,
                 small_object_roi_area_threshold_px=small_object_roi_area_threshold_px,
                 small_object_workspace_box=small_object_workspace_box,
                 cancel_check=cancel_check,
             )
+        image_h, image_w = self._source_size(cv_image)
         return self._predict_polygon_for_rgb_array(
-            cv_image,
+            self._crop_source(cv_image, (0, 0, image_w, image_h)),
             cache_key=cache_key,
             positive_points=positive_points,
             negative_points=negative_points,
@@ -1280,186 +1362,119 @@ class PromptSegmentationService:
         tool_mode: str,
         active_stage: str | None,
         roi_constraint_box: tuple[int, int, int, int] | None,
+        roi_workspace_box: tuple[int, int, int, int] | None,
         small_object_enhancement_enabled: bool,
         small_object_roi_area_threshold_px: int,
         small_object_workspace_box: tuple[int, int, int, int] | None,
         cancel_check: Callable[[], bool] | None,
     ) -> PromptSegmentationResult:
-        image_h, image_w = cv_image.shape[:2]
+        image_h, image_w = self._source_size(cv_image)
         constraint_box = _normalize_roi_constraint_box(roi_constraint_box, image_size=(image_h, image_w))
-        constraint_bounds = constraint_box or (0, 0, image_w, image_h)
-        bounds_w = max(1, constraint_bounds[2] - constraint_bounds[0])
-        bounds_h = max(1, constraint_bounds[3] - constraint_bounds[1])
+        bounds = constraint_box or (0, 0, image_w, image_h)
+        bounds_w, bounds_h = bounds[2] - bounds[0], bounds[3] - bounds[1]
         image_long_side = max(bounds_h, bounds_w)
-        latest_positive = positive_points[-1] if positive_points else _prompt_centroid(positive_points)
-        center = latest_positive or _prompt_centroid(positive_points) or Point(image_w / 2.0, image_h / 2.0)
-        center = Point(
-            max(constraint_bounds[0], min(center.x, constraint_bounds[2] - 1)),
-            max(constraint_bounds[1], min(center.y, constraint_bounds[3] - 1)),
-        )
-        prompt_long_side = _prompt_bbox_long_side(positive_points, negative_points)
-        initial_side = int(round(max(ROI_CROP_MIN_SIDE, 4.0 * prompt_long_side)))
-        initial_side = max(ROI_CROP_MIN_SIDE, min(initial_side, ROI_CROP_MAX_INITIAL_SIDE))
-        max_rounds = ROI_CROP_STANDARD_MAX_ROUNDS if tool_mode == MagicSegmentToolMode.STANDARD else ROI_CROP_FIBER_QUICK_MAX_ROUNDS
-        max_side = image_long_side if tool_mode == MagicSegmentToolMode.STANDARD else min(1024, int(round(image_long_side * 0.6)))
-        initial_crop_side = max(1, min(max(ROI_CROP_MIN_SIDE, initial_side), max_side, image_h, image_w, bounds_w, bounds_h))
+        center = positive_points[-1]
+        center = Point(max(bounds[0], min(center.x, bounds[2] - 1)), max(bounds[1], min(center.y, bounds[3] - 1)))
+        initial_side = max(ROI_CROP_MIN_SIDE, min(
+            int(round(max(ROI_CROP_MIN_SIDE, 4.0 * _prompt_bbox_long_side(positive_points, negative_points)))),
+            ROI_CROP_MAX_INITIAL_SIDE,
+        ))
+        standard = tool_mode == MagicSegmentToolMode.STANDARD
+        max_rounds = ROI_CROP_STANDARD_MAX_ROUNDS if standard else ROI_CROP_FIBER_QUICK_MAX_ROUNDS
+        max_side = image_long_side if standard else min(1024, int(round(image_long_side * 0.6)))
+        initial_crop_side = max(1, min(initial_side, max_side, image_h, image_w, bounds_w, bounds_h))
         if (
-            tool_mode == MagicSegmentToolMode.STANDARD
-            and str(active_stage or "") == "subtract"
-            and constraint_box is not None
+            standard and str(active_stage or "") == "subtract" and constraint_box is not None
             and small_object_enhancement_enabled
-            and (initial_crop_side * initial_crop_side) <= max(1, int(small_object_roi_area_threshold_px))
+            and initial_crop_side**2 <= max(1, int(small_object_roi_area_threshold_px))
         ):
             return self._predict_polygon_small_object_roi(
-                cv_image,
-                cache_key=cache_key,
-                positive_points=positive_points,
-                negative_points=negative_points,
-                roi_constraint_box=constraint_box,
-                small_object_workspace_box=small_object_workspace_box,
-                cancel_check=cancel_check,
+                cv_image, cache_key=cache_key, positive_points=positive_points,
+                negative_points=negative_points, roi_constraint_box=constraint_box,
+                small_object_workspace_box=small_object_workspace_box, cancel_check=cancel_check,
             )
-        last_result = PromptSegmentationResult(mask=None, polygon_px=[], area_rings_px=[], area_px=0.0, metadata={})
-        used_full_image = False
 
-        for round_idx in range(max_rounds):
+        required = [p for p in positive_points + negative_points if _point_in_crop(p, bounds)]
+        workspace = _normalize_workspace_box(roi_workspace_box, bounds=bounds, image_size=(image_h, image_w)) if standard else None
+        if workspace != roi_workspace_box:
+            workspace = None
+        candidates: list[tuple[int, int, int, int]] = []
+        if workspace is not None:
+            initial_side = max(initial_side, workspace[2] - workspace[0], workspace[3] - workspace[1])
+            if _all_points_in_box(required, workspace):
+                candidates.append(workspace)
+                center = Point((workspace[0] + workspace[2]) / 2, (workspace[1] + workspace[3]) / 2)
+            else:
+                # Grow around the previous workspace and all in-bounds prompts.
+                left = min([workspace[0]] + [p.x for p in required])
+                top = min([workspace[1]] + [p.y for p in required])
+                right = max([workspace[2]] + [p.x + 1 for p in required])
+                bottom = max([workspace[3]] + [p.y + 1 for p in required])
+                center = Point((left + right) / 2, (top + bottom) / 2)
+                initial_side = max(int(round(initial_side * ROI_CROP_SCALE_FACTOR)), int(right - left + 1), int(bottom - top + 1))
+        if not candidates or candidates[0] != bounds:
+            for round_idx in range(len(candidates), max_rounds):
+                requested_side = int(round(initial_side * ROI_CROP_SCALE_FACTOR**round_idx))
+                crop_side = max(1, min(max(ROI_CROP_MIN_SIDE, requested_side), max_side, image_h, image_w, bounds_w, bounds_h))
+                crop_box = bounds if standard and (round_idx == max_rounds - 1 or crop_side >= image_long_side) else _centered_square_crop(
+                    center=center, side=crop_side, image_size=(image_h, image_w), bounds=bounds,
+                )
+                if crop_box not in candidates and (not standard or _all_points_in_box(required, crop_box)):
+                    candidates.append(crop_box)
+        if bounds not in candidates:
+            candidates.append(bounds)
+
+        for index, crop_box in enumerate(candidates):
+            self._check_cancelled()
             if cancel_check is not None and cancel_check():
                 raise RuntimeError("请求已取消。")
-            requested_side = int(round(initial_side * (ROI_CROP_SCALE_FACTOR**round_idx)))
-            crop_side = max(1, min(max(ROI_CROP_MIN_SIDE, requested_side), max_side, image_h, image_w, bounds_w, bounds_h))
-            if tool_mode == MagicSegmentToolMode.STANDARD and (round_idx == max_rounds - 1 or crop_side >= image_long_side):
-                crop_box = constraint_bounds
-                used_full_image = constraint_box is None
-            else:
-                crop_box = _centered_square_crop(
-                    center=center,
-                    side=crop_side,
-                    image_size=(image_h, image_w),
-                    bounds=constraint_bounds,
-                )
-            x0, y0, x1, y1 = crop_box
-            crop_image = cv_image[y0:y1, x0:x1].copy()
-            crop_positive = _crop_points_to_local(positive_points, crop_box)
-            crop_negative = _crop_points_to_local(negative_points, crop_box)
-            roi_signature = f"{x0}:{y0}:{x1}:{y1}"
+            if self._performance is not None:
+                self._performance.roi_crops.append(crop_box)
+            signature = ":".join(str(value) for value in crop_box)
             crop_result = self._predict_polygon_for_rgb_array(
-                crop_image,
-                cache_key=f"{cache_key}|roi={roi_signature}",
-                positive_points=crop_positive,
-                negative_points=crop_negative,
+                self._crop_source(cv_image, crop_box),
+                cache_key=f"{cache_key}|roi={signature}",
+                positive_points=_crop_points_to_local(positive_points, crop_box),
+                negative_points=_crop_points_to_local(negative_points, crop_box),
                 metadata_extra={
-                    "segmentation_roi_round": round_idx + 1,
-                    "segmentation_used_full_image": used_full_image,
+                    "segmentation_roi_round": min(index + 1, max_rounds),
+                    "segmentation_used_full_image": crop_box == bounds and constraint_box is None,
                     "segmentation_crop_box": crop_box,
                     "segmentation_roi_constraint_box": constraint_box,
                     "small_object_enhancement_used": False,
                 },
             )
+            self._check_cancelled()
             expanded_mask = (
                 mask_region(crop_result.mask, origin=crop_box[:2], extent=(image_h, image_w))
                 if getattr(self, "local_masks", False)
-                else _expand_mask_from_crop(
-                    crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w)
-                )
+                else _expand_mask_from_crop(crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w))
             )
-            selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
-                expanded_mask,
-                positive_points=positive_points,
-                negative_points=negative_points,
+            selected_mask, area_rings, polygon, stats = self._geometry(
+                expanded_mask, positive_points=positive_points, negative_points=negative_points,
             )
-            last_result = PromptSegmentationResult(
+            needs_expansion = selected_mask is None or _roi_result_needs_expansion(selected_mask, crop_box=crop_box)
+            result = PromptSegmentationResult(
                 mask=selected_mask.copy() if selected_mask is not None else None,
-                polygon_px=polygon,
-                area_rings_px=area_rings,
-                area_px=magic_mask_area_px(selected_mask),
-                metadata={
-                    **crop_result.metadata,
-                    **geometry_stats,
-                    "segmentation_roi_round": round_idx + 1,
-                    "segmentation_used_full_image": used_full_image,
-                    "segmentation_crop_box": crop_box,
-                    "segmentation_roi_constraint_box": constraint_box,
-                    "small_object_enhancement_used": False,
-                },
+                polygon_px=polygon, area_rings_px=area_rings, area_px=magic_mask_area_px(selected_mask),
+                metadata={**crop_result.metadata, **stats,
+                          "segmentation_workspace_reusable": _roi_workspace_is_reusable(
+                              selected_mask, crop_box=crop_box, bounds=bounds,
+                          ) if standard else False},
             )
-            if selected_mask is not None and not _roi_result_needs_expansion(selected_mask, crop_box=crop_box):
-                return last_result
-            if used_full_image:
-                break
-        if last_result.mask is None or _roi_result_needs_expansion(
-            last_result.mask,
-            crop_box=last_result.metadata.get("segmentation_crop_box", (0, 0, image_w, image_h)),
-        ):
-            x0, y0, x1, y1 = constraint_bounds
-            fallback_crop = cv_image[y0:y1, x0:x1].copy()
-            fallback_positive = _crop_points_to_local(positive_points, constraint_bounds)
-            fallback_negative = _crop_points_to_local(negative_points, constraint_bounds)
-            fallback_signature = f"{x0}:{y0}:{x1}:{y1}"
-            fallback_result = self._predict_polygon_for_rgb_array(
-                fallback_crop,
-                cache_key=f"{cache_key}|roi={fallback_signature}|fallback",
-                positive_points=fallback_positive,
-                negative_points=fallback_negative,
-                metadata_extra={
-                    "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
-                    "segmentation_used_full_image": constraint_box is None,
-                    "segmentation_crop_box": constraint_bounds,
-                    "segmentation_roi_constraint_box": constraint_box,
-                    "segmentation_fallback_from_roi": True,
-                    "small_object_enhancement_used": False,
-                },
-            )
-            if fallback_result.mask is not None:
-                expanded_mask = (
-                    mask_region(
-                        fallback_result.mask,
-                        origin=constraint_bounds[:2],
-                        extent=(image_h, image_w),
-                    )
-                    if getattr(self, "local_masks", False)
-                    else _expand_mask_from_crop(
-                        fallback_result.mask,
-                        crop_box=constraint_bounds,
-                        image_shape=(image_h, image_w),
-                    )
-                )
-                selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
-                    expanded_mask,
-                    positive_points=positive_points,
-                    negative_points=negative_points,
-                )
-                return PromptSegmentationResult(
-                    mask=selected_mask.copy() if selected_mask is not None else None,
-                    polygon_px=polygon,
-                    area_rings_px=area_rings,
-                    area_px=magic_mask_area_px(selected_mask),
-                    metadata={
-                        **fallback_result.metadata,
-                        **geometry_stats,
-                        "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
-                        "segmentation_used_full_image": constraint_box is None,
-                        "segmentation_crop_box": constraint_bounds,
-                        "segmentation_roi_constraint_box": constraint_box,
-                        "segmentation_fallback_from_roi": True,
-                        "small_object_enhancement_used": False,
-                    },
-                )
-            return PromptSegmentationResult(
-                mask=None,
-                polygon_px=[],
-                area_rings_px=[],
-                area_px=0.0,
-                metadata={
-                    "reason": "roi_unstable",
-                    "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
-                    "segmentation_used_full_image": constraint_box is None,
-                    "segmentation_crop_box": constraint_bounds,
-                    "segmentation_roi_constraint_box": constraint_box,
-                    "segmentation_fallback_from_roi": True,
-                    "small_object_enhancement_used": False,
-                },
-            )
-        return last_result
+            if crop_box == bounds:
+                if needs_expansion or (not standard and index >= max_rounds):
+                    result.metadata["segmentation_fallback_from_roi"] = True
+                if selected_mask is None:
+                    result.metadata["reason"] = "roi_unstable"
+                if self._performance is not None:
+                    self._performance.stop_reason = "full_constraint"
+                return result
+            if not needs_expansion:
+                if self._performance is not None:
+                    self._performance.stop_reason = "stable_roi"
+                return result
+        raise AssertionError("ROI candidates must include the complete constraint region")
 
     def _predict_polygon_small_object_roi(
         self,
@@ -1474,7 +1489,7 @@ class PromptSegmentationService:
     ) -> PromptSegmentationResult:
         if cancel_check is not None and cancel_check():
             raise RuntimeError("请求已取消。")
-        image_h, image_w = cv_image.shape[:2]
+        image_h, image_w = self._source_size(cv_image)
         workspace_box = _small_object_workspace_box(
             image_size=(image_h, image_w),
             bounds=roi_constraint_box,
@@ -1483,8 +1498,12 @@ class PromptSegmentationService:
             requested_workspace_box=small_object_workspace_box,
         )
         x0, y0, x1, y1 = workspace_box
-        crop_image = cv_image[y0:y1, x0:x1].copy()
-        enhanced_image, scale = _enhance_small_object_crop(crop_image)
+        if self._performance is not None:
+            self._performance.roi_crops.append(workspace_box)
+            self._performance.stop_reason = "small_object"
+        crop_image = self._crop_source(cv_image, workspace_box).load()
+        with self._stage("image_prepare_ms"):
+            enhanced_image, scale = _enhance_small_object_crop(crop_image)
         enhanced_positive = _points_to_enhanced_local(positive_points, workspace_box, scale=scale)
         enhanced_negative = _points_to_enhanced_local(negative_points, workspace_box, scale=scale)
         if not enhanced_positive:
@@ -1526,7 +1545,7 @@ class PromptSegmentationService:
                     crop_mask, crop_box=workspace_box, image_shape=(image_h, image_w)
                 )
             )
-            selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+            selected_mask, area_rings, polygon, geometry_stats = self._geometry(
                 expanded_mask,
                 positive_points=positive_points,
                 negative_points=negative_points,
@@ -1628,7 +1647,7 @@ class PromptSegmentationService:
             positive_points=positive_points,
             negative_points=negative_points,
         )
-        selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+        selected_mask, area_rings, polygon, geometry_stats = self._geometry(
             mask,
             positive_points=positive_points,
             negative_points=negative_points,
@@ -1662,14 +1681,15 @@ class PromptSegmentationService:
                 f"未找到 {magic_segment_model_label(self._model_variant)} 模型文件，请确认对应 runtime 目录中存在 encoder/decoder ONNX。"
             )
 
-        self._encoder_session = ort.InferenceSession(
-            self._encoder_path.as_posix(),
-            providers=["CPUExecutionProvider"],
-        )
-        self._decoder_session = ort.InferenceSession(
-            self._decoder_path.as_posix(),
-            providers=["CPUExecutionProvider"],
-        )
+        with self._stage("session_init_ms"):
+            self._encoder_session = ort.InferenceSession(
+                self._encoder_path.as_posix(),
+                providers=["CPUExecutionProvider"],
+            )
+            self._decoder_session = ort.InferenceSession(
+                self._decoder_path.as_posix(),
+                providers=["CPUExecutionProvider"],
+            )
         inputs = self._encoder_session.get_inputs()
         if not inputs:
             raise RuntimeError(f"{magic_segment_model_label(self._model_variant)} encoder 未暴露输入张量。")
@@ -1678,48 +1698,71 @@ class PromptSegmentationService:
         self._encoder_input_shape = tuple(getattr(inputs[0], "shape", ()) or ())
         self._decoder_input_names = {item.name: item.name for item in self._decoder_session.get_inputs()}
 
+    @property
+    def embedding_cache_bytes(self) -> int:
+        return sum(int(getattr(entry.image_embeddings, "nbytes", 0)) for entry in self._embedding_cache.values())
+
+    def _stage(self, name: str):
+        return self._performance.stage(name) if self._performance is not None else nullcontext()
+
+    def _check_cancelled(self) -> None:
+        if self._cancel_check is not None and self._cancel_check():
+            raise RuntimeError("请求已取消。")
+
+    def _geometry(self, *args, **kwargs):
+        with self._stage("geometry_ms"):
+            return magic_mask_to_geometry(*args, **kwargs)
+
+    @staticmethod
+    def _source_size(image) -> tuple[int, int]:
+        return (image.height(), image.width()) if hasattr(image, "isNull") else tuple(image.shape[:2])
+
+    def _crop_source(self, image, box: tuple[int, int, int, int]) -> _RgbCrop:
+        x0, y0, x1, y1 = box
+        def read():
+            if hasattr(image, "isNull"):
+                with self._stage("image_prepare_ms"):
+                    cropped = image.copy(x0, y0, x1 - x0, y1 - y0)
+                return self._image_to_rgb_array(cropped)
+            with self._stage("image_prepare_ms"):
+                return image[y0:y1, x0:x1].copy()
+        return _RgbCrop((y1 - y0, x1 - x0, 3), read)
+
     def _image_to_rgb_array(self, image):
-        return qimage_to_rgb_array(image)
+        with self._stage("image_prepare_ms"):
+            return qimage_to_rgb_array(image)
 
     def _embedding_for_image(self, image, *, cache_key: str) -> _EmbeddingEntry:
+        # Preserve this helper for callers using an opaque image/loader in tests.
         key = str(cache_key)
-        cached = self._embedding_cache.get(key)
-        if cached is not None:
+        if key in self._embedding_cache:
             self._embedding_cache.move_to_end(key)
-            return cached
-        cv_image = self._image_to_rgb_array(image)
-        return self._embedding_for_rgb_array(cv_image, cache_key=cache_key)
+            return self._embedding_cache[key]
+        return self._embedding_for_rgb_array(self._image_to_rgb_array(image), cache_key=key)
 
     def _embedding_for_rgb_array(self, cv_image, *, cache_key: str) -> _EmbeddingEntry:
+        self._check_cancelled()
         key = str(cache_key)
         cached = self._embedding_cache.get(key)
         if cached is not None:
             self._embedding_cache.move_to_end(key)
+            if self._performance is not None:
+                self._performance.cache_hits += 1
             return cached
-        started_at = perf_counter()
+        if self._performance is not None:
+            self._performance.cache_misses += 1
+        if isinstance(cv_image, _RgbCrop):
+            cv_image = cv_image.load()
         image_embeddings, original_size = self._run_encoder(cv_image)
+        self._check_cancelled()
         cached = _EmbeddingEntry(image_embeddings=image_embeddings, original_size=original_size)
         self._embedding_cache[key] = cached
         self._embedding_cache.move_to_end(key)
-        roi_keys = [item_key for item_key in self._embedding_cache.keys() if "|roi=" in item_key]
-        while len(roi_keys) > 4:
-            oldest_roi_key = roi_keys.pop(0)
-            self._embedding_cache.pop(oldest_roi_key, None)
-        non_roi_keys = [item_key for item_key in self._embedding_cache.keys() if "|roi=" not in item_key]
+        non_roi_keys = [item_key for item_key in self._embedding_cache if "|roi=" not in item_key]
         while len(non_roi_keys) > self._max_cache_entries:
-            oldest_key = non_roi_keys.pop(0)
-            self._embedding_cache.pop(oldest_key, None)
-        elapsed_ms = (perf_counter() - started_at) * 1000.0
-        if elapsed_ms >= 80.0:
-            append_runtime_log(
-                "Magic segmentation preprocess",
-                (
-                    f"elapsed_ms={elapsed_ms:.2f}, "
-                    f"cache_size={len(self._embedding_cache)}, "
-                    f"image_size={original_size[1]}x{original_size[0]}, "
-                    f"model_variant={self._model_variant}"
-                ),
-            )
+            self._embedding_cache.pop(non_roi_keys.pop(0), None)
+        while self._embedding_cache and self.embedding_cache_bytes > self._max_cache_bytes:
+            self._embedding_cache.popitem(last=False)
         return cached
 
     def _run_encoder(self, cv_image):
@@ -1728,25 +1771,31 @@ class PromptSegmentationService:
             import numpy as np
         except ImportError as exc:
             raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-        original_size = tuple(int(value) for value in cv_image.shape[:2])
-        target_length = self._effective_target_length()
-        target_h, target_w = self._get_preprocess_shape(original_size[0], original_size[1], target_length)
-        resized = cv2.resize(cv_image, (target_w, target_h))
-        transformed = resized.transpose((2, 0, 1))
-        if self._requires_external_resize_norm_pad():
-            transformed = self._normalize_and_pad_encoder_input(
-                transformed,
-                np,
-                target_size=target_length,
-                input_size=(target_h, target_w),
-            )
-        else:
-            transformed = self._cast_encoder_input(transformed, np)
-        transformed = transformed[None, ...]
-        image_embeddings = self._encoder_session.run(
-            None,
-            {self._encoder_input_name: transformed},
-        )[0]
+        with self._stage("encoder_prepare_ms"):
+            original_size = tuple(int(value) for value in cv_image.shape[:2])
+            target_length = self._effective_target_length()
+            target_h, target_w = self._get_preprocess_shape(original_size[0], original_size[1], target_length)
+            resized = cv2.resize(cv_image, (target_w, target_h))
+            transformed = resized.transpose((2, 0, 1))
+            if self._requires_external_resize_norm_pad():
+                transformed = self._normalize_and_pad_encoder_input(
+                    transformed,
+                    np,
+                    target_size=target_length,
+                    input_size=(target_h, target_w),
+                )
+            else:
+                transformed = self._cast_encoder_input(transformed, np)
+            transformed = transformed[None, ...]
+        self._check_cancelled()
+        if self._performance is not None:
+            self._performance.encoder_calls += 1
+        with self._stage("encoder_ms"):
+            image_embeddings = self._encoder_session.run(
+                None,
+                {self._encoder_input_name: transformed},
+            )[0]
+        self._check_cancelled()
         return image_embeddings, original_size
 
     def _effective_target_length(self) -> int:
@@ -1846,27 +1895,33 @@ class PromptSegmentationService:
             self._decoder_input_names.get("point_coords", "point_coords"): point_coords,
             self._decoder_input_names.get("point_labels", "point_labels"): point_labels,
         }
-        outputs = self._decoder_session.run(None, input_dict)
-        masks = None
-        for output in outputs:
-            if getattr(output, "ndim", 0) >= 3:
-                masks = output
-                break
-        if masks is None:
-            raise RuntimeError(f"{magic_segment_model_label(self._model_variant)} decoder 未返回掩码张量。")
-        candidate_logits = np.asarray(masks)[0]
-        if candidate_logits.ndim == 2:
-            candidate_logits = candidate_logits.reshape((1, *candidate_logits.shape))
-        elif candidate_logits.ndim > 3:
-            candidate_logits = candidate_logits.reshape((-1, candidate_logits.shape[-2], candidate_logits.shape[-1]))
-        scores = self._calculate_stability_score(candidate_logits, 0.0, 1.0)
-        input_size = self._get_preprocess_shape(*embedding.original_size, self._effective_target_length())
-        candidates: list[_MaskCandidate] = []
-        flat_scores = np.asarray(scores, dtype=float).reshape(-1)
-        for index, mask in enumerate(candidate_logits):
-            postprocessed = self._postprocess_masks(mask, input_size=input_size, original_size=embedding.original_size) > 0.0
-            stability = float(flat_scores[index]) if index < flat_scores.size else 0.0
-            candidates.append(_MaskCandidate(mask=postprocessed, stability=stability, index=index))
+        self._check_cancelled()
+        if self._performance is not None:
+            self._performance.decoder_calls += 1
+        with self._stage("decoder_ms"):
+            outputs = self._decoder_session.run(None, input_dict)
+        self._check_cancelled()
+        with self._stage("mask_postprocess_ms"):
+            masks = None
+            for output in outputs:
+                if getattr(output, "ndim", 0) >= 3:
+                    masks = output
+                    break
+            if masks is None:
+                raise RuntimeError(f"{magic_segment_model_label(self._model_variant)} decoder 未返回掩码张量。")
+            candidate_logits = np.asarray(masks)[0]
+            if candidate_logits.ndim == 2:
+                candidate_logits = candidate_logits.reshape((1, *candidate_logits.shape))
+            elif candidate_logits.ndim > 3:
+                candidate_logits = candidate_logits.reshape((-1, candidate_logits.shape[-2], candidate_logits.shape[-1]))
+            scores = self._calculate_stability_score(candidate_logits, 0.0, 1.0)
+            input_size = self._get_preprocess_shape(*embedding.original_size, self._effective_target_length())
+            candidates: list[_MaskCandidate] = []
+            flat_scores = np.asarray(scores, dtype=float).reshape(-1)
+            for index, mask in enumerate(candidate_logits):
+                postprocessed = self._postprocess_masks(mask, input_size=input_size, original_size=embedding.original_size) > 0.0
+                stability = float(flat_scores[index]) if index < flat_scores.size else 0.0
+                candidates.append(_MaskCandidate(mask=postprocessed, stability=stability, index=index))
         return candidates
 
     def _mask_to_polygon(self, mask) -> list[Point]:
@@ -1964,6 +2019,7 @@ class LightHQSamPromptSegmentationService:
         active_stage: str | None = None,
         roi_enabled: bool = False,
         roi_constraint_box: tuple[int, int, int, int] | None = None,
+        roi_workspace_box: tuple[int, int, int, int] | None = None,
         small_object_enhancement_enabled: bool = False,
         small_object_roi_area_threshold_px: int = 160000,
         small_object_workspace_box: tuple[int, int, int, int] | None = None,
@@ -2148,6 +2204,7 @@ class EfficientSamSPromptSegmentationService:
         active_stage: str | None = None,
         roi_enabled: bool = False,
         roi_constraint_box: tuple[int, int, int, int] | None = None,
+        roi_workspace_box: tuple[int, int, int, int] | None = None,
         small_object_enhancement_enabled: bool = False,
         small_object_roi_area_threshold_px: int = 160000,
         small_object_workspace_box: tuple[int, int, int, int] | None = None,

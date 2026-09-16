@@ -1,0 +1,6687 @@
+{
+  "baseline_ref": "d9a0dd7",
+  "execution_order": "current-first",
+  "versions": {
+    "current": {
+      "version": "current",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "cpu": "Apple M5 Pro",
+      "started_at_unix": 1789536579.028825,
+      "service_sha256": "ca062e4ade03753f0f94b759d10f264d733d0d822e8d273140ac4cac81e0c194",
+      "ort": "1.24.4",
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "model": "edge_sam_3x",
+      "samples_per_scenario": 30,
+      "scenarios": {
+        "new_roi": {
+          "p50_ms": 100.48218800147879,
+          "p95_ms": 105.90724984867848,
+          "encoder_calls": 30,
+          "peak_cache_bytes": 33554432,
+          "peak_sampled_rss_bytes": 806109184,
+          "initial": null,
+          "samples": [
+            {
+              "ms": 99.77920899837045,
+              "process_cpu_ms": 835.2930000000001,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 770375680
+            },
+            {
+              "ms": 101.04612500435906,
+              "process_cpu_ms": 824.6499999999996,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                52,
+                628,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 8388608,
+              "rss_bytes": 782188544
+            },
+            {
+              "ms": 98.69412499392638,
+              "process_cpu_ms": 816.6279999999997,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                52,
+                928,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 12582912,
+              "rss_bytes": 784482304
+            },
+            {
+              "ms": 99.46662500442471,
+              "process_cpu_ms": 820.3849999999999,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                52,
+                1228,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 784531456
+            },
+            {
+              "ms": 101.49645800265716,
+              "process_cpu_ms": 834.117,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                52,
+                1528,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 20971520,
+              "rss_bytes": 784613376
+            },
+            {
+              "ms": 106.31412499787984,
+              "process_cpu_ms": 875.184,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                52,
+                1828,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 25165824,
+              "rss_bytes": 793100288
+            },
+            {
+              "ms": 105.18745800072793,
+              "process_cpu_ms": 858.9310000000002,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                332,
+                328,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 29360128,
+              "rss_bytes": 793116672
+            },
+            {
+              "ms": 110.52429199480684,
+              "process_cpu_ms": 902.6919999999992,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                332,
+                628,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 797360128
+            },
+            {
+              "ms": 100.4214589993353,
+              "process_cpu_ms": 824.3759999999991,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                332,
+                928,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 797376512
+            },
+            {
+              "ms": 98.58741700008977,
+              "process_cpu_ms": 817.4299999999998,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                332,
+                1228,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801554432
+            },
+            {
+              "ms": 98.85662500164472,
+              "process_cpu_ms": 818.0920000000001,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                332,
+                1528,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801570816
+            },
+            {
+              "ms": 100.4665840009693,
+              "process_cpu_ms": 832.381999999999,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                332,
+                1828,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801603584
+            },
+            {
+              "ms": 97.94449999753851,
+              "process_cpu_ms": 813.1660000000007,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                612,
+                328,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801652736
+            },
+            {
+              "ms": 100.31087500101421,
+              "process_cpu_ms": 828.8519999999995,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                612,
+                628,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801685504
+            },
+            {
+              "ms": 100.18624999793246,
+              "process_cpu_ms": 831.6290000000013,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                612,
+                928,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801701888
+            },
+            {
+              "ms": 105.40995799965458,
+              "process_cpu_ms": 869.8960000000006,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                612,
+                1228,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801701888
+            },
+            {
+              "ms": 100.07520799990743,
+              "process_cpu_ms": 828.0189999999976,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                612,
+                1528,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801701888
+            },
+            {
+              "ms": 100.51908400055254,
+              "process_cpu_ms": 830.4229999999997,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                612,
+                1828,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801734656
+            },
+            {
+              "ms": 100.49779200198827,
+              "process_cpu_ms": 829.1409999999998,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                892,
+                328,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 801783808
+            },
+            {
+              "ms": 100.96275000250898,
+              "process_cpu_ms": 834.8209999999981,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                892,
+                628,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 805994496
+            },
+            {
+              "ms": 100.55062500032363,
+              "process_cpu_ms": 834.8329999999997,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                892,
+                928,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806010880
+            },
+            {
+              "ms": 101.4003340023919,
+              "process_cpu_ms": 844.3079999999981,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                892,
+                1228,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806027264
+            },
+            {
+              "ms": 100.31508300016867,
+              "process_cpu_ms": 830.8509999999991,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                892,
+                1528,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806043648
+            },
+            {
+              "ms": 100.41529199952492,
+              "process_cpu_ms": 830.9040000000003,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                892,
+                1828,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806043648
+            },
+            {
+              "ms": 99.72204199584667,
+              "process_cpu_ms": 829.3330000000019,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                1172,
+                328,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806043648
+            },
+            {
+              "ms": 99.36975000164239,
+              "process_cpu_ms": 827.3629999999982,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                1172,
+                628,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806060032
+            },
+            {
+              "ms": 100.78066600544844,
+              "process_cpu_ms": 829.7660000000029,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                1172,
+                928,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806060032
+            },
+            {
+              "ms": 101.2200000041048,
+              "process_cpu_ms": 835.5819999999987,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                1172,
+                1228,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806076416
+            },
+            {
+              "ms": 101.01483299513347,
+              "process_cpu_ms": 826.231,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                1172,
+                1528,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806092800
+            },
+            {
+              "ms": 100.56625000288477,
+              "process_cpu_ms": 823.5010000000002,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                1172,
+                1828,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 806109184
+            }
+          ]
+        },
+        "same_roi": {
+          "p50_ms": 14.907146000041394,
+          "p95_ms": 17.887845799486964,
+          "encoder_calls": 0,
+          "peak_cache_bytes": 4194304,
+          "peak_sampled_rss_bytes": 827850752,
+          "initial": {
+            "ms": 104.48270799679449,
+            "process_cpu_ms": 863.4979999999998,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              72,
+              52,
+              328,
+              308
+            ],
+            "area": 6327.0,
+            "cache_bytes": 4194304
+          },
+          "samples": [
+            {
+              "ms": 11.320709003484808,
+              "process_cpu_ms": 99.39699999999974,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808812544
+            },
+            {
+              "ms": 14.358583001012448,
+              "process_cpu_ms": 129.31700000000035,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808828928
+            },
+            {
+              "ms": 15.462499999557622,
+              "process_cpu_ms": 132.52900000000167,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808845312
+            },
+            {
+              "ms": 14.71591600420652,
+              "process_cpu_ms": 128.17499999999882,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808861696
+            },
+            {
+              "ms": 14.82479200058151,
+              "process_cpu_ms": 130.11599999999746,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808894464
+            },
+            {
+              "ms": 14.753082999959588,
+              "process_cpu_ms": 132.15899999999792,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808894464
+            },
+            {
+              "ms": 14.516041999740992,
+              "process_cpu_ms": 128.28700000000026,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808894464
+            },
+            {
+              "ms": 13.849709001078736,
+              "process_cpu_ms": 122.75800000000103,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808894464
+            },
+            {
+              "ms": 14.04283400188433,
+              "process_cpu_ms": 127.28699999999904,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808910848
+            },
+            {
+              "ms": 15.947208004945423,
+              "process_cpu_ms": 134.3550000000029,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808910848
+            },
+            {
+              "ms": 14.543416000378784,
+              "process_cpu_ms": 128.5550000000022,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808910848
+            },
+            {
+              "ms": 16.261582997685764,
+              "process_cpu_ms": 132.78899999999894,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808910848
+            },
+            {
+              "ms": 18.194707998191006,
+              "process_cpu_ms": 148.00300000000277,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808910848
+            },
+            {
+              "ms": 18.37349999550497,
+              "process_cpu_ms": 151.5519999999988,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808943616
+            },
+            {
+              "ms": 16.722166001272853,
+              "process_cpu_ms": 136.74800000000076,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808976384
+            },
+            {
+              "ms": 16.162583997356705,
+              "process_cpu_ms": 142.6070000000017,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808976384
+            },
+            {
+              "ms": 15.539291998720728,
+              "process_cpu_ms": 130.0370000000015,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808992768
+            },
+            {
+              "ms": 17.51279200107092,
+              "process_cpu_ms": 145.7170000000012,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 808992768
+            },
+            {
+              "ms": 15.130333005799912,
+              "process_cpu_ms": 134.12299999999888,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809009152
+            },
+            {
+              "ms": 15.482916998735163,
+              "process_cpu_ms": 132.05699999999965,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809009152
+            },
+            {
+              "ms": 14.043208997463807,
+              "process_cpu_ms": 125.39699999999954,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809025536
+            },
+            {
+              "ms": 14.460332997259684,
+              "process_cpu_ms": 129.02099999999805,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809025536
+            },
+            {
+              "ms": 14.949500000511762,
+              "process_cpu_ms": 131.12300000000232,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809041920
+            },
+            {
+              "ms": 14.540875003149267,
+              "process_cpu_ms": 128.80300000000133,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809058304
+            },
+            {
+              "ms": 14.217542004189454,
+              "process_cpu_ms": 126.07200000000063,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 809058304
+            },
+            {
+              "ms": 15.176041997619905,
+              "process_cpu_ms": 131.58299999999912,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 813350912
+            },
+            {
+              "ms": 14.416374993743375,
+              "process_cpu_ms": 124.8160000000027,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 818839552
+            },
+            {
+              "ms": 15.256917002261616,
+              "process_cpu_ms": 133.20099999999968,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 823083008
+            },
+            {
+              "ms": 15.04150000255322,
+              "process_cpu_ms": 132.8169999999993,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827834368
+            },
+            {
+              "ms": 14.864791999571025,
+              "process_cpu_ms": 130.36299999999912,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827850752
+            }
+          ]
+        },
+        "continuous_prompts": {
+          "p50_ms": 14.685583497339394,
+          "p95_ms": 16.29772224696353,
+          "encoder_calls": 0,
+          "peak_cache_bytes": 4194304,
+          "peak_sampled_rss_bytes": 828669952,
+          "initial": {
+            "ms": 96.4735000015935,
+            "process_cpu_ms": 803.6180000000002,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              72,
+              52,
+              328,
+              308
+            ],
+            "area": 6327.0,
+            "cache_bytes": 4194304
+          },
+          "samples": [
+            {
+              "ms": 12.495374998252373,
+              "process_cpu_ms": 102.6250000000033,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827899904
+            },
+            {
+              "ms": 13.847000001987908,
+              "process_cpu_ms": 124.19100000000327,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6332.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827916288
+            },
+            {
+              "ms": 13.94395800161874,
+              "process_cpu_ms": 123.90399999999602,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6337.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827916288
+            },
+            {
+              "ms": 13.476583997544367,
+              "process_cpu_ms": 121.77300000000457,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6342.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827916288
+            },
+            {
+              "ms": 14.298166999651585,
+              "process_cpu_ms": 122.25499999999556,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6341.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827949056
+            },
+            {
+              "ms": 13.696624999283813,
+              "process_cpu_ms": 120.8910000000003,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6342.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827965440
+            },
+            {
+              "ms": 13.373125002544839,
+              "process_cpu_ms": 118.86499999999955,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6340.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827965440
+            },
+            {
+              "ms": 14.065625000512227,
+              "process_cpu_ms": 121.70299999999656,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6341.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 827981824
+            },
+            {
+              "ms": 14.769875000638422,
+              "process_cpu_ms": 124.27299999999519,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6341.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828047360
+            },
+            {
+              "ms": 14.566750003723428,
+              "process_cpu_ms": 129.1610000000034,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6341.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828063744
+            },
+            {
+              "ms": 14.34637500642566,
+              "process_cpu_ms": 129.8529999999971,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6342.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828112896
+            },
+            {
+              "ms": 14.66470899322303,
+              "process_cpu_ms": 128.2420000000002,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6343.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828145664
+            },
+            {
+              "ms": 14.296916997409426,
+              "process_cpu_ms": 127.78500000000292,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6342.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828162048
+            },
+            {
+              "ms": 15.093875001184642,
+              "process_cpu_ms": 130.51199999999596,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6343.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828178432
+            },
+            {
+              "ms": 15.051292000862304,
+              "process_cpu_ms": 128.51500000000016,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6343.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828227584
+            },
+            {
+              "ms": 14.706458001455758,
+              "process_cpu_ms": 128.20399999999665,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6342.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828276736
+            },
+            {
+              "ms": 16.310040999087505,
+              "process_cpu_ms": 142.3509999999979,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6342.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828309504
+            },
+            {
+              "ms": 15.061500002047978,
+              "process_cpu_ms": 128.96800000000042,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6343.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828342272
+            },
+            {
+              "ms": 14.23087500006659,
+              "process_cpu_ms": 125.44799999999867,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6344.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828375040
+            },
+            {
+              "ms": 14.648709002358373,
+              "process_cpu_ms": 127.05400000000111,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6345.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828391424
+            },
+            {
+              "ms": 14.86395899701165,
+              "process_cpu_ms": 127.38600000000133,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6345.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828440576
+            },
+            {
+              "ms": 15.118333998543676,
+              "process_cpu_ms": 131.63400000000536,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6345.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828456960
+            },
+            {
+              "ms": 14.843416996882297,
+              "process_cpu_ms": 128.30199999999792,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6345.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828473344
+            },
+            {
+              "ms": 15.568458999041468,
+              "process_cpu_ms": 134.6109999999996,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6344.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828522496
+            },
+            {
+              "ms": 14.608666999265552,
+              "process_cpu_ms": 129.5300000000026,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6344.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828538880
+            },
+            {
+              "ms": 16.282665994367562,
+              "process_cpu_ms": 143.4420000000003,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6344.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828555264
+            },
+            {
+              "ms": 16.75141699524829,
+              "process_cpu_ms": 148.94100000000066,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6345.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828571648
+            },
+            {
+              "ms": 15.401040996948723,
+              "process_cpu_ms": 135.8110000000039,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6346.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828604416
+            },
+            {
+              "ms": 16.019542003050447,
+              "process_cpu_ms": 140.0860000000037,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6347.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828637184
+            },
+            {
+              "ms": 16.194167001231108,
+              "process_cpu_ms": 142.79599999999704,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6349.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 828669952
+            }
+          ]
+        },
+        "expanded_repeat": {
+          "p50_ms": 28.18285399916931,
+          "p95_ms": 29.096925000703777,
+          "encoder_calls": 0,
+          "peak_cache_bytes": 16777216,
+          "peak_sampled_rss_bytes": 940326912,
+          "initial": {
+            "ms": 364.15141600446077,
+            "process_cpu_ms": 2923.377000000002,
+            "encodes": 4,
+            "decodes": 4,
+            "crop": [
+              0,
+              0,
+              2048,
+              1536
+            ],
+            "area": 159685.0,
+            "cache_bytes": 16777216
+          },
+          "samples": [
+            {
+              "ms": 21.875708996958565,
+              "process_cpu_ms": 116.3969999999992,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 905183232
+            },
+            {
+              "ms": 28.070291999028996,
+              "process_cpu_ms": 173.17800000000005,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 908378112
+            },
+            {
+              "ms": 28.568374997121282,
+              "process_cpu_ms": 169.84400000000477,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 908410880
+            },
+            {
+              "ms": 27.3771249994752,
+              "process_cpu_ms": 166.62200000000382,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 908460032
+            },
+            {
+              "ms": 27.45379200496245,
+              "process_cpu_ms": 167.35800000000012,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 914751488
+            },
+            {
+              "ms": 27.718208999431226,
+              "process_cpu_ms": 167.4590000000009,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 914833408
+            },
+            {
+              "ms": 27.489416002936196,
+              "process_cpu_ms": 162.6579999999933,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 918028288
+            },
+            {
+              "ms": 28.252666001208127,
+              "process_cpu_ms": 169.16700000000162,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 918028288
+            },
+            {
+              "ms": 28.223291999893263,
+              "process_cpu_ms": 176.75299999999794,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 918044672
+            },
+            {
+              "ms": 28.29258400015533,
+              "process_cpu_ms": 173.97400000000118,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 918061056
+            },
+            {
+              "ms": 28.231000003870577,
+              "process_cpu_ms": 170.12100000000174,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 918061056
+            },
+            {
+              "ms": 27.96649999800138,
+              "process_cpu_ms": 169.74799999999846,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 918061056
+            },
+            {
+              "ms": 26.49741699860897,
+              "process_cpu_ms": 165.87499999999977,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 921239552
+            },
+            {
+              "ms": 27.98925000388408,
+              "process_cpu_ms": 157.43499999999955,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 921255936
+            },
+            {
+              "ms": 28.0122910044156,
+              "process_cpu_ms": 169.83300000000412,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 930742272
+            },
+            {
+              "ms": 31.325124997238163,
+              "process_cpu_ms": 168.134000000002,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 930758656
+            },
+            {
+              "ms": 28.142415998445358,
+              "process_cpu_ms": 174.79099999999903,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 933920768
+            },
+            {
+              "ms": 28.017707998515107,
+              "process_cpu_ms": 169.77899999999835,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937082880
+            },
+            {
+              "ms": 29.10637499735458,
+              "process_cpu_ms": 163.2550000000066,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937099264
+            },
+            {
+              "ms": 28.376417001709342,
+              "process_cpu_ms": 176.30499999999927,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937115648
+            },
+            {
+              "ms": 28.461499998229556,
+              "process_cpu_ms": 173.16999999999894,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937115648
+            },
+            {
+              "ms": 28.069665997463744,
+              "process_cpu_ms": 170.6479999999999,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937148416
+            },
+            {
+              "ms": 27.068916999269277,
+              "process_cpu_ms": 161.90600000000188,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937148416
+            },
+            {
+              "ms": 28.427665994968265,
+              "process_cpu_ms": 167.28100000000268,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937148416
+            },
+            {
+              "ms": 28.475500002969056,
+              "process_cpu_ms": 177.2680000000051,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 937148416
+            },
+            {
+              "ms": 28.988584002945572,
+              "process_cpu_ms": 173.8810000000015,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 940310528
+            },
+            {
+              "ms": 29.085375004797243,
+              "process_cpu_ms": 167.2760000000011,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 940310528
+            },
+            {
+              "ms": 28.907874999276828,
+              "process_cpu_ms": 182.33400000000444,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 940326912
+            },
+            {
+              "ms": 28.81100000377046,
+              "process_cpu_ms": 169.48700000000372,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 940326912
+            },
+            {
+              "ms": 27.850792001117952,
+              "process_cpu_ms": 164.1959999999969,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 940326912
+            }
+          ]
+        },
+        "edge_target": {
+          "p50_ms": 15.21599999978207,
+          "p95_ms": 16.281591298320564,
+          "encoder_calls": 0,
+          "peak_cache_bytes": 4194304,
+          "peak_sampled_rss_bytes": 953434112,
+          "initial": {
+            "ms": 93.19004200369818,
+            "process_cpu_ms": 761.0680000000016,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              0,
+              384,
+              256,
+              640
+            ],
+            "area": 5658.0,
+            "cache_bytes": 4194304
+          },
+          "samples": [
+            {
+              "ms": 10.79612500325311,
+              "process_cpu_ms": 94.82400000000268,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 940343296
+            },
+            {
+              "ms": 15.904457999567967,
+              "process_cpu_ms": 138.61100000000448,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944586752
+            },
+            {
+              "ms": 16.124333000334445,
+              "process_cpu_ms": 138.51900000000228,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 14.830958003585692,
+              "process_cpu_ms": 127.69099999999867,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 14.391832999535836,
+              "process_cpu_ms": 126.98499999999768,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 15.739874994324055,
+              "process_cpu_ms": 137.16800000000262,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 16.36016599513823,
+              "process_cpu_ms": 138.49300000000397,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 15.505167000810616,
+              "process_cpu_ms": 134.36399999999793,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 15.21974999923259,
+              "process_cpu_ms": 133.21700000000192,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 14.857417001621798,
+              "process_cpu_ms": 130.1559999999995,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 944603136
+            },
+            {
+              "ms": 15.668083004129585,
+              "process_cpu_ms": 135.53000000000281,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 15.179167006863281,
+              "process_cpu_ms": 130.68299999999766,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 15.395834001537878,
+              "process_cpu_ms": 135.22100000000137,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 16.288415994495153,
+              "process_cpu_ms": 139.80899999999963,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 13.963916993816383,
+              "process_cpu_ms": 121.42599999999959,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 14.371666999068111,
+              "process_cpu_ms": 126.26099999999951,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 15.308541995182168,
+              "process_cpu_ms": 130.95900000000427,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 14.677916995424312,
+              "process_cpu_ms": 129.33400000000006,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 16.262999997707084,
+              "process_cpu_ms": 136.50499999999965,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948830208
+            },
+            {
+              "ms": 15.090083004906774,
+              "process_cpu_ms": 132.717999999997,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 15.610500006005168,
+              "process_cpu_ms": 134.5540000000014,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 15.030417001980823,
+              "process_cpu_ms": 129.4809999999984,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 15.21225000033155,
+              "process_cpu_ms": 131.8249999999992,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 14.528915999107994,
+              "process_cpu_ms": 125.03199999999737,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 15.570958006719593,
+              "process_cpu_ms": 133.95699999999522,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 15.188874996965751,
+              "process_cpu_ms": 132.41400000000425,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 14.987125003244728,
+              "process_cpu_ms": 127.7159999999995,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 16.273250002996065,
+              "process_cpu_ms": 136.62800000000175,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 14.714666998770554,
+              "process_cpu_ms": 127.90100000000137,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 948846592
+            },
+            {
+              "ms": 15.636708005331457,
+              "process_cpu_ms": 137.5759999999957,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 953434112
+            }
+          ]
+        },
+        "large_image": {
+          "p50_ms": 102.02370849583531,
+          "p95_ms": 104.10761424791417,
+          "encoder_calls": 30,
+          "peak_cache_bytes": 33554432,
+          "peak_sampled_rss_bytes": 1152892928,
+          "initial": null,
+          "samples": [
+            {
+              "ms": 100.96500000508968,
+              "process_cpu_ms": 817.7050000000037,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1121468416
+            },
+            {
+              "ms": 99.92654199595563,
+              "process_cpu_ms": 817.0199999999994,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                52,
+                628,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 8388608,
+              "rss_bytes": 1121468416
+            },
+            {
+              "ms": 100.37679100059904,
+              "process_cpu_ms": 823.2190000000016,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                52,
+                928,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 12582912,
+              "rss_bytes": 1121615872
+            },
+            {
+              "ms": 100.49883300234796,
+              "process_cpu_ms": 817.9930000000013,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                52,
+                1228,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1121615872
+            },
+            {
+              "ms": 100.02458300004946,
+              "process_cpu_ms": 821.8510000000024,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                52,
+                1528,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 20971520,
+              "rss_bytes": 1121615872
+            },
+            {
+              "ms": 101.38700000243261,
+              "process_cpu_ms": 826.0239999999967,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                52,
+                1828,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 25165824,
+              "rss_bytes": 1121615872
+            },
+            {
+              "ms": 102.47637500287965,
+              "process_cpu_ms": 837.4540000000011,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                332,
+                328,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 29360128,
+              "rss_bytes": 1121615872
+            },
+            {
+              "ms": 102.04379199421965,
+              "process_cpu_ms": 832.7230000000014,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                332,
+                628,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1121615872
+            },
+            {
+              "ms": 103.68358399864519,
+              "process_cpu_ms": 851.861999999997,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                332,
+                928,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1126072320
+            },
+            {
+              "ms": 102.23145900090458,
+              "process_cpu_ms": 836.5610000000032,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                332,
+                1228,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1130299392
+            },
+            {
+              "ms": 101.91462500370108,
+              "process_cpu_ms": 832.2089999999989,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                332,
+                1528,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1130364928
+            },
+            {
+              "ms": 102.6789160023327,
+              "process_cpu_ms": 838.3060000000029,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                332,
+                1828,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1130364928
+            },
+            {
+              "ms": 104.1444579968811,
+              "process_cpu_ms": 851.1740000000003,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                612,
+                328,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1130512384
+            },
+            {
+              "ms": 102.78591699898243,
+              "process_cpu_ms": 836.5380000000044,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                612,
+                628,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1130528768
+            },
+            {
+              "ms": 101.71795799396932,
+              "process_cpu_ms": 828.3479999999984,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                612,
+                928,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1134755840
+            },
+            {
+              "ms": 104.06258299917681,
+              "process_cpu_ms": 852.4029999999954,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                612,
+                1228,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1143537664
+            },
+            {
+              "ms": 100.96083400276257,
+              "process_cpu_ms": 826.4739999999974,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                612,
+                1528,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1143537664
+            },
+            {
+              "ms": 101.24712499964517,
+              "process_cpu_ms": 824.8160000000055,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                612,
+                1828,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1147748352
+            },
+            {
+              "ms": 102.67908300011186,
+              "process_cpu_ms": 837.4150000000071,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                892,
+                328,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1147748352
+            },
+            {
+              "ms": 101.56749999441672,
+              "process_cpu_ms": 835.3170000000034,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                892,
+                628,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1148600320
+            },
+            {
+              "ms": 102.87475000222912,
+              "process_cpu_ms": 842.8130000000067,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                892,
+                928,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1148665856
+            },
+            {
+              "ms": 102.00362499745097,
+              "process_cpu_ms": 834.5279999999917,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                892,
+                1228,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1148665856
+            },
+            {
+              "ms": 102.39766700397013,
+              "process_cpu_ms": 839.620999999994,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                892,
+                1528,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 101.21545800211607,
+              "process_cpu_ms": 831.1429999999973,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                892,
+                1828,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 101.61562499706633,
+              "process_cpu_ms": 826.1930000000035,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                1172,
+                328,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 102.2750839983928,
+              "process_cpu_ms": 840.0290000000012,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                1172,
+                628,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 102.44208299991442,
+              "process_cpu_ms": 834.2090000000013,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                1172,
+                928,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 101.95587499765679,
+              "process_cpu_ms": 840.5989999999974,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                1172,
+                1228,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 104.0361670020502,
+              "process_cpu_ms": 856.2670000000026,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                1172,
+                1528,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            },
+            {
+              "ms": 105.0530840002466,
+              "process_cpu_ms": 855.4450000000031,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                1172,
+                1828,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 33554432,
+              "rss_bytes": 1152892928
+            }
+          ]
+        }
+      },
+      "cancelled_before_start": [
+        {
+          "ms": 0.01958400389412418,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.004875000740867108,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.002458000381011516,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0016659978427924216,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0015410041669383645,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.001624997821636498,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014999968698248267,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014999968698248267,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.001500004145782441,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.001415995939169079,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013750031939707696,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0015420009731315076,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013750031939707696,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013750031939707696,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013750031939707696,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014160032151266932,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.001333006366621703,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0015410041669383645,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0012919990695081651,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013749959180131555,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.001415995939169079,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014170000213198364,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014170000213198364,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014170000213198364,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013329990906640887,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014160032151266932,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014999968698248267,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0014170000213198364,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013750031939707696,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.0013749959180131555,
+          "encodes": 0,
+          "decodes": 0
+        }
+      ],
+      "fixed_crop_masks": {
+        "circle": {
+          "sha256": "44c72a89f5cae2b97a84ca267c60271e4651143fe9c62fcb932d7bbf7c1806f6",
+          "area": 6237,
+          "final_mask_sha256": "44c72a89f5cae2b97a84ca267c60271e4651143fe9c62fcb932d7bbf7c1806f6",
+          "final_area": 6237.0,
+          "rings_sha256": "627fd366586f06d0d7936b23b942da505b5281cc7976579b7a9a6ca1b6f88ba5"
+        },
+        "hole": {
+          "sha256": "ec2a5baebd29633134de28385f6115cf8ec24d101a0cb014aa7151cad1e6ee44",
+          "area": 5464,
+          "final_mask_sha256": "ec2a5baebd29633134de28385f6115cf8ec24d101a0cb014aa7151cad1e6ee44",
+          "final_area": 5464.0,
+          "rings_sha256": "efa08dd7747b9bb8aebf70f8079141d88b74ce515417cf91a5d46047b3358118"
+        },
+        "border": {
+          "sha256": "4efe9d534723a238639994bb4e776a5bd07f4d84a9133272c8819e3332e57cda",
+          "area": 4966,
+          "final_mask_sha256": "4efe9d534723a238639994bb4e776a5bd07f4d84a9133272c8819e3332e57cda",
+          "final_area": 4966.0,
+          "rings_sha256": "318ee172f23fcee4d2738f4aaabdf825c3be52433739371214fcb778d607ded1"
+        },
+        "microscopy_fragment": {
+          "sha256": "9eeea95b093157896635ab17f262bb3d85507d7a6e0f9c1dfae00acb2aef0a74",
+          "area": 2284,
+          "final_mask_sha256": "9eeea95b093157896635ab17f262bb3d85507d7a6e0f9c1dfae00acb2aef0a74",
+          "final_area": 2284.0,
+          "rings_sha256": "2258ba7207b941ae6bf373c4593de8838d8d5c8cc682f36fe0129c71ab5b3cce"
+        }
+      },
+      "replays": {
+        "circle": [
+          {
+            "ms": 90.26399999856949,
+            "process_cpu_ms": 741.1840000000041,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              118,
+              128,
+              374,
+              384
+            ],
+            "area": 6318.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-circle-0.npz",
+            "rings": 1
+          },
+          {
+            "ms": 10.968959002639167,
+            "process_cpu_ms": 94.00800000000231,
+            "encodes": 0,
+            "decodes": 1,
+            "crop": [
+              118,
+              128,
+              374,
+              384
+            ],
+            "area": 6322.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-circle-1.npz",
+            "rings": 1
+          },
+          {
+            "ms": 11.052207999455277,
+            "process_cpu_ms": 93.02800000000389,
+            "encodes": 0,
+            "decodes": 1,
+            "crop": [
+              118,
+              128,
+              374,
+              384
+            ],
+            "area": 6322.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-circle-2.npz",
+            "rings": 1
+          }
+        ],
+        "hole": [
+          {
+            "ms": 87.21658399736043,
+            "process_cpu_ms": 732.2810000000004,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              102,
+              128,
+              358,
+              384
+            ],
+            "area": 5480.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-hole-0.npz",
+            "rings": 2
+          },
+          {
+            "ms": 10.633792000589892,
+            "process_cpu_ms": 91.29800000000898,
+            "encodes": 0,
+            "decodes": 1,
+            "crop": [
+              102,
+              128,
+              358,
+              384
+            ],
+            "area": 5491.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-hole-1.npz",
+            "rings": 2
+          },
+          {
+            "ms": 10.633707999659237,
+            "process_cpu_ms": 92.22900000000323,
+            "encodes": 0,
+            "decodes": 1,
+            "crop": [
+              102,
+              128,
+              358,
+              384
+            ],
+            "area": 5496.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-hole-2.npz",
+            "rings": 2
+          }
+        ],
+        "microscopy_fragment": [
+          {
+            "ms": 90.2470830042148,
+            "process_cpu_ms": 747.2429999999974,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              1052,
+              37,
+              1308,
+              293
+            ],
+            "area": 2414.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-microscopy_fragment-0.npz",
+            "rings": 1
+          },
+          {
+            "ms": 10.431084003357682,
+            "process_cpu_ms": 92.29299999999796,
+            "encodes": 0,
+            "decodes": 1,
+            "crop": [
+              1052,
+              37,
+              1308,
+              293
+            ],
+            "area": 2380.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-microscopy_fragment-1.npz",
+            "rings": 1
+          },
+          {
+            "ms": 10.703250001824927,
+            "process_cpu_ms": 93.10700000000338,
+            "encodes": 0,
+            "decodes": 1,
+            "crop": [
+              1052,
+              37,
+              1308,
+              293
+            ],
+            "area": 2396.0,
+            "cache_bytes": 4194304,
+            "mask_file": "current-microscopy_fragment-2.npz",
+            "rings": 1
+          }
+        ],
+        "microscopy_background_gap": [
+          {
+            "ms": 184.66070799331646,
+            "process_cpu_ms": 1510.704000000004,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              200,
+              200,
+              661,
+              661
+            ],
+            "area": 30122.0,
+            "cache_bytes": 8388608,
+            "mask_file": "current-microscopy_background_gap-0.npz",
+            "rings": 8
+          },
+          {
+            "ms": 186.9994169974234,
+            "process_cpu_ms": 1517.2390000000037,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              200,
+              208,
+              661,
+              669
+            ],
+            "area": 31593.0,
+            "cache_bytes": 16777216,
+            "mask_file": "current-microscopy_background_gap-1.npz",
+            "rings": 2
+          },
+          {
+            "ms": 186.07295800029533,
+            "process_cpu_ms": 1515.139999999988,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              198,
+              216,
+              659,
+              677
+            ],
+            "area": 32233.0,
+            "cache_bytes": 25165824,
+            "mask_file": "current-microscopy_background_gap-2.npz",
+            "rings": 2
+          }
+        ],
+        "microscopy_fiber": [
+          {
+            "ms": 184.5725000021048,
+            "process_cpu_ms": 1523.489000000012,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              572,
+              620,
+              1033,
+              1081
+            ],
+            "area": 11188.0,
+            "cache_bytes": 8388608,
+            "mask_file": "current-microscopy_fiber-0.npz",
+            "rings": 1
+          },
+          {
+            "ms": 185.79245800356148,
+            "process_cpu_ms": 1529.2689999999993,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              574,
+              628,
+              1035,
+              1089
+            ],
+            "area": 11292.0,
+            "cache_bytes": 16777216,
+            "mask_file": "current-microscopy_fiber-1.npz",
+            "rings": 1
+          },
+          {
+            "ms": 183.8180420018034,
+            "process_cpu_ms": 1523.887000000002,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              572,
+              636,
+              1033,
+              1097
+            ],
+            "area": 11257.0,
+            "cache_bytes": 25165824,
+            "mask_file": "current-microscopy_fiber-2.npz",
+            "rings": 2
+          }
+        ]
+      }
+    },
+    "baseline": {
+      "version": "baseline",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "cpu": "Apple M5 Pro",
+      "started_at_unix": 1789536591.5795689,
+      "service_sha256": "f2c30520756e40191583b5eb0d3cbe3bd4c0c3d2646e7e512473c5c930dc843d",
+      "ort": "1.24.4",
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "model": "edge_sam_3x",
+      "samples_per_scenario": 30,
+      "scenarios": {
+        "new_roi": {
+          "p50_ms": 103.00002100120764,
+          "p95_ms": 131.5761499987275,
+          "encoder_calls": 30,
+          "peak_cache_bytes": 16777216,
+          "peak_sampled_rss_bytes": 860291072,
+          "initial": null,
+          "samples": [
+            {
+              "ms": 100.85350000008475,
+              "process_cpu_ms": 838.8370000000001,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 791609344
+            },
+            {
+              "ms": 323.15733300492866,
+              "process_cpu_ms": 947.3589999999996,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                52,
+                628,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 8388608,
+              "rss_bytes": 798982144
+            },
+            {
+              "ms": 131.03687499824446,
+              "process_cpu_ms": 1083.3479999999995,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                52,
+                928,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 12582912,
+              "rss_bytes": 801292288
+            },
+            {
+              "ms": 132.0173749991227,
+              "process_cpu_ms": 997.1949999999996,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                52,
+                1228,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 805502976
+            },
+            {
+              "ms": 102.41591600060929,
+              "process_cpu_ms": 847.2780000000002,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                52,
+                1528,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 805502976
+            },
+            {
+              "ms": 102.89400000328897,
+              "process_cpu_ms": 852.6210000000001,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                52,
+                1828,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 810074112
+            },
+            {
+              "ms": 102.66587500518654,
+              "process_cpu_ms": 850.041,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                332,
+                328,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 824541184
+            },
+            {
+              "ms": 104.11658399971202,
+              "process_cpu_ms": 863.7529999999991,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                332,
+                628,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 832454656
+            },
+            {
+              "ms": 103.33733399602352,
+              "process_cpu_ms": 853.2149999999988,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                332,
+                928,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 832552960
+            },
+            {
+              "ms": 102.14041599829216,
+              "process_cpu_ms": 844.9169999999988,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                332,
+                1228,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 837255168
+            },
+            {
+              "ms": 101.59979199670488,
+              "process_cpu_ms": 841.6669999999992,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                332,
+                1528,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 837402624
+            },
+            {
+              "ms": 102.43520799849648,
+              "process_cpu_ms": 852.563,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                332,
+                1828,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 841596928
+            },
+            {
+              "ms": 101.65570800018031,
+              "process_cpu_ms": 840.1459999999989,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                612,
+                328,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 841613312
+            },
+            {
+              "ms": 103.73533300298732,
+              "process_cpu_ms": 862.8789999999995,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                612,
+                628,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 841646080
+            },
+            {
+              "ms": 103.44541700033005,
+              "process_cpu_ms": 854.2970000000007,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                612,
+                928,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 845856768
+            },
+            {
+              "ms": 102.46199999528471,
+              "process_cpu_ms": 842.9329999999986,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                612,
+                1228,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851197952
+            },
+            {
+              "ms": 102.23775000486057,
+              "process_cpu_ms": 846.5439999999979,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                612,
+                1528,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851214336
+            },
+            {
+              "ms": 102.06333299720427,
+              "process_cpu_ms": 843.7230000000006,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                612,
+                1828,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851214336
+            },
+            {
+              "ms": 103.13875000429107,
+              "process_cpu_ms": 852.8890000000011,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                892,
+                328,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851247104
+            },
+            {
+              "ms": 106.02116699737962,
+              "process_cpu_ms": 878.9750000000005,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                892,
+                628,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851247104
+            },
+            {
+              "ms": 102.72337500646245,
+              "process_cpu_ms": 848.6890000000003,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                892,
+                928,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851279872
+            },
+            {
+              "ms": 104.10845800652169,
+              "process_cpu_ms": 855.5810000000008,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                892,
+                1228,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851329024
+            },
+            {
+              "ms": 103.10604199912632,
+              "process_cpu_ms": 853.5019999999988,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                892,
+                1528,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851345408
+            },
+            {
+              "ms": 100.54824999679113,
+              "process_cpu_ms": 830.8200000000028,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                892,
+                1828,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851345408
+            },
+            {
+              "ms": 104.70462500234134,
+              "process_cpu_ms": 865.8950000000018,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                1172,
+                328,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 851394560
+            },
+            {
+              "ms": 103.40833400550764,
+              "process_cpu_ms": 855.834999999999,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                1172,
+                628,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 860110848
+            },
+            {
+              "ms": 101.97158299706643,
+              "process_cpu_ms": 839.9049999999982,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                1172,
+                928,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 860127232
+            },
+            {
+              "ms": 103.16520799824502,
+              "process_cpu_ms": 854.1810000000005,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                1172,
+                1228,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 860274688
+            },
+            {
+              "ms": 104.34349999559345,
+              "process_cpu_ms": 858.4870000000002,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                1172,
+                1528,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 860274688
+            },
+            {
+              "ms": 101.97695799433859,
+              "process_cpu_ms": 847.0030000000008,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                1172,
+                1828,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 860291072
+            }
+          ]
+        },
+        "same_roi": {
+          "p50_ms": 16.596375000517583,
+          "p95_ms": 17.137431248556823,
+          "encoder_calls": 0,
+          "peak_cache_bytes": 4194304,
+          "peak_sampled_rss_bytes": 888782848,
+          "initial": {
+            "ms": 103.1906250063912,
+            "process_cpu_ms": 853.6040000000007,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              72,
+              52,
+              328,
+              308
+            ],
+            "area": 6327.0,
+            "cache_bytes": 4194304
+          },
+          "samples": [
+            {
+              "ms": 12.161082995589823,
+              "process_cpu_ms": 105.79999999999856,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 867155968
+            },
+            {
+              "ms": 16.462084000522736,
+              "process_cpu_ms": 135.78500000000204,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 867270656
+            },
+            {
+              "ms": 17.33550000062678,
+              "process_cpu_ms": 145.36500000000174,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 867270656
+            },
+            {
+              "ms": 15.521999994234648,
+              "process_cpu_ms": 131.6469999999974,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 871497728
+            },
+            {
+              "ms": 17.056167002010625,
+              "process_cpu_ms": 143.74699999999763,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 871514112
+            },
+            {
+              "ms": 16.90204099577386,
+              "process_cpu_ms": 141.03700000000075,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 871530496
+            },
+            {
+              "ms": 16.400041000451893,
+              "process_cpu_ms": 139.0000000000029,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 875724800
+            },
+            {
+              "ms": 16.514040995389223,
+              "process_cpu_ms": 138.81999999999906,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 875724800
+            },
+            {
+              "ms": 17.180124996230006,
+              "process_cpu_ms": 143.73099999999894,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 879951872
+            },
+            {
+              "ms": 16.741208004532382,
+              "process_cpu_ms": 140.72399999999874,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 879968256
+            },
+            {
+              "ms": 16.849874999024905,
+              "process_cpu_ms": 142.1740000000007,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 879968256
+            },
+            {
+              "ms": 16.425540998170618,
+              "process_cpu_ms": 136.99100000000186,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 879968256
+            },
+            {
+              "ms": 17.041457998857368,
+              "process_cpu_ms": 143.6320000000002,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 880017408
+            },
+            {
+              "ms": 17.03983300103573,
+              "process_cpu_ms": 143.65899999999954,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 880033792
+            },
+            {
+              "ms": 16.98449999821605,
+              "process_cpu_ms": 140.2959999999993,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 884326400
+            },
+            {
+              "ms": 16.45470900257351,
+              "process_cpu_ms": 138.11600000000013,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 884326400
+            },
+            {
+              "ms": 16.8784580018837,
+              "process_cpu_ms": 142.98000000000144,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888619008
+            },
+            {
+              "ms": 16.842375000123866,
+              "process_cpu_ms": 144.08300000000196,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888619008
+            },
+            {
+              "ms": 16.77741599996807,
+              "process_cpu_ms": 143.36799999999883,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888619008
+            },
+            {
+              "ms": 16.548166000575293,
+              "process_cpu_ms": 139.77200000000067,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888619008
+            },
+            {
+              "ms": 16.584958000748884,
+              "process_cpu_ms": 139.69200000000015,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888619008
+            },
+            {
+              "ms": 16.60779200028628,
+              "process_cpu_ms": 139.43399999999784,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888651776
+            },
+            {
+              "ms": 17.08525000140071,
+              "process_cpu_ms": 144.89000000000374,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888668160
+            },
+            {
+              "ms": 16.19708400539821,
+              "process_cpu_ms": 136.56199999999785,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888717312
+            },
+            {
+              "ms": 16.391917000873946,
+              "process_cpu_ms": 139.58800000000338,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888733696
+            },
+            {
+              "ms": 16.395833001297433,
+              "process_cpu_ms": 139.96600000000115,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888750080
+            },
+            {
+              "ms": 16.74437500332715,
+              "process_cpu_ms": 141.78900000000283,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888750080
+            },
+            {
+              "ms": 16.102374996989965,
+              "process_cpu_ms": 136.9100000000003,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888750080
+            },
+            {
+              "ms": 15.92312499997206,
+              "process_cpu_ms": 133.35200000000214,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888766464
+            },
+            {
+              "ms": 16.58470799884526,
+              "process_cpu_ms": 140.6070000000028,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 888782848
+            }
+          ]
+        },
+        "continuous_prompts": {
+          "p50_ms": 103.08822950173635,
+          "p95_ms": 105.73510420035745,
+          "encoder_calls": 30,
+          "peak_cache_bytes": 16777216,
+          "peak_sampled_rss_bytes": 898564096,
+          "initial": {
+            "ms": 100.69591699721059,
+            "process_cpu_ms": 831.8080000000023,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              72,
+              52,
+              328,
+              308
+            ],
+            "area": 6327.0,
+            "cache_bytes": 4194304
+          },
+          "samples": [
+            {
+              "ms": 88.33308299654163,
+              "process_cpu_ms": 749.4390000000024,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                35,
+                30,
+                335,
+                330
+              ],
+              "area": 6308.0,
+              "cache_bytes": 8388608,
+              "rss_bytes": 888799232
+            },
+            {
+              "ms": 105.75404200062621,
+              "process_cpu_ms": 867.7380000000028,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                36,
+                30,
+                336,
+                330
+              ],
+              "area": 6316.0,
+              "cache_bytes": 12582912,
+              "rss_bytes": 888799232
+            },
+            {
+              "ms": 104.77299999911338,
+              "process_cpu_ms": 863.5640000000037,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                37,
+                30,
+                337,
+                330
+              ],
+              "area": 6323.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 888995840
+            },
+            {
+              "ms": 101.17408399673877,
+              "process_cpu_ms": 838.8550000000023,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                38,
+                30,
+                338,
+                330
+              ],
+              "area": 6329.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 888995840
+            },
+            {
+              "ms": 101.77408299932722,
+              "process_cpu_ms": 839.732000000005,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                39,
+                30,
+                339,
+                330
+              ],
+              "area": 6334.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889028608
+            },
+            {
+              "ms": 101.47850000066683,
+              "process_cpu_ms": 836.3500000000031,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                40,
+                30,
+                340,
+                330
+              ],
+              "area": 6336.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889061376
+            },
+            {
+              "ms": 102.70454200508539,
+              "process_cpu_ms": 850.8330000000014,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                41,
+                30,
+                341,
+                330
+              ],
+              "area": 6323.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889094144
+            },
+            {
+              "ms": 105.10712499672081,
+              "process_cpu_ms": 871.4660000000051,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                42,
+                30,
+                342,
+                330
+              ],
+              "area": 6332.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889274368
+            },
+            {
+              "ms": 103.15770900342613,
+              "process_cpu_ms": 849.5569999999973,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                43,
+                30,
+                343,
+                330
+              ],
+              "area": 6328.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889290752
+            },
+            {
+              "ms": 105.11949999636272,
+              "process_cpu_ms": 857.7729999999946,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                44,
+                30,
+                344,
+                330
+              ],
+              "area": 6318.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889290752
+            },
+            {
+              "ms": 103.55479199643014,
+              "process_cpu_ms": 857.8339999999969,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                45,
+                30,
+                345,
+                330
+              ],
+              "area": 6328.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889356288
+            },
+            {
+              "ms": 103.01875000004657,
+              "process_cpu_ms": 850.127999999998,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                46,
+                30,
+                346,
+                330
+              ],
+              "area": 6332.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889356288
+            },
+            {
+              "ms": 104.04645800008439,
+              "process_cpu_ms": 864.1739999999984,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                47,
+                30,
+                347,
+                330
+              ],
+              "area": 6332.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889372672
+            },
+            {
+              "ms": 101.18908300501062,
+              "process_cpu_ms": 836.1549999999979,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                48,
+                30,
+                348,
+                330
+              ],
+              "area": 6336.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889372672
+            },
+            {
+              "ms": 100.88370900484733,
+              "process_cpu_ms": 834.0670000000046,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                49,
+                30,
+                349,
+                330
+              ],
+              "area": 6340.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889389056
+            },
+            {
+              "ms": 103.63274999690475,
+              "process_cpu_ms": 854.337000000001,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                50,
+                30,
+                350,
+                330
+              ],
+              "area": 6335.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 889389056
+            },
+            {
+              "ms": 101.81683299742872,
+              "process_cpu_ms": 838.8740000000041,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                51,
+                30,
+                351,
+                330
+              ],
+              "area": 6338.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 893583360
+            },
+            {
+              "ms": 101.79575000074692,
+              "process_cpu_ms": 841.6160000000019,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                52,
+                30,
+                352,
+                330
+              ],
+              "area": 6340.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 893583360
+            },
+            {
+              "ms": 101.94945800321875,
+              "process_cpu_ms": 844.9890000000053,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                53,
+                30,
+                353,
+                330
+              ],
+              "area": 6341.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 893714432
+            },
+            {
+              "ms": 101.25991600216366,
+              "process_cpu_ms": 840.0400000000019,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                54,
+                30,
+                354,
+                330
+              ],
+              "area": 6345.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 893730816
+            },
+            {
+              "ms": 103.1650000004447,
+              "process_cpu_ms": 854.6070000000014,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                55,
+                30,
+                355,
+                330
+              ],
+              "area": 6339.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 893812736
+            },
+            {
+              "ms": 102.23108399804914,
+              "process_cpu_ms": 846.0340000000031,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                56,
+                30,
+                356,
+                330
+              ],
+              "area": 6339.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898351104
+            },
+            {
+              "ms": 102.19054199842503,
+              "process_cpu_ms": 847.0420000000018,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                57,
+                30,
+                357,
+                330
+              ],
+              "area": 6345.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898383872
+            },
+            {
+              "ms": 104.65916699467925,
+              "process_cpu_ms": 865.8690000000036,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                58,
+                30,
+                358,
+                330
+              ],
+              "area": 6343.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898383872
+            },
+            {
+              "ms": 103.76420799730113,
+              "process_cpu_ms": 859.2700000000023,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                59,
+                30,
+                359,
+                330
+              ],
+              "area": 6340.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898449408
+            },
+            {
+              "ms": 104.70808300306089,
+              "process_cpu_ms": 866.4690000000021,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                60,
+                30,
+                360,
+                330
+              ],
+              "area": 6342.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898465792
+            },
+            {
+              "ms": 102.43766700295964,
+              "process_cpu_ms": 847.1070000000011,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                61,
+                30,
+                361,
+                330
+              ],
+              "area": 6344.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898482176
+            },
+            {
+              "ms": 106.01499999756925,
+              "process_cpu_ms": 874.288,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                62,
+                30,
+                362,
+                330
+              ],
+              "area": 6347.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898498560
+            },
+            {
+              "ms": 105.71195800002897,
+              "process_cpu_ms": 874.1109999999992,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                63,
+                30,
+                363,
+                330
+              ],
+              "area": 6351.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898564096
+            },
+            {
+              "ms": 105.23233300045831,
+              "process_cpu_ms": 873.9840000000002,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                64,
+                30,
+                364,
+                330
+              ],
+              "area": 6343.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 898564096
+            }
+          ]
+        },
+        "expanded_repeat": {
+          "p50_ms": 494.77597900113324,
+          "p95_ms": 576.0073231034766,
+          "encoder_calls": 150,
+          "peak_cache_bytes": 16777216,
+          "peak_sampled_rss_bytes": 1037598720,
+          "initial": {
+            "ms": 489.5891659980407,
+            "process_cpu_ms": 3970.646000000002,
+            "encodes": 5,
+            "decodes": 5,
+            "crop": [
+              0,
+              0,
+              2048,
+              1536
+            ],
+            "area": 159685.0,
+            "cache_bytes": 16777216
+          },
+          "samples": [
+            {
+              "ms": 470.0774579978315,
+              "process_cpu_ms": 3794.505000000008,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 971014144
+            },
+            {
+              "ms": 483.1725410040235,
+              "process_cpu_ms": 3892.617000000001,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 985399296
+            },
+            {
+              "ms": 488.1639160012128,
+              "process_cpu_ms": 3938.6289999999917,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 985579520
+            },
+            {
+              "ms": 490.54262500430923,
+              "process_cpu_ms": 3947.365000000005,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 988758016
+            },
+            {
+              "ms": 492.0930000007502,
+              "process_cpu_ms": 3952.8839999999973,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 991985664
+            },
+            {
+              "ms": 490.95458300143946,
+              "process_cpu_ms": 3931.484999999995,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 995147776
+            },
+            {
+              "ms": 489.9283339982503,
+              "process_cpu_ms": 3947.5479999999975,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1008812032
+            },
+            {
+              "ms": 496.98283299949253,
+              "process_cpu_ms": 3981.4989999999993,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1011826688
+            },
+            {
+              "ms": 510.8676669988199,
+              "process_cpu_ms": 4060.9290000000015,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1014988800
+            },
+            {
+              "ms": 543.3170000032987,
+              "process_cpu_ms": 4273.5290000000105,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1015070720
+            },
+            {
+              "ms": 554.6085000023595,
+              "process_cpu_ms": 4404.744000000008,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1018527744
+            },
+            {
+              "ms": 483.8359580026008,
+              "process_cpu_ms": 3891.903999999997,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1018560512
+            },
+            {
+              "ms": 502.4080830044113,
+              "process_cpu_ms": 3989.3009999999977,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1022754816
+            },
+            {
+              "ms": 482.6511249993928,
+              "process_cpu_ms": 3891.289999999998,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1022754816
+            },
+            {
+              "ms": 487.64004199620103,
+              "process_cpu_ms": 3914.422000000002,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1022771200
+            },
+            {
+              "ms": 494.8595000023488,
+              "process_cpu_ms": 3945.607999999993,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1022803968
+            },
+            {
+              "ms": 510.767791995022,
+              "process_cpu_ms": 4050.5950000000157,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1026998272
+            },
+            {
+              "ms": 556.7663750043721,
+              "process_cpu_ms": 4359.853999999985,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1026998272
+            },
+            {
+              "ms": 591.749917002744,
+              "process_cpu_ms": 4633.800000000008,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030193152
+            },
+            {
+              "ms": 632.0452090003528,
+              "process_cpu_ms": 4950.015000000008,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030193152
+            },
+            {
+              "ms": 503.378999994311,
+              "process_cpu_ms": 4001.669000000021,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030209536
+            },
+            {
+              "ms": 496.51408300269395,
+              "process_cpu_ms": 3989.1280000000224,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030209536
+            },
+            {
+              "ms": 492.4824580011773,
+              "process_cpu_ms": 3946.9629999999825,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030209536
+            },
+            {
+              "ms": 483.17600000154926,
+              "process_cpu_ms": 3891.865999999993,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030225920
+            },
+            {
+              "ms": 494.6924579999177,
+              "process_cpu_ms": 3966.5840000000117,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030225920
+            },
+            {
+              "ms": 513.581166997028,
+              "process_cpu_ms": 4022.7539999999917,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1030225920
+            },
+            {
+              "ms": 548.1766250013607,
+              "process_cpu_ms": 4311.887999999982,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1034436608
+            },
+            {
+              "ms": 552.7705839995178,
+              "process_cpu_ms": 4378.614999999996,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1034436608
+            },
+            {
+              "ms": 488.59245800122153,
+              "process_cpu_ms": 3929.326000000003,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1034436608
+            },
+            {
+              "ms": 493.1332920023124,
+              "process_cpu_ms": 3976.5490000000054,
+              "encodes": 5,
+              "decodes": 5,
+              "crop": [
+                0,
+                0,
+                2048,
+                1536
+              ],
+              "area": 159685.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1037598720
+            }
+          ]
+        },
+        "edge_target": {
+          "p50_ms": 17.0626045037352,
+          "p95_ms": 17.84163780102972,
+          "encoder_calls": 0,
+          "peak_cache_bytes": 4194304,
+          "peak_sampled_rss_bytes": 1037647872,
+          "initial": {
+            "ms": 103.96920800121734,
+            "process_cpu_ms": 858.193,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              0,
+              384,
+              256,
+              640
+            ],
+            "area": 5658.0,
+            "cache_bytes": 4194304
+          },
+          "samples": [
+            {
+              "ms": 11.911334004253149,
+              "process_cpu_ms": 98.10799999999631,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.83920899470104,
+              "process_cpu_ms": 148.9729999999838,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.418499999621417,
+              "process_cpu_ms": 144.86899999999991,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.861707998032216,
+              "process_cpu_ms": 137.66599999999585,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.70608399581397,
+              "process_cpu_ms": 141.1210000000267,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.492041999299545,
+              "process_cpu_ms": 138.0399999999895,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.137708004156593,
+              "process_cpu_ms": 144.20599999999695,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.115084003307857,
+              "process_cpu_ms": 142.15200000001005,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.348082998069003,
+              "process_cpu_ms": 143.7930000000165,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.3292500039679,
+              "process_cpu_ms": 144.4360000000131,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.192792001878843,
+              "process_cpu_ms": 142.17500000000882,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.647624994220678,
+              "process_cpu_ms": 140.32100000000014,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.66624999436317,
+              "process_cpu_ms": 148.40699999999174,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.84362500620773,
+              "process_cpu_ms": 148.5270000000014,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.401249999238644,
+              "process_cpu_ms": 145.79099999997425,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.761166996730026,
+              "process_cpu_ms": 140.02600000000598,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.985041998850647,
+              "process_cpu_ms": 142.25199999998495,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.754249998484738,
+              "process_cpu_ms": 141.92900000000463,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 16.90312499704305,
+              "process_cpu_ms": 141.53000000001725,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.23908300482435,
+              "process_cpu_ms": 141.83499999998617,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037615104
+            },
+            {
+              "ms": 17.07154200266814,
+              "process_cpu_ms": 142.44900000002758,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 17.155166999145877,
+              "process_cpu_ms": 144.79000000000042,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 16.845834004925564,
+              "process_cpu_ms": 143.4329999999875,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 17.62425000197254,
+              "process_cpu_ms": 146.7630000000213,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 16.721542000595946,
+              "process_cpu_ms": 141.4869999999837,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 16.617291999864392,
+              "process_cpu_ms": 143.06799999999953,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 16.717958002118394,
+              "process_cpu_ms": 140.10399999997958,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 17.053667004802264,
+              "process_cpu_ms": 144.26299999999515,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 18.205084001237992,
+              "process_cpu_ms": 144.9089999999842,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            },
+            {
+              "ms": 16.856082998856436,
+              "process_cpu_ms": 138.82399999999961,
+              "encodes": 0,
+              "decodes": 1,
+              "crop": [
+                0,
+                384,
+                256,
+                640
+              ],
+              "area": 5658.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1037647872
+            }
+          ]
+        },
+        "large_image": {
+          "p50_ms": 115.06783349977923,
+          "p95_ms": 117.08594984884257,
+          "encoder_calls": 30,
+          "peak_cache_bytes": 16777216,
+          "peak_sampled_rss_bytes": 1277673472,
+          "initial": null,
+          "samples": [
+            {
+              "ms": 110.92041599476943,
+              "process_cpu_ms": 868.6230000000137,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                52,
+                328,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 4194304,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 116.16520800453145,
+              "process_cpu_ms": 895.2879999999936,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                52,
+                628,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 8388608,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 117.24149999645306,
+              "process_cpu_ms": 925.138000000004,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                52,
+                928,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 12582912,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.76854199665831,
+              "process_cpu_ms": 906.1080000000175,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                52,
+                1228,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 113.93366699485341,
+              "process_cpu_ms": 889.4459999999924,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                52,
+                1528,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 113.7747920001857,
+              "process_cpu_ms": 892.011999999994,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                52,
+                1828,
+                308
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.4346660003066,
+              "process_cpu_ms": 899.4849999999985,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                332,
+                328,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.5996250017779,
+              "process_cpu_ms": 906.4500000000066,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                332,
+                628,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.24916700343601,
+              "process_cpu_ms": 893.7170000000094,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                332,
+                928,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.07662499934668,
+              "process_cpu_ms": 902.401999999995,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                332,
+                1228,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.35587499383837,
+              "process_cpu_ms": 906.8790000000035,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                332,
+                1528,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 116.61054100113688,
+              "process_cpu_ms": 914.0160000000037,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                332,
+                1828,
+                588
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.79441700066673,
+              "process_cpu_ms": 901.9030000000043,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                612,
+                328,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.72129200067138,
+              "process_cpu_ms": 906.406000000004,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                612,
+                628,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.1067920034402,
+              "process_cpu_ms": 899.3310000000179,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                612,
+                928,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 113.7331250065472,
+              "process_cpu_ms": 891.902999999985,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                612,
+                1228,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 116.3386249972973,
+              "process_cpu_ms": 901.1229999999841,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                612,
+                1528,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.75195800449,
+              "process_cpu_ms": 897.2390000000132,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                612,
+                1828,
+                868
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 113.36358400149038,
+              "process_cpu_ms": 891.459999999995,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                892,
+                328,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 113.78687499382067,
+              "process_cpu_ms": 891.7350000000113,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                892,
+                628,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.08016700099688,
+              "process_cpu_ms": 906.8160000000205,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                892,
+                928,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.53641699336004,
+              "process_cpu_ms": 900.2749999999935,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                892,
+                1228,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 116.8958330017631,
+              "process_cpu_ms": 919.7989999999834,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                892,
+                1528,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.05904200021178,
+              "process_cpu_ms": 902.8720000000021,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                892,
+                1828,
+                1148
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 116.19266599882394,
+              "process_cpu_ms": 910.3690000000029,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                72,
+                1172,
+                328,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 116.44725000223843,
+              "process_cpu_ms": 908.1529999999987,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                372,
+                1172,
+                628,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 115.23270900215721,
+              "process_cpu_ms": 904.9760000000049,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                672,
+                1172,
+                928,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 114.10870899999281,
+              "process_cpu_ms": 893.5519999999997,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                972,
+                1172,
+                1228,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 119.56062500394182,
+              "process_cpu_ms": 933.2430000000045,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1272,
+                1172,
+                1528,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            },
+            {
+              "ms": 113.70254099892918,
+              "process_cpu_ms": 887.139000000019,
+              "encodes": 1,
+              "decodes": 1,
+              "crop": [
+                1572,
+                1172,
+                1828,
+                1428
+              ],
+              "area": 6327.0,
+              "cache_bytes": 16777216,
+              "rss_bytes": 1277673472
+            }
+          ]
+        }
+      },
+      "cancelled_before_start": [
+        {
+          "ms": 0.1824589999159798,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.1233750008395873,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.13387500075623393,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.04900000203633681,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.04691699723480269,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.08662499749334529,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.042790998122654855,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.08612500096205622,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.03724999987753108,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.046375003876164556,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.04454200097825378,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.037834004615433514,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.041250001231674105,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.039332997403107584,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.03441699664108455,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.04262499714968726,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.040583996451459825,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.039375001506414264,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.09533399861538783,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.05033399793319404,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.043125000956933945,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.07141599780879915,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.040083999920170754,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.03883300087181851,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.038207996112760156,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.03774999640882015,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.03995800216216594,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.039917002141010016,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.037750003684777766,
+          "encodes": 0,
+          "decodes": 0
+        },
+        {
+          "ms": 0.03949999518226832,
+          "encodes": 0,
+          "decodes": 0
+        }
+      ],
+      "fixed_crop_masks": {
+        "circle": {
+          "sha256": "44c72a89f5cae2b97a84ca267c60271e4651143fe9c62fcb932d7bbf7c1806f6",
+          "area": 6237,
+          "final_mask_sha256": "44c72a89f5cae2b97a84ca267c60271e4651143fe9c62fcb932d7bbf7c1806f6",
+          "final_area": 6237.0,
+          "rings_sha256": "627fd366586f06d0d7936b23b942da505b5281cc7976579b7a9a6ca1b6f88ba5"
+        },
+        "hole": {
+          "sha256": "ec2a5baebd29633134de28385f6115cf8ec24d101a0cb014aa7151cad1e6ee44",
+          "area": 5464,
+          "final_mask_sha256": "ec2a5baebd29633134de28385f6115cf8ec24d101a0cb014aa7151cad1e6ee44",
+          "final_area": 5464.0,
+          "rings_sha256": "efa08dd7747b9bb8aebf70f8079141d88b74ce515417cf91a5d46047b3358118"
+        },
+        "border": {
+          "sha256": "4efe9d534723a238639994bb4e776a5bd07f4d84a9133272c8819e3332e57cda",
+          "area": 4966,
+          "final_mask_sha256": "4efe9d534723a238639994bb4e776a5bd07f4d84a9133272c8819e3332e57cda",
+          "final_area": 4966.0,
+          "rings_sha256": "318ee172f23fcee4d2738f4aaabdf825c3be52433739371214fcb778d607ded1"
+        },
+        "microscopy_fragment": {
+          "sha256": "9eeea95b093157896635ab17f262bb3d85507d7a6e0f9c1dfae00acb2aef0a74",
+          "area": 2284,
+          "final_mask_sha256": "9eeea95b093157896635ab17f262bb3d85507d7a6e0f9c1dfae00acb2aef0a74",
+          "final_area": 2284.0,
+          "rings_sha256": "2258ba7207b941ae6bf373c4593de8838d8d5c8cc682f36fe0129c71ab5b3cce"
+        }
+      },
+      "replays": {
+        "circle": [
+          {
+            "ms": 92.42458300286671,
+            "process_cpu_ms": 762.3269999999991,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              118,
+              128,
+              374,
+              384
+            ],
+            "area": 6318.0,
+            "cache_bytes": 4194304,
+            "mask_file": "baseline-circle-0.npz",
+            "rings": 1
+          },
+          {
+            "ms": 88.74891699815635,
+            "process_cpu_ms": 752.2999999999911,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              128,
+              128,
+              384,
+              384
+            ],
+            "area": 6328.0,
+            "cache_bytes": 8388608,
+            "mask_file": "baseline-circle-1.npz",
+            "rings": 1
+          },
+          {
+            "ms": 88.0446250012028,
+            "process_cpu_ms": 746.3329999999928,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              136,
+              128,
+              392,
+              384
+            ],
+            "area": 6329.0,
+            "cache_bytes": 12582912,
+            "mask_file": "baseline-circle-2.npz",
+            "rings": 1
+          }
+        ],
+        "hole": [
+          {
+            "ms": 90.72329199989326,
+            "process_cpu_ms": 764.5239999999944,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              102,
+              128,
+              358,
+              384
+            ],
+            "area": 5480.0,
+            "cache_bytes": 4194304,
+            "mask_file": "baseline-hole-0.npz",
+            "rings": 2
+          },
+          {
+            "ms": 86.5611249973881,
+            "process_cpu_ms": 734.8929999999996,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              103,
+              120,
+              359,
+              376
+            ],
+            "area": 5489.0,
+            "cache_bytes": 8388608,
+            "mask_file": "baseline-hole-1.npz",
+            "rings": 2
+          },
+          {
+            "ms": 89.00500000163447,
+            "process_cpu_ms": 753.4870000000069,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              102,
+              132,
+              358,
+              388
+            ],
+            "area": 5495.0,
+            "cache_bytes": 12582912,
+            "mask_file": "baseline-hole-2.npz",
+            "rings": 2
+          }
+        ],
+        "microscopy_fragment": [
+          {
+            "ms": 93.6467910069041,
+            "process_cpu_ms": 778.521000000012,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              1052,
+              37,
+              1308,
+              293
+            ],
+            "area": 2414.0,
+            "cache_bytes": 4194304,
+            "mask_file": "baseline-microscopy_fragment-0.npz",
+            "rings": 1
+          },
+          {
+            "ms": 93.14804099994944,
+            "process_cpu_ms": 774.2220000000088,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              1056,
+              41,
+              1312,
+              297
+            ],
+            "area": 2380.0,
+            "cache_bytes": 8388608,
+            "mask_file": "baseline-microscopy_fragment-1.npz",
+            "rings": 1
+          },
+          {
+            "ms": 93.78329099854454,
+            "process_cpu_ms": 775.7210000000043,
+            "encodes": 1,
+            "decodes": 1,
+            "crop": [
+              1050,
+              35,
+              1306,
+              291
+            ],
+            "area": 2356.0,
+            "cache_bytes": 12582912,
+            "mask_file": "baseline-microscopy_fragment-2.npz",
+            "rings": 1
+          }
+        ],
+        "microscopy_background_gap": [
+          {
+            "ms": 189.33712499710964,
+            "process_cpu_ms": 1554.8709999999915,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              200,
+              200,
+              661,
+              661
+            ],
+            "area": 30122.0,
+            "cache_bytes": 8388608,
+            "mask_file": "baseline-microscopy_background_gap-0.npz",
+            "rings": 8
+          },
+          {
+            "ms": 190.23866699717473,
+            "process_cpu_ms": 1561.4829999999813,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              200,
+              208,
+              661,
+              669
+            ],
+            "area": 31593.0,
+            "cache_bytes": 16777216,
+            "mask_file": "baseline-microscopy_background_gap-1.npz",
+            "rings": 2
+          },
+          {
+            "ms": 198.12725000520004,
+            "process_cpu_ms": 1626.8059999999878,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              198,
+              216,
+              659,
+              677
+            ],
+            "area": 32233.0,
+            "cache_bytes": 16777216,
+            "mask_file": "baseline-microscopy_background_gap-2.npz",
+            "rings": 2
+          }
+        ],
+        "microscopy_fiber": [
+          {
+            "ms": 188.12383300246438,
+            "process_cpu_ms": 1548.794000000015,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              572,
+              620,
+              1033,
+              1081
+            ],
+            "area": 11188.0,
+            "cache_bytes": 8388608,
+            "mask_file": "baseline-microscopy_fiber-0.npz",
+            "rings": 1
+          },
+          {
+            "ms": 188.8143329997547,
+            "process_cpu_ms": 1560.2540000000147,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              574,
+              628,
+              1035,
+              1089
+            ],
+            "area": 11292.0,
+            "cache_bytes": 16777216,
+            "mask_file": "baseline-microscopy_fiber-1.npz",
+            "rings": 1
+          },
+          {
+            "ms": 185.03262499871198,
+            "process_cpu_ms": 1526.2850000000014,
+            "encodes": 2,
+            "decodes": 2,
+            "crop": [
+              572,
+              636,
+              1033,
+              1097
+            ],
+            "area": 11257.0,
+            "cache_bytes": 16777216,
+            "mask_file": "baseline-microscopy_fiber-2.npz",
+            "rings": 2
+          }
+        ]
+      }
+    }
+  },
+  "comparison": {
+    "new_roi": {
+      "p50_reduction_percent": 2.4444975595678153,
+      "p95_change_percent": -19.508778870864717
+    },
+    "same_roi": {
+      "p50_reduction_percent": 10.178300986953525,
+      "p95_change_percent": 4.378804151254201
+    },
+    "continuous_prompts": {
+      "p50_reduction_percent": 85.7543547228231,
+      "p95_change_percent": -84.58627116299901
+    },
+    "expanded_repeat": {
+      "p50_reduction_percent": 94.30391627821835,
+      "p95_change_percent": -94.94851474388692
+    },
+    "edge_target": {
+      "p50_reduction_percent": 10.822524213984375,
+      "p95_change_percent": -8.743852554943798
+    },
+    "large_image": {
+      "p50_reduction_percent": 11.336030763079364,
+      "p95_change_percent": -11.084451736253042
+    }
+  },
+  "quality": {
+    "circle": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 6318,
+        "new_area": 6318,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.997158193874329,
+        "pixel_equal": false,
+        "old_area": 6328,
+        "new_area": 6322,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9973160719924219,
+        "pixel_equal": false,
+        "old_area": 6329,
+        "new_area": 6322,
+        "old_rings": 1,
+        "new_rings": 1
+      }
+    ],
+    "hole": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 5480,
+        "new_area": 5480,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9920174165457184,
+        "pixel_equal": false,
+        "old_area": 5489,
+        "new_area": 5491,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9987270412802328,
+        "pixel_equal": false,
+        "old_area": 5495,
+        "new_area": 5496,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ],
+    "microscopy_fragment": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 2414,
+        "new_area": 2414,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9941348973607038,
+        "pixel_equal": false,
+        "old_area": 2380,
+        "new_area": 2380,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.974241794765268,
+        "pixel_equal": false,
+        "old_area": 2356,
+        "new_area": 2396,
+        "old_rings": 1,
+        "new_rings": 1
+      }
+    ],
+    "microscopy_background_gap": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 30122,
+        "new_area": 30122,
+        "old_rings": 8,
+        "new_rings": 8
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 31593,
+        "new_area": 31593,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 32233,
+        "new_area": 32233,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ],
+    "microscopy_fiber": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11188,
+        "new_area": 11188,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11292,
+        "new_area": 11292,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11257,
+        "new_area": 11257,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ]
+  },
+  "fixed_crop_pixel_equal": true
+}
