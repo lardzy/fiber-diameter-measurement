@@ -1,0 +1,316 @@
+24 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+25 INFO: PyInstaller: 6.19.0, contrib hooks: 2026.3
+25 INFO: Python: 3.13.12 (conda)
+30 INFO: Platform: macOS-26.6.2-arm64-arm-64bit-Mach-O
+30 INFO: Python environment: /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv
+33 INFO: Removing temporary files and cleaning cache in /Users/lishuyang/Library/Application Support/pyinstaller
+19 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+391 WARNING: Failed to collect submodules for 'onnxruntime.quantization' because importing 'onnxruntime.quantization' raised: ModuleNotFoundError: No module named 'onnx'
+628 INFO: Module search paths (PYTHONPATH):
+['/opt/miniconda3/lib/python313.zip',
+ '/opt/miniconda3/lib/python3.13',
+ '/opt/miniconda3/lib/python3.13/lib-dynload',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/src',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/research/magic-roi-performance-2026-09-16',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/src']
+21 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+713 INFO: Appending 'binaries' from .spec
+714 INFO: Appending 'datas' from .spec
+714 INFO: checking Analysis
+714 INFO: Building Analysis because Analysis-00.toc is non existent
+714 INFO: Looking for Python shared library...
+714 INFO: Using Python shared library: /opt/miniconda3/lib/libpython3.13.dylib
+714 INFO: Running Analysis Analysis-00.toc
+714 INFO: Target bytecode optimization level: 0
+714 INFO: Initializing module dependency graph...
+714 INFO: Initializing module graph hook caches...
+717 INFO: Analyzing modules for base_library.zip ...
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+1080 INFO: Processing standard module hook 'hook-encodings.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+19 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+1648 INFO: Processing standard module hook 'hook-pickle.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+1991 INFO: Processing standard module hook 'hook-heapq.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2147 INFO: Caching module dependency graph...
+2160 INFO: Analyzing /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/research/magic-roi-performance-2026-09-16/frozen_probe.py
+2171 INFO: Processing standard module hook 'hook-platform.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2182 INFO: Processing standard module hook 'hook-xml.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2195 INFO: Processing standard module hook 'hook-sysconfig.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2200 INFO: Processing standard module hook 'hook-_osx_support.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2201 INFO: Processing standard module hook 'hook-_ctypes.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2225 INFO: Processing standard module hook 'hook-cv2.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+19 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+2362 INFO: Processing standard module hook 'hook-numpy.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2536 INFO: Processing standard module hook 'hook-difflib.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+2610 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+3550 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+3550 INFO: SetuptoolsInfo: initializing cached setuptools info...
+39 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+3967 INFO: Processing standard module hook 'hook-skimage.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+3979 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+4026 INFO: Processing standard module hook 'hook-skimage.morphology.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+4074 INFO: Processing standard module hook 'hook-scipy.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+4398 INFO: Processing standard module hook 'hook-scipy.special._ufuncs.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+4455 INFO: Processing standard module hook 'hook-scipy.linalg.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+5216 INFO: Processing standard module hook 'hook-scipy.spatial._ckdtree.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+5504 INFO: Processing standard module hook 'hook-scipy.spatial.transform.rotation.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+5885 INFO: Processing standard module hook 'hook-scipy.stats._stats.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+6082 INFO: Processing standard module hook 'hook-scipy.sparse.csgraph.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+6342 INFO: Processing standard module hook 'hook-scipy.special._ellip_harm_2.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+6356 INFO: Processing standard module hook 'hook-skimage.draw.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+6502 INFO: Processing standard module hook 'hook-skimage.exposure.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+6649 INFO: Processing standard module hook 'hook-skimage.measure.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+6789 INFO: Processing standard module hook 'hook-skimage.filters.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+17 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+7093 INFO: Processing standard module hook 'hook-PySide6.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+7159 INFO: Processing standard module hook 'hook-shiboken6.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+7222 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+7585 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+7957 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+8132 INFO: Processing standard module hook 'hook-fdm.services.fiber_quick_geometry.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/packaging/pyinstaller/hooks'
+8404 INFO: Processing standard module hook 'hook-onnxruntime.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+8426 INFO: Processing pre-safe-import-module hook 'hook-tensorflow.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/pre_safe_import_module'
+8589 INFO: Processing standard module hook 'hook-PIL.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+8627 INFO: Processing standard module hook 'hook-PIL.Image.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+8735 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+8803 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+9304 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+9366 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_find_module_path'
+9366 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+9446 INFO: Processing standard module hook 'hook-_tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+9570 INFO: Processing standard module hook 'hook-openpyxl.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+10030 INFO: Analyzing hidden import 'onnxruntime.capi.convert_npz_to_onnx_adapter'
+10031 INFO: Analyzing hidden import 'onnxruntime.datasets'
+10031 INFO: Analyzing hidden import 'onnxruntime.tools'
+10032 INFO: Analyzing hidden import 'onnxruntime.tools.check_onnx_model_mobile_usability'
+10044 INFO: Analyzing hidden import 'onnxruntime.tools.convert_onnx_models_to_ort'
+10058 INFO: Analyzing hidden import 'onnxruntime.tools.make_dynamic_shape_fixed'
+10059 INFO: Analyzing hidden import 'onnxruntime.tools.offline_tuning'
+10061 INFO: Analyzing hidden import 'onnxruntime.tools.onnx_randomizer'
+10062 INFO: Analyzing hidden import 'onnxruntime.tools.onnxruntime_test'
+10067 INFO: Analyzing hidden import 'onnxruntime.tools.optimize_onnx_model'
+10068 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py'
+10068 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs'
+10069 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.ArgType'
+10069 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.ArgTypeAndIndex'
+10081 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Attribute'
+10086 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.AttributeType'
+10086 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Checkpoint'
+10088 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.DeprecatedKernelCreateInfos'
+10089 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.DeprecatedNodeIndexAndKernelDefHash'
+10090 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.DeprecatedSessionState'
+10091 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.DeprecatedSubGraphSessionState'
+10092 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Dimension'
+10093 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.DimensionValue'
+10094 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.DimensionValueType'
+10094 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.EdgeEnd'
+10095 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.FloatProperty'
+10096 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Graph'
+10100 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.InferenceSession'
+10101 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.IntProperty'
+10102 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.KernelTypeStrArgsEntry'
+10103 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.KernelTypeStrResolver'
+10104 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.MapType'
+10105 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Model'
+10108 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.ModuleState'
+10109 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Node'
+10113 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.NodeEdge'
+10115 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.NodeType'
+10115 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.NodesToOptimizeIndices'
+10117 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.OpIdKernelTypeStrArgsEntry'
+10118 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.OperatorSetId'
+10119 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.OptimizerGroup'
+10120 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.ParameterOptimizerState'
+10121 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.PropertyBag'
+10123 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.RuntimeOptimizationRecord'
+10125 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.RuntimeOptimizationRecordContainerEntry'
+10126 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.RuntimeOptimizations'
+10127 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.SequenceType'
+10128 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Shape'
+10129 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.SparseTensor'
+10130 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.StringProperty'
+10131 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.StringStringEntry'
+10132 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Tensor'
+10134 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.TensorDataType'
+10135 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.TensorTypeAndShape'
+10135 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.TypeInfo'
+10136 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.TypeInfoValue'
+10137 INFO: Analyzing hidden import 'onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.ValueInfo'
+10138 INFO: Analyzing hidden import 'onnxruntime.tools.pytorch_export_contrib_ops'
+10139 INFO: Analyzing hidden import 'onnxruntime.tools.qdq_helpers'
+10140 INFO: Analyzing hidden import 'onnxruntime.tools.qdq_helpers.optimize_qdq_model'
+10140 INFO: Analyzing hidden import 'onnxruntime.tools.reduced_build_config_parser'
+10142 INFO: Analyzing hidden import 'onnxruntime.tools.remove_initializer_from_input'
+10142 INFO: Analyzing hidden import 'onnxruntime.tools.symbolic_shape_infer'
+10683 INFO: Processing standard module hook 'hook-py.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+10793 INFO: Processing standard module hook 'hook-pygments.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+17 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+11172 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11172 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+11174 INFO: Processing standard module hook 'hook-setuptools.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11178 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11189 INFO: Processing pre-safe-import-module hook 'hook-jaraco.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11189 INFO: Setuptools: 'jaraco' appears to be a full setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco'!
+11193 INFO: Processing pre-safe-import-module hook 'hook-more_itertools.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11193 INFO: Setuptools: 'more_itertools' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.more_itertools'!
+11294 INFO: Processing standard module hook 'hook-setuptools._vendor.jaraco.text.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11295 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11298 INFO: Processing pre-safe-import-module hook 'hook-backports.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11298 INFO: Setuptools: 'backports' appears to be a full setuptools-vendored copy - creating alias to 'setuptools._vendor.backports'!
+11354 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11354 INFO: Setuptools: 'importlib_metadata' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.importlib_metadata'!
+11363 INFO: Processing standard module hook 'hook-setuptools._vendor.importlib_metadata.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11370 INFO: Processing pre-safe-import-module hook 'hook-zipp.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11370 INFO: Setuptools: 'zipp' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.zipp'!
+11623 INFO: Processing pre-safe-import-module hook 'hook-wheel.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11623 INFO: Setuptools: 'wheel' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.wheel'!
+15994 INFO: Analyzing hidden import 'onnxruntime.tools.update_onnx_opset'
+15995 INFO: Analyzing hidden import 'onnxruntime.transformers.affinity_helper'
+15995 INFO: Analyzing hidden import 'onnxruntime.transformers.benchmark'
+16004 INFO: Analyzing hidden import 'onnxruntime.transformers.benchmark_helper'
+16011 INFO: Analyzing hidden import 'onnxruntime.transformers.bert_perf_test'
+16018 INFO: Analyzing hidden import 'onnxruntime.transformers.bert_test_data'
+16023 INFO: Analyzing hidden import 'onnxruntime.transformers.compare_bert_results'
+16025 INFO: Analyzing hidden import 'onnxruntime.transformers.constants'
+16026 INFO: Analyzing hidden import 'onnxruntime.transformers.convert_generation'
+16087 INFO: Analyzing hidden import 'onnxruntime.transformers.convert_tf_models_to_pytorch'
+16089 INFO: Analyzing hidden import 'onnxruntime.transformers.convert_to_packing_mode'
+16094 INFO: Analyzing hidden import 'onnxruntime.transformers.dynamo_onnx_helper'
+16097 INFO: Analyzing hidden import 'onnxruntime.transformers.float16'
+16103 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_attention'
+16116 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_attention_clip'
+16119 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_attention_sam2'
+16124 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_attention_unet'
+16137 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_attention_vae'
+16140 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_bart_attention'
+16145 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_base'
+16147 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_bias_add'
+16148 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_biasgelu'
+16148 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_biassplitgelu'
+16150 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_conformer_attention'
+16152 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_constant_fold'
+16153 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_embedlayer'
+16161 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_fastgelu'
+16166 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_gelu'
+16168 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_gelu_approximation'
+16169 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_gemmfastgelu'
+16170 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_gpt_attention'
+16175 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_gpt_attention_megatron'
+16179 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_gpt_attention_no_past'
+16181 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_group_norm'
+16183 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_layernorm'
+16188 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_mha_mmdit'
+16193 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_nhwc_conv'
+16195 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_options'
+16197 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_qordered_attention'
+16201 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_qordered_gelu'
+16202 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_qordered_layernorm'
+16204 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_qordered_matmul'
+16205 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_quickgelu'
+16206 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_reshape'
+16208 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_rotary_attention'
+16223 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_shape'
+16225 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_simplified_layernorm'
+16226 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_skip_group_norm'
+16229 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_skiplayernorm'
+16231 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_transpose'
+16233 INFO: Analyzing hidden import 'onnxruntime.transformers.fusion_utils'
+16237 INFO: Analyzing hidden import 'onnxruntime.transformers.huggingface_models'
+16238 INFO: Analyzing hidden import 'onnxruntime.transformers.import_utils'
+16238 INFO: Analyzing hidden import 'onnxruntime.transformers.io_binding_helper'
+16244 INFO: Analyzing hidden import 'onnxruntime.transformers.large_model_exporter'
+16249 INFO: Analyzing hidden import 'onnxruntime.transformers.metrics'
+16251 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_exporter'
+16258 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model'
+16277 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_bart'
+16279 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_bert'
+16285 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_bert_keras'
+16290 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_bert_tf'
+16297 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_clip'
+16297 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_conformer'
+16298 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_gpt2'
+16299 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_mmdit'
+16335 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_phi'
+16346 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_sam2'
+16348 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_t5'
+16357 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_tnlr'
+16359 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_unet'
+16362 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_model_vae'
+16363 INFO: Analyzing hidden import 'onnxruntime.transformers.onnx_utils'
+16364 INFO: Analyzing hidden import 'onnxruntime.transformers.optimizer'
+16369 INFO: Analyzing hidden import 'onnxruntime.transformers.past_helper'
+16370 INFO: Analyzing hidden import 'onnxruntime.transformers.profile_result_processor'
+16374 INFO: Analyzing hidden import 'onnxruntime.transformers.profiler'
+16377 INFO: Analyzing hidden import 'onnxruntime.transformers.quantize_helper'
+16544 INFO: Analyzing hidden import 'onnxruntime.transformers.shape_infer_helper'
+16546 INFO: Analyzing hidden import 'onnxruntime.transformers.shape_optimizer'
+16550 INFO: Analyzing hidden import 'onnxruntime.transformers.torch_onnx_export_helper'
+16551 INFO: Processing module hooks (post-graph stage)...
+16773 INFO: Processing standard module hook 'hook-skimage.transform.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+16912 INFO: Processing standard module hook 'hook-skimage.restoration.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+17 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+17051 INFO: Processing standard module hook 'hook-skimage.feature.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+17266 INFO: Processing standard module hook 'hook-skimage.color.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+17464 INFO: Processing standard module hook 'hook-skimage.metrics.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+17650 WARNING: Hidden import "scipy._lib.array_api_compat.numpy.fft" not found!
+17653 WARNING: Hidden import "scipy.special._cdflib" not found!
+17653 INFO: Processing standard module hook 'hook-_tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+17892 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+17932 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+18746 INFO: Performing binary vs. data reclassification (494 entries)
+18774 INFO: Looking for ctypes DLLs
+18837 INFO: Analyzing run-time hooks ...
+18841 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+18843 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+18844 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+18845 INFO: Including run-time hook 'pyi_rth_setuptools.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+18845 INFO: Including run-time hook 'pyi_rth_pyside6.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+18846 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_find_module_path'
+18846 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+18847 INFO: Including run-time hook 'pyi_rth__tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+18863 INFO: Creating base_library.zip...
+18871 INFO: Looking for dynamic libraries
+19364 INFO: Warnings written to /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/build/frozen_probe/warn-frozen_probe.txt
+19404 INFO: Graph cross-reference written to /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/build/frozen_probe/xref-frozen_probe.html
+19554 INFO: checking PYZ
+19554 INFO: Building PYZ because PYZ-00.toc is non existent
+19554 INFO: Building PYZ (ZlibArchive) /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/build/frozen_probe/PYZ-00.pyz
+20864 INFO: Building PYZ (ZlibArchive) /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/build/frozen_probe/PYZ-00.pyz completed successfully.
+20879 INFO: EXE target arch: arm64
+20879 INFO: Code signing identity: None
+20880 INFO: checking PKG
+20880 INFO: Building PKG because PKG-00.toc is non existent
+20880 INFO: Building PKG (CArchive) fdm-magic-roi-probe.pkg
+20889 INFO: Building PKG (CArchive) fdm-magic-roi-probe.pkg completed successfully.
+20889 INFO: Bootloader /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/bootloader/Darwin-64bit/run
+20889 INFO: checking EXE
+20889 INFO: Building EXE because EXE-00.toc is non existent
+20889 INFO: Building EXE from EXE-00.toc
+20889 INFO: Copying bootloader EXE to /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/build/frozen_probe/fdm-magic-roi-probe
+20889 INFO: Converting EXE to target arch (arm64)
+20907 INFO: Removing signature(s) from EXE
+20918 INFO: Modifying Mach-O image UUID(s) in EXE
+20928 INFO: Appending PKG archive to EXE
+20931 INFO: Fixing EXE headers for code signing
+20933 INFO: Rewriting the executable's macOS SDK version (15.5.0) to match the SDK version of the Python library (12.1.0) in order to avoid inconsistent behavior and potential UI issues in the frozen application.
+20933 INFO: Re-signing the EXE
+20959 INFO: Building EXE from EXE-00.toc completed successfully.
+20963 INFO: checking COLLECT
+20963 INFO: Building COLLECT because COLLECT-00.toc is non existent
+20963 INFO: Removing dir /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/dist/fdm-magic-roi-probe
+21013 INFO: Building COLLECT COLLECT-00.toc
+33284 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+33289 INFO: Build complete! The results are available in: /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/magic-roi-frozen/dist

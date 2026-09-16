@@ -1,0 +1,40 @@
+{
+  "platform": "macOS ARM64; not Windows installer acceptance",
+  "pyinstaller_version": "6.19.0",
+  "build_command": "uv run --no-sync pyinstaller --noconfirm --clean --distpath .tmp/magic-roi-frozen/dist --workpath .tmp/magic-roi-frozen/build docs/research/magic-roi-performance-2026-09-16/frozen_probe.spec",
+  "probe_command": "QT_QPA_PLATFORM=offscreen .tmp/magic-roi-frozen/dist/fdm-magic-roi-probe/fdm-magic-roi-probe",
+  "build_exit_code": 0,
+  "probe_exit_code": 0,
+  "build_completed_at": "2026-09-16T05:19:48.653166+00:00",
+  "source_service_sha256": "ca062e4ade03753f0f94b759d10f264d733d0d822e8d273140ac4cac81e0c194",
+  "model_files": [
+    {
+      "file": "runtime/segment-anything/edge_sam/edge_sam_encoder.onnx",
+      "bytes": 22036245,
+      "sha256": "8d35ad4c6618f8a0ee9bade08920e266759e3f33fe15cb2d2b3655359e3fad26",
+      "packaged_hash_equal": true
+    },
+    {
+      "file": "runtime/segment-anything/edge_sam/edge_sam_decoder.onnx",
+      "bytes": 18641271,
+      "sha256": "bb4eb4f915ad63ef48a5903a1f0db3019bc7055c17076feffe857f5e17bc59b6",
+      "packaged_hash_equal": true
+    },
+    {
+      "file": "runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx",
+      "bytes": 22098300,
+      "sha256": "719a498cf5b3fe9be9f01ee513e13d3915f9028aa4f23dfd30eaaa0a17143159",
+      "packaged_hash_equal": true
+    },
+    {
+      "file": "runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx",
+      "bytes": 15937006,
+      "sha256": "83a2174d54571596913dcb7455d021e713623c3dca30a31c8c41ab98c9fb0863",
+      "packaged_hash_equal": true
+    }
+  ],
+  "frozen_probe": true,
+  "windows_onedir": "not_run",
+  "windows_installer": "not_run",
+  "target_windows_performance": "not_run"
+}

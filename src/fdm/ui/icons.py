@@ -54,6 +54,8 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "magic_segment": "fa5s.magic",
     "polygon_area": "mdi6.draw-polygon",
     "freehand_area": "mdi6.draw",
+    "mask_erase": "fa5s.eraser",
+    "polygon_subtract": "mdi6.vector-difference",
     "calibration": "mdi6.ruler",
     "overlay_rect": "mdi6.rectangle-outline",
     "overlay_circle": "mdi6.circle-outline",
@@ -264,6 +266,20 @@ def _draw_area_auto(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.setPen(_pen(QColor("#0B0B0B"), 1.6))
     painter.drawLine(QPointF(rect.center().x(), rect.top() + 3.0), QPointF(rect.center().x(), rect.top() + 8.0))
     painter.drawLine(QPointF(rect.center().x() - 2.5, rect.top() + 5.5), QPointF(rect.center().x() + 2.5, rect.top() + 5.5))
+
+
+def _draw_mask_erase(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 1.5))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    points = [QPointF(rect.left()+rect.width()*x, rect.top()+rect.height()*y) for x, y in ((.08, .62), (.57, .1), (.92, .43), (.5, .9), (.33, .9))]
+    painter.drawPolygon(QPolygonF(points))
+    painter.drawLine(QPointF(rect.left()+rect.width()*.3, rect.top()+rect.height()*.39), QPointF(rect.left()+rect.width()*.68, rect.top()+rect.height()*.7))
+
+
+def _draw_polygon_subtract(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    _draw_polygon_area(painter, color, rect.adjusted(0, 0, -3, -3))
+    painter.setPen(_pen(color, 2.2))
+    painter.drawLine(QPointF(rect.center().x(), rect.bottom()-1), QPointF(rect.right(), rect.bottom()-1))
 
 
 def _draw_magic_segment(painter: QPainter, color: QColor, rect: QRectF) -> None:
@@ -540,6 +556,8 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "magic_segment": _draw_magic_segment,
     "polygon_area": _draw_polygon_area,
     "freehand_area": _draw_freehand_area,
+    "mask_erase": _draw_mask_erase,
+    "polygon_subtract": _draw_polygon_subtract,
     "calibration": _draw_calibration,
     "area_auto": _draw_area_auto,
     "open_images": _draw_images,

@@ -1,0 +1,35 @@
+{
+  "missing_contracts": [
+    {
+      "file": "src/fdm/ui/contour_comparison_dialog.py",
+      "line": 1243,
+      "file_equals_HEAD": true
+    },
+    {
+      "file": "src/fdm/services/contour_comparison.py",
+      "line": 480,
+      "file_equals_HEAD": true
+    },
+    {
+      "file": "src/fdm/services/contour_comparison.py",
+      "line": 480,
+      "file_equals_HEAD": true
+    },
+    {
+      "file": "src/fdm/services/contour_comparison.py",
+      "line": 480,
+      "file_equals_HEAD": true
+    },
+    {
+      "file": "scripts/benchmark_contour_comparison.py",
+      "line": 68,
+      "file_equals_HEAD": true
+    },
+    {
+      "file": "scripts/benchmark_contour_comparison.py",
+      "line": 66,
+      "file_equals_HEAD": true
+    }
+  ],
+  "all_preexisting": true
+}

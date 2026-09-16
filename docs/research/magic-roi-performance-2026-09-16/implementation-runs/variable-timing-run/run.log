@@ -1,0 +1,174 @@
+{"version": "baseline", "scenario": "new_roi", "p50_ms": 806.4188540010946, "p95_ms": 938.3275955042336, "encoder_calls": 30, "peak_cache_bytes": 16777216, "peak_sampled_rss_bytes": 867909632}
+{"version": "baseline", "scenario": "same_roi", "p50_ms": 128.69987549856887, "p95_ms": 152.0258331507648, "encoder_calls": 0, "peak_cache_bytes": 4194304, "peak_sampled_rss_bytes": 870957056}
+{"version": "baseline", "scenario": "continuous_prompts", "p50_ms": 95.15741650102427, "p95_ms": 98.6716916984733, "encoder_calls": 30, "peak_cache_bytes": 16777216, "peak_sampled_rss_bytes": 882753536}
+{"version": "baseline", "scenario": "expanded_repeat", "p50_ms": 447.02806250279536, "p95_ms": 453.8604647037573, "encoder_calls": 150, "peak_cache_bytes": 16777216, "peak_sampled_rss_bytes": 999636992}
+{"version": "baseline", "scenario": "edge_target", "p50_ms": 16.577437498199288, "p95_ms": 17.537550001361524, "encoder_calls": 0, "peak_cache_bytes": 4194304, "peak_sampled_rss_bytes": 1004191744}
+{"version": "baseline", "scenario": "large_image", "p50_ms": 107.05468750165892, "p95_ms": 133.4708918511751, "encoder_calls": 30, "peak_cache_bytes": 16777216, "peak_sampled_rss_bytes": 1244217344}
+{"version": "current", "scenario": "new_roi", "p50_ms": 102.53143800218822, "p95_ms": 104.48283559708216, "encoder_calls": 30, "peak_cache_bytes": 33554432, "peak_sampled_rss_bytes": 846577664}
+{"version": "current", "scenario": "same_roi", "p50_ms": 16.022812997107394, "p95_ms": 17.252354202355487, "encoder_calls": 0, "peak_cache_bytes": 4194304, "peak_sampled_rss_bytes": 859144192}
+{"version": "current", "scenario": "continuous_prompts", "p50_ms": 17.1530840016203, "p95_ms": 19.221810601084144, "encoder_calls": 0, "peak_cache_bytes": 4194304, "peak_sampled_rss_bytes": 863944704}
+{"version": "current", "scenario": "expanded_repeat", "p50_ms": 38.54395850066794, "p95_ms": 40.50213139780681, "encoder_calls": 0, "peak_cache_bytes": 16777216, "peak_sampled_rss_bytes": 973520896}
+{"version": "current", "scenario": "edge_target", "p50_ms": 20.250166999176145, "p95_ms": 22.282599698155536, "encoder_calls": 0, "peak_cache_bytes": 4194304, "peak_sampled_rss_bytes": 978288640}
+{"version": "current", "scenario": "large_image", "p50_ms": 155.18770850030705, "p95_ms": 165.82463954691775, "encoder_calls": 30, "peak_cache_bytes": 33554432, "peak_sampled_rss_bytes": 1146519552}
+{
+  "baseline_ref": "d9a0dd7",
+  "comparison": {
+    "new_roi": {
+      "p50_reduction_percent": 87.28558521499437,
+      "p95_change_percent": -88.86499383608816
+    },
+    "same_roi": {
+      "p50_reduction_percent": 87.55024980790634,
+      "p95_change_percent": -88.65169567250703
+    },
+    "continuous_prompts": {
+      "p50_reduction_percent": 81.97399148448334,
+      "p95_change_percent": -80.51942733502202
+    },
+    "expanded_repeat": {
+      "p50_reduction_percent": 91.37773179498616,
+      "p95_change_percent": -91.0760829489206
+    },
+    "edge_target": {
+      "p50_reduction_percent": -22.154989282124006,
+      "p95_change_percent": 27.056514144938326
+    },
+    "large_image": {
+      "p50_reduction_percent": -44.961152212883974,
+      "p95_change_percent": 24.24030232136176
+    }
+  },
+  "quality": {
+    "circle": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 6318,
+        "new_area": 6318,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.997158193874329,
+        "pixel_equal": false,
+        "old_area": 6328,
+        "new_area": 6322,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9973160719924219,
+        "pixel_equal": false,
+        "old_area": 6329,
+        "new_area": 6322,
+        "old_rings": 1,
+        "new_rings": 1
+      }
+    ],
+    "hole": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 5480,
+        "new_area": 5480,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9920174165457184,
+        "pixel_equal": false,
+        "old_area": 5489,
+        "new_area": 5491,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 0.9987270412802328,
+        "pixel_equal": false,
+        "old_area": 5495,
+        "new_area": 5496,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ],
+    "microscopy_fragment": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 2414,
+        "new_area": 2414,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.9941348973607038,
+        "pixel_equal": false,
+        "old_area": 2380,
+        "new_area": 2380,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 0.974241794765268,
+        "pixel_equal": false,
+        "old_area": 2356,
+        "new_area": 2396,
+        "old_rings": 1,
+        "new_rings": 1
+      }
+    ],
+    "microscopy_background_gap": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 30122,
+        "new_area": 30122,
+        "old_rings": 8,
+        "new_rings": 8
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 31593,
+        "new_area": 31593,
+        "old_rings": 2,
+        "new_rings": 2
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 32233,
+        "new_area": 32233,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ],
+    "microscopy_fiber": [
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11188,
+        "new_area": 11188,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11292,
+        "new_area": 11292,
+        "old_rings": 1,
+        "new_rings": 1
+      },
+      {
+        "iou": 1.0,
+        "pixel_equal": true,
+        "old_area": 11257,
+        "new_area": 11257,
+        "old_rings": 2,
+        "new_rings": 2
+      }
+    ]
+  },
+  "fixed_crop_pixel_equal": true
+}

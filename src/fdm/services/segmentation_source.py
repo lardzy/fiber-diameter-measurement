@@ -22,6 +22,28 @@ def _qimage_content_version(image: QImage) -> str:
     return f"sha256:{digest.hexdigest()}"
 
 
+class ImageSourceVersionCache:
+    """One content digest per live document/QImage revision; retain no pixels."""
+
+    def __init__(self) -> None:
+        self._versions: dict[str, tuple[tuple[int, ...], str]] = {}
+
+    def version(self, document_id: str, image: QImage) -> str:
+        key = (int(image.cacheKey()), image.width(), image.height(), image.format().value)
+        existing = self._versions.get(document_id)
+        if existing is not None and existing[0] == key:
+            return existing[1]
+        version = _qimage_content_version(image)
+        self._versions[document_id] = (key, version)
+        return version
+
+    def discard(self, document_id: str) -> None:
+        self._versions.pop(document_id, None)
+
+    def clear(self) -> None:
+        self._versions.clear()
+
+
 @dataclass(frozen=True, slots=True)
 class SegmentationSourceSnapshot:
     """Immutable, native-pixel input used by interactive segmentation.

@@ -1,0 +1,44 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_production_json_serialization_explicitly_rejects_non_finite_values ____
+
+    def test_production_json_serialization_explicitly_rejects_non_finite_values() -> None:
+        project_root = Path(__file__).resolve().parents[1]
+        paths = [
+            *(project_root / "src" / "fdm").rglob("*.py"),
+            *(project_root / "runtime" / "area-infer" / "app").rglob("*.py"),
+            *(project_root / "scripts").glob("*.py"),
+        ]
+        missing_contract: list[str] = []
+        for path in paths:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for call in (
+                node
+                for node in ast.walk(tree)
+                if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "json"
+                and node.func.attr in {"dump", "dumps"}
+            ):
+                allow_nan = next(
+                    (keyword.value for keyword in call.keywords if keyword.arg == "allow_nan"),
+                    None,
+                )
+                if not (
+                    isinstance(allow_nan, ast.Constant)
+                    and allow_nan.value is False
+                ):
+                    relative = path.relative_to(project_root).as_posix()
+                    missing_contract.append(f"{relative}:{call.lineno}")
+
+>       assert missing_contract == []
+E       AssertionError: assert ['src/fdm/ui/...arison.py:66'] == []
+E
+E         Left contains 6 more items, first extra item: 'src/fdm/ui/contour_comparison_dialog.py:957'
+E         Use -v to get more diff
+
+tests/test_atomic_io.py:49: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_atomic_io.py::test_production_json_serialization_explicitly_rejects_non_finite_values
+1 failed in 9.03s

@@ -21,6 +21,7 @@ from build_support import write_release_manifest
 from fdm import app
 from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.release_manifest import (
+    _probe_fiber_quick_geometry,
     _probe_analysis_pipeline,
     _probe_image_processing_pipeline,
     _probe_pillow_raster_encoders,
@@ -107,6 +108,26 @@ def _successful_tifffile_probe() -> dict[str, object]:
 
 
 class ReleaseSelfCheckTests(unittest.TestCase):
+    def test_compiled_quick_diameter_probe_runs_real_geometry(self) -> None:
+        result = _probe_fiber_quick_geometry()
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(result["compiled_extension"])
+        self.assertTrue(result["skeleton_connected"])
+        self.assertEqual(result["backend"], "skimage_zhang")
+        self.assertEqual(set(result["cases"]), {"straight", "diagonal", "cross", "short_fiber", "near_border", "extended", "shrunk"})
+        self.assertEqual(result["geometry_revision"], 3)
+        self.assertAlmostEqual(result["cases"]["extended"]["width_px"], result["cases"]["straight"]["width_px"] + 7.0)
+        self.assertAlmostEqual(result["cases"]["shrunk"]["width_px"], result["cases"]["straight"]["width_px"] - 7.0)
+        self.assertEqual(result["incomplete_boundary_rejection"], {"ok": True, "failure_code": "incomplete_boundary"})
+
+    def test_quick_diameter_failure_fails_the_release_self_check(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir), profile="core")
+            with patch("fdm.release_manifest._probe_fiber_quick_geometry", side_effect=ImportError("missing skeleton .pyd")):
+                result = run_release_self_check(app_dir)
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("quick diameter self-check failed" in error for error in result["errors"]))
+
     def test_windows_overlay_probe_is_required_without_area_models(self) -> None:
         for profile in ("core", "full"):
             with self.subTest(profile=profile):

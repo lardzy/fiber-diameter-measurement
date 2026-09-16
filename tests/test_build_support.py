@@ -203,7 +203,7 @@ class BuildSupportTests(unittest.TestCase):
         full_profile = resolve_runtime_profile(PROJECT_ROOT, "full")
         self.assertEqual(
             core_profile.required_python_modules,
-            ("numpy", "cv2", "PIL", "openpyxl", "tifffile"),
+            ("numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy"),
         )
         self.assertEqual(
             full_profile.required_python_modules,
@@ -213,6 +213,8 @@ class BuildSupportTests(unittest.TestCase):
                 "PIL",
                 "openpyxl",
                 "tifffile",
+                "skimage",
+                "scipy",
                 "onnxruntime",
                 "torch",
                 "torchvision",

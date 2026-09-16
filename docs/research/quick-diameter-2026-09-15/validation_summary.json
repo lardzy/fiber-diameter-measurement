@@ -1,0 +1,35 @@
+{
+  "baseline_commit": "80b8c3bb3ecf1f8f92401e160f981454c8799b63",
+  "full_suite": {
+    "passed": 2845,
+    "failed": 1,
+    "subtests_passed": 1497,
+    "elapsed_seconds": 388.79,
+    "command": "QT_QPA_PLATFORM=offscreen uv run --no-sync python -B -m pytest -q -p no:cacheprovider --durations=10",
+    "failure": "tests/test_atomic_io.py::test_production_json_serialization_explicitly_rejects_non_finite_values",
+    "unchanged_failure_sources": [
+      {
+        "path": "src/fdm/ui/contour_comparison_dialog.py",
+        "unchanged_from_head": true
+      },
+      {
+        "path": "src/fdm/services/contour_comparison.py",
+        "unchanged_from_head": true
+      },
+      {
+        "path": "scripts/benchmark_contour_comparison.py",
+        "unchanged_from_head": true
+      }
+    ]
+  },
+  "frozen_probe": {
+    "platform": "macOS ARM64",
+    "scikit_image": "0.26.0",
+    "scipy": "1.18.1",
+    "pyinstaller": "6.19.0",
+    "ok": true,
+    "result_file": "frozen_result.json"
+  },
+  "scipy_1_17_1_probe": "not completed: PyPI wheel metadata download timed out",
+  "windows_installer": "not built or installed on a Windows machine in this session"
+}

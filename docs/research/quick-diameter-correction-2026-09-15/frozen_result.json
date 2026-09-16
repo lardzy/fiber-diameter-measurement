@@ -1,0 +1,57 @@
+{
+  "ok": true,
+  "backend": "skimage_zhang",
+  "geometry_revision": 3,
+  "backend_version": "0.26.0",
+  "compiled_extension": true,
+  "skeleton_connected": true,
+  "cases": {
+    "straight": {
+      "ok": true,
+      "width_px": 39.0,
+      "geometry_ms": 4.7416670131497085
+    },
+    "diagonal": {
+      "ok": true,
+      "width_px": 24.000000000000007,
+      "geometry_ms": 5.219208018388599
+    },
+    "cross": {
+      "ok": true,
+      "width_px": 40.0,
+      "geometry_ms": 6.054750003386289
+    },
+    "short_fiber": {
+      "ok": true,
+      "width_px": 14.999999999999998,
+      "geometry_ms": 1.1696250003296882
+    },
+    "near_border": {
+      "ok": true,
+      "width_px": 39.0,
+      "geometry_ms": 3.3107500057667494
+    },
+    "extended": {
+      "ok": true,
+      "width_px": 46.0,
+      "correction_per_endpoint_px": 3.5,
+      "geometry_ms": 3.442499990342185
+    },
+    "shrunk": {
+      "ok": true,
+      "width_px": 32.0,
+      "correction_per_endpoint_px": -3.5,
+      "geometry_ms": 3.1985420209821314
+    }
+  },
+  "incomplete_boundary_rejection": {
+    "ok": true,
+    "failure_code": "incomplete_boundary"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "frozen": true,
+  "extension_in_bundle": true,
+  "extension": "/private/tmp/fdm-quick-correction-frozen-20260915/dist/fdm-quick-geometry-probe/_internal/skimage/morphology/_skeletonize_various_cy.cpython-313-darwin.so",
+  "stdio_none": true,
+  "probe_process_elapsed_ms": 54566.696833004244
+}

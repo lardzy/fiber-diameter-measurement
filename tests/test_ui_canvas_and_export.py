@@ -47,6 +47,7 @@ from fdm.services.digital_slide_cache import DigitalSlideSessionCache
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore, DigitalSlideTile
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryWorker
 from fdm.services.motion_control import AXIS_X, AXIS_Y, AXIS_Z, DIR_NEG, DIR_POS, MotionShutdownResult
 from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
 from fdm.services.prompt_segmentation import PromptSegmentationResult
@@ -8018,6 +8019,13 @@ class CanvasAndExportTests(unittest.TestCase):
             document.initialize_runtime_state()
 
             self._load_document_into_window(window, document, image)
+            document.calibration = Calibration("manual", 2.0, "um", "test")
+            dialog = SettingsDialog(window._app_settings, document=document)
+            try:
+                dialog._fiber_quick_line_extension_spin.setValue(3.5)
+                window._activate_app_settings(dialog.app_settings())
+            finally:
+                dialog.close()
             canvas = window.current_canvas()
             self.assertIsNotNone(canvas)
             window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
@@ -8060,7 +8068,19 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 1)
             self.assertEqual(fake_worker.requested.payload.timeout_ms, DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS)
+            self.assertEqual(fake_worker.requested.payload.line_extension_px, 3.5)
             self.assertIn("正在异步计算直径线", window.statusBar().currentMessage())
+            worker = FiberQuickGeometryWorker()
+            worker.succeeded.connect(window._on_fiber_quick_geometry_succeeded)
+            worker.measure(fake_worker.requested.payload)
+            self.assertIsNotNone(canvas._fiber_quick.preview_line)
+            self.assertTrue(window._commit_fiber_quick_preview())
+            self.assertEqual(len(document.measurements), 1)
+            measurement = document.measurements[0]
+            self.assertAlmostEqual(measurement.diameter_px, 83.0 + 7.0)
+            self.assertAlmostEqual(measurement.diameter_unit, 45.0)
+            self.assertAlmostEqual(measurement.debug_payload["uncorrected_diameter_px"], 83.0)
+            self.assertAlmostEqual(measurement.debug_payload["diameter_correction_px"], 7.0)
         finally:
             window._reset_workspace()
             window.close()
@@ -8078,6 +8098,13 @@ class CanvasAndExportTests(unittest.TestCase):
             document.initialize_runtime_state()
 
             self._load_document_into_window(window, document, image)
+            document.calibration = Calibration("manual", 2.0, "um", "test")
+            dialog = SettingsDialog(window._app_settings, document=document)
+            try:
+                dialog._fiber_quick_line_extension_spin.setValue(-3.5)
+                window._activate_app_settings(dialog.app_settings())
+            finally:
+                dialog.close()
             canvas = window.current_canvas()
             self.assertIsNotNone(canvas)
             window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
@@ -8117,23 +8144,17 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(fake_worker.requests, [(document.id, 1)])
             self.assertIsNotNone(fake_worker.requested.payload)
             self.assertEqual(fake_worker.requested.payload.timeout_ms, DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS)
+            self.assertEqual(fake_worker.requested.payload.line_extension_px, -3.5)
 
-            window._on_fiber_quick_commit_geometry_succeeded(
-                document.id,
-                1,
-                type(
-                    "Result",
-                    (),
-                    {
-                        "line_px": Line(Point(60, 40), Point(92, 40)),
-                        "confidence": 0.9,
-                        "debug_payload": {},
-                    },
-                )(),
-            )
+            worker = FiberQuickGeometryWorker(coalesce_latest=False)
+            worker.succeeded.connect(window._on_fiber_quick_commit_geometry_succeeded)
+            worker.measure(fake_worker.requested.payload)
 
             self.assertEqual(len(document.measurements), 1)
             self.assertEqual(document.measurements[0].mode, "fiber_quick")
+            self.assertAlmostEqual(document.measurements[0].diameter_px, 59.0 - 7.0)
+            self.assertAlmostEqual(document.measurements[0].diameter_unit, 26.0)
+            self.assertAlmostEqual(document.measurements[0].debug_payload["diameter_correction_px"], -7.0)
         finally:
             window._reset_workspace()
             window.close()

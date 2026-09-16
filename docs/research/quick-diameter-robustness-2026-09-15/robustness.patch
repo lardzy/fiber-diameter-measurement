@@ -1,0 +1,390 @@
+--- a/src/fdm/services/fiber_quick_geometry.py
++++ b/src/fdm/services/fiber_quick_geometry.py
+@@ -19,0 +20,10 @@
++FIBER_QUICK_GEOMETRY_REVISION = 2
++
++
++class FiberQuickGeometryError(RuntimeError):
++    """An actionable message plus machine-readable reasons for diagnostics."""
++
++    def __init__(self, code: str, message: str, debug_payload: dict[str, object]) -> None:
++        super().__init__(message)
++        self.code = code
++        self.debug_payload = {**debug_payload, "failure_code": code}
+@@ -66,0 +77,10 @@
++        diagnostics: dict[str, object] = {
++            "skeleton_backend": FIBER_QUICK_SKELETON_BACKEND,
++            "geometry_revision": FIBER_QUICK_GEOMETRY_REVISION,
++        }
++
++        def fail(code: str, message: str) -> None:
++            raise FiberQuickGeometryError(
++                code, message, {**diagnostics, "geometry_ms": (perf_counter() - started_at) * 1000.0}
++            )
++
+@@ -70 +90 @@
+-            raise RuntimeError("未找到目标纤维区域。")
++            fail("empty_mask", "未找到目标纤维区域，请重新选择目标。")
+@@ -71,0 +92 @@
++        untrimmed_mask = prepared_mask
+@@ -79,0 +101,16 @@
++        # Trimming may create an artificial boundary inside the image. Record
++        # exactly which strips lost foreground so those edges cannot be measured.
++        clipped_sides = (False, False, False, False)
++        if trimmed_pixels:
++            clipped_sides = (
++                bool(np.any(untrimmed_mask[:, 0])),
++                bool(np.any(untrimmed_mask[0, :])),
++                bool(np.any(untrimmed_mask[:, -1])),
++                bool(np.any(untrimmed_mask[-1, :])),
++            )
++        diagnostics.update(
++            edge_trim_enabled=bool(edge_trim_enabled),
++            edge_trim_pixels=int(trimmed_pixels),
++            edge_trim_band_px=int(border_band_px),
++            clipped_sides=clipped_sides,
++        )
+@@ -94 +131 @@
+-            raise RuntimeError("未找到目标纤维区域。")
++            fail("empty_after_cleanup", "区域清理后没有可用纤维，请补点选择更完整的目标。")
+@@ -96,2 +133,3 @@
+-        if len(xs) < 64:
+-            raise RuntimeError("未找到可靠直径线。")
++        diagnostics["component_area_px"] = int(len(xs))
++        if len(xs) < 32:
++            fail("target_too_small", "目标区域过小，无法稳定测径，请选择更完整的纤维。")
+@@ -103,4 +141,3 @@
+-        if min(bbox_width, bbox_height) < 6:
+-            raise RuntimeError("未找到可靠直径线。")
+-        bbox_area = bbox_width * bbox_height
+-        bbox_area_ratio = bbox_area / image_area
++        diagnostics["bbox_size"] = (bbox_width, bbox_height)
++        if min(bbox_width, bbox_height) < 3:
++            fail("target_too_thin", "纤维的像素宽度不足，请使用更高分辨率的图像。")
+@@ -108,7 +145,4 @@
+-        bbox_long_ratio = max(bbox_width, bbox_height) / max(image_h, image_w)
+-        if (
+-            bbox_area_ratio >= 0.70
+-            or mask_area_ratio >= 0.40
+-            or bbox_long_ratio >= 0.97
+-        ):
+-            raise RuntimeError("目标分割范围过大。")
++        # A long or diagonal fiber can occupy nearly the entire bounding box
++        # while its foreground area is small. Judge actual foreground coverage.
++        if mask_area_ratio >= 0.40:
++            fail("target_too_large", "目标分割范围过大，请补点排除背景或相邻纤维。")
+@@ -143 +176,0 @@
+-        direction_skeleton = _exclude_junctions(skeleton, distance_map, local_branches)
+@@ -157,9 +190,10 @@
+-        candidate_points = _select_candidate_points(
+-            skeleton=direction_skeleton,
+-            distance_map=distance_map,
+-            end_points=local_endpoints,
+-            forbidden_mask=forbidden_mask,
+-            origin=roi_origin,
+-            full_shape=selected_mask.shape[:2],
+-            scale_xy=(scale_x, scale_y),
+-            max_candidates=max_candidates,
++        rejected: dict[str, int] = {}
++        attempts: list[dict[str, object]] = []
++        diagnostics.update(
++            roi_size=(int(working_mask.shape[1]), int(working_mask.shape[0])),
++            roi_scale_xy=(scale_x, scale_y),
++            skeleton_pixels=int(np.count_nonzero(skeleton)),
++            branch_point_count=len(branch_points),
++            end_point_count=len(end_points),
++            rejection_counts=rejected,
++            geometry_attempts=attempts,
+@@ -167,5 +200,0 @@
+-        if not candidate_points:
+-            raise RuntimeError("未找到可靠直径线。")
+-        if border_seed_count > 0 and _effective_skeleton_length(skeleton, forbidden_mask=forbidden_mask) < 24:
+-            raise RuntimeError("目标在视野边缘不完整。")
+-
+@@ -173 +202,2 @@
+-        for center_x, center_y in candidate_points:
++
++        def measure(center: Point, tangent: tuple[float, float], *, strict_support: bool) -> None:
+@@ -175,8 +205,4 @@
+-            local_center = Point(float(center_x), float(center_y))
+-            tangent = _estimate_tangent(working_mask, direction_skeleton, local_center, distance_map)
+-            if tangent is None:
+-                continue
+-            center = original_point(local_center)
+-            tangent_x, tangent_y = tangent[0] * scale_x, tangent[1] * scale_y
+-            tangent_length = hypot(tangent_x, tangent_y)
+-            tangent = (tangent_x / tangent_length, tangent_y / tangent_length)
++            local_center = Point(
++                (center.x - roi_origin[0] + 0.5) / scale_x - 0.5,
++                (center.y - roi_origin[1] + 0.5) / scale_y - 0.5,
++            )
+@@ -194,0 +221,4 @@
++                rejection_counts=rejected,
++                clipped_sides=clipped_sides,
++                border_band_px=border_band_px,
++                strict_support=strict_support,
+@@ -197,0 +228,63 @@
++
++        _raise_if_cancelled(cancel_check, deadline_at)
++        compact_axis = _compact_mask_axis(roi_mask, diagnostics=diagnostics)
++
++        def measure_compact_axis() -> None:
++            if compact_axis is None:
++                return
++            center, tangent, extent = compact_axis
++            for offset in (0.0, -extent * 0.1, extent * 0.1):
++                point = Point(center.x + tangent[0] * offset + roi_origin[0], center.y + tangent[1] * offset + roi_origin[1])
++                measure(point, tangent, strict_support=True)
++
++        # A short fiber's skeleton may contain only a few stair-step pixels.
++        # Its whole-mask axis has more directional support when the shape is
++        # solid and convex; do not let that tiny skeleton overrule it.
++        method = "compact_mask_axis"
++        compact_attempted = False
++        if compact_axis is not None and float(diagnostics.get("mask_axis_aspect", 99.0)) <= 2.5:
++            compact_attempted = True
++            measure_compact_axis()
++            attempts.append({"method": method, "sampled": 3, "accepted": len(candidates)})
++        for method, junction_factor in (("skeleton", 1.5), ("local_branch", 0.9)):
++            if candidates:
++                method = str(attempts[-1]["method"])
++                break
++            if method == "local_branch" and not local_branches:
++                continue
++            direction_skeleton = _exclude_junctions(
++                skeleton, distance_map, local_branches, radius_factor=junction_factor
++            )
++            candidate_points = _select_candidate_points(
++                skeleton=direction_skeleton,
++                distance_map=distance_map,
++                end_points=local_endpoints,
++                forbidden_mask=forbidden_mask,
++                max_candidates=max_candidates,
++            )
++            attempts.append({"method": method, "sampled": len(candidate_points)})
++            for center_x, center_y in candidate_points:
++                _raise_if_cancelled(cancel_check, deadline_at)
++                local_center = Point(float(center_x), float(center_y))
++                tangent = _estimate_tangent(working_mask, direction_skeleton, local_center, distance_map)
++                if tangent is None:
++                    _record_rejection(rejected, "ambiguous_direction")
++                    continue
++                tx, ty = tangent[0] * scale_x, tangent[1] * scale_y
++                norm = hypot(tx, ty)
++                measure(original_point(local_center), (tx / norm, ty / norm), strict_support=method != "skeleton")
++            attempts[-1]["accepted"] = len(candidates)
++            if candidates:
++                break
++
++        if not candidates and not compact_attempted:
++            # Short solid fibers can have too few skeleton pixels for local PCA.
++            # Only an elongated, filled shape may use its global mask axis.
++            _raise_if_cancelled(cancel_check, deadline_at)
++            attempts.append({"method": "compact_mask_axis", "sampled": 0, "accepted": 0})
++            if compact_axis is not None:
++                method = "compact_mask_axis"
++                measure_compact_axis()
++                attempts[-1].update(sampled=3, accepted=len(candidates))
++            elif not branch_points:
++                _record_rejection(rejected, "ambiguous_direction")
+@@ -199 +292,2 @@
+-            raise RuntimeError("未找到可靠直径线。")
++            code, message = _geometry_failure_reason(rejected, len(branch_points))
++            fail(code, message)
+@@ -203 +297 @@
+-            raise RuntimeError("未找到可靠直径线。")
++            fail("low_confidence", "测量截面不够稳定，请补点选择边界更清晰的纤维段。")
+@@ -218,0 +313,2 @@
++                **diagnostics,
++                "geometry_method": method,
+@@ -248,0 +345,73 @@
++def _record_rejection(counts: dict[str, int], reason: str) -> None:
++    counts[reason] = counts.get(reason, 0) + 1
++
++
++def _geometry_failure_reason(counts: dict[str, int], branch_count: int) -> tuple[str, str]:
++    messages = {
++        "incomplete_boundary": "目标在视野边缘不完整，无法取得横截面的两侧边界，请移动视野后重试。",
++        "target_too_thin": "纤维的像素宽度不足，请使用更高分辨率的图像。",
++        "width_mismatch": "候选截面宽度异常，可能包含交叉或粘连，请补点修正分割。",
++        "unstable_width": "截面附近宽度变化过大，请选择边界更清晰的纤维段。",
++        "no_boundary": "未找到完整的两侧边界，请补点修正纤维区域。",
++        "ambiguous_direction": "目标方向不明确，请选择更完整的纤维段。",
++    }
++    if counts:
++        code = max(counts, key=counts.get)
++        return code, messages[code]
++    if branch_count:
++        return "no_usable_branch", "交叉附近没有足够的完整纤维段，请补点缩小到单根纤维。"
++    return "no_usable_skeleton", "目标没有可用的测量方向，请选择更完整的纤维段。"
++
++
++def _compact_mask_axis(mask, *, diagnostics=None) -> tuple[Point, tuple[float, float], float] | None:
++    """Use whole-mask moments only for a solid, elongated, approximately straight shape."""
++    import numpy as np
++
++    raster = mask.astype(np.uint8)
++    moments = cv2.moments(raster, binaryImage=True)
++    area = moments["m00"]
++    if area < 32:
++        return None
++    covariance = np.array([
++        [moments["mu20"], moments["mu11"]],
++        [moments["mu11"], moments["mu02"]],
++    ]) / area
++    values, vectors = np.linalg.eigh(covariance)
++    if diagnostics is not None:
++        diagnostics["mask_axis_ratio"] = float(values[-1] / max(values[0], 1e-6))
++    if values[-1] < max(1.0, values[0] * 1.35):
++        return None
++    contours, _ = cv2.findContours(raster, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
++    if len(contours) != 1:
++        return None
++    rectangle = cv2.minAreaRect(contours[0])
++    _, (width, height), _ = rectangle
++    if diagnostics is not None:
++        diagnostics["mask_axis_aspect"] = float(max(width, height) / max(1.0, min(width, height)))
++    fill_ratio = area / ((width + 1.0) * (height + 1.0))
++    concavity = cv2.contourArea(cv2.convexHull(contours[0])) - cv2.contourArea(contours[0])
++    # Stair-step digital edges have small concavities even for a rectangle.
++    # Permit that pixel-scale loss, but not a concave cross, T or bent fiber.
++    raster_tolerance = cv2.arcLength(contours[0], True) * 0.6
++    if diagnostics is not None:
++        diagnostics.update(mask_axis_fill_ratio=fill_ratio, mask_concavity_px=concavity)
++    if fill_ratio < 0.78 or concavity > max(2.0, raster_tolerance):
++        return None
++    tangent = vectors[:, -1]
++    box = cv2.boxPoints(rectangle)
++    sides = np.roll(box, -1, axis=0) - box
++    longest = sides[int(np.argmax(np.sum(sides * sides, axis=1)))]
++    alignment = abs(float(tangent @ longest)) / max(float(np.linalg.norm(longest)), 1e-6)
++    if diagnostics is not None:
++        diagnostics["mask_axis_agreement"] = alignment
++    # At very low resolution the moments and enclosing box can disagree by
++    # tens of degrees. That is insufficient evidence to recover a short fiber.
++    if alignment < 0.985:
++        return None
++    return (
++        Point(moments["m10"] / area, moments["m01"] / area),
++        (float(tangent[0]), float(tangent[1])),
++        float(max(width, height)),
++    )
++
++
+@@ -255 +424,6 @@
+-    working = np.asarray(mask, dtype=np.uint8).copy()
++    # Give morphology explicit background outside the image. Its default
++    # border extrapolation can close a small gap to the frame and falsely make
++    # an otherwise complete fiber appear clipped. Crop back afterward so a
++    # fiber that really crosses the source boundary still touches that edge.
++    padding = 6
++    working = np.pad(np.asarray(mask, dtype=np.uint8), padding, mode="constant")
+@@ -257,0 +432 @@
++    working = working[padding:-padding, padding:-padding].copy()
+@@ -280,4 +455,10 @@
+-    border_band[:band_px, :] = True
+-    border_band[-band_px:, :] = True
+-    border_band[:, :band_px] = True
+-    border_band[:, -band_px:] = True
++    # Proximity alone does not make a fiber incomplete. Only trim sides that
++    # actually touch the source image boundary.
++    if np.any(working[0, :]):
++        border_band[:band_px, :] = True
++    if np.any(working[-1, :]):
++        border_band[-band_px:, :] = True
++    if np.any(working[:, 0]):
++        border_band[:, :band_px] = True
++    if np.any(working[:, -1]):
++        border_band[:, -band_px:] = True
+@@ -378,0 +560,4 @@
++        # All arms of a short junction may be terminal. Do not collapse the
++        # whole structure into its central knot by labelling every arm a spur.
++        if int(np.count_nonzero(usable)) - len(removed) < max(6, ceil(max_length)):
++            break
+@@ -384 +569 @@
+-def _exclude_junctions(skeleton, distance_map, branch_points):
++def _exclude_junctions(skeleton, distance_map, branch_points, *, radius_factor: float = 1.5):
+@@ -390 +575 @@
+-        radius = max(4, int(ceil(_sample_image(distance_map, point) * 1.5)))
++        radius = max(2, int(ceil(_sample_image(distance_map, point) * radius_factor)))
+@@ -401,3 +585,0 @@
+-    origin: tuple[int, int],
+-    full_shape: tuple[int, int],
+-    scale_xy: tuple[float, float],
+@@ -428,8 +609,0 @@
+-    global_coords = (coords + 0.5) * np.asarray(scale_xy) - 0.5 + np.asarray(origin)
+-    clearance = np.minimum.reduce((global_coords[:, 0], global_coords[:, 1],
+-                                   full_shape[1] - 1 - global_coords[:, 0],
+-                                   full_shape[0] - 1 - global_coords[:, 1]))
+-    valid = clearance >= np.maximum(8.0, distance_map[ys, xs] * max(scale_xy) * 1.75)
+-    coords = coords[valid]
+-    if not len(coords):
+-        return []
+@@ -502,0 +677,4 @@
++    rejection_counts: dict[str, int] | None = None,
++    clipped_sides: tuple[bool, bool, bool, bool] = (False, False, False, False),
++    border_band_px: int = 0,
++    strict_support: bool = False,
+@@ -503,0 +682,4 @@
++    def reject(reason: str) -> None:
++        if rejection_counts is not None:
++            _record_rejection(rejection_counts, reason)
++
+@@ -506,0 +689,4 @@
++        reject("incomplete_boundary" if hit_image_border else "no_boundary")
++        return None
++    if _line_touches_trimmed_side(line, image_shape, clipped_sides, border_band_px):
++        reject("incomplete_boundary")
+@@ -509,0 +696 @@
++        reject("target_too_thin")
+@@ -512,0 +700 @@
++        reject("width_mismatch")
+@@ -520,2 +707,0 @@
+-    if border_clearance < max(8.0, radius * 1.75):
+-        return None
+@@ -522,0 +709,2 @@
++    if strict_support:
++        offset = max(2.0, min(radius * 0.6, 12.0))
+@@ -529 +717,4 @@
+-        if offset_line is not None and not offset_hit_border:
++        if (
++            offset_line is not None and not offset_hit_border
++            and not _line_touches_trimmed_side(offset_line, image_shape, clipped_sides, border_band_px)
++        ):
+@@ -530,0 +722,6 @@
++    if strict_support and (
++        len(sample_widths) < 3
++        or max(sample_widths) - min(sample_widths) > max(2.0, line_length_px * 0.15)
++    ):
++        reject("unstable_width")
++        return None
+@@ -545,0 +743,14 @@
++def _line_touches_trimmed_side(line, shape, clipped_sides, band_px) -> bool:
++    if not any(clipped_sides):
++        return False
++    height, width = shape
++    left, top, right, bottom = clipped_sides
++    margin = band_px + 0.5
++    return any(
++        (left and point.x <= margin) or (top and point.y <= margin)
++        or (right and point.x >= width - 1 - margin)
++        or (bottom and point.y >= height - 1 - margin)
++        for point in (line.start, line.end)
++    )
++
++
+@@ -566,0 +778 @@
++    candidates = [candidate for candidate in candidates if candidate.score >= 0.22]
+@@ -581,4 +793 @@
+-    best = ranked[0]
+-    if best.score < 0.22:
+-        return None
+-    return best
++    return ranked[0]
+@@ -784,0 +994,6 @@
++    average_width = float(mask.sum()) / long_side
++    if average_width / scale < 4.0:
++        # A long thin ROI often has few total pixels. Preserve its width instead
++        # of squeezing a sound fiber into one pixel just to meet a side limit.
++        area_scale = max(1.0, (mask.size / (max_long_side ** 2)) ** 0.5)
++        scale = max(area_scale, min(scale, max(1.0, average_width / 4.0)))

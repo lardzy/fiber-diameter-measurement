@@ -1,0 +1,99 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "frozen": true,
+  "stdio_none": true,
+  "extensions_in_bundle": true,
+  "extensions": {
+    "onnxruntime": "onnxruntime/capi/onnxruntime_pybind11_state.so",
+    "skeleton": "skimage/morphology/_skeletonize_various_cy.cpython-313-darwin.so"
+  },
+  "functional_checks": {
+    "magic_segmentation": {
+      "ok": true,
+      "backend": "onnxruntime",
+      "backend_version": "1.24.4",
+      "models": {
+        "edge_sam": {
+          "encoder_calls_first": 1,
+          "encoder_calls_repeat": 0,
+          "decoder_calls_repeat": 1,
+          "mask_equal": true,
+          "area_px": 6272.0,
+          "providers": [
+            "CPUExecutionProvider"
+          ],
+          "first_ms": 144.0214169997489,
+          "repeat_ms": 12.377459002891555,
+          "cache_bytes": 4194304,
+          "ok": true
+        },
+        "edge_sam_3x": {
+          "encoder_calls_first": 1,
+          "encoder_calls_repeat": 0,
+          "decoder_calls_repeat": 1,
+          "mask_equal": true,
+          "area_px": 6300.0,
+          "providers": [
+            "CPUExecutionProvider"
+          ],
+          "first_ms": 106.64979200373637,
+          "repeat_ms": 12.89991699741222,
+          "cache_bytes": 4194304,
+          "ok": true
+        }
+      }
+    },
+    "fiber_quick_geometry": {
+      "ok": true,
+      "backend": "skimage_zhang",
+      "geometry_revision": 3,
+      "backend_version": "0.26.0",
+      "compiled_extension": true,
+      "skeleton_connected": true,
+      "cases": {
+        "straight": {
+          "ok": true,
+          "width_px": 39.0,
+          "geometry_ms": 4.1796669975155964
+        },
+        "diagonal": {
+          "ok": true,
+          "width_px": 24.000000000000007,
+          "geometry_ms": 4.753959001391195
+        },
+        "cross": {
+          "ok": true,
+          "width_px": 40.0,
+          "geometry_ms": 5.409167002653703
+        },
+        "short_fiber": {
+          "ok": true,
+          "width_px": 14.999999999999998,
+          "geometry_ms": 1.0089579955092631
+        },
+        "near_border": {
+          "ok": true,
+          "width_px": 39.0,
+          "geometry_ms": 3.1597920024069026
+        },
+        "extended": {
+          "ok": true,
+          "width_px": 46.0,
+          "correction_per_endpoint_px": 3.5,
+          "geometry_ms": 3.722166999068577
+        },
+        "shrunk": {
+          "ok": true,
+          "width_px": 32.0,
+          "correction_per_endpoint_px": -3.5,
+          "geometry_ms": 3.321709002193529
+        }
+      },
+      "incomplete_boundary_rejection": {
+        "ok": true,
+        "failure_code": "incomplete_boundary"
+      }
+    }
+  },
+  "ok": true
+}

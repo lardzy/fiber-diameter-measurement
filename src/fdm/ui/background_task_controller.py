@@ -468,6 +468,7 @@ class BackgroundTaskController(QObject):
             geometry_worker = cast(FiberQuickGeometryWorker, worker)
             geometry_worker.succeeded.connect(self._host._on_fiber_quick_geometry_succeeded)
             geometry_worker.failed.connect(self._host._on_fiber_quick_geometry_failed)
+            geometry_worker.warmupRequested.emit()
 
         handle = self._tasks.ensure_persistent(
             TASK_FIBER_QUICK_GEOMETRY,
@@ -485,6 +486,7 @@ class BackgroundTaskController(QObject):
             geometry_worker = cast(FiberQuickGeometryWorker, worker)
             geometry_worker.succeeded.connect(self._host._on_fiber_quick_commit_geometry_succeeded)
             geometry_worker.failed.connect(self._host._on_fiber_quick_commit_geometry_failed)
+            geometry_worker.warmupRequested.emit()
 
         handle = self._tasks.ensure_persistent(
             TASK_FIBER_QUICK_COMMIT_GEOMETRY,

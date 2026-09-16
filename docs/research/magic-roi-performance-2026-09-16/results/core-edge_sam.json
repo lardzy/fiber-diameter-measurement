@@ -1,0 +1,667 @@
+{
+  "env": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "ort": "1.24.4",
+    "providers_available": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "cv2": "4.13.0",
+    "cv2_threads": 18,
+    "cpu": "Apple M5 Pro",
+    "head": "d9a0dd75d125c8d70bc23f066e364787c31589da"
+  },
+  "mode": "core",
+  "variant": "edge_sam",
+  "cases": [
+    {
+      "name": "new_roi_first_ever",
+      "wall_ms": 208.34908300457755,
+      "process_cpu_ms": 982.875,
+      "stage_ms": {
+        "full_qimage_rgb": 0.18862499564420432,
+        "session_init": 76.11695800005691,
+        "encoder_ort": 115.13491599907866,
+        "embedding_inclusive": 192.5539169969852,
+        "decoder_ort": 10.667333997844253,
+        "decoder_and_postprocess": 12.362374996882863,
+        "geometry": 3.028665996680502
+      },
+      "encoder_calls": 1,
+      "decoder_calls": 1,
+      "cache_hits": 0,
+      "cache_misses": 1,
+      "round": 1,
+      "fallback": false,
+      "crop": [
+        384,
+        384,
+        640,
+        640
+      ],
+      "area": 6267.0,
+      "rings": 1,
+      "polygon_vertices": 103,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.18862499564420432
+        },
+        {
+          "stage": "session_init",
+          "ms": 76.11695800005691
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 115.13491599907866,
+          "input_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 192.5539169969852,
+          "hit": false,
+          "key": "synthetic|roi=384:384:640:640",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 10.667333997844253,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 12.362374996882863,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 2.4995409985422157
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.5291249981382862
+        }
+      ]
+    },
+    {
+      "name": "repeat_same_roi",
+      "wall_ms": 12.043417002132628,
+      "process_cpu_ms": 100.75500000000015,
+      "stage_ms": {
+        "full_qimage_rgb": 0.9034999966388568,
+        "embedding_inclusive": 0.0016250050975941122,
+        "decoder_ort": 8.204750003642403,
+        "decoder_and_postprocess": 10.041834000730887,
+        "geometry": 0.9645419995649718
+      },
+      "encoder_calls": 0,
+      "decoder_calls": 1,
+      "cache_hits": 1,
+      "cache_misses": 0,
+      "round": 1,
+      "fallback": false,
+      "crop": [
+        384,
+        384,
+        640,
+        640
+      ],
+      "area": 6267.0,
+      "rings": 1,
+      "polygon_vertices": 103,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.9034999966388568
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.0016250050975941122,
+          "hit": true,
+          "key": "synthetic|roi=384:384:640:640",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 8.204750003642403,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 10.041834000730887,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.5776249963673763
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.3869170031975955
+        }
+      ]
+    },
+    {
+      "name": "negative_point_same_roi",
+      "wall_ms": 11.64499999867985,
+      "process_cpu_ms": 98.65000000000012,
+      "stage_ms": {
+        "full_qimage_rgb": 0.18754199845716357,
+        "embedding_inclusive": 0.0017909987946040928,
+        "decoder_ort": 8.384834000025876,
+        "decoder_and_postprocess": 10.086166999826673,
+        "geometry": 1.132583995058667
+      },
+      "encoder_calls": 0,
+      "decoder_calls": 1,
+      "cache_hits": 1,
+      "cache_misses": 0,
+      "round": 1,
+      "fallback": false,
+      "crop": [
+        384,
+        384,
+        640,
+        640
+      ],
+      "area": 6263.0,
+      "rings": 1,
+      "polygon_vertices": 99,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.18754199845716357
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 0.0017909987946040928,
+          "hit": true,
+          "key": "synthetic|roi=384:384:640:640",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 8.384834000025876,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              2,
+              2
+            ],
+            "point_labels": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 10.086166999826673,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.6686249980702996
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.4639589969883673
+        }
+      ]
+    },
+    {
+      "name": "new_roi_elsewhere",
+      "wall_ms": 126.20141600200441,
+      "process_cpu_ms": 823.0380000000001,
+      "stage_ms": {
+        "full_qimage_rgb": 0.18399999680696055,
+        "encoder_ort": 113.6946659971727,
+        "embedding_inclusive": 114.8064590015565,
+        "decoder_ort": 8.428458000707906,
+        "decoder_and_postprocess": 10.106208006618544,
+        "geometry": 0.9822919964790344
+      },
+      "encoder_calls": 1,
+      "decoder_calls": 1,
+      "cache_hits": 0,
+      "cache_misses": 1,
+      "round": 1,
+      "fallback": false,
+      "crop": [
+        1152,
+        896,
+        1408,
+        1152
+      ],
+      "area": 6269.0,
+      "rings": 1,
+      "polygon_vertices": 106,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.18399999680696055
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 113.6946659971727,
+          "input_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 114.8064590015565,
+          "hit": false,
+          "key": "synthetic|roi=1152:896:1408:1152",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 8.428458000707906,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              1,
+              2
+            ],
+            "point_labels": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 10.106208006618544,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.577291997615248
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.40499999886378646
+        }
+      ]
+    },
+    {
+      "name": "positive_point_shift_8",
+      "wall_ms": 121.40762500348501,
+      "process_cpu_ms": 800.1700000000001,
+      "stage_ms": {
+        "full_qimage_rgb": 0.18804199498845264,
+        "encoder_ort": 108.07179199764505,
+        "embedding_inclusive": 109.1642920000595,
+        "decoder_ort": 9.39279099839041,
+        "decoder_and_postprocess": 10.930583004665095,
+        "geometry": 0.9754589991644025
+      },
+      "encoder_calls": 1,
+      "decoder_calls": 1,
+      "cache_hits": 0,
+      "cache_misses": 1,
+      "round": 1,
+      "fallback": false,
+      "crop": [
+        392,
+        384,
+        648,
+        640
+      ],
+      "area": 6277.0,
+      "rings": 1,
+      "polygon_vertices": 108,
+      "events": [
+        {
+          "stage": "full_qimage_rgb",
+          "ms": 0.18804199498845264
+        },
+        {
+          "stage": "encoder_ort",
+          "ms": 108.07179199764505,
+          "input_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "stage": "embedding_inclusive",
+          "ms": 109.1642920000595,
+          "hit": false,
+          "key": "synthetic|roi=392:384:648:640",
+          "crop_hw": [
+            256,
+            256
+          ]
+        },
+        {
+          "stage": "decoder_ort",
+          "ms": 9.39279099839041,
+          "input_shapes": {
+            "image_embeddings": [
+              1,
+              256,
+              64,
+              64
+            ],
+            "point_coords": [
+              1,
+              2,
+              2
+            ],
+            "point_labels": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "stage": "decoder_and_postprocess",
+          "ms": 10.930583004665095,
+          "candidates": 4
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.5347499973140657
+        },
+        {
+          "stage": "geometry",
+          "ms": 0.4407090018503368
+        }
+      ]
+    }
+  ],
+  "encoder_input": [
+    {
+      "name": "input_image",
+      "shape": [
+        1,
+        3,
+        "image_height",
+        "image_width"
+      ],
+      "type": "tensor(uint8)"
+    }
+  ],
+  "decoder_input": [
+    {
+      "name": "image_embeddings",
+      "shape": [
+        1,
+        256,
+        64,
+        64
+      ],
+      "type": "tensor(float)"
+    },
+    {
+      "name": "point_coords",
+      "shape": [
+        1,
+        "num_points",
+        2
+      ],
+      "type": "tensor(float)"
+    },
+    {
+      "name": "point_labels",
+      "shape": [
+        1,
+        "num_points"
+      ],
+      "type": "tensor(float)"
+    }
+  ],
+  "providers_used": [
+    "CPUExecutionProvider"
+  ],
+  "session_options": {
+    "intra_op_num_threads": 0,
+    "inter_op_num_threads": 0,
+    "execution_mode": "ExecutionMode.ORT_SEQUENTIAL"
+  },
+  "encoder_size_sweep": [
+    {
+      "roi_side": 128,
+      "median_ms": 106.32308300409932,
+      "trials": [
+        {
+          "total_ms": 110.17779100075131,
+          "encoder_ms": 108.88395800429862,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 104.27891699509928,
+          "encoder_ms": 103.14987500169082,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 106.32308300409932,
+          "encoder_ms": 105.18916599539807,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "roi_side": 256,
+      "median_ms": 111.8726249987958,
+      "trials": [
+        {
+          "total_ms": 104.0887909985031,
+          "encoder_ms": 102.95974999462487,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 112.72441699838964,
+          "encoder_ms": 111.5747090007062,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 111.8726249987958,
+          "encoder_ms": 110.78662500221981,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "roi_side": 512,
+      "median_ms": 111.17616700357758,
+      "trials": [
+        {
+          "total_ms": 119.88708300486906,
+          "encoder_ms": 118.79041700012749,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 110.69262499950128,
+          "encoder_ms": 109.56683300173609,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 111.17616700357758,
+          "encoder_ms": 109.91354099678574,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "roi_side": 1024,
+      "median_ms": 110.7116670027608,
+      "trials": [
+        {
+          "total_ms": 107.80891700414941,
+          "encoder_ms": 106.71800000272924,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 110.7116670027608,
+          "encoder_ms": 109.59900000307243,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        },
+        {
+          "total_ms": 111.09062500327127,
+          "encoder_ms": 109.98195799766108,
+          "tensor_shapes": {
+            "input_image": [
+              1,
+              3,
+              1024,
+              1024
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

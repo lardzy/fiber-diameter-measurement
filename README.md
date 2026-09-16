@@ -6,7 +6,7 @@ Fiber Diameter Measurement（FDM）是一款离线桌面软件，用于把显微
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 源码版本 | `0.4.5` |
+| 源码版本 | `0.4.6` |
 | 桌面界面 | PySide6 / Qt 6 |
 | Python | `3.11+` |
 | 主要发布平台 | Windows 10 / 11；基础离线图像能力也可从源码在常规桌面环境运行 |
@@ -42,6 +42,10 @@ Fiber Diameter Measurement（FDM）是一款离线桌面软件，用于把显微
 - **查看体验**：适合窗口、原始像素、连续缩放、导航概览、F11 全屏测量，以及可切换的左右侧栏和底部结果区。
 
 标准魔棒与同类扩选使用本地 EdgeSAM / EdgeSAM-3x ONNX 模型。快速测径会先分割目标，再异步计算代表直径线；面积自动识别则通过隔离 worker 和已配置的权重批量生成实例。
+
+快速测径在进入工具时后台预热编译版骨架组件，并排除交叉及端帽干扰。短纤维和靠近边框的完整截面增加了恢复判断，失败时提示具体原因。实现与验证范围见 [最新稳定性调整记录](docs/quick-diameter-robustness-2026-09-15.md) 和 [首轮提速记录](docs/quick-diameter-implementation-2026-09-15.md)。
+
+“快速测径扩展像素”按原图像素对两端各做修正，例如 `+2 px` 使总直径增加 `4 px`，负值用于收缩。应用设置后生成的新结果使用该数值，详见 [像素修正说明](docs/quick-diameter-pixel-correction-2026-09-15.md)。
 
 ## 项目级 ROI、图像处理与批处理
 
@@ -90,6 +94,8 @@ Fiber Diameter Measurement（FDM）是一款离线桌面软件，用于把显微
 分析结果可独立导出为审计型 Excel 工作簿、单表/曲线 CSV，或包含工作簿、关联资产和清单的便携 ZIP 包。批量分析使用内置的平面分析配方，常用分析覆盖亮度统计、直方图、FFT 功率谱、粒子分析和极值检测，高级分析覆盖方向性、Tubeness、GLCM、二维强度表面，并提供“亮度统计 + 直方图”和“方向性 + GLCM”组合。
 
 ![可筛选、复核和导出的分析结果中心](docs/readme-assets/analysis-results-center.png)
+
+**前后轮廓对比**通过“分析 → 前后轮廓对比…”打开，用于固定俯拍的衣物等物体处理前后外形检查。支持自动识别、标准魔棒补点与排除背景、画笔／多边形修边及撤销重做；以共同中线和参考高度计算左右外缘、内侧腿缝边界、上下端及投影面积变化。结果在原照片上标出前后边界和变化值，点击样品与表格可双向定位。支持毫米标定、独立保存 `.fdmcompare`、Excel 数据及带位置标注的叠加图导出。未标定结果明确使用像素；形状差异不直接解释为材料应变。[操作、参数和验证说明](docs/garment-contour-comparison.md)。
 
 ## 实时采集与数字化切片
 
@@ -160,6 +166,7 @@ CU 系列专用模式不会启动第二个 Microview 实例，也不会访问或
 | `sample.assets/processed/` | 图像处理生成的无损派生图片 |
 | `sample.assets/slides/` | 项目内数字化切片 |
 | `sample.assets/analysis/` | 大型分析表格、曲线、标签图或掩膜等校验资产 |
+| `sample.fdmcompare` | 独立的前后轮廓对比，内嵌照片、原分辨率修正掩膜、中线和标定；从对比工作区打开 |
 
 普通打开的原始图片通常仍由项目引用，不会自动全部复制进资产目录。移动或备份项目时，应同时保留 `.fdmproj`、同名 `.assets` 目录和仍被引用的外部原图。
 
@@ -296,6 +303,8 @@ python -m fdm.ui_snapshot --scenario measurement --theme dark --width 1600 --hei
 python -m pip install -e ".[area-infer,packaging]"
 python scripts/build_windows_onedir.py
 ```
+
+使用锁定依赖可执行 `uv sync --frozen --extra area-infer --extra packaging`。测径依赖的 scikit-image / SciPy 由专用 PyInstaller 钩子收集；构建后的 `--self-check --json` 必须通过编译后端和实际测宽检查，安装器复用已有 onedir 时同样检查。
 
 公开 checkout 通常不含私有面积模型和原始记录模板，应显式生成公开 onedir：
 

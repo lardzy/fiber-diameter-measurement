@@ -1,0 +1,184 @@
+{
+  "env": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "ort": "1.24.4",
+    "providers_available": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "cv2": "4.13.0",
+    "cv2_threads": 18,
+    "cpu": "Apple M5 Pro",
+    "head": "d9a0dd75d125c8d70bc23f066e364787c31589da"
+  },
+  "mode": "threads",
+  "variant": "edge_sam_3x",
+  "thread_sweep": [
+    {
+      "threads": 0,
+      "session_init_ms": 53.248374999384396,
+      "warm_median_wall_ms": 87.20933300355682,
+      "warm_median_encoder_ms": 68.00837500486523,
+      "warm_median_decoder_ms": 9.823541993682738,
+      "trials": [
+        {
+          "wall_ms": 102.89587500301423,
+          "cpu_ms": 839.2230000000001,
+          "encoder_ms": 80.61808400088921,
+          "decoder_ms": 11.560999999346677
+        },
+        {
+          "wall_ms": 91.2804999970831,
+          "cpu_ms": 764.2260000000001,
+          "encoder_ms": 72.2035830040113,
+          "decoder_ms": 9.978582995245233
+        },
+        {
+          "wall_ms": 86.91079100390198,
+          "cpu_ms": 730.7210000000002,
+          "encoder_ms": 67.56395899719791,
+          "decoder_ms": 9.823541993682738
+        },
+        {
+          "wall_ms": 87.20933300355682,
+          "cpu_ms": 725.9470000000001,
+          "encoder_ms": 68.00837500486523,
+          "decoder_ms": 9.295915995608084
+        }
+      ]
+    },
+    {
+      "threads": 1,
+      "session_init_ms": 52.918291999958456,
+      "warm_median_wall_ms": 189.67916600377066,
+      "warm_median_encoder_ms": 157.4872499986668,
+      "warm_median_decoder_ms": 22.123750000901055,
+      "trials": [
+        {
+          "wall_ms": 192.3273339998559,
+          "cpu_ms": 197.20899999999997,
+          "encoder_ms": 158.56412499852013,
+          "decoder_ms": 22.98516700102482
+        },
+        {
+          "wall_ms": 189.67916600377066,
+          "cpu_ms": 195.30599999999998,
+          "encoder_ms": 157.4872499986668,
+          "decoder_ms": 23.302542002056725
+        },
+        {
+          "wall_ms": 191.28204099979484,
+          "cpu_ms": 196.64299999999992,
+          "encoder_ms": 159.94795800361317,
+          "decoder_ms": 22.123750000901055
+        },
+        {
+          "wall_ms": 183.84924999554642,
+          "cpu_ms": 188.98499999999973,
+          "encoder_ms": 152.88620799401542,
+          "decoder_ms": 21.877833001781255
+        }
+      ]
+    },
+    {
+      "threads": 2,
+      "session_init_ms": 52.25149999751011,
+      "warm_median_wall_ms": 153.2976669986965,
+      "warm_median_encoder_ms": 129.7628749962314,
+      "warm_median_decoder_ms": 13.840916995832231,
+      "trials": [
+        {
+          "wall_ms": 132.15941700036637,
+          "cpu_ms": 261.3669999999999,
+          "encoder_ms": 107.22916699887719,
+          "decoder_ms": 15.047042004880495
+        },
+        {
+          "wall_ms": 157.70195899676764,
+          "cpu_ms": 313.7439999999998,
+          "encoder_ms": 135.31137500103796,
+          "decoder_ms": 13.7813340043067
+        },
+        {
+          "wall_ms": 153.2976669986965,
+          "cpu_ms": 307.1429999999999,
+          "encoder_ms": 129.7628749962314,
+          "decoder_ms": 13.909708002756815
+        },
+        {
+          "wall_ms": 151.0077499988256,
+          "cpu_ms": 302.8599999999999,
+          "encoder_ms": 128.03033299860545,
+          "decoder_ms": 13.840916995832231
+        }
+      ]
+    },
+    {
+      "threads": 4,
+      "session_init_ms": 51.76579199905973,
+      "warm_median_wall_ms": 105.41158400155837,
+      "warm_median_encoder_ms": 85.97216600173851,
+      "warm_median_decoder_ms": 10.490291999303736,
+      "trials": [
+        {
+          "wall_ms": 110.09362500044517,
+          "cpu_ms": 413.7650000000006,
+          "encoder_ms": 87.5234580016695,
+          "decoder_ms": 11.010082998836879
+        },
+        {
+          "wall_ms": 105.74987500149291,
+          "cpu_ms": 407.75699999999927,
+          "encoder_ms": 86.0697500029346,
+          "decoder_ms": 10.837875001016073
+        },
+        {
+          "wall_ms": 105.41158400155837,
+          "cpu_ms": 407.9829999999998,
+          "encoder_ms": 85.97216600173851,
+          "decoder_ms": 10.490291999303736
+        },
+        {
+          "wall_ms": 104.19812500185799,
+          "cpu_ms": 403.13,
+          "encoder_ms": 84.87166700069793,
+          "decoder_ms": 10.056833001726773
+        }
+      ]
+    },
+    {
+      "threads": 8,
+      "session_init_ms": 53.42820799705805,
+      "warm_median_wall_ms": 86.74120799696539,
+      "warm_median_encoder_ms": 67.20583399874158,
+      "warm_median_decoder_ms": 8.968292000645306,
+      "trials": [
+        {
+          "wall_ms": 90.60541699727764,
+          "cpu_ms": 664.4360000000003,
+          "encoder_ms": 71.00925000122515,
+          "decoder_ms": 9.545832996082027
+        },
+        {
+          "wall_ms": 86.74120799696539,
+          "cpu_ms": 646.5070000000006,
+          "encoder_ms": 67.20583399874158,
+          "decoder_ms": 9.321958001237363
+        },
+        {
+          "wall_ms": 94.62045800319174,
+          "cpu_ms": 708.2429999999995,
+          "encoder_ms": 76.54537499911385,
+          "decoder_ms": 8.573207996960264
+        },
+        {
+          "wall_ms": 84.82166600151686,
+          "cpu_ms": 629.1170000000009,
+          "encoder_ms": 66.49654100328917,
+          "decoder_ms": 8.968292000645306
+        }
+      ]
+    }
+  ]
+}

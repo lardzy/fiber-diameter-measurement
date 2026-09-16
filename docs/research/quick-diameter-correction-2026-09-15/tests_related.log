@@ -1,0 +1,9 @@
+.................................................................................................................................. [ 95%]
+......                                                               [100%]
+============================= slowest 5 durations ==============================
+1.12s call     tests/test_build_support.py::BuildSupportTests::test_runtime_profiles_keep_core_small_and_full_complete
+0.63s call     tests/test_fiber_quick_geometry.py::FiberQuickGeometryTests::test_width_and_direction_across_angles_and_roi_resizing
+0.61s call     tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+0.56s call     tests/test_build_support.py::BuildSupportTests::test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache
+0.53s call     tests/test_release_self_check.py::ReleaseSelfCheckTests::test_app_self_check_json_includes_real_windowed_render_results
+136 passed, 234 subtests passed in 8.24s

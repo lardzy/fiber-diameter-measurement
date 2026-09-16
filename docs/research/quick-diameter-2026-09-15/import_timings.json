@@ -1,0 +1,8 @@
+{
+  "scope": "fresh Python processes; cv2 and numpy already imported; package files warm in OS cache",
+  "skimage_morphology_import_ms": [
+    527.8624579950701,
+    537.5971249886788,
+    531.7286659847014
+  ]
+}

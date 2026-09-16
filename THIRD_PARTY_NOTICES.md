@@ -9,6 +9,9 @@ files included by those components.
 | PySide6 / Qt for Python | LGPL-3.0-only, GPL-3.0-only, or commercial terms; <https://doc.qt.io/qtforpython-6/licenses.html> |
 | NumPy | BSD-3-Clause; <https://github.com/numpy/numpy/blob/main/LICENSE.txt> |
 | OpenCV | Apache-2.0; <https://github.com/opencv/opencv/blob/4.x/LICENSE> |
+| scikit-image | BSD-3-Clause and component notices; <https://github.com/scikit-image/scikit-image/blob/v0.26.0/LICENSE.txt> |
+| SciPy | BSD-3-Clause and bundled library notices; <https://github.com/scipy/scipy/blob/main/LICENSE.txt> |
+| lazy-loader | BSD-3-Clause; <https://github.com/scientific-python/lazy-loader/blob/main/LICENSE.md> |
 | Pillow | HPND; <https://github.com/python-pillow/Pillow/blob/main/LICENSE> |
 | tifffile | BSD-3-Clause; <https://github.com/cgohlke/tifffile/blob/master/LICENSE> |
 | openpyxl | MIT; <https://foss.heptapod.net/openpyxl/openpyxl/-/blob/branch/3.1/LICENCE.rst> |
