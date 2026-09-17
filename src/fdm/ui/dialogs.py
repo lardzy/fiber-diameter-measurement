@@ -2188,6 +2188,7 @@ class SettingsDialog(QDialog):
         )
         return AppSettings(
             theme_mode=self._theme_mode_combo.currentData(),
+            measurement_text_size_space=self._measurement_text_size_space_combo.currentData(),
             length_measurement_label_style=length_label_style,
             area_measurement_label_style=area_label_style,
             show_count_numbers=self._show_count_numbers.isChecked(),
@@ -2433,7 +2434,7 @@ class SettingsDialog(QDialog):
         if preview is None:
             return
         font = QFont(self._length_measurement_label_font.currentFont())
-        font.setPointSize(self._length_measurement_label_size.value())
+        font.setPixelSize(self._length_measurement_label_size.value())
         preview.set_preview_style(
             show_label=self._show_length_measurement_labels.isChecked(),
             font=font,
@@ -2452,7 +2453,7 @@ class SettingsDialog(QDialog):
         if preview is None:
             return
         font = QFont(self._area_measurement_label_font.currentFont())
-        font.setPointSize(self._area_measurement_label_size.value())
+        font.setPixelSize(self._area_measurement_label_size.value())
         preview.set_preview_style(
             show_label=self._show_area_measurement_labels.isChecked(),
             font=font,
@@ -2475,6 +2476,22 @@ class SettingsDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
 
+        display_group = QGroupBox("标注与文字显示")
+        display_form = QFormLayout(display_group)
+        self._measurement_text_size_space_combo = NoWheelComboBox()
+        for label, value in OverlayTextSizeSpace.DISPLAY_ITEMS:
+            self._measurement_text_size_space_combo.addItem(label, value)
+        self._measurement_text_size_space_combo.setCurrentIndex(max(
+            0, self._measurement_text_size_space_combo.findData(settings.measurement_text_size_space)
+        ))
+        display_form.addRow("显示模式", self._measurement_text_size_space_combo)
+        display_hint = QLabel(
+            OverlayTextSizeSpace.DISPLAY_HINT + "\n应用于直径、长度、面积结果文字及计数点编号。"
+        )
+        display_hint.setWordWrap(True)
+        display_form.addRow("", display_hint)
+        layout.addWidget(display_group)
+
         length_style = settings.length_measurement_label_style
         area_style = settings.area_measurement_label_style
 
@@ -2489,6 +2506,7 @@ class SettingsDialog(QDialog):
         )
         self._length_measurement_label_size = NoWheelSpinBox()
         self._length_measurement_label_size.setRange(8, 96)
+        self._length_measurement_label_size.setSuffix(" px")
         self._length_measurement_label_size.setValue(length_style.font_size)
         self._length_measurement_label_color = self._create_color_button(length_style.color)
         self._length_measurement_label_decimals = NoWheelSpinBox()
@@ -2522,6 +2540,7 @@ class SettingsDialog(QDialog):
         )
         self._area_measurement_label_size = NoWheelSpinBox()
         self._area_measurement_label_size.setRange(8, 96)
+        self._area_measurement_label_size.setSuffix(" px")
         self._area_measurement_label_size.setValue(area_style.font_size)
         self._area_measurement_label_color = self._create_color_button(area_style.color)
         self._area_measurement_label_decimals = NoWheelSpinBox()
@@ -2558,6 +2577,7 @@ class SettingsDialog(QDialog):
         self._configure_font_combo(self._count_number_font, settings.count_number_font_family)
         self._count_number_size = NoWheelSpinBox()
         self._count_number_size.setRange(8, 96)
+        self._count_number_size.setSuffix(" px")
         self._count_number_size.setValue(settings.count_number_font_size)
         self._count_number_color = self._create_color_button(settings.count_number_color)
         self._endpoint_style_combo = NoWheelComboBox()
@@ -2810,17 +2830,12 @@ class SettingsDialog(QDialog):
         self._configure_font_combo(self._text_font, settings.text_font_family)
         self._text_size = NoWheelSpinBox()
         self._text_size.setRange(8, 144)
+        self._text_size.setSuffix(" px")
         self._text_size.setValue(settings.text_font_size)
         self._text_color = self._create_color_button(settings.text_color)
         self._text_size_space_combo = NoWheelComboBox()
-        self._text_size_space_combo.addItem(
-            "随图像缩放（推荐）",
-            OverlayTextSizeSpace.IMAGE_PX,
-        )
-        self._text_size_space_combo.addItem(
-            "固定输出像素",
-            OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
-        )
+        for label, value in OverlayTextSizeSpace.DISPLAY_ITEMS:
+            self._text_size_space_combo.addItem(label, value)
         self._text_size_space_combo.setCurrentIndex(
             max(
                 0,
@@ -2839,14 +2854,11 @@ class SettingsDialog(QDialog):
             )
         )
         text_form.addRow("文字字体", self._text_font)
-        text_form.addRow("新建时屏显字号", self._text_size)
+        text_form.addRow("文字字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
-        text_form.addRow("尺寸基准", self._text_size_space_combo)
+        text_form.addRow("显示模式", self._text_size_space_combo)
         text_form.addRow("默认锚点", self._text_anchor_combo)
-        text_hint = QLabel(
-            "“随图像缩放”会在创建时按当前缩放率换算并冻结原图字号，"
-            "使画布、完整分辨率和其它图片导出模式保持同一相对大小。"
-        )
+        text_hint = QLabel(OverlayTextSizeSpace.DISPLAY_HINT + "\n此处设置用于新建文字标注。")
         text_hint.setWordWrap(True)
         text_form.addRow("", text_hint)
 

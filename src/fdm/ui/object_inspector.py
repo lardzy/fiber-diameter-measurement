@@ -142,7 +142,7 @@ class CurrentObjectInspector(QWidget):
             QSizePolicy.Policy.Ignored,
             QSizePolicy.Policy.Preferred,
         )
-        text_layout_form.addRow("尺寸基准", self._text_size_space_label)
+        text_layout_form.addRow("显示模式", self._text_size_space_label)
 
         self._text_image_font_size_label = QLabel("原图字号", self._text_layout_group)
         self._text_image_font_size_spin = NoWheelDoubleSpinBox(self._text_layout_group)
@@ -236,7 +236,7 @@ class CurrentObjectInspector(QWidget):
             self._text_layout_group,
         )
         self._text_layout_conversion_button.setToolTip(
-            "把当前屏幕中的文字大小换算成原图像素字号，并改用随图像缩放的布局。"
+            "把当前屏幕中的文字大小换算成原图像素字号，并改用图像像素模式。"
         )
         self._text_layout_conversion_button.clicked.connect(
             self._request_text_layout_conversion
@@ -845,17 +845,17 @@ class CurrentObjectInspector(QWidget):
                 editor_size = explicit_size
 
         if is_image_space:
-            self._text_size_space_label.setText("随图像缩放（推荐）")
+            self._text_size_space_label.setText("图像像素（默认）")
         elif is_implicit_legacy:
-            self._text_size_space_label.setText("旧版固定输出像素")
+            self._text_size_space_label.setText("屏幕自适应（旧版）")
         else:
-            self._text_size_space_label.setText("固定输出像素")
+            self._text_size_space_label.setText("屏幕自适应")
         if is_image_space:
             self._text_image_font_size_label.setText("原图字号")
         elif is_implicit_legacy:
             self._text_image_font_size_label.setText("转换后原图字号")
         else:
-            self._text_image_font_size_label.setText("固定输出字号")
+            self._text_image_font_size_label.setText("屏幕字号")
         self._text_image_font_size_spin.blockSignals(True)
         self._text_image_font_size_spin.setValue(editor_size)
         self._text_image_font_size_spin.blockSignals(False)
@@ -889,7 +889,7 @@ class CurrentObjectInspector(QWidget):
             )
         elif is_legacy:
             self._legacy_text_layout_label.setText(
-                "此文字使用固定输出像素。可按当前画布外观转换为随图像缩放，"
+                "此文字使用屏幕自适应模式。可按当前画布外观转换为图像像素模式，"
                 "使画布与完整分辨率导出的相对大小一致。"
             )
 

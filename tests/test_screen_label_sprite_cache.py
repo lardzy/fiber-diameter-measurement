@@ -665,10 +665,10 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
         self.assertEqual(first_call["text"], "7")
         self.assertEqual(second_call["text"], "7")
         self.assertEqual(first_call["font"].family(), "Arial")
-        self.assertEqual(first_call["font"].pointSize(), 31)
+        self.assertEqual(first_call["font"].pixelSize(), 31)
         self.assertEqual(first_call["text_color"].name(), "#ff3355")
         self.assertEqual(second_call["font"].family(), "Microsoft YaHei UI")
-        self.assertEqual(second_call["font"].pointSize(), 42)
+        self.assertEqual(second_call["font"].pixelSize(), 42)
         self.assertEqual(second_call["text_color"].name(), "#33aaff")
         self.assertEqual(len(painter.draw_images), 2)
         first_target, second_target = [

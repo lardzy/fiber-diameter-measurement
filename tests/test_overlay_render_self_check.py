@@ -44,6 +44,8 @@ def test_real_windowed_probe_checks_all_pixels_without_touching_live_pool(monkey
             "magic_subtract",
             "scene_overview",
             "mixed_exact",
+            "text_image_pixels",
+            "text_screen_adaptive",
             "empty",
         )
         for dpr in ("1", "1.5", "2")

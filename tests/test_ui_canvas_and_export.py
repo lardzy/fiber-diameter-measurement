@@ -8264,7 +8264,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
-    def test_new_text_uses_image_space_size_and_center_anchor_at_current_zoom(self) -> None:
+    def test_new_text_uses_image_space_size_and_center_anchor_independent_of_creation_zoom(self) -> None:
         window = MainWindow()
         try:
             image = QImage(800, 600, QImage.Format.Format_RGB32)
@@ -8311,7 +8311,7 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             self.assertAlmostEqual(
                 annotation.text_layout.image_font_size_px,
-                72.0,
+                18.0,
             )
             resolved = resolve_overlay_text_layout(
                 annotation,
@@ -8319,7 +8319,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas.image_to_widget,
                 render_mode="screen_scale_full_image",
             )
-            self.assertEqual(resolved.font.pixelSize(), 18)
+            self.assertEqual(resolved.font.pixelSize(), 4)
         finally:
             window._reset_workspace()
             window.close()
@@ -9646,7 +9646,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_infer_device_combo.currentData(), "cpu")
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 0),
-                ["直径/长度结果", "面积结果", "计数点编号", "测量线与端点"],
+                ["标注与文字显示", "直径/长度结果", "面积结果", "计数点编号", "测量线与端点"],
             )
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(

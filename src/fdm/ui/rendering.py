@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence, Set as AbstractSet
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 import math
@@ -207,6 +208,32 @@ def measurement_label_font(settings: AppSettings, measurement: Measurement | Non
         )
     )
     return _cached_measurement_label_font(font_family, font_size)
+
+
+def measurement_text_scale(settings: AppSettings, output_scale: float) -> float:
+    """Convert a configured font pixel to output pixels without a DPI factor."""
+    if settings.measurement_text_size_space == OverlayTextSizeSpace.IMAGE_PX:
+        return max(1e-9, float(output_scale))
+    return 1.0
+
+
+@contextmanager
+def _measurement_text_coordinates(painter, scale: float, sprite_device_pixel_ratio):
+    """Scale the complete label, including its padding, background and offset.
+
+    Render sprites at the effective device resolution so zooming never enlarges
+    a low-resolution cached glyph. The model's font size remains unchanged.
+    """
+    if scale == 1.0:
+        yield sprite_device_pixel_ratio
+        return
+    painter.save()
+    try:
+        painter.scale(scale, scale)
+        ratio = sprite_device_pixel_ratio or _painter_device_pixel_ratio(painter)
+        yield ratio * scale
+    finally:
+        painter.restore()
 
 
 def _measurement_label_style(settings: AppSettings | None, measurement: Measurement | None):
@@ -599,7 +626,14 @@ def _painter_visible_rect(painter: QPainter) -> QRectF | None:
     rect = QRectF(viewport()) if callable(viewport) else None
     # A detached QPicture recorder has no device viewport yet. Its label
     # sprites must be recorded in full and clipped by the eventual tile.
-    return rect if rect is not None and not rect.isEmpty() else None
+    if rect is None or rect.isEmpty():
+        return None
+    transform = getattr(painter, "combinedTransform", None)
+    if callable(transform):
+        inverse, invertible = transform().inverted()
+        if invertible:
+            rect = inverse.mapRect(rect)
+    return rect
 
 
 def _is_visible_to_painter(painter: QPainter, rect: QRectF, *, padding: float = 4.0) -> bool:
@@ -964,7 +998,7 @@ def draw_measurement_label_only(
         return
     if measurement.measurement_kind == "area":
         center = area_derived_geometry_service.centroid(measurement)
-        draw_area_measurement_label(painter, measurement, document, settings, image_to_output(center), use_sprite_cache=True)
+        draw_area_measurement_label(painter, measurement, document, settings, image_to_output(center), image_to_output_scale=_image_to_output_scale(_image_to_output_transform(image_to_output)), use_sprite_cache=True)
     elif measurement.measurement_kind == "polyline":
         points = [image_to_output(point) for point in measurement.polyline_px]
         draw_polyline_measurement_label(painter, measurement, document, settings, points, image_to_output, use_sprite_cache=True)
@@ -1295,6 +1329,9 @@ def _measurement_label_image_bounds(
         math.hypot(unit_y.x() - origin.x(), unit_y.y() - origin.y()),
     )
 
+    label_scale = measurement_text_scale(settings, output_scale)
+    label_to_image = label_scale / output_scale
+
     if measurement.measurement_kind == "count":
         if (
             not settings.show_count_numbers
@@ -1309,13 +1346,13 @@ def _measurement_label_image_bounds(
             render_mode="count",
         )
         marker_radius = 4.0 * measurement_marker_scale(measurement)
-        anchor_x = measurement.point_px.x + (marker_radius * 1.35 / output_scale)
-        anchor_y = measurement.point_px.y - (marker_radius * 2.05 / output_scale)
+        anchor_x = measurement.point_px.x + (marker_radius * 1.35 * label_to_image)
+        anchor_y = measurement.point_px.y - (marker_radius * 2.05 * label_to_image)
         return QRectF(
-            anchor_x - (6.0 / output_scale),
-            anchor_y - (3.0 / output_scale),
-            (layout.width + 12.0) / output_scale,
-            (layout.height + 6.0) / output_scale,
+            anchor_x - (6.0 * label_to_image),
+            anchor_y - (3.0 * label_to_image),
+            (layout.width + 12.0) * label_to_image,
+            (layout.height + 6.0) * label_to_image,
         )
 
     if not _measurement_label_enabled(settings, measurement):
@@ -1334,9 +1371,9 @@ def _measurement_label_image_bounds(
         "measurement-length-parallel" if parallel else "measurement-length",
     )
     layout = _cached_text_layout(font, text, render_mode=render_mode)
-    width = (layout.width + 12.0) / output_scale
-    height = (layout.height + 6.0) / output_scale
-    offset = max(12.0, layout.height * 0.75) / output_scale
+    width = (layout.width + 12.0) * label_to_image
+    height = (layout.height + 6.0) * label_to_image
+    offset = max(12.0, layout.height * 0.75) * label_to_image
 
     if measurement.measurement_kind == "line":
         line = measurement.effective_line()
@@ -1378,7 +1415,7 @@ def _measurement_label_image_bounds(
             if center is None:
                 center = area_derived_geometry_service.centroid(measurement)
             label_center_y = center.y - (
-                max(14.0, layout.height * 0.9) / output_scale
+                max(14.0, layout.height * 0.9) * label_to_image
             )
             return QRectF(
                 center.x - (width / 2.0),
@@ -1395,7 +1432,7 @@ def _measurement_label_image_bounds(
         # ``max(14, 0.9 * text_height)`` and the sprite extends another half
         # height above that center. Keep the same formula here; a fixed
         # ``height + 14`` margin clips 96/144 px object-level labels.
-        label_offset = max(14.0, layout.height * 0.9) / output_scale
+        label_offset = max(14.0, layout.height * 0.9) * label_to_image
         return QRectF(
             left - width / 2.0,
             top - label_offset - (height / 2.0),
@@ -1675,6 +1712,7 @@ def draw_count_measurement(
             endpoint_radius=resolved_endpoint_radius,
             count_number=count_number,
             measurement=measurement,
+            image_to_output_scale=_image_to_output_scale(_image_to_output_transform(image_to_output)),
             use_sprite_cache=use_sprite_cache,
             sprite_device_pixel_ratio=sprite_device_pixel_ratio,
         )
@@ -1688,6 +1726,7 @@ def draw_count_measurement(
         endpoint_radius=resolved_endpoint_radius,
         count_number=count_number,
         measurement=measurement,
+        image_to_output_scale=_image_to_output_scale(_image_to_output_transform(image_to_output)),
         use_sprite_cache=use_sprite_cache,
         sprite_device_pixel_ratio=sprite_device_pixel_ratio,
     )
@@ -1749,6 +1788,7 @@ def draw_count_measurements_batch(
             settings,
             endpoint_radius=endpoint_radius * measurement_marker_scale(representative),
             measurement=representative,
+            image_to_output_scale=_image_to_output_scale(_image_to_output_transform(image_to_output)),
             use_sprite_cache=use_sprite_cache,
             sprite_device_pixel_ratio=sprite_device_pixel_ratio,
         )
@@ -1765,7 +1805,7 @@ def _count_number_font(settings: AppSettings, measurement: Measurement | None = 
         if appearance is not None and appearance.font_family
         else settings.count_number_font_family
     )
-    font.setPointSize(
+    font.setPixelSize(
         max(
             8,
             int(
@@ -1779,6 +1819,22 @@ def _count_number_font(settings: AppSettings, measurement: Measurement | None = 
 
 
 def _draw_count_number_labels(
+    painter: QPainter, label_points: list[tuple[QPointF, int]], settings: AppSettings, *,
+    endpoint_radius: float, measurement: Measurement | None = None,
+    image_to_output_scale: float = 1.0,
+    use_sprite_cache: bool | None = None,
+    sprite_device_pixel_ratio: float | None = None,
+) -> None:
+    scale = measurement_text_scale(settings, image_to_output_scale)
+    with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
+        _draw_count_number_labels_unscaled(
+            painter, [(point / scale, number) for point, number in label_points], settings,
+            endpoint_radius=endpoint_radius, measurement=measurement,
+            use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=ratio,
+        )
+
+
+def _draw_count_number_labels_unscaled(
     painter: QPainter,
     label_points: list[tuple[QPointF, int]],
     settings: AppSettings,
@@ -1847,6 +1903,7 @@ def _draw_count_number_label(
     endpoint_radius: float,
     count_number: int | None,
     measurement: Measurement | None = None,
+    image_to_output_scale: float = 1.0,
     use_sprite_cache: bool | None = None,
     sprite_device_pixel_ratio: float | None = None,
 ) -> None:
@@ -1858,6 +1915,7 @@ def _draw_count_number_label(
         settings,
         endpoint_radius=endpoint_radius,
         measurement=measurement,
+        image_to_output_scale=image_to_output_scale,
         use_sprite_cache=use_sprite_cache,
         sprite_device_pixel_ratio=sprite_device_pixel_ratio,
     )
@@ -1963,6 +2021,7 @@ def draw_area_measurement(
                 document,
                 settings,
                 image_to_output(label_center),
+                image_to_output_scale=_image_to_output_scale(output_transform),
             )
         else:
             label_kwargs = {"use_sprite_cache": use_sprite_cache}
@@ -1976,6 +2035,7 @@ def draw_area_measurement(
                 document,
                 settings,
                 image_to_output(label_center),
+                image_to_output_scale=_image_to_output_scale(output_transform),
                 **label_kwargs,
             )
     if not show_handles:
@@ -2064,6 +2124,7 @@ def build_passive_area_overlay_command(
     label_command: AreaOverlayLabelCommand | None = None
     if _measurement_label_enabled(settings, measurement):
         label_center = area_derived_geometry_service.cached_centroid(measurement)
+        label_scale = measurement_text_scale(settings, zoom)
         font = measurement_label_font(settings, measurement)
         text = measurement_display_text_with_settings(
             measurement,
@@ -2085,7 +2146,7 @@ def build_passive_area_overlay_command(
             text_color=text_color,
             outline_color=None,
             background_color=background_color,
-            device_pixel_ratio=sprite_device_pixel_ratio,
+            device_pixel_ratio=sprite_device_pixel_ratio * label_scale,
             arrangement_mode="measurement-area",
         )
         center_offset = QPointF(
@@ -2094,6 +2155,9 @@ def build_passive_area_overlay_command(
             - (sprite.content_height / 2.0)
             - 3.0,
         )
+        center_offset *= label_scale
+        label_image = QImage(sprite.image)
+        label_image.setDevicePixelRatio(sprite.image.devicePixelRatioF() / label_scale)
         top_left = (
             None
             if label_center is None
@@ -2103,7 +2167,7 @@ def build_passive_area_overlay_command(
             )
         )
         label_command = AreaOverlayLabelCommand(
-            image=QImage(sprite.image),
+            image=label_image,
             top_left=top_left,
             center_offset=center_offset,
             centroid_key=(
@@ -2129,6 +2193,21 @@ def build_passive_area_overlay_command(
 
 
 def draw_area_measurement_label(
+    painter: QPainter, measurement: Measurement, document: ImageDocument,
+    settings: AppSettings, center: QPointF, *,
+    image_to_output_scale: float = 1.0,
+    use_sprite_cache: bool | None = None,
+    sprite_device_pixel_ratio: float | None = None,
+) -> None:
+    scale = measurement_text_scale(settings, image_to_output_scale)
+    with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
+        _draw_area_measurement_label_unscaled(
+            painter, measurement, document, settings, center / scale,
+            use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=ratio,
+        )
+
+
+def _draw_area_measurement_label_unscaled(
     painter: QPainter,
     measurement: Measurement,
     document: ImageDocument,
@@ -2190,6 +2269,23 @@ def draw_area_measurement_label(
 
 
 def draw_measurement_label(
+    painter: QPainter, measurement: Measurement, document: ImageDocument,
+    settings: AppSettings, start_point: QPointF, end_point: QPointF, *,
+    use_sprite_cache: bool | None = None,
+    sprite_device_pixel_ratio: float | None = None,
+) -> None:
+    line = measurement.effective_line()
+    image_length = math.hypot(line.end.x - line.start.x, line.end.y - line.start.y)
+    output_length = math.hypot(end_point.x() - start_point.x(), end_point.y() - start_point.y())
+    scale = measurement_text_scale(settings, output_length / image_length if image_length > 1e-9 else 1.0)
+    with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
+        _draw_measurement_label_unscaled(
+            painter, measurement, document, settings, start_point / scale, end_point / scale,
+            use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=ratio,
+        )
+
+
+def _draw_measurement_label_unscaled(
     painter: QPainter,
     measurement: Measurement,
     document: ImageDocument,
@@ -2298,6 +2394,21 @@ def draw_measurement_label(
 
 
 def draw_polyline_measurement_label(
+    painter: QPainter, measurement: Measurement, document: ImageDocument,
+    settings: AppSettings, path_points: list[QPointF], image_to_output, *,
+    use_sprite_cache: bool | None = None,
+    sprite_device_pixel_ratio: float | None = None,
+) -> None:
+    scale = measurement_text_scale(settings, _image_to_output_scale(_image_to_output_transform(image_to_output)))
+    with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
+        _draw_polyline_measurement_label_unscaled(
+            painter, measurement, document, settings, [point / scale for point in path_points],
+            lambda point: image_to_output(point) / scale,
+            use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=ratio,
+        )
+
+
+def _draw_polyline_measurement_label_unscaled(
     painter: QPainter,
     measurement: Measurement,
     document: ImageDocument,

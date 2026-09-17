@@ -24651,20 +24651,10 @@ class MainWindow(QMainWindow):
                 self._focus_current_canvas()
                 return
             canvas = self._canvases.get(document.id)
-            persisted_zoom = float(document.view_state.zoom or 1.0)
-            if not math.isfinite(persisted_zoom) or persisted_zoom <= 0:
-                persisted_zoom = 1.0
-            view_zoom = (
-                canvas.view_zoom()
-                if canvas is not None
-                else max(MIN_VIEW_ZOOM, persisted_zoom)
-            )
             text_size_space = OverlayTextSizeSpace.normalize(
                 self._app_settings.text_size_space
             )
             stored_font_size = float(self._app_settings.text_font_size)
-            if text_size_space == OverlayTextSizeSpace.IMAGE_PX:
-                stored_font_size /= max(MIN_VIEW_ZOOM, view_zoom)
             text_layout = OverlayTextLayoutSpec(
                 anchor_alignment=OverlayTextAnchorAlignment.normalize(
                     self._app_settings.text_anchor_alignment

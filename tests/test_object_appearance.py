@@ -703,7 +703,7 @@ class ObjectAppearanceTests(unittest.TestCase):
         try:
             with patch(
                 "fdm.ui.rendering.draw_area_measurement_label",
-                side_effect=lambda _painter, measurement, *_args: calls.append(measurement),
+                side_effect=lambda _painter, measurement, *_args, **_kwargs: calls.append(measurement),
             ):
                 draw_measurements(
                     painter,
@@ -1008,7 +1008,7 @@ class ObjectAppearanceTests(unittest.TestCase):
         )
 
         self.assertFalse(inspector._text_layout_group.isHidden())
-        self.assertEqual(inspector._text_size_space_label.text(), "随图像缩放（推荐）")
+        self.assertEqual(inspector._text_size_space_label.text(), "图像像素（默认）")
         self.assertEqual(inspector._text_image_font_size_spin.value(), 180.0)
         self.assertTrue(inspector._text_image_font_size_spin.isEnabled())
         self.assertTrue(inspector._font_size_spin.isHidden())
@@ -1069,7 +1069,7 @@ class ObjectAppearanceTests(unittest.TestCase):
             view_zoom=0.1,
         )
 
-        self.assertEqual(inspector._text_size_space_label.text(), "旧版固定输出像素")
+        self.assertEqual(inspector._text_size_space_label.text(), "屏幕自适应（旧版）")
         self.assertFalse(inspector._text_image_font_size_spin.isEnabled())
         self.assertEqual(inspector._text_image_font_size_spin.value(), 180.0)
         self.assertFalse(inspector._font_size_spin.isHidden())

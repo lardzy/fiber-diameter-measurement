@@ -460,6 +460,7 @@ def _measurement_overlay_settings_signature(
     """
 
     return (
+        OverlayTextSizeSpace.normalize(settings.measurement_text_size_space),
         _measurement_label_style_signature(
             settings,
             "length_measurement_label_style",
@@ -6188,7 +6189,7 @@ class DocumentCanvas(QWidget):
                 maximum = max(maximum, size)
         return maximum
 
-    def _measurement_label_padding_screen(self) -> float:
+    def _measurement_label_padding_screen(self, *, zoom: float | None = None) -> float:
         label_font_sizes = [
             float(
                 getattr(
@@ -6227,7 +6228,12 @@ class DocumentCanvas(QWidget):
         # perform the second-stage cull. A generous width factor is necessary
         # for object-level 96px+ fonts and long calibrated values that extend
         # into a neighbouring 512px tile.
-        return max(64.0, (maximum * 8.0) + 32.0)
+        label_scale = (
+            max(1.0, self._zoom if zoom is None else zoom)
+            if self._settings.measurement_text_size_space == OverlayTextSizeSpace.IMAGE_PX
+            else 1.0
+        )
+        return max(64.0, ((maximum * 8.0) + 32.0) * label_scale)
 
     def _draw_measurements_direct(
         self,
@@ -7248,7 +7254,8 @@ class DocumentCanvas(QWidget):
             # repeated snapshot construction for the same epoch.
             self._overlay_tile_failed.add(key)
 
-    def _capture_overlay_commands(self, measurements, *, zoom, dpr, count_numbers=None):
+    def _capture_overlay_commands(self, measurements, *, zoom, dpr, count_numbers=None, settings=None):
+        settings = self._screen_passive_settings if settings is None else settings
         commands = []
         primitives = []
         counts = []
@@ -7265,7 +7272,7 @@ class DocumentCanvas(QWidget):
                     recorder,
                     self._document,
                     lambda point: QPointF(point.x * zoom, point.y * zoom),
-                    self._screen_passive_settings,
+                    settings,
                     line_width=2.0,
                     endpoint_radius=4.0,
                     selected_measurement_id=None,
@@ -7290,7 +7297,7 @@ class DocumentCanvas(QWidget):
                 command = build_passive_area_overlay_command(
                     self._document,
                     measurement,
-                    self._screen_passive_settings,
+                    settings,
                     zoom=zoom,
                     line_width=2.0,
                     show_fill=self._show_area_fill,
@@ -7381,6 +7388,9 @@ class DocumentCanvas(QWidget):
     def _scene_preview_measurements(self):
         return self._document.measurements if self._document is not None else ()
 
+    def _scene_preview_settings(self):
+        return self._screen_passive_settings
+
     def _refresh_scene_preview_after_edits(self):
         if self._document is not None and self.isVisible():
             self._request_scene_preview()
@@ -7392,6 +7402,7 @@ class DocumentCanvas(QWidget):
             self._overlay_preview_measurements = ()
             self._overlay_preview_counts = []
             return
+        preview_settings = self._scene_preview_settings()
         deadline = time.perf_counter() + 0.004
         while self._overlay_preview_position < len(self._overlay_preview_measurements):
             measurement = self._overlay_preview_measurements[self._overlay_preview_position]
@@ -7399,7 +7410,9 @@ class DocumentCanvas(QWidget):
                 self._overlay_preview_counts.append(measurement)
             else:
                 self._overlay_preview_commands.extend(
-                    self._capture_overlay_commands((measurement,), zoom=key.zoom, dpr=1.0)
+                    self._capture_overlay_commands(
+                        (measurement,), zoom=key.zoom, dpr=1.0, settings=preview_settings
+                    )
                 )
             self._overlay_preview_position += 1
             if time.perf_counter() >= deadline:
@@ -7410,6 +7423,7 @@ class DocumentCanvas(QWidget):
         self._overlay_preview_commands.extend(self._capture_overlay_commands(
             self._overlay_preview_counts, zoom=key.zoom, dpr=1.0,
             count_numbers={item.id:index+1 for index,item in enumerate(self._overlay_preview_counts)},
+            settings=preview_settings,
         ))
         commands = tuple(self._overlay_preview_commands)
         self._overlay_preview_commands = []
@@ -8034,7 +8048,7 @@ class DocumentCanvas(QWidget):
         tile_size = float(OVERLAY_TILE_LOGICAL_SIZE)
         for zoom, dpr in self._overlay_known_namespaces:
             label_padding = (
-                self._measurement_label_padding_screen()
+                self._measurement_label_padding_screen(zoom=zoom)
                 / max(zoom, 0.001)
             )
             for left, top, right, bottom in bounds_list:

@@ -735,6 +735,7 @@ class WorkspaceLayoutSettings:
 @dataclass(slots=True)
 class AppSettings:
     theme_mode: str = AppThemeMode.DARK
+    measurement_text_size_space: str = OverlayTextSizeSpace.IMAGE_PX
     length_measurement_label_style: MeasurementLabelStyleSettings = field(
         default=_MEASUREMENT_LABEL_STYLE_UNSET  # type: ignore[arg-type]
     )
@@ -912,6 +913,9 @@ class AppSettings:
         normalized = replace(self)
         normalized.workspace_layout = self.workspace_layout.normalized_copy()
         normalized.theme_mode = normalize_theme_mode(self.theme_mode)
+        normalized.measurement_text_size_space = OverlayTextSizeSpace.normalize(
+            self.measurement_text_size_space
+        )
         normalized.length_measurement_label_style = (
             self.length_measurement_label_style.normalized_copy()
         )
@@ -1518,6 +1522,7 @@ class AppSettings:
         return {
             "version": 3,
             "theme_mode": normalized.theme_mode,
+            "measurement_text_size_space": normalized.measurement_text_size_space,
             "length_measurement_label_style": normalized.length_measurement_label_style.to_dict(),
             "area_measurement_label_style": normalized.area_measurement_label_style.to_dict(),
             # Keep flat aliases for older application builds. They mirror the
@@ -1689,6 +1694,9 @@ class AppSettings:
             fallback=area_fallback,
         )
         settings._sync_legacy_measurement_label_fields()
+        settings.measurement_text_size_space = OverlayTextSizeSpace.normalize(
+            payload.get("measurement_text_size_space", settings.measurement_text_size_space)
+        )
         settings.show_count_numbers = bool(payload.get("show_count_numbers", settings.show_count_numbers))
         settings.count_number_font_family = str(payload.get("count_number_font_family", settings.count_number_font_family))
         settings.count_number_font_size = cls._normalize_font_size(

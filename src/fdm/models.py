@@ -949,7 +949,18 @@ class OverlayTextSizeSpace:
     """Coordinate space used to interpret an overlay text font size."""
 
     LEGACY_OUTPUT_PX = "legacy_output_px"
+    # Keep the persisted token readable by older releases.
+    SCREEN_PX = LEGACY_OUTPUT_PX
     IMAGE_PX = "image_px"
+
+    DISPLAY_ITEMS = (
+        ("图像像素（默认）", IMAGE_PX),
+        ("屏幕自适应", SCREEN_PX),
+    )
+    DISPLAY_HINT = (
+        "图像像素：字号按原图像素计算，随图像等比例缩放，与原始分辨率导出保持相同相对大小。\n"
+        "屏幕自适应：字号按屏幕像素计算，缩放时保持清晰易读；原始分辨率导出仍使用设定字号。"
+    )
 
     @classmethod
     def normalize(cls, value: object) -> str:

@@ -1,4 +1,4 @@
-"""Count labels remain screen-sized across the 64-object cache boundary."""
+"""Count display modes stay consistent across the 64-object cache boundary."""
 
 import math
 from dataclasses import replace
@@ -19,7 +19,7 @@ from test_canvas_overlay_handoff import (
 )
 
 from fdm.geometry import Point
-from fdm.models import Measurement
+from fdm.models import Measurement, OverlayTextSizeSpace
 from fdm.ui.rendering import draw_measurements
 
 
@@ -106,12 +106,14 @@ def preview_pixels(canvas, *, direct=False, clip=None):
 @pytest.mark.parametrize("count", [60, 63, 64, 70, 500])
 @pytest.mark.parametrize("zoom", [0.25, 1.0, 8.0, 40.0])
 @pytest.mark.parametrize("dpr", [1, 1.25, 1.5, 2])
+@pytest.mark.parametrize("mode", [OverlayTextSizeSpace.IMAGE_PX, OverlayTextSizeSpace.SCREEN_PX])
 def test_whole_slide_preview_keeps_count_marker_and_number_size(
-    scene, monkeypatch, count, zoom, dpr
+    scene, monkeypatch, count, zoom, dpr, mode
 ):
     canvas, document, *_ = scene
     monkeypatch.setattr(canvas, "devicePixelRatioF", lambda: dpr)
     install_counts(scene, count)
+    canvas.set_settings(replace(canvas._settings, measurement_text_size_space=mode))
     canvas._zoom = zoom
     canvas._pan = Point(300 - 8500 * zoom, 250 - 4350 * zoom)
     document_before = [measurement.to_dict() for measurement in document.measurements]
@@ -162,12 +164,14 @@ def test_count_preview_obeys_partial_repaint_and_current_category_style(scene, n
 
 @pytest.mark.parametrize("scene", ["digital"], indirect=True)
 @pytest.mark.parametrize("dpr", [1, 1.25, 1.5, 2])
+@pytest.mark.parametrize("mode", [OverlayTextSizeSpace.IMAGE_PX, OverlayTextSizeSpace.SCREEN_PX])
 def test_count_preview_and_exact_tiles_have_identical_visible_output(
-    scene, monkeypatch, dpr
+    scene, monkeypatch, dpr, mode
 ):
     canvas, *_ = scene
     monkeypatch.setattr(canvas, "devicePixelRatioF", lambda: dpr)
     install_counts(scene, 70)
+    canvas.set_settings(replace(canvas._settings, measurement_text_size_space=mode))
     canvas._zoom = 2
     canvas._pan = Point(300 - 8500 * 2, 250 - 4350 * 2)
     complete_preview(scene)

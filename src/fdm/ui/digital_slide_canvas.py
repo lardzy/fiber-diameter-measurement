@@ -3076,12 +3076,12 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _scene_preview_key(self):
         key = super()._scene_preview_key()
         return (
-            replace(key, content_stamp=(*key.content_stamp, "screen-space-counts"))
+            replace(key, content_stamp=(*key.content_stamp, "live-preview-labels"))
             if key is not None else None
         )
 
     def _scene_preview_measurements(self):
-        # Count markers and numbers are cosmetic screen-sized content. A
+        # Count markers are cosmetic screen-sized content. A
         # 1536px whole-slide preview can magnify them hundreds of times when
         # zooming back into a native field. Keep them out of that raster.
         return tuple(
@@ -3089,13 +3089,36 @@ class DigitalSlideCanvas(DocumentCanvas):
             if item.measurement_kind != "count"
         )
 
+    def _scene_preview_settings(self):
+        # A whole-slide thumbnail is only a geometry fallback. Baking text
+        # into it both blurs image-pixel glyphs and magnifies screen-sized
+        # glyphs when returning to a native field. Paint visible labels at
+        # the current zoom until the exact overlay tiles arrive instead.
+        settings = self._screen_passive_settings
+        return replace(
+            settings,
+            length_measurement_label_style=replace(
+                settings.length_measurement_label_style, enabled=False
+            ),
+            area_measurement_label_style=replace(
+                settings.area_measurement_label_style, enabled=False
+            ),
+            show_count_numbers=False,
+        )
+
     def _draw_scene_preview(self, painter, context):
-        from fdm.ui.rendering import draw_measurements
+        from fdm.ui.rendering import draw_measurement_label_only, draw_measurements
 
         super()._draw_scene_preview(painter, context)
         if self._document is None:
             return
         visible, numbers = self._measurement_render_inputs(context.image_rect)
+        for item in visible:
+            if item.measurement_kind != "count":
+                draw_measurement_label_only(
+                    painter, self._document, item, self.image_to_widget,
+                    self._screen_passive_settings,
+                )
         counts = tuple(item for item in visible if item.measurement_kind == "count")
         if not counts:
             return

@@ -63,6 +63,10 @@ def _snapshots(dpr):
         CanvasOverlayTileKey,
         PictureOverlayDrawCommand,
     )
+    from fdm.geometry import Point
+    from fdm.models import ImageDocument, Measurement, OverlayTextSizeSpace
+    from fdm.settings import AppSettings, MeasurementLabelStyleSettings
+    from fdm.ui.rendering import build_passive_area_overlay_command
 
     def coordinates(points):
         return np.asarray(points, dtype=np.float64).tobytes()
@@ -138,11 +142,36 @@ def _snapshots(dpr):
     mixed = replace(
         base, area_commands=(primary, overlap, PictureOverlayDrawCommand(primitive))
     )
+    text_cases = []
+    area = Measurement(
+        id="text-area", image_id="text-image", fiber_group_id=None,
+        mode="polygon_area", measurement_kind="area",
+        polygon_px=[Point(176, 216), Point(208, 216), Point(208, 224), Point(176, 224)],
+    )
+    area.recalculate(None)
+    document = ImageDocument(
+        id="text-image", path="overlay-self-check.png", image_size=(256, 256),
+        measurements=[area],
+    )
+    for name, mode in (
+        ("text_image_pixels", OverlayTextSizeSpace.IMAGE_PX),
+        ("text_screen_adaptive", OverlayTextSizeSpace.SCREEN_PX),
+    ):
+        settings = AppSettings(
+            measurement_text_size_space=mode,
+            area_measurement_label_style=MeasurementLabelStyleSettings(enabled=True, font_size=14),
+        )
+        command = build_passive_area_overlay_command(
+            document, area, settings, zoom=0.5, line_width=2.0,
+            show_fill=False, sprite_device_pixel_ratio=dpr,
+        )
+        text_cases.append((name, replace(base, area_commands=(primary, command))))
     return (
         ("magic_primary", base),
         ("magic_subtract", replace(base, area_commands=(primary, subtract))),
         ("scene_overview", mixed),
         ("mixed_exact", replace(mixed, exact_composition=True)),
+        *text_cases,
         ("empty", replace(base, known_empty=True)),
     )
 
@@ -196,6 +225,10 @@ def _validate_result(name, snapshot, result):
             pixel(x, y).alpha() for x in range(98, 118) for y in range(106, 119)
         ):
             raise RuntimeError("measurement label is missing")
+    if name.startswith("text_") and not any(
+        pixel(x, y).alpha() for x in range(55, 123) for y in range(96, 106)
+    ):
+        raise RuntimeError("measurement display mode label is missing")
     if (picture is None) != (expected_picture is None):
         raise RuntimeError("exact composition command stream is missing")
     if picture is not None:
