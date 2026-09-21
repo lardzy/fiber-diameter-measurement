@@ -5678,6 +5678,8 @@ def validate_image_operation_spec(
         raise TypeError("operation 必须是 ImageOperationSpec")
     if not isinstance(input_state, RasterTypeState):
         raise TypeError("input_state 必须是 RasterTypeState")
+    if input_state.semantic is RasterSemantic.HEIGHT:
+        raise ImageRecipeValidationError("高度图保留原始计数，仅支持显示和原始导出", operation_id=operation.operation_id)
     descriptor = get_image_operation_descriptor(operation.operation_id)
     if operation.implementation != "fdm":
         raise ImageRecipeValidationError(

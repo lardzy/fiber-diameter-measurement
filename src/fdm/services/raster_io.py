@@ -361,7 +361,20 @@ def raster_plane_to_qimage(
             gamma=transform.gamma,
             inverted=transform.inverted,
         )
-        if transform.lut_id not in {None, "grayscale"}:
+        if transform.lut_rgb is not None:
+            # Index the original native samples, not an 8-bit intermediate.
+            # Olympus tables have 65536 entries and include their own gamma.
+            table = np.frombuffer(transform.lut_rgb, dtype=np.uint8).reshape(-1, 3)
+            low, high = selected_range or (float(np.nanmin(array)), float(np.nanmax(array)))
+            normalized = np.clip((array.astype(np.float64) - low) / max(high - low, 1e-30), 0, 1)
+            normalized = np.nan_to_num(normalized)
+            if transform.gamma != 1.0:
+                normalized = normalized ** (1.0 / transform.gamma)
+            if transform.inverted:
+                normalized = 1.0 - normalized
+            display = table[(normalized * (len(table) - 1)).astype(np.int64)]
+            image_format = QImage.Format.Format_RGB888
+        elif transform.lut_id not in {None, "grayscale"}:
             display = _apply_display_lut(display, transform.lut_id)
             image_format = QImage.Format.Format_RGB888
         else:

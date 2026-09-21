@@ -149,6 +149,14 @@ class ImageInformationDialog(QDialog):
             )
         )
         self._add_row(form, "换算关系", scale, group)
+        if snapshot.pixels_per_unit_y is not None:
+            self._add_row(form, "Y 比例", f"{snapshot.pixels_per_unit_y:.12g} px/{snapshot.calibration_unit}", group)
+        if snapshot.device_source:
+            source = snapshot.device_source
+            self._add_row(form, "设备通道", source.get("display_name"), group)
+            self._add_row(form, "设备", source.get("device"), group)
+            self._add_row(form, "设备原文件", source.get("source_path"), group)
+            self._add_row(form, "标定状态", source.get("calibration_issue") or "内置标定已读取", group)
         return group
 
     def _derivation_group(self, parent: QWidget) -> QGroupBox:

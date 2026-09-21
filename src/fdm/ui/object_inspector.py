@@ -623,6 +623,8 @@ class CurrentObjectInspector(QWidget):
             distance_label = "固定半径"
 
         calibration = self._document.calibration if self._document is not None else None
+        if calibration is not None and not calibration.is_isotropic:
+            calibration = None
         factor = (
             float(calibration.pixels_per_unit)
             if calibration is not None

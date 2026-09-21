@@ -704,6 +704,7 @@ def _calibration_key(document: ImageDocument | None) -> tuple[object, ...]:
     return (
         calibration.unit,
         float(calibration.pixels_per_unit),
+        float(calibration.y_pixels_per_unit),
     )
 
 

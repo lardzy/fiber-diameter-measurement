@@ -719,6 +719,7 @@ class CalibrationPresetDialog(QDialog):
         initial_pixel_distance: float = 100.0,
         initial_actual_distance: float = 10.0,
         initial_unit: str = DEFAULT_LENGTH_UNIT,
+        initial_pixels_per_unit_y: float | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -726,11 +727,11 @@ class CalibrationPresetDialog(QDialog):
         self._name_edit.setPlaceholderText("例如 40x 显微镜")
         self._name_edit.setText(initial_name)
         self._pixel_distance_spin = QDoubleSpinBox()
-        self._pixel_distance_spin.setDecimals(6)
+        self._pixel_distance_spin.setDecimals(12)
         self._pixel_distance_spin.setRange(0.000001, 1_000_000.0)
         self._pixel_distance_spin.setValue(initial_pixel_distance)
         self._actual_distance_spin = QDoubleSpinBox()
-        self._actual_distance_spin.setDecimals(6)
+        self._actual_distance_spin.setDecimals(12)
         self._actual_distance_spin.setRange(0.000001, 1_000_000.0)
         self._actual_distance_spin.setValue(initial_actual_distance)
         self._unit_combo = _calibration_unit_combo(initial_unit)
@@ -747,6 +748,16 @@ class CalibrationPresetDialog(QDialog):
         form.addRow("实际距离", self._actual_distance_spin)
         form.addRow("单位", self._unit_combo)
         form.addRow("自动计算", self._computed_label)
+        self._dual_axis = QCheckBox("分别设置 X/Y 标尺（以上距离用于 X）")
+        self._y_scale = QDoubleSpinBox()
+        self._y_scale.setDecimals(12)
+        self._y_scale.setRange(1e-12, 1e12)
+        self._y_scale.setValue(initial_pixels_per_unit_y or initial_pixel_distance / initial_actual_distance)
+        self._dual_axis.setChecked(initial_pixels_per_unit_y is not None)
+        self._y_scale.setEnabled(self._dual_axis.isChecked())
+        self._dual_axis.toggled.connect(self._y_scale.setEnabled)
+        form.addRow(self._dual_axis)
+        form.addRow("Y 比例（px/所选单位）", self._y_scale)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -770,6 +781,9 @@ class CalibrationPresetDialog(QDialog):
             pixels_per_unit,
             self._unit_combo.currentData(),
         )
+
+    def y_pixels_per_unit(self) -> float | None:
+        return self._y_scale.value() if self._dual_axis.isChecked() else None
 
 
 class FiberGroupDialog(QDialog):

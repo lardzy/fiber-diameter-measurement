@@ -1,0 +1,1847 @@
+{
+  "date": "2026-09-21",
+  "scope": "Supplied samples; read-only structural and pixel validation, no application integration or hardware acceptance",
+  "environment": {
+    "python": "3.13.12",
+    "numpy": "2.4.3",
+    "tifffile": "2026.7.14",
+    "pillow": "12.1.1"
+  },
+  "inventory": [
+    {
+      "path": "DSX1000/单张/1_0002_1.dsx",
+      "bytes": 7361014,
+      "sha256": "2ea2b19e970abb0d9d0106174441578d40b18abff7ca72f9e73d41e7117c5df7"
+    },
+    {
+      "path": "DSX1000/单张/1_0002_1_C.jpeg",
+      "bytes": 854546,
+      "sha256": "ec254da35e6ad75aba00d40f745658d779d3a0667de7c178d3cc606c856a40b3"
+    },
+    {
+      "path": "DSX1000/单张/1_0002_1_H.jpeg",
+      "bytes": 338416,
+      "sha256": "27682955dacc1263cd165b5e0e0ec9ea652ddaf25eef56b4ce4b6354b5e3b068"
+    },
+    {
+      "path": "DSX1000/拼接/merge_1_0001.dsx",
+      "bytes": 75661768,
+      "sha256": "d328a20d71b25b1e4cfdc2609efc061129367242873352ab8a7a66a6d9813734"
+    },
+    {
+      "path": "DSX1000/拼接/merge_1_0001_C.jpeg",
+      "bytes": 9326142,
+      "sha256": "55715b4eab9003757b525ba51be3101f5948a990c3e6a60fd541449d2f1930af"
+    },
+    {
+      "path": "DSX1000/拼接/merge_1_0001_H.jpeg",
+      "bytes": 1999652,
+      "sha256": "a8588a724938fc93e355b1a130a2d2c3d340413d95d610d77600193eb06f7757"
+    },
+    {
+      "path": "OLS5000/单张/26A054517_001.poir",
+      "bytes": 7977462,
+      "sha256": "eb82ee260e81088772faea1de35417478a76b885bf731166101062f5f8fecae6"
+    },
+    {
+      "path": "OLS5000/单张/26A054517_001_C.jpg",
+      "bytes": 1206999,
+      "sha256": "ba248056c54a04a5ae2f3dd33526347980f3050b53f511c5451280fcecd97ecb"
+    },
+    {
+      "path": "OLS5000/单张/26A054517_001_H.jpg",
+      "bytes": 496603,
+      "sha256": "ceed318acd30074aaeb8593720dd4472e78cacf3fb4709d9de36f5d5df68c60a"
+    },
+    {
+      "path": "OLS5000/单张/26A054517_001_I.jpg",
+      "bytes": 829719,
+      "sha256": "c7b1343c49ae25e008730366ae5ae4517c774d2f0633c042de8e1a1fbfe05294"
+    },
+    {
+      "path": "OLS5000/多点位/26W011304_260821_085523.mpoir",
+      "bytes": 39091482,
+      "sha256": "1ed4c8f0d229d57000f789132f9a276beb0892a260a0203d0da5d8bdb134bdd2"
+    },
+    {
+      "path": "OLS5000/拼接/matl.omp2info",
+      "bytes": 3292,
+      "sha256": "374b24289be77539e63a5d332f23da1bbd5ea44025864fbb72b86c3b1190e463"
+    },
+    {
+      "path": "OLS5000/拼接/反面_002_G001.poir",
+      "bytes": 35874547,
+      "sha256": "f98ea7e1085024a854c7c95253684ce83a13d093ab223d78e045a382aec48022"
+    },
+    {
+      "path": "OLS5000/拼接/反面_002_G001_C.jpg",
+      "bytes": 6919650,
+      "sha256": "f9649337b783e277fe14e734b3bc180778ad4eb63c6e89333e9d79f98c08b9ca"
+    },
+    {
+      "path": "OLS5000/拼接/反面_002_G001_H.jpg",
+      "bytes": 3818653,
+      "sha256": "d11e20520621dd310a342ceba1c77f07e243d4e1d0fc40bce401218ee6474e6c"
+    },
+    {
+      "path": "OLS5000/拼接/反面_002_G001_I.jpg",
+      "bytes": 5096681,
+      "sha256": "23ae96a3262db1eb9a4457106e08a52bfde36b86e73a3f9692b8aab6ca9a7bdc"
+    }
+  ],
+  "checks": {
+    "native_tiff_accepted_by_fdm": 32,
+    "native_tiff_exact_bytes": 32,
+    "metadata_only_oir_count": 14,
+    "metadata_only_pixel_bytes": 0,
+    "source_files_hashes_unchanged": 16,
+    "source_hashes_rechecked_now": 16,
+    "color_only_tiffs": 9,
+    "color_only_lsm_pixel_bytes": 0
+  },
+  "independent_reader": {
+    "reference_library": "oirfile",
+    "version": "2026.9.6",
+    "numpy_version": "2.4.3",
+    "oir_count": 14,
+    "native_planes_equal": 42
+  },
+  "samples": [
+    {
+      "source": "DSX1000/单张/1_0002_1.dsx",
+      "sha256": "2ea2b19e970abb0d9d0106174441578d40b18abff7ca72f9e73d41e7117c5df7",
+      "comparisons": {
+        "color": {
+          "reference": ".tmp/DSX1000、OLS5000样张/DSX1000/单张/1_0002_1_C.jpeg",
+          "full_image": {
+            "mae_8bit": 1.5249652777777778,
+            "rmse_8bit": 6.011255376683285,
+            "psnr_db": 32.55150003806587,
+            "max_abs_8bit": 200.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 1.365919675925926,
+            "rmse_8bit": 5.960232622697428,
+            "psnr_db": 32.62553940453766,
+            "max_abs_8bit": 194.0,
+            "exact_equal": false
+          },
+          "upper_90_percent_excluding_scale_annotation": {
+            "mae_8bit": 1.1941463477366254,
+            "rmse_8bit": 1.8237528152893199,
+            "psnr_db": 42.91148410241127,
+            "max_abs_8bit": 28.0,
+            "exact_equal": false
+          }
+        },
+        "height": {
+          "reference": ".tmp/DSX1000、OLS5000样张/DSX1000/单张/1_0002_1_H.jpeg",
+          "full_image": {
+            "mae_8bit": 98.04959652777778,
+            "rmse_8bit": 111.5054610033285,
+            "psnr_db": 7.184880857312388,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 98.04970717592593,
+            "rmse_8bit": 111.505999638244,
+            "psnr_db": 7.1848388996173185,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "upper_90_percent_excluding_scale_annotation": {
+            "mae_8bit": 96.20164146090535,
+            "rmse_8bit": 110.76644810232818,
+            "psnr_db": 7.24263901647733,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          }
+        }
+      },
+      "datasets": [
+        {
+          "dimensions_wh": [
+            1200,
+            1200
+          ],
+          "pixel_scale_um": {
+            "x": 5.295278410301179,
+            "y": 5.295278410301179,
+            "z": 1e-06
+          }
+        }
+      ],
+      "pages": [
+        {
+          "index": 0,
+          "ifd_offset": 7355190,
+          "shape": [
+            1200,
+            1200,
+            3
+          ],
+          "dtype": "uint8",
+          "kind": "color",
+          "strip_offsets": [
+            8
+          ],
+          "strip_lengths": [
+            4320000
+          ],
+          "description_offset": 7355494,
+          "compression": 1,
+          "pixel_scale_um": {
+            "x": 5.295278410301179,
+            "y": 5.295278410301179,
+            "z": 1e-06
+          }
+        },
+        {
+          "index": 1,
+          "ifd_offset": 4374984,
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "dtype": "uint8",
+          "kind": "thumbnail",
+          "strip_offsets": [
+            4325831
+          ],
+          "strip_lengths": [
+            49152
+          ],
+          "description_offset": 4375204,
+          "compression": 1
+        },
+        {
+          "index": 2,
+          "ifd_offset": 7255214,
+          "shape": [
+            1200,
+            1200
+          ],
+          "dtype": "uint16",
+          "kind": "height",
+          "strip_offsets": [
+            4375214
+          ],
+          "strip_lengths": [
+            2880000
+          ],
+          "description_offset": 7255428,
+          "compression": 1,
+          "pixel_scale_um": {
+            "x": 5.295278410301179,
+            "y": 5.295278410301179,
+            "z": 0.0774721130728722
+          }
+        },
+        {
+          "index": 3,
+          "ifd_offset": 7347236,
+          "shape": [
+            102,
+            300,
+            3
+          ],
+          "dtype": "uint8",
+          "kind": "mapimage",
+          "strip_offsets": [
+            7255435
+          ],
+          "strip_lengths": [
+            91800
+          ],
+          "description_offset": 7347456,
+          "compression": 1
+        }
+      ],
+      "native_exports": {
+        "color": {
+          "shape": [
+            1200,
+            1200,
+            3
+          ],
+          "dtype": "uint8",
+          "min": 39,
+          "max": 255,
+          "raw_sha256": "ba2d3534c10012cb4625f7adabd206ca9fff8a6f3995125deb42ea2bae01b6ed",
+          "tiff_readback_exact": true
+        },
+        "height": {
+          "shape": [
+            1200,
+            1200
+          ],
+          "dtype": "uint16",
+          "min": 14659,
+          "max": 34567,
+          "raw_sha256": "1d32bccc08001f69de6d58585d329da5fecf069651191d0b5fb3f76eae864820",
+          "tiff_readback_exact": true
+        }
+      }
+    },
+    {
+      "source": "DSX1000/拼接/merge_1_0001.dsx",
+      "sha256": "d328a20d71b25b1e4cfdc2609efc061129367242873352ab8a7a66a6d9813734",
+      "comparisons": {
+        "color": {
+          "reference": ".tmp/DSX1000、OLS5000样张/DSX1000/拼接/merge_1_0001_C.jpeg",
+          "full_image": {
+            "mae_8bit": 1.906730551896294,
+            "rmse_8bit": 10.716903644934272,
+            "psnr_db": 27.529417088413012,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 1.7348998181045545,
+            "rmse_8bit": 10.682485198248434,
+            "psnr_db": 27.557357614136137,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "upper_90_percent_excluding_scale_annotation": {
+            "mae_8bit": 1.327138033456149,
+            "rmse_8bit": 4.14888860319453,
+            "psnr_db": 35.77216812331871,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          }
+        },
+        "height": {
+          "reference": ".tmp/DSX1000、OLS5000样张/DSX1000/拼接/merge_1_0001_H.jpeg",
+          "full_image": {
+            "mae_8bit": 95.15359830701486,
+            "rmse_8bit": 117.43641576772623,
+            "psnr_db": 6.734747851934786,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 95.1536352813217,
+            "rmse_8bit": 117.4367292418057,
+            "psnr_db": 6.734724666642501,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "upper_90_percent_excluding_scale_annotation": {
+            "mae_8bit": 94.14580817915231,
+            "rmse_8bit": 116.77365766154709,
+            "psnr_db": 6.783905935088967,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          }
+        }
+      },
+      "datasets": [
+        {
+          "dimensions_wh": [
+            6651,
+            2265
+          ],
+          "pixel_scale_um": {
+            "x": 5.295278410301179,
+            "y": 5.295278410301179,
+            "z": 1e-06
+          }
+        }
+      ],
+      "pages": [
+        {
+          "index": 0,
+          "ifd_offset": 75655946,
+          "shape": [
+            2265,
+            6651,
+            3
+          ],
+          "dtype": "uint8",
+          "kind": "color",
+          "strip_offsets": [
+            8
+          ],
+          "strip_lengths": [
+            45193545
+          ],
+          "description_offset": 75656250,
+          "compression": 1,
+          "pixel_scale_um": {
+            "x": 5.295278410301179,
+            "y": 5.295278410301179,
+            "z": 1e-06
+          }
+        },
+        {
+          "index": 1,
+          "ifd_offset": 45248528,
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "dtype": "uint8",
+          "kind": "thumbnail",
+          "strip_offsets": [
+            45199375
+          ],
+          "strip_lengths": [
+            49152
+          ],
+          "description_offset": 45248748,
+          "compression": 1
+        },
+        {
+          "index": 2,
+          "ifd_offset": 75377788,
+          "shape": [
+            2265,
+            6651
+          ],
+          "dtype": "uint16",
+          "kind": "height",
+          "strip_offsets": [
+            45248758
+          ],
+          "strip_lengths": [
+            30129030
+          ],
+          "description_offset": 75378002,
+          "compression": 1,
+          "pixel_scale_um": {
+            "x": 5.295278410301179,
+            "y": 5.295278410301179,
+            "z": 0.088523343205452
+          }
+        },
+        {
+          "index": 3,
+          "ifd_offset": 75648010,
+          "shape": [
+            300,
+            300,
+            3
+          ],
+          "dtype": "uint8",
+          "kind": "mapimage",
+          "strip_offsets": [
+            75378009
+          ],
+          "strip_lengths": [
+            270000
+          ],
+          "description_offset": 75648230,
+          "compression": 1
+        }
+      ],
+      "native_exports": {
+        "color": {
+          "shape": [
+            2265,
+            6651,
+            3
+          ],
+          "dtype": "uint8",
+          "min": 17,
+          "max": 255,
+          "raw_sha256": "b38d1ec2ce0f8ecefaa941275030f29e937098494d3a6873e599889f5fc24a1d",
+          "tiff_readback_exact": true
+        },
+        "height": {
+          "shape": [
+            2265,
+            6651
+          ],
+          "dtype": "uint16",
+          "min": 0,
+          "max": 38085,
+          "raw_sha256": "5434a3ecbdac1206b86338c5837ac4faa8e653eee3bf6793bb0a7cff99c89c27",
+          "tiff_readback_exact": true
+        }
+      }
+    },
+    {
+      "source": "OLS5000/单张/26A054517_001.poir",
+      "sha256": "eb82ee260e81088772faea1de35417478a76b885bf731166101062f5f8fecae6",
+      "comparisons": {
+        "color": {
+          "reference": ".tmp/DSX1000、OLS5000样张/OLS5000/单张/26A054517_001_C.jpg",
+          "full_image": {
+            "mae_8bit": 3.8775227864583335,
+            "rmse_8bit": 6.15609095540644,
+            "psnr_db": 32.34470305170438,
+            "max_abs_8bit": 112.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 0.29002539316813153,
+            "rmse_8bit": 0.643996137950998,
+            "psnr_db": 51.953138350662975,
+            "max_abs_8bit": 6.0,
+            "exact_equal": false
+          }
+        },
+        "intensity": {
+          "reference": ".tmp/DSX1000、OLS5000样张/OLS5000/单张/26A054517_001_I.jpg",
+          "full_image": {
+            "mae_8bit": 0.08701229095458984,
+            "rmse_8bit": 0.2949784584585624,
+            "psnr_db": 58.73499757482225,
+            "max_abs_8bit": 1.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 0.12103462219238281,
+            "rmse_8bit": 0.34806199988180087,
+            "psnr_db": 57.2976713844466,
+            "max_abs_8bit": 2.0,
+            "exact_equal": false
+          }
+        },
+        "height": {
+          "reference": ".tmp/DSX1000、OLS5000样张/OLS5000/单张/26A054517_001_H.jpg",
+          "full_image": {
+            "mae_8bit": 1.6792640686035156,
+            "rmse_8bit": 6.898192617722026,
+            "psnr_db": 31.35609726921181,
+            "max_abs_8bit": 186.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 0.1735366185506185,
+            "rmse_8bit": 0.48154962633448706,
+            "psnr_db": 54.47798260469596,
+            "max_abs_8bit": 4.0,
+            "exact_equal": false
+          }
+        }
+      },
+      "datasets": [
+        {
+          "member_path": "OLS5000/单张/26A054517_001.poir!26A054517_001_LSM3D^3D_LSM.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0005843610835242034
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0005843610835242034
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "5366a93d-3f71-44ce-9ece-ace43579337a": "Gray",
+            "03269172-3c0c-4212-bde8-7789e12a28d4": "Gray",
+            "418d3664-df01-4fad-835b-d8cefed442bf": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 12989885,
+          "z_scales": [
+            {
+              "channel_guid": "78f8a51f-37c3-4ac4-b977-af9c9cf64531",
+              "count": 1024,
+              "values": {
+                "5030203193157": 1024
+              }
+            }
+          ],
+          "native_exports": {
+            "height": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 54671,
+              "raw_sha256": "ea970f6e21160ae1e4ec19a44bf97d0ea70dd233ad4bde147900d2667a699376",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 259,
+              "max": 65535,
+              "raw_sha256": "6d5449a935884381ff649a6d6b714e4f98b8d457c4396459c9574470ba9e6f86",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "4557ba10281d960057f8dbb928b65714712484aa63e086cb3ed23718c4099e4c",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/单张/26A054517_001.poir!26A054517_001_COLOR3D^XY_Camera.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "5366a93d-3f71-44ce-9ece-ace43579337a": "Gray",
+            "03269172-3c0c-4212-bde8-7789e12a28d4": "Gray",
+            "418d3664-df01-4fad-835b-d8cefed442bf": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 9772197,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                1024,
+                1024,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 0,
+              "max": 255,
+              "raw_sha256": "ff79db765e34fbcfe622ba18aeb16b6c8fecc93cd64022aebc1ab14ead500037",
+              "tiff_readback_exact": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "source": "OLS5000/多点位/26W011304_260821_085523.mpoir",
+      "sha256": "1ed4c8f0d229d57000f789132f9a276beb0892a260a0203d0da5d8bdb134bdd2",
+      "comparisons": {},
+      "datasets": [
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_009_X001_Y001_G001_A001.poir!26W011304_009_COLOR3D^XY_Camera.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 10234100,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                1024,
+                1024,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 8,
+              "max": 255,
+              "raw_sha256": "bc0b671cb79ebe2fca8aa485643878db07dcaff3de2fe2f7c269a02e9f45bb7c",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_009_X001_Y001_G001_A001.poir!26W011304_009_LSM3D^3D_LSM.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0004436902177800738
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0004436902177800738
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 13451608,
+          "z_scales": [
+            {
+              "channel_guid": "78f8a51f-37c3-4ac4-b977-af9c9cf64531",
+              "count": 1024,
+              "values": {
+                "4996128809069": 1024
+              }
+            }
+          ],
+          "native_exports": {
+            "height": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 56536,
+              "raw_sha256": "11c834c47c7056e155e3ff04b1e347ed25c859255db9bff3144d56786c219212",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 268,
+              "max": 65535,
+              "raw_sha256": "e9759428addcc231e2b938043d3bfccea82dd5f7af160767a171050fb4b2712a",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "75dab633c8778bf196169bae3ca67886e9eeb4b1d067f0a5800d47ccb204ef50",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_010_X001_Y001_G002_A001.poir!26W011304_010_COLOR3D^XY_Camera.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 10234096,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                1024,
+                1024,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 2,
+              "max": 255,
+              "raw_sha256": "a82a6e5514f144573fef1dc099a5b2e5af768777ca74548344e6f449624ba6f4",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_010_X001_Y001_G002_A001.poir!26W011304_010_LSM3D^3D_LSM.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0003045450039250333
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0003045450039250333
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 13451606,
+          "z_scales": [
+            {
+              "channel_guid": "78f8a51f-37c3-4ac4-b977-af9c9cf64531",
+              "count": 1024,
+              "values": {
+                "4995953388765": 1024
+              }
+            }
+          ],
+          "native_exports": {
+            "height": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 52366,
+              "raw_sha256": "78083d4e5b0a0e2df96d014b12cd3292772db034e869549982bdc0b085436e9c",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 272,
+              "max": 65535,
+              "raw_sha256": "4d1d241c5e0063ed0b25a9c965f3894cb0f4aa739342038c3ed4cf3554d7c472",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "d52db6449da1d8dfa020a5523970d2d1acb7a01aebfa430354b74ceb1bd11654",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_011_X001_Y001_G003_A001.poir!26W011304_011_COLOR3D^XY_Camera.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 10234098,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                1024,
+                1024,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 3,
+              "max": 255,
+              "raw_sha256": "1922aeafeb49c542e20e369ad85c6573019cc96fcf5a2231eef4e738357545e4",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_011_X001_Y001_G003_A001.poir!26W011304_011_LSM3D^3D_LSM.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0003645029048808491
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0003645029048808491
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 13451604,
+          "z_scales": [
+            {
+              "channel_guid": "78f8a51f-37c3-4ac4-b977-af9c9cf64531",
+              "count": 1024,
+              "values": {
+                "4974580895046": 1024
+              }
+            }
+          ],
+          "native_exports": {
+            "height": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 54716,
+              "raw_sha256": "b3b7124d10c7b0a292edbaeb4896cbf14910206e790df7a8f11f247cc9007989",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 282,
+              "max": 65535,
+              "raw_sha256": "0530bf990d3d851eb39e54ddd5fd2752b5855f56552cb8aea35ec03572f0345d",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "47694a9c9f5a988d2ef52a8578541dab3fcd806cc772e95c62db42fda5bbb553",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_012_X001_Y001_G004_A001.poir!26W011304_012_COLOR3D^XY_Camera.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 10234096,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                1024,
+                1024,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 2,
+              "max": 255,
+              "raw_sha256": "0c3ac0755fd590f2525095fb0ca4b2c3ddfb54b605c0ccf694b5a3947df4d338",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_012_X001_Y001_G004_A001.poir!26W011304_012_LSM3D^3D_LSM.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.00031421642160522667
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.00031421642160522667
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 13451618,
+          "z_scales": [
+            {
+              "channel_guid": "78f8a51f-37c3-4ac4-b977-af9c9cf64531",
+              "count": 1024,
+              "values": {
+                "5001710989319": 1024
+              }
+            }
+          ],
+          "native_exports": {
+            "height": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 51950,
+              "raw_sha256": "05b0c0aab5002090ec61018dfea763d3a5b3b195c4c8b9ee259864001e1004df",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 272,
+              "max": 65535,
+              "raw_sha256": "ef0c9b0447ed3dc33dfdda8c06345007036f577065d222b85f3b511ab33ef994",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "87728343349d68cc1e79ca7ba7a5b113994f08d76ee9b3d68463054fb50570b4",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_013_X001_Y001_G005_A001.poir!26W011304_013_COLOR3D^XY_Camera.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.0
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.0
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 10234100,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                1024,
+                1024,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 1,
+              "max": 255,
+              "raw_sha256": "977efe2c7555f6b5ecf7dee6fc8106fa416ce26fab92c1ae77a2e537f234d257",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/多点位/26W011304_260821_085523.mpoir!26W011304_013_X001_Y001_G005_A001.poir!26W011304_013_LSM3D^3D_LSM.oir",
+          "dimensions_wh": [
+            1024,
+            1024
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 0.125,
+              "y": 0.125,
+              "z": 0.00038785959760316585
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.00899373895262,
+              "y": 1.0103507177364701,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 0.1261242173690775,
+              "y": 0.12629383971705876,
+              "z": 0.00038785959760316585
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "810c6fd4-e51b-4f7d-a22c-b27c859c30d0": "Gray",
+            "8aaac174-68ec-4782-a298-43aed2227d06": "Gray",
+            "b1fb867e-4fb4-44d9-9ecf-f863dd40ee90": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 13451620,
+          "z_scales": [
+            {
+              "channel_guid": "78f8a51f-37c3-4ac4-b977-af9c9cf64531",
+              "count": 1024,
+              "values": {
+                "4980981309262": 1024
+              }
+            }
+          ],
+          "native_exports": {
+            "height": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 52399,
+              "raw_sha256": "a471271e62077c0dd34ee0dab4487f5872f4136ce8229c266f587ff8088d9f73",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 271,
+              "max": 65535,
+              "raw_sha256": "05ea28fb2049814103b1797a2fbecd7f96fc5330724bb5be8cb0291fc28fecd4",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                1024,
+                1024
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "1da790bb343e8e8f43048eb954a8a11ea019d1609279bc4108c8b72b3ae0c8dc",
+              "tiff_readback_exact": true
+            }
+          }
+        }
+      ],
+      "layout": {
+        "map_image": "Map_A01.oir",
+        "groups": [
+          {
+            "id": "4c5d76e6-d43d-4550-b2f0-65c350b9217c",
+            "stitching": "false",
+            "stitch_image": null,
+            "region": {
+              "height": "129324",
+              "width": "129151",
+              "x": "634849",
+              "y": "-3309433"
+            },
+            "area_info": {
+              "numOfXAreas": "1",
+              "numOfYAreas": "1",
+              "areaLeft": "634849",
+              "areaTop": "-3309433",
+              "areaWidth": "129151",
+              "areaHeight": "129324"
+            },
+            "areas": [
+              {
+                "protocolId": "ee3f1784-b5be-4d6c-a0ee-9d1af4113ecb",
+                "image": "26W011304_009_X001_Y001_G001_A001.poir",
+                "xIndex": "0",
+                "yIndex": "0"
+              }
+            ]
+          },
+          {
+            "id": "fa28074e-a174-4a32-93e4-2917ca35aec5",
+            "stitching": "false",
+            "stitch_image": null,
+            "region": {
+              "height": "129324",
+              "width": "129151",
+              "x": "558989",
+              "y": "-3020373"
+            },
+            "area_info": {
+              "numOfXAreas": "1",
+              "numOfYAreas": "1",
+              "areaLeft": "558989",
+              "areaTop": "-3020373",
+              "areaWidth": "129151",
+              "areaHeight": "129324"
+            },
+            "areas": [
+              {
+                "protocolId": "9f1d35db-fb3a-46f4-8bbf-651df16b58ab",
+                "image": "26W011304_010_X001_Y001_G002_A001.poir",
+                "xIndex": "0",
+                "yIndex": "0"
+              }
+            ]
+          },
+          {
+            "id": "ff3159e4-aaef-4fef-abc2-2ecdedf82db7",
+            "stitching": "false",
+            "stitch_image": null,
+            "region": {
+              "height": "129324",
+              "width": "129151",
+              "x": "432689",
+              "y": "-4172453"
+            },
+            "area_info": {
+              "numOfXAreas": "1",
+              "numOfYAreas": "1",
+              "areaLeft": "432689",
+              "areaTop": "-4172453",
+              "areaWidth": "129151",
+              "areaHeight": "129324"
+            },
+            "areas": [
+              {
+                "protocolId": "3e01cd38-1528-4647-85e9-8a493be3130a",
+                "image": "26W011304_011_X001_Y001_G003_A001.poir",
+                "xIndex": "0",
+                "yIndex": "0"
+              }
+            ]
+          },
+          {
+            "id": "9b8a35c2-8513-4f82-b536-629cc747680b",
+            "stitching": "false",
+            "stitch_image": null,
+            "region": {
+              "height": "129324",
+              "width": "129151",
+              "x": "284889",
+              "y": "-2745593"
+            },
+            "area_info": {
+              "numOfXAreas": "1",
+              "numOfYAreas": "1",
+              "areaLeft": "284889",
+              "areaTop": "-2745593",
+              "areaWidth": "129151",
+              "areaHeight": "129324"
+            },
+            "areas": [
+              {
+                "protocolId": "04140d5a-0f60-4455-802a-102ec0acfb88",
+                "image": "26W011304_012_X001_Y001_G004_A001.poir",
+                "xIndex": "0",
+                "yIndex": "0"
+              }
+            ]
+          },
+          {
+            "id": "e9248b24-5c37-441a-aa32-fefb3e16aa56",
+            "stitching": "false",
+            "stitch_image": null,
+            "region": {
+              "height": "129324",
+              "width": "129151",
+              "x": "431369",
+              "y": "-4123773"
+            },
+            "area_info": {
+              "numOfXAreas": "1",
+              "numOfYAreas": "1",
+              "areaLeft": "431369",
+              "areaTop": "-4123773",
+              "areaWidth": "129151",
+              "areaHeight": "129324"
+            },
+            "areas": [
+              {
+                "protocolId": "a61a66b0-4615-48c8-9c10-40a62e2fd524",
+                "image": "26W011304_013_X001_Y001_G005_A001.poir",
+                "xIndex": "0",
+                "yIndex": "0"
+              }
+            ]
+          }
+        ],
+        "map_member_present": false
+      }
+    },
+    {
+      "source": "OLS5000/拼接/反面_002_G001.poir",
+      "sha256": "f98ea7e1085024a854c7c95253684ce83a13d093ab223d78e045a382aec48022",
+      "comparisons": {
+        "color": {
+          "reference": ".tmp/DSX1000、OLS5000样张/OLS5000/拼接/反面_002_G001_C.jpg",
+          "full_image": {
+            "mae_8bit": 9.243081113453938,
+            "rmse_8bit": 12.689378672927765,
+            "psnr_db": 26.061996455240582,
+            "max_abs_8bit": 126.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 0.2751112099520157,
+            "rmse_8bit": 0.6196128921976196,
+            "psnr_db": 52.288394698981044,
+            "max_abs_8bit": 5.0,
+            "exact_equal": false
+          }
+        },
+        "intensity": {
+          "reference": ".tmp/DSX1000、OLS5000样张/OLS5000/拼接/反面_002_G001_I.jpg",
+          "full_image": {
+            "mae_8bit": 0.08654415317962086,
+            "rmse_8bit": 0.2941838764779961,
+            "psnr_db": 58.758426280857236,
+            "max_abs_8bit": 1.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 0.12116561852575818,
+            "rmse_8bit": 0.3482542100891995,
+            "psnr_db": 57.29287610130578,
+            "max_abs_8bit": 2.0,
+            "exact_equal": false
+          }
+        },
+        "height": {
+          "reference": ".tmp/DSX1000、OLS5000样张/OLS5000/拼接/反面_002_G001_H.jpg",
+          "full_image": {
+            "mae_8bit": 2.3280212849800654,
+            "rmse_8bit": 4.99113456941442,
+            "psnr_db": 34.166818021950725,
+            "max_abs_8bit": 255.0,
+            "exact_equal": false
+          },
+          "jpeg_sampling": 2,
+          "jpeg_codec_control": {
+            "mae_8bit": 0.19369990953827734,
+            "rmse_8bit": 0.5114096124749805,
+            "psnr_db": 53.955425873018726,
+            "max_abs_8bit": 4.0,
+            "exact_equal": false
+          }
+        }
+      },
+      "datasets": [
+        {
+          "member_path": "OLS5000/拼接/反面_002_G001.poir!Stitch_A01_G001_0001^3D_LSM.oir",
+          "dimensions_wh": [
+            1016,
+            4709
+          ],
+          "device": "LSM",
+          "calibration": {
+            "nominal_length": {
+              "x": 1.25,
+              "y": 1.250549197906079,
+              "z": 0.007673651118093
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.0006972820670001,
+              "y": 0.999999931867928,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 1.25087160258375,
+              "y": 1.250549112703571,
+              "z": 0.007673651118093
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "height",
+            "intensity",
+            "invalid"
+          ],
+          "lut_names": {
+            "133e4599-8817-4158-9ff2-d2d791e4cad7": "Gray_Gamma1.5",
+            "58fbd155-68c9-4074-8c21-af64f9c44e6f": "Gray",
+            "78f8a51f-37c3-4ac4-b977-af9c9cf64531": "Rainbow1",
+            "b89e09ed-fe6d-46fe-84b8-3f68d3296b7a": "Gray",
+            "2ac843a6-ab02-4d09-b1a6-37ebac5084fb": "Gray",
+            "5704cf74-f2bb-47f5-abb5-bcc5a8f17388": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 33051182,
+          "z_scales": [],
+          "native_exports": {
+            "height": {
+              "shape": [
+                4709,
+                1016
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 62467,
+              "raw_sha256": "d131bf0e9d01d55fe2fbdb461d3fad96f8138a82f0151645156ce4dfa2c918a5",
+              "tiff_readback_exact": true
+            },
+            "intensity": {
+              "shape": [
+                4709,
+                1016
+              ],
+              "dtype": "uint16",
+              "min": 219,
+              "max": 65535,
+              "raw_sha256": "c779b96589079838d4cc70b3ff458d8e1645aad684630eb52e640956349c9a27",
+              "tiff_readback_exact": true
+            },
+            "invalid": {
+              "shape": [
+                4709,
+                1016
+              ],
+              "dtype": "uint16",
+              "min": 0,
+              "max": 90,
+              "raw_sha256": "b69abfcdd1520fa34ab1feb99df14968153e07ff089428e31c4cbc8a8a5de1d8",
+              "tiff_readback_exact": true
+            }
+          }
+        },
+        {
+          "member_path": "OLS5000/拼接/反面_002_G001.poir!Stitch_A01_G001^XY_Camera.oir",
+          "dimensions_wh": [
+            1016,
+            4709
+          ],
+          "device": "Camera",
+          "calibration": {
+            "nominal_length": {
+              "x": 1.25,
+              "y": 1.250549197906079,
+              "z": 0.007673651118093
+            },
+            "units": {
+              "x": "MICRO_METER",
+              "y": "MICRO_METER",
+              "z": "MICRO_METER"
+            },
+            "pixelCalibration": {
+              "x": 1.0006972820670001,
+              "y": 0.999999931867928,
+              "z": 1.0
+            },
+            "userPixelCalibration": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "factory_corrected_um": {
+              "x": 1.25087160258375,
+              "y": 1.250549112703571,
+              "z": 0.007673651118093
+            },
+            "nonidentity_user_calibration_unverified": false
+          },
+          "plane_kinds": [
+            "red",
+            "green",
+            "blue"
+          ],
+          "lut_names": {
+            "b89e09ed-fe6d-46fe-84b8-3f68d3296b7a": "Gray",
+            "2ac843a6-ab02-4d09-b1a6-37ebac5084fb": "Gray",
+            "5704cf74-f2bb-47f5-abb5-bcc5a8f17388": "Gray"
+          },
+          "block_count": 17,
+          "index_offset": 18692595,
+          "z_scales": [],
+          "native_exports": {
+            "color": {
+              "shape": [
+                4709,
+                1016,
+                3
+              ],
+              "dtype": "uint8",
+              "min": 0,
+              "max": 255,
+              "raw_sha256": "71ad799fdff026c34513ace2d93479d653585def6dc51dd0c0dc01ff51f4d0fa",
+              "tiff_readback_exact": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "reference_source_sha256": {
+    "oirfile_reference.py": "46ad19934ea19854eab298ae91baea8f8f545847fdef4759e39fd3cf10257a29",
+    "oirfile_gwyddion.c": "faf558124e26677278fee5a632872e836dfa4032a2ce9991b8068b7a87e7ac27"
+  }
+}

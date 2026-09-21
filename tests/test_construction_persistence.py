@@ -67,7 +67,7 @@ def test_legacy_document_defaults_to_empty_sparse_construction_layer() -> None:
         version="test",
         documents=[legacy_project.documents[0]],
     ).to_dict()
-    assert project_payload["project_schema_version"] == PROJECT_SCHEMA_VERSION == 2
+    assert project_payload["project_schema_version"] == PROJECT_SCHEMA_VERSION == 3
     assert "construction-geometry/v1" not in project_payload["required_features"]
 
 
@@ -79,7 +79,7 @@ def test_construction_roundtrip_auto_declares_supported_required_feature() -> No
 
     payload = project.to_dict()
 
-    assert payload["project_schema_version"] == 2
+    assert payload["project_schema_version"] == PROJECT_SCHEMA_VERSION
     assert payload["required_features"] == ["construction-geometry/v1"]
     document_payload = payload["documents"][0]
     assert document_payload["construction_entities"] == [entity.to_dict()]

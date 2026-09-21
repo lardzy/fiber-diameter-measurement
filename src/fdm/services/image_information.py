@@ -29,6 +29,8 @@ class ImageInformationSnapshot:
     dpi_y: float | None = None
     calibration_mode: str = ""
     pixels_per_unit: float | None = None
+    pixels_per_unit_y: float | None = None
+    device_source: dict | None = None
     calibration_unit: str = ""
     derivation_source_document_id: str = ""
     derivation_step_count: int = 0
@@ -54,6 +56,8 @@ class ImageInformationSnapshot:
             "dpi_y": self.dpi_y,
             "calibration_mode": self.calibration_mode,
             "pixels_per_unit": self.pixels_per_unit,
+            "pixels_per_unit_y": self.pixels_per_unit_y,
+            "device_source": self.device_source,
             "calibration_unit": self.calibration_unit,
             "derivation_source_document_id": self.derivation_source_document_id,
             "derivation_step_count": self.derivation_step_count,
@@ -112,6 +116,8 @@ def build_image_information_snapshot(
             else None
         ),
         calibration_unit=(calibration.unit if calibration is not None else ""),
+        pixels_per_unit_y=(calibration.y_pixels_per_unit if calibration else None),
+        device_source=document.metadata.get("device_source"),
         derivation_source_document_id=(
             derivation.source_document_id if derivation is not None else ""
         ),

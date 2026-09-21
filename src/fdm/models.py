@@ -50,8 +50,8 @@ from fdm.version import __version__
 UNCATEGORIZED_LABEL = "未分类"
 UNCATEGORIZED_COLOR = "#98A2B3"
 
-PROJECT_SCHEMA_VERSION = 2
-PROJECT_MIN_READER_VERSION = 2
+PROJECT_SCHEMA_VERSION = 3
+PROJECT_MIN_READER_VERSION = 3
 SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
     {
         "analysis-artifacts/v1",
@@ -377,9 +377,28 @@ class Calibration:
     pixels_per_unit: float
     unit: str
     source_label: str
+    pixels_per_unit_y: float | None = None
 
     def __post_init__(self) -> None:
         self.pixels_per_unit = require_positive_finite(self.pixels_per_unit)
+        if self.pixels_per_unit_y is not None:
+            self.pixels_per_unit_y = require_positive_finite(self.pixels_per_unit_y)
+
+    @property
+    def y_pixels_per_unit(self) -> float:
+        return self.pixels_per_unit if self.pixels_per_unit_y is None else self.pixels_per_unit_y
+
+    @property
+    def pixel_size_x(self) -> float:
+        return 1.0 / self.pixels_per_unit
+
+    @property
+    def pixel_size_y(self) -> float:
+        return 1.0 / self.y_pixels_per_unit
+
+    @property
+    def is_isotropic(self) -> bool:
+        return math.isclose(self.pixels_per_unit, self.y_pixels_per_unit, rel_tol=1e-12)
 
     def clone(self, *, mode: str | None = None, source_label: str | None = None) -> "Calibration":
         return Calibration(
@@ -387,36 +406,53 @@ class Calibration:
             pixels_per_unit=self.pixels_per_unit,
             unit=self.unit,
             source_label=self.source_label if source_label is None else source_label,
+            pixels_per_unit_y=self.pixels_per_unit_y,
         )
 
     def as_project_default(self) -> "Calibration":
         return self.clone(mode="project_default")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "mode": self.mode,
-            "pixels_per_unit": self.pixels_per_unit,
             "unit": self.unit,
             "source_label": self.source_label,
         }
+        if self.is_isotropic:
+            payload["pixels_per_unit"] = self.pixels_per_unit
+        else:
+            # No legacy scalar: older sidecar readers must fail rather than
+            # silently interpreting anisotropic pixels as square pixels.
+            payload["axis_pixels_per_unit"] = {
+                "x": self.pixels_per_unit, "y": self.y_pixels_per_unit,
+            }
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "Calibration":
+        axes = payload.get("axis_pixels_per_unit")
         return cls(
             mode=str(payload["mode"]),
-            pixels_per_unit=float(payload["pixels_per_unit"]),
+            pixels_per_unit=float(axes["x"] if axes is not None else payload["pixels_per_unit"]),
             unit=str(payload["unit"]),
             source_label=str(payload["source_label"]),
+            pixels_per_unit_y=float(axes["y"]) if axes is not None else None,
         )
 
-    def px_to_unit(self, value_px: float) -> float:
-        return value_px / self.pixels_per_unit
+    def px_to_unit(self, value_px: float, *, axis: str = "x") -> float:
+        return value_px / (self.y_pixels_per_unit if axis == "y" else self.pixels_per_unit)
 
-    def unit_to_px(self, value: float) -> float:
-        return value * self.pixels_per_unit
+    def unit_to_px(self, value: float, *, axis: str = "x") -> float:
+        return value * (self.y_pixels_per_unit if axis == "y" else self.pixels_per_unit)
+
+    def line_length_unit(self, line: Line) -> float:
+        return math.hypot(
+            (line.end.x - line.start.x) * self.pixel_size_x,
+            (line.end.y - line.start.y) * self.pixel_size_y,
+        )
 
     def px_area_to_unit(self, value_px: float) -> float:
-        return value_px / (self.pixels_per_unit ** 2)
+        return value_px / (self.pixels_per_unit * self.y_pixels_per_unit)
 
 
 @dataclass(slots=True)
@@ -427,9 +463,12 @@ class CalibrationPreset:
     pixel_distance: float | None = None
     actual_distance: float | None = None
     computed_pixels_per_unit: float | None = None
+    pixels_per_unit_y: float | None = None
 
     def __post_init__(self) -> None:
         self.pixels_per_unit = require_positive_finite(self.pixels_per_unit)
+        if self.pixels_per_unit_y is not None:
+            self.pixels_per_unit_y = require_positive_finite(self.pixels_per_unit_y)
         if self.computed_pixels_per_unit is not None:
             self.computed_pixels_per_unit = require_positive_finite(
                 self.computed_pixels_per_unit,
@@ -457,10 +496,11 @@ class CalibrationPreset:
             pixels_per_unit=self.resolved_pixels_per_unit(),
             unit=self.unit,
             source_label=self.name,
+            pixels_per_unit_y=self.pixels_per_unit_y,
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "name": self.name,
             "pixels_per_unit": self.resolved_pixels_per_unit(),
             "unit": self.unit,
@@ -468,9 +508,22 @@ class CalibrationPreset:
             "actual_distance": self.actual_distance,
             "computed_pixels_per_unit": self.resolved_pixels_per_unit(),
         }
+        if not self.to_calibration().is_isotropic:
+            payload.pop("pixels_per_unit")
+            payload.pop("computed_pixels_per_unit")
+            payload["axis_pixels_per_unit"] = {
+                "x": self.resolved_pixels_per_unit(), "y": self.pixels_per_unit_y,
+            }
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "CalibrationPreset":
+        axes = payload.get("axis_pixels_per_unit")
+        if axes is not None:
+            return cls(name=str(payload["name"]), unit=str(payload["unit"]),
+                       pixels_per_unit=float(axes["x"]), pixels_per_unit_y=float(axes["y"]),
+                       pixel_distance=payload.get("pixel_distance"), actual_distance=payload.get("actual_distance"),
+                       computed_pixels_per_unit=float(axes["x"]))
         computed_pixels_per_unit = payload.get("computed_pixels_per_unit")
         pixels_per_unit = float(
             computed_pixels_per_unit
@@ -775,7 +828,12 @@ class Measurement:
         if calibration is None:
             self.diameter_unit = self.diameter_px
         else:
-            self.diameter_unit = calibration.px_to_unit(self.diameter_px)
+            self.diameter_unit = (
+                sum(calibration.line_length_unit(Line(a, b))
+                    for a, b in zip(self.polyline_px, self.polyline_px[1:]))
+                if self.measurement_kind == "polyline"
+                else calibration.line_length_unit(self.effective_line())
+            )
         self.area_px = None
         self.area_unit = None
 
@@ -1139,7 +1197,7 @@ class CalibrationSidecar:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "version": "1",
+            "version": "1" if self.calibration.is_isotropic else "2",
             "image_path": self.image_path,
             "calibration": self.calibration.to_dict(),
             "calibration_line": self.calibration_line.to_dict() if self.calibration_line else None,
@@ -1148,6 +1206,8 @@ class CalibrationSidecar:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "CalibrationSidecar":
+        if str(payload.get("version", "1")) not in {"1", "2"}:
+            raise ValueError("不支持的标定侧车版本")
         line_payload = payload.get("calibration_line")
         return cls(
             image_path=str(payload.get("image_path", "")),
@@ -2046,6 +2106,7 @@ class ImageDocument:
             calibration_token = (
                 calibration.mode,
                 float(calibration.pixels_per_unit),
+                float(calibration.y_pixels_per_unit),
                 calibration.unit,
                 calibration.source_label,
             )
@@ -2450,6 +2511,7 @@ class ProjectState:
                 if calibration is None
                 else calibration_signature_from_values(
                     pixels_per_unit=calibration.pixels_per_unit,
+                    pixels_per_unit_y=calibration.y_pixels_per_unit,
                     unit=calibration.unit,
                 )
             )
@@ -2662,10 +2724,11 @@ def _rebuild_analysis_dependency_signature(
         else {
             "signature": calibration_signature_from_values(
                 pixels_per_unit=calibration.pixels_per_unit,
+                pixels_per_unit_y=calibration.y_pixels_per_unit,
                 unit=calibration.unit,
             ),
             "pixel_size_x": 1.0 / calibration.pixels_per_unit,
-            "pixel_size_y": 1.0 / calibration.pixels_per_unit,
+            "pixel_size_y": calibration.pixel_size_y,
             "unit": calibration.unit,
         }
     )

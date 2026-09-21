@@ -1947,8 +1947,8 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             ),
             purpose="重采样为指定宽高。",
             calibration_effect=(
-                "等比例缩放时同步调整 pixels_per_unit；"
-                "已标定图像的非等比例缩放必须先明确清除标定。"
+                "按输出宽、高分别更新 X、Y 标尺；"
+                "等比例与非等比例缩放均保留正确的双轴标定。"
             ),
             roi_behavior=no_roi,
         ),
@@ -2022,7 +2022,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                 ),
             ),
             purpose="将 k×k 原始像素块聚合为一个输出像素。",
-            calibration_effect="pixels_per_unit 除以像素合并系数。",
+            calibration_effect="X、Y 两轴的每单位像素数均除以像素合并系数。",
             roi_behavior=no_roi,
         ),
         define(

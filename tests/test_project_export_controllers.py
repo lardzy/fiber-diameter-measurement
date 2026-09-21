@@ -372,7 +372,7 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertIsNotNone(host.confirmed)
             self.assertFalse(
                 project_path.with_name(
-                    f"{project_path.name}.pre-v2.bak"
+                    f"{project_path.name}.pre-v3.bak"
                 ).exists()
             )
 

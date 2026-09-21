@@ -1180,6 +1180,7 @@ def calibration_signature_from_values(
     *,
     pixels_per_unit: float | None,
     unit: str | None,
+    pixels_per_unit_y: float | None = None,
 ) -> str | None:
     """Build a stable signature without exposing calibration formatting details."""
 
@@ -1198,11 +1199,15 @@ def calibration_signature_from_values(
         field_name="unit",
         maximum_length=64,
     )
+    values = {"pixels_per_unit": normalized_scale, "unit": normalized_unit}
+    if pixels_per_unit_y is not None:
+        y_scale = _finite_number(pixels_per_unit_y, field_name="pixels_per_unit_y")
+        if y_scale <= 0:
+            raise ValueError("pixels_per_unit_y 必须大于 0")
+        if not math.isclose(y_scale, normalized_scale, rel_tol=1e-12):
+            values["pixels_per_unit_y"] = y_scale
     payload = json.dumps(
-        {
-            "pixels_per_unit": normalized_scale,
-            "unit": normalized_unit,
-        },
+        values,
         ensure_ascii=False,
         allow_nan=False,
         sort_keys=True,

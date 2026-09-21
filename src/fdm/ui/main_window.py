@@ -73,6 +73,8 @@ from PySide6.QtWidgets import (
 )
 from shiboken6 import isValid as is_qobject_valid
 
+from fdm.services.device_image_io import DEVICE_SUFFIXES
+from fdm.ui.device_import_dialog import DeviceImportDialog, LoadedDeviceChannel
 from fdm import __version__
 from fdm.analysis_artifacts import (
     AnalysisArtifact,
@@ -1734,7 +1736,7 @@ class SmallObjectEnhancementPreviewWindow(QWidget):
 
 
 class MainWindow(QMainWindow):
-    IMAGE_FILTER = "图像与数字化切片 (*.png *.jpg *.jpeg *.bmp *.webp *.tif *.tiff *.fdmslide);;图像文件 (*.png *.jpg *.jpeg *.bmp *.webp *.tif *.tiff);;数字化切片 (*.fdmslide)"
+    IMAGE_FILTER = "图像与数字化切片 (*.png *.jpg *.jpeg *.bmp *.webp *.tif *.tiff *.dsx *.poir *.mpoir *.fdmslide);;图像文件 (*.png *.jpg *.jpeg *.bmp *.webp *.tif *.tiff);;设备图像 (*.dsx *.poir *.mpoir);;数字化切片 (*.fdmslide)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     IMAGE_SUFFIXES = {
         ".png",
@@ -1746,7 +1748,7 @@ class MainWindow(QMainWindow):
         ".tiff",
     }
     DIGITAL_SLIDE_SUFFIXES = {DIGITAL_SLIDE_SUFFIX}
-    SUPPORTED_SUFFIXES = IMAGE_SUFFIXES | DIGITAL_SLIDE_SUFFIXES
+    SUPPORTED_SUFFIXES = IMAGE_SUFFIXES | DIGITAL_SLIDE_SUFFIXES | DEVICE_SUFFIXES
     MAP_BUILD_AVAILABLE = True
     PREVIEW_ANALYSIS_INTERVAL_MS = 300
     TABLE_COL_GROUP = int(MeasurementResultColumn.GROUP)
@@ -1763,6 +1765,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("显微测量工作台")
         self.setWindowIcon(application_icon())
         self.setAcceptDrops(True)
+        self._device_import_dialog = None
 
         self.project = ProjectState.empty()
         self._runtime_features = packaged_runtime_features()
@@ -2618,6 +2621,11 @@ class MainWindow(QMainWindow):
             self._open_training_dataset_export_dialog
         )
 
+        self.device_channels_action = QAction("同源通道…", self)
+        self.device_channels_action.triggered.connect(self._open_same_source_channels)
+        self.device_calibration_action = QAction("从设备文件读取标尺…", self)
+        self.device_calibration_action.triggered.connect(self._read_device_calibration)
+
         self.image_information_action = QAction("图像信息与属性…", self)
         self.image_information_action.triggered.connect(
             self._show_current_image_information
@@ -3266,6 +3274,8 @@ class MainWindow(QMainWindow):
         image_menu = self.menuBar().addMenu("图像")
         image_menu.addAction(self.watermark_action)
         image_menu.addAction(self.image_information_action)
+        image_menu.addAction(self.device_channels_action)
+        image_menu.addAction(self.device_calibration_action)
         image_menu.addAction(self.duplicate_raster_action)
         image_menu.addSeparator()
         image_menu.addAction(self.image_processing_workbench_action)
@@ -5991,6 +6001,9 @@ class MainWindow(QMainWindow):
             scale = 1.0 / calibration.pixels_per_unit
             text = f"已标定 · {scale:.6g} {calibration.unit}/px"
             details = f"{calibration.source_label}\n{calibration.pixels_per_unit:.6g} px/{calibration.unit}"
+            if not calibration.is_isotropic:
+                text = f"已标定 · X {calibration.pixel_size_x:.6g} / Y {calibration.pixel_size_y:.6g} {calibration.unit}/px"
+                details = f"{calibration.source_label}\n{text}"
         elif available:
             text = "⚠ 未标定 · 结果为 px / px²"
             details = "当前图片尚未标定，长度为像素、面积为平方像素。点击开始标定或应用预设。"
@@ -6005,6 +6018,7 @@ class MainWindow(QMainWindow):
         menu.clear()
         menu.addAction(self._mode_actions["calibration"])
         menu.addAction("标定详情与预设管理…", self._show_calibration_controls)
+        menu.addAction(self.device_calibration_action)
         if self.preset_combo.count():
             menu.addSeparator()
             for index in range(self.preset_combo.count()):
@@ -6110,6 +6124,10 @@ class MainWindow(QMainWindow):
         overlay_kind: str | None = None,
         construction_kind: str | None = None,
     ) -> None:
+        document = self.current_document()
+        if document is not None and document.raster_semantic is RasterSemantic.HEIGHT and is_magic_toolbar_tool_mode(mode):
+            self.statusBar().showMessage("高度图不参与普通纤维分析。", 4000)
+            return
         previous_mode = self._tool_mode
         if is_magic_toolbar_tool_mode(mode) and "magic-segmentation" not in self._runtime_features:
             mode = "select"
@@ -6248,10 +6266,12 @@ class MainWindow(QMainWindow):
         label = self._document_display_name(document)
         path = str(document.absolute_path or document.path)
         calibration = document.calibration
+        if calibration is not None and not calibration.is_isotropic:
+            label += "（双轴标定：轮廓对比使用 px）"
         unit_to_mm = millimeters_per_unit(calibration.unit) if calibration is not None else None
         scale = (
             unit_to_mm / calibration.pixels_per_unit
-            if calibration is not None and unit_to_mm is not None else None
+            if calibration is not None and calibration.is_isotropic and unit_to_mm is not None else None
         )
 
         def load(token):
@@ -6324,6 +6344,7 @@ class MainWindow(QMainWindow):
             return "uncalibrated"
         signature = calibration_signature_from_values(
             pixels_per_unit=calibration.pixels_per_unit,
+            pixels_per_unit_y=calibration.y_pixels_per_unit,
             unit=calibration.unit,
         )
         return signature or "uncalibrated"
@@ -7125,6 +7146,9 @@ class MainWindow(QMainWindow):
                 "图像处理",
                 "请先打开一张图片或数字化切片。",
             )
+            return None
+        if document.raster_semantic is RasterSemantic.HEIGHT:
+            QMessageBox.information(self, "高度图", "高度数据保留原始计数，请使用显示调整或原始导出。")
             return None
         derivation_prefix: tuple[ImageOperationSpec, ...] = ()
         frozen_slide_viewport = False
@@ -7987,6 +8011,7 @@ class MainWindow(QMainWindow):
             else (
                 source_document.calibration.unit,
                 float(source_document.calibration.pixels_per_unit),
+                float(source_document.calibration.y_pixels_per_unit),
             )
         )
         candidates: dict[str, RasterPlane] = {}
@@ -8010,6 +8035,7 @@ class MainWindow(QMainWindow):
                 else (
                     document.calibration.unit,
                     float(document.calibration.pixels_per_unit),
+                    float(document.calibration.y_pixels_per_unit),
                 )
             )
             if candidate_calibration != source_calibration:
@@ -8197,6 +8223,10 @@ class MainWindow(QMainWindow):
             document = self.project.get_document(document_id)
             if document is None:
                 continue
+            if document.raster_semantic is RasterSemantic.HEIGHT:
+                options.append(BatchDocumentOption(document.id, self._document_display_name(document),
+                    "高度图", selected=False, enabled=False, unavailable_reason="高度数据仅供查看及原始导出"))
+                continue
             if document.is_digital_slide():
                 options.append(
                     BatchDocumentOption(
@@ -8374,10 +8404,9 @@ class MainWindow(QMainWindow):
                 (document := self.project.get_document(item.document_id))
                 is not None
                 and document.calibration is not None
-                and self._recipe_has_non_uniform_scaling(
-                    item.raster,
-                    payload.recipe,
-                )
+                and self._calibration_for_derived_recipe(
+                    document, item.raster, payload.recipe, clear_non_uniform=False,
+                ) is ...
             )
         )
         clear_non_uniform = False
@@ -8407,11 +8436,11 @@ class MainWindow(QMainWindow):
 
     def _confirm_batch_calibration_clear(self, count: int) -> bool:
         dialog = QMessageBox(self)
-        dialog.setWindowTitle("批量处理中的非等比例缩放")
+        dialog.setWindowTitle("批量处理中的派生标定")
         dialog.setIcon(QMessageBox.Icon.Warning)
         dialog.setText(
-            f"当前配方会使 {int(count)} 张已标定图片发生非等比例缩放，"
-            "无法为派生图片保留统一像素标尺。"
+            f"当前配方会使 {int(count)} 张非等方图片发生任意角度旋转，"
+            "无法为派生图片保留正交双轴标尺。"
         )
         dialog.setInformativeText(
             "本次确认只出现一次。继续后仅清除对应派生图片的标定；"
@@ -8670,6 +8699,9 @@ class MainWindow(QMainWindow):
             if document is None:
                 continue
             display_name = self._document_display_name(document)
+            if document.raster_semantic is RasterSemantic.HEIGHT:
+                unavailable.append((document.id, display_name, "高度图不参与普通图像分析"))
+                continue
             if document.is_digital_slide():
                 unavailable.append(
                     (
@@ -10285,10 +10317,11 @@ class MainWindow(QMainWindow):
         pixel_size = 1.0 / calibration.pixels_per_unit
         return AnalysisCalibrationSnapshot(
             pixel_size_x=pixel_size,
-            pixel_size_y=pixel_size,
+            pixel_size_y=calibration.pixel_size_y,
             unit=calibration.unit,
             signature=calibration_signature_from_values(
                 pixels_per_unit=calibration.pixels_per_unit,
+                pixels_per_unit_y=calibration.y_pixels_per_unit,
                 unit=calibration.unit,
             ),
         )
@@ -10508,7 +10541,7 @@ class MainWindow(QMainWindow):
             parameters["study_area"] = (
                 area_px
                 if calibration is None
-                else area_px / (calibration.pixels_per_unit**2)
+                else calibration.px_area_to_unit(area_px)
             )
         else:
             parameters.pop("study_bounds", None)
@@ -12803,10 +12836,10 @@ class MainWindow(QMainWindow):
         # A single-image workbench asks at commit time.  Batch processing
         # performs the same decision once before any worker starts.
         dialog = QMessageBox(self)
-        dialog.setWindowTitle("非等比例缩放")
+        dialog.setWindowTitle("派生标定")
         dialog.setIcon(QMessageBox.Icon.Warning)
         dialog.setText(
-            "当前处理配方包含非等比例缩放，无法保留一个统一的像素标尺。"
+            "当前处理包含非等方图片的任意角度旋转，无法保留正交双轴标尺。"
         )
         dialog.setInformativeText(
             "可以明确清除派生图片的标定后继续；源图片及其标定不会改变。"
@@ -12906,25 +12939,48 @@ class MainWindow(QMainWindow):
         calibration = source_document.calibration
         if calibration is None:
             return None
-        scale, non_uniform = cls._recipe_calibration_scale(
-            source_plane,
-            recipe,
-        )
-        if non_uniform:
-            return None if clear_non_uniform else ...
-        derived = calibration.clone(
-            mode=(
-                calibration.mode
-                if math.isclose(scale, 1.0, rel_tol=1e-12, abs_tol=1e-12)
-                else "derived"
-            ),
-            source_label=(
-                calibration.source_label
-                if math.isclose(scale, 1.0, rel_tol=1e-12, abs_tol=1e-12)
-                else f"{calibration.source_label} · 派生缩放"
-            ),
-        )
-        derived.pixels_per_unit *= scale
+        derived = calibration.clone()
+        width, height = source_plane.width, source_plane.height
+        for step in recipe.operations:
+            operation, parameters = step.operation_id, step.parameters
+            if operation == ImageOperation.ROTATE.value:
+                angle = float(parameters.get("angle_degrees", 0))
+                if bool(parameters.get("expand", True)):
+                    cosine, sine = abs(math.cos(math.radians(angle))), abs(math.sin(math.radians(angle)))
+                    next_width = max(1, math.ceil(height * sine + width * cosine))
+                    next_height = max(1, math.ceil(height * cosine + width * sine))
+                else:
+                    next_width, next_height = width, height
+                if not math.isclose(angle % 90, 0, abs_tol=1e-9):
+                    if not derived.is_isotropic:
+                        return None if clear_non_uniform else ...
+                    width, height = next_width, next_height
+                    continue
+                swap_axes = round(angle / 90) % 2 == 1
+            else:
+                swap_axes = operation in {ImageOperation.ROTATE_90_CLOCKWISE.value,
+                                          ImageOperation.ROTATE_90_COUNTERCLOCKWISE.value}
+            if swap_axes:
+                derived.pixels_per_unit, derived.pixels_per_unit_y = derived.y_pixels_per_unit, derived.pixels_per_unit
+                width, height = (next_width, next_height) if operation == ImageOperation.ROTATE.value else (height, width)
+            elif operation == ImageOperation.ROTATE.value:
+                width, height = next_width, next_height
+            elif operation == ImageOperation.RESIZE.value:
+                target_w, target_h = int(parameters["width"]), int(parameters["height"])
+                derived.pixels_per_unit_y = derived.y_pixels_per_unit * target_h / height
+                derived.pixels_per_unit *= target_w / width
+                width, height = target_w, target_h
+            elif operation == ImageOperation.PIXEL_BIN.value:
+                factor = int(parameters.get("factor", 2))
+                derived.pixels_per_unit_y = derived.y_pixels_per_unit / factor
+                derived.pixels_per_unit /= factor
+                width, height = width // factor, height // factor
+            elif operation in {ImageOperation.CROP.value, ImageOperation.RESIZE_CANVAS.value}:
+                width = int(parameters.get("width", width))
+                height = int(parameters.get("height", height))
+        if (derived.pixels_per_unit, derived.y_pixels_per_unit) != (calibration.pixels_per_unit, calibration.y_pixels_per_unit):
+            derived.mode = "derived"
+            derived.source_label += " · 派生变换"
         return derived
 
     def _image_processing_library_versions(
@@ -13670,7 +13726,7 @@ class MainWindow(QMainWindow):
         calibration = target_document.calibration
         if calibration is not None and calibration.pixels_per_unit > 0:
             width_unit = self._format_dimension_value(calibration.px_to_unit(width_px))
-            height_unit = self._format_dimension_value(calibration.px_to_unit(height_px))
+            height_unit = self._format_dimension_value(calibration.px_to_unit(height_px, axis="y"))
             parts.append(f"实际尺寸: {width_unit} x {height_unit} {calibration.unit}")
         self._image_resolution_label.setText("    |    ".join(parts))
 
@@ -14132,6 +14188,9 @@ class MainWindow(QMainWindow):
         return document.resolved_path(project_path or self._project_path)
 
     def _document_display_name(self, document: ImageDocument) -> str:
+        source = document.metadata.get("device_source")
+        if isinstance(source, dict) and source.get("display_name"):
+            return str(source["display_name"])
         token = str(document.path or "").strip()
         if token:
             return Path(token).name or token
@@ -15420,7 +15479,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(message, timeout_ms)
 
     def is_image_loading(self) -> bool:
-        return self.background_task_controller.is_image_loading()
+        return self._device_import_dialog is not None or self.background_task_controller.is_image_loading()
 
     def _show_area_inference_warning(self, message: str) -> None:
         QMessageBox.warning(self, "面积自动识别", message)
@@ -16730,6 +16789,8 @@ class MainWindow(QMainWindow):
         return Calibration(
             mode=calibration.mode,
             pixels_per_unit=max(0.000001, calibration.pixels_per_unit * capture_scale),
+            pixels_per_unit_y=(max(0.000001, calibration.y_pixels_per_unit * capture_scale)
+                               if calibration.pixels_per_unit_y is not None else None),
             unit=calibration.unit,
             source_label=calibration.source_label,
         )
@@ -18546,6 +18607,7 @@ class MainWindow(QMainWindow):
             (
                 calibration.mode,
                 calibration.pixels_per_unit,
+                calibration.y_pixels_per_unit,
                 calibration.unit,
                 calibration.source_label,
             )
@@ -18586,6 +18648,7 @@ class MainWindow(QMainWindow):
             pixel_distance=preset.pixel_distance,
             actual_distance=preset.actual_distance,
             computed_pixels_per_unit=preset.computed_pixels_per_unit,
+            pixels_per_unit_y=preset.pixels_per_unit_y,
         )
 
     def _preset_content_equal(self, left: CalibrationPreset, right: CalibrationPreset, *, include_name: bool = True) -> bool:
@@ -18593,6 +18656,7 @@ class MainWindow(QMainWindow):
             return False
         return (
             abs(left.resolved_pixels_per_unit() - right.resolved_pixels_per_unit()) < 1e-9
+            and left.to_calibration().y_pixels_per_unit == right.to_calibration().y_pixels_per_unit
             and left.unit == right.unit
             and left.pixel_distance == right.pixel_distance
             and left.actual_distance == right.actual_distance
@@ -18606,12 +18670,14 @@ class MainWindow(QMainWindow):
                 preset.name == calibration.source_label
                 and preset.unit == calibration.unit
                 and abs(preset.resolved_pixels_per_unit() - calibration.pixels_per_unit) < 1e-9
+                and abs(preset.to_calibration().y_pixels_per_unit - calibration.y_pixels_per_unit) < 1e-9
             ):
                 return preset
         for preset in self._calibration_presets():
             if (
                 preset.unit == calibration.unit
                 and abs(preset.resolved_pixels_per_unit() - calibration.pixels_per_unit) < 1e-9
+                and abs(preset.to_calibration().y_pixels_per_unit - calibration.y_pixels_per_unit) < 1e-9
             ):
                 return preset
         return None
@@ -18624,7 +18690,7 @@ class MainWindow(QMainWindow):
         if calibration_line:
             line = calibration_line if isinstance(calibration_line, Line) else Line.from_dict(calibration_line)
             pixel_distance = max(line_length(line), 0.000001)
-            actual_distance = calibration.px_to_unit(pixel_distance)
+            actual_distance = calibration.line_length_unit(line)
             if actual_distance > 0:
                 return pixel_distance, actual_distance, calibration.unit
         preset = self._find_matching_preset(calibration)
@@ -19053,6 +19119,107 @@ class MainWindow(QMainWindow):
         layout.addWidget(buttons)
         return dialog.exec() == QDialog.DialogCode.Accepted
 
+    def _open_device_sources(self, paths, *, calibration_only=False, expected_fingerprint=None):
+        if self.is_image_loading():
+            return False
+        if self._session_processed_root is None:
+            self._session_processed_root = Path(tempfile.mkdtemp(prefix="fdm-processed-"))
+        document = self.current_document()
+        existing = {
+            source["identity"]: doc.id for doc in self.project.documents
+            if isinstance(source := doc.metadata.get("device_source"), dict) and source.get("identity")
+        }
+        dialog = DeviceImportDialog(
+            list(dict.fromkeys(paths)), asset_root=self._session_processed_root,
+            preferred=self._app_settings.device_import_channels, existing=existing,
+            calibration_only=calibration_only,
+            calibration_target_size=document.image_size if document else None,
+            expected_fingerprint=expected_fingerprint, parent=self,
+        )
+        self._device_import_dialog = dialog
+        importing_project = self.project
+
+        def receive(result):
+            if self.project is importing_project:
+                document_id = self._mount_device_channel(result)
+                dialog.register_imported_document(result.channel.identity, document_id)
+            else:
+                result.session_path.unlink(missing_ok=True)
+
+        dialog.channelLoaded.connect(receive)
+        dialog.focusDocument.connect(self._set_current_document)
+        if document is not None:
+            dialog.calibrationSelected.connect(lambda channel: self._apply_device_calibration(document.id, channel))
+        try:
+            result = dialog.exec()
+            if dialog.imported_common:
+                self._app_settings.device_import_channels = sorted(dialog.imported_common)
+                self._save_app_settings(context="设备通道选择")
+            if expected_fingerprint and self.project is importing_project and dialog._channels:
+                relocated = dialog._channels[0]
+                if relocated.source_sha256 == expected_fingerprint:
+                    for doc in self.project.documents:
+                        source = doc.metadata.get("device_source")
+                        if (isinstance(source, dict) and source.get("source_sha256") == expected_fingerprint
+                                and source.get("source_path") != relocated.source_path):
+                            source["source_path"] = relocated.source_path
+                            doc.mark_session_dirty()
+            return result == QDialog.DialogCode.Accepted
+        finally:
+            self._device_import_dialog = None
+            dialog.deleteLater()
+
+    def _mount_device_channel(self, result: LoadedDeviceChannel) -> str:
+        channel = result.channel
+        document = ImageDocument(
+            id=new_id("image"), path=result.relative_path,
+            image_size=(result.plane.width, result.plane.height), source_type="project_asset",
+            calibration=channel.calibration.clone() if channel.calibration else None,
+            metadata={"device_source": channel.source_metadata()},
+            raster_pixel_type=result.plane.pixel_type, raster_semantic=channel.semantic,
+            display_transform=channel.display_transform,
+            calibration_load_error=channel.calibration_issue or None,
+        )
+        self._session_processed_assets[document.id] = result.session_path
+        self._add_loaded_document(
+            ImageLoadRequest(path=str(result.session_path), document=document, raster_plane=result.plane), result.image,
+        )
+        return document.id
+
+    def _open_same_source_channels(self):
+        document = self.current_document()
+        source = document.metadata.get("device_source") if document else None
+        if not isinstance(source, dict):
+            QMessageBox.information(self, "同源通道", "当前图片没有设备文件来源。")
+            return
+        path = str(source.get("source_path", ""))
+        if not Path(path).is_file():
+            path, _ = QFileDialog.getOpenFileName(self, "重新定位设备原文件", "", "设备图像 (*.dsx *.poir *.mpoir)")
+            if not path:
+                return
+        self._open_device_sources([path], expected_fingerprint=source.get("source_sha256"))
+
+    def _read_device_calibration(self):
+        path, _ = QFileDialog.getOpenFileName(self, "从设备文件读取标尺", "", "设备图像 (*.dsx *.poir *.mpoir)")
+        if path:
+            self._open_device_sources([path], calibration_only=True)
+
+    def _apply_device_calibration(self, document_id, channel):
+        document = self.project.get_document(document_id)
+        if document is None or channel.calibration is None or document.image_size != (channel.width, channel.height):
+            return
+
+        def mutate():
+            document.calibration = channel.calibration.clone()
+            document.calibration_load_error = None
+            document.calibration_load_payload = None
+            document.metadata.pop("calibration_line", None)
+            document.metadata["device_calibration_source"] = channel.source_metadata()
+            document.recalculate_measurements()
+
+        self._apply_document_change(document, "应用设备标尺", mutate,
+            sync_sidecar=True, impact=DocumentChangeImpact.CALIBRATION)
+
     def open_images(self) -> None:
         self.stop_live_preview()
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
@@ -19279,6 +19446,13 @@ class MainWindow(QMainWindow):
         if self.is_image_loading():
             QMessageBox.information(self, context_label, "当前仍有图片在加载，请稍候。")
             return
+        device_paths = [path for path, doc in items if doc is None and Path(path).suffix.lower() in DEVICE_SUFFIXES]
+        if device_paths:
+            if not self._open_device_sources(device_paths):
+                return
+            items = [(path, doc) for path, doc in items if doc is not None or Path(path).suffix.lower() not in DEVICE_SUFFIXES]
+            if not items:
+                return
         requests, skipped_count, focus_document_id = self._prepare_image_load_requests(items)
         if not requests:
             if focus_document_id is not None:
@@ -19790,6 +19964,10 @@ class MainWindow(QMainWindow):
             if target_document.uses_sidecar():
                 target_document.sidecar_path = target_document.default_sidecar_path()
         target_document.initialize_runtime_state()
+        device_source = target_document.metadata.get("device_source", {})
+        if (target_document.calibration is None and isinstance(device_source, dict)
+                and device_source.get("calibration_issue")):
+            target_document.calibration_load_error = device_source["calibration_issue"]
         if target_document.calibration is None:
             loaded_from_sidecar = False
             if not target_document.calibration_load_error and target_document.uses_sidecar():
@@ -21509,6 +21687,8 @@ class MainWindow(QMainWindow):
             initial_pixel_distance=pixel_distance,
             initial_actual_distance=actual_distance,
             initial_unit=unit,
+            initial_pixels_per_unit_y=(self.current_document().calibration.pixels_per_unit_y
+                if self.current_document() and self.current_document().calibration else None),
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
@@ -21524,6 +21704,7 @@ class MainWindow(QMainWindow):
                 pixel_distance=pixel_distance,
                 actual_distance=actual_distance,
                 computed_pixels_per_unit=pixels_per_unit,
+                pixels_per_unit_y=dialog.y_pixels_per_unit(),
             )
         )
         self._save_app_settings(context="新增预设")
@@ -21544,6 +21725,7 @@ class MainWindow(QMainWindow):
             initial_pixel_distance=initial_pixel_distance,
             initial_actual_distance=initial_actual_distance,
             initial_unit=preset.unit,
+            initial_pixels_per_unit_y=preset.pixels_per_unit_y,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
@@ -21558,6 +21740,7 @@ class MainWindow(QMainWindow):
             pixel_distance=pixel_distance,
             actual_distance=actual_distance,
             computed_pixels_per_unit=pixels_per_unit,
+            pixels_per_unit_y=dialog.y_pixels_per_unit(),
         )
         self._save_app_settings(context="编辑预设")
         self._refresh_preset_combo(selected_name=name)
@@ -22371,7 +22554,7 @@ class MainWindow(QMainWindow):
         target_documents = self.project.documents if apply_all else ([self.current_document()] if self.current_document() else [])
         target_documents = [document for document in target_documents if document is not None]
         skipped_slides = [document for document in target_documents if document.is_digital_slide()]
-        target_documents = [document for document in target_documents if not document.is_digital_slide()]
+        target_documents = [document for document in target_documents if not document.is_digital_slide() and document.raster_semantic is not RasterSemantic.HEIGHT]
         if not target_documents:
             if skipped_slides:
                 QMessageBox.information(self, "面积自动识别", "数字化切片文件会跳过面积自动识别。")
@@ -22381,7 +22564,7 @@ class MainWindow(QMainWindow):
         requests = [
             AreaInferenceRequest(
                 document_id=document.id,
-                image_path=document.path,
+                image_path=str(self._session_processed_assets.get(document.id) or self._resolved_document_path(document)),
                 model_name=model_name,
                 model_file=model_file,
             )
@@ -25195,7 +25378,10 @@ class MainWindow(QMainWindow):
         self.preset_combo.clear()
         target_index = -1
         for index, preset in enumerate(self._calibration_presets()):
-            self.preset_combo.addItem(f"{preset.name} ({preset.resolved_pixels_per_unit():g} px/{preset.unit})")
+            self.preset_combo.addItem(
+                f"{preset.name} (X {preset.resolved_pixels_per_unit():g} / Y {preset.to_calibration().y_pixels_per_unit:g} px/{preset.unit})"
+                if not preset.to_calibration().is_isotropic else f"{preset.name} ({preset.resolved_pixels_per_unit():g} px/{preset.unit})"
+            )
             if current_name is not None and preset.name == current_name and target_index < 0:
                 target_index = index
         if target_index >= 0:
@@ -25383,7 +25569,7 @@ class MainWindow(QMainWindow):
             )
         self._update_calibration_panel(document)
         if self._construction_context_widget is not None:
-            if document is not None and document.calibration is not None:
+            if document is not None and document.calibration is not None and document.calibration.is_isotropic:
                 self._construction_context_widget.setDistanceUnit(
                     document.calibration.unit,
                     document.calibration.pixels_per_unit,
@@ -25469,7 +25655,7 @@ class MainWindow(QMainWindow):
             f"标定来源: {source_label}",
             f"标定模式: {self._format_calibration_mode(calibration.mode)}",
             f"换算关系: {calibration.pixels_per_unit:.4f} px/{calibration.unit}",
-            f"像素尺寸: {unit_per_px:.6g} {calibration.unit}/px",
+            f"像素尺寸: X {unit_per_px:.6g} / Y {calibration.pixel_size_y:.6g} {calibration.unit}/px",
         ]
         if calibration.mode == "project_default" or not document.uses_sidecar():
             details.append("保存位置: 当前项目")
@@ -25477,7 +25663,8 @@ class MainWindow(QMainWindow):
             details.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
         self._set_calibration_status_card(
             title=f"已标定 · {source_label}",
-            summary=f"{unit_per_px:.6g} {calibration.unit}/px",
+            summary=(f"X {unit_per_px:.6g} / Y {calibration.pixel_size_y:.6g} {calibration.unit}/px"
+                     if not calibration.is_isotropic else f"{unit_per_px:.6g} {calibration.unit}/px"),
             status="calibrated",
             details="\n".join(details),
             show_start_button=False,
@@ -26285,7 +26472,8 @@ class MainWindow(QMainWindow):
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.export_current_image_action.setEnabled(can_pixel_work)
-        can_process_image = can_pixel_work
+        is_height_image = bool(document and document.raster_semantic is RasterSemantic.HEIGHT)
+        can_process_image = can_pixel_work and not is_height_image
         self.image_processing_workbench_action.setEnabled(can_process_image)
         self.image_batch_processing_action.setEnabled(
             any(
@@ -26303,7 +26491,7 @@ class MainWindow(QMainWindow):
             action.setEnabled(can_process_image)
         for action in self._direct_type_actions.values():
             action.setEnabled(can_process_image)
-        self.image_information_action.setEnabled(can_process_image)
+        self.image_information_action.setEnabled(can_pixel_work)
         self.duplicate_raster_action.setEnabled(can_process_image)
         current_plane = (
             None if document is None else self._rasters.get(document.id)
@@ -26470,6 +26658,7 @@ class MainWindow(QMainWindow):
                 and bool(self._app_settings.area_model_mappings)
                 and not preview_active
                 and not (document is not None and document.is_digital_slide())
+                and not is_height_image
             )
         workspace_undo_available = bool(
             document
@@ -26532,7 +26721,7 @@ class MainWindow(QMainWindow):
             )
             action.setEnabled(
                 mode == "select"
-                or (not preview_active and mode_enabled)
+                or (not preview_active and mode_enabled and not (is_height_image and is_magic_toolbar_tool_mode(mode)))
             )
         if self._manual_tool_button is not None:
             self._manual_tool_button.setEnabled(
@@ -26544,7 +26733,7 @@ class MainWindow(QMainWindow):
             magic_available = "magic-segmentation" in self._runtime_features
             self._magic_tool_button.setVisible(magic_available)
             self._magic_tool_button.setEnabled(
-                magic_available and not preview_active and pixel_work_enabled
+                magic_available and not preview_active and pixel_work_enabled and not is_height_image
             )
             for mode in (
                 MagicSegmentToolMode.STANDARD,
@@ -28502,6 +28691,10 @@ class MainWindow(QMainWindow):
         return results
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self._device_import_dialog is not None:
+            self._device_import_dialog.reject()
+            event.ignore()
+            return
         if self._contour_comparison_dialog is not None:
             if not self._contour_comparison_dialog.close():
                 event.ignore()

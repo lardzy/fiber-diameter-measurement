@@ -1597,7 +1597,7 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             help_text = help_labels[0].text()
             for heading in ("用途：", "像素：", "标定：", "适用类型：", "ROI："):
                 self.assertIn(heading, help_text)
-            self.assertIn("pixels_per_unit", help_text)
+            self.assertIn("双轴标定", help_text)
         finally:
             dialog.close()
 

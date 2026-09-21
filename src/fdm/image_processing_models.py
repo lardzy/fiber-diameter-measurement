@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 import json
+import base64
+import zlib
 import math
 import re
 from typing import Any, Callable
@@ -25,6 +27,7 @@ class RasterSemantic(str, Enum):
     BINARY_MASK = "binary_mask"
     LABELS = "labels"
     DISTANCE = "distance"
+    HEIGHT = "height"
 
 
 @dataclass(frozen=True, slots=True)
@@ -494,6 +497,7 @@ class DisplayTransform:
     window_center: float | None = None
     window_width: float | None = None
     inverted: bool = False
+    lut_rgb: bytes | None = field(default=None, repr=False)
     schema_version: int = field(
         default=IMAGE_PROCESSING_SCHEMA_VERSION,
         repr=False,
@@ -535,6 +539,13 @@ class DisplayTransform:
             raise ValueError("窗宽/窗位与显式显示范围不能同时提供")
         gamma = _positive_finite(self.gamma, field_name="gamma")
         lut_id = _normalize_display_lut_id(self.lut_id)
+        if self.lut_rgb is not None:
+            table = bytes(self.lut_rgb)
+            if len(table) % 3 or not 6 <= len(table) <= 65536 * 3:
+                raise ValueError("设备 LUT 必须包含 2～65536 个 RGB 项")
+            if lut_id not in {None, "grayscale"}:
+                raise ValueError("设备 LUT 与预设 LUT 不能同时使用")
+            object.__setattr__(self, "lut_rgb", table)
         if not isinstance(self.inverted, bool):
             raise TypeError("inverted 必须是布尔值")
         object.__setattr__(self, "black_point", black_point)
@@ -582,7 +593,7 @@ class DisplayTransform:
             return ranges
         if self.window_center is not None:
             raise ValueError("窗宽/窗位只适用于灰度图片")
-        if self.lut_id not in {None, "grayscale"}:
+        if self.lut_id not in {None, "grayscale"} or self.lut_rgb is not None:
             raise ValueError("彩色图片不能应用灰度 LUT")
         if not ranges:
             return ()
@@ -600,6 +611,7 @@ class DisplayTransform:
             and not self.channel_ranges
             and self.gamma == 1.0
             and self.lut_id is None
+            and self.lut_rgb is None
             and self.window_center is None
             and self.window_width is None
             and not self.inverted
@@ -621,6 +633,8 @@ class DisplayTransform:
             ]
         if self.lut_id is not None:
             payload["lut_id"] = self.lut_id
+        if self.lut_rgb is not None:
+            payload["lut_rgb_zlib"] = base64.b64encode(zlib.compress(self.lut_rgb)).decode("ascii")
         if self.window_center is not None and self.window_width is not None:
             payload["window_center"] = self.window_center
             payload["window_width"] = self.window_width
@@ -639,6 +653,8 @@ class DisplayTransform:
             window_center=payload.get("window_center"),
             window_width=payload.get("window_width"),
             inverted=payload.get("inverted", False),
+            lut_rgb=(zlib.decompress(base64.b64decode(payload["lut_rgb_zlib"]))
+                     if payload.get("lut_rgb_zlib") else None),
             schema_version=payload.get(
                 "schema_version",
                 IMAGE_PROCESSING_SCHEMA_VERSION,

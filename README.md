@@ -152,6 +152,7 @@ CU 系列专用模式不会启动第二个 Microview 实例，也不会访问或
 | --- | --- |
 | PNG、JPEG、BMP、WebP | 支持常见灰度、RGB/RGBA 图片；读取时应用可用的 EXIF 方向信息 |
 | TIFF | 支持单页二维 `GRAY8`、`GRAY16`、`GRAY32_FLOAT`、`RGB8`、`RGBA8`；不支持 TIFF 图像堆栈 |
+| DSX、POIR、MPOIR | Olympus DSX1000 / OLS5000 设备图像；选择彩图、激光强度和点位，自动读取双轴标定；高度图按需预览、导出或加入项目。[设备文件使用说明](docs/olympus-import.md) |
 | `.fdmslide` | FDM 数字化切片；以 SQLite 保存清单、多焦层 tile 和采集状态 |
 
 支持的图片元数据包括可用的 ICC 色彩配置、DPI/分辨率和原始方向。派生图片以无损 PNG 或 TIFF 写入，并在替换目标文件前执行回读校验。
@@ -164,11 +165,14 @@ CU 系列专用模式不会启动第二个 Microview 实例，也不会访问或
 | `sample.fdmproj` | 项目主文件，保存图片引用、标定、类别、测量、标注、ROI、分析结果索引和每张图片的视图状态 |
 | `sample.assets/captures/` | 项目内抓拍图片 |
 | `sample.assets/processed/` | 图像处理生成的无损派生图片 |
+| `sample.assets/imports/` | 从设备容器选定并无损导入的图片 |
 | `sample.assets/slides/` | 项目内数字化切片 |
 | `sample.assets/analysis/` | 大型分析表格、曲线、标签图或掩膜等校验资产 |
 | `sample.fdmcompare` | 独立的前后轮廓对比，内嵌照片、原分辨率修正掩膜、中线和标定；从对比工作区打开 |
 
 普通打开的原始图片通常仍由项目引用，不会自动全部复制进资产目录。移动或备份项目时，应同时保留 `.fdmproj`、同名 `.assets` 目录和仍被引用的外部原图。
+
+项目格式 v3 保存双轴标定及设备通道信息。新版可读取旧项目，升级覆盖保存前沿用项目备份流程；旧版软件不能读取 v3。已导入的设备图片随 `.assets` 保存，补取未导入通道仍需要设备原文件。
 
 ### 导出
 

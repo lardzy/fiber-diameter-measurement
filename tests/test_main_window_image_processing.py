@@ -663,7 +663,7 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
             )
         )
 
-    def test_non_uniform_resize_requires_explicit_calibration_clear(
+    def test_non_uniform_resize_preserves_both_calibration_axes(
         self,
     ) -> None:
         window, session_root = self._window()
@@ -698,33 +698,12 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
         )
         source_payload_before = source.to_dict()
 
-        with patch(
-            "fdm.ui.main_window.write_native_raster_asset",
-        ) as asset_writer:
-            self._run_calibration_choice(
-                window,
-                selected_label="取消",
-                callback=lambda: window._on_derived_image_ready(result),
-            )
-
-        self.assertEqual(len(window.project.documents), 1)
-        self.assertEqual(source.to_dict(), source_payload_before)
-        self.assertEqual(window._session_processed_assets, {})
-        self.assertEqual(list(session_root.rglob("*")), [])
-        asset_writer.assert_not_called()
-
-        default_label = self._run_calibration_choice(
-            window,
-            selected_label="清除标定并继续",
-            callback=lambda: window._on_derived_image_ready(result),
-        )
+        window._on_derived_image_ready(result)
         self._process_events()
-
-        self.assertEqual(default_label, "取消")
         self.assertEqual(len(window.project.documents), 2)
         derived = window.current_document()
-        self.assertIsNotNone(derived)
-        self.assertIsNone(derived.calibration)
+        self.assertEqual(derived.calibration.pixels_per_unit, 4)
+        self.assertEqual(derived.calibration.y_pixels_per_unit, 8)
         self.assertEqual(source.to_dict(), source_payload_before)
         self.assertEqual(source.calibration.to_dict(), calibration.to_dict())
         self.assertTrue(window._session_processed_assets[derived.id].is_file())

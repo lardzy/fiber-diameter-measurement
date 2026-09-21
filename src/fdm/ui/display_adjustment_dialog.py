@@ -370,6 +370,8 @@ class DisplayAdjustmentDialog(QDialog):
         self.lutCombo = NoWheelComboBox(appearance_group)
         for label, value in self._LUT_ITEMS:
             self.lutCombo.addItem(label, value)
+        if initial.lut_rgb is not None:
+            self.lutCombo.addItem("设备内置", "device")
         appearance_form.addRow("LUT", self.lutCombo)
         self.invertCheck = QCheckBox("反相显示", appearance_group)
         appearance_form.addRow("", self.invertCheck)
@@ -723,7 +725,7 @@ class DisplayAdjustmentDialog(QDialog):
             ):
                 low_spin.setValue(low)
                 high_spin.setValue(high)
-        lut_index = self.lutCombo.findData(initial.lut_id)
+        lut_index = self.lutCombo.findData("device" if initial.lut_rgb is not None else initial.lut_id)
         self.lutCombo.setCurrentIndex(max(0, lut_index))
         self.invertCheck.setChecked(initial.inverted)
         self._update_mode_visibility()
@@ -762,7 +764,8 @@ class DisplayAdjustmentDialog(QDialog):
         if self.rangeModeCombo.currentData() == "window":
             return DisplayTransform(
                 gamma=gamma,
-                lut_id=lut_id,
+                lut_id=None if lut_id == "device" else lut_id,
+                lut_rgb=self._initial_transform.lut_rgb if lut_id == "device" else None,
                 window_center=float(self.windowCenterSpin.value()),
                 window_width=float(self.windowWidthSpin.value()),
                 inverted=inverted,
@@ -790,7 +793,8 @@ class DisplayAdjustmentDialog(QDialog):
         return DisplayTransform(
             channel_ranges=tuple(ranges),
             gamma=gamma,
-            lut_id=lut_id,
+            lut_id=None if lut_id == "device" else lut_id,
+            lut_rgb=self._initial_transform.lut_rgb if lut_id == "device" else None,
             inverted=inverted,
         )
 
@@ -823,7 +827,7 @@ class DisplayAdjustmentDialog(QDialog):
         self,
         transform: DisplayTransform,
     ) -> DisplayBakePlan:
-        if transform.lut_id not in {None, "grayscale"}:
+        if transform.lut_id not in {None, "grayscale"} or transform.lut_rgb is not None:
             return DisplayBakePlan(
                 False,
                 message=(

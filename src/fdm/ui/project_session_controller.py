@@ -78,7 +78,7 @@ class ProjectPersistenceSnapshot:
 class ProjectDirtySnapshot:
     """Small immutable project state used exclusively for dirty comparisons."""
 
-    project_default_calibration: tuple[str, float, str, str] | None
+    project_default_calibration: tuple[object, ...] | None
     project_default_document_ids: tuple[str, ...]
     project_asset_documents: tuple[tuple[str, str], ...]
     project_group_templates: tuple[tuple[str, str], ...]

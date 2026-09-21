@@ -821,6 +821,7 @@ class AppSettings:
     area_worker_python: str = field(default_factory=default_area_worker_python)
     area_infer_device: str = AreaInferDevice.CPU
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
+    device_import_channels: list[str] = field(default_factory=lambda: ["intensity"])
     load_issues: list[dict[str, object]] = field(default_factory=list, repr=False, compare=False)
     selected_capture_device_id: str = ""
     raw_record_templates: list[RawRecordTemplate] = field(default_factory=list)
@@ -1594,6 +1595,7 @@ class AppSettings:
             "area_worker_python": normalized.area_worker_python,
             "area_infer_device": normalized.area_infer_device,
             "calibration_presets": [preset.to_dict() for preset in normalized.calibration_presets],
+            "device_import_channels": [c for c in normalized.device_import_channels if c in ("intensity", "color")],
             "selected_capture_device_id": normalized.selected_capture_device_id,
             "raw_record_templates": [template.to_dict() for template in normalized.raw_record_templates],
             "last_raw_record_template_path": normalized.last_raw_record_template_path,
@@ -1894,6 +1896,9 @@ class AppSettings:
             payload.get("area_infer_device", settings.area_infer_device)
         )
         presets = payload.get("calibration_presets", None)
+        preferred = payload.get("device_import_channels", ["intensity"])
+        if isinstance(preferred, list):
+            settings.device_import_channels = [c for c in preferred if c in ("intensity", "color")] or ["intensity"]
         if isinstance(presets, list):
             valid_presets: list[CalibrationPreset] = []
             for index, item in enumerate(presets):
