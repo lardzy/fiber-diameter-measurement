@@ -114,6 +114,10 @@ class WatermarkGeometry:
     text_width: float
     line_height: float
     ascent: float
+    content_height: float
+    datetime_line: str
+    datetime_scale: float
+    datetime_top: float
 
 
 def watermark_geometry(document, spec: WatermarkSpec) -> WatermarkGeometry:
@@ -132,22 +136,52 @@ def watermark_geometry(document, spec: WatermarkSpec) -> WatermarkGeometry:
         height = width * logo_height / logo_width
     else:
         height = width * (metrics.lineSpacing() * len(lines) + 8) / text_width
+    content_height = height
+    datetime_line = spec.datetime_text if spec.include_datetime else ""
+    datetime_scale = 0.0
+    datetime_top = height
+    if datetime_line:
+        datetime_width = metrics.boundingRect(datetime_line).width() + 8
+        datetime_scale = width / datetime_width
+        if spec.kind == "text":
+            datetime_scale = min(datetime_scale, 0.8 * width / text_width)
+        gap = min(width * 0.03, metrics.lineSpacing() * datetime_scale * 0.3)
+        datetime_top += gap
+        height = datetime_top + (metrics.lineSpacing() + 8) * datetime_scale
     rotated = QTransform().rotate(spec.rotation).mapRect(QRectF(0, 0, width, height))
-    return WatermarkGeometry(width, height, rotated, font, lines, text_width, metrics.lineSpacing(), metrics.ascent())
+    return WatermarkGeometry(
+        width, height, rotated, font, lines, text_width, metrics.lineSpacing(), metrics.ascent(),
+        content_height, datetime_line, datetime_scale, datetime_top,
+    )
 
 
 def _draw_content(painter, document, spec, geometry):
     painter.setRenderHints(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.TextAntialiasing | QPainter.RenderHint.SmoothPixmapTransform)
     if spec.kind == "logo":
-        painter.drawImage(QRectF(0, 0, geometry.width, geometry.height), logo_image(document, spec))
+        painter.drawImage(QRectF(0, 0, geometry.width, geometry.content_height), logo_image(document, spec))
     else:
-        painter.scale(geometry.width / geometry.text_width, geometry.width / geometry.text_width)
-        painter.setFont(geometry.font)
-        painter.setPen(QColor(spec.color))
-        metrics = QFontMetricsF(geometry.font)
-        for index, line in enumerate(geometry.lines):
-            left = metrics.boundingRect(line).left()
-            painter.drawText(QPointF(4 - left, 4 + geometry.ascent + index * geometry.line_height), line)
+        painter.save()
+        try:
+            painter.scale(geometry.width / geometry.text_width, geometry.width / geometry.text_width)
+            painter.setFont(geometry.font)
+            painter.setPen(QColor(spec.color))
+            metrics = QFontMetricsF(geometry.font)
+            for index, line in enumerate(geometry.lines):
+                left = metrics.boundingRect(line).left()
+                painter.drawText(QPointF(4 - left, 4 + geometry.ascent + index * geometry.line_height), line)
+        finally:
+            painter.restore()
+    if geometry.datetime_line:
+        painter.save()
+        try:
+            painter.translate(0, geometry.datetime_top)
+            painter.scale(geometry.datetime_scale, geometry.datetime_scale)
+            painter.setFont(geometry.font)
+            painter.setPen(QColor(spec.color))
+            left = QFontMetricsF(geometry.font).boundingRect(geometry.datetime_line).left()
+            painter.drawText(QPointF(4 - left, 4 + geometry.ascent), geometry.datetime_line)
+        finally:
+            painter.restore()
 
 
 def _stamp(document, spec, geometry, resolution: float) -> tuple[QImage | None, QRectF]:

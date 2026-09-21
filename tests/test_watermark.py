@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QPointF, QRectF
+from PySide6.QtCore import QDateTime, QPointF, QRectF
 from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QApplication, QDialog
 
@@ -16,8 +16,8 @@ from fdm.models import ImageDocument, ProjectState, project_assets_root
 from fdm.project_io import ProjectIO
 from fdm.services.export_service import ExportImageRenderMode, ExportSelection, ExportService
 from fdm.ui.canvas import DocumentCanvas
-from fdm.ui.watermark_dialog import WatermarkDialog
-from fdm.ui.watermark_rendering import draw_watermark, import_logo, watermark_raster_cache
+from fdm.ui.watermark_dialog import DATETIME_DISPLAY_FORMAT, WatermarkDialog
+from fdm.ui.watermark_rendering import draw_watermark, import_logo, watermark_geometry, watermark_raster_cache
 from fdm.watermark import WatermarkSpec
 from test_canvas_progressive_overlay import scene as scene
 
@@ -191,7 +191,10 @@ def test_legacy_project_and_digital_slide_are_unmodified():
     assert "image-watermark/v1" not in ProjectState(version="test", documents=[item]).effective_required_features()
     blank = render(item)
     item.document_kind = "digital_slide"
-    item.watermark = WatermarkSpec(enabled=True, text="不得出现", layout="tile")
+    item.watermark = WatermarkSpec(
+        enabled=True, text="不得出现", layout="tile",
+        include_datetime=True, datetime_text="2026-09-21 14:35:26",
+    )
     assert render(item) == blank
 
 
@@ -368,7 +371,8 @@ def test_current_display_export_contains_watermark_and_raw_export_does_not(windo
         assert abs(color.green() - (223 if display else 255)) <= 1
 
 
-def test_watermark_release_probe_and_build_gate(tmp_path):
+@pytest.mark.parametrize("failed_case", ["tile@2", "datetime_text@1.5", "datetime_logo@2"])
+def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
     import subprocess
     import sys
     from fdm.ui.watermark_self_check import run_watermark_self_check
@@ -385,7 +389,7 @@ def test_watermark_release_probe_and_build_gate(tmp_path):
     }}
     for valid in (True, False):
         if not valid:
-            watermark["cases"]["tile@2"] = False
+            watermark["cases"][failed_case] = False
         completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
         with patch("build_windows_onedir.subprocess.run", return_value=completed):
             errors = run_packaged_self_check(tmp_path)
@@ -521,3 +525,127 @@ def test_zoomed_watermark_uses_bounded_direct_drawing(tmp_path, monkeypatch, lay
     target = render(item, scale=20, size=(200, 100))
     assert abs(target.pixelColor(50, 50).green() - 223) <= 1
     assert watermark_raster_cache.bytes <= 4096
+
+
+DATETIME_TEXT = "2026-09-21 14:35:26"
+
+
+@pytest.mark.parametrize("kind", ["text", "logo"])
+def test_datetime_is_a_separate_caption_below_unchanged_content(tmp_path, kind):
+    item = logo_document(tmp_path, color="#000000")
+    if kind == "text":
+        item.watermark = replace(item.watermark, kind="text", text="实验室\nLaboratory")
+    plain_geometry = watermark_geometry(item, item.watermark)
+    plain = render(item)
+    item.watermark = replace(item.watermark, include_datetime=True, datetime_text=DATETIME_TEXT)
+    geometry = watermark_geometry(item, item.watermark)
+    result = render(item)
+    assert geometry.width == plain_geometry.width
+    assert geometry.content_height == plain_geometry.height
+    assert geometry.datetime_top > geometry.content_height
+    assert geometry.height > plain_geometry.height
+    body_height = int(plain_geometry.height)
+    result_body = result.copy(0, 0, 60, body_height)
+    plain_body = plain.copy(0, 0, 60, body_height)
+    np.testing.assert_allclose(
+        np.frombuffer(result_body.constBits(), np.uint8),
+        np.frombuffer(plain_body.constBits(), np.uint8), atol=1, rtol=0,
+    )
+    caption = result.copy(0, int(geometry.datetime_top), 60, int(geometry.height - geometry.datetime_top) + 1)
+    channels = np.frombuffer(caption.constBits(), np.uint8)
+    assert channels.min() < 250
+    assert channels.min() >= 190  # 25% black over white, applied only once.
+    misses = watermark_raster_cache.misses
+    assert render(item) == result
+    assert watermark_raster_cache.misses == misses
+    item.watermark = replace(item.watermark, datetime_text="2027-01-02 03:04:05")
+    assert render(item) != result
+
+
+@pytest.mark.parametrize("layout", ["single", "tile"])
+@pytest.mark.parametrize("dpr", [1, 1.5, 2])
+def test_datetime_group_keeps_viewport_phase_and_rotation(tmp_path, layout, dpr):
+    item = logo_document(tmp_path, layout=layout, rotation=-30, include_datetime=True, datetime_text=DATETIME_TEXT)
+    full = render(item, dpr=dpr)
+    viewport = render(item, dpr=dpr, origin=(-40, -20), size=(100, 80))
+    expected = full.copy(round(40 * dpr), round(20 * dpr), round(100 * dpr), round(80 * dpr))
+    np.testing.assert_allclose(
+        np.frombuffer(viewport.constBits(), np.uint8), np.frombuffer(expected.constBits(), np.uint8), atol=1, rtol=0,
+    )
+
+
+def test_datetime_edit_is_optional_fixed_and_draft_only(tmp_path):
+    item = logo_document(tmp_path)
+    before = item.snapshot_state()
+    dialog = WatermarkDialog(item, render(document()))
+    assert not dialog.datetime_check.isChecked()
+    assert not dialog.datetime_edit.isEnabled()
+    assert dialog.watermark().datetime_text == ""
+    assert "datetime_text" not in dialog.watermark().to_dict()
+    dialog._accept()
+    assert dialog.watermark() == item.watermark
+    dialog.datetime_check.setChecked(True)
+    dialog.datetime_edit.setDateTime(QDateTime.fromString(DATETIME_TEXT, DATETIME_DISPLAY_FORMAT))
+    dialog._refresh_preview()
+    assert dialog.font_combo.isEnabled()  # Logo captions use the same text controls.
+    spec = dialog.watermark()
+    assert spec.include_datetime and spec.datetime_text == DATETIME_TEXT
+    dialog.reject()
+    assert item.snapshot_state() == before
+    item.watermark = spec
+    reopened = WatermarkDialog(item, render(document()))
+    assert reopened.datetime_edit.dateTime().toString(DATETIME_DISPLAY_FORMAT) == DATETIME_TEXT
+    reopened.datetime_check.setChecked(False)
+    assert not reopened.watermark().include_datetime
+    assert reopened.watermark().datetime_text == DATETIME_TEXT
+    reopened.datetime_check.setChecked(True)
+    assert reopened.watermark() == spec
+    reopened.reject()
+    dialog.deleteLater()
+    reopened.deleteLater()
+
+
+def test_datetime_save_history_and_frozen_export(window, tmp_path):
+    spec = WatermarkSpec(enabled=True, text="Laboratory", include_datetime=True, datetime_text=DATETIME_TEXT)
+    window._apply_watermark(spec, all_open=True)
+    window.undo_current_document()
+    assert all(item.watermark is None for item in window.project.documents)
+    window.redo_current_document()
+    assert all(item.watermark == spec for item in window.project.documents)
+    path = tmp_path / "datetime.fdmproj"
+    ProjectIO.save(window.project, path)
+    reopened = ProjectIO.load(path)
+    assert "image-watermark-datetime/v1" in reopened.required_features
+    assert all(item.watermark == spec for item in reopened.documents)
+    item = window.current_document()
+    plan = window.export_service.build_plan([item], ExportSelection(include_combined_overlay=True, include_watermark=True))
+    before = tmp_path / "before.png"
+    after = tmp_path / "after.png"
+    kwargs = dict(include_measurements=False, include_scale=False, include_watermark=True, render_mode=ExportImageRenderMode.FULL_RESOLUTION)
+    window._render_overlay_image(item, before, **kwargs)
+    window._apply_watermark(replace(spec, datetime_text="2028-02-29 23:59:59"))
+    window._render_overlay_image(item, after, render_context=plan.render_contexts[0], **kwargs)
+    assert QImage(str(before)) == QImage(str(after))
+
+
+def test_datetime_project_protects_against_older_watermark_readers(tmp_path, monkeypatch):
+    from fdm import models
+    from fdm.project_io import ProjectCompatibilityError
+
+    legacy = WatermarkSpec.from_dict({"enabled": True, "text": "older watermark"})
+    assert not legacy.include_datetime
+    assert "image-watermark-datetime/v1" not in ProjectState(version="test", documents=[document(legacy)]).effective_required_features()
+    item = document(replace(legacy, include_datetime=True, datetime_text=DATETIME_TEXT))
+    target = tmp_path / "datetime.fdmproj"
+    ProjectIO.save(ProjectState(version="test", documents=[item]), target)
+    monkeypatch.setattr(models, "SUPPORTED_PROJECT_REQUIRED_FEATURES", models.SUPPORTED_PROJECT_REQUIRED_FEATURES - {"image-watermark-datetime/v1"})
+    loaded = ProjectIO.load(target)
+    assert loaded.is_read_only_compatible
+    with pytest.raises(ProjectCompatibilityError):
+        ProjectIO.save(loaded, target)
+
+
+@pytest.mark.parametrize("value", ["2026-02-30 10:00:00", "2026-09-21 24:00:00", "2026/09/21", "2026-09-21 10:00:00Z", 123])
+def test_invalid_datetime_cannot_be_saved_as_a_watermark(value):
+    with pytest.raises(ValueError):
+        WatermarkSpec(include_datetime=True, datetime_text=value)

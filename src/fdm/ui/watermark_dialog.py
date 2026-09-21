@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
+from PySide6.QtCore import QDate, QDateTime, QPointF, QRectF, Qt, QTime, QTimer
 from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtWidgets import (
-    QCheckBox, QColorDialog, QDialog, QDialogButtonBox, QFileDialog,
+    QCheckBox, QColorDialog, QDateTimeEdit, QDialog, QDialogButtonBox, QFileDialog,
     QFontComboBox, QFormLayout, QHBoxLayout, QLabel, QMessageBox,
     QPlainTextEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget,
 )
@@ -14,6 +14,15 @@ from PySide6.QtWidgets import (
 from fdm.ui.watermark_rendering import draw_watermark, import_logo, logo_image
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox
 from fdm.watermark import ANCHORS, WatermarkSpec
+
+
+DATETIME_DISPLAY_FORMAT = "yyyy-MM-dd HH:mm:ss"
+
+
+class WatermarkDateTimeEdit(QDateTimeEdit):
+    def wheelEvent(self, event):
+        # Scrolling the settings form must not silently alter the timestamp.
+        event.ignore()
 
 
 class WatermarkPreview(QWidget):
@@ -49,7 +58,9 @@ class WatermarkDialog(QDialog):
         self._logo_sha256 = spec.logo_sha256
         self._color = spec.color
         self._font_family = spec.font_family
+        self._datetime_text = spec.datetime_text
         form = QFormLayout()
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.enabled_check = QCheckBox("启用水印")
         self.enabled_check.setChecked(spec.enabled)
         form.addRow(self.enabled_check)
@@ -85,6 +96,30 @@ class WatermarkDialog(QDialog):
         self.logo_button = QPushButton("更换 Logo…" if self._logo_sha256 else "选择 Logo…")
         self.logo_button.clicked.connect(self._choose_logo)
         form.addRow("Logo 图片", self.logo_button)
+        self.datetime_check = QCheckBox("附加日期和时间")
+        self.datetime_check.setChecked(spec.include_datetime)
+        self.datetime_check.setToolTip("显示在水印内容下方，随水印一起旋转、平铺和调整不透明度。")
+        form.addRow(self.datetime_check)
+        datetime_row = QWidget()
+        datetime_layout = QHBoxLayout(datetime_row)
+        datetime_layout.setContentsMargins(0, 0, 0, 0)
+        self.datetime_edit = WatermarkDateTimeEdit()
+        self.datetime_edit.setDisplayFormat(DATETIME_DISPLAY_FORMAT)
+        self.datetime_edit.setDateTimeRange(
+            QDateTime(QDate(1, 1, 1), QTime(0, 0)),
+            QDateTime(QDate(9999, 12, 31), QTime(23, 59, 59)),
+        )
+        self.datetime_edit.setCalendarPopup(True)
+        self.datetime_edit.setDateTime(
+            QDateTime.fromString(spec.datetime_text, DATETIME_DISPLAY_FORMAT)
+            if spec.datetime_text else QDateTime.currentDateTime()
+        )
+        self.datetime_edit.setToolTip("默认记录设置时的本机日期时间，可手动修改；保存后保持固定。")
+        self.datetime_now_button = QPushButton("当前时间")
+        self.datetime_now_button.clicked.connect(self._use_current_datetime)
+        datetime_layout.addWidget(self.datetime_edit, 1)
+        datetime_layout.addWidget(self.datetime_now_button)
+        form.addRow("日期时间", datetime_row)
         self.layout_combo = NoWheelComboBox()
         self.layout_combo.addItem("单个", "single")
         self.layout_combo.addItem("重复平铺", "tile")
@@ -152,6 +187,8 @@ class WatermarkDialog(QDialog):
         for control in (self.kind_combo, self.layout_combo, self.anchor_combo):
             control.currentIndexChanged.connect(self._schedule_preview)
         self.font_combo.currentFontChanged.connect(self._font_changed)
+        self.datetime_check.toggled.connect(self._datetime_toggled)
+        self.datetime_edit.dateTimeChanged.connect(self._datetime_changed)
         self.text_edit.textChanged.connect(self._schedule_preview)
         self._refresh_preview()
         screen = self.screen()
@@ -165,6 +202,19 @@ class WatermarkDialog(QDialog):
     def _font_changed(self, font):
         self._font_family = "" if font.family() == "系统默认" else font.family()
         self._schedule_preview()
+
+    def _datetime_toggled(self, enabled):
+        if enabled and not self._datetime_text:
+            self._use_current_datetime()
+        self._schedule_preview()
+
+    def _datetime_changed(self, value):
+        self._datetime_text = value.toString(DATETIME_DISPLAY_FORMAT)
+        self._schedule_preview()
+
+    def _use_current_datetime(self):
+        self.datetime_edit.setDateTime(QDateTime.currentDateTime())
+        self._datetime_changed(self.datetime_edit.dateTime())
 
     def done(self, result):
         self._preview_timer.stop()
@@ -183,6 +233,7 @@ class WatermarkDialog(QDialog):
             width_ratio=self.width_spin.value() / 100, rotation=self.rotation_spin.value(),
             offset_x=self.x_spin.value() / 100, offset_y=self.y_spin.value() / 100,
             gap_x=self.gap_x_spin.value() / 100, gap_y=self.gap_y_spin.value() / 100,
+            include_datetime=self.datetime_check.isChecked(), datetime_text=self._datetime_text,
         )
 
     def assets(self) -> dict[str, bytes]:
@@ -196,8 +247,11 @@ class WatermarkDialog(QDialog):
         spec = self.watermark()
         self._draft.watermark = spec
         text = spec.kind == "text"
-        for control in (self.text_edit, self.font_combo, self.bold_check, self.italic_check, self.color_button):
-            control.setEnabled(text)
+        self.text_edit.setEnabled(text)
+        for control in (self.font_combo, self.bold_check, self.italic_check, self.color_button):
+            control.setEnabled(text or spec.include_datetime)
+        self.datetime_edit.setEnabled(spec.include_datetime)
+        self.datetime_now_button.setEnabled(spec.include_datetime)
         self.logo_button.setEnabled(not text)
         self.anchor_combo.setEnabled(spec.layout == "single")
         self.gap_x_spin.setEnabled(spec.layout == "tile")
@@ -233,6 +287,8 @@ class WatermarkDialog(QDialog):
         self._refresh_preview()
 
     def _accept(self):
+        if self.datetime_check.isChecked():
+            self.datetime_edit.interpretText()
         spec = self.watermark()
         try:
             spec.validate_content()

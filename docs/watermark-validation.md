@@ -122,3 +122,32 @@ Windows 实机待验收项：
 下面使用合成图片展示旋转平铺效果：
 
 ![水印设置与实时预览](validation/watermark-2026-09-21/watermark-dialog.png)
+
+## 日期时间附注追加验证（2026-09-21）
+
+在 `340abd8` 基础上增加默认关闭的“附加日期和时间”，对文字和 Logo 使用同一日期时间附注。默认记录勾选时的本机时间，可编辑或用“当前时间”更新；保存、撤销重做和冻结的导出计划均保留具体值。日期时间放在内容下方，原文字与 Logo 的尺寸比例保持不变。
+
+- 相关回归 **711 项 + 51 子测试通过**：[回归日志](validation/watermark-datetime-2026-09-21/regression.log)。包括全部数字切片测试、画布局部刷新、水印、魔棒、模型、历史状态、导出和发布自检。
+- 最终水印及发布 / 构建门禁专项 **111 项 + 21 子测试通过**：[专项日志](validation/watermark-datetime-2026-09-21/package-tests.log)。上述测试组有重叠。
+- 生产渲染自检 **22 项全部通过**：[JSON](validation/watermark-datetime-2026-09-21/renderer-self-check.json)。新增文字与 Logo 日期时间在 DPR 1、1.5、2 下的绘制与重复结果一致性检查；Windows 构建门禁同步要求这些检查通过。
+- 验证了新增日期不会改动主体尺寸或重复应用不透明度，视窗裁剪和平铺相位一致；修改日期使缓存失效，固定日期的重复绘制命中缓存。
+- 验证了默认关闭、手动日期编辑、取消、重新打开设置、关闭后再次启用、批量撤销重做、项目重开、冻结导出及旧读取器的只读保护。
+- 740×660 窗口下长行自动换行，无横向溢出；纵向参数区域可滚动。
+
+本次为同一 macOS 开发环境验证，Windows 打包和安装后实机验收仍待进行。复现：
+
+```sh
+QT_QPA_PLATFORM=offscreen uv run --no-sync pytest -q \
+  tests/test_watermark.py tests/test_digital_slide*.py \
+  tests/test_canvas_interaction_invalidation.py tests/test_canvas_progressive_overlay.py \
+  tests/test_build_windows_onedir.py tests/test_release_self_check.py \
+  tests/test_magic_roi_performance.py tests/test_models_project_io.py \
+  tests/test_history_state_stamps.py tests/test_export_service.py
+
+QT_QPA_PLATFORM=offscreen uv run --no-sync pytest -q \
+  tests/test_watermark.py tests/test_release_self_check.py tests/test_build_windows_onedir.py
+
+uv run --no-sync python -m fdm.ui.watermark_self_check
+```
+
+![附加日期和时间](validation/watermark-datetime-2026-09-21/datetime-dialog.png)

@@ -156,7 +156,9 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
     watermark = checks.get("watermark_renderer")
     watermark_cases = watermark.get("cases") if isinstance(watermark, dict) else None
     required_watermark_cases = {"codec_png", "codec_jpg", "codec_webp", "digital_slide_excluded"} | {
-        f"{name}@{dpr}" for name in ("text", "logo_alpha", "tile", "cache") for dpr in ("1", "1.5", "2")
+        f"{name}@{dpr}"
+        for name in ("text", "logo_alpha", "tile", "cache", "datetime_text", "datetime_logo")
+        for dpr in ("1", "1.5", "2")
     }
     if (
         not isinstance(watermark, dict) or watermark.get("ok") is not True

@@ -59,6 +59,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "construction-geometry/v1",
         "project-rois/v1",
         "image-watermark/v1",
+        "image-watermark-datetime/v1",
     }
 )
 
@@ -2362,6 +2363,12 @@ class ProjectState:
             features.append("construction-geometry/v1")
         if any(document.watermark is not None for document in self.documents):
             features.append("image-watermark/v1")
+        if any(
+            document.watermark is not None
+            and (document.watermark.include_datetime or document.watermark.datetime_text)
+            for document in self.documents
+        ):
+            features.append("image-watermark-datetime/v1")
         return tuple(dict.fromkeys(features))
 
     def remove_project_rois(

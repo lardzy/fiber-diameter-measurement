@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import json
+import math
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -10,7 +11,7 @@ from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter
 
 from fdm.models import ImageDocument
-from fdm.ui.watermark_rendering import draw_watermark, import_logo, watermark_raster_cache
+from fdm.ui.watermark_rendering import draw_watermark, import_logo, watermark_geometry, watermark_raster_cache
 from fdm.watermark import WatermarkSpec
 
 _application = None
@@ -58,8 +59,26 @@ def run_watermark_self_check() -> dict:
             checks[f"tile@{dpr:g}"] = result.pixelColor(round(130 * dpr), round(70 * dpr)) == color
             hits = watermark_raster_cache.hits
             checks[f"cache@{dpr:g}"] = render(tiled, dpr) == result and watermark_raster_cache.hits > hits
+            for kind, base in (("text", text), ("logo", logo_spec)):
+                dated = replace(
+                    base, include_datetime=True, datetime_text="2026-09-21 14:35:26",
+                    anchor="top_left", offset_x=0, offset_y=0, width_ratio=0.75,
+                )
+                geometry = watermark_geometry(document, dated)
+                dated_image = render(dated, dpr)
+                caption_box = (
+                    0, math.floor(geometry.datetime_top * dpr),
+                    math.ceil(geometry.width * dpr),
+                    math.ceil((geometry.height - geometry.datetime_top) * dpr),
+                )
+                checks[f"datetime_{kind}@{dpr:g}"] = (
+                    dated_image.copy(*caption_box) != blank.copy(*caption_box)
+                    and render(dated, dpr) == dated_image
+                )
         document.document_kind = "digital_slide"
-        checks["digital_slide_excluded"] = render(logo_spec) == render(None)
+        checks["digital_slide_excluded"] = render(
+            replace(logo_spec, include_datetime=True, datetime_text="2026-09-21 14:35:26")
+        ) == render(None)
     return {"ok": all(checks.values()), "cases": checks, "cache_bytes": watermark_raster_cache.bytes, "cache_budget": watermark_raster_cache.budget}
 
 
