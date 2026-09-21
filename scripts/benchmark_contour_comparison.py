@@ -63,9 +63,9 @@ def run(output, screenshots, heights=(2000, 4000, 6000)):
         metrics.append({"size": [frames[0].mask.shape[1], height], "segmentation_ms": segment_ms, "profile_p50_ms": float(np.median(times)), "profile_max_ms": max(times), "rows": len(result.sections), "length_change_mm": result.summary["纵向总长变化"]})
         if height == heights[0]:
             demo_frames = frames
-        print(json.dumps(metrics[-1], ensure_ascii=False), flush=True)
+        print(json.dumps(metrics[-1], ensure_ascii=False, allow_nan=False), flush=True)
     save_comparison(output / "合成样本-前后轮廓.fdmcompare", *demo_frames, 5)
-    (output / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+    (output / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
     if screenshots:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication

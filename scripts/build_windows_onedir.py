@@ -88,7 +88,7 @@ def _save_self_check_output(report_path: Path | None, stdout: str, stderr: str) 
         return
     try:
         payload = json.loads(stdout.lstrip("\ufeff").strip())
-        output = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+        output = json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
     except (json.JSONDecodeError, TypeError, ValueError):
         output = stdout
     try:

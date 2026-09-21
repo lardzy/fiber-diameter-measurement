@@ -628,7 +628,16 @@ def _painter_visible_rect(painter: QPainter) -> QRectF | None:
     # sprites must be recorded in full and clipped by the eventual tile.
     if rect is None or rect.isEmpty():
         return None
-    transform = getattr(painter, "combinedTransform", None)
+    if _painter_targets_screen_widget(painter):
+        # QWidget viewports are logical pixels, but combinedTransform also
+        # includes the device's DPR (and QWidget.render's target DPR). Work
+        # entirely in logical coordinates to avoid shrinking the visible area
+        # twice. QImage viewports, in contrast, are physical pixels.
+        if painter.viewTransformEnabled():
+            rect = QRectF(painter.window())
+        transform = painter.worldTransform if painter.worldMatrixEnabled() else None
+    else:
+        transform = getattr(painter, "combinedTransform", None)
     if callable(transform):
         inverse, invertible = transform().inverted()
         if invertible:

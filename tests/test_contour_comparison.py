@@ -209,6 +209,24 @@ def test_failed_save_does_not_replace_previous_and_version_refused(tmp_path):
         load_comparison(path)
 
 
+@pytest.mark.parametrize("field", ["before_intervals", "after_intervals", "boundary_changes"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_excel_rejects_non_finite_segment_json_without_replacing_previous(tmp_path, field, value):
+    before, after = rectangle(), rectangle((8, 12, 93, 108))
+    result = compare_contours(before, after, .5)
+    path = tmp_path / "results.xlsx"
+    export_comparison_excel(path, before, after, result)
+    original = path.read_bytes()
+    invalid_row = replace(result.sections[0], **{field: ((value, 1.0),)})
+    invalid = replace(result, sections=(invalid_row, *result.sections[1:]))
+
+    with pytest.raises(ValueError, match="Out of range float values"):
+        export_comparison_excel(path, before, after, invalid)
+
+    assert path.read_bytes() == original
+    assert not list(tmp_path.glob(".results*"))
+
+
 def test_cancel_and_sampling_limits():
     source = CancellationTokenSource()
     source.cancel()

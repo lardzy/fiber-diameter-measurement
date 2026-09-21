@@ -153,7 +153,7 @@ def test_digital_native_export_keeps_font_pixels_and_frozen_focus_at_every_zoom(
                 focus_index=focus, origin_x=8192, origin_y=4096,
                 viewport_width=240, viewport_height=180,
             )
-            for zoom in (0.25, 2.0, 8.0):
+            for zoom in (0.01, 0.25, 2.0, 8.0):
                 canvas._zoom = zoom
                 output = tmp_path / f"focus-{focus}-zoom-{zoom}.png"
                 result = window._render_overlay_image(

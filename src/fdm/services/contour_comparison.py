@@ -477,7 +477,7 @@ def export_comparison_excel(path, before: ContourFrame, after: ContourFrame, res
     sheet = workbook.create_sheet("逐高度外缘")
     sheet.append([f"参考高度 ({result.unit})", "前左距", "后左距", "左变化", "前右距", "后右距", "右变化", "前外缘跨度", "后外缘跨度", "跨度变化", "状态", "前分段 [左,右]", "后分段 [左,右]", "各段边界距中线变化 [左,右]"])
     for row in result.sections:
-        sheet.append([row.height, row.left_before, row.left_after, row.left_change, row.right_before, row.right_after, row.right_change, row.span_before, row.span_after, row.span_change, row.status, json.dumps(row.before_intervals), json.dumps(row.after_intervals), json.dumps(row.boundary_changes)])
+        sheet.append([row.height, row.left_before, row.left_after, row.left_change, row.right_before, row.right_after, row.right_change, row.span_before, row.span_after, row.span_change, row.status, json.dumps(row.before_intervals, allow_nan=False), json.dumps(row.after_intervals, allow_nan=False), json.dumps(row.boundary_changes, allow_nan=False)])
     for target in workbook:
         target.freeze_panes = "A2"
         target.auto_filter.ref = target.dimensions

@@ -1240,7 +1240,7 @@ class ContourComparisonDialog(QDialog):
         image.setText("Before", self.frames[0].label)
         image.setText("After", self.frames[1].label)
         image.setText("ComparisonUnit", self.result.unit)
-        image.setText("MeasurementSummary", json.dumps(self.result.summary, ensure_ascii=False))
+        image.setText("MeasurementSummary", json.dumps(self.result.summary, ensure_ascii=False, allow_nan=False))
         image.setText("Notes", " ".join(self.result.warnings))
         image.setText("Background", preview.background)
         image.setText("SelectedHeight", "" if preview.height_line is None else str(preview.height_line))

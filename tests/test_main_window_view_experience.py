@@ -28,6 +28,7 @@ from fdm.services.export_service import ExportImageRenderMode
 from fdm.settings import AppSettings, MagicSegmentToolMode
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.main_window import MainWindow
+from fdm.ui.rendering import resolve_overlay_text_layout
 from fdm.ui.view_transform import CanvasZoomMode
 
 
@@ -545,43 +546,105 @@ class MainWindowViewExperienceTests(unittest.TestCase):
         canvas.set_view_zoom(0.01)
         canvas.center_on_image_point(Point(800.0, 500.0))
         window._app_settings.text_font_size = 8
-        window._app_settings.text_size_space = OverlayTextSizeSpace.IMAGE_PX
+        for size_space, screen_font_size in (
+            (OverlayTextSizeSpace.IMAGE_PX, 1),
+            (OverlayTextSizeSpace.SCREEN_PX, 8),
+        ):
+            with self.subTest(size_space=size_space):
+                window._app_settings.text_size_space = size_space
+                with patch(
+                    "fdm.ui.main_window.QInputDialog.getMultiLineText",
+                    return_value=("字", True),
+                ):
+                    window._on_canvas_overlay_create_requested(
+                        document.id,
+                        {
+                            "kind": OverlayAnnotationKind.TEXT,
+                            "anchor_px": Point(800.0, 500.0),
+                        },
+                    )
 
+                annotation = document.overlay_annotations[-1]
+                self.assertIsNotNone(annotation.text_layout)
+                self.assertEqual(annotation.text_layout.size_space, size_space)
+                # New text owns the configured size in the selected space;
+                # creating at 1% must not enlarge a saved image-pixel font.
+                self.assertEqual(annotation.text_layout.image_font_size_px, 8.0)
+                resolved = resolve_overlay_text_layout(
+                    annotation, window._app_settings, canvas.image_to_widget,
+                )
+                self.assertEqual(resolved.font.pixelSize(), screen_font_size)
+
+                with TemporaryDirectory() as tmp_dir:
+                    for render_mode, output_font_size in (
+                        (ExportImageRenderMode.CURRENT_VIEWPORT, screen_font_size),
+                        (ExportImageRenderMode.FULL_RESOLUTION, 8),
+                    ):
+                        output = Path(tmp_dir) / f"{render_mode}.png"
+                        with patch("fdm.ui.main_window.draw_overlay_annotations") as draw:
+                            window._render_overlay_image(
+                                document,
+                                output,
+                                include_measurements=True,
+                                include_scale=False,
+                                render_mode=render_mode,
+                            )
+                        mapper = draw.call_args.args[2]
+                        point = Point(900.0, 560.0)
+                        mapped = mapper(point)
+                        if render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
+                            expected = canvas.image_to_widget(point)
+                            self.assertAlmostEqual(mapped.x(), expected.x(), places=6)
+                            self.assertAlmostEqual(mapped.y(), expected.y(), places=6)
+                        else:
+                            self.assertAlmostEqual(mapped.x(), point.x, places=6)
+                            self.assertAlmostEqual(mapped.y(), point.y, places=6)
+                        exported_layout = resolve_overlay_text_layout(
+                            annotation, window._app_settings, mapper,
+                            render_mode=render_mode,
+                        )
+                        self.assertEqual(exported_layout.font.pixelSize(), output_font_size)
+
+    def test_low_zoom_screen_text_conversion_preserves_appearance_and_undo(self) -> None:
+        window = self._window()
+        document = self._mount_document(window, name="low-zoom-text-conversion")
+        canvas = window.current_canvas()
+        canvas.set_view_zoom(0.01)
+        canvas.center_on_image_point(Point(800.0, 500.0))
+        window._app_settings.text_font_size = 8
+        window._app_settings.text_size_space = OverlayTextSizeSpace.SCREEN_PX
         with patch(
             "fdm.ui.main_window.QInputDialog.getMultiLineText",
             return_value=("字", True),
         ):
             window._on_canvas_overlay_create_requested(
                 document.id,
-                {
-                    "kind": OverlayAnnotationKind.TEXT,
-                    "anchor_px": Point(800.0, 500.0),
-                },
+                {"kind": OverlayAnnotationKind.TEXT, "anchor_px": Point(800.0, 500.0)},
             )
-
-        annotation = document.overlay_annotations[0]
-        self.assertIsNotNone(annotation.text_layout)
-        self.assertAlmostEqual(
-            annotation.text_layout.image_font_size_px,
-            800.0,
+        original = document.overlay_annotations[0]
+        before = resolve_overlay_text_layout(
+            original, window._app_settings, canvas.image_to_widget,
         )
 
-        with TemporaryDirectory() as tmp_dir:
-            output = Path(tmp_dir) / "current-viewport.png"
-            with patch("fdm.ui.main_window.draw_measurements") as draw:
-                window._render_overlay_image(
-                    document,
-                    output,
-                    include_measurements=True,
-                    include_scale=False,
-                    render_mode=ExportImageRenderMode.CURRENT_VIEWPORT,
-                )
-            mapper = draw.call_args.args[2]
-            point = Point(900.0, 560.0)
-            mapped = mapper(point)
-            expected = canvas.image_to_widget(point)
-            self.assertAlmostEqual(mapped.x(), expected.x(), places=6)
-            self.assertAlmostEqual(mapped.y(), expected.y(), places=6)
+        window._on_overlay_text_layout_conversion_requested(original.id)
+
+        converted = document.get_overlay_annotation(original.id)
+        self.assertEqual(converted.text_layout.size_space, OverlayTextSizeSpace.IMAGE_PX)
+        # Explicit appearance conversion, unlike creation, divides by exact zoom.
+        self.assertAlmostEqual(converted.text_layout.image_font_size_px, 800.0)
+        after = resolve_overlay_text_layout(
+            converted, window._app_settings, canvas.image_to_widget,
+        )
+        self.assertEqual(after.font.pixelSize(), before.font.pixelSize())
+        self.assertEqual(after.text_rect.size(), before.text_rect.size())
+        self.assertAlmostEqual(after.text_rect.x(), before.text_rect.x(), places=6)
+        self.assertAlmostEqual(after.text_rect.y(), before.text_rect.y(), places=6)
+
+        window.undo_current_document()
+
+        restored = document.get_overlay_annotation(original.id)
+        self.assertEqual(restored.text_layout.size_space, OverlayTextSizeSpace.SCREEN_PX)
+        self.assertEqual(restored.text_layout.image_font_size_px, 8.0)
 
     def test_digital_navigator_requests_are_debounced_to_latest_point(self) -> None:
         window = self._window()
