@@ -322,6 +322,8 @@ python scripts/build_windows_onedir.py --public-release
 python scripts/build_windows_installer.py
 ```
 
+安装器和卸载器默认使用简体中文，语言文件随仓库提供，无需向 Inno Setup 安装目录复制 `.isl`。安装界面中的软件名称为“特纤通用测量工具”；缺少中文语言文件时，打包脚本会在重建 onedir 前报错。语言文件维护及 Windows 检查步骤见 [`packaging/inno-setup/README.md`](packaging/inno-setup/README.md)。
+
 产物位于：
 
 - `dist/windows/FiberDiameterMeasurement/`

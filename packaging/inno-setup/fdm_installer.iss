@@ -12,6 +12,11 @@
 #define MyAppOutputDir ProjectRoot + "\dist\installer"
 #define MyAppOutputBaseFilename "fiber-diameter-measurement-setup-" + MyAppVersion
 #define MyAppIconFile ProjectRoot + "\packaging\assets\icons\app-icon.ico"
+#define MyAppMessagesFile AddBackslash(SourcePath) + "languages\ChineseSimplified.isl"
+
+#ifnexist MyAppMessagesFile
+  #error "Simplified Chinese messages not found. Restore packaging/inno-setup/languages/ChineseSimplified.isl."
+#endif
 
 #ifnexist MyAppSourceDir + "\" + MyAppExeName
   #error "PyInstaller output not found. Build dist/windows/FiberDiameterMeasurement first."
@@ -39,9 +44,9 @@
 
 [Setup]
 AppId={{F0F6A8B5-4838-4DF0-B2C1-18F1D5AA4A66}
-AppName={#MyAppName}
+AppName={#MyAppShortcutName}
 AppVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion}
+AppVerName={#MyAppShortcutName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 SetupIconFile={#MyAppIconFile}
 LicenseFile={#ProjectRoot}\LICENSE
@@ -53,6 +58,8 @@ OutputBaseFilename={#MyAppOutputBaseFilename}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+ShowLanguageDialog=no
+UsePreviousLanguage=no
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -64,7 +71,7 @@ CloseApplications=yes
 CloseApplicationsFilter=*.exe
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "{#MyAppMessagesFile}"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}";
@@ -76,7 +83,7 @@ Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesub
 [Icons]
 Name: "{group}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
 Name: "{group}\Fiber 截图工具"; Filename: "{app}\{#ScreenshotToolExeName}"; Parameters: "--show-settings"; IconFilename: "{app}\{#ScreenshotToolExeName}"
-Name: "{group}\卸载 {#MyAppShortcutName}"; Filename: "{uninstallexe}"
+Name: "{group}\{cm:UninstallProgram,{#MyAppShortcutName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
@@ -92,13 +99,13 @@ Root: HKLM; Subkey: "Software\Classes\{#DigitalSlideProgId}"; ValueType: string;
 Root: HKLM; Subkey: "Software\Classes\{#DigitalSlideProgId}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Tasks: fileassoc
 Root: HKLM; Subkey: "Software\Classes\{#DigitalSlideProgId}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassoc
 
-Root: HKLM; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey; Tasks: fileassoc
+Root: HKLM; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppShortcutName}"; Flags: uninsdeletekey; Tasks: fileassoc
 Root: HKLM; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".fdmproj"; ValueData: ""; Flags: uninsdeletevalue uninsdeletekeyifempty; Tasks: fileassoc
 Root: HKLM; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".fdmslide"; ValueData: ""; Flags: uninsdeletevalue uninsdeletekeyifempty; Tasks: fileassoc
 Root: HKLM; Subkey: "Software\Classes\Applications\{#MyAppExeName}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey; Tasks: fileassoc
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppShortcutName}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 procedure RemoveOwnedExtensionDefault(const ExtensionName, ProgId: String);

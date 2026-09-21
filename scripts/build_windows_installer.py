@@ -137,6 +137,12 @@ def build_installer(
         print("Sync only mode: version.auto.iss has been refreshed from src/fdm/version.py")
         return 0
 
+    language_file = iss_path.parent / "languages" / "ChineseSimplified.isl"
+    if not language_file.is_file():
+        print(f"Simplified Chinese installer messages not found: {language_file}", file=sys.stderr)
+        return 1
+    print(f"Installer language: Simplified Chinese ({language_file})")
+
     if rebuild_onedir:
         print("Building a clean full-profile onedir package before the installer...")
         onedir_result = build_onedir(

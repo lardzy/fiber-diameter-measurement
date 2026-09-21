@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import subprocess
@@ -26,6 +27,10 @@ def _prepare_installer_root(root: Path, *, version: str = "3.1.4") -> Path:
         "; stub\n",
         encoding="utf-8",
     )
+    language_relative_path = Path("packaging/inno-setup/languages/ChineseSimplified.isl")
+    language_path = root / language_relative_path
+    language_path.parent.mkdir(parents=True, exist_ok=True)
+    language_path.write_bytes((PROJECT_ROOT / language_relative_path).read_bytes())
     return root / "dist" / "installer" / f"fiber-diameter-measurement-setup-{version}.exe"
 
 
@@ -108,13 +113,8 @@ class BuildWindowsInstallerTests(unittest.TestCase):
     def test_build_installer_invokes_compiler_with_iss_script(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
-            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
-            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
-            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
+            expected_output = _prepare_installer_root(root)
             iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
-            iss_path.write_text("; stub\n", encoding="utf-8")
-            expected_output = root / "dist" / "installer" / "fiber-diameter-measurement-setup-3.1.4.exe"
 
             def compile_installer(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
                 expected_output.parent.mkdir(parents=True, exist_ok=True)
@@ -138,6 +138,28 @@ class BuildWindowsInstallerTests(unittest.TestCase):
             self.assertEqual(validate_mock.call_args.kwargs["excluded_components"], ())
             self.assertTrue(validate_mock.call_args.kwargs["include_content_templates"])
             self.assertIsInstance(validate_mock.call_args.kwargs["warnings"], list)
+
+    def test_missing_chinese_messages_stops_before_build_or_compile(self) -> None:
+        for rebuild_onedir in (True, False):
+            with self.subTest(rebuild_onedir=rebuild_onedir), TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                _prepare_installer_root(root)
+                language_path = root / "packaging/inno-setup/languages/ChineseSimplified.isl"
+                language_path.unlink()
+                with (
+                    patch("build_windows_installer.build_onedir") as onedir_mock,
+                    patch("build_windows_installer.validate_installer_release") as validate_mock,
+                    patch("build_windows_installer.subprocess.run") as compiler_mock,
+                    patch("sys.stderr", new_callable=StringIO) as stderr,
+                ):
+                    result = build_installer(root=root, rebuild_onedir=rebuild_onedir)
+
+                self.assertEqual(result, 1)
+                self.assertIn(f"Simplified Chinese installer messages not found: {language_path}", stderr.getvalue())
+                onedir_mock.assert_not_called()
+                validate_mock.assert_not_called()
+                self._self_check.assert_not_called()
+                compiler_mock.assert_not_called()
 
     def test_cli_rebuilds_onedir_by_default_and_can_explicitly_reuse_it(self) -> None:
         cases = (
@@ -294,11 +316,7 @@ class BuildWindowsInstallerTests(unittest.TestCase):
     def test_build_installer_blocks_when_release_gate_fails(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
-            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
-            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
-            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
-            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
+            _prepare_installer_root(root)
             with (
                 patch("build_windows_installer.validate_installer_release", return_value=["dirty worktree"]),
                 patch("build_windows_installer.subprocess.run") as mock_run,
@@ -315,12 +333,7 @@ class BuildWindowsInstallerTests(unittest.TestCase):
     def test_build_installer_blocks_when_iscc_produces_no_output(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
-            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
-            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
-            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
-            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
-            stale_output = root / "dist" / "installer" / "fiber-diameter-measurement-setup-3.1.4.exe"
+            stale_output = _prepare_installer_root(root)
             stale_output.parent.mkdir(parents=True)
             stale_output.write_bytes(b"stale installer")
 
@@ -336,11 +349,7 @@ class BuildWindowsInstallerTests(unittest.TestCase):
     def test_build_installer_blocks_when_iscc_is_unavailable(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
-            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
-            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
-            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
-            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
+            _prepare_installer_root(root)
 
             with (
                 patch("build_windows_installer.validate_installer_release", return_value=[]),
@@ -353,13 +362,8 @@ class BuildWindowsInstallerTests(unittest.TestCase):
     def test_build_installer_runs_optional_sign_and_verify_hooks(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
-            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
-            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
-            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
+            expected_output = _prepare_installer_root(root)
             iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
-            iss_path.write_text("; stub\n", encoding="utf-8")
-            expected_output = root / "dist" / "installer" / "fiber-diameter-measurement-setup-3.1.4.exe"
             commands: list[list[str]] = []
 
             def run_command(command, **_kwargs) -> subprocess.CompletedProcess[str]:
@@ -484,10 +488,8 @@ class BuildWindowsInstallerTests(unittest.TestCase):
     def test_build_installer_requires_existing_onedir_output(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
-            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
-            (root / "src" / "fdm" / "version.py").write_text('__version__ = "1.0.1"\n', encoding="utf-8")
-            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
+            _prepare_installer_root(root, version="1.0.1")
+            (root / "dist" / "windows" / "FiberDiameterMeasurement").rmdir()
 
             result = build_installer(root=root, compiler_path="C:/Tools/ISCC.exe")
 
