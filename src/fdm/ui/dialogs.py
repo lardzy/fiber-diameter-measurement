@@ -839,6 +839,8 @@ class ExportOptionsDialog(QDialog):
         allow_all_scope: bool,
         legacy_overlay_text_count_current: int = 0,
         legacy_overlay_text_count_all: int = 0,
+        watermark_count_current: int = 0,
+        watermark_count_all: int = 0,
         raw_record_templates: list[RawRecordTemplate] | None = None,
         last_raw_record_template_path: str = "",
         parent=None,
@@ -864,6 +866,12 @@ class ExportOptionsDialog(QDialog):
         self._combined_overlay = QCheckBox("测量 + 比例尺叠加图")
         self._combined_overlay.setChecked(selection.include_combined_overlay)
         self._construction_geometry = QCheckBox("在结果图中包含辅助几何")
+        self._watermark_counts = (watermark_count_current, watermark_count_all)
+        self._watermark = QCheckBox("包含水印（普通图片）")
+        self._watermark.setChecked(bool(selection.include_watermark or (
+            watermark_count_all if allow_all_scope else watermark_count_current
+        )))
+        self._watermark.setToolTip("使用各图片已保存的水印；数字切片和数据文件不添加水印。")
         self._construction_geometry.setChecked(
             selection.include_construction_geometry
         )
@@ -1073,6 +1081,7 @@ class ExportOptionsDialog(QDialog):
         overlay_layout.addWidget(self._scale_overlay)
         overlay_layout.addWidget(self._combined_overlay)
         overlay_layout.addWidget(self._construction_geometry)
+        overlay_layout.addWidget(self._watermark)
         overlay_layout.addStretch(1)
 
         files_content = QWidget(self)
@@ -1182,6 +1191,9 @@ class ExportOptionsDialog(QDialog):
         self._csv.toggled.connect(self._update_export_summary)
         self._scale_json.toggled.connect(self._update_export_summary)
         self._scope_current.toggled.connect(self._update_export_summary)
+        self._scope_current.toggled.connect(self._update_render_mode_state)
+        self._scope_all.toggled.connect(self._update_render_mode_state)
+        self._watermark.toggled.connect(self._update_export_summary)
         self._scope_all.toggled.connect(self._update_export_summary)
         self._render_mode_combo.currentIndexChanged.connect(
             self._update_export_summary
@@ -1376,6 +1388,8 @@ class ExportOptionsDialog(QDialog):
         self._render_mode_hint.setEnabled(enabled)
         self._image_format_group.setEnabled(enabled)
         self._construction_geometry.setEnabled(enabled)
+        watermark_available = self._watermark_counts[1 if self._scope_all.isChecked() else 0] > 0
+        self._watermark.setEnabled(enabled and watermark_available)
         self._update_legacy_overlay_text_warning()
         self._update_export_summary()
 
@@ -1583,6 +1597,8 @@ class ExportOptionsDialog(QDialog):
                 )
                 if self._construction_geometry.isChecked():
                     image_suffix += " · 包含辅助几何"
+                if self._watermark.isChecked() and self._watermark.isEnabled():
+                    image_suffix += " · 包含水印"
             summary.setText(
                 f"导出概要：{scope_text} · "
                 + "、".join(outputs)
@@ -1615,6 +1631,7 @@ class ExportOptionsDialog(QDialog):
             jpeg_background=self._flatten_background,
         )
         return ExportSelection(
+            include_watermark=self._watermark.isEnabled() and self._watermark.isChecked(),
             include_measurement_overlay=self._measurement_overlay.isChecked(),
             include_scale_overlay=self._scale_overlay.isChecked(),
             include_combined_overlay=self._combined_overlay.isChecked(),

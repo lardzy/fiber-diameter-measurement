@@ -752,6 +752,12 @@ class ProjectSessionController:
         imported_count = host._merge_legacy_calibration_presets(project.calibration_presets)
         self._begin_project_load(project.documents)
         host._project_path = project_path
+        watermark_errors = [
+            f"{Path(document.path).name}: {document.watermark_asset_error}"
+            for document in project.documents if document.watermark_asset_error
+        ]
+        if watermark_errors:
+            host._show_project_warning("水印资源缺失", "\n".join(watermark_errors))
         host.project = ProjectState(
             version=project.version,
             documents=[],

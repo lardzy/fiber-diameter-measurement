@@ -454,10 +454,12 @@ def test_packaging_enforces_real_magic_probe(state, monkeypatch):
         magic['models']['edge_sam']['providers'] = None
     if state == 'reencoded':
         magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+    from fdm.ui.watermark_self_check import run_watermark_self_check
     payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
         'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
         'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
         'magic_segmentation': magic,
+        'watermark_renderer': run_watermark_self_check(),
     }}
     with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
         errors = module.run_packaged_self_check(Path('/tmp/package'))

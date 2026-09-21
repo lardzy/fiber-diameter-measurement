@@ -140,6 +140,17 @@ def test_digital_native_export_keeps_font_pixels_and_frozen_focus_at_every_zoom(
                 )
                 assert (result.width, result.height) == (240, 180)
                 exported = QImage(str(output))
+                from fdm.watermark import WatermarkSpec
+
+                document.watermark = WatermarkSpec(enabled=True, text="切片不应显示", layout="tile", opacity=1)
+                watermark_output = tmp_path / f"excluded-watermark-{focus}-{zoom}.png"
+                window._render_overlay_image(
+                    document, watermark_output, include_measurements=True, include_scale=False,
+                    include_watermark=True, render_mode=ExportImageRenderMode.CURRENT_VIEWPORT,
+                    render_context=context,
+                )
+                assert QImage(str(watermark_output)) == exported
+                document.watermark = None
                 assert exported.pixelColor(0, 0).name() == color
                 if reference is None:
                     reference = exported

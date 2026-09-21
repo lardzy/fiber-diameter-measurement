@@ -192,6 +192,9 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 "backend_version": "0.26.0",
                 "compiled_extension": True,
             }
+            from fdm.ui.watermark_self_check import run_watermark_self_check
+
+            payload["functional_checks"]["watermark_renderer"] = run_watermark_self_check()
             completed = subprocess.CompletedProcess(
                 [], 0, stdout=json.dumps(payload), stderr=""
             )

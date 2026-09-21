@@ -2562,6 +2562,9 @@ class MainWindow(QMainWindow):
         )
 
     def _create_actions(self) -> None:
+        self.watermark_action = QAction("水印…", self)
+        self.watermark_action.setToolTip("为普通图片设置文字或 Logo 水印")
+        self.watermark_action.triggered.connect(self.edit_watermark)
         self.previous_image_action = QAction("上一张图片", self)
         self.previous_image_action.setShortcut("Ctrl+PgUp")
         self.previous_image_action.triggered.connect(lambda: self._step_document(-1))
@@ -3260,6 +3263,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.delete_group_action)
 
         image_menu = self.menuBar().addMenu("图像")
+        image_menu.addAction(self.watermark_action)
         image_menu.addAction(self.image_information_action)
         image_menu.addAction(self.duplicate_raster_action)
         image_menu.addSeparator()
@@ -14755,6 +14759,8 @@ class MainWindow(QMainWindow):
         )
         return ExportOptionsDialog(
             preset,
+            watermark_count_current=sum(bool(d.watermark and d.watermark.enabled) for d in current_documents if not d.is_digital_slide()),
+            watermark_count_all=sum(bool(d.watermark and d.watermark.enabled) for d in self.project.documents if not d.is_digital_slide()),
             allow_all_scope=len(self.project.documents) > 1,
             legacy_overlay_text_count_current=self._legacy_overlay_text_count(
                 current_documents
@@ -14766,6 +14772,58 @@ class MainWindow(QMainWindow):
             last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
             parent=self,
         )
+
+    def edit_watermark(self) -> None:
+        from fdm.ui.watermark_dialog import WatermarkDialog
+
+        document = self.current_document()
+        if document is None or document.document_kind != "image" or self.project.is_read_only_compatible:
+            return
+        image = self._images.get(document.id)
+        if image is None or image.isNull():
+            return
+        dialog = WatermarkDialog(document, image, parent=self)
+        try:
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+            self._apply_watermark(dialog.watermark(), assets=dialog.assets(), all_open=dialog.apply_to_all())
+        except (ValueError, OSError) as exc:
+            QMessageBox.warning(self, "设置水印失败", str(exc))
+        finally:
+            dialog.deleteLater()
+
+    def _apply_watermark(self, spec, *, assets=None, all_open=False) -> int:
+        from types import SimpleNamespace
+        from fdm.ui.watermark_rendering import logo_image
+
+        current = self.current_document()
+        if current is None or current.document_kind != "image" or self.project.is_read_only_compatible:
+            return 0
+        assets = dict(assets or {})
+        if spec is not None:
+            spec.validate_content()
+            if spec.logo_sha256 and spec.logo_sha256 in current.watermark_assets:
+                assets.setdefault(spec.logo_sha256, current.watermark_assets[spec.logo_sha256])
+            if spec.enabled and spec.kind == "logo":
+                logo_image(SimpleNamespace(watermark_assets=assets), spec)
+        candidates = list(self.project.documents) if all_open else [current]
+        targets = [item for item in candidates if item.document_kind == "image"]
+
+        def mutate(document):
+            changed = document.watermark != spec
+            document.watermark_assets.update(assets)
+            document.watermark = spec
+            document.watermark_asset_error = None
+            return int(changed)
+
+        count = self._apply_documents_change(targets, "设置水印", mutate, workspace_scope=all_open)
+        for document in targets:
+            canvas = self._canvases.get(document.id)
+            if canvas is not None:
+                canvas.notify_document_visual_changed()
+        skipped = len(candidates) - len(targets)
+        self.statusBar().showMessage(f"已更新 {count} 张图片的水印" + (f"；跳过 {skipped} 张数字切片" if skipped else ""), 5000)
+        return count
 
     def export_current_image(self) -> None:
         try:
@@ -14786,6 +14844,7 @@ class MainWindow(QMainWindow):
         dialog = CurrentImageExportDialog(
             default_dir / default_name,
             digital_slide_viewport=document.is_digital_slide(),
+            watermark_available=bool(not document.is_digital_slide() and document.watermark and document.watermark.enabled),
             parent=self,
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
@@ -14914,6 +14973,12 @@ class MainWindow(QMainWindow):
                         )
                         if rendered.width <= 0 or rendered.height <= 0:
                             raise OSError("数字切片当前视窗为空。")
+                    elif dialog.include_watermark():
+                        self._render_overlay_image(
+                            document, raster_source, include_measurements=False,
+                            include_scale=False, include_watermark=True,
+                            render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                        )
                     else:
                         image = self._images.get(document.id)
                         if image is None or image.isNull():
@@ -19423,6 +19488,8 @@ class MainWindow(QMainWindow):
         # geometry on the UI thread.
         source_document = unresolved.document
         document = ImageDocument.from_dict(source_document.to_dict())
+        document.watermark_assets = dict(source_document.watermark_assets)
+        document.watermark_asset_error = source_document.watermark_asset_error
         document.calibration_load_error = source_document.calibration_load_error
         document.calibration_load_payload = (
             dict(source_document.calibration_load_payload)
@@ -26140,6 +26207,10 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
+        self.watermark_action.setEnabled(bool(
+            document is not None and document.document_kind == "image"
+            and not self.project.is_read_only_compatible
+        ))
         self.focus_workspace_action.setEnabled(has_document)
         self.review_workspace_action.setEnabled(has_document)
         self.export_template_action.setEnabled(has_document)
@@ -27749,6 +27820,7 @@ class MainWindow(QMainWindow):
         include_measurements: bool,
         include_scale: bool,
         include_construction_geometry: bool = False,
+        include_watermark: bool = False,
         render_mode: str,
         render_context: ExportRenderContext | None = None,
     ) -> RenderedExport:
@@ -27914,6 +27986,20 @@ class MainWindow(QMainWindow):
                 source_image,
                 QRectF(0.0, 0.0, source_image.width(), source_image.height()),
             )
+
+        if include_watermark and not document.is_digital_slide():
+            from fdm.ui.watermark_rendering import draw_watermark
+
+            frozen_spec = (
+                render_context.watermark
+                if render_context is not None and render_context.watermark_frozen
+                else document.watermark
+            )
+            try:
+                draw_watermark(painter, document, image_to_output, spec=frozen_spec, strict=True)
+            except Exception:
+                painter.end()
+                raise
 
         metrics = self._overlay_metrics(image.width(), image.height(), render_mode)
         line_width = metrics["line_width"]

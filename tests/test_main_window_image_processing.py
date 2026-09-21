@@ -236,6 +236,9 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
     ) -> None:
         window, _session_root = self._window()
         source, source_plane, source_roi = self._rich_source_document(window)
+        from fdm.watermark import WatermarkSpec
+
+        source.watermark = WatermarkSpec(enabled=True, text="源图片水印")
         source_payload_before = source.to_dict()
         source_sha_before = window._rasters[source.id].sha256()
         source_rois_before = tuple(window.project.project_rois)
@@ -311,6 +314,8 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(derived.measurements, [])
         self.assertEqual(derived.overlay_annotations, [])
+        self.assertIsNone(derived.watermark)
+        self.assertEqual(derived.watermark_assets, {})
         self.assertIsNone(derived.scale_overlay_anchor)
         self.assertFalse(
             any(

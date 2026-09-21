@@ -620,7 +620,12 @@ class ReleaseSelfCheckTests(unittest.TestCase):
         self.assertEqual(result, 0, payload["errors"])
         overlay = payload["functional_checks"]["overlay_renderer"]
         self.assertTrue(overlay["ok"] and overlay["worker_stdio_none"])
-        self.assertEqual(len(overlay["cases"]), 15)
+        self.assertEqual(len(overlay["cases"]), 21)
+        watermark = payload["functional_checks"]["watermark_renderer"]
+        self.assertTrue(watermark["ok"])
+        self.assertTrue(watermark["cases"]["digital_slide_excluded"])
+        self.assertTrue(watermark["cases"]["logo_alpha@2"])
+        self.assertTrue(watermark["cases"]["tile@1.5"])
 
 
 if __name__ == "__main__":

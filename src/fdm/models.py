@@ -44,6 +44,7 @@ from fdm.project_roi import (
     remove_rois_with_dependents,
 )
 from fdm.raster import RasterPixelType
+from fdm.watermark import WatermarkSpec
 from fdm.version import __version__
 
 UNCATEGORIZED_LABEL = "未分类"
@@ -57,6 +58,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "analysis-artifacts/v2",
         "construction-geometry/v1",
         "project-rois/v1",
+        "image-watermark/v1",
     }
 )
 
@@ -1184,6 +1186,11 @@ class ImageDocument:
     raster_semantic: RasterSemantic | None = None
     construction_entities: list[ConstructionEntity] = field(default_factory=list)
     selected_construction_id: str | None = None
+    watermark: WatermarkSpec | None = None
+    # Encoded assets are shared by value and retained for session undo. Never
+    # serialize them into document JSON or measurement/segmentation inputs.
+    watermark_assets: dict[str, bytes] = field(default_factory=dict, repr=False, compare=False)
+    watermark_asset_error: str | None = field(default=None, repr=False, compare=False)
     _current_state_stamp: DocumentStateStamp = field(
         default_factory=DocumentStateStamp,
         init=False,
@@ -1934,6 +1941,7 @@ class ImageDocument:
 
     def snapshot_state(self) -> dict[str, Any]:
         return {
+            "watermark": self.watermark.to_dict() if self.watermark else None,
             # Runtime-only compatibility metadata for legacy History.push().
             # Project/sidecar serializers never call snapshot_state().
             "_runtime_state_stamp": {
@@ -1957,6 +1965,7 @@ class ImageDocument:
         }
 
     def restore_snapshot(self, snapshot: dict[str, Any]) -> None:
+        self.watermark = WatermarkSpec.from_dict(snapshot.get("watermark"))
         self.calibration = Calibration.from_dict(snapshot["calibration"]) if snapshot.get("calibration") else None
         self.fiber_groups = [
             FiberGroup.from_dict(item, fallback_number=index + 1)
@@ -2160,6 +2169,8 @@ class ImageDocument:
             ]
         if self.selected_construction_id is not None:
             payload["selected_construction_id"] = self.selected_construction_id
+        if self.watermark is not None:
+            payload["watermark"] = self.watermark.to_dict()
         return payload
 
     @classmethod
@@ -2246,6 +2257,7 @@ class ImageDocument:
                 semantic=parsed_semantic,
             )
         image_document = cls(
+            watermark=WatermarkSpec.from_dict(payload.get("watermark")),
             id=str(payload["id"]),
             path=str(payload["path"]),
             source_type=str(payload.get("source_type", "filesystem")),
@@ -2348,6 +2360,8 @@ class ProjectState:
             features.append("analysis-artifacts/v2")
         if any(document.construction_entities for document in self.documents):
             features.append("construction-geometry/v1")
+        if any(document.watermark is not None for document in self.documents):
+            features.append("image-watermark/v1")
         return tuple(dict.fromkeys(features))
 
     def remove_project_rois(

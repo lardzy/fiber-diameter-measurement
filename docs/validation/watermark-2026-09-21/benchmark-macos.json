@@ -1,0 +1,430 @@
+{
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12",
+  "qt": "6.10.2",
+  "viewport": [
+    1280,
+    800
+  ],
+  "cache_budget_bytes": 33554432,
+  "process_peak_rss_bytes": 291569664,
+  "measurement": "Qt CPU offscreen repaint; synthetic source; not Windows installer acceptance",
+  "results": [
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "text",
+      "layout": "single",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.2156670016120188,
+        "p95_ms": 0.2652583014423726
+      },
+      "watermark": {
+        "p50_ms": 0.2566045004641637,
+        "p95_ms": 0.35148094430041965
+      },
+      "p50_added_ms": 0.04093749885214493,
+      "cache_bytes": 60480,
+      "cache_bytes_after_warmup": 60480,
+      "cache_peak_bytes": 60480,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 71,
+      "cache_misses": 1,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "text",
+      "layout": "single",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.31887500153970905,
+        "p95_ms": 0.44276010012254113
+      },
+      "watermark": {
+        "p50_ms": 0.3810205016634427,
+        "p95_ms": 0.49862559790199157
+      },
+      "p50_added_ms": 0.062145500123733655,
+      "cache_bytes": 322692,
+      "cache_bytes_after_warmup": 322692,
+      "cache_peak_bytes": 322692,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 68,
+      "cache_misses": 4,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "text",
+      "layout": "tile",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.196916502318345,
+        "p95_ms": 0.23985829757293683
+      },
+      "watermark": {
+        "p50_ms": 0.5594579997705296,
+        "p95_ms": 0.6561378508195047
+      },
+      "p50_added_ms": 0.36254149745218456,
+      "cache_bytes": 285912,
+      "cache_bytes_after_warmup": 285912,
+      "cache_peak_bytes": 285912,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 142,
+      "cache_misses": 2,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "text",
+      "layout": "tile",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.2703749996726401,
+        "p95_ms": 0.39891429732961114
+      },
+      "watermark": {
+        "p50_ms": 0.8064375033427496,
+        "p95_ms": 1.0545125038333936
+      },
+      "p50_added_ms": 0.5360625036701094,
+      "cache_bytes": 1536820,
+      "cache_bytes_after_warmup": 1536820,
+      "cache_peak_bytes": 1536820,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 136,
+      "cache_misses": 8,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "logo",
+      "layout": "single",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.19056199744227342,
+        "p95_ms": 0.2508544479496777
+      },
+      "watermark": {
+        "p50_ms": 0.24581250181654468,
+        "p95_ms": 0.28498364772531204
+      },
+      "p50_added_ms": 0.05525050437427126,
+      "cache_bytes": 139128,
+      "cache_bytes_after_warmup": 139128,
+      "cache_peak_bytes": 139128,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 71,
+      "cache_misses": 2,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "logo",
+      "layout": "single",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.2957085016532801,
+        "p95_ms": 0.411574397367076
+      },
+      "watermark": {
+        "p50_ms": 0.35618750189314596,
+        "p95_ms": 0.4583681016811169
+      },
+      "p50_added_ms": 0.060479000239865854,
+      "cache_bytes": 489992,
+      "cache_bytes_after_warmup": 489992,
+      "cache_peak_bytes": 489992,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 71,
+      "cache_misses": 5,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "logo",
+      "layout": "tile",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.18929149882751517,
+        "p95_ms": 0.23226039957080502
+      },
+      "watermark": {
+        "p50_ms": 0.5629789993690792,
+        "p95_ms": 0.6502160489617381
+      },
+      "p50_added_ms": 0.3736875005415641,
+      "cache_bytes": 444900,
+      "cache_bytes_after_warmup": 444900,
+      "cache_peak_bytes": 444900,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 142,
+      "cache_misses": 3,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        3840,
+        2160
+      ],
+      "kind": "logo",
+      "layout": "tile",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.2933750001830049,
+        "p95_ms": 0.39043154793034773
+      },
+      "watermark": {
+        "p50_ms": 0.8067704984568991,
+        "p95_ms": 1.0496149025129853
+      },
+      "p50_added_ms": 0.5133954982738942,
+      "cache_bytes": 2133948,
+      "cache_bytes_after_warmup": 2133948,
+      "cache_peak_bytes": 2133948,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 139,
+      "cache_misses": 9,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "text",
+      "layout": "single",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.2561879991844762,
+        "p95_ms": 0.36588125221896906
+      },
+      "watermark": {
+        "p50_ms": 0.33368799995514564,
+        "p95_ms": 0.4882038498180918
+      },
+      "p50_added_ms": 0.07750000077066943,
+      "cache_bytes": 60480,
+      "cache_bytes_after_warmup": 60480,
+      "cache_peak_bytes": 60480,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 71,
+      "cache_misses": 1,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "text",
+      "layout": "single",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.4291459990781732,
+        "p95_ms": 0.6142708531115204
+      },
+      "watermark": {
+        "p50_ms": 0.486770997667918,
+        "p95_ms": 0.635489903652342
+      },
+      "p50_added_ms": 0.05762499858974479,
+      "cache_bytes": 322692,
+      "cache_bytes_after_warmup": 322692,
+      "cache_peak_bytes": 322692,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 68,
+      "cache_misses": 4,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "text",
+      "layout": "tile",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.24158400265150703,
+        "p95_ms": 0.3158329986035823
+      },
+      "watermark": {
+        "p50_ms": 0.677124502544757,
+        "p95_ms": 0.7904961468739202
+      },
+      "p50_added_ms": 0.43554049989324994,
+      "cache_bytes": 285912,
+      "cache_bytes_after_warmup": 285912,
+      "cache_peak_bytes": 285912,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 142,
+      "cache_misses": 2,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "text",
+      "layout": "tile",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.45110399878467433,
+        "p95_ms": 0.5748812523961533
+      },
+      "watermark": {
+        "p50_ms": 0.9831249990384094,
+        "p95_ms": 1.23260594518797
+      },
+      "p50_added_ms": 0.5320210002537351,
+      "cache_bytes": 1536820,
+      "cache_bytes_after_warmup": 1536820,
+      "cache_peak_bytes": 1536820,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 136,
+      "cache_misses": 8,
+      "logo_decodes": 0
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "logo",
+      "layout": "single",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.24585400387877598,
+        "p95_ms": 0.28974999877391383
+      },
+      "watermark": {
+        "p50_ms": 0.3041460004169494,
+        "p95_ms": 0.3987520474765915
+      },
+      "p50_added_ms": 0.05829199653817341,
+      "cache_bytes": 139128,
+      "cache_bytes_after_warmup": 139128,
+      "cache_peak_bytes": 139128,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 71,
+      "cache_misses": 2,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "logo",
+      "layout": "single",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.4109164983674418,
+        "p95_ms": 0.5923818473092978
+      },
+      "watermark": {
+        "p50_ms": 0.4899995001323987,
+        "p95_ms": 0.6254246975004206
+      },
+      "p50_added_ms": 0.07908300176495686,
+      "cache_bytes": 489992,
+      "cache_bytes_after_warmup": 489992,
+      "cache_peak_bytes": 489992,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 71,
+      "cache_misses": 5,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "logo",
+      "layout": "tile",
+      "gesture": "pan",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.2662084989424329,
+        "p95_ms": 0.3637256035290192
+      },
+      "watermark": {
+        "p50_ms": 0.7247704998007976,
+        "p95_ms": 0.9266419958294136
+      },
+      "p50_added_ms": 0.4585620008583646,
+      "cache_bytes": 444900,
+      "cache_bytes_after_warmup": 444900,
+      "cache_peak_bytes": 444900,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 142,
+      "cache_misses": 3,
+      "logo_decodes": 1
+    },
+    {
+      "image_size": [
+        7680,
+        4320
+      ],
+      "kind": "logo",
+      "layout": "tile",
+      "gesture": "zoom",
+      "iterations": 60,
+      "baseline": {
+        "p50_ms": 0.4491455001698341,
+        "p95_ms": 0.6266618514928267
+      },
+      "watermark": {
+        "p50_ms": 1.055916498444276,
+        "p95_ms": 1.265885404063738
+      },
+      "p50_added_ms": 0.6067709982744418,
+      "cache_bytes": 2133948,
+      "cache_bytes_after_warmup": 2133948,
+      "cache_peak_bytes": 2133948,
+      "cache_growth_after_warmup_bytes": 0,
+      "cache_hits": 139,
+      "cache_misses": 9,
+      "logo_decodes": 1
+    }
+  ]
+}

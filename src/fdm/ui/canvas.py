@@ -991,6 +991,7 @@ class DocumentCanvas(QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._document: ImageDocument | None = None
         self._image: QImage | None = None
+        self._watermark_visual_state = None
         self._tool_mode = "select"
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._construction_tool_kind = "point"
@@ -1350,6 +1351,7 @@ class DocumentCanvas(QWidget):
         previous_document = self._document
         self._document = document
         self._image = image
+        self._watermark_visual_state = self._watermark_visual_signature()
         self._hovered_line_endpoint = None
         self._clear_construction_interaction()
         self._construction_spatial_index = None
@@ -1404,6 +1406,7 @@ class DocumentCanvas(QWidget):
         document_token = id(self._document) if self._document is not None else None
         self._document = None
         self._image = None
+        self._watermark_visual_state = None
         self._last_view_transform_snapshot = None
         self._cancel_line_drawing()
         self._cancel_area_drawing()
@@ -2801,6 +2804,12 @@ class DocumentCanvas(QWidget):
         # under the pointer without producing another mouse event.  Drop that
         # cached hit before repainting the changed document geometry.
         self._set_hovered_line_endpoint(None)
+        watermark_state = self._watermark_visual_signature()
+        if watermark_state != self._watermark_visual_state:
+            self._watermark_visual_state = watermark_state
+            # Watermarks affect the whole image, including areas without any
+            # measurement objects. Undo and asset repair need this refresh too.
+            self.update()
         construction_resolution_signature = self._construction_resolution_signature()
         construction_signature = self._construction_visual_signature()
         construction_changed = bool(
@@ -4515,6 +4524,10 @@ class DocumentCanvas(QWidget):
         if self._image is None or target.isEmpty():
             return target
         painter.drawImage(target, self._image)
+        from fdm.ui.watermark_rendering import draw_watermark
+
+        if self._document is not None:
+            draw_watermark(painter, self._document, self.image_to_widget)
         painter.save()
         border_pen = QPen(canvas_image_border(self.palette()))
         border_pen.setWidthF(1.0)
@@ -6646,6 +6659,18 @@ class DocumentCanvas(QWidget):
         """Pixel sources underneath a cached clean edit background."""
         return self._image.cacheKey() if self._image is not None else None
 
+    def _watermark_visual_signature(self):
+        document = self._document
+        if document is None or document.document_kind != "image":
+            return None
+        spec = document.watermark
+        if spec is None or not spec.enabled:
+            return None
+        # Repairing a missing asset can leave the persisted spec unchanged.
+        # Bytes are immutable and retained for history, so identity is enough.
+        asset = document.watermark_assets.get(spec.logo_sha256) if spec.kind == "logo" else None
+        return spec, id(asset) if asset is not None else None
+
     def _overlay_underlay_signature(self):
         constructions = None
         if self._document is not None and self._document.construction_entities:
@@ -6658,6 +6683,7 @@ class DocumentCanvas(QWidget):
             )
         return (
             self._overlay_background_signature(),
+            self._watermark_visual_signature(),
             self.palette().cacheKey(),
             self._project_roi_visual_revision,
             constructions,

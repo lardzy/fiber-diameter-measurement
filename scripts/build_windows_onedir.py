@@ -153,6 +153,17 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
             )
         ):
             return ["packaged self-check did not pass the magic segmentation ROI/cache probe"]
+    watermark = checks.get("watermark_renderer")
+    watermark_cases = watermark.get("cases") if isinstance(watermark, dict) else None
+    required_watermark_cases = {"codec_png", "codec_jpg", "codec_webp", "digital_slide_excluded"} | {
+        f"{name}@{dpr}" for name in ("text", "logo_alpha", "tile", "cache") for dpr in ("1", "1.5", "2")
+    }
+    if (
+        not isinstance(watermark, dict) or watermark.get("ok") is not True
+        or not isinstance(watermark_cases, dict)
+        or any(watermark_cases.get(name) is not True for name in required_watermark_cases)
+    ):
+        return ["packaged self-check did not pass the watermark renderer probe"]
     return []
 
 

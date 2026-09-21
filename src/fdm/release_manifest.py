@@ -588,6 +588,19 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
     else:
         functional_checks["overlay_renderer"] = "skipped_non_windows"
         warnings.append("Windows frozen overlay-renderer execution probe skipped on this host")
+    if execute_runtime_probe:
+        try:
+            from fdm.ui.watermark_self_check import run_watermark_self_check
+
+            watermark_probe = run_watermark_self_check()
+            functional_checks["watermark_renderer"] = watermark_probe
+            if watermark_probe.get("ok") is not True:
+                errors.append("watermark renderer self-check returned a failure")
+        except Exception as exc:
+            functional_checks["watermark_renderer"] = {"ok": False}
+            errors.append(f"watermark renderer self-check failed: {exc}")
+    else:
+        functional_checks["watermark_renderer"] = "skipped_non_windows"
     if "area-inference" in features and execute_runtime_probe and not errors:
         try:
             probe_result = _probe_area_worker(root)

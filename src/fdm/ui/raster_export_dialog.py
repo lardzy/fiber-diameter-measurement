@@ -41,6 +41,7 @@ class CurrentImageExportDialog(QDialog):
         *,
         initial_options: RasterEncodingOptions | None = None,
         digital_slide_viewport: bool = False,
+        watermark_available: bool = False,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -77,6 +78,13 @@ class CurrentImageExportDialog(QDialog):
         mode_layout.addWidget(self.raw_radio)
         mode_layout.addWidget(self.display_radio)
         form.addRow("像素来源", mode_row)
+        self.watermark_check = QCheckBox("包含水印", self)
+        self._watermark_available = watermark_available and not digital_slide_viewport
+        self.watermark_check.setChecked(self._watermark_available)
+        self.watermark_check.setVisible(self._watermark_available)
+        self.watermark_check.setEnabled(False)
+        self.display_radio.toggled.connect(lambda checked: self.watermark_check.setEnabled(checked and self._watermark_available))
+        form.addRow("", self.watermark_check)
 
         self.format_combo = NoWheelComboBox(self)
         for label, value in (
@@ -172,6 +180,9 @@ class CurrentImageExportDialog(QDialog):
             if self.raw_radio.isChecked()
             else CurrentImageExportMode.CURRENT_DISPLAY
         )
+
+    def include_watermark(self) -> bool:
+        return self.display_radio.isChecked() and self.watermark_check.isEnabled() and self.watermark_check.isChecked()
 
     def encoding_options(self) -> RasterEncodingOptions:
         export_format = self.format_combo.currentData()

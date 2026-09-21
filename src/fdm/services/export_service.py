@@ -19,6 +19,7 @@ from fdm.area_display import area_derived_geometry_service
 from fdm.atomic_io import atomic_replace_file, staged_path_for
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.settings import RawRecordTemplate
+from fdm.watermark import WatermarkSpec
 from fdm.services.raw_record_export import (
     raw_record_output_suffix,
     write_raw_record_template,
@@ -75,6 +76,7 @@ class ExportSelection:
     image_encoding: RasterEncodingOptions = field(
         default_factory=RasterEncodingOptions
     )
+    include_watermark: bool = False
 
     @classmethod
     def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
@@ -117,6 +119,7 @@ class ExportOptionsSnapshot:
     image_encoding: RasterEncodingOptions = field(
         default_factory=RasterEncodingOptions
     )
+    include_watermark: bool = False
 
     @classmethod
     def from_selection(cls, selection: ExportSelection) -> "ExportOptionsSnapshot":
@@ -134,6 +137,7 @@ class ExportOptionsSnapshot:
             render_mode=str(selection.render_mode),
             raw_record_template_path=str(selection.raw_record_template_path or ""),
             image_encoding=selection.image_encoding,
+            include_watermark=bool(selection.include_watermark),
         )
 
     def to_selection(self) -> ExportSelection:
@@ -149,6 +153,7 @@ class ExportOptionsSnapshot:
             render_mode=self.render_mode,
             raw_record_template_path=self.raw_record_template_path,
             image_encoding=self.image_encoding,
+            include_watermark=self.include_watermark,
         )
 
 
@@ -161,6 +166,8 @@ class ExportRenderContext:
     origin_y: int = 0
     viewport_width: int = 0
     viewport_height: int = 0
+    watermark: WatermarkSpec | None = None
+    watermark_frozen: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,6 +271,19 @@ class ExportService:
         image_suffix = options.image_encoding.canonical_suffix
         for document in target_documents:
             base_name = Path(document.path).stem or document.id
+            if not document.is_digital_slide() and selection.include_watermark and any((
+                selection.include_measurement_overlay, selection.include_scale_overlay,
+                selection.include_combined_overlay,
+            )):
+                context = supplied_contexts.get(document.id)
+                if context is None or not context.watermark_frozen:
+                    context = ExportRenderContext(
+                        document_id=document.id, render_mode=selection.render_mode,
+                        watermark=document.watermark, watermark_frozen=True,
+                    )
+                if context.document_id != document.id or context.render_mode != selection.render_mode:
+                    raise ValueError("水印导出上下文与当前图片不一致")
+                frozen_contexts.append(context)
             if document.is_digital_slide() and any(
                 (
                     selection.include_measurement_overlay,
@@ -536,6 +556,7 @@ class ExportService:
                     include_construction_geometry=(
                         execution_selection.include_construction_geometry
                     ),
+                    include_watermark=execution_selection.include_watermark,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -561,6 +582,7 @@ class ExportService:
                     include_construction_geometry=(
                         execution_selection.include_construction_geometry
                     ),
+                    include_watermark=execution_selection.include_watermark,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -586,6 +608,7 @@ class ExportService:
                     include_construction_geometry=(
                         execution_selection.include_construction_geometry
                     ),
+                    include_watermark=execution_selection.include_watermark,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -751,6 +774,7 @@ class ExportService:
         include_measurements: bool,
         include_scale: bool,
         include_construction_geometry: bool = False,
+        include_watermark: bool = False,
         render_mode: str,
         render_context: ExportRenderContext | None,
         encoding: RasterEncodingOptions,
@@ -774,6 +798,8 @@ class ExportService:
             # path; omission has the same meaning as False.
             if include_construction_geometry:
                 kwargs["include_construction_geometry"] = True
+            if include_watermark:
+                kwargs["include_watermark"] = True
             if render_context is not None:
                 kwargs["render_context"] = render_context
             result = overlay_renderer(document, temporary_path, **kwargs)

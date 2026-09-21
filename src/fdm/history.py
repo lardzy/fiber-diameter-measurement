@@ -294,6 +294,7 @@ class DocumentHistoryState:
     construction_payload: ConstructionHistoryPayload
     metadata_payload: bytes
     display_transform_payload: bytes
+    watermark_payload: bytes
     measurement_order: tuple[str, ...]
     measurement_states: tuple[MeasurementRuntimeState, ...]
     geometry_payloads: tuple[tuple[str, bytes], ...]
@@ -329,6 +330,7 @@ class DocumentHistoryState:
             groups_payload=_json_bytes(
                 [group.to_dict() for group in document.sorted_groups()]
             ),
+            watermark_payload=_json_bytes(document.watermark.to_dict() if document.watermark else None),
             overlay_payload=_json_bytes(
                 [annotation.to_dict() for annotation in document.overlay_annotations]
             ),
@@ -379,6 +381,7 @@ class DocumentHistoryState:
             construction_payload=self.construction_payload,
             metadata_payload=self.metadata_payload,
             display_transform_payload=self.display_transform_payload,
+            watermark_payload=self.watermark_payload,
             measurement_order=self.measurement_order,
             measurement_states=self.measurement_states,
             geometry_payloads=self.geometry_payloads,
@@ -404,6 +407,7 @@ class DocumentHistoryState:
             + len(self.overlay_payload)
             + len(self.metadata_payload)
             + len(self.display_transform_payload)
+            + len(self.watermark_payload)
             + sum(len(state.appearance_payload) + 128 for state in self.measurement_states)
             + sum(len(payload) for _measurement_id, payload in self.geometry_payloads)
             + sum(
@@ -421,6 +425,9 @@ class DocumentHistoryState:
         )
 
     def restore(self, document: Any) -> None:
+        from fdm.watermark import WatermarkSpec
+
+        document.watermark = WatermarkSpec.from_dict(_decode_json(self.watermark_payload))
         current_slide_view = _current_digital_slide_view_metadata(document)
         current_order = tuple(measurement.id for measurement in document.measurements)
         current_construction_payload = _construction_payload_for_document(document)

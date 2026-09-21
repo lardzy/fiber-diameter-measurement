@@ -14,7 +14,9 @@ from fdm.models import (
     ImageDocument,
     ProjectCompatibilityState,
     ProjectState,
+    project_assets_root,
 )
+from fdm.services.watermark_assets import hydrate_watermark_assets, stage_watermark_assets
 
 
 _NONFINITE_RAW_VALUE_KEY = "__fdm_nonfinite_float_v1__"
@@ -283,7 +285,19 @@ class ProjectIO:
             _apply_document_save_path(normalized_payload, source, project_dir)
             output_documents[index] = normalized_payload
         output_payload["documents"] = output_documents
-        atomic_write_json(output_path, output_payload, ensure_ascii=False, indent=2)
+        created_assets: list[Path] = []
+        try:
+            stage_watermark_assets(
+                output_documents, sources, project_assets_root(output_path), created_assets
+            )
+            atomic_write_json(output_path, output_payload, ensure_ascii=False, indent=2)
+        except Exception:
+            for asset in created_assets:
+                try:
+                    asset.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            raise
         return output_path
 
     @staticmethod
@@ -341,6 +355,7 @@ class ProjectIO:
                 if isinstance(matching_issue, dict) and isinstance(matching_issue.get("raw_payload"), dict)
                 else None
             )
+        hydrate_watermark_assets(project.documents, project_assets_root(input_path))
         return project
 
     @staticmethod
