@@ -595,7 +595,9 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
             watermark_probe = run_watermark_self_check()
             functional_checks["watermark_renderer"] = watermark_probe
             if watermark_probe.get("ok") is not True:
-                errors.append("watermark renderer self-check returned a failure")
+                failed_cases = [name for name, passed in watermark_probe.get("cases", {}).items() if passed is not True]
+                detail = ": " + ", ".join(failed_cases) if failed_cases else ""
+                errors.append("watermark renderer self-check returned a failure" + detail)
         except Exception as exc:
             functional_checks["watermark_renderer"] = {"ok": False}
             errors.append(f"watermark renderer self-check failed: {exc}")

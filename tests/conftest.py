@@ -9,7 +9,10 @@ def desktop_application():
     # A function-scoped QApplication may be collected while window wrappers
     # still exist. Keep one application alive for the whole desktop test run.
     import os
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    import sys
+    # Windows offscreen cannot discover installed fonts. Use the same native
+    # font backend as the packaged application and its image-only workers.
+    os.environ.setdefault("QT_QPA_PLATFORM", "windows" if sys.platform == "win32" else "offscreen")
     from PySide6.QtWidgets import QApplication
 
     app = QApplication.instance() or QApplication([])

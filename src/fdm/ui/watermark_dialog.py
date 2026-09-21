@@ -47,14 +47,27 @@ class WatermarkPreview(QWidget):
 class WatermarkDialog(QDialog):
     """Edit an isolated draft; only the accepted result changes live documents."""
 
-    def __init__(self, document, image: QImage, parent=None):
+    def __init__(self, document, image: QImage, parent=None, *, default_spec=None, default_assets=None):
         super().__init__(parent)
         self.setWindowTitle("图片水印")
         self.setMinimumSize(660, 460)
         self.resize(980, 660)
         self._removed = False
         self._draft = replace(document, watermark_assets=dict(document.watermark_assets))
-        spec = document.watermark or WatermarkSpec(enabled=True)
+        spec = document.watermark
+        if spec is None:
+            spec = default_spec or WatermarkSpec(
+                enabled=True, text="GTTC", bold=True, include_datetime=True,
+                layout="tile", opacity=0.75, rotation=45.0, gap_x=0.25, gap_y=0.25,
+            )
+            self._draft.watermark_assets.update(default_assets or {})
+            # Remember the datetime option, not another image's timestamp.
+            # An existing document's timestamp stays fixed across edits.
+            spec = replace(
+                spec,
+                datetime_text=QDateTime.currentDateTime().toString(DATETIME_DISPLAY_FORMAT)
+                if spec.include_datetime else "",
+            )
         self._logo_sha256 = spec.logo_sha256
         self._color = spec.color
         self._font_family = spec.font_family
@@ -260,7 +273,7 @@ class WatermarkDialog(QDialog):
             spec.validate_content()
             if spec.enabled and not text:
                 logo_image(self._draft, spec)
-            self.hint.setText("预览使用原图比例。水印随项目保存，数字切片不参与。")
+            self.hint.setText("点击“应用”后记忆本次设置，供下次新建水印使用。水印随项目保存，数字切片不参与。")
         except ValueError as exc:
             self.hint.setText(str(exc))
         self.preview.update()

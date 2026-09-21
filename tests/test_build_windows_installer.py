@@ -56,7 +56,8 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 )
             self.assertEqual(result, 1)
             self._self_check.assert_called_once_with(
-                root / "dist" / "windows" / "FiberDiameterMeasurement"
+                root / "dist" / "windows" / "FiberDiameterMeasurement",
+                report_path=root / "build" / "self-check" / "packaged-runtime.json",
             )
             compiler.assert_not_called()
 

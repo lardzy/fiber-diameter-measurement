@@ -1,0 +1,145 @@
+{
+  "ok": false,
+  "cases": {
+    "font_database": false,
+    "codec_png": true,
+    "codec_jpg": true,
+    "codec_webp": true,
+    "logo_alpha@1": true,
+    "text@1": false,
+    "tile@1": true,
+    "cache@1": true,
+    "datetime_text@1": false,
+    "datetime_logo@1": false,
+    "logo_alpha@1.5": true,
+    "text@1.5": false,
+    "tile@1.5": true,
+    "cache@1.5": true,
+    "datetime_text@1.5": false,
+    "datetime_logo@1.5": false,
+    "logo_alpha@2": true,
+    "text@2": false,
+    "tile@2": true,
+    "cache@2": true,
+    "datetime_text@2": false,
+    "datetime_logo@2": false,
+    "digital_slide_excluded": true
+  },
+  "failed_cases": [
+    "font_database",
+    "text@1",
+    "datetime_text@1",
+    "datetime_logo@1",
+    "text@1.5",
+    "datetime_text@1.5",
+    "datetime_logo@1.5",
+    "text@2",
+    "datetime_text@2",
+    "datetime_logo@2"
+  ],
+  "runtime": {
+    "qt_platform": "minimal",
+    "qt_version": "6.10.2",
+    "font_family_count": 0,
+    "default_font_family": ""
+  },
+  "details": {
+    "logo_alpha@1": {
+      "rgba": [
+        255,
+        224,
+        224,
+        255
+      ]
+    },
+    "text@1": {
+      "visible": false
+    },
+    "datetime_text@1": {
+      "visible": false,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        50,
+        180,
+        12
+      ]
+    },
+    "datetime_logo@1": {
+      "visible": false,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        93,
+        180,
+        12
+      ]
+    },
+    "logo_alpha@1.5": {
+      "rgba": [
+        255,
+        224,
+        224,
+        255
+      ]
+    },
+    "text@1.5": {
+      "visible": false
+    },
+    "datetime_text@1.5": {
+      "visible": false,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        76,
+        270,
+        18
+      ]
+    },
+    "datetime_logo@1.5": {
+      "visible": false,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        139,
+        270,
+        18
+      ]
+    },
+    "logo_alpha@2": {
+      "rgba": [
+        255,
+        224,
+        224,
+        255
+      ]
+    },
+    "text@2": {
+      "visible": false
+    },
+    "datetime_text@2": {
+      "visible": false,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        101,
+        360,
+        24
+      ]
+    },
+    "datetime_logo@2": {
+      "visible": false,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        186,
+        360,
+        24
+      ]
+    }
+  },
+  "cache_bytes": 1279648,
+  "cache_budget": 33554432,
+  "host": "darwin",
+  "top_level_windows": 0
+}

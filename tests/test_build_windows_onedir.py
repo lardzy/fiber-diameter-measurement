@@ -201,6 +201,55 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             with patch("build_windows_onedir.subprocess.run", return_value=completed):
                 self.assertEqual(run_packaged_self_check(Path(tmpdir)), [])
 
+    def test_failed_watermark_report_is_saved_and_names_failed_cases(self) -> None:
+        # Shape of the reported Windows failure, including its generic error.
+        cases = {"codec_png": True, "tile@2": True} | {
+            f"{name}@{dpr}": False
+            for name in ("text", "datetime_text", "datetime_logo")
+            for dpr in ("1", "1.5", "2")
+        }
+        for runtime in (None, {"qt_platform": "offscreen", "font_family_count": 0}):
+            with self.subTest(runtime=runtime), TemporaryDirectory() as tmpdir:
+                payload = {
+                    "ok": False,
+                    "errors": ["watermark renderer self-check returned a failure"],
+                    "functional_checks": {"watermark_renderer": {"ok": False, "cases": cases, "runtime": runtime}},
+                }
+                completed = subprocess.CompletedProcess(
+                    [], 1, stdout="\ufeff" + json.dumps(payload), stderr="QFontDatabase: Cannot find font directory\n",
+                )
+                report_path = Path(tmpdir) / "build" / "self-check" / "packaged-runtime.json"
+                with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                    errors = run_packaged_self_check(Path(tmpdir), report_path=report_path)
+                self.assertEqual(json.loads(report_path.read_text(encoding="utf-8")), payload)
+                self.assertIn('\n  "functional_checks"', report_path.read_text(encoding="utf-8"))
+                self.assertEqual(report_path.with_suffix(".stderr.log").read_text(encoding="utf-8"), completed.stderr)
+                self.assertEqual(errors[0], payload["errors"][0])
+                for name, passed in cases.items():
+                    self.assertEqual(name in errors[1], not passed)
+                if runtime:
+                    self.assertIn("font families=0", errors[1])
+
+    def test_malformed_self_check_output_is_preserved_for_diagnosis(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "self-check.json"
+            completed = subprocess.CompletedProcess([], 1, stdout="interrupted JSON", stderr="Qt failed\n")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(Path(tmpdir), report_path=report_path)
+            self.assertIn("did not return JSON", errors[0])
+            self.assertEqual(report_path.read_text(encoding="utf-8"), completed.stdout)
+            self.assertEqual(report_path.with_suffix(".stderr.log").read_text(encoding="utf-8"), completed.stderr)
+
+    def test_timed_out_self_check_preserves_partial_output(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "self-check.json"
+            failure = subprocess.TimeoutExpired("self-check", 600, output=b"partial", stderr=b"last warning")
+            with patch("build_windows_onedir.subprocess.run", side_effect=failure):
+                errors = run_packaged_self_check(Path(tmpdir), report_path=report_path)
+            self.assertIn("unable to execute", errors[0])
+            self.assertEqual(report_path.read_text(encoding="utf-8"), "partial")
+            self.assertIn("last warning", report_path.with_suffix(".stderr.log").read_text(encoding="utf-8"))
+
     def test_packaged_self_check_rejects_missing_or_noncompiled_diameter_probe(self) -> None:
         for geometry in (
             None,
@@ -239,11 +288,14 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 patch("build_windows_onedir.check_runtime_profile", return_value=RuntimeProfileCheck("core", (), ())),
                 patch("build_windows_onedir.subprocess.run", side_effect=run_pyinstaller) as run_mock,
                 patch("build_windows_onedir.write_release_manifest", return_value=manifest_path) as manifest_mock,
-                patch("build_windows_onedir.run_packaged_self_check", return_value=[]),
+                patch("build_windows_onedir.run_packaged_self_check", return_value=[]) as self_check_mock,
             ):
                 result = build(clean=True, console=False, bootloader_debug=False, profile="core", root=root)
 
             self.assertEqual(result, 0)
+            self_check_mock.assert_called_once_with(
+                app_dir, report_path=root / "build" / "self-check" / "packaged-runtime.json"
+            )
             environment = run_mock.call_args.kwargs["env"]
             self.assertEqual(environment["FDM_BUILD_PROFILE"], "core")
             self.assertEqual(environment["FDM_STRICT_ASSET_HASHES"], "0")

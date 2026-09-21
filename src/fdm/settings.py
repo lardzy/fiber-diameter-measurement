@@ -15,6 +15,7 @@ from fdm.models import (
     OverlayTextAnchorAlignment,
     OverlayTextSizeSpace,
 )
+from fdm.watermark import WatermarkSpec
 
 
 DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
@@ -813,6 +814,7 @@ class AppSettings:
     main_window_is_maximized: bool = False
     recent_export_dir: str = ""
     recent_project_dir: str = ""
+    last_watermark: WatermarkSpec | None = None
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
@@ -1585,6 +1587,7 @@ class AppSettings:
             "main_window_is_maximized": normalized.main_window_is_maximized,
             "recent_export_dir": normalized.recent_export_dir,
             "recent_project_dir": normalized.recent_project_dir,
+            "last_watermark": normalized.last_watermark.to_dict() if normalized.last_watermark is not None else None,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
@@ -1638,6 +1641,13 @@ class AppSettings:
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "AppSettings":
         settings = cls()
+        try:
+            watermark = WatermarkSpec.from_dict(payload.get("last_watermark"))
+            if watermark is not None:
+                watermark.validate_content()
+            settings.last_watermark = watermark
+        except (TypeError, ValueError) as exc:
+            settings.load_issues.append({"kind": "last_watermark", "message": str(exc)})
         settings.theme_mode = normalize_theme_mode(payload.get("theme_mode", settings.theme_mode))
         legacy_style = MeasurementLabelStyleSettings(
             enabled=bool(payload.get("show_measurement_labels", settings.show_measurement_labels)),

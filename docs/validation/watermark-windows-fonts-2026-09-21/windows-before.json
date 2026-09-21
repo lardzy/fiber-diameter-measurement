@@ -1,0 +1,43 @@
+{
+  "provenance": "User-supplied Windows packaged self-check, before the fix",
+  "source_commit": "4aa12bb43785cffd16b5a1c06fb802cf61446060",
+  "version": "0.4.6",
+  "dependency_versions": {
+    "python": "3.12.13",
+    "PySide6": "6.10.2"
+  },
+  "errors": [
+    "watermark renderer self-check returned a failure"
+  ],
+  "functional_checks": {
+    "watermark_renderer": {
+      "cache_budget": 33554432,
+      "cache_bytes": 1279648,
+      "cases": {
+        "cache@1": true,
+        "cache@1.5": true,
+        "cache@2": true,
+        "codec_jpg": true,
+        "codec_png": true,
+        "codec_webp": true,
+        "datetime_logo@1": false,
+        "datetime_logo@1.5": false,
+        "datetime_logo@2": false,
+        "datetime_text@1": false,
+        "datetime_text@1.5": false,
+        "datetime_text@2": false,
+        "digital_slide_excluded": true,
+        "logo_alpha@1": true,
+        "logo_alpha@1.5": true,
+        "logo_alpha@2": true,
+        "text@1": false,
+        "text@1.5": false,
+        "text@2": false,
+        "tile@1": true,
+        "tile@1.5": true,
+        "tile@2": true
+      },
+      "ok": false
+    }
+  }
+}

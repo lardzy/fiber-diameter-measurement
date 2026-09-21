@@ -83,7 +83,40 @@ def check_area_model_runtime_assets(root: Path) -> list[str]:
     return missing
 
 
-def run_packaged_self_check(app_dir: Path) -> list[str]:
+def _save_self_check_output(report_path: Path | None, stdout: str, stderr: str) -> None:
+    if report_path is None:
+        return
+    try:
+        payload = json.loads(stdout.lstrip("\ufeff").strip())
+        output = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    except (json.JSONDecodeError, TypeError, ValueError):
+        output = stdout
+    try:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(output, encoding="utf-8")
+        stderr_path = report_path.with_suffix(".stderr.log")
+        stderr_path.write_text(stderr, encoding="utf-8")
+        print(f"Packaged self-check report: {report_path}")
+        print(f"Packaged self-check stderr: {stderr_path}")
+    except OSError as exc:
+        print(f"Unable to save packaged self-check report: {exc}", file=sys.stderr)
+
+
+def _watermark_failure_detail(probe: object) -> str:
+    if not isinstance(probe, dict):
+        return ""
+    cases = probe.get("cases")
+    failed = [name for name, passed in cases.items() if passed is not True] if isinstance(cases, dict) else []
+    if not failed:
+        return ""
+    detail = "watermark renderer failed cases: " + ", ".join(sorted(failed))
+    runtime = probe.get("runtime")
+    if isinstance(runtime, dict):
+        detail += f" (Qt platform={runtime.get('qt_platform')}, font families={runtime.get('font_family_count')})"
+    return detail
+
+
+def run_packaged_self_check(app_dir: Path, *, report_path: Path | None = None) -> list[str]:
     executable = app_dir / "FiberDiameterMeasurement.exe"
     try:
         completed = subprocess.run(
@@ -97,9 +130,17 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
             check=False,
         )
     except (OSError, subprocess.SubprocessError) as exc:
+        stdout = getattr(exc, "stdout", None) or ""
+        stderr = getattr(exc, "stderr", None) or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode("utf-8", errors="replace")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+        _save_self_check_output(report_path, stdout, stderr + f"\n{exc}\n")
         return [f"unable to execute packaged self-check: {exc}"]
+    _save_self_check_output(report_path, completed.stdout, completed.stderr)
     try:
-        payload = json.loads(completed.stdout.strip())
+        payload = json.loads(completed.stdout.lstrip("\ufeff").strip())
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         return [
             f"packaged self-check did not return JSON (rc={completed.returncode}): {exc}; "
@@ -111,11 +152,15 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
     if not isinstance(errors_payload, list) or any(not isinstance(item, str) for item in errors_payload):
         return ["packaged self-check errors field must be a list of strings"]
     errors = [item for item in errors_payload if item]
+    checks = payload.get("functional_checks")
+    watermark = checks.get("watermark_renderer") if isinstance(checks, dict) else None
+    watermark_detail = _watermark_failure_detail(watermark)
+    if watermark_detail:
+        errors.append(watermark_detail)
     if errors:
         return errors
     if completed.returncode != 0 or payload.get("ok") is not True:
         return errors or [f"packaged self-check failed with exit code {completed.returncode}"]
-    checks = payload.get("functional_checks")
     overlay = checks.get("overlay_renderer") if isinstance(checks, dict) else None
     if (
         not isinstance(overlay, dict)
@@ -153,9 +198,8 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
             )
         ):
             return ["packaged self-check did not pass the magic segmentation ROI/cache probe"]
-    watermark = checks.get("watermark_renderer")
     watermark_cases = watermark.get("cases") if isinstance(watermark, dict) else None
-    required_watermark_cases = {"codec_png", "codec_jpg", "codec_webp", "digital_slide_excluded"} | {
+    required_watermark_cases = {"font_database", "codec_png", "codec_jpg", "codec_webp", "digital_slide_excluded", "preferences_roundtrip"} | {
         f"{name}@{dpr}"
         for name in ("text", "logo_alpha", "tile", "cache", "datetime_text", "datetime_logo")
         for dpr in ("1", "1.5", "2")
@@ -165,7 +209,9 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
         or not isinstance(watermark_cases, dict)
         or any(watermark_cases.get(name) is not True for name in required_watermark_cases)
     ):
-        return ["packaged self-check did not pass the watermark renderer probe"]
+        missing = sorted(required_watermark_cases - watermark_cases.keys()) if isinstance(watermark_cases, dict) else []
+        detail = "; missing cases: " + ", ".join(missing) if missing else ""
+        return ["packaged self-check did not pass the watermark renderer probe" + detail]
     return []
 
 
@@ -343,7 +389,9 @@ def build(
             else (BUILD_COMPONENT_CONTENT_TEMPLATES,)
         ),
     )
-    self_check_errors = run_packaged_self_check(app_dir)
+    self_check_errors = run_packaged_self_check(
+        app_dir, report_path=root / "build" / "self-check" / "packaged-runtime.json"
+    )
     if self_check_errors:
         print(
             "Packaged runtime self-check failed:\n  " + "\n  ".join(self_check_errors),

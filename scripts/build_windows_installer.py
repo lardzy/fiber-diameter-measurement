@@ -184,7 +184,9 @@ def build_installer(
         return 1
 
     if not rebuild_onedir:
-        self_check_errors = run_packaged_self_check(app_dir)
+        self_check_errors = run_packaged_self_check(
+            app_dir, report_path=root / "build" / "self-check" / "packaged-runtime.json"
+        )
         if self_check_errors:
             print(
                 "Packaged runtime self-check failed:\n  " + "\n  ".join(self_check_errors),

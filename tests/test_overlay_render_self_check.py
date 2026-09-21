@@ -6,6 +6,7 @@ import pytest
 
 from fdm.ui import overlay_process_renderer as renderer
 from fdm.ui import overlay_render_self_check as probe
+from fdm.ui.qt_raster_runtime import raster_platform_name
 
 
 def _unfixed_windowed_initializer():
@@ -28,6 +29,13 @@ def _stuck_raster(_payload):
     time.sleep(60)
 
 
+def _fontless_worker_environment():
+    from fdm.ui.overlay_render_self_check import _worker_environment
+
+    environment = _worker_environment()
+    return {**environment, "font_family_count": 0, "text_visible": False}
+
+
 def test_real_windowed_probe_checks_all_pixels_without_touching_live_pool(monkeypatch):
     live_pool = object()
     monkeypatch.setattr(renderer, "_pool", live_pool)
@@ -35,7 +43,9 @@ def test_real_windowed_probe_checks_all_pixels_without_touching_live_pool(monkey
 
     assert renderer._pool is live_pool
     assert report["ok"] and report["worker_stdio_none"]
-    assert report["worker_platform"] == "offscreen"
+    assert report["worker_platform"] == raster_platform_name()
+    assert report["worker_font_family_count"] > 0
+    assert report["worker_text_visible"]
     assert report["start_method"] == "spawn"
     assert set(report["cases"]) == {
         f"{name}@{dpr}"
@@ -72,6 +82,12 @@ def test_probe_catches_the_original_windowed_initializer_failure(monkeypatch):
 def test_probe_rejects_a_worker_that_returns_blank_images(monkeypatch):
     monkeypatch.setattr(renderer, "_render", _blank_raster)
     with pytest.raises(RuntimeError, match="magic_primary@1: raster pixels differ"):
+        probe.run_overlay_render_self_check()
+
+
+def test_probe_rejects_a_worker_without_system_fonts(monkeypatch):
+    monkeypatch.setattr(probe, "_worker_environment", _fontless_worker_environment)
+    with pytest.raises(RuntimeError, match="worker startup: Qt raster worker could not render system font glyphs"):
         probe.run_overlay_render_self_check()
 
 

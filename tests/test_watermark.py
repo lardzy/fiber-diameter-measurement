@@ -371,7 +371,7 @@ def test_current_display_export_contains_watermark_and_raw_export_does_not(windo
         assert abs(color.green() - (223 if display else 255)) <= 1
 
 
-@pytest.mark.parametrize("failed_case", ["tile@2", "datetime_text@1.5", "datetime_logo@2"])
+@pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
 def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
     import subprocess
     import sys
@@ -394,6 +394,8 @@ def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
         with patch("build_windows_onedir.subprocess.run", return_value=completed):
             errors = run_packaged_self_check(tmp_path)
         assert bool(errors) is not valid
+        if not valid:
+            assert any(failed_case in error for error in errors)
 
 
 @pytest.mark.parametrize("dtype,pixel_type", [(np.uint16, "gray16"), (np.float32, "gray32_float")])

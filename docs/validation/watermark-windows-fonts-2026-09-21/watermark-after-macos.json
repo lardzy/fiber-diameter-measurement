@@ -1,0 +1,134 @@
+{
+  "ok": true,
+  "cases": {
+    "font_database": true,
+    "codec_png": true,
+    "codec_jpg": true,
+    "codec_webp": true,
+    "logo_alpha@1": true,
+    "text@1": true,
+    "tile@1": true,
+    "cache@1": true,
+    "datetime_text@1": true,
+    "datetime_logo@1": true,
+    "logo_alpha@1.5": true,
+    "text@1.5": true,
+    "tile@1.5": true,
+    "cache@1.5": true,
+    "datetime_text@1.5": true,
+    "datetime_logo@1.5": true,
+    "logo_alpha@2": true,
+    "text@2": true,
+    "tile@2": true,
+    "cache@2": true,
+    "datetime_text@2": true,
+    "datetime_logo@2": true,
+    "digital_slide_excluded": true
+  },
+  "failed_cases": [],
+  "runtime": {
+    "qt_platform": "offscreen",
+    "qt_version": "6.10.2",
+    "font_family_count": 248,
+    "default_font_family": ".AppleSystemUIFont"
+  },
+  "details": {
+    "logo_alpha@1": {
+      "rgba": [
+        255,
+        224,
+        224,
+        255
+      ]
+    },
+    "text@1": {
+      "visible": true
+    },
+    "datetime_text@1": {
+      "visible": true,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        99,
+        180,
+        25
+      ]
+    },
+    "datetime_logo@1": {
+      "visible": true,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        95,
+        180,
+        25
+      ]
+    },
+    "logo_alpha@1.5": {
+      "rgba": [
+        255,
+        224,
+        224,
+        255
+      ]
+    },
+    "text@1.5": {
+      "visible": true
+    },
+    "datetime_text@1.5": {
+      "visible": true,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        148,
+        270,
+        37
+      ]
+    },
+    "datetime_logo@1.5": {
+      "visible": true,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        143,
+        270,
+        37
+      ]
+    },
+    "logo_alpha@2": {
+      "rgba": [
+        255,
+        224,
+        224,
+        255
+      ]
+    },
+    "text@2": {
+      "visible": true
+    },
+    "datetime_text@2": {
+      "visible": true,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        198,
+        360,
+        49
+      ]
+    },
+    "datetime_logo@2": {
+      "visible": true,
+      "repeat_equal": true,
+      "caption_box": [
+        0,
+        190,
+        360,
+        49
+      ]
+    }
+  },
+  "cache_bytes": 1706312,
+  "cache_budget": 33554432,
+  "host": "darwin",
+  "top_level_windows": 0
+}

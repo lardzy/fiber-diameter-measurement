@@ -31,12 +31,10 @@ def _initialize_worker():
         # lack a file descriptor. Optional diagnostics must not abort the
         # renderer initializer and leave every draft preview invisible.
         pass
-    from PySide6.QtGui import QGuiApplication
     from fdm.ui.canvas_overlay_cache import _AreaCommandCentroidCache
+    from fdm.ui.qt_raster_runtime import ensure_raster_application
 
-    _application = QGuiApplication.instance() or QGuiApplication(
-        ["fdm-overlay-worker", "-platform", "offscreen"]
-    )
+    _application = ensure_raster_application("fdm-overlay-worker")
     _centroids = _AreaCommandCentroidCache()
 
 

@@ -194,6 +194,25 @@ class ReleaseSelfCheckTests(unittest.TestCase):
                     any("overlay renderer" in error for error in report["errors"])
                 )
 
+    def test_watermark_failure_lists_failed_cases(self) -> None:
+        manifest = {"ok": True, "errors": [], "warnings": [], "profile": "core", "features": ["measurement"]}
+        watermark = {
+            "ok": False,
+            "cases": {"codec_png": True, "text@1": False, "datetime_logo@2": False},
+            "runtime": {"qt_platform": "offscreen", "font_family_count": 0},
+        }
+        with (
+            patch("fdm.release_manifest.verify_release_manifest", return_value=manifest),
+            patch("fdm.release_manifest._validate_pe_executable", return_value=(True, "")),
+            patch("fdm.release_manifest._probe_overlay_renderer", return_value={"ok": True}),
+            patch("fdm.ui.watermark_self_check.run_watermark_self_check", return_value=watermark),
+            patch.dict(os.environ, {"FDM_SELF_CHECK_EXECUTE": "1"}),
+        ):
+            report = run_release_self_check(PROJECT_ROOT)
+        self.assertFalse(report["ok"])
+        self.assertIn("watermark renderer self-check returned a failure: text@1, datetime_logo@2", report["errors"])
+        self.assertEqual(report["functional_checks"]["watermark_renderer"], watermark)
+
     def test_pillow_raster_encoder_probe_exercises_all_export_formats(self) -> None:
         report = _probe_pillow_raster_encoders()
 

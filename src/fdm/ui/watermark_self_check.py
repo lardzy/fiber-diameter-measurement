@@ -7,10 +7,13 @@ import math
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from PySide6.QtCore import QPointF
-from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter
+from PySide6.QtCore import QPointF, qVersion
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QImage, QPainter
 
 from fdm.models import ImageDocument
+from fdm.services.watermark_preferences import load_watermark_default_assets, save_watermark_defaults
+from fdm.settings import AppSettings, AppSettingsIO
+from fdm.ui.qt_raster_runtime import ensure_raster_application
 from fdm.ui.watermark_rendering import draw_watermark, import_logo, watermark_geometry, watermark_raster_cache
 from fdm.watermark import WatermarkSpec
 
@@ -19,8 +22,16 @@ _application = None
 
 def run_watermark_self_check() -> dict:
     global _application
-    _application = QGuiApplication.instance() or QGuiApplication(["watermark-self-check", "-platform", "offscreen"])
-    checks = {}
+    _application = ensure_raster_application("watermark-self-check")
+    font_count = len(QFontDatabase.families())
+    runtime = {
+        "qt_platform": _application.platformName(),
+        "qt_version": qVersion(),
+        "font_family_count": font_count,
+        "default_font_family": QFontInfo(QFont()).family(),
+    }
+    checks = {"font_database": font_count > 0}
+    details = {}
     document = ImageDocument(id="watermark-probe", path="probe.png", image_size=(320, 240))
 
     def render(spec, dpr=1.0):
@@ -51,9 +62,11 @@ def run_watermark_self_check() -> dict:
             image = render(logo_spec, dpr)
             color = image.pixelColor(round(10 * dpr), round(10 * dpr))
             checks[f"logo_alpha@{dpr:g}"] = color.red() == 255 and abs(color.green() - 223) <= 1 and color.alpha() == 255
+            details[f"logo_alpha@{dpr:g}"] = {"rgba": color.getRgb()}
             text = WatermarkSpec(enabled=True, text="纤维测量\nWatermark", color="#000000")
             blank = render(None, dpr)
             checks[f"text@{dpr:g}"] = render(text, dpr) != blank
+            details[f"text@{dpr:g}"] = {"visible": checks[f"text@{dpr:g}"]}
             tiled = replace(logo_spec, layout="tile")
             result = render(tiled, dpr)
             checks[f"tile@{dpr:g}"] = result.pixelColor(round(130 * dpr), round(70 * dpr)) == color
@@ -71,15 +84,30 @@ def run_watermark_self_check() -> dict:
                     math.ceil(geometry.width * dpr),
                     math.ceil((geometry.height - geometry.datetime_top) * dpr),
                 )
-                checks[f"datetime_{kind}@{dpr:g}"] = (
-                    dated_image.copy(*caption_box) != blank.copy(*caption_box)
-                    and render(dated, dpr) == dated_image
-                )
+                visible = dated_image.copy(*caption_box) != blank.copy(*caption_box)
+                repeat_equal = render(dated, dpr) == dated_image
+                checks[f"datetime_{kind}@{dpr:g}"] = visible and repeat_equal
+                details[f"datetime_{kind}@{dpr:g}"] = {
+                    "visible": visible, "repeat_equal": repeat_equal, "caption_box": caption_box,
+                }
+        settings_path = Path(temporary) / "profile" / "settings.json"
+        remembered = replace(logo_spec, include_datetime=True, datetime_text="2026-09-21 14:35:26")
+        save_watermark_defaults(AppSettings(), remembered, document.watermark_assets, settings_path=settings_path)
+        restored = AppSettingsIO.load(settings_path)
+        checks["preferences_roundtrip"] = (
+            restored.last_watermark == remembered
+            and load_watermark_default_assets(restored.last_watermark, settings_path=settings_path) == document.watermark_assets
+        )
         document.document_kind = "digital_slide"
         checks["digital_slide_excluded"] = render(
             replace(logo_spec, include_datetime=True, datetime_text="2026-09-21 14:35:26")
         ) == render(None)
-    return {"ok": all(checks.values()), "cases": checks, "cache_bytes": watermark_raster_cache.bytes, "cache_budget": watermark_raster_cache.budget}
+    return {
+        "ok": all(checks.values()), "cases": checks,
+        "failed_cases": [name for name, passed in checks.items() if not passed],
+        "runtime": runtime, "details": details,
+        "cache_bytes": watermark_raster_cache.bytes, "cache_budget": watermark_raster_cache.budget,
+    }
 
 
 if __name__ == "__main__":

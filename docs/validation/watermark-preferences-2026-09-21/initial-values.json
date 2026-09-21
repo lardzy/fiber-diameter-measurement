@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "kind": "text",
+  "text": "GTTC",
+  "font_family": "",
+  "bold": true,
+  "italic": false,
+  "color": "#666666",
+  "logo_sha256": "",
+  "layout": "tile",
+  "anchor": "bottom_right",
+  "opacity": 0.75,
+  "width_ratio": 0.25,
+  "rotation": 45.0,
+  "offset_x": 0.02,
+  "offset_y": 0.02,
+  "gap_x": 0.25,
+  "gap_y": 0.25,
+  "include_datetime": true,
+  "datetime_text": "2026-09-21 14:00:45"
+}

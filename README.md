@@ -351,6 +351,12 @@ python scripts/build_windows_installer.py `
 
 打包自检会在真实 spawn 子进程中关闭标准输入输出，运行 Qt 叠加层绘制并校验像素；覆盖魔棒主体/孔洞/剔除、完整预览、混合测量图块与空图块，以及 DPR 1/1.5/2。该检查不依赖分割模型，core 和排除面积模型的安装包也必须通过；启动失败、像素不符或超时会阻止构建成功。`--reuse-onedir` 复用已有目录时同样重新执行自检，检查缺失或被跳过的旧目录不能直接打包。
 
+Windows 自检和后台绘图使用 `windows` Qt 平台读取系统字体，仅绘制到内存，不创建窗口。构建脚本自动保存 `build/self-check/packaged-runtime.json` 和相邻的 `packaged-runtime.stderr.log`，失败时仍保留输出；报告文件位于产物目录之外。JSON 正常返回时按层级缩进，水印失败会列出具体检查名。可在 PowerShell 中读取嵌套结果：
+
+```powershell
+(Get-Content .\build\self-check\packaged-runtime.json -Raw | ConvertFrom-Json).functional_checks.watermark_renderer | ConvertTo-Json -Depth 10
+```
+
 ## 目录结构
 
 ```text

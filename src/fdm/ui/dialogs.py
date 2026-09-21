@@ -2249,6 +2249,7 @@ class SettingsDialog(QDialog):
             ],
             recent_export_dir=self._initial_settings.recent_export_dir,
             recent_project_dir=self._initial_settings.recent_project_dir,
+            last_watermark=self._initial_settings.last_watermark,
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),

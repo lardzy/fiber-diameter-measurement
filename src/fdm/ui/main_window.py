@@ -14774,6 +14774,7 @@ class MainWindow(QMainWindow):
         )
 
     def edit_watermark(self) -> None:
+        from fdm.services.watermark_preferences import load_watermark_default_assets, save_watermark_defaults
         from fdm.ui.watermark_dialog import WatermarkDialog
 
         document = self.current_document()
@@ -14782,11 +14783,30 @@ class MainWindow(QMainWindow):
         image = self._images.get(document.id)
         if image is None or image.isNull():
             return
-        dialog = WatermarkDialog(document, image, parent=self)
+        default_assets = {}
+        if document.watermark is None:
+            try:
+                default_assets = load_watermark_default_assets(self._app_settings.last_watermark)
+            except (OSError, ValueError):
+                # Preserve the remembered configuration. The dialog's Logo
+                # validator prompts for a replacement instead of discarding it.
+                pass
+        dialog = WatermarkDialog(
+            document, image, parent=self,
+            default_spec=self._app_settings.last_watermark, default_assets=default_assets,
+        )
         try:
             if dialog.exec() != QDialog.DialogCode.Accepted:
                 return
-            self._apply_watermark(dialog.watermark(), assets=dialog.assets(), all_open=dialog.apply_to_all())
+            spec, assets = dialog.watermark(), dialog.assets()
+            self._apply_watermark(spec, assets=assets, all_open=dialog.apply_to_all())
+            if spec is not None:
+                try:
+                    save_watermark_defaults(self._app_settings, spec, assets)
+                except (ValueError, OSError) as exc:
+                    QMessageBox.warning(self, "记忆水印设置失败", f"水印已应用，但无法保存供下次使用的设置：\n{exc}")
+                else:
+                    self._app_settings.last_watermark = spec
         except (ValueError, OSError) as exc:
             QMessageBox.warning(self, "设置水印失败", str(exc))
         finally:

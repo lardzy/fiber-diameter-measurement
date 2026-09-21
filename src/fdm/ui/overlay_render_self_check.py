@@ -30,7 +30,22 @@ def _initialize_windowed_worker():
 def _worker_environment():
     import os
 
-    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QColor, QFont, QFontDatabase, QGuiApplication, QImage, QPainter
+
+    # Labels can have an opaque background even when no glyphs were drawn.
+    # Verify actual text on transparency before comparing full overlay tiles.
+    image = QImage(160, 40, QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(image)
+    try:
+        font = QFont()
+        font.setPixelSize(24)
+        painter.setFont(font)
+        painter.setPen(QColor("white"))
+        painter.drawText(4, 30, "Aa0123")
+    finally:
+        painter.end()
 
     return {
         "pid": os.getpid(),
@@ -38,6 +53,8 @@ def _worker_environment():
             getattr(sys, name) is None for name in ("stdin", "stdout", "stderr")
         ),
         "platform": QGuiApplication.platformName(),
+        "font_family_count": len(QFontDatabase.families()),
+        "text_visible": any(image.pixelColor(x, y).alpha() for x in range(160) for y in range(40)),
     }
 
 
@@ -275,15 +292,10 @@ def _stop_probe_pool(pool):
 
 def run_overlay_render_self_check(*, timeout_seconds=30.0):
     global _application
-    from PySide6.QtGui import QGuiApplication
-
     from fdm.ui import overlay_process_renderer as renderer
+    from fdm.ui.qt_raster_runtime import ensure_raster_application, raster_platform_name
 
-    _application = QGuiApplication.instance() or QGuiApplication(
-        ["fdm-overlay-self-check", "-platform", "offscreen"]
-    )
-    if not isinstance(_application, QGuiApplication):
-        raise TypeError("overlay probe requires a Qt GUI application")
+    _application = ensure_raster_application("fdm-overlay-self-check")
     started = time.monotonic()
     deadline = started + timeout_seconds
     pool = ProcessPoolExecutor(
@@ -298,10 +310,13 @@ def run_overlay_render_self_check(*, timeout_seconds=30.0):
 
     try:
         environment = receive(pool.submit(_worker_environment))
-        if not environment["stdio_none"] or environment["platform"] != "offscreen":
+        if not environment["stdio_none"] or environment["platform"] != raster_platform_name():
             raise RuntimeError(
-                "probe worker did not start in the windowed offscreen environment"
+                "probe worker did not start with windowed stdio and the expected "
+                f"Qt raster platform ({raster_platform_name()}): {environment}"
             )
+        if not environment["font_family_count"] or not environment["text_visible"]:
+            raise RuntimeError(f"Qt raster worker could not render system font glyphs: {environment}")
         cases = {}
         for dpr in (1.0, 1.5, 2.0):
             for name, snapshot in _snapshots(dpr):
@@ -316,6 +331,8 @@ def run_overlay_render_self_check(*, timeout_seconds=30.0):
             "ok": True,
             "worker_stdio_none": True,
             "worker_platform": environment["platform"],
+            "worker_font_family_count": environment["font_family_count"],
+            "worker_text_visible": environment["text_visible"],
             "worker_pid": environment["pid"],
             "start_method": "spawn",
             "cases": cases,
