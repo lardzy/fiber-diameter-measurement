@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
@@ -352,20 +353,33 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
         if not valid:
             errors.append(f"invalid Windows executable {executable_name}: {reason}")
 
+    unit_checks: dict[str, bool] = {}
     try:
         from fdm.models import Calibration
+        from fdm.units import millimeters_per_unit
 
-        probe = Calibration(
-            mode="self_check",
-            pixels_per_unit=5.0,
-            unit="um",
-            source_label="release-self-check",
-        )
-        measurement_ok = abs(probe.px_to_unit(25.0) - 5.0) <= 1e-12
+        # The same 100 nm/pixel calibration expressed in each supported unit.
+        reference_scales = {
+            "nm": 0.01, "um": 10.0, "mm": 10_000.0,
+            "cm": 100_000.0, "m": 10_000_000.0,
+        }
+        for unit, pixels_per_unit in reference_scales.items():
+            probe = Calibration(
+                mode="self_check", pixels_per_unit=pixels_per_unit,
+                unit=unit, source_label="release-self-check",
+            )
+            factor = millimeters_per_unit(unit)
+            unit_checks[unit] = factor is not None and (
+                math.isclose(probe.px_to_unit(25.0) * factor, 0.0025)
+                and math.isclose(probe.unit_to_px(0.0025 / factor), 25.0)
+                and math.isclose(probe.px_area_to_unit(625.0) * factor**2, 6.25e-6)
+            )
+        measurement_ok = all(unit_checks.values())
     except Exception as exc:  # noqa: BLE001
         measurement_ok = False
         errors.append(f"core measurement self-check failed: {exc}")
     functional_checks["core_measurement"] = measurement_ok
+    functional_checks["measurement_units"] = unit_checks
     if not measurement_ok and not any("core measurement" in str(item) for item in errors):
         errors.append("core measurement self-check returned an unexpected value")
 

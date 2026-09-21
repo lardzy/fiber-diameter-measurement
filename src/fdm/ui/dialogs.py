@@ -51,6 +51,7 @@ from fdm.models import (
     OverlayTextAnchorAlignment,
     OverlayTextSizeSpace,
 )
+from fdm.units import DEFAULT_LENGTH_UNIT, LENGTH_UNITS, resolve_length_unit
 from fdm.settings import (
     AppThemeMode,
     AreaInferDevice,
@@ -657,6 +658,24 @@ class DigitalSlideCompressionDialog(QDialog):
         super().closeEvent(event)
 
 
+def _calibration_unit_combo(initial_unit: str = DEFAULT_LENGTH_UNIT) -> QComboBox:
+    combo = QComboBox()
+    for unit in LENGTH_UNITS:
+        combo.addItem(unit.symbol, unit.code)
+        combo.setItemData(combo.count() - 1, unit.name, Qt.ItemDataRole.ToolTipRole)
+    definition = resolve_length_unit(initial_unit)
+    if definition is None:
+        # Older/imported presets may use a custom unit. Editing their name or
+        # distances must not silently relabel them as micrometers.
+        combo.addItem(initial_unit, initial_unit)
+        index = combo.count() - 1
+    else:
+        index = combo.findData(definition.code)
+        combo.setItemData(index, initial_unit)
+    combo.setCurrentIndex(index)
+    return combo
+
+
 class CalibrationInputDialog(QDialog):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -665,8 +684,7 @@ class CalibrationInputDialog(QDialog):
         self._length_spin.setDecimals(6)
         self._length_spin.setRange(0.000001, 1_000_000.0)
         self._length_spin.setValue(100.0)
-        self._unit_combo = QComboBox()
-        self._unit_combo.addItems(["um", "mm"])
+        self._unit_combo = _calibration_unit_combo()
         self._apply_to_project = QCheckBox("应用到当前项目（当前及后续打开图片）")
         self._apply_to_project.setChecked(True)
 
@@ -686,7 +704,7 @@ class CalibrationInputDialog(QDialog):
     def values(self) -> tuple[float, str, bool]:
         return (
             self._length_spin.value(),
-            self._unit_combo.currentText(),
+            self._unit_combo.currentData(),
             self._apply_to_project.isChecked(),
         )
 
@@ -700,7 +718,7 @@ class CalibrationPresetDialog(QDialog):
         initial_name: str = "",
         initial_pixel_distance: float = 100.0,
         initial_actual_distance: float = 10.0,
-        initial_unit: str = "um",
+        initial_unit: str = DEFAULT_LENGTH_UNIT,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -715,11 +733,7 @@ class CalibrationPresetDialog(QDialog):
         self._actual_distance_spin.setDecimals(6)
         self._actual_distance_spin.setRange(0.000001, 1_000_000.0)
         self._actual_distance_spin.setValue(initial_actual_distance)
-        self._unit_combo = QComboBox()
-        self._unit_combo.addItems(["um", "mm"])
-        initial_index = self._unit_combo.findText(initial_unit)
-        if initial_index >= 0:
-            self._unit_combo.setCurrentIndex(initial_index)
+        self._unit_combo = _calibration_unit_combo(initial_unit)
         self._computed_label = QLabel()
         self._computed_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
@@ -754,7 +768,7 @@ class CalibrationPresetDialog(QDialog):
             self._pixel_distance_spin.value(),
             self._actual_distance_spin.value(),
             pixels_per_unit,
-            self._unit_combo.currentText(),
+            self._unit_combo.currentData(),
         )
 
 

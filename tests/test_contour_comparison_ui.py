@@ -234,7 +234,12 @@ def test_pending_polygon_cannot_be_silently_saved_or_exported(app, dialog):
     assert "未完成" in dialog.status.text()
 
 
-def test_main_window_entry_is_independent_and_source_snapshot_outlives_tab(app):
+@pytest.mark.parametrize("unit,pixels_per_unit,mm_per_pixel", [
+    ("nm", 2e-6, 0.5), ("um", 0.002, 0.5), ("µm", 0.002, 0.5),
+    ("μm", 0.002, 0.5), ("mm", 2.0, 0.5), ("cm", 20.0, 0.5),
+    ("m", 2000.0, 0.5), ("legacy-custom", 2.0, None),
+])
+def test_main_window_entry_is_independent_and_source_snapshot_outlives_tab(app, unit, pixels_per_unit, mm_per_pixel):
     from fdm.cancellation import CancellationTokenSource
     from fdm.models import Calibration, ImageDocument, new_id
     from fdm.raster import RasterPixelType, RasterPlane
@@ -248,7 +253,7 @@ def test_main_window_entry_is_independent_and_source_snapshot_outlives_tab(app):
             f = sample()
             plane = RasterPlane(f.rgba.shape[1], f.rgba.shape[0], RasterPixelType.RGB8, f.rgba[:, :, :3].tobytes())
             doc = ImageDocument(id=new_id("image"), path="/tmp/contour-source.png", image_size=(plane.width, plane.height))
-            doc.calibration = Calibration("manual", 2, "mm", "ruler")
+            doc.calibration = Calibration("manual", pixels_per_unit, unit, "ruler")
             doc.initialize_runtime_state()
             doc.mark_session_saved()
             doc.mark_calibration_saved()
@@ -263,7 +268,10 @@ def test_main_window_entry_is_independent_and_source_snapshot_outlives_tab(app):
             loader = window._contour_comparison_source_loader(doc.id)
             window._reset_workspace()
             loaded = loader(CancellationTokenSource().token)
-            assert loaded.mm_per_pixel == .5
+            if mm_per_pixel is None:
+                assert loaded.mm_per_pixel is None
+            else:
+                assert loaded.mm_per_pixel == pytest.approx(mm_per_pixel)
             assert loaded.mask.any()
             np.testing.assert_array_equal(loaded.rgba[:, :, :3], f.rgba[:, :, :3])
             assert window.project.documents == []

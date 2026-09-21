@@ -93,6 +93,7 @@ from fdm.area_display import (
     clear_area_derived_geometry_cache,
 )
 from fdm.geometry import Line, Point, line_length
+from fdm.units import DEFAULT_LENGTH_UNIT, millimeters_per_unit
 from fdm.construction_document import make_construction_resolver
 from fdm.construction_geometry import (
     ConstructionEntity,
@@ -6247,10 +6248,10 @@ class MainWindow(QMainWindow):
         label = self._document_display_name(document)
         path = str(document.absolute_path or document.path)
         calibration = document.calibration
-        unit_to_mm = {"mm": 1.0, "um": .001, "µm": .001, "μm": .001, "cm": 10.0, "m": 1000.0}
+        unit_to_mm = millimeters_per_unit(calibration.unit) if calibration is not None else None
         scale = (
-            unit_to_mm[calibration.unit] / calibration.pixels_per_unit
-            if calibration is not None and calibration.unit in unit_to_mm else None
+            unit_to_mm / calibration.pixels_per_unit
+            if calibration is not None and unit_to_mm is not None else None
         )
 
         def load(token):
@@ -18617,7 +18618,7 @@ class MainWindow(QMainWindow):
 
     def _default_preset_dialog_values(self, document: ImageDocument | None) -> tuple[float, float, str]:
         if document is None or document.calibration is None:
-            return 100.0, 10.0, "um"
+            return 100.0, 10.0, DEFAULT_LENGTH_UNIT
         calibration = document.calibration
         calibration_line = document.metadata.get("calibration_line")
         if calibration_line:

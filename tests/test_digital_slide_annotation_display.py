@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from fdm.geometry import Line, Point
-from fdm.models import Measurement, OverlayTextSizeSpace
+from fdm.models import Calibration, Measurement, OverlayTextSizeSpace
 from fdm.settings import MeasurementLabelStyleSettings
 from test_canvas_overlay_handoff import scene as scene
 from test_digital_slide_count_preview import complete_preview, preview_pixels
@@ -20,7 +20,22 @@ from test_digital_slide_count_preview import complete_preview, preview_pixels
 def test_digital_preview_label_matches_current_zoom_before_exact_tiles_arrive(
     scene, monkeypatch, mode, zoom, dpr, kind,
 ):
+    _assert_preview_label(scene, monkeypatch, mode, zoom, dpr, kind)
+
+
+@pytest.mark.parametrize("scene", ["digital"], indirect=True)
+@pytest.mark.parametrize("unit", ["nm", "um", "mm", "cm", "m"])
+@pytest.mark.parametrize("kind", ["line", "area"])
+def test_digital_preview_uses_calibrated_length_and_area_units(scene, monkeypatch, unit, kind):
+    _assert_preview_label(
+        scene, monkeypatch, OverlayTextSizeSpace.IMAGE_PX, 0.5, 1.5, kind, unit=unit,
+    )
+
+
+def _assert_preview_label(scene, monkeypatch, mode, zoom, dpr, kind, *, unit=None):
     canvas, document, *_ = scene
+    if unit is not None:
+        document.calibration = Calibration("image_scale", 2.0, unit, "ruler")
     monkeypatch.setattr(canvas, "devicePixelRatioF", lambda: dpr)
     document.measurements = [
         Measurement(
@@ -36,7 +51,10 @@ def test_digital_preview_label_matches_current_zoom_before_exact_tiles_arrive(
         for index in range(70)
     ]
     for item in document.measurements:
-        item.recalculate(None)
+        item.recalculate(document.calibration)
+    if unit is not None:
+        label = f"2500.0000 {unit}²" if kind == "area" else f"50.0000 {unit}"
+        assert document.measurements[0].display_label(document.calibration) == label
     document.view_state.selected_measurement_id = None
     document.mark_measurement_geometry_changed()
     document.mark_session_dirty()
@@ -72,7 +90,8 @@ def test_digital_preview_label_matches_current_zoom_before_exact_tiles_arrive(
 
 
 @pytest.mark.parametrize("mode", [OverlayTextSizeSpace.IMAGE_PX, OverlayTextSizeSpace.SCREEN_PX])
-def test_digital_native_export_keeps_font_pixels_and_frozen_focus_at_every_zoom(tmp_path, mode):
+@pytest.mark.parametrize("unit", [None, "nm", "um", "mm", "cm", "m"])
+def test_digital_native_export_keeps_font_pixels_and_frozen_focus_at_every_zoom(tmp_path, mode, unit):
     from PySide6.QtGui import QColor, QImage
 
     from fdm.models import ImageDocument, OverlayAnnotation, OverlayTextLayoutSpec
@@ -100,6 +119,7 @@ def test_digital_native_export_keeps_font_pixels_and_frozen_focus_at_every_zoom(
     document = ImageDocument(
         id="slide-font-export", path=str(path), image_size=(16384, 8192),
         document_kind="digital_slide",
+        calibration=Calibration("image_scale", 2.0, unit, "ruler") if unit is not None else None,
         metadata={"digital_slide": {"viewport_origin": [8192, 4096], "focus_index": 0}},
         measurements=[Measurement(
             id="line", image_id="slide-font-export", fiber_group_id=None,
@@ -112,7 +132,9 @@ def test_digital_native_export_keeps_font_pixels_and_frozen_focus_at_every_zoom(
         )],
     )
     document.initialize_runtime_state()
-    document.measurements[0].recalculate(None)
+    document.measurements[0].recalculate(document.calibration)
+    expected_label = f"60.0000 {unit}" if unit is not None else "120.0000 px"
+    assert document.measurements[0].display_label(document.calibration) == expected_label
     window = MainWindow()
     try:
         window._app_settings = AppSettings(

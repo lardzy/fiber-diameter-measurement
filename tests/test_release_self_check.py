@@ -395,10 +395,30 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             self.assertEqual(report["version"], "1.2.3")
             self.assertEqual(report["build_id"], "self-check-build")
             self.assertTrue(report["functional_checks"]["core_measurement"])
+            self.assertEqual(report["functional_checks"]["measurement_units"], {
+                "nm": True, "um": True, "mm": True, "cm": True, "m": True,
+            })
             self.assertTrue(report["functional_checks"]["qt_local_ipc"])
             self.assertTrue(report["functional_checks"]["pe:FiberDiameterMeasurement.exe"])
             self.assertTrue(report["functional_checks"]["pe:FiberScreenshotTool.exe"])
             self.assertTrue(report["functional_checks"]["screenshot_tool"])
+
+    def test_wrong_nanometer_factor_fails_release_self_check(self) -> None:
+        from fdm.units import millimeters_per_unit
+
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir), profile="core")
+            with patch(
+                "fdm.units.millimeters_per_unit",
+                side_effect=lambda unit: 0.001 if unit == "nm" else millimeters_per_unit(unit),
+            ):
+                report = run_release_self_check(app_dir)
+        self.assertFalse(report["ok"])
+        self.assertFalse(report["functional_checks"]["core_measurement"])
+        self.assertEqual(report["functional_checks"]["measurement_units"], {
+            "nm": False, "um": True, "mm": True, "cm": True, "m": True,
+        })
+        self.assertIn("core measurement self-check returned an unexpected value", report["errors"])
 
     def test_core_profile_runs_declared_image_feature_gates(self) -> None:
         with TemporaryDirectory() as tmpdir:
