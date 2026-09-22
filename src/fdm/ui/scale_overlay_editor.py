@@ -264,7 +264,10 @@ class ScaleOverlayPanel(QGroupBox):
         self.calibrate.clicked.connect(controller.calibrate)
         outer.addWidget(self.calibrate)
         self.more_toggle = QCheckBox("更多样式")
-        outer.addWidget(self.more_toggle)
+        more_actions = QHBoxLayout()
+        more_actions.addWidget(self.more_toggle)
+        more_actions.addStretch(1)
+        outer.addLayout(more_actions)
         self.more = QWidget()
         more = QFormLayout(self.more)
         more.setContentsMargins(0, 0, 0, 0)
@@ -295,18 +298,34 @@ class ScaleOverlayPanel(QGroupBox):
         )
         self.redo_button.setToolTip("重做比例尺调整")
         self.redo_button.setAccessibleName("重做比例尺调整")
-        controls.addWidget(self.undo_button)
-        controls.addWidget(self.redo_button)
+        more_actions.addWidget(self.undo_button)
+        more_actions.addWidget(self.redo_button)
         self.undo_button.clicked.connect(controller.undo)
         self.redo_button.clicked.connect(controller.redo)
-        controls.addStretch(1)
-        for title, callback in (
-            ("完成编辑", controller.finish),
-            ("取消编辑", controller.cancel),
-        ):
-            button = QPushButton(title)
-            button.clicked.connect(callback)
-            controls.addWidget(button)
+        self.finish_button = QPushButton("完成编辑")
+        self.finish_button.setObjectName("scaleFinishButton")
+        self.finish_button.setProperty("primary", True)
+        self.finish_button.setStyleSheet(
+            "QPushButton { background: #237F74; color: white; "
+            "border: 1px solid #237F74; font-weight: 600; }"
+            "QPushButton:hover { background: #1C6A61; }"
+            "QPushButton:pressed { background: #16544D; }"
+            "QPushButton:focus { border: 2px solid palette(highlight); }"
+        )
+        self.finish_button.clicked.connect(controller.finish)
+        self.cancel_button = QPushButton("取消编辑")
+        self.cancel_button.setObjectName("scaleCancelButton")
+        self.cancel_button.setStyleSheet(
+            "QPushButton { background: palette(button); color: palette(button-text); "
+            "border: 2px solid #B95742; font-weight: 600; }"
+            "QPushButton:hover { background: palette(alternate-base); border-color: #D47A63; }"
+            "QPushButton:pressed { background: palette(mid); }"
+            "QPushButton:focus { border-color: palette(highlight); }"
+        )
+        self.cancel_button.clicked.connect(controller.cancel)
+        for button in (self.finish_button, self.cancel_button):
+            button.setMinimumHeight(38)
+            controls.addWidget(button, 1)
         outer.addLayout(controls)
         self.scope.currentIndexChanged.connect(
             lambda: (
