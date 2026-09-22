@@ -1,0 +1,478 @@
+{
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12",
+  "qt": "6.10.2",
+  "measurement": "Synthetic Qt CPU raster into 1280x800 viewport; excludes desktop input latency and Windows installation",
+  "results": [
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "image",
+      "gesture": "drag",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2387,
+        "p95_ms": 0.2817
+      },
+      "scale_preview": {
+        "p50_ms": 0.3509,
+        "p95_ms": 0.4318
+      },
+      "cache": {
+        "hits": 130,
+        "misses": 20,
+        "maxsize": 256,
+        "currsize": 20
+      },
+      "python_growth_after_warmup": 989693,
+      "python_peak_bytes": 4047077,
+      "process_peak_rss_after_warmup": 170246144,
+      "process_peak_rss_after_run": 170262528,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "image",
+      "gesture": "pan",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2321,
+        "p95_ms": 0.2821
+      },
+      "scale_preview": {
+        "p50_ms": 0.3113,
+        "p95_ms": 0.3863
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 8448,
+      "python_peak_bytes": 19026,
+      "process_peak_rss_after_warmup": 170262528,
+      "process_peak_rss_after_run": 170262528,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "image",
+      "gesture": "zoom",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.4329,
+        "p95_ms": 0.4932
+      },
+      "scale_preview": {
+        "p50_ms": 0.5371,
+        "p95_ms": 0.6213
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 2104,
+      "python_peak_bytes": 9984,
+      "process_peak_rss_after_warmup": 170442752,
+      "process_peak_rss_after_run": 170491904,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "image",
+      "gesture": "switch_image",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2609,
+        "p95_ms": 0.2972
+      },
+      "scale_preview": {
+        "p50_ms": 0.3359,
+        "p95_ms": 0.3735
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 2016,
+      "python_peak_bytes": 9718,
+      "process_peak_rss_after_warmup": 170491904,
+      "process_peak_rss_after_run": 170491904,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "viewport",
+      "gesture": "drag",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2332,
+        "p95_ms": 0.2658
+      },
+      "scale_preview": {
+        "p50_ms": 0.3305,
+        "p95_ms": 0.385
+      },
+      "cache": {
+        "hits": 130,
+        "misses": 20,
+        "maxsize": 256,
+        "currsize": 20
+      },
+      "python_growth_after_warmup": 4052,
+      "python_peak_bytes": 27746,
+      "process_peak_rss_after_warmup": 170491904,
+      "process_peak_rss_after_run": 170491904,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "viewport",
+      "gesture": "pan",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2317,
+        "p95_ms": 0.2644
+      },
+      "scale_preview": {
+        "p50_ms": 0.3168,
+        "p95_ms": 0.3697
+      },
+      "cache": {
+        "hits": 135,
+        "misses": 15,
+        "maxsize": 256,
+        "currsize": 15
+      },
+      "python_growth_after_warmup": 4008,
+      "python_peak_bytes": 19632,
+      "process_peak_rss_after_warmup": 170491904,
+      "process_peak_rss_after_run": 170491904,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "viewport",
+      "gesture": "zoom",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.4255,
+        "p95_ms": 0.5086
+      },
+      "scale_preview": {
+        "p50_ms": 0.5458,
+        "p95_ms": 0.6652
+      },
+      "cache": {
+        "hits": 135,
+        "misses": 15,
+        "maxsize": 256,
+        "currsize": 15
+      },
+      "python_growth_after_warmup": 4140,
+      "python_peak_bytes": 19276,
+      "process_peak_rss_after_warmup": 174456832,
+      "process_peak_rss_after_run": 174473216,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        3840,
+        2160
+      ],
+      "region": "viewport",
+      "gesture": "switch_image",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2767,
+        "p95_ms": 0.3313
+      },
+      "scale_preview": {
+        "p50_ms": 0.3438,
+        "p95_ms": 0.38
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 1904,
+      "python_peak_bytes": 9764,
+      "process_peak_rss_after_warmup": 174473216,
+      "process_peak_rss_after_run": 174473216,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "image",
+      "gesture": "drag",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2884,
+        "p95_ms": 0.3583
+      },
+      "scale_preview": {
+        "p50_ms": 0.3929,
+        "p95_ms": 0.514
+      },
+      "cache": {
+        "hits": 130,
+        "misses": 20,
+        "maxsize": 256,
+        "currsize": 20
+      },
+      "python_growth_after_warmup": 5794,
+      "python_peak_bytes": 29736,
+      "process_peak_rss_after_warmup": 440647680,
+      "process_peak_rss_after_run": 440647680,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "image",
+      "gesture": "pan",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2927,
+        "p95_ms": 0.3618
+      },
+      "scale_preview": {
+        "p50_ms": 0.3957,
+        "p95_ms": 0.4902
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 1992,
+      "python_peak_bytes": 9972,
+      "process_peak_rss_after_warmup": 440647680,
+      "process_peak_rss_after_run": 440647680,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "image",
+      "gesture": "zoom",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.5223,
+        "p95_ms": 0.6304
+      },
+      "scale_preview": {
+        "p50_ms": 0.6461,
+        "p95_ms": 0.7433
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 1992,
+      "python_peak_bytes": 9942,
+      "process_peak_rss_after_warmup": 440778752,
+      "process_peak_rss_after_run": 440860672,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "image",
+      "gesture": "switch_image",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.3727,
+        "p95_ms": 0.4568
+      },
+      "scale_preview": {
+        "p50_ms": 0.4599,
+        "p95_ms": 0.5459
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 1992,
+      "python_peak_bytes": 9942,
+      "process_peak_rss_after_warmup": 440860672,
+      "process_peak_rss_after_run": 440860672,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "viewport",
+      "gesture": "drag",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2658,
+        "p95_ms": 0.3119
+      },
+      "scale_preview": {
+        "p50_ms": 0.3802,
+        "p95_ms": 0.4211
+      },
+      "cache": {
+        "hits": 130,
+        "misses": 20,
+        "maxsize": 256,
+        "currsize": 20
+      },
+      "python_growth_after_warmup": 4096,
+      "python_peak_bytes": 28028,
+      "process_peak_rss_after_warmup": 440860672,
+      "process_peak_rss_after_run": 440877056,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "viewport",
+      "gesture": "pan",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.2704,
+        "p95_ms": 0.3096
+      },
+      "scale_preview": {
+        "p50_ms": 0.3699,
+        "p95_ms": 0.4207
+      },
+      "cache": {
+        "hits": 135,
+        "misses": 15,
+        "maxsize": 256,
+        "currsize": 15
+      },
+      "python_growth_after_warmup": 4184,
+      "python_peak_bytes": 19902,
+      "process_peak_rss_after_warmup": 441614336,
+      "process_peak_rss_after_run": 441614336,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "viewport",
+      "gesture": "zoom",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.5279,
+        "p95_ms": 0.6314
+      },
+      "scale_preview": {
+        "p50_ms": 0.6366,
+        "p95_ms": 0.7589
+      },
+      "cache": {
+        "hits": 135,
+        "misses": 15,
+        "maxsize": 256,
+        "currsize": 15
+      },
+      "python_growth_after_warmup": 4184,
+      "python_peak_bytes": 19452,
+      "process_peak_rss_after_warmup": 447922176,
+      "process_peak_rss_after_run": 447938560,
+      "source_unchanged": true
+    },
+    {
+      "size": [
+        7680,
+        4320
+      ],
+      "region": "viewport",
+      "gesture": "switch_image",
+      "iterations": 120,
+      "image_only": {
+        "p50_ms": 0.3641,
+        "p95_ms": 0.4618
+      },
+      "scale_preview": {
+        "p50_ms": 0.4857,
+        "p95_ms": 0.5898
+      },
+      "cache": {
+        "hits": 149,
+        "misses": 1,
+        "maxsize": 256,
+        "currsize": 1
+      },
+      "python_growth_after_warmup": 2036,
+      "python_peak_bytes": 9934,
+      "process_peak_rss_after_warmup": 447938560,
+      "process_peak_rss_after_run": 447938560,
+      "source_unchanged": true
+    }
+  ],
+  "unique_drag_memory": [
+    {
+      "layouts": 512,
+      "python_bytes": 290832,
+      "cached_entries": 256
+    },
+    {
+      "layouts": 1024,
+      "python_bytes": 290928,
+      "cached_entries": 256
+    },
+    {
+      "layouts": 1536,
+      "python_bytes": 290992,
+      "cached_entries": 256
+    },
+    {
+      "layouts": 2048,
+      "python_bytes": 291120,
+      "cached_entries": 256
+    }
+  ]
+}

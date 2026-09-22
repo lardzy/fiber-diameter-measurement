@@ -43,6 +43,9 @@ def test_real_windowed_probe_checks_all_pixels_without_touching_live_pool(monkey
 
     assert renderer._pool is live_pool
     assert report["ok"] and report["worker_stdio_none"]
+    assert report["scale_overlay"]["ok"]
+    assert report["scale_overlay"]["revision"] == 1
+    assert all(report["scale_overlay"]["cases"].values())
     assert report["worker_platform"] == raster_platform_name()
     assert report["worker_font_family_count"] > 0
     assert report["worker_text_visible"]

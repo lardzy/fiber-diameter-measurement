@@ -1301,7 +1301,9 @@ class DigitalSlideCanvas(DocumentCanvas):
             or not self.isVisible()
         ):
             return
-        if self._zoom + _PIXEL_WORK_EPSILON < self._native_field_fit_zoom():
+        scale_preview = getattr(self, "_scale_overlay_preview", None)
+        scale_visible = bool(scale_preview and self._document and scale_preview.is_visible(self._document))
+        if self._zoom + _PIXEL_WORK_EPSILON < self._native_field_fit_zoom() and not scale_visible:
             self._native_frame_pending_key = None
             return
         key = self._native_request_key()
@@ -2339,8 +2341,12 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._presentation_preview_frame,
             self._focus_transition_frame,
         )
+        scale_visible = bool(getattr(self, "_scale_overlay_preview", None) and self._document
+                             and self._scale_overlay_preview.is_visible(self._document))
         return (
             super()._overlay_background_signature(),
+            scale_visible,
+            self._native_frame_key if scale_visible else None,
             self._focus_index,
             self._view_generation,
             tuple(
@@ -2552,6 +2558,17 @@ class DigitalSlideCanvas(DocumentCanvas):
             and self._render_frame.generation == self._view_generation
         ):
             draw_frame(self._render_frame)
+        scale_preview = getattr(self, "_scale_overlay_preview", None)
+        if scale_preview is not None and self._document and scale_preview.is_visible(self._document):
+            native = self.native_viewport_rect()
+            top_left = self.image_to_widget(Point(native.x(), native.y()))
+            native_target = QRectF(top_left.x(), top_left.y(), native.width() * self._zoom, native.height() * self._zoom)
+            if self._native_frame_key == self._native_request_key() and self._image is not None:
+                painter.drawImage(native_target, self._image)
+            else:
+                # The export preview must never present a retained old-focus
+                # browsing transition as the requested native image.
+                painter.fillRect(native_target, QColor("#29343C"))
         painter.restore()
 
         painter.save()

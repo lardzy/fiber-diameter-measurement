@@ -16,6 +16,7 @@ from fdm.models import (
     OverlayTextSizeSpace,
 )
 from fdm.watermark import WatermarkSpec
+from fdm.scale_overlay import ScaleOverlaySpec
 
 
 DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
@@ -765,10 +766,11 @@ class AppSettings:
     scale_overlay_placement_mode: str = ScaleOverlayPlacementMode.BOTTOM_RIGHT
     scale_overlay_style: str = ScaleOverlayStyle.TICKS
     scale_overlay_length_value: float = 50.0
-    scale_overlay_color: str = "#F4F1DE"
-    scale_overlay_text_color: str = "#F4F1DE"
+    scale_overlay_color: str = "#FF0000"
+    scale_overlay_text_color: str = "#FF0000"
     scale_overlay_font_family: str = "Microsoft YaHei UI"
     scale_overlay_font_size: int = 18
+    last_scale_overlay: ScaleOverlaySpec | None = None
     text_font_family: str = "Microsoft YaHei UI"
     text_font_size: int = 18
     text_color: str = "#F7F4EA"
@@ -1589,6 +1591,7 @@ class AppSettings:
             "recent_export_dir": normalized.recent_export_dir,
             "recent_project_dir": normalized.recent_project_dir,
             "last_watermark": normalized.last_watermark.to_dict() if normalized.last_watermark is not None else None,
+            "last_scale_overlay": normalized.last_scale_overlay.to_dict() if normalized.last_scale_overlay is not None else None,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
@@ -1643,6 +1646,10 @@ class AppSettings:
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "AppSettings":
         settings = cls()
+        try:
+            settings.last_scale_overlay = ScaleOverlaySpec.from_dict(payload.get("last_scale_overlay"))
+        except (TypeError, ValueError, OverflowError) as exc:
+            settings.load_issues.append({"kind": "last_scale_overlay", "message": str(exc)})
         try:
             watermark = WatermarkSpec.from_dict(payload.get("last_watermark"))
             if watermark is not None:

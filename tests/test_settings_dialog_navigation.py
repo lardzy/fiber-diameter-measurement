@@ -288,7 +288,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
         try:
             dialog._settings_navigation.setCurrentRow(2)  # noqa: SLF001
             self.assertTrue(dialog._scale_anchor_pick_button.isEnabled())  # noqa: SLF001
-            self.assertEqual(dialog._scale_anchor_status_label.text(), "当前锚点：(24.0, 36.0)")  # noqa: SLF001
+            self.assertIn("主画布预览", dialog._scale_anchor_status_label.text())  # noqa: SLF001
         finally:
             dialog.close()
 

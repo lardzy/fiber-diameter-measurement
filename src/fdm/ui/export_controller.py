@@ -91,9 +91,13 @@ class ExportController:
             else:
                 host._show_export_information("导出结果", "当前没有可导出的图片。")
             return
-        preset = preset or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
+        preset = preset or ExportSelection.all_enabled(scope=ExportScope.CURRENT)
         dialog = host._create_export_options_dialog(preset)
         if dialog.exec() != dialog.DialogCode.Accepted:
+            if getattr(dialog, "adjust_scale_requested", False):
+                preview = getattr(host, "scale_preview", None)
+                if preview is not None:
+                    preview.begin(dialog.selection())
             return
         selection = dialog.selection()
         if not selection.any_selected():
@@ -113,6 +117,9 @@ class ExportController:
                 if callable(context_provider)
                 else None
             )
+            scale_preparer = getattr(host, "_prepare_scale_export", None)
+            if callable(scale_preparer):
+                render_contexts = scale_preparer(selection, target_documents, render_contexts)
             protected_provider = getattr(host, "_export_protected_source_paths", None)
             protected_source_paths = (
                 protected_provider(target_documents)
@@ -198,6 +205,9 @@ class ExportController:
         if not outputs:
             host._show_export_information("导出结果", "没有生成任何文件。")
             return
+        remember_scale = getattr(host, "_remember_scale_export", None)
+        if callable(remember_scale):
+            remember_scale(selection)
         export_root = single_output_path.parent if single_output_path is not None else Path(output_dir)
         host._remember_recent_directory(setting_name="recent_export_dir", directory=export_root, context="导出结果")
         summary_lines = self._format_output_summary(outputs)

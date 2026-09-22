@@ -318,6 +318,11 @@ def run_overlay_render_self_check(*, timeout_seconds=30.0):
         if not environment["font_family_count"] or not environment["text_visible"]:
             raise RuntimeError(f"Qt raster worker could not render system font glyphs: {environment}")
         cases = {}
+        stage = "scale preview/export"
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+        scale_overlay = receive(pool.submit(run_scale_overlay_self_check))
+        if scale_overlay.get("ok") is not True:
+            raise RuntimeError("scale preview/export probe failed")
         for dpr in (1.0, 1.5, 2.0):
             for name, snapshot in _snapshots(dpr):
                 stage = f"{name}@{dpr:g}"
@@ -336,6 +341,7 @@ def run_overlay_render_self_check(*, timeout_seconds=30.0):
             "worker_pid": environment["pid"],
             "start_method": "spawn",
             "cases": cases,
+            "scale_overlay": scale_overlay,
             "elapsed_ms": round((time.monotonic() - started) * 1000, 2),
         }
     except FutureTimeoutError as exc:

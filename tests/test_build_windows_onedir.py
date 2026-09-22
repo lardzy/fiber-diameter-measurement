@@ -152,6 +152,11 @@ class BuildWindowsOnedirTests(unittest.TestCase):
 
                 self.assertEqual(errors, expected_errors)
 
+    @staticmethod
+    def _scale_report():
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+        return run_scale_overlay_self_check()
+
     def test_packaged_self_check_requires_completed_windowed_rendering(self) -> None:
         for overlay in (
             None,
@@ -184,6 +189,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             payload["functional_checks"]["overlay_renderer"] = {
                 "ok": True,
                 "worker_stdio_none": True,
+                "scale_overlay": self._scale_report(),
             }
             payload["functional_checks"]["fiber_quick_geometry"] = {
                 "ok": True,
@@ -261,12 +267,30 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         ):
             with self.subTest(geometry=geometry), TemporaryDirectory() as tmpdir:
                 payload = {"ok": True, "errors": [], "functional_checks": {
-                    "overlay_renderer": {"ok": True, "worker_stdio_none": True},
+                    "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": self._scale_report()},
                     "fiber_quick_geometry": geometry,
                 }}
                 completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
                 with patch("build_windows_onedir.subprocess.run", return_value=completed):
                     self.assertEqual(run_packaged_self_check(Path(tmpdir)), ["packaged self-check did not pass the compiled quick diameter probe"])
+
+    def test_packaged_self_check_rejects_missing_or_incomplete_scale_probe(self) -> None:
+        invalid_scales = [None, {"ok": False}, {"ok": True, "revision": 1, "cases": {}}]
+        for name in ("endpoint_pixels", "fractional_span_coverage", "style_variants", "division_geometry", "actual_layout_geometry"):
+            for missing in (True, False):
+                scale = self._scale_report()
+                if missing:
+                    scale["cases"].pop(name)
+                else:
+                    scale["cases"][name] = False
+                invalid_scales.append(scale)
+        for scale in invalid_scales:
+            payload = {"ok": True, "errors": [], "functional_checks": {
+                "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": scale},
+            }}
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with TemporaryDirectory() as tmpdir, patch("build_windows_onedir.subprocess.run", return_value=completed):
+                self.assertEqual(run_packaged_self_check(Path(tmpdir)), ["packaged self-check did not pass the scale preview/export probe"])
 
     def test_build_passes_profile_to_pyinstaller_and_generates_release_manifest(self) -> None:
         with TemporaryDirectory() as tmpdir:

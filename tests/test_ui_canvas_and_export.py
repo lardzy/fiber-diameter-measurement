@@ -4016,13 +4016,13 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_export_options_defaults_scope_to_all_open_when_available(self) -> None:
+    def test_export_options_preserves_current_scope_when_all_open_available(self) -> None:
         dialog = ExportOptionsDialog(
             ExportSelection(include_excel=True, scope=ExportScope.CURRENT),
             allow_all_scope=True,
         )
         try:
-            self.assertEqual(dialog.selection().scope, ExportScope.ALL_OPEN)
+            self.assertEqual(dialog.selection().scope, ExportScope.CURRENT)
         finally:
             dialog.close()
 
@@ -4043,6 +4043,7 @@ class CanvasAndExportTests(unittest.TestCase):
             ExportSelection(
                 include_measurement_overlay=True,
                 render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                scope=ExportScope.ALL_OPEN,
             ),
             allow_all_scope=True,
             legacy_overlay_text_count_current=1,
@@ -5284,6 +5285,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(
                 view_actions,
                 [
+                    window.scale_preview_action,
+                    window.scale_edit_action,
                     window.fit_action,
                     window.digital_slide_native_fit_action,
                     window.actual_size_action,
@@ -9152,13 +9155,11 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_settings_dialog_collects_scale_overlay_fields(self) -> None:
+    def test_settings_dialog_preserves_legacy_scale_fields_and_other_defaults(self) -> None:
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
         try:
-            dialog._scale_overlay_style_combo.setCurrentIndex(dialog._scale_overlay_style_combo.findData("ticks"))
-            dialog._scale_overlay_length_spin.setValue(27.5)
-            dialog._scale_overlay_font_size.setValue(24)
+            self.assertFalse(hasattr(dialog, "_scale_overlay_length_spin"))
             dialog._overlay_line_width.setValue(4.5)
             dialog._show_count_numbers.setChecked(True)
             dialog._count_number_size.setValue(20)
@@ -9168,8 +9169,8 @@ class CanvasAndExportTests(unittest.TestCase):
             updated = dialog.app_settings()
 
             self.assertEqual(updated.scale_overlay_style, "ticks")
-            self.assertAlmostEqual(updated.scale_overlay_length_value, 27.5)
-            self.assertEqual(updated.scale_overlay_font_size, 24)
+            self.assertAlmostEqual(updated.scale_overlay_length_value, settings.scale_overlay_length_value)
+            self.assertEqual(updated.scale_overlay_font_size, settings.scale_overlay_font_size)
             self.assertAlmostEqual(updated.overlay_line_width, 4.5)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
@@ -9191,11 +9192,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._count_number_size.value(), 12)
             self.assertEqual(dialog._count_number_color.property("color_value"), "#FFFFFF")
             self.assertEqual(dialog._open_view_mode_combo.currentData(), OpenImageViewMode.FIT)
-            self.assertEqual(dialog._scale_overlay_mode_combo.currentData(), ScaleOverlayPlacementMode.BOTTOM_RIGHT)
-            self.assertEqual(dialog._scale_overlay_style_combo.currentData(), ScaleOverlayStyle.TICKS)
-            self.assertAlmostEqual(dialog._scale_overlay_length_spin.value(), 50.0)
-            self.assertEqual(dialog._scale_overlay_color.property("color_value"), "#F4F1DE")
-            self.assertEqual(dialog._scale_overlay_text_color.property("color_value"), "#F4F1DE")
+            self.assertEqual(dialog.app_settings().scale_overlay_placement_mode, ScaleOverlayPlacementMode.BOTTOM_RIGHT)
+            self.assertEqual(dialog.app_settings().scale_overlay_style, ScaleOverlayStyle.TICKS)
+            self.assertFalse(dialog._scale_anchor_pick_button.isEnabled())
+            self.assertIn("在画布", dialog._scale_anchor_pick_button.text())
         finally:
             dialog.close()
 
@@ -9259,7 +9259,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
-    def test_settings_dialog_scale_overlay_length_uses_current_calibration_unit_suffix(self) -> None:
+    def test_settings_dialog_scale_editor_entry_available_for_calibrated_image(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
             path="/tmp/scale_unit.png",
@@ -9274,14 +9274,14 @@ class CanvasAndExportTests(unittest.TestCase):
         )
         dialog = SettingsDialog(AppSettings(), document=document)
         try:
-            self.assertTrue(dialog._scale_overlay_length_spin.suffix().endswith(" um"))
+            self.assertTrue(dialog._scale_anchor_pick_button.isEnabled())
         finally:
             dialog.close()
 
     def test_settings_dialog_combobox_ignores_wheel_without_popup(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
-            combo = dialog._scale_overlay_style_combo
+            combo = dialog._endpoint_style_combo
             current_index = combo.currentIndex()
             event = FakeIgnoredWheelEvent()
 
@@ -9309,7 +9309,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_settings_dialog_spinbox_ignores_wheel(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
-            spinbox = dialog._scale_overlay_length_spin
+            spinbox = dialog._overlay_line_width
             current_value = spinbox.value()
             event = FakeIgnoredWheelEvent()
 
@@ -9924,7 +9924,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 for group in annotation_page.findChildren(QGroupBox)
                 if group.title()
             ]
-            self.assertIn("当前图片比例尺位置", group_titles)
+            self.assertIn("比例尺", group_titles)
             self.assertNotIn("类别颜色", group_titles)
         finally:
             dialog.close()

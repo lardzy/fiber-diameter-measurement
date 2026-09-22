@@ -429,7 +429,7 @@ def scale_overlay_font(settings: AppSettings, *, suggested_font_px: float, rende
     font.setFamily(settings.scale_overlay_font_family)
     base_font_px = float(max(8, settings.scale_overlay_font_size))
     if render_mode == "full_resolution":
-        resolved_px = min(max(base_font_px, 12.0), 28.0)
+        resolved_px = base_font_px
     else:
         lower_bound = max(10.0, suggested_font_px * 0.75)
         upper_bound = max(lower_bound, suggested_font_px * 1.6)

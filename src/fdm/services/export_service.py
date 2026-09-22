@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Iterator, MutableMapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 import csv
@@ -20,6 +20,7 @@ from fdm.atomic_io import atomic_replace_file, staged_path_for
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.settings import RawRecordTemplate
 from fdm.watermark import WatermarkSpec
+from fdm.scale_overlay import ScaleOverlayLayout, ScaleOverlaySpec
 from fdm.services.raw_record_export import (
     raw_record_output_suffix,
     write_raw_record_template,
@@ -77,6 +78,8 @@ class ExportSelection:
         default_factory=RasterEncodingOptions
     )
     include_watermark: bool = False
+    scale_overlay: ScaleOverlaySpec | None = None
+    include_annotations: bool = True
 
     @classmethod
     def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
@@ -120,10 +123,14 @@ class ExportOptionsSnapshot:
         default_factory=RasterEncodingOptions
     )
     include_watermark: bool = False
+    scale_overlay: ScaleOverlaySpec | None = None
+    include_annotations: bool = True
 
     @classmethod
     def from_selection(cls, selection: ExportSelection) -> "ExportOptionsSnapshot":
         return cls(
+            scale_overlay=selection.scale_overlay,
+            include_annotations=selection.include_annotations,
             include_measurement_overlay=bool(selection.include_measurement_overlay),
             include_scale_overlay=bool(selection.include_scale_overlay),
             include_combined_overlay=bool(selection.include_combined_overlay),
@@ -142,6 +149,8 @@ class ExportOptionsSnapshot:
 
     def to_selection(self) -> ExportSelection:
         return ExportSelection(
+            scale_overlay=self.scale_overlay,
+            include_annotations=self.include_annotations,
             include_measurement_overlay=self.include_measurement_overlay,
             include_scale_overlay=self.include_scale_overlay,
             include_combined_overlay=self.include_combined_overlay,
@@ -168,6 +177,13 @@ class ExportRenderContext:
     viewport_height: int = 0
     watermark: WatermarkSpec | None = None
     watermark_frozen: bool = False
+    scale_overlay: ScaleOverlaySpec | None = None
+    scale_layout: ScaleOverlayLayout | None = None
+    # All ordinary-image output geometry is frozen before progress events run.
+    output_size: tuple[int, int] | None = None
+    image_scale: float = 1.0
+    image_offset: tuple[float, float] = (0.0, 0.0)
+    calibration_snapshot: tuple[float, str] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -271,19 +287,24 @@ class ExportService:
         image_suffix = options.image_encoding.canonical_suffix
         for document in target_documents:
             base_name = Path(document.path).stem or document.id
+            ordinary_context = supplied_contexts.get(document.id)
             if not document.is_digital_slide() and selection.include_watermark and any((
                 selection.include_measurement_overlay, selection.include_scale_overlay,
                 selection.include_combined_overlay,
             )):
                 context = supplied_contexts.get(document.id)
                 if context is None or not context.watermark_frozen:
-                    context = ExportRenderContext(
-                        document_id=document.id, render_mode=selection.render_mode,
+                    context = replace(
+                        context or ExportRenderContext(document.id, selection.render_mode),
                         watermark=document.watermark, watermark_frozen=True,
                     )
                 if context.document_id != document.id or context.render_mode != selection.render_mode:
                     raise ValueError("水印导出上下文与当前图片不一致")
-                frozen_contexts.append(context)
+                ordinary_context = context
+            if not document.is_digital_slide() and ordinary_context is not None:
+                if ordinary_context.document_id != document.id or ordinary_context.render_mode != selection.render_mode:
+                    raise ValueError("冻结的导出上下文与当前图片不一致")
+                frozen_contexts.append(ordinary_context)
             if document.is_digital_slide() and any(
                 (
                     selection.include_measurement_overlay,
@@ -337,6 +358,12 @@ class ExportService:
                 render_suffix = f"viewport_f{focus_index}_x{origin_x}_y{origin_y}"
             else:
                 render_suffix = self._render_mode_suffix(selection.render_mode)
+            if selection.scale_overlay is not None and (selection.include_scale_overlay or selection.include_combined_overlay):
+                context = next((item for item in frozen_contexts if item.document_id == document.id), None)
+                frozen = self._freeze_scale_context(document, selection, context)
+                if context is not None:
+                    frozen_contexts.remove(context)
+                frozen_contexts.append(frozen)
             if selection.include_measurement_overlay:
                 planned.append(
                     PlannedExportFile(
@@ -383,6 +410,40 @@ class ExportService:
         selection: ExportSelection | None = None,
     ) -> list[PlannedExportFile]:
         return list(self.build_plan(documents, selection).files)
+
+    @staticmethod
+    def _freeze_scale_context(document, selection, context):
+        from fdm.ui.scale_overlay_rendering import layout_scale_overlay
+
+        if context is not None and context.scale_layout is not None:
+            if context.scale_overlay != selection.scale_overlay or context.scale_layout.spec != selection.scale_overlay:
+                raise ValueError("冻结的比例尺配置与导出选项不一致。")
+            return context
+        context = context or ExportRenderContext(document.id, selection.render_mode)
+        width, height = document.image_size
+        if document.is_digital_slide():
+            width, height = context.viewport_width, context.viewport_height
+            target = (float(context.origin_x), float(context.origin_y), float(width), float(height))
+            scale, offset, output = 1., (-context.origin_x, -context.origin_y), (width, height)
+        elif selection.render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
+            if context.output_size is None or context.image_scale <= 0:
+                raise ValueError("当前视窗比例尺需要先冻结画布尺寸和变换。")
+            scale, offset, output = context.image_scale, context.image_offset, context.output_size
+            left, top = max(0., -offset[0] / scale), max(0., -offset[1] / scale)
+            target = (left, top, min(width, (output[0] - offset[0]) / scale) - left,
+                      min(height, (output[1] - offset[1]) / scale) - top)
+        else:
+            scale = document.view_state.zoom if selection.render_mode == ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE else 1.
+            if not math.isfinite(scale) or scale <= 0:
+                raise ValueError("比例尺导出缩放无效。")
+            offset, output = (0., 0.), (max(1, round(width * scale)), max(1, round(height * scale)))
+            target = (0., 0., float(width), float(height))
+        calibration = document.calibration
+        snapshot = (calibration.pixels_per_unit, calibration.unit) if calibration else None
+        layout = layout_scale_overlay(selection.scale_overlay, target, *(snapshot or (None, None)))
+        return replace(context, scale_overlay=selection.scale_overlay, scale_layout=layout,
+                       output_size=output, image_scale=scale, image_offset=offset,
+                       calibration_snapshot=snapshot)
 
     def export_project(
         self,
@@ -557,6 +618,7 @@ class ExportService:
                         execution_selection.include_construction_geometry
                     ),
                     include_watermark=execution_selection.include_watermark,
+                    include_annotations=execution_selection.include_annotations,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -583,6 +645,7 @@ class ExportService:
                         execution_selection.include_construction_geometry
                     ),
                     include_watermark=execution_selection.include_watermark,
+                    include_annotations=execution_selection.include_annotations,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -609,6 +672,7 @@ class ExportService:
                         execution_selection.include_construction_geometry
                     ),
                     include_watermark=execution_selection.include_watermark,
+                    include_annotations=execution_selection.include_annotations,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -775,6 +839,7 @@ class ExportService:
         include_scale: bool,
         include_construction_geometry: bool = False,
         include_watermark: bool = False,
+        include_annotations: bool = True,
         render_mode: str,
         render_context: ExportRenderContext | None,
         encoding: RasterEncodingOptions,
@@ -800,6 +865,8 @@ class ExportService:
                 kwargs["include_construction_geometry"] = True
             if include_watermark:
                 kwargs["include_watermark"] = True
+            if not include_annotations:
+                kwargs["include_annotations"] = False
             if render_context is not None:
                 kwargs["render_context"] = render_context
             result = overlay_renderer(document, temporary_path, **kwargs)

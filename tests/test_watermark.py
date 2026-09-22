@@ -284,11 +284,11 @@ def test_result_and_raw_export_watermark_controls():
     slide.display_radio.setChecked(True)
     assert not slide.include_watermark()
     mixed = ExportOptionsDialog(ExportSelection(include_combined_overlay=True), allow_all_scope=True, watermark_count_current=0, watermark_count_all=1)
-    assert mixed.selection().include_watermark
-    mixed._scope_current.setChecked(True)
     assert not mixed.selection().include_watermark
     mixed._scope_all.setChecked(True)
     assert mixed.selection().include_watermark
+    mixed._scope_current.setChecked(True)
+    assert not mixed.selection().include_watermark
 
 
 @pytest.mark.parametrize("values", [{"opacity": float("nan")}, {"width_ratio": 0}, {"gap_x": -1}, {"logo_sha256": "missing"}, {"color": "bad"}])
@@ -380,10 +380,12 @@ def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
     from build_windows_onedir import run_packaged_self_check
 
+    from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
     watermark = run_watermark_self_check()
     assert watermark["ok"]
     payload = {"ok": True, "errors": [], "functional_checks": {
-        "overlay_renderer": {"ok": True, "worker_stdio_none": True},
+        "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
         "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
         "watermark_renderer": watermark,
     }}

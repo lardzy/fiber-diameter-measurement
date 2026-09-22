@@ -874,6 +874,8 @@ class ExportOptionsDialog(QDialog):
         parent=None,
     ) -> None:
         super().__init__(parent)
+        self.adjust_scale_requested = False
+        self._scale_spec = selection.scale_overlay
         self.setWindowTitle("导出选项")
         self.resize(820, 600)
         self.setMinimumSize(640, 460)
@@ -896,8 +898,14 @@ class ExportOptionsDialog(QDialog):
         self._construction_geometry = QCheckBox("在结果图中包含辅助几何")
         self._watermark_counts = (watermark_count_current, watermark_count_all)
         self._watermark = QCheckBox("包含水印（普通图片）")
+        self._watermark_uses_default = selection.scale_overlay is None and not selection.include_watermark
+        all_selected = allow_all_scope and selection.scope == ExportScope.ALL_OPEN
+        # A scale-editor selection already carries the chosen export content,
+        # including an explicit unchecked watermark after a dialog round trip.
+        # General export presets still opt in when their selected scope has one.
         self._watermark.setChecked(bool(selection.include_watermark or (
-            watermark_count_all if allow_all_scope else watermark_count_current
+            (watermark_count_all if all_selected else watermark_count_current)
+            if selection.scale_overlay is None else False
         )))
         self._watermark.setToolTip("使用各图片已保存的水印；数字切片和数据文件不添加水印。")
         self._construction_geometry.setChecked(
@@ -918,8 +926,8 @@ class ExportOptionsDialog(QDialog):
         scope_layout = QHBoxLayout(self._scope_group)
         self._scope_current = QRadioButton("当前图片")
         self._scope_all = QRadioButton("全部已打开图片")
-        self._scope_current.setChecked(not allow_all_scope)
-        self._scope_all.setChecked(allow_all_scope)
+        self._scope_current.setChecked(not all_selected)
+        self._scope_all.setChecked(all_selected)
         self._scope_all.setEnabled(allow_all_scope)
         scope_layout.addWidget(self._scope_current)
         scope_layout.addWidget(self._scope_all)
@@ -1125,6 +1133,18 @@ class ExportOptionsDialog(QDialog):
         image_layout.setContentsMargins(0, 0, 8, 0)
         image_layout.setSpacing(6)
         image_layout.addWidget(self._overlay_group)
+        scale_row = QHBoxLayout()
+        self._adjust_scale = QPushButton("在画布调整比例尺…")
+        self._adjust_scale.clicked.connect(self._request_scale_adjustment)
+        def update_scale_editor_button():
+            self._adjust_scale.setEnabled(self._scale_overlay.isChecked() or self._combined_overlay.isChecked())
+        self._scale_overlay.toggled.connect(update_scale_editor_button)
+        self._combined_overlay.toggled.connect(update_scale_editor_button)
+        update_scale_editor_button()
+        self._include_annotations = QCheckBox("包含标注")
+        self._include_annotations.setChecked(selection.include_annotations)
+        scale_row.addWidget(self._adjust_scale); scale_row.addWidget(self._include_annotations)
+        scale_row.addStretch(1); image_layout.addLayout(scale_row)
         image_layout.addWidget(self._render_group)
         image_layout.addWidget(self._image_format_group)
         image_layout.addStretch(1)
@@ -1222,6 +1242,7 @@ class ExportOptionsDialog(QDialog):
         self._scope_current.toggled.connect(self._update_render_mode_state)
         self._scope_all.toggled.connect(self._update_render_mode_state)
         self._watermark.toggled.connect(self._update_export_summary)
+        self._watermark.toggled.connect(self._remember_watermark_choice)
         self._scope_all.toggled.connect(self._update_export_summary)
         self._render_mode_combo.currentIndexChanged.connect(
             self._update_export_summary
@@ -1417,9 +1438,18 @@ class ExportOptionsDialog(QDialog):
         self._image_format_group.setEnabled(enabled)
         self._construction_geometry.setEnabled(enabled)
         watermark_available = self._watermark_counts[1 if self._scope_all.isChecked() else 0] > 0
+        if self._watermark_uses_default:
+            # Follow availability as scope changes until the user explicitly
+            # chooses; don't overwrite an unchecked choice on a later change.
+            blocked = self._watermark.blockSignals(True)
+            self._watermark.setChecked(watermark_available)
+            self._watermark.blockSignals(blocked)
         self._watermark.setEnabled(enabled and watermark_available)
         self._update_legacy_overlay_text_warning()
         self._update_export_summary()
+
+    def _remember_watermark_choice(self, _checked: bool) -> None:
+        self._watermark_uses_default = False
 
     def _update_image_encoding_state(self) -> None:
         export_format = self._image_format_combo.currentData()
@@ -1639,6 +1669,10 @@ class ExportOptionsDialog(QDialog):
         if continue_button is not None:
             continue_button.setEnabled(bool(outputs))
 
+    def _request_scale_adjustment(self):
+        self.adjust_scale_requested = True
+        self.reject()
+
     def selection(self) -> ExportSelection:
         export_format = self._image_format_combo.currentData()
         image_encoding = RasterEncodingOptions(
@@ -1659,6 +1693,8 @@ class ExportOptionsDialog(QDialog):
             jpeg_background=self._flatten_background,
         )
         return ExportSelection(
+            scale_overlay=self._scale_spec,
+            include_annotations=self._include_annotations.isChecked(),
             include_watermark=self._watermark.isEnabled() and self._watermark.isChecked(),
             include_measurement_overlay=self._measurement_overlay.isChecked(),
             include_scale_overlay=self._scale_overlay.isChecked(),
@@ -2243,13 +2279,13 @@ class SettingsDialog(QDialog):
             measurement_endpoint_style=self._endpoint_style_combo.currentData(),
             default_measurement_color=self._default_measurement_color.property("color_value") or self._initial_settings.default_measurement_color,
             open_image_view_mode=self._open_view_mode_combo.currentData(),
-            scale_overlay_placement_mode=self._scale_overlay_mode_combo.currentData(),
-            scale_overlay_style=self._scale_overlay_style_combo.currentData(),
-            scale_overlay_length_value=self._scale_overlay_length_spin.value(),
-            scale_overlay_color=self._scale_overlay_color.property("color_value") or self._initial_settings.scale_overlay_color,
-            scale_overlay_text_color=self._scale_overlay_text_color.property("color_value") or self._initial_settings.scale_overlay_text_color,
-            scale_overlay_font_family=self._font_combo_family_value(self._scale_overlay_font),
-            scale_overlay_font_size=self._scale_overlay_font_size.value(),
+            scale_overlay_placement_mode=self._initial_settings.scale_overlay_placement_mode,
+            scale_overlay_style=self._initial_settings.scale_overlay_style,
+            scale_overlay_length_value=self._initial_settings.scale_overlay_length_value,
+            scale_overlay_color=self._initial_settings.scale_overlay_color,
+            scale_overlay_text_color=self._initial_settings.scale_overlay_text_color,
+            scale_overlay_font_family=self._initial_settings.scale_overlay_font_family,
+            scale_overlay_font_size=self._initial_settings.scale_overlay_font_size,
             text_font_family=self._font_combo_family_value(self._text_font),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
@@ -2278,6 +2314,7 @@ class SettingsDialog(QDialog):
             recent_export_dir=self._initial_settings.recent_export_dir,
             recent_project_dir=self._initial_settings.recent_project_dir,
             last_watermark=self._initial_settings.last_watermark,
+            last_scale_overlay=self._initial_settings.last_scale_overlay,
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
@@ -2831,45 +2868,6 @@ class SettingsDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        placement_group = QGroupBox("比例尺位置与长度")
-        placement_form = QFormLayout(placement_group)
-        self._scale_overlay_mode_combo = NoWheelComboBox()
-        self._scale_overlay_mode_combo.addItem("左上", ScaleOverlayPlacementMode.TOP_LEFT)
-        self._scale_overlay_mode_combo.addItem("右上", ScaleOverlayPlacementMode.TOP_RIGHT)
-        self._scale_overlay_mode_combo.addItem("左下", ScaleOverlayPlacementMode.BOTTOM_LEFT)
-        self._scale_overlay_mode_combo.addItem("右下", ScaleOverlayPlacementMode.BOTTOM_RIGHT)
-        self._scale_overlay_mode_combo.addItem("手动选定", ScaleOverlayPlacementMode.MANUAL)
-        self._scale_overlay_mode_combo.setCurrentIndex(max(0, self._scale_overlay_mode_combo.findData(settings.scale_overlay_placement_mode)))
-        self._scale_overlay_length_spin = NoWheelDoubleSpinBox()
-        self._scale_overlay_length_spin.setDecimals(4)
-        self._scale_overlay_length_spin.setRange(0.01, 1_000_000.0)
-        self._scale_overlay_length_spin.setValue(settings.scale_overlay_length_value)
-        self._scale_overlay_length_spin.setSuffix(f" {self._scale_overlay_length_unit()}")
-        placement_form.addRow("比例尺叠加位置", self._scale_overlay_mode_combo)
-        placement_form.addRow("目标长度", self._scale_overlay_length_spin)
-
-        style_group = QGroupBox("比例尺样式")
-        style_form = QFormLayout(style_group)
-        self._scale_overlay_style_combo = NoWheelComboBox()
-        self._scale_overlay_style_combo.addItem("纯线", ScaleOverlayStyle.LINE)
-        self._scale_overlay_style_combo.addItem("端点刻度", ScaleOverlayStyle.TICKS)
-        self._scale_overlay_style_combo.addItem("粗条", ScaleOverlayStyle.BAR)
-        self._scale_overlay_style_combo.setCurrentIndex(max(0, self._scale_overlay_style_combo.findData(settings.scale_overlay_style)))
-        self._scale_overlay_color = self._create_color_button(settings.scale_overlay_color)
-        self._scale_overlay_font = NoWheelFontComboBox()
-        self._configure_font_combo(self._scale_overlay_font, settings.scale_overlay_font_family)
-        self._scale_overlay_font_size = NoWheelSpinBox()
-        self._scale_overlay_font_size.setRange(8, 96)
-        self._scale_overlay_font_size.setValue(settings.scale_overlay_font_size)
-        self._scale_overlay_text_color = self._create_color_button(settings.scale_overlay_text_color)
-        style_form.addRow("比例尺样式", self._scale_overlay_style_combo)
-        style_form.addRow("线条颜色", self._scale_overlay_color)
-        style_form.addRow("文字字体", self._scale_overlay_font)
-        style_form.addRow("文字字号", self._scale_overlay_font_size)
-        style_form.addRow("文字颜色", self._scale_overlay_text_color)
-        display_hint = QLabel("目标长度按当前图片标定单位输入；未标定时按 px 输入。文字会自动补对比描边。")
-        display_hint.setWordWrap(True)
-
         text_group = QGroupBox("文字标注默认样式")
         text_form = QFormLayout(text_group)
         self._text_font = NoWheelFontComboBox()
@@ -2922,9 +2920,6 @@ class SettingsDialog(QDialog):
         shape_hint.setWordWrap(True)
         shape_form.addRow("", shape_hint)
 
-        layout.addWidget(placement_group)
-        layout.addWidget(style_group)
-        layout.addWidget(display_hint)
         layout.addWidget(self._build_current_scale_anchor_group())
         layout.addWidget(text_group)
         layout.addWidget(shape_group)
@@ -2933,26 +2928,20 @@ class SettingsDialog(QDialog):
         return self._wrap_settings_page(page)
 
     def _build_current_scale_anchor_group(self) -> QGroupBox:
-        group = QGroupBox("当前图片比例尺位置")
+        group = QGroupBox("比例尺")
         group_layout = QVBoxLayout(group)
         document = self._document
-        if document is None:
-            status = QLabel("当前没有打开的图片，无法设置手动比例尺位置。", group)
-        elif document.scale_overlay_anchor is None:
-            status = QLabel("当前图片尚未设置手动位置。", group)
-        else:
-            anchor = document.scale_overlay_anchor
-            status = QLabel(f"当前锚点：({anchor.x:.1f}, {anchor.y:.1f})", group)
+        status = QLabel("在主画布预览、拖动并调整比例尺，然后直接导出。自动记住最近确认的设置。", group)
         self._scale_anchor_status_label = status
         status.setWordWrap(True)
         group_layout.addWidget(status)
         hint = QLabel(
-            "只有点击下方按钮才会关闭首选项并进入画布选点；修改其它比例尺设置不会触发选点。",
+            "显示与导出范围独立；重新启动后默认隐藏比例尺。",
             group,
         )
         hint.setWordWrap(True)
         group_layout.addWidget(hint)
-        self._scale_anchor_pick_button = QPushButton("在画布重新选择位置", group)
+        self._scale_anchor_pick_button = QPushButton("在画布编辑比例尺…", group)
         self._scale_anchor_pick_button.setEnabled(document is not None)
         self._scale_anchor_pick_button.clicked.connect(self._trigger_scale_anchor_pick)
         group_layout.addWidget(self._scale_anchor_pick_button)
@@ -4005,9 +3994,6 @@ class SettingsDialog(QDialog):
         self._apply_button_color(button, color.name())
 
     def _trigger_scale_anchor_pick(self) -> None:
-        manual_index = self._scale_overlay_mode_combo.findData(ScaleOverlayPlacementMode.MANUAL)
-        if manual_index >= 0:
-            self._scale_overlay_mode_combo.setCurrentIndex(manual_index)
         self._request_scale_anchor_pick = True
         self.accept()
 

@@ -523,6 +523,7 @@ from fdm.ui.thread_task_manager import (
 )
 from fdm.ui.view_transform import MIN_VIEW_ZOOM, CanvasViewportSnapshot
 from fdm.ui.view_zoom_control import ViewZoomStatusButton
+from fdm.ui.scale_overlay_control import ScaleOverlayStatusButton
 from fdm.ui.widgets import (
     CollapsibleSection,
     FiberGroupListItemWidget,
@@ -2275,6 +2276,8 @@ class MainWindow(QMainWindow):
         self.project_session_controller = ProjectSessionController(self)
         self.associated_file_open_controller = AssociatedFileOpenController(self, self)
         self.export_controller = ExportController(self)
+        from fdm.ui.scale_overlay_editor import ScaleOverlayPreviewController
+        self.scale_preview = ScaleOverlayPreviewController(self)
 
         self._records_controller.groupChangeRequested.connect(
             self._on_measurement_group_change_requested
@@ -2475,6 +2478,13 @@ class MainWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
+        self._scale_status_button = ScaleOverlayStatusButton(self.statusBar())
+        self._scale_status_button.editRequested.connect(self.scale_preview.begin)
+        self._scale_status_button.visibilityRequested.connect(
+            lambda visible: self.scale_preview.begin() if visible else self.scale_preview.hide()
+        )
+        self._scale_status_button.locateRequested.connect(self.scale_preview.locate)
+        self.statusBar().addPermanentWidget(self._scale_status_button, 0)
         self._object_snap_status_button = ObjectSnapStatusButton(self.statusBar())
         self._object_snap_status_button.setSnapState(
             self._app_settings.object_snap_enabled,
@@ -2923,6 +2933,12 @@ class MainWindow(QMainWindow):
         self.export_template_action.triggered.connect(self._export_template)
         self.export_actions.append(self.export_template_action)
         self.export_overlay_action = self.export_actions[0]
+        self.scale_preview_action = QAction("显示比例尺", self)
+        self.scale_preview_action.setCheckable(True)
+        self.scale_preview_action.setToolTip("显示 / 隐藏比例尺；使用“编辑比例尺”调整")
+        self.scale_preview_action.triggered.connect(self.scale_preview.toggle)
+        self.scale_edit_action = QAction("编辑比例尺…", self)
+        self.scale_edit_action.triggered.connect(lambda: self.scale_preview.begin())
         self._screen_label_actions = {}
         label_group = QActionGroup(self)
         label_group.setExclusive(True)
@@ -3450,6 +3466,9 @@ class MainWindow(QMainWindow):
         tool_menu.addAction(self.settings_action)
 
         view_menu = self.menuBar().addMenu("视图")
+        view_menu.addAction(self.scale_preview_action)
+        view_menu.addAction(self.scale_edit_action)
+        view_menu.addSeparator()
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.digital_slide_native_fit_action)
         view_menu.addAction(self.actual_size_action)
@@ -5250,6 +5269,7 @@ class MainWindow(QMainWindow):
         self._object_properties_section.setVisible(state.object_properties_expanded)
         self._current_measurement_summary.editButton.setChecked(state.object_properties_expanded)
         inspector_layout.insertWidget(1, self._object_properties_section)
+        inspector_layout.insertWidget(0, self.scale_preview.create_panel(inspector_content))
         inspector_layout.removeWidget(self._statistics_section)
         inspector_layout.insertWidget(4, self._statistics_section)
         inspector_layout.addStretch(1)
@@ -5873,7 +5893,10 @@ class MainWindow(QMainWindow):
 
     def _make_export_action(self, label: str, selection: ExportSelection) -> QAction:
         action = QAction(label, self)
-        action.triggered.connect(lambda checked=False, preset=selection: self.export_results(preset))
+        if selection.include_scale_overlay or selection.include_combined_overlay:
+            action.triggered.connect(lambda checked=False, preset=selection: self.scale_preview.begin(preset))
+        else:
+            action.triggered.connect(lambda checked=False, preset=selection: self.export_results(preset))
         return action
 
     def _export_template(self) -> None:
@@ -13587,8 +13610,10 @@ class MainWindow(QMainWindow):
                 " border-color: palette(mid); background: palette(alternate-base);"
                 " }"
             )
-        if self._object_snap_status_button is not None:
-            self._object_snap_status_button.setStyleSheet(
+        for button in (self._object_snap_status_button, getattr(self, "_scale_status_button", None)):
+            if button is None:
+                continue
+            button.setStyleSheet(
                 "QToolButton {"
                 f" color: {self._status_color('muted')};"
                 " padding: 1px 28px 1px 10px; border: 1px solid transparent;"
@@ -21027,7 +21052,7 @@ class MainWindow(QMainWindow):
             if not close_after:
                 dialog.accept()
                 return
-            self._begin_scale_anchor_pick(self.current_document())
+            self.scale_preview.begin()
         elif close_after:
             self.statusBar().showMessage("设置已更新", 3000)
 
@@ -23364,6 +23389,9 @@ class MainWindow(QMainWindow):
         self._update_ui_for_current_document()
 
     def undo_current_document(self) -> None:
+        if self.scale_preview.editing:
+            self.scale_preview.undo()
+            return
         document = self.current_document()
         if document is None:
             return
@@ -23396,6 +23424,9 @@ class MainWindow(QMainWindow):
         self._update_ui_for_current_document()
 
     def redo_current_document(self) -> None:
+        if self.scale_preview.editing:
+            self.scale_preview.redo()
+            return
         document = self.current_document()
         if document is None:
             return
@@ -26702,6 +26733,7 @@ class MainWindow(QMainWindow):
             and not preview_active
             and pixel_work_enabled
         )
+        self.scale_preview.sync()
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)
         self.live_preview_action.setEnabled(capture_feature_available)
@@ -28011,6 +28043,18 @@ class MainWindow(QMainWindow):
             )
         return contexts
 
+    def _prepare_scale_export(self, selection, documents, contexts):
+        if not (selection.include_scale_overlay or selection.include_combined_overlay):
+            return contexts
+        from fdm.ui.scale_overlay_editor import freeze_scale_contexts
+        selection.scale_overlay = selection.scale_overlay or self.scale_preview.confirmed
+        return freeze_scale_contexts(self, documents, selection, contexts)
+
+    def _remember_scale_export(self, selection):
+        if selection.scale_overlay is not None and (selection.include_scale_overlay or selection.include_combined_overlay):
+            self._app_settings.last_scale_overlay = selection.scale_overlay
+            self._save_app_settings(context="比例尺导出设置")
+
     def _export_protected_source_paths(
         self,
         documents: list[ImageDocument],
@@ -28031,6 +28075,7 @@ class MainWindow(QMainWindow):
         include_scale: bool,
         include_construction_geometry: bool = False,
         include_watermark: bool = False,
+        include_annotations: bool = True,
         render_mode: str,
         render_context: ExportRenderContext | None = None,
     ) -> RenderedExport:
@@ -28093,7 +28138,20 @@ class MainWindow(QMainWindow):
                 persisted_zoom = 1.0
             screen_scale = max(MIN_VIEW_ZOOM, persisted_zoom)
 
-        if document.is_digital_slide():
+        if render_context is not None and render_context.output_size is not None:
+            image = self._create_export_surface(*render_context.output_size)
+            image_to_output_scale = render_context.image_scale
+            offset_x, offset_y = render_context.image_offset
+
+            def image_to_output(point) -> QPointF:
+                return QPointF(offset_x + point.x * image_to_output_scale,
+                               offset_y + point.y * image_to_output_scale)
+
+            visible_construction_rect = QRectF(
+                -offset_x / image_to_output_scale, -offset_y / image_to_output_scale,
+                image.width() / image_to_output_scale, image.height() / image_to_output_scale,
+            )
+        elif document.is_digital_slide():
             image = self._create_export_surface(source_image.width(), source_image.height())
             image_to_output_scale = 1.0
             assert viewport_origin is not None
@@ -28177,7 +28235,12 @@ class MainWindow(QMainWindow):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
-        if document.is_digital_slide():
+        if render_context is not None and render_context.output_size is not None and not document.is_digital_slide():
+            painter.fillRect(image.rect(), QColor("#101820"))
+            painter.drawImage(QRectF(*render_context.image_offset,
+                                    source_image.width() * image_to_output_scale,
+                                    source_image.height() * image_to_output_scale), source_image)
+        elif document.is_digital_slide():
             painter.drawImage(QPointF(0.0, 0.0), source_image)
         elif render_mode == ExportImageRenderMode.FULL_RESOLUTION:
             painter.drawImage(QPointF(0.0, 0.0), source_image)
@@ -28242,7 +28305,7 @@ class MainWindow(QMainWindow):
                 area_geometry_mode=AREA_GEOMETRY_RAW,
             )
 
-        if include_measurements or include_scale:
+        if include_annotations and (include_measurements or include_scale):
             draw_overlay_annotations(
                 painter,
                 document,
@@ -28252,7 +28315,14 @@ class MainWindow(QMainWindow):
                 render_mode=render_mode,
             )
 
-        if include_scale:
+        if include_scale and render_context is not None and render_context.scale_layout is not None:
+            from fdm.ui.scale_overlay_rendering import paint_scale_overlay
+            painter.save()
+            painter.translate(*render_context.image_offset)
+            painter.scale(render_context.image_scale, render_context.image_scale)
+            paint_scale_overlay(painter, render_context.scale_layout)
+            painter.restore()
+        elif include_scale:
             if (
                 self._app_settings.scale_overlay_placement_mode == ScaleOverlayPlacementMode.MANUAL
                 and document.scale_overlay_anchor is None
@@ -28272,7 +28342,7 @@ class MainWindow(QMainWindow):
                 scale_fg_width=scale_fg_width,
                 font_px=font_px,
                 render_mode=render_mode,
-                image_origin=viewport_origin,
+                image_origin=viewport_origin or (Point(-document.view_state.pan.x / screen_scale, -document.view_state.pan.y / screen_scale) if render_mode == ExportImageRenderMode.CURRENT_VIEWPORT else None),
             )
 
         painter.end()

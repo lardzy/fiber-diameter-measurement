@@ -4502,6 +4502,9 @@ class DocumentCanvas(QWidget):
         finally:
             self._overlay_paint_region = None
         self._draw_preview(painter)
+        scale_preview = getattr(self, "_scale_overlay_preview", None)
+        if scale_preview is not None:
+            scale_preview.paint(self, painter)
 
     def _base_image_target_rect(self) -> QRectF:
         if self._image is None:

@@ -168,6 +168,16 @@ def run_packaged_self_check(app_dir: Path, *, report_path: Path | None = None) -
         or overlay.get("worker_stdio_none") is not True
     ):
         return ["packaged self-check did not pass the windowed overlay renderer probe"]
+    scale = overlay.get("scale_overlay")
+    required_scale_cases = {"unit_nm", "unit_um", "unit_mm", "unit_cm", "unit_m",
+                            "preview_export_dpr_1", "preview_export_dpr_1.5", "preview_export_dpr_2",
+                            "uncalibrated_px", "oversized_rejected", "endpoint_pixels",
+                            "fractional_span_coverage", "style_variants", "division_geometry",
+                            "actual_layout_geometry"}
+    if (not isinstance(scale, dict) or scale.get("ok") is not True or scale.get("revision") != 1
+            or not isinstance(scale.get("cases"), dict)
+            or any(scale["cases"].get(name) is not True for name in required_scale_cases)):
+        return ["packaged self-check did not pass the scale preview/export probe"]
     geometry = checks.get("fiber_quick_geometry")
     if (
         not isinstance(geometry, dict)
