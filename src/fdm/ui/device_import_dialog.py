@@ -23,6 +23,7 @@ from fdm.services.device_image_io import (
 from fdm.services.raster_io import (
     raster_plane_to_qimage, write_native_raster_asset, recommended_native_asset_suffix,
 )
+from fdm.services.raster_asset_reuse import RasterAssetReceipt
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,7 @@ class LoadedDeviceChannel:
     image: QImage
     relative_path: str
     session_path: Path
+    asset_receipt: RasterAssetReceipt | None = None
 
 
 class DeviceReadWorker(QObject):
@@ -84,7 +86,8 @@ class DeviceReadWorker(QObject):
                             encoded = write_native_raster_asset(plane, session_path)
                             if not encoded:
                                 raise ValueError(str(encoded.failure))
-                            result = LoadedDeviceChannel(item, plane, image, relative, session_path)
+                            receipt = RasterAssetReceipt.from_verified_file(session_path, plane)
+                            result = LoadedDeviceChannel(item, plane, image, relative, session_path, receipt)
                 if self.cancelled.is_set() and self.operation != "export":
                     if session_path is not None:
                         session_path.unlink(missing_ok=True)

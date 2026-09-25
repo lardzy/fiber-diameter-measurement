@@ -1,0 +1,74 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ ModelsProjectIOTests.test_app_settings_from_dict_defaults_new_overlay_and_focus_fields _
+
+self = <test_models_project_io.ModelsProjectIOTests testMethod=test_app_settings_from_dict_defaults_new_overlay_and_focus_fields>
+
+    def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
+        settings = AppSettings.from_dict({})
+
+        self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
+        self.assertEqual(settings.measurement_label_color, "#FF0000")
+        self.assertEqual(settings.length_measurement_label_style.color, "#FF0000")
+        self.assertEqual(settings.area_measurement_label_style.color, "#FF0000")
+        self.assertEqual(settings.measurement_label_decimals, 2)
+        self.assertTrue(settings.measurement_label_background_enabled)
+        self.assertTrue(settings.length_measurement_label_style.enabled)
+        self.assertFalse(settings.area_measurement_label_style.enabled)
+        self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
+        self.assertFalse(settings.show_count_numbers)
+        self.assertEqual(settings.count_number_font_size, 12)
+        self.assertEqual(settings.count_number_color, "#FFFFFF")
+        self.assertEqual(settings.open_image_view_mode, OpenImageViewMode.FIT)
+        self.assertEqual(settings.scale_overlay_placement_mode, ScaleOverlayPlacementMode.BOTTOM_RIGHT)
+        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.TICKS)
+        self.assertAlmostEqual(settings.scale_overlay_length_value, 50.0)
+>       self.assertEqual(settings.scale_overlay_color, "#F4F1DE")
+E       AssertionError: '#FF0000' != '#F4F1DE'
+E       - #FF0000
+E       + #F4F1DE
+
+.tmp/asset-save-baseline-12eb1f1/tests/test_models_project_io.py:1347: AssertionError
+___ test_production_json_serialization_explicitly_rejects_non_finite_values ____
+
+    def test_production_json_serialization_explicitly_rejects_non_finite_values() -> None:
+        project_root = Path(__file__).resolve().parents[1]
+        paths = [
+            *(project_root / "src" / "fdm").rglob("*.py"),
+            *(project_root / "runtime" / "area-infer" / "app").rglob("*.py"),
+            *(project_root / "scripts").glob("*.py"),
+        ]
+        missing_contract: list[str] = []
+        for path in paths:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for call in (
+                node
+                for node in ast.walk(tree)
+                if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "json"
+                and node.func.attr in {"dump", "dumps"}
+            ):
+                allow_nan = next(
+                    (keyword.value for keyword in call.keywords if keyword.arg == "allow_nan"),
+                    None,
+                )
+                if not (
+                    isinstance(allow_nan, ast.Constant)
+                    and allow_nan.value is False
+                ):
+                    relative = path.relative_to(project_root).as_posix()
+                    missing_contract.append(f"{relative}:{call.lineno}")
+
+>       assert missing_contract == []
+E       AssertionError: assert ['scripts/ben...erlay.py:176'] == []
+E
+E         Left contains one more item: 'scripts/benchmark_scale_overlay.py:176'
+E         Use -v to get more diff
+
+.tmp/asset-save-baseline-12eb1f1/tests/test_atomic_io.py:49: AssertionError
+=========================== short test summary info ============================
+FAILED .tmp/asset-save-baseline-12eb1f1/tests/test_models_project_io.py::ModelsProjectIOTests::test_app_settings_from_dict_defaults_new_overlay_and_focus_fields
+FAILED .tmp/asset-save-baseline-12eb1f1/tests/test_atomic_io.py::test_production_json_serialization_explicitly_rejects_non_finite_values
+2 failed in 1.32s

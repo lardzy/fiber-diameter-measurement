@@ -25,6 +25,11 @@ from fdm.services.analysis_asset_io import (
     validate_analysis_asset_reference,
 )
 from fdm.services.digital_slide_store import copy_slide_file
+from fdm.services.raster_asset_reuse import (
+    AssetFileStamp,
+    RasterAssetReceipt,
+    copy_verified_raster_asset,
+)
 from fdm.services.raster_io import (
     qimage_to_raster_plane,
     recommended_native_asset_suffix,
@@ -226,6 +231,7 @@ class ProjectAssetStageResult:
     analysis_asset_overrides: tuple[AnalysisAssetSaveOverride, ...] = ()
     created_paths: tuple[Path, ...] = ()
     message: str = ""
+    raster_receipts: tuple[tuple[str, RasterAssetReceipt], ...] = ()
 
     def __bool__(self) -> bool:
         return self.success
@@ -291,10 +297,18 @@ class ProjectSessionController:
         self._host = host
         self._unresolved_documents: dict[str, UnresolvedProjectDocument] = {}
         self._project_document_order: list[str] = []
+        self._raster_asset_receipts: dict[str, RasterAssetReceipt] = {}
 
     def clear_unresolved_documents(self) -> None:
         self._unresolved_documents.clear()
         self._project_document_order.clear()
+        self._raster_asset_receipts.clear()
+
+    def remember_raster_asset(
+        self, document_id: str, receipt: RasterAssetReceipt | None,
+    ) -> None:
+        if receipt is not None:
+            self._raster_asset_receipts[document_id] = receipt
 
     def unresolved_documents(self) -> list[UnresolvedProjectDocument]:
         return sorted(self._unresolved_documents.values(), key=lambda item: item.original_index)
@@ -340,6 +354,7 @@ class ProjectSessionController:
 
     def remove_document(self, document_id: str) -> None:
         self._unresolved_documents.pop(document_id, None)
+        self._raster_asset_receipts.pop(document_id, None)
         self._project_document_order = [item for item in self._project_document_order if item != document_id]
 
     def _ordered_persisted_document_sources(self) -> tuple[ImageDocument, ...]:
@@ -586,6 +601,7 @@ class ProjectSessionController:
         # Publish save-only overrides to live state strictly after the project
         # JSON commit.  Any asset or JSON failure above leaves live paths,
         # metadata, version and dirty savepoints untouched.
+        self._raster_asset_receipts.update(asset_result.raster_receipts)
         override_by_id = {item.document_id: item for item in asset_result.overrides}
         for document in host.project.documents:
             override = override_by_id.get(document.id)
@@ -877,6 +893,7 @@ class ProjectSessionController:
         )
         created_paths: list[Path] = []
         overrides: list[DocumentSaveOverride] = []
+        raster_receipts: list[tuple[str, RasterAssetReceipt]] = []
         for operation in operations:
             snapshot = operation.snapshot
             source_document = operation.source_document
@@ -1028,6 +1045,41 @@ class ProjectSessionController:
             output_path = original_target
             original_target.parent.mkdir(parents=True, exist_ok=True)
             try:
+                reusable = self._raster_asset_receipts.get(snapshot.document_id)
+                if (
+                    reusable is not None
+                    and reusable.matches(plane, raster_metadata)
+                    and reusable.path.suffix.casefold() == original_target.suffix.casefold()
+                ):
+                    reusable = reusable.refreshed()
+                else:
+                    reusable = None
+                if reusable is not None:
+                    revised_relative = _revisioned_asset_path(document_path, reusable.sha256)
+                    output_path = project_assets_root(target_path) / revised_relative
+                    if output_path.resolve() == reusable.path:
+                        receipt = reusable
+                    elif output_path.exists():
+                        stamp = AssetFileStamp.read(output_path)
+                        if (
+                            stamp is None
+                            or _file_sha256(output_path) != reusable.sha256
+                            or AssetFileStamp.read(output_path) != stamp
+                        ):
+                            raise OSError(f"修订资产哈希冲突或既有文件已损坏: {output_path}")
+                        receipt = replace(reusable, path=output_path.resolve(), stamp=stamp)
+                    else:
+                        # Include the path before copying: a late stat/fsync
+                        # failure must still remove this uncommitted output.
+                        created_paths.append(output_path)
+                        receipt = copy_verified_raster_asset(reusable, output_path)
+                    raster_receipts.append((snapshot.document_id, receipt))
+                    overrides.append(DocumentSaveOverride(
+                        document_id=snapshot.document_id,
+                        path=revised_relative,
+                        metadata=document_metadata,
+                    ))
+                    continue
                 staged_suffix = (
                     original_target.suffix
                     if original_target.suffix.casefold()
@@ -1068,6 +1120,12 @@ class ProjectSessionController:
                         output_path.parent.mkdir(parents=True, exist_ok=True)
                         atomic_replace_file(staged_path, output_path)
                         created_paths.append(output_path)
+                    stamp = AssetFileStamp.read(output_path)
+                    if stamp is None:
+                        raise OSError(f"无法确认已保存的图像资源: {output_path}")
+                    raster_receipts.append((snapshot.document_id, RasterAssetReceipt(
+                        output_path.resolve(), plane, raster_metadata, stamp, digest,
+                    )))
             except Exception as exc:  # noqa: BLE001 - storage failures share one UI contract
                 host._show_project_warning("保存项目", f"写入项目内图片失败: {output_path}\n{exc}")
                 return _failed_asset_stage_result(created_paths, str(exc))
@@ -1095,6 +1153,7 @@ class ProjectSessionController:
             overrides=tuple(overrides),
             analysis_asset_overrides=analysis_asset_overrides,
             created_paths=tuple(created_paths),
+            raster_receipts=tuple(raster_receipts),
         )
 
     def _stage_analysis_assets(

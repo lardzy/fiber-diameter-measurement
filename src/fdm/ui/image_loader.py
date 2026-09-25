@@ -9,6 +9,7 @@ from PySide6.QtGui import QImage
 
 from fdm.cancellation import CancellationSource, CancellationToken
 from fdm.raster import RasterImage, RasterPlane
+from fdm.services.raster_asset_reuse import AssetFileStamp, RasterAssetReceipt
 from fdm.services.raster_io import (
     RasterMetadata,
     raster_plane_to_qimage,
@@ -58,6 +59,20 @@ class ImageLoadRequest:
     generation: int = 0
     raster_plane: RasterPlane | None = None
     raster_metadata: RasterMetadata | None = None
+    raster_asset_receipt: RasterAssetReceipt | None = None
+
+    def asset_stamp_before_load(self) -> AssetFileStamp | None:
+        if getattr(self.document, "source_type", None) == "project_asset":
+            return AssetFileStamp.read(self.path)
+        return None
+
+    def remember_loaded_asset(self, stamp: AssetFileStamp | None) -> None:
+        self.raster_asset_receipt = None
+        if stamp is not None and self.raster_plane is not None:
+            self.raster_asset_receipt = RasterAssetReceipt.from_verified_file(
+                self.path, self.raster_plane, self.raster_metadata,
+                expected_stamp=stamp,
+            )
 
 
 def qimage_to_raster(image: QImage) -> RasterImage:
@@ -109,6 +124,7 @@ class ImageBatchLoaderWorker(QObject):
                 if self._cancellation.token.is_cancelled:
                     break
                 try:
+                    asset_stamp = request.asset_stamp_before_load()
                     loaded = read_raster_file(request.path)
                     if self._cancellation.token.is_cancelled:
                         break
@@ -157,6 +173,7 @@ class ImageBatchLoaderWorker(QObject):
                         break
                     request.raster_plane = loaded.plane
                     request.raster_metadata = loaded.metadata
+                    request.remember_loaded_asset(asset_stamp)
                     if self._cancellation.token.is_cancelled:
                         break
                     self.loaded.emit(request, image)

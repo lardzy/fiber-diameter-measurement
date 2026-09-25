@@ -173,6 +173,6 @@ if __name__ == "__main__":
     report = run(options.iterations)
     options.output.parent.mkdir(parents=True, exist_ok=True)
     options.output.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
     )
     print(f"{len(report['results'])} scenarios written to {options.output}")

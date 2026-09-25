@@ -271,6 +271,7 @@ from fdm.services.raster_export import (
     RasterExportError,
     RasterExportWriter,
 )
+from fdm.services.raster_asset_reuse import RasterAssetReceipt
 from fdm.services.raster_io import (
     RasterMetadata,
     qimage_to_raster_plane,
@@ -13257,6 +13258,12 @@ class MainWindow(QMainWindow):
                 raster_plane=result_raster,
                 raster_metadata=derived_metadata,
             )
+            self.project_session_controller.remember_raster_asset(
+                document.id,
+                RasterAssetReceipt.from_verified_file(
+                    session_path, result_raster, derived_metadata,
+                ),
+            )
         except Exception as exc:  # noqa: BLE001 - isolate one batch item
             self._session_processed_assets.pop(document.id, None)
             session_path.unlink(missing_ok=True)
@@ -19207,7 +19214,10 @@ class MainWindow(QMainWindow):
         )
         self._session_processed_assets[document.id] = result.session_path
         self._add_loaded_document(
-            ImageLoadRequest(path=str(result.session_path), document=document, raster_plane=result.plane), result.image,
+            ImageLoadRequest(
+                path=str(result.session_path), document=document, raster_plane=result.plane,
+                raster_asset_receipt=result.asset_receipt,
+            ), result.image,
         )
         return document.id
 
@@ -19539,6 +19549,7 @@ class MainWindow(QMainWindow):
         if is_digital_slide_path(request.path):
             self._load_digital_slide_request_sync(request, state)
             return
+        asset_stamp = request.asset_stamp_before_load()
         loaded = read_raster_file(request.path)
         if (
             not loaded.success
@@ -19601,6 +19612,7 @@ class MainWindow(QMainWindow):
             return
         request.raster_plane = loaded.plane
         request.raster_metadata = loaded.metadata
+        request.remember_loaded_asset(asset_stamp)
         self._add_loaded_document(request, image)
         state.completed_count += 1
         state.loaded_count += 1
@@ -20041,6 +20053,10 @@ class MainWindow(QMainWindow):
             raster_metadata=request.raster_metadata,
             restored_view_state=request.document is not None,
         )
+        if target_document.is_project_asset():
+            self.project_session_controller.remember_raster_asset(
+                target_document.id, request.raster_asset_receipt,
+            )
         self.project_session_controller.mark_document_resolved(target_document.id)
 
     def _attach_canvas_navigator(
