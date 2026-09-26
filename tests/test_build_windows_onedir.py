@@ -201,11 +201,40 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             from fdm.ui.watermark_self_check import run_watermark_self_check
 
             payload["functional_checks"]["watermark_renderer"] = run_watermark_self_check()
+            from fdm.ui.project_save_self_check import run_project_save_self_check
+            payload["functional_checks"]["project_save"] = run_project_save_self_check()
             completed = subprocess.CompletedProcess(
                 [], 0, stdout=json.dumps(payload), stderr=""
             )
             with patch("build_windows_onedir.subprocess.run", return_value=completed):
                 self.assertEqual(run_packaged_self_check(Path(tmpdir)), [])
+
+    def test_background_save_probe_is_required_and_checked_per_case(self) -> None:
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+        save = run_project_save_self_check()
+        self.assertTrue(save["ok"])
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": self._scale_report()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3,
+                                     "backend_version": "0.26.0", "compiled_extension": True},
+            "watermark_renderer": run_watermark_self_check(),
+        }}
+        invalid = [None, {"ok": True, "revision": 1, "cases": {}}, {**save, "revision": 0}]
+        for name in save["cases"]:
+            for value in (None, False):
+                cases = dict(save["cases"])
+                if value is None:
+                    cases.pop(name)
+                else:
+                    cases[name] = value
+                invalid.append({**save, "cases": cases})
+        with TemporaryDirectory() as tmpdir:
+            for invalid_save in invalid:
+                payload["functional_checks"]["project_save"] = invalid_save
+                completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+                with self.subTest(save=invalid_save), patch("build_windows_onedir.subprocess.run", return_value=completed):
+                    self.assertEqual(run_packaged_self_check(Path(tmpdir)), ["packaged self-check did not pass the background project save probe"])
 
     def test_failed_watermark_report_is_saved_and_names_failed_cases(self) -> None:
         # Shape of the reported Windows failure, including its generic error.

@@ -379,12 +379,14 @@ def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
     from build_windows_onedir import run_packaged_self_check
+    from fdm.ui.project_save_self_check import run_project_save_self_check
 
     from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
 
     watermark = run_watermark_self_check()
     assert watermark["ok"]
     payload = {"ok": True, "errors": [], "functional_checks": {
+        "project_save": run_project_save_self_check(),
         "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
         "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
         "watermark_renderer": watermark,

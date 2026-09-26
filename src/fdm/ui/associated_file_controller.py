@@ -121,7 +121,10 @@ class AssociatedFileOpenController(QObject):
             return
         self._open_digital_slides(list(request.paths))
 
-    def _open_digital_slides(self, paths: list[Path]) -> None:
+    def _open_digital_slides(self, paths: list[Path], chosen_disposition=None) -> None:
+        defer = getattr(self._host, "_defer_for_project_save", None)
+        if callable(defer) and defer(lambda: self._open_digital_slides(paths, chosen_disposition), "打开数字切片"):
+            return
         valid_paths: list[Path] = []
         failures: list[str] = []
         focus_document_id: str | None = None
@@ -152,7 +155,9 @@ class AssociatedFileOpenController(QObject):
             return
 
         disposition = AssociatedSlideDisposition.ADD_TO_CURRENT
-        if self._host._project_path is not None:
+        if chosen_disposition is not None:
+            disposition = chosen_disposition
+        elif self._host._project_path is not None:
             disposition = self._choose_slide_disposition(valid_paths)
         if disposition == AssociatedSlideDisposition.CANCEL:
             return
@@ -171,11 +176,14 @@ class AssociatedFileOpenController(QObject):
         if acquisition_disposition == AcquisitionDisposition.CANCEL:
             self._host._show_status_message("操作已取消。", 6000)
             return
-        if (
-            documents_to_close is not None
-            and not self._host._confirm_close_documents(documents_to_close)
-        ):
-            return
+        if documents_to_close is not None:
+            confirm = getattr(self._host, "_confirm_close_documents_for_transition", None)
+            confirmed = (
+                confirm(documents_to_close, lambda: self._open_digital_slides(paths, disposition))
+                if callable(confirm) else self._host._confirm_close_documents(documents_to_close)
+            )
+            if not confirmed:
+                return
 
         if acquisition_active:
             transition = self._host._prepare_transition(

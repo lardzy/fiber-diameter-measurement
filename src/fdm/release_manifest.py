@@ -617,6 +617,19 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
             errors.append(f"watermark renderer self-check failed: {exc}")
     else:
         functional_checks["watermark_renderer"] = "skipped_non_windows"
+    if execute_runtime_probe:
+        try:
+            from fdm.ui.project_save_self_check import run_project_save_self_check
+
+            save_probe = run_project_save_self_check()
+            functional_checks["project_save"] = save_probe
+            if save_probe.get("ok") is not True:
+                errors.append("background project save self-check returned a failure")
+        except Exception as exc:
+            functional_checks["project_save"] = {"ok": False}
+            errors.append(f"background project save self-check failed: {exc}")
+    else:
+        functional_checks["project_save"] = "skipped_non_windows"
     if "area-inference" in features and execute_runtime_probe and not errors:
         try:
             probe_result = _probe_area_worker(root)

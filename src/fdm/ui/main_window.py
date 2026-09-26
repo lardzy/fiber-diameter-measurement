@@ -484,6 +484,8 @@ from fdm.ui.raster_derivation_dialogs import (
     RasterCopyDialog,
     RasterCopyScope,
 )
+from fdm.ui.project_save_coordinator import ProjectSaveCoordinator
+from fdm.ui.project_save_indicator import ProjectSaveIndicator
 from fdm.ui.project_session_controller import (
     ProjectDirtySnapshot,
     ProjectAssetPersistResult,
@@ -2275,6 +2277,7 @@ class MainWindow(QMainWindow):
             parent=self,
         )
         self.project_session_controller = ProjectSessionController(self)
+        self.project_save_coordinator = ProjectSaveCoordinator(self, self)
         self.associated_file_open_controller = AssociatedFileOpenController(self, self)
         self.export_controller = ExportController(self)
         from fdm.ui.scale_overlay_editor import ScaleOverlayPreviewController
@@ -2615,7 +2618,7 @@ class MainWindow(QMainWindow):
         self.save_project_action = QAction("保存项目", self)
         self.save_project_action.setIcon(themed_icon("save_project", color="#D7E3FC"))
         self.save_project_action.setShortcut("Ctrl+S")
-        self.save_project_action.triggered.connect(lambda: self.save_project())
+        self.save_project_action.triggered.connect(lambda: self.request_save_project())
 
         self.export_current_image_action = QAction("导出当前图像…", self)
         self.export_current_image_action.setIcon(
@@ -3537,6 +3540,12 @@ class MainWindow(QMainWindow):
         open_button.setMenu(open_menu)
         file_toolbar.addWidget(open_button)
         file_toolbar.addAction(self.save_project_action)
+        self._save_status_indicator = ProjectSaveIndicator(file_toolbar)
+        self._save_status_indicator.retryRequested.connect(self.request_save_project)
+        self._save_status_indicator.detailsRequested.connect(self._show_save_failure_details)
+        self._save_status_indicator.cancelTransitionRequested.connect(self.project_save_coordinator.cancel_transition)
+        self.project_save_coordinator.statusChanged.connect(self._save_status_indicator.set_status)
+        file_toolbar.addWidget(self._save_status_indicator)
         file_toolbar.addWidget(action_button(self.export_template_action, self, text="导出模板"))
         file_toolbar.addWidget(action_button(self.export_overlay_action, self, text="叠加图"))
 
@@ -12758,6 +12767,10 @@ class MainWindow(QMainWindow):
             self._analysis_run_contexts.clear()
         return stopped
 
+    def _analysis_asset_paths_for_save(self) -> dict[str, Path]:
+        # Copy path references only. Validation/hashing belongs to the writer.
+        return dict(self._session_analysis_assets)
+
     def _analysis_asset_source_for_save(
         self,
         reference: AnalysisAssetReference,
@@ -13804,10 +13817,14 @@ class MainWindow(QMainWindow):
         """Keep every explicit command reachable without Qt's overflow menu."""
 
         if self._file_toolbar is not None:
+            self._save_status_indicator.set_compact(False)
             self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             self._file_toolbar.layout().invalidate()
             if self._file_toolbar.sizeHint().width() > int(width):
                 self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+                self._file_toolbar.layout().invalidate()
+            if self._file_toolbar.sizeHint().width() > int(width):
+                self._save_status_indicator.set_compact(True)
 
     def _schedule_main_command_bar_density_update(self) -> None:
         if getattr(self, "_file_toolbar", None) is None:
@@ -20656,7 +20673,35 @@ class MainWindow(QMainWindow):
             action.blockSignals(False)
 
     def save_project(self, path: str | None = None) -> ProjectSaveResult:
+        if self.project_save_coordinator.busy:
+            return ProjectSaveResult(False, message="后台保存正在进行，请使用 request_save_project 排队保存。")
         return self.project_session_controller.save_project(path)
+
+    def request_save_project(self, path: str | None = None) -> bool:
+        return self.project_save_coordinator.request_save(path)
+
+    def _refresh_project_save_state(self) -> None:
+        self._update_project_navigation_summary()
+
+    def _show_save_failure_details(self) -> None:
+        box = QMessageBox(QMessageBox.Icon.Warning, "保存失败", "", QMessageBox.StandardButton.Close, self)
+        box.setTextFormat(Qt.TextFormat.PlainText)
+        box.setText(self.project_save_coordinator.status.detail)
+        box.setWindowModality(Qt.WindowModality.NonModal)
+        box.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        box.show()
+
+    def _defer_for_project_save(self, callback, label: str) -> bool:
+        return self.project_save_coordinator.defer_transition(callback, label)
+
+    def _confirm_close_documents_for_transition(self, documents, callback) -> bool:
+        # Preserve the existing one-argument confirmation hook for integrations.
+        previous = getattr(self, "_save_transition_continuation", None)
+        self._save_transition_continuation = callback
+        try:
+            return self._confirm_close_documents(documents)
+        finally:
+            self._save_transition_continuation = previous
 
     def load_project(self) -> ProjectLoadResult:
         return self.project_session_controller.load_project()
@@ -23369,13 +23414,23 @@ class MainWindow(QMainWindow):
 
     def close_current_document(self) -> None:
         document = self.current_document()
+        if document is not None:
+            self._close_document_with_save(document.id)
+
+    def _close_document_with_save(self, document_id: str) -> None:
+        document = self.project.get_document(document_id)
         if document is None:
             return
-        if not self._confirm_close_documents([document]):
+        resume = lambda: self._close_document_with_save(document_id)
+        if self._defer_for_project_save(resume, "关闭图片"):
+            return
+        if not self._confirm_close_documents_for_transition([document], resume):
             return
         self._remove_document(document.id)
 
     def close_all_documents(self) -> None:
+        if self._defer_for_project_save(self.close_all_documents, "关闭全部图片"):
+            return
         if not self.project.documents and not self.project_session_controller.unresolved_documents():
             return
         intent = TransitionIntent.RESET_WORKSPACE
@@ -23383,7 +23438,7 @@ class MainWindow(QMainWindow):
         if disposition == AcquisitionDisposition.CANCEL:
             QMessageBox.information(self, "重置工作区", "操作已取消。")
             return
-        if not self._confirm_close_documents(self.project.documents):
+        if not self._confirm_close_documents_for_transition(self.project.documents, self.close_all_documents):
             return
         transition = self._prepare_transition(intent, disposition=disposition)
         if not transition.completed:
@@ -23697,6 +23752,7 @@ class MainWindow(QMainWindow):
         return False
 
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool:
+        on_saved = getattr(self, "_save_transition_continuation", None)
         for document in tuple(documents):
             self._flush_pending_measurements(document)
         dirty_documents = [document for document in documents if self._document_has_unsaved_project_changes(document)]
@@ -23723,10 +23779,20 @@ class MainWindow(QMainWindow):
         if clicked == cancel_button:
             return False
         if clicked == save_button:
-            return self.save_project()
+            if on_saved is not None:
+                if self.request_save_project():
+                    self._defer_for_project_save(on_saved, "继续关闭或切换")
+                return False
+            # Compatibility callers must explicitly retry after completion;
+            # never wait for the writer in a nested GUI event loop.
+            self.request_save_project()
+            return False
         return clicked == discard_button
 
     def _reset_workspace(self) -> None:
+        if self.project_save_coordinator.busy:
+            raise RuntimeError("项目正在后台保存，暂不能释放工作区资源。")
+        self.project_save_coordinator.reset()
         queue = getattr(self, "_measurement_commit_queue", None)
         if queue is not None:
             queue.cancel_all()
@@ -23814,6 +23880,8 @@ class MainWindow(QMainWindow):
         self._slide_stores.clear()
 
     def _remove_document(self, document_id: str) -> None:
+        if self._defer_for_project_save(lambda: self._close_document_with_save(document_id), "关闭图片"):
+            return
         if document_id not in self._document_order:
             return
         if self._display_adjustment_document_id == document_id:
@@ -24027,6 +24095,7 @@ class MainWindow(QMainWindow):
             return False
         self._close_image_batch_dialog(wait=True)
         self._close_analysis_batch_dialog(wait=True)
+        self.project_save_coordinator.reset()
         self.project = ProjectState.empty()
         self._construction_resolution_cache.clear()
         self._workspace_composite_undo.clear()
@@ -25659,6 +25728,7 @@ class MainWindow(QMainWindow):
             )
 
     def _update_project_navigation_summary(self) -> None:
+        self.project_save_coordinator.refresh_dirty()
         label = self._project_summary_label
         if label is None:
             return
@@ -28777,6 +28847,9 @@ class MainWindow(QMainWindow):
         return results
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self._defer_for_project_save(self.close, "关闭软件"):
+            event.ignore()
+            return
         if self._device_import_dialog is not None:
             self._device_import_dialog.reject()
             event.ignore()
@@ -28791,7 +28864,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("操作已取消。", 6000)
             event.ignore()
             return
-        if not self._confirm_close_documents(self.project.documents):
+        if not self._confirm_close_documents_for_transition(self.project.documents, self.close):
             event.ignore()
             return
         transition = self._prepare_transition(intent, disposition=disposition)

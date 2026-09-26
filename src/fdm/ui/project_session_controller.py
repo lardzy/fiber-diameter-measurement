@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 import copy
 import hashlib
 import math
 import re
+from time import perf_counter
+
+from PySide6.QtGui import QImage
 from typing import Any, Protocol
 
 from fdm import __version__
@@ -15,6 +18,8 @@ from fdm.models import (
     PROJECT_SCHEMA_VERSION,
     SUPPORTED_PROJECT_REQUIRED_FEATURES,
     ImageDocument,
+    DocumentStateStamp,
+    ProjectCompatibilityState,
     ProjectState,
     project_assets_root,
 )
@@ -235,6 +240,57 @@ class ProjectAssetStageResult:
 
     def __bool__(self) -> bool:
         return self.success
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentSavepoint:
+    identity: int
+    stamp: DocumentStateStamp
+    calibration_signature: tuple[object, ...]
+    previous_saved_stamp: DocumentStateStamp
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class PreparedProjectSave:
+    """Owned persistence data; no widgets, live models, or bound UI callbacks."""
+
+    target_path: Path
+    project_identity: int
+    plan: ProjectSavePlan
+    savepoints: dict[str, DocumentSavepoint]
+    clean_snapshot: ProjectDirtySnapshot | None
+    compatibility: ProjectCompatibilityState
+    old_project_path: Path | None
+    same_loaded_project: bool
+    rasters: dict[str, object]
+    images: dict[str, QImage]
+    analysis_paths: dict[str, Path]
+    receipts: dict[str, RasterAssetReceipt]
+    preparation_ms: float = 0.0
+
+    def equivalent(self, other: PreparedProjectSave) -> bool:
+        return (
+            self.project_identity == other.project_identity
+            and self.target_path == other.target_path
+            and self.savepoints == other.savepoints
+            and self.clean_snapshot == other.clean_snapshot
+            and self.plan.payload == other.plan.payload
+            and self.rasters.keys() == other.rasters.keys()
+            and all(self.rasters[key][0] is other.rasters[key][0]
+                    and self.rasters[key][1] == other.rasters[key][1]
+                    for key in self.rasters)
+            and self.images.keys() == other.images.keys()
+            and all(self.images[key].cacheKey() == other.images[key].cacheKey()
+                    for key in self.images)
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectWriteResult:
+    result: ProjectSaveResult
+    assets: ProjectAssetStageResult = field(default_factory=lambda: ProjectAssetStageResult(False))
+    payload: dict[str, Any] = field(default_factory=dict)
+    write_ms: float = 0.0
 
 
 class ProjectSessionHost(Protocol):
@@ -486,17 +542,9 @@ class ProjectSessionController:
         project.load_issues = copy.deepcopy(self._host.project.load_issues)
         return project
 
-    def save_project(self, path: str | None = None) -> ProjectSaveResult:
+    def prepare_save(self, path: str | None = None) -> PreparedProjectSave | ProjectSaveResult:
         host = self._host
-        try:
-            flush = getattr(host, "_flush_pending_measurements", None)
-            if flush is not None:
-                flush(for_snapshot=True)
-            save_plan = self._build_project_save_plan(version=__version__)
-        except Exception as exc:  # noqa: BLE001 - normalize snapshot failures for the UI
-            host._show_project_warning("保存项目", f"无法构造项目保存计划，当前项目未改变：\n{exc}")
-            return ProjectSaveResult(False, message=str(exc))
-        if not save_plan.documents:
+        if not self._ordered_persisted_document_sources():
             host._show_project_information("保存项目", "请先打开图片。")
             return ProjectSaveResult(False, message="当前项目没有文档。")
         target_path = Path(path) if path else host._project_path
@@ -565,118 +613,190 @@ class ProjectSessionController:
                     cancelled=True,
                     message="用户取消升级并覆盖旧项目。",
                 )
-        asset_result = self._stage_project_assets(target_path, save_plan)
-        if not asset_result:
-            return ProjectSaveResult(
-                False,
-                path=target_path,
-                message=asset_result.message or "项目资产写入失败。",
-            )
-        committed_payload = save_plan.payload_with_overrides(
-            asset_result.overrides,
-            asset_result.analysis_asset_overrides,
-        )
+        started = perf_counter()
         try:
-            if target_path.exists() and same_loaded_project:
-                ProjectIO.create_pre_upgrade_backup(
-                    target_path,
-                    project=host.project,
+            flush = getattr(host, "_flush_pending_measurements", None)
+            if flush is not None:
+                flush(for_snapshot=True)
+            plan = self._build_project_save_plan(version=__version__)
+            savepoints = {}
+            documents = []
+            images = {}
+            rasters = {}
+            for item in plan.documents:
+                source = item.source_document
+                savepoints[source.id] = DocumentSavepoint(
+                    id(source), source.state_stamp, source.calibration_signature(),
+                    source.saved_state_stamp,
                 )
-            # The project JSON is the commit point and is always published last.
-            ProjectIO.save_payload(
-                committed_payload,
-                target_path,
-                document_sources=tuple(item.source_document for item in save_plan.documents),
-                preserve_path_document_ids=set(save_plan.preserve_path_document_ids),
+                # Only source fields needed by path normalization/resource I/O.
+                # Geometry is already detached in plan.payload. Runtime history
+                # and canvases must never cross this boundary.
+                detached = ImageDocument(
+                    id=source.id, path=source.path, image_size=source.image_size,
+                    source_type=source.source_type, document_kind=source.document_kind,
+                    absolute_path=source.absolute_path, metadata=item.payload["metadata"],
+                    raster_pixel_type=source.raster_pixel_type,
+                    watermark_assets=dict(source.watermark_assets),
+                )
+                documents.append(replace(item, source_document=detached))
+                if source.is_project_asset() and not source.is_digital_slide() and not item.unresolved:
+                    provider = getattr(host, "_project_asset_raster_for_save", None)
+                    raster = provider(source) if callable(provider) else None
+                    if raster is not None:
+                        rasters[source.id] = raster
+                    else:
+                        image = host._project_asset_image_for_save(source)
+                        if image is not None:
+                            images[source.id] = QImage(image)  # implicit sharing, no pixel copy
+            paths_provider = getattr(host, "_analysis_asset_paths_for_save", None)
+            if callable(paths_provider):
+                analysis_paths = dict(paths_provider())
+            else:
+                # Legacy non-UI hosts; the application supplies a path-only map.
+                analysis_paths = {}
+                provider = getattr(host, "_analysis_asset_source_for_save", None)
+                if callable(provider):
+                    for artifact in host.project.analysis_artifacts:
+                        for reference in artifact.assets:
+                            source = provider(reference)
+                            if source is not None:
+                                analysis_paths[reference.path] = Path(source)
+            snapshotter = getattr(host, "_project_snapshot", None)
+            clean_snapshot = snapshotter() if callable(snapshotter) else None
+            if clean_snapshot is not None:
+                clean_snapshot = replace(clean_snapshot, document_persistence=self.persistence_snapshot())
+            return PreparedProjectSave(
+                target_path=target_path, project_identity=id(host.project),
+                plan=replace(plan, documents=tuple(documents)), savepoints=savepoints,
+                clean_snapshot=clean_snapshot, compatibility=host.project.compatibility,
+                old_project_path=host._project_path, same_loaded_project=same_loaded_project,
+                rasters=rasters, images=images, analysis_paths=analysis_paths,
+                receipts=dict(self._raster_asset_receipts),
+                preparation_ms=(perf_counter() - started) * 1000,
             )
-        except Exception as exc:  # noqa: BLE001 - preserve the previous project on any storage failure
-            for created_path in asset_result.created_paths:
-                try:
-                    created_path.unlink(missing_ok=True)
-                except OSError:
-                    pass
-            host._show_project_warning("保存项目", f"项目文件写入失败，旧项目保持不变：\n{exc}")
-            return ProjectSaveResult(False, path=target_path, message=str(exc))
+        except Exception as exc:  # noqa: BLE001 - snapshot failures leave live state intact
+            return ProjectSaveResult(False, path=target_path, message=f"无法构造项目保存计划：{exc}")
 
-        # Publish save-only overrides to live state strictly after the project
-        # JSON commit.  Any asset or JSON failure above leaves live paths,
-        # metadata, version and dirty savepoints untouched.
-        self._raster_asset_receipts.update(asset_result.raster_receipts)
-        override_by_id = {item.document_id: item for item in asset_result.overrides}
+    def save_project(self, path: str | None = None) -> ProjectSaveResult:
+        """Synchronous compatibility entry; UI commands use the coordinator."""
+        prepared = self.prepare_save(path)
+        if isinstance(prepared, ProjectSaveResult):
+            return prepared
+        written = write_project_save(prepared)
+        if not written.result:
+            self._host._show_project_warning("保存项目", written.result.message)
+            return written.result
+        result = self.apply_save(prepared, written)
+        try:
+            self._cleanup_unreferenced_revision_assets_payload(prepared.target_path, written.payload)
+        except Exception:  # cleanup cannot turn a committed save into failure
+            pass
+        return result
+
+    def apply_save(self, prepared: PreparedProjectSave, written: ProjectWriteResult) -> ProjectSaveResult:
+        """Main-thread publication, merging only persistence-owned fields."""
+        host = self._host
+        if id(host.project) != prepared.project_identity:
+            return ProjectSaveResult(False, path=prepared.target_path, cancelled=True, message="项目会话已改变。")
+        if not written.result:
+            return written.result
+        target_path = prepared.target_path
+        asset_result = written.assets
+        committed_payload = written.payload
+        snapshots = {item.document_id: item for item in prepared.plan.documents}
+        overrides = {item.document_id: item for item in asset_result.overrides}
+        receipts = dict(asset_result.raster_receipts)
         for document in host.project.documents:
-            override = override_by_id.get(document.id)
-            if override is None:
+            point = prepared.savepoints.get(document.id)
+            if point is None or point.identity != id(document):
                 continue
-            document.path = override.path
-            document.metadata = copy.deepcopy(override.metadata)
-        committed_artifacts = committed_payload.get("analysis_artifacts", [])
-        if isinstance(committed_artifacts, list):
-            host.project.analysis_artifacts = [
-                AnalysisArtifact.from_dict(item)
-                for item in committed_artifacts
-                if isinstance(item, dict)
-            ]
+            source = snapshots[document.id].source_document
+            override = overrides.get(document.id)
+            source_unchanged = document.source_type == source.source_type
+            if document.id in prepared.rasters:
+                provider = getattr(host, "_project_asset_raster_for_save", None)
+                current = provider(document) if callable(provider) else None
+                captured = prepared.rasters[document.id]
+                source_unchanged = source_unchanged and current is not None and current[0] is captured[0] and current[1] == captured[1]
+            elif document.id in prepared.images:
+                current = host._project_asset_image_for_save(document)
+                source_unchanged = source_unchanged and current is not None and current.cacheKey() == prepared.images[document.id].cacheKey()
+            if override is not None and source_unchanged:
+                document.path = override.path
+                # Never restore the full metadata dictionary from an old save.
+                if document.is_digital_slide():
+                    previous = source.metadata.get("digital_slide", {}).get("working_path")
+                    current = document.metadata.get("digital_slide", {})
+                    if isinstance(current, dict) and current.get("working_path") == previous:
+                        document.metadata = {**document.metadata, "digital_slide": {
+                            **current, "working_path": override.metadata["digital_slide"]["working_path"],
+                        }}
+                receipt = receipts.get(document.id)
+                if receipt is not None:
+                    self._raster_asset_receipts[document.id] = receipt
+            if not source_unchanged and document.state_stamp == point.stamp:
+                document.mark_session_dirty()
+            document.mark_snapshot_saved(
+                point.stamp, point.calibration_signature,
+                previous_saved_stamp=point.previous_saved_stamp,
+            )
+        # Asset references can be rebased without reverting a newer analysis,
+        # stale status, new result, or deleted result with the same identifier.
+        asset_overrides = {(item.artifact_id, item.asset_index): item.reference for item in asset_result.analysis_asset_overrides}
+        original_artifacts = {item["id"]: item for item in prepared.plan.payload.get("analysis_artifacts", [])}
+        for index, artifact in enumerate(host.project.analysis_artifacts):
+            original = original_artifacts.get(artifact.id)
+            if original is None:
+                continue
+            payload = artifact.to_dict()
+            changed = False
+            for asset_index, current in enumerate(payload.get("assets", [])):
+                reference = asset_overrides.get((artifact.id, asset_index))
+                originals = original.get("assets", [])
+                if reference is not None and asset_index < len(originals) and current == originals[asset_index]:
+                    payload["assets"][asset_index] = reference.to_dict()
+                    changed = True
+            if changed:
+                host.project.analysis_artifacts[index] = AnalysisArtifact.from_dict(payload)
         host.project.version = __version__
-        host.project.project_schema_version = int(
-            committed_payload.get(
-                "project_schema_version",
-                host.project.project_schema_version,
-            )
-        )
-        host.project.min_reader_version = int(
-            committed_payload.get(
-                "min_reader_version",
-                host.project.min_reader_version,
-            )
-        )
-        committed_required_features = committed_payload.get(
-            "required_features",
-            host.project.required_features,
-        )
-        if isinstance(committed_required_features, list) and all(
-            isinstance(item, str) for item in committed_required_features
-        ):
-            host.project.required_features = tuple(
-                dict.fromkeys(committed_required_features)
-            )
+        host.project.project_schema_version = int(committed_payload["project_schema_version"])
+        host.project.min_reader_version = max(host.project.min_reader_version, int(committed_payload["min_reader_version"]))
+        features = tuple(dict.fromkeys((*host.project.required_features, *committed_payload.get("required_features", []))))
+        host.project.required_features = features
         host.project.compatibility = replace(
             host.project.compatibility,
             source_schema_version=host.project.project_schema_version,
             min_reader_version=host.project.min_reader_version,
-            required_features=host.project.required_features,
-            unknown_required_features=tuple(
-                feature
-                for feature in host.project.required_features
-                if feature not in SUPPORTED_PROJECT_REQUIRED_FEATURES
-            ),
-            source_path=str(target_path.expanduser().resolve()),
+            required_features=features,
+            unknown_required_features=tuple(feature for feature in features if feature not in SUPPORTED_PROJECT_REQUIRED_FEATURES),
+            source_path=str(target_path.absolute()),
         )
-        # The JSON replacement above is the save commit point.  Removing old
-        # revision assets is deliberately post-commit housekeeping: a denied
-        # directory traversal, disappearing mount, or antivirus race must not
-        # turn an already committed project into a reported/dirty half-save.
-        try:
-            self._cleanup_unreferenced_revision_assets_payload(target_path, committed_payload)
-        except Exception:  # noqa: BLE001 - post-commit cleanup is strictly best-effort
-            pass
         host._project_path = target_path
-        host._remember_recent_directory(
-            setting_name="recent_project_dir",
-            directory=target_path.parent,
-            context="保存项目",
-        )
-        for document in host.project.documents:
-            document.mark_session_saved()
-            document.mark_calibration_saved()
-        host._mark_project_saved()
-        host._update_ui_for_current_document()
+        host._remember_recent_directory(setting_name="recent_project_dir", directory=target_path.parent, context="保存项目")
+        if prepared.clean_snapshot is not None:
+            saved = prepared.clean_snapshot
+            persistence = replace(saved.document_persistence, documents=tuple(
+                replace(item, path=overrides[item.document_id].path)
+                if item.document_id in overrides else item
+                for item in saved.document_persistence.documents
+            ))
+            host._project_clean_snapshot = replace(
+                saved, document_persistence=persistence,
+                project_asset_documents=tuple((key, overrides[key].path if key in overrides else path)
+                                              for key, path in saved.project_asset_documents),
+            )
+        else:
+            host._mark_project_saved()
+        # Async UI uses a targeted refresh; do not reset the current canvas tool
+        # or selection while the user is in the middle of drawing.
+        refresh = getattr(host, "_refresh_project_save_state", None)
+        if callable(refresh):
+            refresh()
+        else:
+            host._update_ui_for_current_document()
         host._show_status_message(f"项目已保存: {target_path}", 5000)
-        return ProjectSaveResult(
-            True,
-            path=target_path,
-            message="项目已保存。",
-            unresolved_count=len(self._unresolved_documents),
-        )
+        return written.result
 
     def load_project(self) -> ProjectLoadResult:
         selected_path = self._host._select_project_open_path()
@@ -686,6 +806,9 @@ class ProjectSessionController:
 
     def load_project_from_path(self, path: str | Path) -> ProjectLoadResult:
         host = self._host
+        defer = getattr(host, "_defer_for_project_save", None)
+        if callable(defer) and defer(lambda: self.load_project_from_path(path), "切换项目"):
+            return ProjectLoadResult(False, path=Path(path), cancelled=True, message="等待后台保存完成后切换项目。")
         project_path = Path(path).expanduser().resolve(strict=False)
         if project_path.suffix.lower() != ".fdmproj":
             message = f"所选文件不是 .fdmproj 项目文件：\n{project_path}"
@@ -729,7 +852,12 @@ class ProjectSessionController:
                 cancelled=True,
                 message=reason,
             )
-        if not host._confirm_close_documents(host.project.documents):
+        confirm_transition = getattr(host, "_confirm_close_documents_for_transition", None)
+        confirmed = (
+            confirm_transition(host.project.documents, lambda: self.load_project_from_path(path))
+            if callable(confirm_transition) else host._confirm_close_documents(host.project.documents)
+        )
+        if not confirmed:
             return ProjectLoadResult(
                 False,
                 path=project_path,
@@ -881,6 +1009,20 @@ class ProjectSessionController:
         target_path: Path,
         plan: ProjectSavePlan,
     ) -> ProjectAssetStageResult:
+        created_paths: list[Path] = []
+        try:
+            return self._stage_owned_project_assets(target_path, plan, created_paths)
+        except Exception as exc:
+            # Conversion/provider failures outside an individual encoder must
+            # also roll back resources already staged for earlier documents.
+            return _failed_asset_stage_result(created_paths, str(exc))
+
+    def _stage_owned_project_assets(
+        self,
+        target_path: Path,
+        plan: ProjectSavePlan,
+        created_paths: list[Path],
+    ) -> ProjectAssetStageResult:
         host = self._host
         live_by_id = {document.id: document for document in host.project.documents}
         operations = tuple(
@@ -891,7 +1033,6 @@ class ProjectSessionController:
             for snapshot in plan.documents
             if snapshot.payload.get("source_type") == "project_asset" and not snapshot.unresolved
         )
-        created_paths: list[Path] = []
         overrides: list[DocumentSaveOverride] = []
         raster_receipts: list[tuple[str, RasterAssetReceipt]] = []
         for operation in operations:
@@ -1043,8 +1184,8 @@ class ProjectSessionController:
                 ).replace("\\", "/")
             original_target = project_assets_root(target_path) / document_path
             output_path = original_target
-            original_target.parent.mkdir(parents=True, exist_ok=True)
             try:
+                original_target.parent.mkdir(parents=True, exist_ok=True)
                 reusable = self._raster_asset_receipts.get(snapshot.document_id)
                 if (
                     reusable is not None
@@ -1286,6 +1427,84 @@ class ProjectSessionController:
                 candidate.unlink()
             except OSError:
                 continue
+
+class _SaveStorageHost:
+    """Worker-owned resource adapter. It never forwards calls to the window."""
+
+    def __init__(self, prepared: PreparedProjectSave) -> None:
+        self.prepared = prepared
+        self.project = ProjectState(
+            version=__version__,
+            documents=[item.source_document for item in prepared.plan.documents],
+            compatibility=prepared.compatibility,
+        )
+        self._project_path = prepared.old_project_path
+        self.warnings: list[str] = []
+
+    def _show_project_warning(self, title: str, message: str) -> None:
+        self.warnings.append(message)
+
+    def _document_display_name(self, document: ImageDocument) -> str:
+        return Path(document.path).name
+
+    def _project_asset_image_for_save(self, document: ImageDocument):
+        return self.prepared.images.get(document.id)
+
+    def _project_asset_raster_for_save(self, document: ImageDocument):
+        return self.prepared.rasters.get(document.id)
+
+    def _analysis_asset_source_for_save(self, reference: AnalysisAssetReference) -> Path | None:
+        direct = self.prepared.analysis_paths.get(reference.path)
+        if direct is not None and direct.is_file():
+            return direct
+        # Legacy imported resources may be registered under their session name.
+        for candidate in self.prepared.analysis_paths.values():
+            if candidate.is_file() and _file_sha256(candidate) == reference.sha256:
+                return candidate
+        return None
+
+
+def write_project_save(prepared: PreparedProjectSave) -> ProjectWriteResult:
+    """Storage transaction shared by synchronous callers and the Qt worker.
+
+    Inputs are owned by this request. Only immutable pixels/encoded Logo bytes
+    are shared. In particular there is no main-window reference in the worker.
+    Old revision cleanup is deferred during interactive saving: queued saves,
+    newer live analyses and undo may still own those files.
+    """
+    started = perf_counter()
+    host = _SaveStorageHost(prepared)
+    controller = ProjectSessionController(host)
+    controller._raster_asset_receipts = dict(prepared.receipts)
+    assets = ProjectAssetStageResult(False)
+    try:
+        assets = controller._stage_project_assets(prepared.target_path, prepared.plan)
+        if not assets:
+            raise OSError("\n".join(host.warnings) or assets.message)
+        payload = prepared.plan.payload_with_overrides(assets.overrides, assets.analysis_asset_overrides)
+        if prepared.same_loaded_project and prepared.target_path.exists():
+            ProjectIO.create_pre_upgrade_backup(prepared.target_path, project=host.project)
+        ProjectIO.save_payload(
+            payload, prepared.target_path,
+            document_sources=tuple(item.source_document for item in prepared.plan.documents),
+            preserve_path_document_ids=set(prepared.plan.preserve_path_document_ids),
+        )
+    except Exception as exc:  # normalize failures, preserving the preceding committed project
+        for path in assets.created_paths:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+        return ProjectWriteResult(
+            ProjectSaveResult(False, path=prepared.target_path, message=f"保存失败，旧项目保持不变：\n{exc}"),
+            write_ms=(perf_counter() - started) * 1000,
+        )
+    return ProjectWriteResult(
+        ProjectSaveResult(True, path=prepared.target_path, message="项目已保存。",
+                          unresolved_count=sum(item.unresolved for item in prepared.plan.documents)),
+        assets, payload, (perf_counter() - started) * 1000,
+    )
+
 
 def _file_sha256(path: Path) -> str:
     digest = hashlib.sha256()

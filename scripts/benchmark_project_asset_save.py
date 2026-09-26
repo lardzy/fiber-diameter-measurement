@@ -26,6 +26,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class Timings:
     active = None
+    background = False
+    app = None
 
     def instrument(self, owner, name, label, stack):
         original = getattr(owner, name)
@@ -47,9 +49,29 @@ class Timings:
         self.active = defaultdict(float)
         start = time.perf_counter()
         try:
-            result = window.save_project(str(path))
+            if self.background:
+                from PySide6.QtCore import QTimer
+                pulses = [time.perf_counter()]
+                timer = QTimer()
+                timer.setInterval(5)
+                timer.timeout.connect(lambda: pulses.append(time.perf_counter()))
+                timer.start()
+                assert window.request_save_project(str(path))
+                while window.project_save_coordinator.busy:
+                    self.app.processEvents()
+                    if time.perf_counter() - start > 60:
+                        raise TimeoutError("background save")
+                    time.sleep(0.0005)
+                timer.stop()
+                pulses.append(time.perf_counter())
+                assert window.project_save_coordinator.status.phase in {"saved", "saved_newer"}, window.project_save_coordinator.status
+                self.active.update(window.project_save_coordinator.last_metrics)
+                gaps = [(b-a)*1000 for a, b in zip(pulses, pulses[1:])]
+                self.active["max_event_gap_ms"] = max(gaps)
+            else:
+                result = window.save_project(str(path))
+                assert result.success, result
             elapsed = (time.perf_counter() - start) * 1000
-            assert result.success, result
             return dict(self.active, save_total_ms=elapsed)
         finally:
             self.active = None
@@ -78,10 +100,11 @@ def run(args):
 
     app = QApplication.instance() or QApplication([])
     timings = Timings()
+    timings.background, timings.app = args.background, app
     report = {
         "platform": platform.platform(), "python": platform.python_version(),
         "pyside6": qt_version, "label": args.label, "iterations": args.iterations,
-        "scope": "Actual MainWindow synchronous save, local disposable projects, no on-screen repaint timing",
+        "scope": "Actual MainWindow background save including Qt dispatch" if args.background else "Actual MainWindow synchronous save, no on-screen repaint timing",
         "stage_times_are_nested": True, "cases": [],
     }
     with TemporaryDirectory(prefix="fdm-asset-save-bench-") as temporary, ExitStack() as stack:
@@ -90,7 +113,7 @@ def run(args):
         stack.enter_context(patch.object(screenshot_settings, "screenshot_settings_file_path", lambda: temporary / "screenshot.json"))
         stack.enter_context(patch.object(runtime_logging, "runtime_log_path", lambda: temporary / "startup.log"))
         window = MainWindow()
-        window._confirm_close_documents = lambda _: True
+        window._confirm_close_documents = lambda _, **kwargs: True
 
         def warning(title, message):
             raise RuntimeError(f"{title}: {message}")
@@ -99,7 +122,7 @@ def run(args):
         controller = window.project_session_controller
         for owner, name, label in (
             (controller, "_build_project_save_plan", "save_plan"),
-            (controller, "_stage_project_assets", "asset_stage"),
+            (persistence.ProjectSessionController, "_stage_project_assets", "asset_stage"),
             (controller, "_cleanup_unreferenced_revision_assets_payload", "asset_cleanup"),
             (persistence, "write_native_raster_asset", "write_verified_asset"),
             (raster_io, "_write_png", "png_encode"),
@@ -200,6 +223,7 @@ if __name__ == "__main__":
     parser.add_argument("--samples-dir", type=Path, default=ROOT / ".tmp/DSX1000、OLS5000样张")
     parser.add_argument("--iterations", type=int, default=30)
     parser.add_argument("--label", default="working-tree")
+    parser.add_argument("--background", action="store_true", help="Measure the asynchronous UI save command and event gaps")
     arguments = parser.parse_args()
     if arguments.iterations < 1:
         parser.error("--iterations must be positive")

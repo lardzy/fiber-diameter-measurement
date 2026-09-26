@@ -2089,6 +2089,27 @@ class ImageDocument:
         )
         self.refresh_dirty_flags()
 
+    def mark_snapshot_saved(
+        self,
+        stamp: DocumentStateStamp,
+        calibration_signature: tuple[object, ...],
+        *,
+        previous_saved_stamp: DocumentStateStamp | None = None,
+    ) -> None:
+        """Acknowledge the bytes saved, even if editing has since advanced."""
+        saved = self.saved_state_stamp
+        newer_sidecar = (
+            previous_saved_stamp is not None
+            and saved.calibration_state_id != previous_saved_stamp.calibration_state_id
+        )
+        self._saved_state_stamp = DocumentStateStamp(
+            stamp.session_state_id,
+            saved.calibration_state_id if newer_sidecar else stamp.calibration_state_id,
+        )
+        if not newer_sidecar:
+            self._saved_calibration_signature = calibration_signature
+        self.refresh_dirty_flags()
+
     def mark_calibration_saved(self) -> None:
         saved = self._saved_state_stamp or self._current_state_stamp
         self._saved_state_stamp = DocumentStateStamp(

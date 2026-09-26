@@ -213,6 +213,20 @@ class ReleaseSelfCheckTests(unittest.TestCase):
         self.assertIn("watermark renderer self-check returned a failure: text@1, datetime_logo@2", report["errors"])
         self.assertEqual(report["functional_checks"]["watermark_renderer"], watermark)
 
+    def test_background_save_failure_blocks_release_self_check(self) -> None:
+        manifest = {"ok": True, "errors": [], "warnings": [], "profile": "core", "features": ["measurement"]}
+        with (
+            patch("fdm.release_manifest.verify_release_manifest", return_value=manifest),
+            patch("fdm.release_manifest._validate_pe_executable", return_value=(True, "")),
+            patch("fdm.release_manifest._probe_overlay_renderer", return_value={"ok": True}),
+            patch("fdm.ui.project_save_self_check.run_project_save_self_check", return_value={"ok": False}),
+            patch.dict(os.environ, {"FDM_SELF_CHECK_EXECUTE": "1"}),
+        ):
+            report = run_release_self_check(PROJECT_ROOT)
+        self.assertFalse(report["ok"])
+        self.assertIn("background project save self-check returned a failure", report["errors"])
+        self.assertFalse(report["functional_checks"]["project_save"]["ok"])
+
     def test_pillow_raster_encoder_probe_exercises_all_export_formats(self) -> None:
         report = _probe_pillow_raster_encoders()
 
@@ -665,6 +679,7 @@ class ReleaseSelfCheckTests(unittest.TestCase):
         self.assertTrue(watermark["cases"]["digital_slide_excluded"])
         self.assertTrue(watermark["cases"]["logo_alpha@2"])
         self.assertTrue(watermark["cases"]["tile@1.5"])
+        self.assertTrue(payload["functional_checks"]["project_save"]["ok"])
 
 
 if __name__ == "__main__":

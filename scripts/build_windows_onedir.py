@@ -222,6 +222,13 @@ def run_packaged_self_check(app_dir: Path, *, report_path: Path | None = None) -
         missing = sorted(required_watermark_cases - watermark_cases.keys()) if isinstance(watermark_cases, dict) else []
         detail = "; missing cases: " + ", ".join(missing) if missing else ""
         return ["packaged self-check did not pass the watermark renderer probe" + detail]
+    save = checks.get("project_save")
+    required_save_cases = {"background_completion", "event_dispatch", "snapshot_isolation",
+                           "preserves_newer_edits", "repeat_save", "failure_rollback", "thread_idle"}
+    if (not isinstance(save, dict) or save.get("ok") is not True or save.get("revision") != 1
+            or not isinstance(save.get("cases"), dict)
+            or any(save["cases"].get(name) is not True for name in required_save_cases)):
+        return ["packaged self-check did not pass the background project save probe"]
     return []
 
 

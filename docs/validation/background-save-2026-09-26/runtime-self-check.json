@@ -1,0 +1,342 @@
+{
+  "environment": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "scope": "macOS source-runtime probes; not a Windows frozen executable or installed build",
+  "functional_checks": {
+    "project_save": {
+      "ok": true,
+      "revision": 1,
+      "cases": {
+        "background_completion": true,
+        "event_dispatch": true,
+        "snapshot_isolation": true,
+        "preserves_newer_edits": true,
+        "repeat_save": true,
+        "failure_rollback": true,
+        "thread_idle": true
+      }
+    },
+    "watermark_renderer": {
+      "ok": true,
+      "cases": {
+        "font_database": true,
+        "codec_png": true,
+        "codec_jpg": true,
+        "codec_webp": true,
+        "logo_alpha@1": true,
+        "text@1": true,
+        "tile@1": true,
+        "cache@1": true,
+        "datetime_text@1": true,
+        "datetime_logo@1": true,
+        "logo_alpha@1.5": true,
+        "text@1.5": true,
+        "tile@1.5": true,
+        "cache@1.5": true,
+        "datetime_text@1.5": true,
+        "datetime_logo@1.5": true,
+        "logo_alpha@2": true,
+        "text@2": true,
+        "tile@2": true,
+        "cache@2": true,
+        "datetime_text@2": true,
+        "datetime_logo@2": true,
+        "preferences_roundtrip": true,
+        "digital_slide_excluded": true
+      },
+      "failed_cases": [],
+      "runtime": {
+        "qt_platform": "offscreen",
+        "qt_version": "6.10.2",
+        "font_family_count": 248,
+        "default_font_family": ".AppleSystemUIFont"
+      },
+      "details": {
+        "logo_alpha@1": {
+          "rgba": [
+            255,
+            224,
+            224,
+            255
+          ]
+        },
+        "text@1": {
+          "visible": true
+        },
+        "datetime_text@1": {
+          "visible": true,
+          "repeat_equal": true,
+          "caption_box": [
+            0,
+            99,
+            180,
+            25
+          ]
+        },
+        "datetime_logo@1": {
+          "visible": true,
+          "repeat_equal": true,
+          "caption_box": [
+            0,
+            95,
+            180,
+            25
+          ]
+        },
+        "logo_alpha@1.5": {
+          "rgba": [
+            255,
+            224,
+            224,
+            255
+          ]
+        },
+        "text@1.5": {
+          "visible": true
+        },
+        "datetime_text@1.5": {
+          "visible": true,
+          "repeat_equal": true,
+          "caption_box": [
+            0,
+            148,
+            270,
+            37
+          ]
+        },
+        "datetime_logo@1.5": {
+          "visible": true,
+          "repeat_equal": true,
+          "caption_box": [
+            0,
+            143,
+            270,
+            37
+          ]
+        },
+        "logo_alpha@2": {
+          "rgba": [
+            255,
+            224,
+            224,
+            255
+          ]
+        },
+        "text@2": {
+          "visible": true
+        },
+        "datetime_text@2": {
+          "visible": true,
+          "repeat_equal": true,
+          "caption_box": [
+            0,
+            198,
+            360,
+            49
+          ]
+        },
+        "datetime_logo@2": {
+          "visible": true,
+          "repeat_equal": true,
+          "caption_box": [
+            0,
+            190,
+            360,
+            49
+          ]
+        }
+      },
+      "cache_bytes": 1706312,
+      "cache_budget": 33554432
+    },
+    "overlay_renderer": {
+      "ok": true,
+      "worker_stdio_none": true,
+      "worker_platform": "offscreen",
+      "worker_font_family_count": 268,
+      "worker_text_visible": true,
+      "worker_pid": 45578,
+      "start_method": "spawn",
+      "cases": {
+        "magic_primary@1": {
+          "ok": true,
+          "width": 128,
+          "height": 128,
+          "dpr": 1.0,
+          "sha256": "e67eb4eeaf2348536b78f7eb959adccc64d7823713c4e1205a2c535e60583085",
+          "exact_picture": false
+        },
+        "magic_subtract@1": {
+          "ok": true,
+          "width": 128,
+          "height": 128,
+          "dpr": 1.0,
+          "sha256": "c96f7a32d4a0b49a5a7fcf3406228115e3723de375e2fa9f141e59345e326627",
+          "exact_picture": false
+        },
+        "scene_overview@1": {
+          "ok": true,
+          "width": 128,
+          "height": 128,
+          "dpr": 1.0,
+          "sha256": "e6dcdd5aacff2e40e206e7039ddd1e457c3e428f61358582ddb62299b9529ada",
+          "exact_picture": false
+        },
+        "mixed_exact@1": {
+          "ok": true,
+          "width": 128,
+          "height": 128,
+          "dpr": 1.0,
+          "sha256": "e6dcdd5aacff2e40e206e7039ddd1e457c3e428f61358582ddb62299b9529ada",
+          "exact_picture": true
+        },
+        "text_image_pixels@1": {
+          "ok": true,
+          "width": 128,
+          "height": 128,
+          "dpr": 1.0,
+          "sha256": "cfb47f6dd625c5df8f04c72d6176f21b2efc21674c9ec82e76f8394d24d66d8e",
+          "exact_picture": false
+        },
+        "text_screen_adaptive@1": {
+          "ok": true,
+          "width": 128,
+          "height": 128,
+          "dpr": 1.0,
+          "sha256": "68f244e31d63ab6ca7480ee2e6ec021a6b394902e7696be1d18060873d4fc199",
+          "exact_picture": false
+        },
+        "empty@1": {
+          "ok": true,
+          "empty": true
+        },
+        "magic_primary@1.5": {
+          "ok": true,
+          "width": 192,
+          "height": 192,
+          "dpr": 1.5,
+          "sha256": "8e243ccd3b7ea7bf511a558cac7b2caa873c772e4cf27fe44c2d29169a8fad90",
+          "exact_picture": false
+        },
+        "magic_subtract@1.5": {
+          "ok": true,
+          "width": 192,
+          "height": 192,
+          "dpr": 1.5,
+          "sha256": "4cb58aa661f8dde152b57060513a2dbe08b5306c1a1e148d46f883017eedf49e",
+          "exact_picture": false
+        },
+        "scene_overview@1.5": {
+          "ok": true,
+          "width": 192,
+          "height": 192,
+          "dpr": 1.5,
+          "sha256": "126c1bc7e33776b6a624a6e983280a35097c9f5262a9197d98378f8482509ad8",
+          "exact_picture": false
+        },
+        "mixed_exact@1.5": {
+          "ok": true,
+          "width": 192,
+          "height": 192,
+          "dpr": 1.5,
+          "sha256": "126c1bc7e33776b6a624a6e983280a35097c9f5262a9197d98378f8482509ad8",
+          "exact_picture": true
+        },
+        "text_image_pixels@1.5": {
+          "ok": true,
+          "width": 192,
+          "height": 192,
+          "dpr": 1.5,
+          "sha256": "3ceee37178b48fe5b2a40cf1ac083f2d6035297c85034320522495682fd96948",
+          "exact_picture": false
+        },
+        "text_screen_adaptive@1.5": {
+          "ok": true,
+          "width": 192,
+          "height": 192,
+          "dpr": 1.5,
+          "sha256": "4016734f9da356854a452696a7f35faea4438d1ed22f2c55e6e44416f611bcc9",
+          "exact_picture": false
+        },
+        "empty@1.5": {
+          "ok": true,
+          "empty": true
+        },
+        "magic_primary@2": {
+          "ok": true,
+          "width": 256,
+          "height": 256,
+          "dpr": 2.0,
+          "sha256": "d68dbc096e2742725eb78b0fccceb6244a1253099fbbbbd1fb3d7017ec27b788",
+          "exact_picture": false
+        },
+        "magic_subtract@2": {
+          "ok": true,
+          "width": 256,
+          "height": 256,
+          "dpr": 2.0,
+          "sha256": "edf87795fc6ed69a769b6786baf8046de545e3a89dd97bd6ebd08d397367fa36",
+          "exact_picture": false
+        },
+        "scene_overview@2": {
+          "ok": true,
+          "width": 256,
+          "height": 256,
+          "dpr": 2.0,
+          "sha256": "c0dd1bccda7056c094eb41ab3305dabc455b2bfe7403ec8a86792416292ae07d",
+          "exact_picture": false
+        },
+        "mixed_exact@2": {
+          "ok": true,
+          "width": 256,
+          "height": 256,
+          "dpr": 2.0,
+          "sha256": "c0dd1bccda7056c094eb41ab3305dabc455b2bfe7403ec8a86792416292ae07d",
+          "exact_picture": true
+        },
+        "text_image_pixels@2": {
+          "ok": true,
+          "width": 256,
+          "height": 256,
+          "dpr": 2.0,
+          "sha256": "13239dfc311feb9ef3dbffb62ed4608f494272e331cbec0d2dbd685eabd6e3b8",
+          "exact_picture": false
+        },
+        "text_screen_adaptive@2": {
+          "ok": true,
+          "width": 256,
+          "height": 256,
+          "dpr": 2.0,
+          "sha256": "a1db7f2c001d006b33494159d501308f0209b642a2babe95e4fe771b8f63276b",
+          "exact_picture": false
+        },
+        "empty@2": {
+          "ok": true,
+          "empty": true
+        }
+      },
+      "scale_overlay": {
+        "ok": true,
+        "revision": 1,
+        "cases": {
+          "unit_nm": true,
+          "unit_um": true,
+          "unit_mm": true,
+          "unit_cm": true,
+          "unit_m": true,
+          "preview_export_dpr_1": true,
+          "preview_export_dpr_1.5": true,
+          "preview_export_dpr_2": true,
+          "uncalibrated_px": true,
+          "oversized_rejected": true,
+          "endpoint_pixels": true,
+          "style_variants": true,
+          "fractional_span_coverage": true,
+          "division_geometry": true,
+          "actual_layout_geometry": true
+        }
+      },
+      "elapsed_ms": 376.67
+    }
+  },
+  "ok": true
+}
