@@ -1,0 +1,44 @@
+{
+  "name": "fdm-basics-tutorial",
+  "version": "1.0.0",
+  "description": "FDM 中文入门操作教程：真实界面、合成教学样本、可编辑 Remotion 源码",
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "render": "node tools/render_series.mjs FDM-01",
+    "prepare:assets": "node tools/prepare_assets.mjs",
+    "narration": "node tools/build_series_narration.mjs",
+    "narration:series": "node tools/build_series_narration.mjs",
+    "font": "node tools/prepare_font.mjs",
+    "preview:frames": "node tools/render_series.mjs --previews FDM-01",
+    "preview:series": "node tools/render_series.mjs --previews",
+    "render:series": "node tools/render_series.mjs",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "validate:guidance": "uv run --no-sync python tools/validate_guidance.py",
+    "validate:media": "uv run --no-sync python tools/validate_series.py",
+    "package:series": "uv run --no-sync python tools/package_series.py"
+  },
+  "repository": {},
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@fontsource-variable/noto-sans-sc": "5.3.0",
+    "@remotion/captions": "4.0.529",
+    "@remotion/cli": "4.0.529",
+    "@remotion/fonts": "4.0.529",
+    "@remotion/media": "4.0.529",
+    "@remotion/transitions": "4.0.529",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.529",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "private": true
+}

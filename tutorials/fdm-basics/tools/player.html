@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FDM · V2 引导增强教程</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #edf3ef;
+      color: #163c33;
+      font-family:
+        system-ui,
+        -apple-system,
+        "PingFang SC",
+        sans-serif;
+    }
+    main {
+      max-width: 1320px;
+      margin: auto;
+      padding: 28px 32px 42px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 1px solid #c6d8ce;
+      padding-bottom: 20px;
+    }
+    header b {
+      font-size: 30px;
+    }
+    header span,
+    p,
+    footer {
+      color: #587369;
+    }
+    header em {
+      font-size: 13px;
+      font-style: normal;
+      background: #fff3d8;
+      color: #895e11;
+      padding: 7px 12px;
+      border-radius: 20px;
+      margin-left: auto;
+    }
+    h1 {
+      font-size: 30px;
+      margin: 23px 0 7px;
+    }
+    p {
+      line-height: 1.7;
+      margin: 6px 0;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0;
+    }
+    button,
+    a,
+    select {
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid #bbd1c3;
+      background: #f8fcf9;
+      color: #285a48;
+      border-radius: 10px;
+      padding: 11px 15px;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    select:focus-visible {
+      outline: 3px solid #e6a422;
+      outline-offset: 3px;
+    }
+    .tabs button[aria-pressed="true"] {
+      background: #237f70;
+      color: white;
+      border-color: #237f70;
+    }
+    .tabs small {
+      display: block;
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+      max-height: 72vh;
+      background: #172b24;
+      border-radius: 16px;
+      box-shadow: 0 16px 35px #1f493017;
+    }
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin: 18px 0;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      font-size: 14px;
+    }
+    select {
+      border: 1px solid #bbd1c3;
+      border-radius: 6px;
+      padding: 5px;
+      background: #f8fcf9;
+      color: #285a48;
+    }
+    input {
+      accent-color: #237f70;
+    }
+    a {
+      color: #217e68;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .downloads {
+      font-size: 14px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .chapters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .chapters button {
+      padding: 9px 13px;
+      text-align: left;
+      font-size: 14px;
+    }
+    .chapters button.active {
+      border-color: #c88c20;
+      background: #fff0ce;
+    }
+    .chapters time {
+      font-variant-numeric: tabular-nums;
+      color: #6b8677;
+      margin-right: 8px;
+    }
+    .status {
+      color: #975a1a;
+      font-size: 14px;
+    }
+    footer {
+      margin-top: 26px;
+      font-size: 13px;
+      border-top: 1px solid #c6d8ce;
+      padding-top: 17px;
+      line-height: 1.7;
+    }
+    @media (max-width: 650px) {
+      main {
+        padding: 20px 14px;
+      }
+      h1 {
+        font-size: 25px;
+      }
+      .tabs button {
+        flex: 1;
+        min-width: 125px;
+      }
+      header span {
+        font-size: 13px;
+      }
+      header em {
+        display: none;
+      }
+      .bar {
+        align-items: flex-start;
+      }
+      video {
+        border-radius: 10px;
+      }
+      .controls {
+        gap: 12px;
+      }
+    }
+  </style>
+  <main>
+    <header>
+      <b>FDM.</b><span>纤维直径测量软件 · 操作教程</span><em>V2 引导增强版</em>
+    </header>
+    <h1 id="title"></h1>
+    <p>
+      跟着黄色目标框、鼠标轨迹和步骤提示操作。01
+      入门篇已重做，五集可分段跟练，也可连续观看。
+    </p>
+    <nav class="tabs" id="tabs" aria-label="选择教程"></nav>
+    <video id="player" controls preload="metadata" playsinline></video>
+    <p class="status" id="status" role="status"></p>
+    <div class="bar">
+      <b id="duration"></b>
+      <div class="controls">
+        <label
+          >播放速度
+          <select id="speed">
+            <option value="0.75">0.75×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+          </select></label
+        >
+        <label
+          ><input type="checkbox" id="next" checked /> 自动播放下一集</label
+        >
+      </div>
+    </div>
+    <div class="downloads">
+      <a id="download" download>下载当前视频</a
+      ><a href="FDM-全套教程-跟练素材-v2.zip" download>下载跟练素材</a
+      ><a href="全套教程说明.md">查看教程说明</a>
+    </div>
+    <nav class="chapters" id="chapters" aria-label="章节跳转"></nav>
+    <footer>
+      1920 × 1080 · 30 fps ·
+      中文旁白与画内字幕。点击章节即可跳转，必要时暂停跟练。<br />真实 Qt
+      操作状态配合引导动画；合成练习图和光学测试图在视频中注明来源。解压后可直接打开本页离线观看。
+    </footer>
+  </main>
+  <script>
+    const data = __DATA__;
+    const player = document.getElementById("player"),
+      tabs = document.getElementById("tabs"),
+      chapters = document.getElementById("chapters"),
+      speed = document.getElementById("speed"),
+      status = document.getElementById("status");
+    let current = 0;
+    data.forEach((v, i) => {
+      const b = document.createElement("button");
+      b.append(document.createTextNode(v.number + " " + v.title));
+      const small = document.createElement("small");
+      small.textContent = v.duration + " · " + v.scenes.length + " 个章节";
+      b.append(small);
+      b.onclick = () => select(i);
+      tabs.append(b);
+    });
+    function play() {
+      player.play().catch(() => {
+        status.textContent = "点击视频中央的播放按钮继续。";
+      });
+    }
+    function select(i, autoplay = false) {
+      current = i;
+      const v = data[i];
+      status.textContent = "";
+      document.getElementById("title").textContent = v.number + " · " + v.title;
+      document.getElementById("duration").textContent = "时长 " + v.duration;
+      player.src = encodeURIComponent(v.file);
+      player.poster = encodeURIComponent(v.cover);
+      player.playbackRate = Number(speed.value);
+      document.getElementById("download").href = encodeURIComponent(v.file);
+      [...tabs.children].forEach((b, n) =>
+        b.setAttribute("aria-pressed", n === i),
+      );
+      chapters.replaceChildren();
+      v.scenes.forEach((s) => {
+        const b = document.createElement("button"),
+          t = document.createElement("time");
+        t.textContent = s.stamp;
+        b.append(t, document.createTextNode(s.title));
+        b.onclick = () => {
+          status.textContent = "";
+          player.currentTime = s.time;
+          play();
+        };
+        chapters.append(b);
+      });
+      history.replaceState(null, "", "#" + v.id);
+      if (autoplay) play();
+    }
+    player.addEventListener("timeupdate", () => {
+      const n = data[current].scenes.findLastIndex(
+        (s) => s.time <= player.currentTime,
+      );
+      [...chapters.children].forEach((b, i) => {
+        b.classList.toggle("active", i === n);
+        if (i === n) b.setAttribute("aria-current", "true");
+        else b.removeAttribute("aria-current");
+      });
+    });
+    player.addEventListener("ended", () => {
+      if (document.getElementById("next").checked && current < 4)
+        select(current + 1, true);
+    });
+    player.addEventListener("error", () => {
+      status.textContent =
+        "视频未能读取，请确认已完整解压教程包，且视频与本页位于同一文件夹。";
+    });
+    speed.onchange = () => {
+      player.playbackRate = Number(speed.value);
+    };
+    select(
+      Math.max(
+        0,
+        data.findIndex((v) => v.id === location.hash.slice(1)),
+      ),
+    );
+  </script>
+</html>
