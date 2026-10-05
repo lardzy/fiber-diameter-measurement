@@ -1,0 +1,743 @@
+................................................................. [  1%]
+........................................................................ [  3%]
+................................................................. [  5%]
+................................................................... [  7%]
+........................................................................... [  9%]
+............................................ [ 10%]
+........................................................................ [ 12%]
+.............................................................. [ 13%]
+........................................................................ [ 15%]
+.............................................................. [ 17%]
+.................................................... [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+................................................................. [ 39%]
+.......FF.......................................................................................................................................................................................... [ 45%]
+........................................................................ [ 47%]
+............................... [ 47%]
+.......................................................................................................................................................................FFFFFFF...... [ 52%]
+...................................................................... [ 54%]
+................................................................... [ 56%]
+........................................................... [ 58%]
+.................................................................. [ 59%]
+............................................................. [ 61%]
+............................F....F................. [ 62%]
+........................................................................ [ 64%]
+...................................................................... [ 66%]
+................................................................ [ 68%]
+................................................................... [ 70%]
+.................................................................. [ 71%]
+........................................................................ [ 73%]
+........................................................................ [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+.................................................................... [ 87%]
+.................................................................... [ 89%]
+........................................................................ [ 90%]
+............................................................ [ 92%]
+..................................................................... [ 94%]
+......................................................... [ 95%]
+....................................................FFFFFF.............. [ 97%]
+........................................................................ [ 99%]
+.......                                                                  [100%]
+=================================== FAILURES ===================================
+____ test_image_page_fits_supported_small_workspace_without_scrolling[dark] ____
+
+app = <PySide6.QtWidgets.QApplication(0x60000121a6c0) at 0x7011b46d00>
+theme = 'dark'
+
+    @pytest.mark.parametrize("theme", ("dark", "light"))
+    def test_image_page_fits_supported_small_workspace_without_scrolling(
+        app: QApplication,
+        theme: str,
+    ) -> None:
+        # 1093×576 可用逻辑区域扣除窗口边距后的实际首选对话框尺寸。
+        apply_application_theme(app, theme)
+        dialog = _show_dialog(
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 9 == 0
+E                +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x70be6c6740>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x70be6c6740> = <PySide6.QtWidgets.QScrollBar(0x60000e1f9c20) at 0x70be6c6740>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x60000e1f9c20) at 0x70be6c6740> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x70be6c5600>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x70be6c5600> = <PySide6.QtWidgets.QScrollArea(0x70bec30ed0) at 0x70be6c5600>.verticalScrollBar
+
+tests/test_export_options_dialog.py:177: AssertionError
+___ test_image_page_fits_supported_small_workspace_without_scrolling[light] ____
+
+app = <PySide6.QtWidgets.QApplication(0x60000121a6c0) at 0x7011b46d00>
+theme = 'light'
+
+    @pytest.mark.parametrize("theme", ("dark", "light"))
+    def test_image_page_fits_supported_small_workspace_without_scrolling(
+        app: QApplication,
+        theme: str,
+    ) -> None:
+        # 1093×576 可用逻辑区域扣除窗口边距后的实际首选对话框尺寸。
+        apply_application_theme(app, theme)
+        dialog = _show_dialog(
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 9 == 0
+E                +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x70ccb61c80>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x70ccb61c80> = <PySide6.QtWidgets.QScrollBar(0x60000e12fc90) at 0x70ccb61c80>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x60000e12fc90) at 0x70ccb61c80> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x70ccb63380>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x70ccb63380> = <PySide6.QtWidgets.QScrollArea(0x705a68ab40) at 0x70ccb63380>.verticalScrollBar
+
+tests/test_export_options_dialog.py:177: AssertionError
+______________ test_packaging_enforces_real_magic_probe[missing] _______________
+
+state = 'missing'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9a29e80>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == ['packaged se.../cache probe']
+E
+E         At index 0 diff: 'packaged self-check did not pass the scale preview/export probe' != 'packaged self-check did not pass the magic segmentation ROI/cache probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+______________ test_packaging_enforces_real_magic_probe[skipped] _______________
+
+state = 'skipped'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9a2a0b0>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == ['packaged se.../cache probe']
+E
+E         At index 0 diff: 'packaged self-check did not pass the scale preview/export probe' != 'packaged self-check did not pass the magic segmentation ROI/cache probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+_____________ test_packaging_enforces_real_magic_probe[incomplete] _____________
+
+state = 'incomplete'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9a29a20>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == ['packaged se.../cache probe']
+E
+E         At index 0 diff: 'packaged self-check did not pass the scale preview/export probe' != 'packaged self-check did not pass the magic segmentation ROI/cache probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+_______________ test_packaging_enforces_real_magic_probe[failed] _______________
+
+state = 'failed'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9afb5b0>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == ['packaged se.../cache probe']
+E
+E         At index 0 diff: 'packaged self-check did not pass the scale preview/export probe' != 'packaged self-check did not pass the magic segmentation ROI/cache probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+_______________ test_packaging_enforces_real_magic_probe[valid] ________________
+
+state = 'valid'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9af9400>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == []
+E
+E         Left contains one more item: 'packaged self-check did not pass the scale preview/export probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+____________ test_packaging_enforces_real_magic_probe[no_provider] _____________
+
+state = 'no_provider'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9afbbd0>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == ['packaged se.../cache probe']
+E
+E         At index 0 diff: 'packaged self-check did not pass the scale preview/export probe' != 'packaged self-check did not pass the magic segmentation ROI/cache probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+_____________ test_packaging_enforces_real_magic_probe[reencoded] ______________
+
+state = 'reencoded'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c9af9860>
+
+    @pytest.mark.parametrize('state', ['missing', 'skipped', 'incomplete', 'failed', 'valid', 'no_provider', 'reencoded'])
+    def test_packaging_enforces_real_magic_probe(state, monkeypatch):
+        import importlib.util
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / 'scripts/build_windows_onedir.py'
+        monkeypatch.syspath_prepend(str(script.parent))
+        spec = importlib.util.spec_from_file_location('roi_build_windows_onedir', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        model = {'ok': True, 'encoder_calls_first': 1, 'encoder_calls_repeat': 0,
+                 'decoder_calls_repeat': 1, 'mask_equal': True, 'providers': ['CPUExecutionProvider']}
+        valid = {'ok': True, 'backend': 'onnxruntime', 'backend_version': 'test',
+                 'models': {'edge_sam': dict(model), 'edge_sam_3x': dict(model)}}
+        magic = {'missing': None, 'skipped': 'skipped_non_windows', 'incomplete': {'ok': True},
+                 'failed': {'ok': False}}.get(state, valid)
+        if state == 'no_provider':
+            magic['models']['edge_sam']['providers'] = None
+        if state == 'reencoded':
+            magic['models']['edge_sam']['encoder_calls_repeat'] = 1
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+        payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
+            'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+            'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+            'magic_segmentation': magic,
+            'watermark_renderer': run_watermark_self_check(),
+        }}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr='')):
+            errors = module.run_packaged_self_check(Path('/tmp/package'))
+>       assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E       AssertionError: assert ['packaged se...export probe'] == ['packaged se.../cache probe']
+E
+E         At index 0 diff: 'packaged self-check did not pass the scale preview/export probe' != 'packaged self-check did not pass the magic segmentation ROI/cache probe'
+E         Use -v to get more diff
+
+tests/test_magic_roi_performance.py:466: AssertionError
+_ ProfessionalWorkspaceTests.test_inspector_sections_remain_contiguous_and_expansion_pushes_down _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_inspector_sections_remain_contiguous_and_expansion_pushes_down>
+
+    def test_inspector_sections_remain_contiguous_and_expansion_pushes_down(self) -> None:
+        window = self._window()
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        content = window._inspector_content
+        layout = content.layout()
+        window._object_properties_section.setExpanded(True)
+        self.app.processEvents()
+        sections = (
+            window._object_properties_section,
+            window._calibration_section,
+            window._records_section,
+            window._statistics_section,
+            window._area_recognition_section,
+        )
+
+        initial_tops = [section.y() for section in sections]
+        window._statistics_section.setExpanded(True)
+        self.app.processEvents()
+        expanded_tops = [section.y() for section in sections]
+        self.assertEqual(expanded_tops[0], initial_tops[0])
+        for before, after in zip(initial_tops[1:], expanded_tops[1:], strict=True):
+            self.assertGreaterEqual(after, before)
+
+        window._records_section.setExpanded(False)
+        self.app.processEvents()
+        for current, following in zip(sections, sections[1:]):
+            gap = following.y() - (current.y() + current.height())
+            self.assertGreaterEqual(gap, 0)
+>           self.assertLessEqual(gap, layout.spacing() + 1)
+E           AssertionError: 345 not less than or equal to 7
+
+tests/test_professional_workspace.py:715: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ ProfessionalWorkspaceTests.test_measurement_inspector_uses_locked_section_order_and_defaults _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_measurement_inspector_uses_locked_section_order_and_defaults>
+
+    def test_measurement_inspector_uses_locked_section_order_and_defaults(self) -> None:
+        window = self._window()
+        content = window._inspector_scroll.widget()
+        self.assertIs(content, window._inspector_content)
+        ordered = [content.layout().itemAt(index).widget() for index in range(6)]
+>       self.assertEqual(
+            ordered,
+            [
+                window._current_measurement_summary,
+                window._object_properties_section,
+                window._calibration_section,
+                window._records_section,
+                window._statistics_section,
+                window._area_recognition_section,
+            ],
+        )
+E       AssertionError: Lists differ: [<fdm.ui.scale_overlay_editor.ScaleOverlayPanel(0x[543 chars]5c0>] != [<fdm.ui.workbench_controls.CurrentMeasurementSumm[531 chars]d40>]
+E
+E       First differing element 0:
+E       <fdm.ui.scale_overlay_editor.ScaleOverlayPanel(0x[50 chars]fd00>
+E       <fdm.ui.workbench_controls.CurrentMeasurementSumm[62 chars]d500>
+E
+E       Diff is 1130 characters long. Set self.maxDiff to None to see it.
+
+tests/test_professional_workspace.py:668: AssertionError
+_ ProfessionalWorkspaceTests.test_responsive_geometry_matrix_keeps_explicit_commands_reachable (size=(1536, 864)) _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_responsive_geometry_matrix_keeps_explicit_commands_reachable>
+
+    def test_responsive_geometry_matrix_keeps_explicit_commands_reachable(self) -> None:
+        window = self._window()
+        window.show()
+        for width, height, compact, command_style in (
+            (1093, 576, True, Qt.ToolButtonStyle.ToolButtonIconOnly),
+            (1280, 720, False, Qt.ToolButtonStyle.ToolButtonIconOnly),
+            (1536, 864, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+            (1920, 1000, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+            (2048, 1152, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+        ):
+            with self.subTest(size=(width, height)):
+                window.resize(width, height)
+                self.app.processEvents()
+                self.assertEqual(window._adaptive_layout.is_compact, compact)
+>               self.assertEqual(window._file_toolbar.toolButtonStyle(), command_style)
+E               AssertionError: <ToolButtonStyle.ToolButtonIconOnly: 0> != <ToolButtonStyle.ToolButtonTextBesideIcon: 2>
+
+tests/test_professional_workspace.py:571: AssertionError
+__________ test_watermark_release_probe_and_build_gate[font_database] __________
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-14/test_watermark_release_probe_a0')
+failed_case = 'font_database'
+
+    @pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
+    def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
+        import subprocess
+        import sys
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from build_windows_onedir import run_packaged_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
+        watermark = run_watermark_self_check()
+        assert watermark["ok"]
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "project_save": run_project_save_self_check(),
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
+            "watermark_renderer": watermark,
+        }}
+        for valid in (True, False):
+            if not valid:
+                watermark["cases"][failed_case] = False
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(tmp_path)
+>           assert bool(errors) is not valid
+E           AssertionError: assert True is not True
+E            +  where True = bool(['packaged self-check did not pass the native kernels probe'])
+
+tests/test_watermark.py:400: AssertionError
+______ test_watermark_release_probe_and_build_gate[preferences_roundtrip] ______
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-14/test_watermark_release_probe_a1')
+failed_case = 'preferences_roundtrip'
+
+    @pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
+    def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
+        import subprocess
+        import sys
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from build_windows_onedir import run_packaged_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
+        watermark = run_watermark_self_check()
+        assert watermark["ok"]
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "project_save": run_project_save_self_check(),
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
+            "watermark_renderer": watermark,
+        }}
+        for valid in (True, False):
+            if not valid:
+                watermark["cases"][failed_case] = False
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(tmp_path)
+>           assert bool(errors) is not valid
+E           AssertionError: assert True is not True
+E            +  where True = bool(['packaged self-check did not pass the native kernels probe'])
+
+tests/test_watermark.py:400: AssertionError
+_____________ test_watermark_release_probe_and_build_gate[text@1] ______________
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-14/test_watermark_release_probe_a2')
+failed_case = 'text@1'
+
+    @pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
+    def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
+        import subprocess
+        import sys
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from build_windows_onedir import run_packaged_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
+        watermark = run_watermark_self_check()
+        assert watermark["ok"]
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "project_save": run_project_save_self_check(),
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
+            "watermark_renderer": watermark,
+        }}
+        for valid in (True, False):
+            if not valid:
+                watermark["cases"][failed_case] = False
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(tmp_path)
+>           assert bool(errors) is not valid
+E           AssertionError: assert True is not True
+E            +  where True = bool(['packaged self-check did not pass the native kernels probe'])
+
+tests/test_watermark.py:400: AssertionError
+_____________ test_watermark_release_probe_and_build_gate[tile@2] ______________
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-14/test_watermark_release_probe_a3')
+failed_case = 'tile@2'
+
+    @pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
+    def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
+        import subprocess
+        import sys
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from build_windows_onedir import run_packaged_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
+        watermark = run_watermark_self_check()
+        assert watermark["ok"]
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "project_save": run_project_save_self_check(),
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
+            "watermark_renderer": watermark,
+        }}
+        for valid in (True, False):
+            if not valid:
+                watermark["cases"][failed_case] = False
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(tmp_path)
+>           assert bool(errors) is not valid
+E           AssertionError: assert True is not True
+E            +  where True = bool(['packaged self-check did not pass the native kernels probe'])
+
+tests/test_watermark.py:400: AssertionError
+________ test_watermark_release_probe_and_build_gate[datetime_text@1.5] ________
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-14/test_watermark_release_probe_a4')
+failed_case = 'datetime_text@1.5'
+
+    @pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
+    def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
+        import subprocess
+        import sys
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from build_windows_onedir import run_packaged_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
+        watermark = run_watermark_self_check()
+        assert watermark["ok"]
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "project_save": run_project_save_self_check(),
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
+            "watermark_renderer": watermark,
+        }}
+        for valid in (True, False):
+            if not valid:
+                watermark["cases"][failed_case] = False
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(tmp_path)
+>           assert bool(errors) is not valid
+E           AssertionError: assert True is not True
+E            +  where True = bool(['packaged self-check did not pass the native kernels probe'])
+
+tests/test_watermark.py:400: AssertionError
+_________ test_watermark_release_probe_and_build_gate[datetime_logo@2] _________
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-14/test_watermark_release_probe_a5')
+failed_case = 'datetime_logo@2'
+
+    @pytest.mark.parametrize("failed_case", ["font_database", "preferences_roundtrip", "text@1", "tile@2", "datetime_text@1.5", "datetime_logo@2"])
+    def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
+        import subprocess
+        import sys
+        from fdm.ui.watermark_self_check import run_watermark_self_check
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from build_windows_onedir import run_packaged_self_check
+        from fdm.ui.project_save_self_check import run_project_save_self_check
+
+        from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+
+        watermark = run_watermark_self_check()
+        assert watermark["ok"]
+        payload = {"ok": True, "errors": [], "functional_checks": {
+            "project_save": run_project_save_self_check(),
+            "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
+            "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},
+            "watermark_renderer": watermark,
+        }}
+        for valid in (True, False):
+            if not valid:
+                watermark["cases"][failed_case] = False
+            completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                errors = run_packaged_self_check(tmp_path)
+>           assert bool(errors) is not valid
+E           AssertionError: assert True is not True
+E            +  where True = bool(['packaged self-check did not pass the native kernels probe'])
+
+tests/test_watermark.py:400: AssertionError
+=============================== warnings summary ===============================
+tests/test_length_units.py::test_mixed_units_survive_csv_excel_scale_export_and_stay_separate_in_statistics
+  /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/openpyxl/styles/stylesheet.py:237: UserWarning: Workbook contains no default style, apply openpyxl's default
+    warn("Workbook contains no default style, apply openpyxl's default")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[missing]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[skipped]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[incomplete]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[failed]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[valid]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[no_provider]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[reencoded]
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults
+SUBFAILED(size=(1536, 864)) tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[font_database]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[preferences_roundtrip]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[text@1]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[tile@2]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[datetime_text@1.5]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[datetime_logo@2]
+18 failed, 3716 passed, 1 warning, 1601 subtests passed in 530.28s (0:08:50)
+This plugin does not support setParent!
+This plugin does not support setParent!
+This plugin does not support setParent!

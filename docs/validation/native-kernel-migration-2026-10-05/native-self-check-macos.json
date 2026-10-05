@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "backend": "native",
+  "api_version": 1,
+  "compiled_extension": true,
+  "build_info": {
+    "api_version": 1,
+    "source_sha256": "6ec36eb4c2aa5ff467c9c4efbde9b61e6339338ada993f2435ddc0211e0a0e80",
+    "python_abi": "cpython-313-darwin",
+    "python_version": "3.13.12",
+    "pybind11_version": "3.0.4",
+    "build_type": "release",
+    "cpp_standard": 201703,
+    "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+  },
+  "cases": {
+    "boundary_segments": true,
+    "contour_sections": true,
+    "prune_short_spurs": true,
+    "inputs_unchanged": true
+  }
+}

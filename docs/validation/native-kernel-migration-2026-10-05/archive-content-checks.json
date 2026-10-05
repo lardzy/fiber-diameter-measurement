@@ -1,0 +1,20 @@
+{
+  "fiber_diameter_measurement-0.4.7-cp313-cp313-macosx_12_0_arm64.whl": {
+    "pybind11_license": true,
+    "binary_files": [
+      "fdm/_native/_kernels.cpython-313-darwin.so"
+    ],
+    "sha256": "bc9ee57a0df58d97f57961b3bde627ef6431b9c6adb4f2230fbb687030fa4af2"
+  },
+  "fiber_diameter_measurement-0.4.7.tar.gz": {
+    "cpp_source": true,
+    "pybind11_license": true,
+    "binary_files": [],
+    "sha256": "bccdf64b6d3c35442b4bc06bc8c8f4af76fb07eabe1ed83ac8843675b8fb7d5d"
+  },
+  "fiber_diameter_measurement-0.4.7-py3-none-any.whl": {
+    "pybind11_license": true,
+    "binary_files": [],
+    "sha256": "df0915bafb6f5edd2ab5f4d04fd4dadda8371c1355570411a1b74bf235043e3a"
+  }
+}

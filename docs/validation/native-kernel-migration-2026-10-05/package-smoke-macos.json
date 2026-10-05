@@ -1,0 +1,67 @@
+{
+  "native_wheel": {
+    "ok": true,
+    "backend": "native",
+    "api_version": 1,
+    "compiled_extension": true,
+    "build_info": {
+      "api_version": 1,
+      "source_sha256": "6ec36eb4c2aa5ff467c9c4efbde9b61e6339338ada993f2435ddc0211e0a0e80",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    },
+    "cases": {
+      "boundary_segments": true,
+      "contour_sections": true,
+      "prune_short_spurs": true,
+      "inputs_unchanged": true
+    }
+  },
+  "reference_wheel": {
+    "ok": true,
+    "backend": "python",
+    "package": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/native-kernel-migration/installed-python/fdm/__init__.py"
+  },
+  "reference_wheel_native_required": {
+    "ok": true,
+    "error": "ModuleNotFoundError"
+  },
+  "corrupt_native_wheel": {
+    "ok": true,
+    "error": "ImportError"
+  },
+  "baseline_file_comparison": {
+    ".idea/fiber-diameter-measurement@1.iml": true,
+    ".idea/modules.xml": false,
+    "src/fdm/ui/digital_slide_canvas.py": true,
+    "src/fdm/ui/main_window.py": true,
+    "src/fiber_diameter_measurement.egg-info/PKG-INFO": true,
+    "src/fiber_diameter_measurement.egg-info/SOURCES.txt": true,
+    "src/fiber_diameter_measurement.egg-info/entry_points.txt": true,
+    "src/fiber_diameter_measurement.egg-info/requires.txt": true,
+    "tests/test_digital_slide_overlay_lifecycle.py": true,
+    "tests/test_ui_canvas_and_export.py": true,
+    "docs/research/jev-applicability-2026-09-20.md": true,
+    "docs/research/jev-open-source-vision-alternatives-2026-09-20.md": true,
+    "tests/test_digital_slide_boundary_feedback.py": true
+  },
+  "baseline_note": "All original code, test, research and egg-info files preserved. IDE modules.xml changed externally during run and was left untouched.",
+  "artifacts": {
+    "native-dist/fiber_diameter_measurement-0.4.7.tar.gz": {
+      "sha256": "bccdf64b6d3c35442b4bc06bc8c8f4af76fb07eabe1ed83ac8843675b8fb7d5d",
+      "size": 1538643
+    },
+    "native-dist/fiber_diameter_measurement-0.4.7-cp313-cp313-macosx_12_0_arm64.whl": {
+      "sha256": "bc9ee57a0df58d97f57961b3bde627ef6431b9c6adb4f2230fbb687030fa4af2",
+      "size": 1707413
+    },
+    "python-dist/fiber_diameter_measurement-0.4.7-py3-none-any.whl": {
+      "sha256": "df0915bafb6f5edd2ab5f4d04fd4dadda8371c1355570411a1b74bf235043e3a",
+      "size": 1617889
+    }
+  }
+}

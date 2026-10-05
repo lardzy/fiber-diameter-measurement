@@ -1,0 +1,15 @@
+{"case": "contour_2000_normal", "input_sha256_matches": true}
+{"case": "contour_4000_normal", "input_sha256_matches": true}
+{"case": "contour_6000_normal", "input_sha256_matches": true}
+{"case": "quick_small_rectangle", "input_sha256_matches": true}
+{"case": "quick_diagonal_120px", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r3_a15", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r3_a25", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r3_a75", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r4_a15", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r4_a25", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r4_a75", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r5_a15", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r5_a25", "input_sha256_matches": true}
+{"case": "quick_cross_w40_r5_a75", "input_sha256_matches": true}
+{"cases": 14, "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/native-kernel-migration/native-overhead.json", "elapsed_seconds": 1.605051624996122}

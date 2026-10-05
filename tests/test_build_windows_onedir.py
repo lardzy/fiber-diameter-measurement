@@ -16,6 +16,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from build_support import RuntimeProfileCheck
 from build_windows_onedir import (
     build,
+    check_native_build_dependencies,
     check_windows_build_dependencies,
     main as onedir_main,
     run_packaged_self_check,
@@ -41,6 +42,39 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         )
         self._dependency_mock = self._dependency_patcher.start()
         self.addCleanup(self._dependency_patcher.stop)
+        native_patcher = patch("build_windows_onedir.check_native_build_dependencies", return_value=[])
+        self._native_mock = native_patcher.start()
+        self.addCleanup(native_patcher.stop)
+
+    @staticmethod
+    def _native_report():
+        return {
+            "ok": True, "backend": "native", "api_version": 1, "compiled_extension": True,
+            "build_info": {"api_version": 1, "compiler": "test", "python_abi": "test",
+                           "pybind11_version": "3.0.4", "source_sha256": "a" * 64},
+            "cases": {name: True for name in ("boundary_segments", "contour_sections", "prune_short_spurs", "inputs_unchanged")},
+        }
+
+    def test_build_rejects_broken_or_stale_native_before_pyinstaller(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            self._native_mock.return_value = ["native kernel build probe failed: stale binary"]
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile") as profile_mock,
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                self.assertEqual(build(True, console=False, bootloader_debug=False, root=root), 1)
+            profile_mock.assert_not_called()
+            run_mock.assert_not_called()
+
+    def test_native_preflight_executes_probe_and_checks_source(self) -> None:
+        with patch("fdm.services.native_kernels_self_check.run_native_kernels_self_check", return_value=self._native_report()) as probe:
+            self.assertEqual(check_native_build_dependencies(), [])
+            probe.assert_called_once_with(validate_source=True)
+        with patch("fdm.services.native_kernels_self_check.run_native_kernels_self_check", side_effect=ImportError("bad DLL")):
+            self.assertIn("bad DLL", check_native_build_dependencies()[0])
 
     def test_cli_public_release_excludes_both_private_components(self) -> None:
         with (
@@ -203,11 +237,23 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             payload["functional_checks"]["watermark_renderer"] = run_watermark_self_check()
             from fdm.ui.project_save_self_check import run_project_save_self_check
             payload["functional_checks"]["project_save"] = run_project_save_self_check()
+            payload["functional_checks"]["native_kernels"] = self._native_report()
             completed = subprocess.CompletedProcess(
                 [], 0, stdout=json.dumps(payload), stderr=""
             )
             with patch("build_windows_onedir.subprocess.run", return_value=completed):
                 self.assertEqual(run_packaged_self_check(Path(tmpdir)), [])
+
+            native = self._native_report()
+            invalid = [None, {"ok": True}, {**native, "backend": "python"},
+                       {**native, "compiled_extension": False}, {**native, "api_version": 2},
+                       {**native, "build_info": {**native["build_info"], "source_sha256": ""}}]
+            invalid += [{**native, "cases": {**native["cases"], name: False}} for name in native["cases"]]
+            for report in invalid:
+                payload["functional_checks"]["native_kernels"] = report
+                completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+                with self.subTest(native=report), patch("build_windows_onedir.subprocess.run", return_value=completed):
+                    self.assertEqual(run_packaged_self_check(Path(tmpdir)), ["packaged self-check did not pass the native kernels probe"])
 
     def test_background_save_probe_is_required_and_checked_per_case(self) -> None:
         from fdm.ui.watermark_self_check import run_watermark_self_check

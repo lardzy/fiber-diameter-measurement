@@ -1,0 +1,176 @@
+FFFF.                                                               [100%]
+=================================== FAILURES ===================================
+____ test_image_page_fits_supported_small_workspace_without_scrolling[dark] ____
+
+app = <PySide6.QtWidgets.QApplication(0x6000032e8410) at 0x102af2600>
+theme = 'dark'
+
+    @pytest.mark.parametrize("theme", ("dark", "light"))
+    def test_image_page_fits_supported_small_workspace_without_scrolling(
+        app: QApplication,
+        theme: str,
+    ) -> None:
+        # 1093×576 可用逻辑区域扣除窗口边距后的实际首选对话框尺寸。
+        apply_application_theme(app, theme)
+        dialog = _show_dialog(
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 9 == 0
+E                +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x1623af540>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x1623af540> = <PySide6.QtWidgets.QScrollBar(0x600001f618f0) at 0x1623af540>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x600001f618f0) at 0x1623af540> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x1623cd040>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x1623cd040> = <PySide6.QtWidgets.QScrollArea(0x164528470) at 0x1623cd040>.verticalScrollBar
+
+tests/test_export_options_dialog.py:177: AssertionError
+----------------------------- Captured stderr call -----------------------------
+qt.qpa.fonts: Populating font family aliases took 78 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost.
+___ test_image_page_fits_supported_small_workspace_without_scrolling[light] ____
+
+app = <PySide6.QtWidgets.QApplication(0x6000032e8410) at 0x102af2600>
+theme = 'light'
+
+    @pytest.mark.parametrize("theme", ("dark", "light"))
+    def test_image_page_fits_supported_small_workspace_without_scrolling(
+        app: QApplication,
+        theme: str,
+    ) -> None:
+        # 1093×576 可用逻辑区域扣除窗口边距后的实际首选对话框尺寸。
+        apply_application_theme(app, theme)
+        dialog = _show_dialog(
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 9 == 0
+E                +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x162b705c0>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x162b705c0> = <PySide6.QtWidgets.QScrollBar(0x600001ebf420) at 0x162b705c0>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x600001ebf420) at 0x162b705c0> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x162b81480>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x162b81480> = <PySide6.QtWidgets.QScrollArea(0x156d80e50) at 0x162b81480>.verticalScrollBar
+
+tests/test_export_options_dialog.py:177: AssertionError
+_ ProfessionalWorkspaceTests.test_inspector_sections_remain_contiguous_and_expansion_pushes_down _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_inspector_sections_remain_contiguous_and_expansion_pushes_down>
+
+    def test_inspector_sections_remain_contiguous_and_expansion_pushes_down(self) -> None:
+        window = self._window()
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        content = window._inspector_content
+        layout = content.layout()
+        window._object_properties_section.setExpanded(True)
+        self.app.processEvents()
+        sections = (
+            window._object_properties_section,
+            window._calibration_section,
+            window._records_section,
+            window._statistics_section,
+            window._area_recognition_section,
+        )
+
+        initial_tops = [section.y() for section in sections]
+        window._statistics_section.setExpanded(True)
+        self.app.processEvents()
+        expanded_tops = [section.y() for section in sections]
+        self.assertEqual(expanded_tops[0], initial_tops[0])
+        for before, after in zip(initial_tops[1:], expanded_tops[1:], strict=True):
+            self.assertGreaterEqual(after, before)
+
+        window._records_section.setExpanded(False)
+        self.app.processEvents()
+        for current, following in zip(sections, sections[1:]):
+            gap = following.y() - (current.y() + current.height())
+            self.assertGreaterEqual(gap, 0)
+>           self.assertLessEqual(gap, layout.spacing() + 1)
+E           AssertionError: 345 not less than or equal to 7
+
+tests/test_professional_workspace.py:715: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ ProfessionalWorkspaceTests.test_measurement_inspector_uses_locked_section_order_and_defaults _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_measurement_inspector_uses_locked_section_order_and_defaults>
+
+    def test_measurement_inspector_uses_locked_section_order_and_defaults(self) -> None:
+        window = self._window()
+        content = window._inspector_scroll.widget()
+        self.assertIs(content, window._inspector_content)
+        ordered = [content.layout().itemAt(index).widget() for index in range(6)]
+>       self.assertEqual(
+            ordered,
+            [
+                window._current_measurement_summary,
+                window._object_properties_section,
+                window._calibration_section,
+                window._records_section,
+                window._statistics_section,
+                window._area_recognition_section,
+            ],
+        )
+E       AssertionError: Lists differ: [<fdm.ui.scale_overlay_editor.ScaleOverlayPanel(0x[541 chars]8c0>] != [<fdm.ui.workbench_controls.CurrentMeasurementSumm[528 chars]400>]
+E
+E       First differing element 0:
+E       <fdm.ui.scale_overlay_editor.ScaleOverlayPanel(0x[50 chars]9640>
+E       <fdm.ui.workbench_controls.CurrentMeasurementSumm[63 chars]eec0>
+E
+E       Diff is 1126 characters long. Set self.maxDiff to None to see it.
+
+tests/test_professional_workspace.py:668: AssertionError
+_ ProfessionalWorkspaceTests.test_responsive_geometry_matrix_keeps_explicit_commands_reachable (size=(1536, 864)) _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_responsive_geometry_matrix_keeps_explicit_commands_reachable>
+
+    def test_responsive_geometry_matrix_keeps_explicit_commands_reachable(self) -> None:
+        window = self._window()
+        window.show()
+        for width, height, compact, command_style in (
+            (1093, 576, True, Qt.ToolButtonStyle.ToolButtonIconOnly),
+            (1280, 720, False, Qt.ToolButtonStyle.ToolButtonIconOnly),
+            (1536, 864, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+            (1920, 1000, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+            (2048, 1152, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+        ):
+            with self.subTest(size=(width, height)):
+                window.resize(width, height)
+                self.app.processEvents()
+                self.assertEqual(window._adaptive_layout.is_compact, compact)
+>               self.assertEqual(window._file_toolbar.toolButtonStyle(), command_style)
+E               AssertionError: <ToolButtonStyle.ToolButtonIconOnly: 0> != <ToolButtonStyle.ToolButtonTextBesideIcon: 2>
+
+tests/test_professional_workspace.py:571: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults
+SUBFAILED(size=(1536, 864)) tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable
+5 failed, 1 passed, 4 subtests passed in 2.39s

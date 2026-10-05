@@ -1,0 +1,3 @@
+include setup.py
+recursive-include native *.cpp *.hpp
+recursive-include src/fdm/_native/licenses *.txt

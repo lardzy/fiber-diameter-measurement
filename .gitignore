@@ -7,6 +7,8 @@
 __pycache__/
 **/__pycache__/
 *.py[cod]
+/src/fdm/_native/*.so
+/src/fdm/_native/*.pyd
 /runtime/area-models/b_c1_1.3(++).pth
 /runtime/area-models/b_c1_1.3(old).pth
 /runtime/area-models/b_c1_1.3.pth

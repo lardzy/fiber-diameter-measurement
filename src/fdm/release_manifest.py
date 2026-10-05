@@ -394,6 +394,18 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
             errors.append("compiled quick diameter self-check returned a failure")
 
     try:
+        from fdm.services.native_kernels_self_check import native_probe_passed, run_native_kernels_self_check
+
+        native_probe = run_native_kernels_self_check()
+    except Exception as exc:  # noqa: BLE001 - missing or incompatible packaged binary
+        functional_checks["native_kernels"] = {"ok": False}
+        errors.append(f"native kernels self-check failed: {exc}")
+    else:
+        functional_checks["native_kernels"] = native_probe
+        if not native_probe_passed(native_probe):
+            errors.append("native kernels self-check returned a failure")
+
+    try:
         from fdm.application_launch import SingleInstanceCoordinator
         from PySide6.QtNetwork import QLocalServer, QLocalSocket
 

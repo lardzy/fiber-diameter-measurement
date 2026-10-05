@@ -6,6 +6,7 @@ files included by those components.
 
 | Component | License / upstream notice |
 | --- | --- |
+| pybind11 (compiled into the internal kernels) | BSD-3-Clause; license included in `fdm/_native/licenses/pybind11.txt`; <https://github.com/pybind/pybind11/blob/v3.0.4/LICENSE> |
 | PySide6 / Qt for Python | LGPL-3.0-only, GPL-3.0-only, or commercial terms; <https://doc.qt.io/qtforpython-6/licenses.html> |
 | NumPy | BSD-3-Clause; <https://github.com/numpy/numpy/blob/main/LICENSE.txt> |
 | OpenCV | Apache-2.0; <https://github.com/opencv/opencv/blob/4.x/LICENSE> |

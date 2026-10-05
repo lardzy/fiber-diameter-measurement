@@ -455,9 +455,19 @@ def test_packaging_enforces_real_magic_probe(state, monkeypatch):
     if state == 'reencoded':
         magic['models']['edge_sam']['encoder_calls_repeat'] = 1
     from fdm.ui.watermark_self_check import run_watermark_self_check
+    from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
+    from fdm.ui.project_save_self_check import run_project_save_self_check
+    from fdm.services.native_kernels_self_check import run_native_kernels_self_check
+
+    scale = run_scale_overlay_self_check()
+    save = run_project_save_self_check()
+    native = run_native_kernels_self_check()
+    assert scale['ok'] and save['ok'] and native['ok']
     payload = {'ok': True, 'errors': [], 'features': ['magic-segmentation'], 'functional_checks': {
-        'overlay_renderer': {'ok': True, 'worker_stdio_none': True},
+        'overlay_renderer': {'ok': True, 'worker_stdio_none': True, 'scale_overlay': scale},
         'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
+        'project_save': save,
+        'native_kernels': native,
         'magic_segmentation': magic,
         'watermark_renderer': run_watermark_self_check(),
     }}

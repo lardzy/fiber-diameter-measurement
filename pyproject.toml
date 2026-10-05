@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "wheel", "pybind11==3.0.4"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -52,6 +52,9 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = {attr = "fdm.version.__version__"}
+
+[tool.setuptools.package-data]
+"fdm._native" = ["licenses/*.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

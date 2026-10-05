@@ -9,7 +9,7 @@ ignored_untracked_prefixes = [
 
 [profiles.core]
 groups = ["microview"]
-required_python_modules = ["numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy"]
+required_python_modules = ["numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy", "fdm._native._kernels"]
 required_files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 features = [
   "measurement",
@@ -123,8 +123,8 @@ target = "THIRD_PARTY_NOTICES.md"
 profile = "core"
 feature = "release-compliance"
 required = true
-size = 2045
-sha256 = "23966737728459baa15a5b1c1bc9f16b405c2464405154eb2496a4bb53292f20"
+size = 2225
+sha256 = "32504755ba8f58d92ef35410ece711557de4e870a124bacf9cb3e721ed602780"
 license = "GPL-3.0-only"
 
 [[assets]]

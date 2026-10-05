@@ -1,0 +1,74 @@
+{
+  "branch": "lard/native-kernel-migration",
+  "head_before": "d7c00be1281316550f6d98df69acc6fae73a948b",
+  "head_after": "d7c00be1281316550f6d98df69acc6fae73a948b",
+  "index_unchanged": true,
+  "original_files": {
+    ".idea/fiber-diameter-measurement@1.iml": {
+      "sha256_before": "509d6e2f136120347a3a40e31ad7666c3b074994b46c93541e8db4c032abcf6b",
+      "sha256_after": "509d6e2f136120347a3a40e31ad7666c3b074994b46c93541e8db4c032abcf6b",
+      "unchanged": true
+    },
+    ".idea/modules.xml": {
+      "sha256_before": "f3014898c4effb1dcf73828cb39f8f9f214a7a2663200eb9eccc967aa9bb594d",
+      "sha256_after": "b101d6373a9d8015739e90b9e5363a75d43b980e7b8a04e771018b7de0489117",
+      "unchanged": false
+    },
+    "src/fdm/ui/digital_slide_canvas.py": {
+      "sha256_before": "280a3cb76bae2dd34d99719c1fd057d8bb794ad8824a041b1fe2ef4d06fa1170",
+      "sha256_after": "280a3cb76bae2dd34d99719c1fd057d8bb794ad8824a041b1fe2ef4d06fa1170",
+      "unchanged": true
+    },
+    "src/fdm/ui/main_window.py": {
+      "sha256_before": "4739782c334e96d3eac45ba443a9e99fdf8cc89f33840b0816edd5a592dd49b1",
+      "sha256_after": "4739782c334e96d3eac45ba443a9e99fdf8cc89f33840b0816edd5a592dd49b1",
+      "unchanged": true
+    },
+    "src/fiber_diameter_measurement.egg-info/PKG-INFO": {
+      "sha256_before": "e96fef3cd2edda2db619c7699a5f9f1d4ed32dcba0da38e9f90c656953ef38d5",
+      "sha256_after": "e96fef3cd2edda2db619c7699a5f9f1d4ed32dcba0da38e9f90c656953ef38d5",
+      "unchanged": true
+    },
+    "src/fiber_diameter_measurement.egg-info/SOURCES.txt": {
+      "sha256_before": "caa7a723bab5385662654a442f1a2d8ab622184c7ea8010ec06d587c569c68eb",
+      "sha256_after": "caa7a723bab5385662654a442f1a2d8ab622184c7ea8010ec06d587c569c68eb",
+      "unchanged": true
+    },
+    "src/fiber_diameter_measurement.egg-info/entry_points.txt": {
+      "sha256_before": "9864bb05e779c15ad10ce0cdb118dd938bd4230e95c0e64c7e86f1e8b3b9e250",
+      "sha256_after": "9864bb05e779c15ad10ce0cdb118dd938bd4230e95c0e64c7e86f1e8b3b9e250",
+      "unchanged": true
+    },
+    "src/fiber_diameter_measurement.egg-info/requires.txt": {
+      "sha256_before": "ab55e940ae38dcb764eb66e4d4bc4f5d91ea95b9a46a1a4550b4b1759efae650",
+      "sha256_after": "ab55e940ae38dcb764eb66e4d4bc4f5d91ea95b9a46a1a4550b4b1759efae650",
+      "unchanged": true
+    },
+    "tests/test_digital_slide_overlay_lifecycle.py": {
+      "sha256_before": "98cde18503b36cfaa64db8836361960e5b1ad19d89a6c58b44d3a3f72115ba24",
+      "sha256_after": "98cde18503b36cfaa64db8836361960e5b1ad19d89a6c58b44d3a3f72115ba24",
+      "unchanged": true
+    },
+    "tests/test_ui_canvas_and_export.py": {
+      "sha256_before": "7605ff0c36103d081aae7e9b12b614c53930fd52cf4e88c73f53fa7a66375250",
+      "sha256_after": "7605ff0c36103d081aae7e9b12b614c53930fd52cf4e88c73f53fa7a66375250",
+      "unchanged": true
+    },
+    "docs/research/jev-applicability-2026-09-20.md": {
+      "sha256_before": "c1a2428f5fc668c18fbf9ee133e9aae3939f60b5e495d744bd38bb3061518fe4",
+      "sha256_after": "c1a2428f5fc668c18fbf9ee133e9aae3939f60b5e495d744bd38bb3061518fe4",
+      "unchanged": true
+    },
+    "docs/research/jev-open-source-vision-alternatives-2026-09-20.md": {
+      "sha256_before": "55bd2b4ad36d0b548bd1b4f0ef5d485ecbe2d78ae55f97ab04f34ef32540dbd3",
+      "sha256_after": "55bd2b4ad36d0b548bd1b4f0ef5d485ecbe2d78ae55f97ab04f34ef32540dbd3",
+      "unchanged": true
+    },
+    "tests/test_digital_slide_boundary_feedback.py": {
+      "sha256_before": "80b7f5dd5e2e0e28feda56b50101fbc48e36a38d627e9d0659dea460fa4e74d8",
+      "sha256_after": "80b7f5dd5e2e0e28feda56b50101fbc48e36a38d627e9d0659dea460fa4e74d8",
+      "unchanged": true
+    }
+  },
+  "note": "IDE modules.xml changed externally; preserve it and new .iml files. No migration commit or push."
+}

@@ -73,13 +73,15 @@ binaries = []
 hiddenimports = [
     "PySide6.QtNetwork",
     "fdm.microview_helper",
+    "fdm._native._kernels",
 ]
+datas += collect_data_files("fdm._native", includes=["licenses/*.txt"])
 
 required_packages = set(resolved_profile.required_python_modules)
 collection_packages = set(required_packages)
 # The diameter service hook collects lazy imports and package metadata; upstream
 # hooks trace Cython extensions and native DLLs. Avoid optional plugins/tests.
-collection_packages.difference_update({"skimage", "scipy"})
+collection_packages.difference_update({"skimage", "scipy", "fdm._native._kernels"})
 if "openpyxl" in required_packages:
     # openpyxl imports this distribution lazily while reading/writing workbooks.
     collection_packages.add("et_xmlfile")

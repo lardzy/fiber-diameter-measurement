@@ -21,6 +21,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
+from fdm._native import array_snapshot, selected_backend
 from fdm.cancellation import CancellationToken
 
 MAX_PIXELS = 36_000_000
@@ -286,7 +287,21 @@ def edit_mask(frame: ContourFrame, points, *, add: bool, radius: float = 0, poly
     return replace(frame, mask=mask, warnings=mask_warnings(mask), edited=True)
 
 
-def boundary_segments(mask: np.ndarray) -> np.ndarray:
+def boundary_segments(mask: np.ndarray, *, token: CancellationToken | None = None) -> np.ndarray:
+    """Exact pixel-cell edges, with the same ordering on both backends."""
+    _check(token)
+    native = selected_backend()
+    if native is None:
+        result = boundary_segments_python(mask)
+        _check(token)
+        return result
+    return native.boundary_segments(
+        array_snapshot(mask, ndim=2, dtypes=("bool",)),
+        None if token is None else token.raise_if_cancelled,
+    )
+
+
+def boundary_segments_python(mask: np.ndarray) -> np.ndarray:
     """Exact pixel-cell edges, including holes and disconnected components."""
     padded = np.pad(mask, 1)
     segments = []
@@ -308,6 +323,21 @@ def boundary_segments(mask: np.ndarray) -> np.ndarray:
 
 
 def _sections(segments: np.ndarray, heights: np.ndarray, step: float, token) -> tuple[tuple[tuple[float, float], ...], ...]:
+    _check(token)
+    native = selected_backend()
+    if native is None:
+        return _sections_python(segments, heights, step, token)
+    offsets, intervals = native.contour_sections(
+        array_snapshot(segments, ndim=3, dtypes=("float64",)),
+        array_snapshot(heights, ndim=1, dtypes=("float64",)),
+        step,
+        None if token is None else token.raise_if_cancelled,
+    )
+    pairs = tuple((float(left), float(right)) for left, right in intervals)
+    return tuple(pairs[int(start):int(stop)] for start, stop in zip(offsets[:-1], offsets[1:]))
+
+
+def _sections_python(segments: np.ndarray, heights: np.ndarray, step: float, token) -> tuple[tuple[tuple[float, float], ...], ...]:
     """Sweep only edges that intersect the fixed-height sample grid."""
     count = len(heights)
     first, second = segments[:, 0], segments[:, 1]
@@ -354,7 +384,7 @@ def compare_contours(before: ContourFrame, after: ContourFrame, step: float, *, 
     worlds, bounds = [], []
     for frame in (before, after):
         _check(token)
-        world = frame.axis.to_world(boundary_segments(frame.mask), frame.scale)
+        world = frame.axis.to_world(boundary_segments(frame.mask, token=token), frame.scale)
         flat = world.reshape(-1, 2)
         bounds.append(tuple(map(float, (*flat.min(axis=0), *flat.max(axis=0)))))
         worlds.append(world)

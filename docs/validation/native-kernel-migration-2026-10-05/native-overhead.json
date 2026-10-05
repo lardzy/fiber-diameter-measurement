@@ -1,0 +1,2145 @@
+{
+  "schema": "fdm.native-overhead-diagnostic.v1",
+  "scope": "input snapshot ownership/layout copies and Python contour tuple reconstruction; standalone diagnostic, not additive formal timing components",
+  "formal_result": {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/native-kernel-migration/paired-performance.json",
+    "sha256": "da0b1f302228a6662f0c4c9cd4cec9bc308aff0e8d74b7dc3e6599bbf336d858",
+    "acceptance": "passed"
+  },
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+    "executable": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+    "versions": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "scikit-image": "0.26.0",
+      "PySide6": "6.10.2",
+      "pybind11": "3.0.4"
+    },
+    "git_head": "d7c00be1281316550f6d98df69acc6fae73a948b",
+    "git_dirty": true,
+    "cpu_count": 18,
+    "opencv_threads": 18,
+    "thread_environment": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "6ec36eb4c2aa5ff467c9c4efbde9b61e6339338ada993f2435ddc0211e0a0e80",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    },
+    "source_sha256": {
+      "native/kernels.cpp": "9bed327ad7c735acfebad9928368da80bf8d40ba3ca27f4136222afe1fef627b",
+      "pyproject.toml": "9d6ce084dcb06e1929a100452b8c5d7458e03e372d80e2113a800000dc3ec67b",
+      "scripts/benchmark_contour_comparison.py": "48ffafcf9256ad218b32e7ba7ac771b42421a63ce51817371e8384f474e9d68c",
+      "scripts/benchmark_native_kernels.py": "5a986b9f3db3ce9518036c3ced7c248a17d964588944fbaf039520053e28227e",
+      "setup.py": "81b08d5286f20f93435c15aacd3cd9ba928e4dd5c88a625e3e82a8ca0a9e1f12",
+      "src/fdm/_native/__init__.py": "7e6c93e398f704263822b649465af53aee0ea9978a510d76d5f6ffe55426a847",
+      "src/fdm/_native/_kernels.cpython-313-darwin.so": "d2ff59f4503beefbfb0feaeec62475b8bce83217e6b473377d7cfe5c3c1c8dd9",
+      "src/fdm/services/contour_comparison.py": "d71ec60637510156cb0885c7572f5072013687b31f23ca85a3665b278df6160e",
+      "src/fdm/services/fiber_quick_geometry.py": "7e39149a32b9b7f4ef1704d46fc621e68fd729379df51cd2c8be1a3b381e3ad9"
+    },
+    "clock": {
+      "implementation": "mach_absolute_time()",
+      "resolution_seconds": 4.166666666666666e-08
+    }
+  },
+  "diagnostic_source_sha256": "1a4a2b31b13ac5cb75419df043200a8bc571842b2826d923bab49e01cb5e6e59",
+  "protocol": {
+    "warmups": 5,
+    "repeats": 30,
+    "preparation": "capture actual production array_snapshot arguments and C++ sections outputs, restore instrumentation before sampling",
+    "snapshot_timer": "all production snapshot calls for the stage plus a retaining tuple; returned arrays released outside the timed interval",
+    "reconstruction_timer": "same float conversion, interval tuple creation and row slicing as production _sections; per-frame and paired-frame diagnostics",
+    "limitations": "warm cache, standalone allocation lifetimes, no C++ compute in sampled stages; do not add/subtract these values to derive formal costs"
+  },
+  "started_utc": "2026-10-04T18:10:03.324464+00:00",
+  "cases": [
+    {
+      "name": "contour_2000_normal",
+      "category": "contour",
+      "input_sha256": "8ee4ebf7307559d0736b18effd005d7d32a5f692e6a2a986c082df2f7ab5552d",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "boundary": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "before_mask",
+                "shape": [
+                  2000,
+                  1400
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  1400,
+                  1
+                ],
+                "input_writeable": false,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": false,
+                "logical_input_bytes": 2800000,
+                "copied_bytes": 0,
+                "output_writeable": false
+              },
+              {
+                "role": "after_mask",
+                "shape": [
+                  2000,
+                  1400
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  1400,
+                  1
+                ],
+                "input_writeable": false,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": false,
+                "logical_input_bytes": 2800000,
+                "copied_bytes": 0,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 5600000,
+            "copied_bytes": 0,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.001875,
+              0.001666,
+              0.001667,
+              0.001666,
+              0.001625,
+              0.001667,
+              0.00175,
+              0.00175,
+              0.001625,
+              0.001708,
+              0.001666,
+              0.001625,
+              0.001625,
+              0.001625,
+              0.001667,
+              0.001583,
+              0.001667,
+              0.001667,
+              0.001625,
+              0.001584,
+              0.001625,
+              0.001709,
+              0.001834,
+              0.002083,
+              0.001792,
+              0.001584,
+              0.001625,
+              0.001625,
+              0.001583,
+              0.001625
+            ],
+            "summary": {
+              "p50_ms": 0.001666,
+              "p95_ms": 0.0018565499999999998,
+              "min_ms": 0.001583,
+              "max_ms": 0.002083
+            }
+          }
+        },
+        "sections": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "before_segments",
+                "shape": [
+                  7392,
+                  2,
+                  2
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  32,
+                  16,
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 236544,
+                "copied_bytes": 236544,
+                "output_writeable": false
+              },
+              {
+                "role": "before_heights",
+                "shape": [
+                  197
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1576,
+                "copied_bytes": 1576,
+                "output_writeable": false
+              },
+              {
+                "role": "after_segments",
+                "shape": [
+                  7224,
+                  2,
+                  2
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  32,
+                  16,
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 231168,
+                "copied_bytes": 231168,
+                "output_writeable": false
+              },
+              {
+                "role": "after_heights",
+                "shape": [
+                  197
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1576,
+                "copied_bytes": 1576,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 470864,
+            "copied_bytes": 470864,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.011041,
+              0.023041,
+              0.010917,
+              0.020417,
+              0.010292,
+              0.02275,
+              0.01,
+              0.021625,
+              0.010083,
+              0.020541,
+              0.010125,
+              0.020291,
+              0.01,
+              0.021667,
+              0.009667,
+              0.017208,
+              0.009667,
+              0.017542,
+              0.009625,
+              0.019291,
+              0.012167,
+              0.022417,
+              0.009792,
+              0.019,
+              0.009667,
+              0.019083,
+              0.009708,
+              0.02425,
+              0.009667,
+              0.016708
+            ],
+            "summary": {
+              "p50_ms": 0.0144375,
+              "p95_ms": 0.022910049999999998,
+              "min_ms": 0.009625,
+              "max_ms": 0.02425
+            }
+          },
+          "tuple_reconstruction": {
+            "production_result_equal": true,
+            "rows_per_frame": [
+              197,
+              197
+            ],
+            "intervals_per_frame": [
+              332,
+              325
+            ],
+            "each_frame": [
+              {
+                "samples_ms": [
+                  0.09275,
+                  0.092042,
+                  0.090833,
+                  0.0905,
+                  0.088917,
+                  0.0915,
+                  0.090583,
+                  0.090875,
+                  0.090333,
+                  0.089791,
+                  0.0905,
+                  0.090209,
+                  0.090333,
+                  0.090375,
+                  0.090416,
+                  0.09025,
+                  0.090375,
+                  0.09025,
+                  0.090167,
+                  0.090041,
+                  0.090291,
+                  0.090625,
+                  0.090334,
+                  0.090167,
+                  0.089875,
+                  0.090083,
+                  0.089875,
+                  0.090708,
+                  0.090292,
+                  0.090375
+                ],
+                "summary": {
+                  "p50_ms": 0.0903335,
+                  "p95_ms": 0.0917981,
+                  "min_ms": 0.088917,
+                  "max_ms": 0.09275
+                }
+              },
+              {
+                "samples_ms": [
+                  0.091583,
+                  0.091542,
+                  0.091291,
+                  0.089958,
+                  0.09075,
+                  0.091208,
+                  0.0925,
+                  0.092542,
+                  0.093375,
+                  0.092375,
+                  0.092,
+                  0.140542,
+                  0.180208,
+                  0.108083,
+                  0.161416,
+                  0.115208,
+                  0.094167,
+                  0.091958,
+                  0.126667,
+                  0.096667,
+                  0.094625,
+                  0.094958,
+                  0.094375,
+                  0.100833,
+                  0.094583,
+                  0.095583,
+                  0.093083,
+                  0.091833,
+                  0.092333,
+                  0.091959
+                ],
+                "summary": {
+                  "p50_ms": 0.093229,
+                  "p95_ms": 0.15202269999999996,
+                  "min_ms": 0.089958,
+                  "max_ms": 0.180208
+                }
+              }
+            ],
+            "both_frames": {
+              "samples_ms": [
+                0.185375,
+                0.183833,
+                0.183708,
+                0.183375,
+                0.182417,
+                0.215625,
+                0.184667,
+                0.181833,
+                0.180167,
+                0.243458,
+                0.184416,
+                0.181584,
+                0.181125,
+                0.186209,
+                0.180709,
+                0.185417,
+                0.180708,
+                0.178583,
+                0.179333,
+                0.181833,
+                0.178583,
+                0.179042,
+                0.17825,
+                0.23325,
+                0.185333,
+                0.181375,
+                0.181375,
+                0.180459,
+                0.183125,
+                0.229167
+              ],
+              "summary": {
+                "p50_ms": 0.18212499999999998,
+                "p95_ms": 0.23141265,
+                "min_ms": 0.17825,
+                "max_ms": 0.243458
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "contour_4000_normal",
+      "category": "contour",
+      "input_sha256": "168d8892b98f71868145b437ec35c816f49f61c49dc58da2a7ddc6e791d67702",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "boundary": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "before_mask",
+                "shape": [
+                  4000,
+                  2800
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  2800,
+                  1
+                ],
+                "input_writeable": false,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": false,
+                "logical_input_bytes": 11200000,
+                "copied_bytes": 0,
+                "output_writeable": false
+              },
+              {
+                "role": "after_mask",
+                "shape": [
+                  4000,
+                  2800
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  2800,
+                  1
+                ],
+                "input_writeable": false,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": false,
+                "logical_input_bytes": 11200000,
+                "copied_bytes": 0,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 22400000,
+            "copied_bytes": 0,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.001667,
+              0.001667,
+              0.001708,
+              0.001667,
+              0.001625,
+              0.002334,
+              0.00175,
+              0.001667,
+              0.001625,
+              0.001667,
+              0.001625,
+              0.001667,
+              0.001667,
+              0.001625,
+              0.001625,
+              0.001584,
+              0.001708,
+              0.001584,
+              0.001583,
+              0.001541,
+              0.001625,
+              0.001583,
+              0.001541,
+              0.001583,
+              0.001584,
+              0.001625,
+              0.001541,
+              0.001583,
+              0.001625,
+              0.001583
+            ],
+            "summary": {
+              "p50_ms": 0.001625,
+              "p95_ms": 0.0017311,
+              "min_ms": 0.001541,
+              "max_ms": 0.002334
+            }
+          }
+        },
+        "sections": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "before_segments",
+                "shape": [
+                  14778,
+                  2,
+                  2
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  32,
+                  16,
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 472896,
+                "copied_bytes": 472896,
+                "output_writeable": false
+              },
+              {
+                "role": "before_heights",
+                "shape": [
+                  197
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1576,
+                "copied_bytes": 1576,
+                "output_writeable": false
+              },
+              {
+                "role": "after_segments",
+                "shape": [
+                  14440,
+                  2,
+                  2
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  32,
+                  16,
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 462080,
+                "copied_bytes": 462080,
+                "output_writeable": false
+              },
+              {
+                "role": "after_heights",
+                "shape": [
+                  197
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1576,
+                "copied_bytes": 1576,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 938128,
+            "copied_bytes": 938128,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.016667,
+              0.032667,
+              0.016125,
+              0.029875,
+              0.015916,
+              0.032417,
+              0.016041,
+              0.057334,
+              0.016916,
+              0.03525,
+              0.018584,
+              0.037708,
+              0.017833,
+              0.034875,
+              0.01875,
+              0.036459,
+              0.017792,
+              0.035541,
+              0.019334,
+              0.035292,
+              0.017542,
+              0.035958,
+              0.017791,
+              0.035875,
+              0.018291,
+              0.035209,
+              0.01825,
+              0.040833,
+              0.017333,
+              0.033459
+            ],
+            "summary": {
+              "p50_ms": 0.0246045,
+              "p95_ms": 0.03942674999999999,
+              "min_ms": 0.015916,
+              "max_ms": 0.057334
+            }
+          },
+          "tuple_reconstruction": {
+            "production_result_equal": true,
+            "rows_per_frame": [
+              197,
+              197
+            ],
+            "intervals_per_frame": [
+              332,
+              325
+            ],
+            "each_frame": [
+              {
+                "samples_ms": [
+                  0.085875,
+                  0.085917,
+                  0.087667,
+                  0.087042,
+                  0.08725,
+                  0.086791,
+                  0.085916,
+                  0.085666,
+                  0.0875,
+                  0.088792,
+                  0.087125,
+                  0.088708,
+                  0.087792,
+                  0.086958,
+                  0.097625,
+                  0.085792,
+                  0.108834,
+                  0.086042,
+                  0.086083,
+                  0.087125,
+                  0.086375,
+                  0.09225,
+                  0.08625,
+                  0.086125,
+                  0.086459,
+                  0.094958,
+                  0.093708,
+                  0.257209,
+                  0.121958,
+                  0.113375
+                ],
+                "summary": {
+                  "p50_ms": 0.087125,
+                  "p95_ms": 0.11809564999999997,
+                  "min_ms": 0.085666,
+                  "max_ms": 0.257209
+                }
+              },
+              {
+                "samples_ms": [
+                  0.0955,
+                  0.088209,
+                  0.0895,
+                  0.089083,
+                  0.089583,
+                  0.089625,
+                  0.089125,
+                  0.088875,
+                  0.098208,
+                  0.089917,
+                  0.08925,
+                  0.08875,
+                  0.087875,
+                  0.087667,
+                  0.08775,
+                  0.087083,
+                  0.0875,
+                  0.0885,
+                  0.088875,
+                  0.088542,
+                  0.093625,
+                  0.08925,
+                  0.12925,
+                  0.10375,
+                  0.089708,
+                  0.136,
+                  0.091792,
+                  0.131875,
+                  0.090333,
+                  0.089083
+                ],
+                "summary": {
+                  "p50_ms": 0.08925,
+                  "p95_ms": 0.13069375,
+                  "min_ms": 0.087083,
+                  "max_ms": 0.136
+                }
+              }
+            ],
+            "both_frames": {
+              "samples_ms": [
+                0.177,
+                0.176375,
+                0.203292,
+                0.297292,
+                0.204292,
+                0.17975,
+                0.234458,
+                0.300833,
+                0.205166,
+                0.233667,
+                0.219416,
+                0.178125,
+                0.177167,
+                0.29375,
+                0.183667,
+                0.179917,
+                0.206458,
+                0.209,
+                0.176791,
+                0.22275,
+                0.177667,
+                0.177167,
+                0.176917,
+                0.176917,
+                0.176583,
+                0.178792,
+                0.184709,
+                0.233917,
+                0.529875,
+                0.179625
+              ],
+              "summary": {
+                "p50_ms": 0.18418800000000002,
+                "p95_ms": 0.29923955,
+                "min_ms": 0.176375,
+                "max_ms": 0.529875
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "contour_6000_normal",
+      "category": "contour",
+      "input_sha256": "9a4135fd36183c0c045d67c6b012c80cfec96503c411eb447782d457b359ab65",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "boundary": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "before_mask",
+                "shape": [
+                  6000,
+                  4200
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  4200,
+                  1
+                ],
+                "input_writeable": false,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": false,
+                "logical_input_bytes": 25200000,
+                "copied_bytes": 0,
+                "output_writeable": false
+              },
+              {
+                "role": "after_mask",
+                "shape": [
+                  6000,
+                  4200
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  4200,
+                  1
+                ],
+                "input_writeable": false,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": false,
+                "logical_input_bytes": 25200000,
+                "copied_bytes": 0,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 50400000,
+            "copied_bytes": 0,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.001667,
+              0.001666,
+              0.001667,
+              0.001708,
+              0.001625,
+              0.001625,
+              0.001959,
+              0.001709,
+              0.001625,
+              0.001625,
+              0.001625,
+              0.001625,
+              0.001666,
+              0.001625,
+              0.001667,
+              0.001583,
+              0.001625,
+              0.001625,
+              0.001584,
+              0.001583,
+              0.001625,
+              0.001625,
+              0.002333,
+              0.001666,
+              0.007958,
+              0.002042,
+              0.001709,
+              0.001708,
+              0.001666,
+              0.001666
+            ],
+            "summary": {
+              "p50_ms": 0.001666,
+              "p95_ms": 0.0022020499999999992,
+              "min_ms": 0.001583,
+              "max_ms": 0.007958
+            }
+          }
+        },
+        "sections": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "before_segments",
+                "shape": [
+                  22176,
+                  2,
+                  2
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  32,
+                  16,
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 709632,
+                "copied_bytes": 709632,
+                "output_writeable": false
+              },
+              {
+                "role": "before_heights",
+                "shape": [
+                  197
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1576,
+                "copied_bytes": 1576,
+                "output_writeable": false
+              },
+              {
+                "role": "after_segments",
+                "shape": [
+                  21674,
+                  2,
+                  2
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  32,
+                  16,
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 693568,
+                "copied_bytes": 693568,
+                "output_writeable": false
+              },
+              {
+                "role": "after_heights",
+                "shape": [
+                  197
+                ],
+                "dtype": "float64",
+                "strides_bytes": [
+                  8
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1576,
+                "copied_bytes": 1576,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 1406352,
+            "copied_bytes": 1406352,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.024708,
+              0.052625,
+              0.025125,
+              0.052084,
+              0.024667,
+              0.060083,
+              0.024625,
+              0.118792,
+              0.025709,
+              0.025833,
+              0.023958,
+              0.023417,
+              0.0225,
+              0.022042,
+              0.022,
+              0.02175,
+              0.021625,
+              0.0225,
+              0.022167,
+              0.021458,
+              0.021167,
+              0.021125,
+              0.022,
+              0.022083,
+              0.021833,
+              0.021583,
+              0.021583,
+              0.021208,
+              0.020959,
+              0.021375
+            ],
+            "summary": {
+              "p50_ms": 0.022125,
+              "p95_ms": 0.056726899999999976,
+              "min_ms": 0.020959,
+              "max_ms": 0.118792
+            }
+          },
+          "tuple_reconstruction": {
+            "production_result_equal": true,
+            "rows_per_frame": [
+              197,
+              197
+            ],
+            "intervals_per_frame": [
+              332,
+              325
+            ],
+            "each_frame": [
+              {
+                "samples_ms": [
+                  0.092584,
+                  0.089542,
+                  0.088791,
+                  0.088292,
+                  0.088459,
+                  0.088667,
+                  0.089,
+                  0.088125,
+                  0.0885,
+                  0.088417,
+                  0.088375,
+                  0.088209,
+                  0.101166,
+                  0.095917,
+                  0.0985,
+                  0.088042,
+                  0.088208,
+                  0.088125,
+                  0.09625,
+                  0.0885,
+                  0.088584,
+                  0.089,
+                  0.088875,
+                  0.091041,
+                  0.088208,
+                  0.088625,
+                  0.088042,
+                  0.088208,
+                  0.091167,
+                  0.090209
+                ],
+                "summary": {
+                  "p50_ms": 0.0886045,
+                  "p95_ms": 0.09748749999999999,
+                  "min_ms": 0.088042,
+                  "max_ms": 0.101166
+                }
+              },
+              {
+                "samples_ms": [
+                  0.14775,
+                  0.1895,
+                  0.094917,
+                  0.086875,
+                  0.086833,
+                  0.086334,
+                  0.086708,
+                  0.085959,
+                  0.08625,
+                  0.086625,
+                  0.085958,
+                  0.086041,
+                  0.086584,
+                  0.086,
+                  0.093208,
+                  0.086792,
+                  0.090625,
+                  0.085541,
+                  0.086083,
+                  0.086292,
+                  0.085458,
+                  0.08625,
+                  0.086375,
+                  0.086458,
+                  0.085708,
+                  0.1495,
+                  0.094542,
+                  0.087583,
+                  0.086208,
+                  0.086458
+                ],
+                "summary": {
+                  "p50_ms": 0.086458,
+                  "p95_ms": 0.1487125,
+                  "min_ms": 0.085458,
+                  "max_ms": 0.1895
+                }
+              }
+            ],
+            "both_frames": {
+              "samples_ms": [
+                0.17425,
+                0.172875,
+                0.1715,
+                0.170667,
+                0.207375,
+                0.187208,
+                0.229709,
+                0.178541,
+                0.176875,
+                0.190042,
+                0.182916,
+                0.180375,
+                0.175167,
+                0.18075,
+                0.189333,
+                0.174667,
+                0.1735,
+                0.390334,
+                0.3035,
+                0.293333,
+                0.215,
+                0.222375,
+                0.199458,
+                0.228166,
+                0.190291,
+                0.180541,
+                0.179666,
+                0.177708,
+                0.177625,
+                0.182667
+              ],
+              "summary": {
+                "p50_ms": 0.1817085,
+                "p95_ms": 0.29892484999999996,
+                "min_ms": 0.170667,
+                "max_ms": 0.390334
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_small_rectangle",
+      "category": "quick",
+      "input_sha256": "d2d95b5eef0e749a9d17ba5cc130f42675d2bb581cadad4566f16107e5b90352",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  74,
+                  84
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  84,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 6216,
+                "copied_bytes": 6216,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  74,
+                  84
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  336,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 24864,
+                "copied_bytes": 24864,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 31080,
+            "copied_bytes": 31080,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.002625,
+              0.002583,
+              0.0025,
+              0.0025,
+              0.002459,
+              0.0025,
+              0.0025,
+              0.002542,
+              0.002542,
+              0.0025,
+              0.002458,
+              0.002459,
+              0.0025,
+              0.002417,
+              0.002541,
+              0.002417,
+              0.002542,
+              0.002416,
+              0.002375,
+              0.002417,
+              0.002416,
+              0.002375,
+              0.002458,
+              0.002458,
+              0.002459,
+              0.002417,
+              0.002417,
+              0.002375,
+              0.002375,
+              0.002417
+            ],
+            "summary": {
+              "p50_ms": 0.0024584999999999997,
+              "p95_ms": 0.0025645499999999996,
+              "min_ms": 0.002375,
+              "max_ms": 0.002625
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_diagonal_120px",
+      "category": "quick",
+      "input_sha256": "a766cfc8b313024b76f732faa0b58b30c11b9155d25cf8d29966dcba121354f7",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  424,
+                  640
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  640,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 271360,
+                "copied_bytes": 271360,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  424,
+                  640
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  2560,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 1085440,
+                "copied_bytes": 1085440,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 1356800,
+            "copied_bytes": 1356800,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.053875,
+              0.020875,
+              0.066375,
+              0.021,
+              0.090375,
+              0.021958,
+              0.053708,
+              0.020625,
+              0.087375,
+              0.097125,
+              0.024792,
+              0.055333,
+              0.021167,
+              0.06225,
+              0.0215,
+              0.05775,
+              0.0205,
+              0.053417,
+              0.019958,
+              0.055167,
+              0.020125,
+              0.060541,
+              0.020417,
+              0.053208,
+              0.019792,
+              0.051833,
+              0.01975,
+              0.061583,
+              0.020209,
+              0.052125
+            ],
+            "summary": {
+              "p50_ms": 0.051979,
+              "p95_ms": 0.08902499999999999,
+              "min_ms": 0.01975,
+              "max_ms": 0.097125
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r3_a15",
+      "category": "quick",
+      "input_sha256": "6e12b0a11884ff9c1d96937177a0aade0d107ddac324e5af288a7932b5073bfc",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  149,
+                  149
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  149,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 22201,
+                "copied_bytes": 22201,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  149,
+                  149
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  596,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 88804,
+                "copied_bytes": 88804,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 111005,
+            "copied_bytes": 111005,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.003417,
+              0.003542,
+              0.003417,
+              0.0035,
+              0.003459,
+              0.003417,
+              0.003458,
+              0.003458,
+              0.003458,
+              0.003417,
+              0.003375,
+              0.003458,
+              0.003375,
+              0.003542,
+              0.003375,
+              0.003416,
+              0.003458,
+              0.003416,
+              0.003417,
+              0.003375,
+              0.003375,
+              0.003375,
+              0.003417,
+              0.003375,
+              0.003334,
+              0.003417,
+              0.003375,
+              0.003417,
+              0.003375,
+              0.003416
+            ],
+            "summary": {
+              "p50_ms": 0.003417,
+              "p95_ms": 0.0035231,
+              "min_ms": 0.003334,
+              "max_ms": 0.003542
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r3_a25",
+      "category": "quick",
+      "input_sha256": "0461266aa0a6acd90ad2e719be6de47c3244b6be92c1294172f200228bee4d1b",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  149,
+                  149
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  149,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 22201,
+                "copied_bytes": 22201,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  149,
+                  149
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  596,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 88804,
+                "copied_bytes": 88804,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 111005,
+            "copied_bytes": 111005,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.003541,
+              0.003541,
+              0.003416,
+              0.0035,
+              0.003542,
+              0.003417,
+              0.003417,
+              0.003416,
+              0.003416,
+              0.003458,
+              0.003542,
+              0.003417,
+              0.003416,
+              0.003375,
+              0.003459,
+              0.003375,
+              0.003458,
+              0.003416,
+              0.003459,
+              0.003375,
+              0.003417,
+              0.003375,
+              0.003417,
+              0.003416,
+              0.003459,
+              0.003417,
+              0.003417,
+              0.003291,
+              0.003417,
+              0.003417
+            ],
+            "summary": {
+              "p50_ms": 0.003417,
+              "p95_ms": 0.00354155,
+              "min_ms": 0.003291,
+              "max_ms": 0.003542
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r3_a75",
+      "category": "quick",
+      "input_sha256": "ed636e64d0edb83d25717aa70808baccf1b5d55e26c4211ef9ba490b154aa08f",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  149,
+                  149
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  149,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 22201,
+                "copied_bytes": 22201,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  149,
+                  149
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  596,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 88804,
+                "copied_bytes": 88804,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 111005,
+            "copied_bytes": 111005,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.0035,
+              0.003458,
+              0.003458,
+              0.003417,
+              0.003417,
+              0.003416,
+              0.003375,
+              0.003334,
+              0.003334,
+              0.003375,
+              0.0035,
+              0.003417,
+              0.003375,
+              0.003375,
+              0.003375,
+              0.003542,
+              0.003375,
+              0.003375,
+              0.003708,
+              0.003417,
+              0.003333,
+              0.003416,
+              0.003417,
+              0.003375,
+              0.003333,
+              0.003375,
+              0.003292,
+              0.003292,
+              0.003291,
+              0.003292
+            ],
+            "summary": {
+              "p50_ms": 0.003375,
+              "p95_ms": 0.0035231,
+              "min_ms": 0.003291,
+              "max_ms": 0.003708
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r4_a15",
+      "category": "quick",
+      "input_sha256": "7e7be01e14aaafc759d5ddfdcd427dc96b927f21c495442c7b5a74f3bca22c20",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  187,
+                  187
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  187,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 34969,
+                "copied_bytes": 34969,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  187,
+                  187
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  748,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 139876,
+                "copied_bytes": 139876,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 174845,
+            "copied_bytes": 174845,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.004542,
+              0.0045,
+              0.004459,
+              0.0045,
+              0.004542,
+              0.004542,
+              0.0045,
+              0.0045,
+              0.0045,
+              0.004625,
+              0.006125,
+              0.005542,
+              0.0045,
+              0.004417,
+              0.004417,
+              0.004417,
+              0.004458,
+              0.0045,
+              0.004417,
+              0.004416,
+              0.004375,
+              0.004416,
+              0.004458,
+              0.004458,
+              0.004375,
+              0.004459,
+              0.004417,
+              0.004416,
+              0.004417,
+              0.004375
+            ],
+            "summary": {
+              "p50_ms": 0.004458500000000001,
+              "p95_ms": 0.005129349999999997,
+              "min_ms": 0.004375,
+              "max_ms": 0.006125
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r4_a25",
+      "category": "quick",
+      "input_sha256": "f25d7a739d98aef82df887a6bdcd65dfda16876ccc7dc3da876a4b0ed9dc3b75",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  183,
+                  183
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  183,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 33489,
+                "copied_bytes": 33489,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  183,
+                  183
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  732,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 133956,
+                "copied_bytes": 133956,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 167445,
+            "copied_bytes": 167445,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.011125,
+              0.004542,
+              0.009375,
+              0.004583,
+              0.009541,
+              0.004583,
+              0.009875,
+              0.004458,
+              0.010625,
+              0.004584,
+              0.01075,
+              0.004459,
+              0.009083,
+              0.004458,
+              0.00925,
+              0.0045,
+              0.009208,
+              0.0045,
+              0.009208,
+              0.0045,
+              0.010209,
+              0.004417,
+              0.011583,
+              0.004458,
+              0.00925,
+              0.004458,
+              0.009209,
+              0.004417,
+              0.015292,
+              0.004459
+            ],
+            "summary": {
+              "p50_ms": 0.006833500000000001,
+              "p95_ms": 0.011376899999999999,
+              "min_ms": 0.004417,
+              "max_ms": 0.015292
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r4_a75",
+      "category": "quick",
+      "input_sha256": "404917648fa725cf2caf8ba2afcf5e9e553022b33081674cc128d6c355745edd",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  187,
+                  187
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  187,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 34969,
+                "copied_bytes": 34969,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  187,
+                  187
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  748,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 139876,
+                "copied_bytes": 139876,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 174845,
+            "copied_bytes": 174845,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.019417,
+              0.005167,
+              0.010041,
+              0.004625,
+              0.010125,
+              0.004875,
+              0.010333,
+              0.004583,
+              0.010042,
+              0.004791,
+              0.009833,
+              0.004583,
+              0.009875,
+              0.004542,
+              0.011291,
+              0.004625,
+              0.009583,
+              0.004583,
+              0.010041,
+              0.004583,
+              0.010833,
+              0.004666,
+              0.009416,
+              0.00475,
+              0.009958,
+              0.0045,
+              0.009916,
+              0.004625,
+              0.009833,
+              0.004542
+            ],
+            "summary": {
+              "p50_ms": 0.0072915,
+              "p95_ms": 0.0110849,
+              "min_ms": 0.0045,
+              "max_ms": 0.019417
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r5_a15",
+      "category": "quick",
+      "input_sha256": "ea03a1c5653dace1253eb8599f4cbad191bd86bc9dd28b0f6ccfb77319bf0ed6",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  227,
+                  227
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  227,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 51529,
+                "copied_bytes": 51529,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  227,
+                  227
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  908,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 206116,
+                "copied_bytes": 206116,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 257645,
+            "copied_bytes": 257645,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.006125,
+              0.00575,
+              0.005625,
+              0.005583,
+              0.005583,
+              0.005791,
+              0.005625,
+              0.005584,
+              0.005542,
+              0.005667,
+              0.005792,
+              0.005666,
+              0.005667,
+              0.005709,
+              0.005709,
+              0.005917,
+              0.005667,
+              0.005625,
+              0.005708,
+              0.005708,
+              0.005625,
+              0.005916,
+              0.00575,
+              0.005791,
+              0.005667,
+              0.005916,
+              0.005917,
+              0.006041,
+              0.00575,
+              0.005666
+            ],
+            "summary": {
+              "p50_ms": 0.005708,
+              "p95_ms": 0.0059852,
+              "min_ms": 0.005542,
+              "max_ms": 0.006125
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r5_a25",
+      "category": "quick",
+      "input_sha256": "b242f3f2f1c31bedd2d0b2834da0510fce76849234201eb84066467425201b94",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  221,
+                  221
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  221,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 48841,
+                "copied_bytes": 48841,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  221,
+                  221
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  884,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 195364,
+                "copied_bytes": 195364,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 244205,
+            "copied_bytes": 244205,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.016208,
+              0.005708,
+              0.01875,
+              0.00675,
+              0.005709,
+              0.005708,
+              0.005333,
+              0.005375,
+              0.005292,
+              0.005417,
+              0.00525,
+              0.00525,
+              0.005291,
+              0.005292,
+              0.005333,
+              0.00525,
+              0.005125,
+              0.005167,
+              0.005208,
+              0.00525,
+              0.005166,
+              0.005333,
+              0.005125,
+              0.005166,
+              0.005209,
+              0.005291,
+              0.005167,
+              0.005125,
+              0.005167,
+              0.005208
+            ],
+            "summary": {
+              "p50_ms": 0.0052705,
+              "p95_ms": 0.011951899999999974,
+              "min_ms": 0.005125,
+              "max_ms": 0.01875
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_cross_w40_r5_a75",
+      "category": "quick",
+      "input_sha256": "4ed5746746d488f88e13ec700096c501a7c609dca9ec216c224da2dce3c2cdea",
+      "formal_input_sha256_matches": true,
+      "stages": {
+        "pruner": {
+          "input_snapshots": {
+            "arrays": [
+              {
+                "role": "skeleton",
+                "shape": [
+                  227,
+                  227
+                ],
+                "dtype": "bool",
+                "strides_bytes": [
+                  227,
+                  1
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 51529,
+                "copied_bytes": 51529,
+                "output_writeable": false
+              },
+              {
+                "role": "distance_map",
+                "shape": [
+                  227,
+                  227
+                ],
+                "dtype": "float32",
+                "strides_bytes": [
+                  908,
+                  4
+                ],
+                "input_writeable": true,
+                "input_c_contiguous": true,
+                "input_aligned": true,
+                "copied": true,
+                "logical_input_bytes": 206116,
+                "copied_bytes": 206116,
+                "output_writeable": false
+              }
+            ],
+            "logical_input_bytes": 257645,
+            "copied_bytes": 257645,
+            "dtype_conversion": "none; production snapshot validates dtype and copies for ownership/layout only",
+            "samples_ms": [
+              0.012417,
+              0.005542,
+              0.0135,
+              0.005583,
+              0.012375,
+              0.0055,
+              0.012042,
+              0.005459,
+              0.01275,
+              0.00825,
+              0.013,
+              0.005583,
+              0.013125,
+              0.005916,
+              0.019334,
+              0.006,
+              0.016334,
+              0.005834,
+              0.022292,
+              0.005875,
+              0.015917,
+              0.005917,
+              0.014041,
+              0.005833,
+              0.01325,
+              0.005917,
+              0.022542,
+              0.012,
+              0.023208,
+              0.011917
+            ],
+            "summary": {
+              "p50_ms": 0.012021,
+              "p95_ms": 0.022429499999999998,
+              "min_ms": 0.005459,
+              "max_ms": 0.023208
+            }
+          }
+        }
+      }
+    }
+  ],
+  "formal_result_preserved": true,
+  "formal_sources_preserved": true,
+  "finished_utc": "2026-10-04T18:10:04.929652+00:00",
+  "elapsed_seconds": 1.605051624996122
+}

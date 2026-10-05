@@ -108,6 +108,32 @@ def _successful_tifffile_probe() -> dict[str, object]:
 
 
 class ReleaseSelfCheckTests(unittest.TestCase):
+    def test_native_probe_executes_compiled_kernels_despite_python_preference(self) -> None:
+        from fdm.services.native_kernels_self_check import native_probe_passed, run_native_kernels_self_check
+
+        with patch.dict(os.environ, {"FDM_NATIVE_BACKEND": "python"}):
+            result = run_native_kernels_self_check(validate_source=True)
+        self.assertTrue(native_probe_passed(result), result)
+        self.assertEqual(result["backend"], "native")
+        self.assertTrue(all(result["cases"].values()))
+
+    def test_native_probe_import_failure_blocks_release(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir), profile="core")
+            with patch("fdm.services.native_kernels_self_check.run_native_kernels_self_check", side_effect=ImportError("missing native .pyd")):
+                result = run_release_self_check(app_dir)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["functional_checks"]["native_kernels"], {"ok": False})
+        self.assertTrue(any("native kernels self-check failed" in error for error in result["errors"]))
+
+    def test_native_probe_false_cases_cannot_pass_with_aggregate_ok(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir), profile="core")
+            with patch("fdm.services.native_kernels_self_check.run_native_kernels_self_check", return_value={"ok": True, "backend": "python"}):
+                result = run_release_self_check(app_dir)
+        self.assertFalse(result["ok"])
+        self.assertIn("native kernels self-check returned a failure", result["errors"])
+
     def test_compiled_quick_diameter_probe_runs_real_geometry(self) -> None:
         result = _probe_fiber_quick_geometry()
         self.assertTrue(result["ok"], result)

@@ -8,6 +8,7 @@ from typing import Callable
 
 import cv2
 
+from fdm._native import array_snapshot, selected_backend
 from fdm.geometry import Line, Point, distance
 from fdm.services.prompt_segmentation import (
     fill_magic_draft_internal_holes,
@@ -514,6 +515,24 @@ def _skeleton_neighbors(skeleton):
 
 
 def _prune_short_spurs(skeleton, distance_map, *, cancel_check=None, deadline_at=None):
+    """Dispatch an equivalent pruning kernel without changing skeletonization."""
+    _raise_if_cancelled(cancel_check, deadline_at)
+    native = selected_backend()
+    if native is None:
+        return _prune_short_spurs_python(
+            skeleton, distance_map, cancel_check=cancel_check, deadline_at=deadline_at
+        )
+    checkpoint = None
+    if cancel_check is not None or deadline_at is not None:
+        checkpoint = lambda: _raise_if_cancelled(cancel_check, deadline_at)
+    return native.prune_short_spurs(
+        array_snapshot(skeleton, ndim=2, dtypes=("bool",)),
+        array_snapshot(distance_map, ndim=2, dtypes=("float32", "float64")),
+        checkpoint,
+    )
+
+
+def _prune_short_spurs_python(skeleton, distance_map, *, cancel_check=None, deadline_at=None):
     """Remove terminal branches shorter than the local diameter at their junction.
 
     Rotated flat end caps often skeletonize into two short spurs. Retaining them
