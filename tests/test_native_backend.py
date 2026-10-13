@@ -35,6 +35,38 @@ def test_auto_falls_back_only_for_absent_extension(monkeypatch):
         _native.selected_backend()
 
 
+@pytest.mark.parametrize("filename", [
+    "_kernels.cpython-999-darwin.so",
+    "_kernels.cp999-win_amd64.pyd",
+    "_kernels.cpython-999-aarch64-linux-gnu.so",
+])
+def test_old_abi_binary_cannot_look_like_absent_extension(tmp_path, monkeypatch, filename):
+    monkeypatch.setattr(_native, "__path__", [str(tmp_path)])
+    monkeypatch.delitem(sys.modules, _native.EXTENSION_NAME, raising=False)
+    (tmp_path / filename).write_bytes(b"old build ignored by the import machinery")
+    for mode in ("auto", "native"):
+        monkeypatch.setenv("FDM_NATIVE_BACKEND", mode)
+        with pytest.raises(RuntimeError, match="ABI 或平台不匹配") as error:
+            _native.selected_backend()
+        assert filename in str(error.value)
+        assert isinstance(error.value.__cause__, ModuleNotFoundError)
+    monkeypatch.setenv("FDM_NATIVE_BACKEND", "python")
+    assert _native.selected_backend() is None
+
+
+def test_real_missing_extension_still_allows_auto_fallback(tmp_path, monkeypatch):
+    monkeypatch.setattr(_native, "__path__", [str(tmp_path)])
+    monkeypatch.delitem(sys.modules, _native.EXTENSION_NAME, raising=False)
+    # Source files and unrelated shared libraries are not stale kernels.
+    for filename in ("_kernels.cpp", "_kernels.pyi", "_kernels_helper.so"):
+        (tmp_path / filename).write_bytes(b"")
+    monkeypatch.setenv("FDM_NATIVE_BACKEND", "auto")
+    assert _native.selected_backend() is None
+    monkeypatch.setenv("FDM_NATIVE_BACKEND", "native")
+    with pytest.raises(ModuleNotFoundError):
+        _native.selected_backend()
+
+
 @pytest.mark.parametrize("error", [missing("another_dependency"), ImportError("bad ABI"), OSError("bad DLL"), RuntimeError("bad source")])
 def test_broken_native_never_falls_back(monkeypatch, error):
     monkeypatch.setenv("FDM_NATIVE_BACKEND", "auto")

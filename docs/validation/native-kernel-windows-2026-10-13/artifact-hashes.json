@@ -1,0 +1,137 @@
+[
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "size": 57013292,
+    "sha256": "347aebeb033f46ae599465fc8457077adba5871423b65eb4ae3217e1a3cd83e4"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013\\FiberDiameterMeasurement\\FiberAreaWorker.exe",
+    "size": 49226771,
+    "sha256": "dfbcbb1c005f995efcfd6eccc31b0ef8e705849d57a143319a54de939af294a0"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013\\FiberDiameterMeasurement\\FiberScreenshotTool.exe",
+    "size": 49507665,
+    "sha256": "5d8de1bf081635ddcbdad84eb9dcb142a79293f3eb97e40e29313349ead703c0"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013\\FiberDiameterMeasurement\\release-manifest.json",
+    "size": 802753,
+    "sha256": "caf7d25bf56e5a3dfb870214a9160d5724b5cc9f5ce0bb82477b9c4481bfbed7"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013\\FiberDiameterMeasurement\\build-id.txt",
+    "size": 33,
+    "sha256": "0263d6b28d766e5fda8c47e789b7454ea70ece4534058f283502d08d0bfb89ad"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013\\FiberDiameterMeasurement\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+    "size": 194560,
+    "sha256": "63f910f02cf6849413eb320ad1a4c050ee142fe1185a4921d126ec2088096368"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "size": 58155575,
+    "sha256": "6d6cf52ce7d8b06ab3da593b791e8a7e8bcb194c8e86c935704ed342b6aae4bb"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013\\FiberDiameterMeasurement\\FiberAreaWorker.exe",
+    "size": 50388948,
+    "sha256": "69f843fd23a210a668f953decf680e9b3f772e5b5e7c4ca8a0059da2a494a6cb"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013\\FiberDiameterMeasurement\\FiberScreenshotTool.exe",
+    "size": 50669842,
+    "sha256": "1addbb9424cd5b5bf7eb6fbb778f282a2fc102dbf667bf9c34197357b0ce4106"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013\\FiberDiameterMeasurement\\release-manifest.json",
+    "size": 812624,
+    "sha256": "f43d6293187d591a3277ab24b4a5828818e98c9fe333658e25c14264c7307a04"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013\\FiberDiameterMeasurement\\build-id.txt",
+    "size": 33,
+    "sha256": "b15964513287774011d8d2567958d0e12e2fa7cde38a9df0f1ee27781d29f491"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013\\FiberDiameterMeasurement\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+    "size": 194560,
+    "sha256": "63f910f02cf6849413eb320ad1a4c050ee142fe1185a4921d126ec2088096368"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "size": 58155575,
+    "sha256": "ff1fa310aa50855fe87a4228940e1ecd0bc53ce8865e5a5842baee67c1bf2f4a"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\FiberAreaWorker.exe",
+    "size": 50388948,
+    "sha256": "2105153d63a9240d0d47af17a671f13a289cb66af3f1ed512f480e0381a45649"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\FiberScreenshotTool.exe",
+    "size": 50669842,
+    "sha256": "662756f1d1c9c6c252e670ec4b85d85a47553235f1dbd9b45dc6e15d7b05a1a1"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\release-manifest.json",
+    "size": 810533,
+    "sha256": "c9f8b50f0abe3d3783c6946e65bf2326a24a05898801a5da159d81dc5eda9f05"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\build-id.txt",
+    "size": 33,
+    "sha256": "7276fb996c4e93d00f6c69f5bb8ba161cc47c123755b60fd4fac1069fc10740e"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+    "size": 194560,
+    "sha256": "63f910f02cf6849413eb320ad1a4c050ee142fe1185a4921d126ec2088096368"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\FiberDiameterMeasurement.exe",
+    "size": 58155575,
+    "sha256": "ff1fa310aa50855fe87a4228940e1ecd0bc53ce8865e5a5842baee67c1bf2f4a"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\FiberAreaWorker.exe",
+    "size": 50388948,
+    "sha256": "2105153d63a9240d0d47af17a671f13a289cb66af3f1ed512f480e0381a45649"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\FiberScreenshotTool.exe",
+    "size": 50669842,
+    "sha256": "662756f1d1c9c6c252e670ec4b85d85a47553235f1dbd9b45dc6e15d7b05a1a1"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\release-manifest.json",
+    "size": 810533,
+    "sha256": "c9f8b50f0abe3d3783c6946e65bf2326a24a05898801a5da159d81dc5eda9f05"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\build-id.txt",
+    "size": 33,
+    "sha256": "7276fb996c4e93d00f6c69f5bb8ba161cc47c123755b60fd4fac1069fc10740e"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+    "size": 194560,
+    "sha256": "63f910f02cf6849413eb320ad1a4c050ee142fe1185a4921d126ec2088096368"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-public.exe",
+    "size": 397297072,
+    "sha256": "2e0c3c3d9882c30271e5532154845176f290b78d6773562a85bf5d4a8782a013"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-windows-validation\\wheel-dist\\fiber_diameter_measurement-0.4.7-cp312-cp312-win_amd64.whl",
+    "size": 1711331,
+    "sha256": "613429d91d447dbc87890bb5fda6bca6f411862b83a7e2dcd87bdc8587e67a77"
+  },
+  {
+    "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-windows-validation\\wheel-dist\\fiber_diameter_measurement-0.4.7.tar.gz",
+    "size": 1543286,
+    "sha256": "81b6c7dde944c35c908e2beec05f455bc8a43fda92e2193d7219bf77241b46d4"
+  }
+]

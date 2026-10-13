@@ -1,0 +1,33 @@
+{"name": "contour_complete_1.5x", "status": "passed", "minimum_speedup": 1.5, "cases": ["contour_2000_normal", "contour_4000_normal", "contour_6000_normal"], "aggregation": "sum matching formal pair indices across fixed cases", "summary": {"python": {"p50_ms": 1116.263188, "p95_ms": 1141.0996538, "min_ms": 1098.522083, "max_ms": 1143.926833}, "native": {"p50_ms": 313.259417, "p95_ms": 334.74070205, "min_ms": 309.480834, "max_ms": 335.556834}}, "speedup": {"p50_ms": 3.56338270271377, "p95_ms": 3.408906197578431}}
+{"name": "quick_pruner_3x", "status": "passed", "minimum_speedup": 3.0, "cases": ["quick_small_rectangle", "quick_horizontal_60px", "quick_diagonal_40px", "quick_diagonal_120px", "quick_curved_48px", "quick_cross_fixture", "quick_cross_w16_r3_a0", "quick_cross_w16_r3_a15", "quick_cross_w16_r3_a25", "quick_cross_w16_r3_a45", "quick_cross_w16_r3_a75", "quick_cross_w16_r4_a0", "quick_cross_w16_r4_a15", "quick_cross_w16_r4_a25", "quick_cross_w16_r4_a45", "quick_cross_w16_r4_a75", "quick_cross_w16_r5_a0", "quick_cross_w16_r5_a15", "quick_cross_w16_r5_a25", "quick_cross_w16_r5_a45", "quick_cross_w16_r5_a75", "quick_cross_w40_r3_a0", "quick_cross_w40_r3_a15", "quick_cross_w40_r3_a25", "quick_cross_w40_r3_a45", "quick_cross_w40_r3_a75", "quick_cross_w40_r4_a0", "quick_cross_w40_r4_a15", "quick_cross_w40_r4_a25", "quick_cross_w40_r4_a45", "quick_cross_w40_r4_a75", "quick_cross_w40_r5_a0", "quick_cross_w40_r5_a15", "quick_cross_w40_r5_a25", "quick_cross_w40_r5_a45", "quick_cross_w40_r5_a75"], "aggregation": "sum matching formal pair indices across fixed cases", "summary": {"python": {"p50_ms": 51.111290499999996, "p95_ms": 51.56538095, "min_ms": 50.61, "max_ms": 51.911079}, "native": {"p50_ms": 5.439499, "p95_ms": 5.5797092, "min_ms": 5.262332, "max_ms": 5.678668}}, "speedup": {"p50_ms": 9.396323172409812, "p95_ms": 9.241589319744477}}
+{"name": "quick_heavy_complete_10pct", "status": "passed", "minimum_speedup": 1.1111111111111112, "cases": ["quick_cross_w40_r3_a15", "quick_cross_w40_r3_a25", "quick_cross_w40_r3_a75", "quick_cross_w40_r4_a15", "quick_cross_w40_r4_a25", "quick_cross_w40_r4_a75", "quick_cross_w40_r5_a15", "quick_cross_w40_r5_a25", "quick_cross_w40_r5_a75"], "aggregation": "sum matching formal pair indices across fixed cases", "summary": {"python": {"p50_ms": 88.3735415, "p95_ms": 90.10952225, "min_ms": 85.939417, "max_ms": 90.322585}, "native": {"p50_ms": 69.208834, "p95_ms": 70.2115476, "min_ms": 67.752167, "max_ms": 70.600666}}, "speedup": {"p50_ms": 1.2769112899662491, "p95_ms": 1.2834003141956096}}
+{"name": "complete_no_regression:quick_horizontal_60px", "status": "failed", "native_limit_ms": {"p50_ms": 23.149349474999998, "p95_ms": 24.6403235925}}
+{"case": "quick_horizontal_60px", "stages": {"complete": {"python": {"p50_ms": 22.0469995, "p95_ms": 23.46697485, "min_ms": 21.548166, "max_ms": 23.912209}, "native": {"p50_ms": 21.625813, "p95_ms": 24.776931399999995, "min_ms": 21.231125, "max_ms": 26.400709}}, "pruner": {"python": {"p50_ms": 0.439646, "p95_ms": 0.47445465, "min_ms": 0.417667, "max_ms": 0.485125}, "native": {"p50_ms": 0.0972915, "p95_ms": 0.11854404999999998, "min_ms": 0.088958, "max_ms": 0.133666}}}}
+{"name": "complete_no_regression:quick_diagonal_40px", "status": "failed", "native_limit_ms": {"p50_ms": 39.429556425, "p95_ms": 40.72442519249999}}
+{"case": "quick_diagonal_40px", "stages": {"complete": {"python": {"p50_ms": 37.5519585, "p95_ms": 38.785166849999996, "min_ms": 36.928042, "max_ms": 40.356292}, "native": {"p50_ms": 34.501437499999994, "p95_ms": 43.711499999999994, "min_ms": 33.820542, "max_ms": 44.857833}}, "pruner": {"python": {"p50_ms": 3.8802915000000002, "p95_ms": 4.0272776, "min_ms": 3.739, "max_ms": 4.165375}, "native": {"p50_ms": 0.894979, "p95_ms": 0.9596519, "min_ms": 0.806333, "max_ms": 0.991791}}}}
+{
+  "ok": true,
+  "backend": "native",
+  "api_version": 1,
+  "compiled_extension": true,
+  "build_info": {
+    "api_version": 1,
+    "source_sha256": "91c68f11c1e9afd98a1ff0cd3053475d7c7e9481fc9c44078c4fa98996e7d415",
+    "python_abi": "cpython-312",
+    "python_version": "3.12.13",
+    "pybind11_version": "3.0.4",
+    "build_type": "release",
+    "cpp_standard": 201703,
+    "compiler": "MSVC 1944"
+  },
+  "cases": {
+    "boundary_segments": true,
+    "contour_sections": true,
+    "prune_short_spurs": true,
+    "inputs_unchanged": true
+  }
+}
+........................................................................ [ 24%]
+........................................................................ [ 48%]
+..........................................................................................................................................................                  [100%]
+298 passed, 261 subtests passed in 80.33s (0:01:20)

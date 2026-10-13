@@ -1,0 +1,8 @@
+﻿{
+    "uninstaller_exists":  true,
+    "exit_code":  0,
+    "installer":  "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-public.exe",
+    "arguments":  "/VERYSILENT /SUPPRESSMSGBOXES /SP- /NORESTART /RESTARTEXITCODE=3010 /NOCLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /NOICONS /TASKS=\"\" /DIR=\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\" /LOG=\"C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-windows-validation\\installation.log\"",
+    "executable_exists":  true,
+    "target":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013"
+}

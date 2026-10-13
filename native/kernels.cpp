@@ -281,13 +281,30 @@ py::tuple contour_sections(const py::array& segments, const py::array& heights,
     return py::make_tuple(std::move(output_offsets), std::move(output_intervals));
 }
 
+// Under MSVC /fp:strict, std::isfinite(double) can call the CRT for every
+// pixel. Classify the IEEE NumPy storage without float conversion or arithmetic;
+// memcpy preserves aliasing rules and the NaN/Inf rejection contract.
+bool finite_distance(float value) {
+    static_assert(sizeof(float) == sizeof(std::uint32_t) && std::numeric_limits<float>::is_iec559);
+    std::uint32_t bits;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return (bits & 0x7f800000U) != 0x7f800000U;
+}
+
+bool finite_distance(double value) {
+    static_assert(sizeof(double) == sizeof(std::uint64_t) && std::numeric_limits<double>::is_iec559);
+    std::uint64_t bits;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return (bits & 0x7ff0000000000000ULL) != 0x7ff0000000000000ULL;
+}
+
 template <typename Distance>
 void prune_impl(bool* usable, const std::uint8_t* source, const Distance* distance_map,
                 std::size_t height, std::size_t width, const Checkpoint& checkpoint) {
     const auto pixels = height * width;
     for (std::size_t index = 0; index < pixels; ++index) {
         if (!(index & kScanCheckpointMask)) checkpoint.check();
-        if (!std::isfinite(static_cast<double>(distance_map[index]))) {
+        if (!finite_distance(distance_map[index])) {
             throw py::value_error("distance_map must be finite");
         }
         usable[index] = source[index] != 0;

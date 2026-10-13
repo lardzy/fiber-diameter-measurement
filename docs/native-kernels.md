@@ -39,6 +39,8 @@ PowerShell 使用 `$env:FDM_BUILD_NATIVE="0"`，需要恢复编译时删除该�
 
 后端选择在服务调用时读取，便于同一进程进行配对测试。非法值、损坏的二进制、缺失的二进制依赖、ABI／接口版本错误、源码与构建指纹不一致均明确报错。计算过程中的错误或取消不回退重算。
 
+升级 Python 或切换平台后，旧 ABI 后缀的 `_kernels.*.so` / `_kernels.*.pyd` 即使被 Python 导入器忽略，也会阻止 auto 静默回退并提示重新构建。显式 `python` 模式仍可用于源码对照。
+
 冻结应用总是要求原生内核，源码调试环境变量不能绕过此要求；`--self-check --json` 会独立执行真实 C++ 内核。需要在已发布应用恢复旧行为时，应恢复此前经过验证的安装包。
 
 ```sh
@@ -91,7 +93,7 @@ Windows 使用相应 `.exe` 路径。该探针不是完整应用安装包。Wind
 在具备目标 Python、MSVC、Inno Setup 和相应发行资源的 Windows 环境，可按以下顺序验收。每次 onedir 构建会更新同一输出目录，应分别保留报告后再进行下一配置；`public` 是 full 配置的发行选项。
 
 ```powershell
-python -m pip install --no-cache-dir ".[dev,packaging]"
+python -m pip install --no-cache-dir -e ".[dev,packaging]"
 python -c "from fdm.services.native_kernels_self_check import run_native_kernels_self_check; print(run_native_kernels_self_check(validate_source=True))"
 python -m pytest -q tests/test_native_backend.py tests/test_native_kernels.py tests/test_build_windows_onedir.py tests/test_release_self_check.py
 python scripts/build_windows_onedir.py --profile core --strict-asset-hashes
@@ -100,6 +102,8 @@ python scripts/build_windows_onedir.py --profile full --public-release --strict-
 python scripts/build_windows_installer.py --reuse-onedir --public-release --strict-asset-hashes
 ```
 
+这里必须使用可编辑安装（`-e`），使原生扩展位于发行脚本实际加载的 `src/fdm/_native` 中。普通 wheel 安装只会把扩展放进安装目录，不能替代源码目录的打包前构建。
+
 在安装后的目录运行应用的 `--self-check --json`，确认 `functional_checks.native_kernels` 四个 case 均为 true，另一个 `fiber_quick_geometry` 检查仍为 `skimage_zhang`、修订号 3。还需实际操作轮廓对比、普通／分叉测径、计算中取消和关闭窗口；将结果与目标 Windows 环境中的 Python 参考路径配对。正式发布沿用项目原有干净工作区、签名和资源要求。
 
-本轮实际结果、已知基线失败和原始证据见 [2026-10-05 验证报告](validation/native-kernel-migration-2026-10-05/README.md)。
+首轮 macOS 实际结果、已知基线失败和原始证据见 [2026-10-05 验证报告](validation/native-kernel-migration-2026-10-05/README.md)。Windows 修复、MSVC 构建及设备验证见 [2026-10-13 验证报告](validation/native-kernel-windows-2026-10-13/README.md)；该设备的完整性能验收仍有两项 P95 退化未通过。

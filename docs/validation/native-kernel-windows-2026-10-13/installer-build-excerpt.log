@@ -1,0 +1,32 @@
+Excerpt: last 30 lines. Full log retained in build/native-windows-validation/18-installer.log
+
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\panedwindow.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\progress.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\scale.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\scrollbar.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\sizegrip.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\spinbox.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\treeview.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\ttk.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\utils.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\vistaTheme.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\winTheme.tcl
+   Compressing: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\..\..\dist\windows\FiberDiameterMeasurement\_tk_data\ttk\xpTheme.tcl
+   Compressing Setup program executable
+   Updating version info (Setup.exe)
+   Updating manifest (Setup.exe)
+
+
+Successful compile (157.438 sec). Resulting Setup program filename is:
+C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\installer\fiber-diameter-measurement-setup-0.4.7.exe
+Synchronized installer version include: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\version.auto.iss -> 0.4.7
+Installer language: Simplified Chinese (C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\languages\ChineseSimplified.isl)
+Packaged self-check report: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\build\self-check\packaged-runtime.json
+Packaged self-check stderr: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\build\self-check\packaged-runtime.stderr.log
+Running Inno Setup:
+C:\Program Files (x86)\Inno Setup 6\ISCC.exe C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\fdm_installer.iss
+
+Installer build completed.
+Output directory: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\installer
+Installer: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\installer\fiber-diameter-measurement-setup-0.4.7-public.exe
+{"Path":"C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-public.exe","Hash":"2E0C3C3D9882C30271E5532154845176F290B78D6773562A85BF5D4A8782A013"}

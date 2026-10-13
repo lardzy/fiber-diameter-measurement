@@ -1,0 +1,132 @@
+[
+  {
+    "path": "LICENSE",
+    "before_sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+    "after_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  {
+    "path": "runtime/area-infer/app/engine.py",
+    "before_sha256": "144cede759e3498f6a31dab22e974541d96042d3128aef0acec4637f887eaa16",
+    "after_sha256": "2876ded96056ee25adb7bf2af7948f34f001c8f15824bb0a7e870be50d7734db"
+  },
+  {
+    "path": "runtime/area-infer/app/main.py",
+    "before_sha256": "897328abfbf0a302e600860cbe4ca844478b13183a71af28bf613fd1abaeeb9b",
+    "after_sha256": "5bc50a574c521cf7aec2edde408397a7346002308dc77e5cccce5a08715aad62"
+  },
+  {
+    "path": "runtime/area-infer/app/model_metadata.py",
+    "before_sha256": "9bb04b04b92a02db6cf54fa9212ef45e0e8ab47a2bb77ee419b9f39906232d17",
+    "after_sha256": "3717f589592853bbd919bdd9e94d402d9f6ed400d58809d30ed2629d5074997d"
+  },
+  {
+    "path": "runtime/area-infer/app/request_limits.py",
+    "before_sha256": "098b855ff4e96237800382a93e8e6661b2bc9f808e01e32713b36c63a0d5dd93",
+    "after_sha256": "8cba336ac0546a2d5e7edbe4d175e2ae17889fc397afb911adbbc5f54c663c20"
+  },
+  {
+    "path": "runtime/area-infer/app/security.py",
+    "before_sha256": "96970e54c30acda206a05408e43a07a308101d50faa6623d9c2c3f891da352a3",
+    "after_sha256": "063660e70c08334b9414fb2d147a9aba84416e8fb2760a98d2a525fbf74f8216"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/LICENSE",
+    "before_sha256": "a25fc4092b588197ad41a62a3cd8be3ca35a5c7f86dd6040a24bcff1d96cfc79",
+    "after_sha256": "2c78d4b5c5e95a30267630bd1f77b7607e18216776c0e5b64f8085fbe101b450"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/backbone.py",
+    "before_sha256": "45164d033a7c58ec538a0b0b3b24aef9ca6ae771fd6a7f45feac227bf5c51759",
+    "after_sha256": "0d9242165f7f4d7d7240681450524ee4f112decc08f4d6f1668ba43931441605"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/yolact.py",
+    "before_sha256": "c1124179076981e885cf68c6bd6c4978b6254d04c1ba86cc7ea14b63479a15a2",
+    "after_sha256": "376e3c347946f4479c82c3a82c4782c7322ba42eb3cf9915a66f2c49d7fd897b"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/data/__init__.py",
+    "before_sha256": "715ff24337ef8f4ec967901611151eb3caecc95c11a84e9ee92bc75ad97f3363",
+    "after_sha256": "f16fff91eb3318f3b1cff844386e6a956319a361192c2dc9d498238383b03ed2"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/data/coco.py",
+    "before_sha256": "2921bf58fde8cd9d977443f85c0a73f842096e205e7cbfafa01a81318b239515",
+    "after_sha256": "593f72b88d7cebfb20e10ab25b0c09c32f9a3365c4871798b4229986d8b72955"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/data/config.py",
+    "before_sha256": "e0e9ce7525fe1e6a4603057f918fd6c5a22b24ef9618a7d463e12813f585f7d1",
+    "after_sha256": "f1386cb5787eb260638f127a8bb6d04843506c527aa85c655574967819238139"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/__init__.py",
+    "before_sha256": "ac6fd54b222e6b8293e15bac7fe3e881e2edcf0e2fbef27d78a14bfa66d1f980",
+    "after_sha256": "e4a6bf6c44d23bce70391a4ace320c3ca1082ea54bf0947fcb47a4dcde5a936e"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/box_utils.py",
+    "before_sha256": "b0a7220fcbdc9bdc5b9a2d270eb3b348f237efdb9bdab2583d1830ea7ac17c8c",
+    "after_sha256": "04e04083276923f3bd22eba40a00c8b0824b5ce3b859a2e0e93f0faeed9c047a"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/interpolate.py",
+    "before_sha256": "7c392fee0921a16a683714018d6b47072eeeff64a2256425bbcc17e4cf9d562c",
+    "after_sha256": "e502fdd29086933d3a5aa10cfaa19b3063d97609e0aed217771001d9b87251a3"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/output_utils.py",
+    "before_sha256": "59aca245ac599dae718cfaf2ee41c567420172dc5526d685c74375e04a33b37b",
+    "after_sha256": "dd6aefba0a814d90c4fab526ef24d61f6575f6eab29ced1ff38460717d6db310"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/functions/__init__.py",
+    "before_sha256": "c30b02f571155c57640692fc0d7d5cbfbc39c9dc7f4c51a1c8d96d2b3b8ec736",
+    "after_sha256": "9735d1ce1895e808b5314d6d0b38775457a8804cd878473acdb994d376846f59"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/functions/detection.py",
+    "before_sha256": "7218e06e6b79ca8a4fca504a2e36044e442c0e31cf4551fee6ff0f572ff2fae0",
+    "after_sha256": "20c51f9965d694e8cb5f1cff3bffdf9071a2fa8dcd366a83dd184a2a7ae8f9d8"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/modules/__init__.py",
+    "before_sha256": "49be5262b0650d017c972bd689cf44b5913e1e23056259acc5012924cc9437b5",
+    "after_sha256": "caf17e0318ed2c2112a20f1182876e254df430b83ec3ffbad20ec5b9ede9a46a"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py",
+    "before_sha256": "567d3e614febaa33a660240ab05ec48bb6c05a11b394b1d93a57cc3a6cf05405",
+    "after_sha256": "886b3dcf046f09d44d782f1e5bbb07d13928c508d61ad4a43b876c13492cd195"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/utils/augmentations.py",
+    "before_sha256": "1b04c9a4c0b4955d4ed011e3d08be2048da3f76b5ab077a643101b4118e7a8c4",
+    "after_sha256": "5c303203ad90060262dbdcf5a9d5e67a6e88aa23e7d80562d94aeaa08dda09bd"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/utils/cython_nms.pyx",
+    "before_sha256": "7bfaf8b25ab732d493606104ca32bea2457dd33078415b153e0128c0fd0eed6d",
+    "after_sha256": "c93ed690a0aae988e08c18b463b28bf388f340cb2ad28152821b42e2654bd21a"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/utils/functions.py",
+    "before_sha256": "996f9baaed47944e355c2f933539622dee1bf17732adc2375352456ecb2fdc09",
+    "after_sha256": "e3adc9e8121c0a20c95539bee00045f541427d883fdbbb8ca05a0d160203c902"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/utils/logger.py",
+    "before_sha256": "832ab96147468f007e235924c1ee288ac35420cc590e212ba2cee21c27b013db",
+    "after_sha256": "0c8d6e490a05b3045592fc16038c133dda125b1d13f381c97d86e6d889810465"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/utils/nvinfo.py",
+    "before_sha256": "23e6d750ec18e82c4a3ee8114799074cd6a7d34fbbbf4ec9b291a0dc2de73692",
+    "after_sha256": "6621b1da7d3f20039a1ce124f1ba42454a41d08b9d60bb75a41623fd61862b44"
+  },
+  {
+    "path": "runtime/area-infer/vendor/yolact/utils/timer.py",
+    "before_sha256": "bf01a730090424dd2d96f20b82c27ebac3e27abf08a35f6343f2a3a592c21613",
+    "after_sha256": "082ecd0fdd58a9e66fa7e8e9618e22ed3886ca1ceef286aa9e265d98bf35cfd2"
+  }
+]

@@ -1,0 +1,51 @@
+{
+  "original_head": "12eb1f108e1e0e8bee675eab0940fd43ee7935bd",
+  "current_branch": "lard/native-kernel-migration",
+  "current_head": "1b343c7c19b90adec162e36e03f20192e02865de",
+  "original_files": {
+    "runtime/content-templates/-26-\u4e2d\u7a7a\u5ea6\u539f\u59cb\u8bb0\u5f55\uff08\u539f\u53f7902\uff09-\u96c6\u56e2-2023.6.13.xlsm": {
+      "expected_sha256": "f5ca2fadc974cfd9034a6fbcd70db9185d721dd51e89ee2e1579b374e8f760a5",
+      "actual_sha256": "f5ca2fadc974cfd9034a6fbcd70db9185d721dd51e89ee2e1579b374e8f760a5"
+    },
+    "runtime/content-templates/-\u7ea4\u7ef4\u5e73\u5747\u76f4\u5f84\u8bd5\u9a8c\u8bb0\u5f55(GBT 36422).xlsm": {
+      "expected_sha256": "8ea2ac84297756d35084bd8be1bd5a844949125b65e46a3b55e379a2dfb2dd04",
+      "actual_sha256": "8ea2ac84297756d35084bd8be1bd5a844949125b65e46a3b55e379a2dfb2dd04"
+    },
+    "runtime/content-templates/-\u9762\u79ef\u6cd5-\u5b9a\u91cf\u8bd5\u9a8c\u539f\u59cb\u8bb0\u5f55-\u65b0\u7cfb\u7edf.xlsm": {
+      "expected_sha256": "76a7de3f1c5214088a68a85e81e91817b23ffda7eafe254395754a888cca937b",
+      "actual_sha256": "76a7de3f1c5214088a68a85e81e91817b23ffda7eafe254395754a888cca937b"
+    },
+    "runtime/content-templates/sheet1.xlsm": {
+      "expected_sha256": "99d84c3076139a5931e80ffa6f0f224e42c9375d8d462b0f96e4fb4adcb84f2c",
+      "actual_sha256": "99d84c3076139a5931e80ffa6f0f224e42c9375d8d462b0f96e4fb4adcb84f2c"
+    },
+    "src/fiber_diameter_measurement.egg-info/PKG-INFO": {
+      "expected_sha256": "4edb329a2e2a13030a87302cd36cef0cfb4f3becb65a9d89e7f4a0f51c75b5d4",
+      "actual_sha256": "4edb329a2e2a13030a87302cd36cef0cfb4f3becb65a9d89e7f4a0f51c75b5d4"
+    },
+    "src/fiber_diameter_measurement.egg-info/SOURCES.txt": {
+      "expected_sha256": "e32289993ade4887adb88dd49ce3c1249333f337367a668e452ae5794406f879",
+      "actual_sha256": "e32289993ade4887adb88dd49ce3c1249333f337367a668e452ae5794406f879"
+    },
+    "src/fiber_diameter_measurement.egg-info/dependency_links.txt": {
+      "expected_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "actual_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "src/fiber_diameter_measurement.egg-info/entry_points.txt": {
+      "expected_sha256": "9864bb05e779c15ad10ce0cdb118dd938bd4230e95c0e64c7e86f1e8b3b9e250",
+      "actual_sha256": "9864bb05e779c15ad10ce0cdb118dd938bd4230e95c0e64c7e86f1e8b3b9e250"
+    },
+    "src/fiber_diameter_measurement.egg-info/requires.txt": {
+      "expected_sha256": "ab55e940ae38dcb764eb66e4d4bc4f5d91ea95b9a46a1a4550b4b1759efae650",
+      "actual_sha256": "ab55e940ae38dcb764eb66e4d4bc4f5d91ea95b9a46a1a4550b4b1759efae650"
+    },
+    "src/fiber_diameter_measurement.egg-info/top_level.txt": {
+      "expected_sha256": "29b1ac57aeabd156f8578570bdd5c27df170106b6cc33a4f21a72e6792df1aa8",
+      "actual_sha256": "29b1ac57aeabd156f8578570bdd5c27df170106b6cc33a4f21a72e6792df1aa8"
+    }
+  },
+  "all_preserved": true,
+  "status": " M LICENSE\n M docs/native-kernels.md\n M native/kernels.cpp\n M runtime/area-infer/app/engine.py\n M runtime/area-infer/app/main.py\n M runtime/area-infer/app/model_metadata.py\n M runtime/area-infer/app/request_limits.py\n M runtime/area-infer/app/security.py\n M runtime/area-infer/vendor/yolact/LICENSE\n M runtime/area-infer/vendor/yolact/backbone.py\n M runtime/area-infer/vendor/yolact/data/__init__.py\n M runtime/area-infer/vendor/yolact/data/coco.py\n M runtime/area-infer/vendor/yolact/data/config.py\n M runtime/area-infer/vendor/yolact/layers/__init__.py\n M runtime/area-infer/vendor/yolact/layers/box_utils.py\n M runtime/area-infer/vendor/yolact/layers/functions/__init__.py\n M runtime/area-infer/vendor/yolact/layers/functions/detection.py\n M runtime/area-infer/vendor/yolact/layers/interpolate.py\n M runtime/area-infer/vendor/yolact/layers/modules/__init__.py\n M runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py\n M runtime/area-infer/vendor/yolact/layers/output_utils.py\n M runtime/area-infer/vendor/yolact/utils/augmentations.py\n M runtime/area-infer/vendor/yolact/utils/cython_nms.pyx\n M runtime/area-infer/vendor/yolact/utils/functions.py\n M runtime/area-infer/vendor/yolact/utils/logger.py\n M runtime/area-infer/vendor/yolact/utils/nvinfo.py\n M runtime/area-infer/vendor/yolact/utils/timer.py\n M runtime/area-infer/vendor/yolact/yolact.py\n M src/fdm/_native/__init__.py\n M src/fiber_diameter_measurement.egg-info/PKG-INFO\n M src/fiber_diameter_measurement.egg-info/SOURCES.txt\n M src/fiber_diameter_measurement.egg-info/dependency_links.txt\n M src/fiber_diameter_measurement.egg-info/entry_points.txt\n M src/fiber_diameter_measurement.egg-info/requires.txt\n M src/fiber_diameter_measurement.egg-info/top_level.txt\n M tests/test_build_support.py\n M tests/test_native_backend.py\n M tests/test_native_kernels.py\n?? runtime/content-templates/\n",
+  "index_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "original_index_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

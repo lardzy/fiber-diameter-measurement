@@ -1,0 +1,3 @@
+# Keep raw evidence bytes stable across Git line-ending configurations.
+*.json -text whitespace=cr-at-eol
+*.xml -text whitespace=cr-at-eol

@@ -1,0 +1,31 @@
+{
+  "wheel": "fiber_diameter_measurement-0.4.7-cp312-cp312-win_amd64.whl",
+  "wheel_sha256": "613429d91d447dbc87890bb5fda6bca6f411862b83a7e2dcd87bdc8587e67a77",
+  "sdist": "fiber_diameter_measurement-0.4.7.tar.gz",
+  "sdist_sha256": "81b6c7dde944c35c908e2beec05f455bc8a43fda92e2193d7219bf77241b46d4",
+  "compiled_modules": [
+    "fdm/_native/_kernels.cp312-win_amd64.pyd"
+  ],
+  "isolated_target_self_check": {
+    "ok": true,
+    "backend": "native",
+    "api_version": 1,
+    "compiled_extension": true,
+    "build_info": {
+      "api_version": 1,
+      "source_sha256": "91c68f11c1e9afd98a1ff0cd3053475d7c7e9481fc9c44078c4fa98996e7d415",
+      "python_abi": "cpython-312",
+      "python_version": "3.12.13",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "MSVC 1944"
+    },
+    "cases": {
+      "boundary_segments": true,
+      "contour_sections": true,
+      "prune_short_spurs": true,
+      "inputs_unchanged": true
+    }
+  }
+}

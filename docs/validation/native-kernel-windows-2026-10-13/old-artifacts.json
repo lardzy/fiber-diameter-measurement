@@ -1,0 +1,14 @@
+[
+  {
+    "original": "dist/windows",
+    "preserved_as": "dist\\windows-before-native-20261013"
+  },
+  {
+    "original": "dist/installer",
+    "preserved_as": "dist\\installer-before-native-20261013"
+  },
+  {
+    "original": "build/pyinstaller",
+    "preserved_as": "build\\pyinstaller-before-native-20261013"
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "backend": "native",
+  "api_version": 1,
+  "compiled_extension": true,
+  "build_info": {
+    "api_version": 1,
+    "source_sha256": "91c68f11c1e9afd98a1ff0cd3053475d7c7e9481fc9c44078c4fa98996e7d415",
+    "python_abi": "cpython-312",
+    "python_version": "3.12.13",
+    "pybind11_version": "3.0.4",
+    "build_type": "release",
+    "cpp_standard": 201703,
+    "compiler": "MSVC 1944"
+  },
+  "cases": {
+    "boundary_segments": true,
+    "contour_sections": true,
+    "prune_short_spurs": true,
+    "inputs_unchanged": true
+  },
+  "frozen": true,
+  "forced_python_still_selects_native": true,
+  "stdio_none": true
+}

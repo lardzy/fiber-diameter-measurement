@@ -1,0 +1,50 @@
+{
+  "branch": "lard/native-kernel-migration",
+  "base_commit": "1b343c7c19b90adec162e36e03f20192e02865de",
+  "guest_original_commit": "12eb1f108e1e0e8bee675eab0940fd43ee7935bd",
+  "guest_project": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement",
+  "vm": "Windows 11",
+  "vm_uuid": "fd15ab52-26aa-4f99-b76a-19d334bc38ea",
+  "windows": "Windows 11 Pro 10.0.26200 ARM64",
+  "python": "3.12.13 win-amd64",
+  "toolchain": "MSVC 1944 / Visual Studio Build Tools 2022 17.14.41",
+  "runtime": "x64 Python and extension running on Windows ARM64; not an ARM64 Python build",
+  "source_fingerprint": "91c68f11c1e9afd98a1ff0cd3053475d7c7e9481fc9c44078c4fa98996e7d415",
+  "initial_targeted_native": "33 failed (including 26 failed subtests), 285 passed, 235 subtests passed",
+  "final_targeted_native": "298 passed, 261 subtests passed",
+  "reference": "83 passed, 138 subtests passed",
+  "msvc_install_exit": 0,
+  "reboot_required": false,
+  "original_files_preserved": 10,
+  "egg_info_restored": 6,
+  "line_ending_assets_restored_to_pinned_bytes": 26,
+  "code_modified": [
+    "native/kernels.cpp",
+    "src/fdm/_native/__init__.py",
+    "docs/native-kernels.md",
+    "tests/test_native_backend.py",
+    "tests/test_native_kernels.py",
+    "tests/test_build_support.py"
+  ],
+  "intermediate_targeted_native": "292 passed, 261 subtests passed",
+  "local_final_native": "139 passed, 138 subtests passed",
+  "formal_performance_status": "failed",
+  "unpassed_p95_cases": [
+    "quick_horizontal_60px",
+    "quick_diagonal_40px"
+  ],
+  "builds": {
+    "core": "passed",
+    "full": "passed",
+    "public": "passed",
+    "installer_reuse": "passed",
+    "installed_self_check": "passed",
+    "sdist_wheel_install": "passed",
+    "frozen_probe": "passed"
+  },
+  "installer_sha256": "2e0c3c3d9882c30271e5532154845176f290b78d6773562a85bf5d4a8782a013",
+  "installed_directory": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013",
+  "public_build_id": "b7a876415af244f1b6823b149ef6437d",
+  "commit_status": "uncommitted fixes; not pushed",
+  "windows_acceptance": "functional and packaging checks passed; performance gate incomplete due to two P95 regressions"
+}

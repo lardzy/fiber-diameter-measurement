@@ -1,0 +1,32 @@
+Excerpt: last 30 lines. Full log retained in build/native-windows-validation/15-core-package.log
+
+414204 INFO: Copying 0 resources to EXE
+414204 INFO: Embedding manifest in EXE
+414239 INFO: Appending PKG archive to EXE
+414302 INFO: Fixing EXE headers
+415846 INFO: Building EXE from EXE-02.toc completed successfully.
+415934 INFO: checking COLLECT
+415934 INFO: Building COLLECT because COLLECT-00.toc is non existent
+415934 INFO: Building COLLECT COLLECT-00.toc
+419875 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+419947 INFO: Build complete! The results are available in: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows
+Running PyInstaller:
+C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --distpath C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows --workpath C:\Users\lishuyang\Downloads\fiber-diameter-measurement\build\pyinstaller C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\pyinstaller\fdm_onedir.spec
+Packaged self-check report: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\build\self-check\packaged-runtime.json
+Packaged self-check stderr: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\build\self-check\packaged-runtime.stderr.log
+
+Build completed.
+Output directory: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows\FiberDiameterMeasurement
+Console mode: off
+Bootloader debug: off
+Runtime profile: core
+Source asset hash policy: strict
+Excluded components: none
+Private content templates: 4 files
+Main executable: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows\FiberDiameterMeasurement\FiberDiameterMeasurement.exe
+Area worker: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows\FiberDiameterMeasurement\FiberAreaWorker.exe
+Screenshot companion: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows\FiberDiameterMeasurement\FiberScreenshotTool.exe
+Runtime assets: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows\FiberDiameterMeasurement\runtime
+Release manifest: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\windows\FiberDiameterMeasurement\release-manifest.json
+Installer version include: C:\Users\lishuyang\Downloads\fiber-diameter-measurement\packaging\inno-setup\version.auto.iss
+Use this directory as the source folder for your Inno Setup installer.

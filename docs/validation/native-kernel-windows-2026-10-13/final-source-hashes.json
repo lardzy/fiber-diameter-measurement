@@ -1,0 +1,27 @@
+{
+  "native/kernels.cpp": {
+    "sha256": "e9a72b76af5c07e3a6deb3c1fc976ae000a0f1ad3903201ab48acd8f2e93f223",
+    "lf_normalized_sha256": "e9a72b76af5c07e3a6deb3c1fc976ae000a0f1ad3903201ab48acd8f2e93f223",
+    "crlf_count": 0
+  },
+  "src/fdm/_native/__init__.py": {
+    "sha256": "f470864921bb7205fd72733f3677ec3bbc953f753bced094afda44bfcef6e2eb",
+    "lf_normalized_sha256": "e75937c8538b85086a1a3a93e8a663926d8d3fa11212b743eb09242eb6b0d10c",
+    "crlf_count": 132
+  },
+  "tests/test_native_backend.py": {
+    "sha256": "f7f8f114c93730e37fb914413084f040f2cd1d0c5215522dc0185e469f8e8b9b",
+    "lf_normalized_sha256": "e4938047eddcc8c8e04a51fb118e7b8c85a64113f5e12b4dec87acd33dabd79d",
+    "crlf_count": 142
+  },
+  "tests/test_native_kernels.py": {
+    "sha256": "3df114a4534aa0fcb7461c306315985d022aa9d386744b9cd30f31ba971b5594",
+    "lf_normalized_sha256": "3df114a4534aa0fcb7461c306315985d022aa9d386744b9cd30f31ba971b5594",
+    "crlf_count": 0
+  },
+  "tests/test_build_support.py": {
+    "sha256": "37644a661eb6af2b4b54ee8219033890b807057c3ec29fa9b86742cd59308005",
+    "lf_normalized_sha256": "37644a661eb6af2b4b54ee8219033890b807057c3ec29fa9b86742cd59308005",
+    "crlf_count": 0
+  }
+}

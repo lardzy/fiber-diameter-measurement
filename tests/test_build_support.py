@@ -360,7 +360,7 @@ license = "LicenseRef-Test"
                 collect_runtime_datas(root, "core")
             self.assertEqual(
                 collect_runtime_datas(root, "core", strict_asset_hashes=False),
-                [(str(asset), "runtime/models")],
+                [(str(asset), str(Path("runtime") / "models"))],
             )
 
     def test_runtime_asset_target_controls_packaged_destination(self) -> None:
@@ -398,7 +398,7 @@ license = "LicenseRef-Test"
             self.assertEqual(runtime_profile_required_files(root, "core"), ("runtime/packaged/model.bin",))
             self.assertEqual(
                 collect_runtime_datas(root, "core"),
-                [(str(asset), "runtime/packaged")],
+                [(str(asset), str(Path("runtime") / "packaged"))],
             )
             self.assertTrue(check_runtime_profile(root, "core").ok)
 

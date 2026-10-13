@@ -1,0 +1,3 @@
+2026-10-13 11:52:46.261   Setup command line: /SL5="$1100B6,395866349,1108480,C:\Users\lishuyang\Downloads\fiber-diameter-measurement\dist\installer\fiber-diameter-measurement-setup-0.4.7-public.exe" /VERYSILENT /SUPPRESSMSGBOXES /SP- /NORESTART /RESTARTEXITCODE=3010 /NOCLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /NOICONS /TASKS="" /DIR="C:\Users\lishuyang\Downloads\fdm-native-validation-installed-20261013" /LOG="C:\Users\lishuyang\Downloads\fiber-diameter-measurement\build\native-windows-validation\installation.log"
+2026-10-13 11:53:21.786   Installation process succeeded.
+2026-10-13 11:53:21.786   Need to restart Windows? No

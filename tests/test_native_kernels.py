@@ -206,6 +206,19 @@ def test_invalid_arrays_rejected_without_poisoning_kernel(kernels):
     np.testing.assert_array_equal(contour.boundary_segments(mask), contour.boundary_segments_python(mask))
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
+def test_distance_validation_includes_background_and_recovers(dtype, value):
+    skeleton = np.zeros((3, 4), bool)
+    distance = np.zeros(skeleton.shape, dtype=dtype)
+    distance[0, 0] = value
+    with pytest.raises(ValueError, match="distance_map must be finite"):
+        quick._prune_short_spurs(skeleton, distance)
+    # Signed zero, subnormals and the largest finite values remain accepted.
+    distance[0, :4] = (-0., np.finfo(dtype).smallest_subnormal, np.finfo(dtype).max, -np.finfo(dtype).max)
+    np.testing.assert_array_equal(quick._prune_short_spurs(skeleton, distance), skeleton)
+
+
 def test_cancellation_exception_and_deadline_priority():
     source = CancellationTokenSource()
     source.cancel()
@@ -274,6 +287,9 @@ def without_timing(value):
 
 
 def test_complete_measurement_results_and_baseline_rejections(monkeypatch):
+    # Match the production worker's warm-up: a cold scikit-image import can
+    # exceed the measurement deadline on Windows before either pruner runs.
+    quick.prepare_fiber_quick_geometry_backend()
     ys, xs = np.indices((320, 320))
     service = quick.FiberQuickDiameterGeometryService()
     for width in (16, 40):

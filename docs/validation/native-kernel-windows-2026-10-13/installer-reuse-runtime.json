@@ -1,0 +1,755 @@
+{
+  "build_id": "b7a876415af244f1b6823b149ef6437d",
+  "checked_files": 4760,
+  "dependency_versions": {
+    "Pillow": "12.1.1",
+    "PySide6": "6.10.2",
+    "et_xmlfile": "2.0.0",
+    "lazy-loader": "0.5",
+    "numpy": "2.4.3",
+    "onnxruntime": "1.24.4",
+    "opencv-python": "4.13.0.92",
+    "openpyxl": "3.1.5",
+    "python": "3.12.13",
+    "scikit-image": "0.26.0",
+    "scipy": "1.18.1",
+    "tifffile": "2026.7.14",
+    "torch": "2.10.0",
+    "torchvision": "0.25.0"
+  },
+  "errors": [],
+  "excluded_components": [
+    "area-models",
+    "content-templates"
+  ],
+  "features": [
+    "measurement",
+    "capture",
+    "screenshot-tool",
+    "digital-slide",
+    "image-export",
+    "image-processing",
+    "image-analysis",
+    "batch-processing",
+    "magic-segmentation"
+  ],
+  "functional_checks": {
+    "analysis_pipeline": {
+      "advanced_analysis": {
+        "generation": 7,
+        "kind": "directionality",
+        "ok": true,
+        "registered_tools": 7,
+        "request_id": "analysis-advanced-self-check"
+      },
+      "advanced_analysis_batch": {
+        "generation": 8,
+        "ok": true,
+        "request_id": "advanced-analysis-batch-self-check",
+        "success_count": 2
+      },
+      "analysis_profiles": {
+        "count": 1,
+        "ok": true,
+        "tool_version": "2"
+      },
+      "batch": {
+        "generation": 11,
+        "item_count": 2,
+        "ok": true,
+        "request_id": "analysis-batch-self-check",
+        "result_sha256": [
+          "ed4a7639fee72fb979ebd7567eaac060cac1862f8b40c70d559017ec31415ac3",
+          "58e116b0bdd5d153f41e21ae0a64b6354e47bc990603c8583d06d413ba9a264d"
+        ],
+        "success_count": 2,
+        "summary": "��������ɣ��ɹ� 2 �ţ�ʧ�� 0 �ţ��� 2 �š�"
+      },
+      "ok": true,
+      "portable_package": {
+        "bytes": 7941,
+        "ok": true,
+        "unicode_path": true
+      },
+      "safe_npz": {
+        "members": [
+          "mask",
+          "values"
+        ],
+        "ok": true,
+        "schema": "fdm.self-check.analysis.v1",
+        "sha256": "6d1bc953d77cd330a9a1057af322bea9dc648f6344a513bcdfaadb4ee63f344f"
+      },
+      "workbook": {
+        "bytes": 7732,
+        "ok": true,
+        "sheets": [
+          "����ժҪ",
+          "��������Դ",
+          "����_ֱ��ͼ"
+        ],
+        "unicode_path": true
+      }
+    },
+    "area_worker": "skipped_area_models_excluded",
+    "core_measurement": true,
+    "dependency:Pillow": true,
+    "dependency:tifffile": true,
+    "dependency:torch": true,
+    "dependency:torchvision": true,
+    "fiber_quick_geometry": {
+      "backend": "skimage_zhang",
+      "backend_version": "0.26.0",
+      "cases": {
+        "cross": {
+          "geometry_ms": 10.656292000021494,
+          "ok": true,
+          "width_px": 40.0
+        },
+        "diagonal": {
+          "geometry_ms": 9.354041999358742,
+          "ok": true,
+          "width_px": 24.000000000000007
+        },
+        "extended": {
+          "correction_per_endpoint_px": 3.5,
+          "geometry_ms": 7.141957999920123,
+          "ok": true,
+          "width_px": 46.0
+        },
+        "near_border": {
+          "geometry_ms": 7.285624999894935,
+          "ok": true,
+          "width_px": 39.0
+        },
+        "short_fiber": {
+          "geometry_ms": 2.2185830002854345,
+          "ok": true,
+          "width_px": 14.999999999999998
+        },
+        "shrunk": {
+          "correction_per_endpoint_px": -3.5,
+          "geometry_ms": 7.200999999440683,
+          "ok": true,
+          "width_px": 32.0
+        },
+        "straight": {
+          "geometry_ms": 10.620041999573004,
+          "ok": true,
+          "width_px": 39.0
+        }
+      },
+      "compiled_extension": true,
+      "geometry_revision": 3,
+      "incomplete_boundary_rejection": {
+        "failure_code": "incomplete_boundary",
+        "ok": true
+      },
+      "ok": true,
+      "skeleton_connected": true
+    },
+    "image_processing_pipeline": {
+      "cases": {
+        "gray16": {
+          "bytes": 150,
+          "generation": 42,
+          "height": 6,
+          "ok": true,
+          "pixel_type": "gray16",
+          "request_id": "self-check-processing-gray16",
+          "sha256": "8d1e054b2f10603325e6459e29f82b6aa6914f57b3b4a702ba7db0a8ec7c8b8e",
+          "width": 8
+        },
+        "gray32_float": {
+          "bytes": 427,
+          "generation": 43,
+          "height": 6,
+          "ok": true,
+          "pixel_type": "gray32_float",
+          "request_id": "self-check-processing-gray32_float",
+          "sha256": "37d70a9e04167131a60bd7b1b44e898080321dc55d3718915807a0d2bd63e627",
+          "width": 8
+        },
+        "gray8": {
+          "bytes": 87,
+          "generation": 41,
+          "height": 6,
+          "ok": true,
+          "pixel_type": "gray8",
+          "request_id": "self-check-processing-gray8",
+          "sha256": "61473e1ad8cdf650a2ed4fb8eb19ef6b820a73dba0bc81b8452b633707456e65",
+          "width": 8
+        }
+      },
+      "copy_split_merge": {
+        "merged_sha256": "00659088e334b97ce0a34d72173229637af7c9c25fc36a41e1644437597d90c8",
+        "ok": true,
+        "source_sha256": "00659088e334b97ce0a34d72173229637af7c9c25fc36a41e1644437597d90c8"
+      },
+      "ok": true,
+      "operation": "gaussian_blur",
+      "registered_operations": 76,
+      "registry_complete": true
+    },
+    "magic_segmentation": {
+      "backend": "onnxruntime",
+      "backend_version": "1.24.4",
+      "models": {
+        "edge_sam": {
+          "area_px": 6272.0,
+          "cache_bytes": 4194304,
+          "decoder_calls_repeat": 1,
+          "encoder_calls_first": 1,
+          "encoder_calls_repeat": 0,
+          "first_ms": 1436.0905840003397,
+          "mask_equal": true,
+          "ok": true,
+          "providers": [
+            "CPUExecutionProvider"
+          ],
+          "repeat_ms": 127.98087499959365
+        },
+        "edge_sam_3x": {
+          "area_px": 6300.0,
+          "cache_bytes": 4194304,
+          "decoder_calls_repeat": 1,
+          "encoder_calls_first": 1,
+          "encoder_calls_repeat": 0,
+          "first_ms": 1023.3290000005582,
+          "mask_equal": true,
+          "ok": true,
+          "providers": [
+            "CPUExecutionProvider"
+          ],
+          "repeat_ms": 90.48733399959019
+        }
+      },
+      "ok": true
+    },
+    "measurement_units": {
+      "cm": true,
+      "m": true,
+      "mm": true,
+      "nm": true,
+      "um": true
+    },
+    "native_kernels": {
+      "api_version": 1,
+      "backend": "native",
+      "build_info": {
+        "api_version": 1,
+        "build_type": "release",
+        "compiler": "MSVC 1944",
+        "cpp_standard": 201703,
+        "pybind11_version": "3.0.4",
+        "python_abi": "cpython-312",
+        "python_version": "3.12.13",
+        "source_sha256": "91c68f11c1e9afd98a1ff0cd3053475d7c7e9481fc9c44078c4fa98996e7d415"
+      },
+      "cases": {
+        "boundary_segments": true,
+        "contour_sections": true,
+        "inputs_unchanged": true,
+        "prune_short_spurs": true
+      },
+      "compiled_extension": true,
+      "ok": true
+    },
+    "overlay_renderer": {
+      "cases": {
+        "empty@1": {
+          "empty": true,
+          "ok": true
+        },
+        "empty@1.5": {
+          "empty": true,
+          "ok": true
+        },
+        "empty@2": {
+          "empty": true,
+          "ok": true
+        },
+        "magic_primary@1": {
+          "dpr": 1.0,
+          "exact_picture": false,
+          "height": 128,
+          "ok": true,
+          "sha256": "e67eb4eeaf2348536b78f7eb959adccc64d7823713c4e1205a2c535e60583085",
+          "width": 128
+        },
+        "magic_primary@1.5": {
+          "dpr": 1.5,
+          "exact_picture": false,
+          "height": 192,
+          "ok": true,
+          "sha256": "8e243ccd3b7ea7bf511a558cac7b2caa873c772e4cf27fe44c2d29169a8fad90",
+          "width": 192
+        },
+        "magic_primary@2": {
+          "dpr": 2.0,
+          "exact_picture": false,
+          "height": 256,
+          "ok": true,
+          "sha256": "d68dbc096e2742725eb78b0fccceb6244a1253099fbbbbd1fb3d7017ec27b788",
+          "width": 256
+        },
+        "magic_subtract@1": {
+          "dpr": 1.0,
+          "exact_picture": false,
+          "height": 128,
+          "ok": true,
+          "sha256": "c96f7a32d4a0b49a5a7fcf3406228115e3723de375e2fa9f141e59345e326627",
+          "width": 128
+        },
+        "magic_subtract@1.5": {
+          "dpr": 1.5,
+          "exact_picture": false,
+          "height": 192,
+          "ok": true,
+          "sha256": "4cb58aa661f8dde152b57060513a2dbe08b5306c1a1e148d46f883017eedf49e",
+          "width": 192
+        },
+        "magic_subtract@2": {
+          "dpr": 2.0,
+          "exact_picture": false,
+          "height": 256,
+          "ok": true,
+          "sha256": "edf87795fc6ed69a769b6786baf8046de545e3a89dd97bd6ebd08d397367fa36",
+          "width": 256
+        },
+        "mixed_exact@1": {
+          "dpr": 1.0,
+          "exact_picture": true,
+          "height": 128,
+          "ok": true,
+          "sha256": "e48a41b5d57b1daf6d9a9aafda8ceab6fe239bbfdfc5df57bd5a4b3f45cb18c4",
+          "width": 128
+        },
+        "mixed_exact@1.5": {
+          "dpr": 1.5,
+          "exact_picture": true,
+          "height": 192,
+          "ok": true,
+          "sha256": "a6acc25b3d27dfae3f06924d606e95339f864bc581099059d97688c3698939eb",
+          "width": 192
+        },
+        "mixed_exact@2": {
+          "dpr": 2.0,
+          "exact_picture": true,
+          "height": 256,
+          "ok": true,
+          "sha256": "1ef827a08ca5fb829aa41808de86d69577ef679ce14df36e6c84b3ec1eaf6c4c",
+          "width": 256
+        },
+        "scene_overview@1": {
+          "dpr": 1.0,
+          "exact_picture": false,
+          "height": 128,
+          "ok": true,
+          "sha256": "e48a41b5d57b1daf6d9a9aafda8ceab6fe239bbfdfc5df57bd5a4b3f45cb18c4",
+          "width": 128
+        },
+        "scene_overview@1.5": {
+          "dpr": 1.5,
+          "exact_picture": false,
+          "height": 192,
+          "ok": true,
+          "sha256": "a6acc25b3d27dfae3f06924d606e95339f864bc581099059d97688c3698939eb",
+          "width": 192
+        },
+        "scene_overview@2": {
+          "dpr": 2.0,
+          "exact_picture": false,
+          "height": 256,
+          "ok": true,
+          "sha256": "1ef827a08ca5fb829aa41808de86d69577ef679ce14df36e6c84b3ec1eaf6c4c",
+          "width": 256
+        },
+        "text_image_pixels@1": {
+          "dpr": 1.0,
+          "exact_picture": false,
+          "height": 128,
+          "ok": true,
+          "sha256": "9118ce8ef145a97bd63070882d36e0ffc0a68997e5f8930c2e3aa1043640454d",
+          "width": 128
+        },
+        "text_image_pixels@1.5": {
+          "dpr": 1.5,
+          "exact_picture": false,
+          "height": 192,
+          "ok": true,
+          "sha256": "11616d4dcac8e056e63986031bada6ab3b110f81f6ffb30270f08a2976b0548a",
+          "width": 192
+        },
+        "text_image_pixels@2": {
+          "dpr": 2.0,
+          "exact_picture": false,
+          "height": 256,
+          "ok": true,
+          "sha256": "101f376788f9a92ecf7d3e3fcf4c6a4b10a448a8e841780f92563afc9528162a",
+          "width": 256
+        },
+        "text_screen_adaptive@1": {
+          "dpr": 1.0,
+          "exact_picture": false,
+          "height": 128,
+          "ok": true,
+          "sha256": "f4890e280e64cd81de46b2a8c045045d45298eb56deda95704b5bc39ce30ee6d",
+          "width": 128
+        },
+        "text_screen_adaptive@1.5": {
+          "dpr": 1.5,
+          "exact_picture": false,
+          "height": 192,
+          "ok": true,
+          "sha256": "2a07cdd00d9d195e0ebd4f8b5163aa94e071c438552c580bd2bc9326a27cd5b0",
+          "width": 192
+        },
+        "text_screen_adaptive@2": {
+          "dpr": 2.0,
+          "exact_picture": false,
+          "height": 256,
+          "ok": true,
+          "sha256": "afa475b62a4e959dcd1346d7a1548c5a81be0ed82d6ee9ae638c7b244b47c1d9",
+          "width": 256
+        }
+      },
+      "elapsed_ms": 765.0,
+      "ok": true,
+      "scale_overlay": {
+        "cases": {
+          "actual_layout_geometry": true,
+          "division_geometry": true,
+          "endpoint_pixels": true,
+          "fractional_span_coverage": true,
+          "oversized_rejected": true,
+          "preview_export_dpr_1": true,
+          "preview_export_dpr_1.5": true,
+          "preview_export_dpr_2": true,
+          "style_variants": true,
+          "uncalibrated_px": true,
+          "unit_cm": true,
+          "unit_m": true,
+          "unit_mm": true,
+          "unit_nm": true,
+          "unit_um": true
+        },
+        "ok": true,
+        "revision": 1
+      },
+      "start_method": "spawn",
+      "worker_font_family_count": 150,
+      "worker_pid": 4620,
+      "worker_platform": "windows",
+      "worker_stdio_none": true,
+      "worker_text_visible": true
+    },
+    "pe:FiberAreaWorker.exe": true,
+    "pe:FiberDiameterMeasurement.exe": true,
+    "pe:FiberScreenshotTool.exe": true,
+    "project_save": {
+      "cases": {
+        "background_completion": true,
+        "event_dispatch": true,
+        "failure_rollback": true,
+        "preserves_newer_edits": true,
+        "repeat_save": true,
+        "snapshot_isolation": true,
+        "thread_idle": true
+      },
+      "ok": true,
+      "revision": 1
+    },
+    "qt_local_ipc": true,
+    "raster_encoder:bmp": true,
+    "raster_encoder:jpeg": true,
+    "raster_encoder:png": true,
+    "raster_encoder:tiff": true,
+    "raster_encoder:webp": true,
+    "raster_encoders": {
+      "backend": "Pillow",
+      "backend_version": "12.1.1",
+      "formats": {
+        "bmp": {
+          "available": true,
+          "bytes": 90,
+          "height": 3,
+          "ok": true,
+          "width": 4
+        },
+        "jpeg": {
+          "available": true,
+          "bytes": 582,
+          "height": 3,
+          "ok": true,
+          "width": 4
+        },
+        "png": {
+          "available": true,
+          "bytes": 83,
+          "height": 3,
+          "ok": true,
+          "width": 4
+        },
+        "tiff": {
+          "available": true,
+          "bytes": 186,
+          "height": 3,
+          "ok": true,
+          "width": 4
+        },
+        "webp": {
+          "available": true,
+          "bytes": 108,
+          "height": 3,
+          "ok": true,
+          "width": 4
+        }
+      },
+      "ok": true,
+      "production_cases": {
+        "gray16_png": {
+          "bytes": 93,
+          "height": 3,
+          "message": "",
+          "ok": true,
+          "pixel_type": "gray16",
+          "sha256": "2cbea43cc73da4b09db353e8f37f610d3837cf5eb20c8e6ee1999552d1ad6993",
+          "width": 4
+        },
+        "gray16_tiff_deflate": {
+          "bytes": 239,
+          "height": 3,
+          "message": "",
+          "ok": true,
+          "pixel_type": "gray16",
+          "sha256": "2cbea43cc73da4b09db353e8f37f610d3837cf5eb20c8e6ee1999552d1ad6993",
+          "width": 4
+        },
+        "gray16_tiff_lzw": {
+          "bytes": 148,
+          "height": 3,
+          "message": "",
+          "ok": true,
+          "pixel_type": "gray16",
+          "sha256": "2cbea43cc73da4b09db353e8f37f610d3837cf5eb20c8e6ee1999552d1ad6993",
+          "width": 4
+        },
+        "gray16_tiff_none": {
+          "bytes": 232,
+          "height": 3,
+          "message": "",
+          "ok": true,
+          "pixel_type": "gray16",
+          "sha256": "2cbea43cc73da4b09db353e8f37f610d3837cf5eb20c8e6ee1999552d1ad6993",
+          "width": 4
+        },
+        "gray32_float_tiff_deflate": {
+          "bytes": 276,
+          "height": 3,
+          "message": "",
+          "ok": true,
+          "pixel_type": "gray32_float",
+          "sha256": "d7e206ffc02909a43ef84f41edae7067d3653ef39cd093bdaac49db259f11333",
+          "width": 4
+        },
+        "webp_lossless": {
+          "bytes": 72,
+          "exact_sha256": true,
+          "height": 3,
+          "lossless": true,
+          "message": "",
+          "ok": true,
+          "quality": 100,
+          "width": 4
+        },
+        "webp_lossy": {
+          "bytes": 84,
+          "exact_sha256": false,
+          "height": 3,
+          "lossless": false,
+          "message": "",
+          "ok": true,
+          "quality": 73,
+          "width": 4
+        }
+      }
+    },
+    "raster_production:gray16_png": true,
+    "raster_production:gray16_tiff_deflate": true,
+    "raster_production:gray16_tiff_lzw": true,
+    "raster_production:gray16_tiff_none": true,
+    "raster_production:gray32_float_tiff_deflate": true,
+    "raster_production:webp_lossless": true,
+    "raster_production:webp_lossy": true,
+    "screenshot_tool": true,
+    "tifffile:float32": true,
+    "tifffile:uint16": true,
+    "tifffile_precision": {
+      "backend": "tifffile",
+      "backend_version": "2026.7.14",
+      "cases": {
+        "float32": {
+          "bytes": 272,
+          "dtype": "float32",
+          "ok": true,
+          "shape": [
+            3,
+            4
+          ]
+        },
+        "uint16": {
+          "bytes": 232,
+          "dtype": "uint16",
+          "ok": true,
+          "shape": [
+            3,
+            4
+          ]
+        }
+      },
+      "ok": true
+    },
+    "watermark_renderer": {
+      "cache_budget": 33554432,
+      "cache_bytes": 1692976,
+      "cases": {
+        "cache@1": true,
+        "cache@1.5": true,
+        "cache@2": true,
+        "codec_jpg": true,
+        "codec_png": true,
+        "codec_webp": true,
+        "datetime_logo@1": true,
+        "datetime_logo@1.5": true,
+        "datetime_logo@2": true,
+        "datetime_text@1": true,
+        "datetime_text@1.5": true,
+        "datetime_text@2": true,
+        "digital_slide_excluded": true,
+        "font_database": true,
+        "logo_alpha@1": true,
+        "logo_alpha@1.5": true,
+        "logo_alpha@2": true,
+        "preferences_roundtrip": true,
+        "text@1": true,
+        "text@1.5": true,
+        "text@2": true,
+        "tile@1": true,
+        "tile@1.5": true,
+        "tile@2": true
+      },
+      "details": {
+        "datetime_logo@1": {
+          "caption_box": [
+            0,
+            95,
+            180,
+            26
+          ],
+          "repeat_equal": true,
+          "visible": true
+        },
+        "datetime_logo@1.5": {
+          "caption_box": [
+            0,
+            143,
+            270,
+            39
+          ],
+          "repeat_equal": true,
+          "visible": true
+        },
+        "datetime_logo@2": {
+          "caption_box": [
+            0,
+            190,
+            360,
+            51
+          ],
+          "repeat_equal": true,
+          "visible": true
+        },
+        "datetime_text@1": {
+          "caption_box": [
+            0,
+            94,
+            180,
+            26
+          ],
+          "repeat_equal": true,
+          "visible": true
+        },
+        "datetime_text@1.5": {
+          "caption_box": [
+            0,
+            142,
+            270,
+            39
+          ],
+          "repeat_equal": true,
+          "visible": true
+        },
+        "datetime_text@2": {
+          "caption_box": [
+            0,
+            189,
+            360,
+            51
+          ],
+          "repeat_equal": true,
+          "visible": true
+        },
+        "logo_alpha@1": {
+          "rgba": [
+            255,
+            223,
+            223,
+            255
+          ]
+        },
+        "logo_alpha@1.5": {
+          "rgba": [
+            255,
+            223,
+            223,
+            255
+          ]
+        },
+        "logo_alpha@2": {
+          "rgba": [
+            255,
+            223,
+            223,
+            255
+          ]
+        },
+        "text@1": {
+          "visible": true
+        },
+        "text@1.5": {
+          "visible": true
+        },
+        "text@2": {
+          "visible": true
+        }
+      },
+      "failed_cases": [],
+      "ok": true,
+      "runtime": {
+        "default_font_family": "Microsoft YaHei UI",
+        "font_family_count": 150,
+        "qt_platform": "windows",
+        "qt_version": "6.10.2"
+      }
+    }
+  },
+  "included_components": [],
+  "manifest": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement\\release-manifest.json",
+  "ok": true,
+  "profile": "full",
+  "root": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows\\FiberDiameterMeasurement",
+  "source_commit": "1b343c7c19b90adec162e36e03f20192e02865de",
+  "version": "0.4.7",
+  "warnings": []
+}

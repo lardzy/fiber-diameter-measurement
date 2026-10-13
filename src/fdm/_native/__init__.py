@@ -51,7 +51,25 @@ def _validate_source(module: ModuleType) -> None:
 
 @lru_cache(maxsize=1)
 def _load_native() -> ModuleType:
-    module = importlib.import_module(EXTENSION_NAME)
+    try:
+        module = importlib.import_module(EXTENSION_NAME)
+    except ModuleNotFoundError as exc:
+        if exc.name == EXTENSION_NAME:
+            # Python ignores extensions tagged for another interpreter or OS.
+            # An old build must not look like an intentional Python-only install.
+            binaries = sorted({
+                path.name
+                for directory in __path__
+                for path in Path(directory).glob("_kernels.*")
+                if path.is_file() and path.suffix.lower() in {".so", ".pyd"}
+            })
+            if binaries:
+                raise RuntimeError(
+                    "发现无法由当前 Python 加载的原生内核，可能是 ABI 或平台不匹配；"
+                    "请使用当前 Python 重新构建 fdm._native._kernels："
+                    + ", ".join(binaries)
+                ) from exc
+        raise
     filename = str(getattr(module, "__file__", ""))
     if not any(filename.endswith(suffix) for suffix in EXTENSION_SUFFIXES):
         raise RuntimeError("原生内核必须由已编译的扩展模块提供。")
