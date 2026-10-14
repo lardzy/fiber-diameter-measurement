@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import argparse
-from collections import deque
+from collections import OrderedDict, deque
 import ctypes
 from dataclasses import dataclass, replace
 from pathlib import Path
 import re
 import sys
+import time
+from datetime import datetime
+from uuid import uuid4
 from typing import Callable, Mapping, Sequence
 
 from PySide6.QtCore import QByteArray, QObject, QLockFile, QStandardPaths, QThread, QTimer, Qt, Signal
@@ -45,6 +48,7 @@ from fdm.services.screenshot_capture import (
     should_open_annotation,
 )
 from fdm.screenshot_settings import (
+    AfterCaptureTask,
     ScreenshotSettings,
     ScreenshotSettingsIO,
     UnsupportedScreenshotSettingsVersion,
@@ -56,6 +60,13 @@ from fdm.ui.screenshot_overlay import ScreenshotOverlay, logical_point_to_physic
 
 
 SCREENSHOT_AUTOSTART_VALUE_NAME = "FiberDiameterMeasurementScreenshotTool"
+_HOTKEY_MODES = (
+    CaptureMode.REGION, CaptureMode.WINDOW, CaptureMode.FULL_SCREEN,
+    CaptureMode.LAST_REGION, CaptureMode.CU5,
+)
+_HOTKEY_IDS = {mode: 0x5F00 + index for index, mode in enumerate(_HOTKEY_MODES, 1)}
+_MAX_CAPTURE_QUEUE = 8
+_RECORDING_LEASE_SECONDS = 15.0
 
 
 # Qt's PortableText names are translated to the documented Win32 virtual-key
@@ -574,6 +585,21 @@ class ScreenshotAgent(QObject):
         self._hotkey_manager: object | None = None
         self._autostart_manager: object | None = None
         self._hotkey_modes: dict[int, CaptureMode] = {}
+        self._hotkey_diagnostics: dict[CaptureMode, dict[str, object]] = {}
+        self._effective_hotkey_text: dict[int, str] = {}
+        self._recording_leases: dict[str, float] = {}
+        self._recording_timer = QTimer(self)
+        self._recording_timer.setInterval(1_000)
+        self._recording_timer.timeout.connect(self._expire_recording_leases)
+        self._capture_history: deque[dict[str, object]] = deque(maxlen=64)
+        self._active_capture_request: CaptureRequest | None = None
+        self._ipc_capture_receipts: OrderedDict[str, tuple[dict, dict]] = OrderedDict()
+        self._shutting_down = False
+        self._shutdown_output_failed = False
+        self._output_queue = None
+        self._output_jobs: dict[str, dict[str, object]] = {}
+        self._output_sequence = 0
+        self._last_successful_region_output_sequence = 0
         self._initialization_errors: list[str] = []
         self._integration_errors: list[str] = []
         self._overlay: ScreenshotOverlay | None = None
@@ -601,7 +627,8 @@ class ScreenshotAgent(QObject):
         self.tray.activated.connect(self._tray_activated)
         self._coordinator.selectionRequested.connect(self._show_selection_overlay)
         self._coordinator.captureReady.connect(self._capture_ready)
-        self._coordinator.captureFailed.connect(self._capture_failed)
+        self._coordinator.captureFailed.connect(self._capture_backend_failed)
+        self._coordinator.cancelled.connect(self._capture_cancelled)
         self._application.aboutToQuit.connect(self.close)
 
     @property
@@ -628,7 +655,64 @@ class ScreenshotAgent(QObject):
         self._initialize_windows_integrations()
         self.tray.show()
 
+    def request_shutdown(self) -> None:
+        if self._shutting_down:
+            return
+        self._shutting_down = True
+        self._shutdown_output_failed = False
+        self._ipc_capture_timer.stop()
+        self._ipc_capture_queue.clear()
+        self._coordinator.cancel(emit_signal=False)
+        if self._overlay is not None:
+            self._overlay.close()
+            self._overlay = None
+        queue = self._output_queue
+        if queue is None or queue.is_shutdown_complete:
+            self._application.quit()
+            return
+        queue.shutdownFinished.connect(self._finish_shutdown)
+        queue.shutdown()
+
+    def _finish_shutdown(self) -> None:
+        if not self._shutting_down:
+            return
+        if self._output_jobs:
+            # Process already posted completion notifications before deciding
+            # whether it is safe to discard the annotation session.
+            QTimer.singleShot(0, self, self._finish_shutdown)
+            return
+        session = self._annotation_session
+        if self._shutdown_output_failed and session is not None:
+            from shiboken6 import isValid
+
+            if isValid(session):
+                # shutdownFinished means every accepted file request and the
+                # worker thread have ended. Retire this closed queue before a
+                # retry lazily creates a fresh one; no old job can cross over.
+                queue = self._output_queue
+                self._output_queue = None
+                if queue is not None:
+                    queue.deleteLater()
+                self._shutting_down = False
+                self._shutdown_output_failed = False
+                session.setEnabled(True)
+                self.tray.showMessage(
+                    "已取消退出",
+                    "截图输出未全部成功，已保留标注。请重试保存、复制或另存为后再退出。",
+                    QSystemTrayIcon.MessageIcon.Warning,
+                )
+                return
+        self._application.quit()
+
     def close(self) -> None:
+        self._shutting_down = True
+        self._coordinator.cancel(emit_signal=False)
+        self._active_capture_request = None
+        self._recording_timer.stop()
+        self._recording_leases.clear()
+        if self._output_queue is not None:
+            self._output_queue.shutdown()
+            self._output_queue.wait_for_shutdown()
         self._annotation_style_timer.stop()
         if self._pending_annotation_styles is not None:
             self._persist_annotation_styles()
@@ -653,6 +737,12 @@ class ScreenshotAgent(QObject):
 
     def handle_command(self, command: IPCCommand) -> Mapping[str, object]:
         if command.command is CommandType.CAPTURE:
+            receipt = self._ipc_capture_receipts.get(command.request_id)
+            fingerprint = command.to_dict()
+            if receipt is not None:
+                if receipt[0] != fingerprint:
+                    raise AgentCommandError("同一请求编号不能用于不同截图命令。")
+                return {**receipt[1], "duplicate": True}
             payload = dict(command.payload)
             payload["mode"] = command.capture_mode.value if command.capture_mode is not None else CaptureMode.REGION.value
             request = CaptureRequest.from_mapping(payload)
@@ -661,15 +751,22 @@ class ScreenshotAgent(QObject):
                     request,
                     include_cursor=self._settings.include_cursor,
                 )
-            self._enqueue_ipc_capture(request)
-            return {
-                "accepted": True,
-                "mode": request.mode.value,
-                "queued": len(self._ipc_capture_queue),
-            }
+            result = self._enqueue_capture(request, source="ipc", trigger_id=command.request_id)
+            self._ipc_capture_receipts[command.request_id] = (fingerprint, result)
+            while len(self._ipc_capture_receipts) > 128:
+                self._ipc_capture_receipts.popitem(last=False)
+            return result
         elif command.command is CommandType.SHUTDOWN:
-            QTimer.singleShot(0, self._application, self._application.quit)
+            QTimer.singleShot(0, self, self.request_shutdown)
             return {"accepted": True, "shutting_down": True}
+        elif command.command is CommandType.RETRY_HOTKEYS:
+            return self.retry_hotkeys()
+        elif command.command is CommandType.HOTKEY_RECORDING:
+            owner = str(command.payload.get("owner", ""))
+            active = command.payload.get("active")
+            if not owner or len(owner) > 128 or not isinstance(active, bool):
+                raise AgentCommandError("快捷键录入需要有效的会话编号和布尔状态。")
+            return self.set_hotkey_recording(owner, active)
         elif command.command is CommandType.SHOW_SETTINGS:
             QTimer.singleShot(0, self, self._show_settings_window)
             return {"accepted": True, "settings_window": "requested"}
@@ -691,7 +788,14 @@ class ScreenshotAgent(QObject):
             "settings_read_only": self._settings_read_only,
             "background_resident": self._settings.background_resident,
             "autostart": self._settings.autostart,
-            "registered_hotkeys": len(self._hotkey_modes),
+            "registered_hotkeys": len(self._hotkey_manager.bindings) if self._hotkey_manager is not None else 0,
+            "hotkeys": list(self._hotkey_diagnostics.values()),
+            "hotkeys_paused": bool(self._recording_leases),
+            "capture_queue_depth": len(self._ipc_capture_queue),
+            "capture_queue_limit": _MAX_CAPTURE_QUEUE,
+            "output_pending": len(self._output_jobs),
+            "recent_captures": list(self._capture_history),
+            "shutting_down": self._shutting_down,
             "annotation_active": self._annotation_session is not None,
             "integration_errors": list(self._integration_errors),
             "last_region": (
@@ -776,6 +880,8 @@ class ScreenshotAgent(QObject):
         }
 
     def reload_settings(self, payload: Mapping[str, object] | None = None) -> dict[str, object]:
+        if self._recording_leases:
+            raise AgentCommandError("正在录入快捷键，请先移出录入框再保存设置。")
         previous = self._settings.normalized()
         raw = dict(payload or {})
         supplied = raw.get("settings")
@@ -900,6 +1006,7 @@ class ScreenshotAgent(QObject):
         ]
         return {
             "reloaded": True,
+            "hotkeys": list(self._hotkey_diagnostics.values()),
             "hotkey_errors": [
                 item for item in self._integration_errors if "快捷键" in item
             ],
@@ -964,66 +1071,104 @@ class ScreenshotAgent(QObject):
         errors: list[str] = []
         manager = self._hotkey_manager
         self._hotkey_modes.clear()
+        old_rows = self._hotkey_diagnostics
+        self._hotkey_diagnostics = {}
+        desired: dict[int, tuple[CaptureMode, object]] = {}
+        paused = bool(self._recording_leases)
+        for mode in _HOTKEY_MODES:
+            binding = self._settings.hotkeys.get(mode)
+            identifier = _HOTKEY_IDS[mode]
+            enabled = bool(self._settings.enabled and binding and binding.enabled)
+            row = {
+                "mode": mode.value, "requested": binding.sequence if binding else "",
+                "effective": "", "state": "disabled" if not enabled else "paused" if paused else "unavailable",
+                "error_code": 0, "error": "", "last_received_at": old_rows.get(mode, {}).get("last_received_at"),
+            }
+            self._hotkey_diagnostics[mode] = row
+            if not enabled or paused:
+                continue
+            try:
+                from fdm.platform.windows_global_hotkey import HotkeyBinding as NativeBinding
+                vk = getattr(binding, "native_virtual_key", None)
+                modifiers = getattr(binding, "native_modifiers", None)
+                native = (
+                    NativeBinding(identifier, modifiers, vk).normalized()
+                    if vk is not None and modifiers is not None
+                    else _parse_windows_hotkey(binding.sequence, identifier)
+                )
+                desired[identifier] = (mode, native)
+            except Exception as exc:
+                row.update(state="invalid", error=str(exc), error_code=getattr(exc, "error_code", 0))
+                errors.append(f"{mode.value} 快捷键无效：{exc}")
+                if failed_hotkey_modes is not None:
+                    failed_hotkey_modes.add(mode)
+                # An invalid edit must not discard a working old registration.
+                old = manager.binding(identifier) if manager is not None else None
+                if old is not None:
+                    desired[identifier] = (mode, old)
         if manager is not None:
-            desired: dict[int, tuple[CaptureMode, object]] = {}
-            retain_after_error: dict[int, CaptureMode] = {}
-            if self._settings.enabled:
-                identifiers = {
-                    mode: 0x5F00 + index
-                    for index, mode in enumerate(
-                        (
-                            CaptureMode.REGION,
-                            CaptureMode.WINDOW,
-                            CaptureMode.FULL_SCREEN,
-                            CaptureMode.LAST_REGION,
-                            CaptureMode.CU5,
-                        ),
-                        start=1,
-                    )
-                }
-                for mode, binding in self._settings.hotkeys.items():
-                    if not binding.enabled or mode not in identifiers:
-                        continue
-                    identifier = identifiers[mode]
+            before = {binding.identifier: binding for binding in manager.bindings}
+            group_bind = getattr(manager, "bind_all", None)
+            if before and callable(group_bind):
+                try:
+                    group_bind(item[1] for item in desired.values())
+                except Exception as exc:
+                    affected = {
+                        mode for mode in _HOTKEY_MODES
+                        if before.get(_HOTKEY_IDS[mode]) != (
+                            desired[_HOTKEY_IDS[mode]][1] if _HOTKEY_IDS[mode] in desired else None
+                        )
+                    }
+                    for mode in affected:
+                        self._hotkey_diagnostics[mode].update(
+                            state="failed", error=str(exc), error_code=getattr(exc, "error_code", 0),
+                        )
+                    errors.append(f"全局快捷键更新失败：{exc}")
+                    if failed_hotkey_modes is not None:
+                        failed_hotkey_modes.update(affected)
+            else:
+                # First startup admits independent available keys even if one is
+                # occupied. Existing groups use bind_all for swaps and rollback.
+                for identifier, (mode, binding) in desired.items():
                     try:
-                        desired[identifier] = (
-                            mode,
-                            _parse_windows_hotkey(binding.sequence, identifier),
+                        manager.bind(binding)
+                    except Exception as exc:
+                        self._hotkey_diagnostics[mode].update(
+                            state="failed", error=str(exc), error_code=getattr(exc, "error_code", 0),
                         )
-                    except Exception as exc:  # noqa: BLE001 - surface parse errors
-                        mode_label = (
-                            "CU 系列实时预览"
-                            if mode is CaptureMode.CU5
-                            else mode.value
-                        )
-                        errors.append(f"{mode_label} 快捷键注册失败：{exc}")
+                        errors.append(f"{mode.value} 快捷键注册失败：{exc}")
                         if failed_hotkey_modes is not None:
                             failed_hotkey_modes.add(mode)
-                        retain_after_error[identifier] = mode
-            existing_ids = {binding.identifier for binding in tuple(manager.bindings)}
-            for identifier, (mode, binding) in desired.items():
-                try:
-                    manager.bind(binding)
-                except Exception as exc:  # noqa: BLE001 - manager restores old binding
-                    mode_label = (
-                        "CU 系列实时预览"
-                        if mode is CaptureMode.CU5
-                        else mode.value
-                    )
-                    errors.append(f"{mode_label} 快捷键注册失败：{exc}")
-                    if failed_hotkey_modes is not None:
-                        failed_hotkey_modes.add(mode)
-                if manager.binding(identifier) is not None:
+                for identifier in sorted(before.keys() - desired.keys()):
+                    try:
+                        manager.unbind(identifier)
+                    except Exception as exc:
+                        mode = next((m for m, i in _HOTKEY_IDS.items() if i == identifier), None)
+                        if mode is not None:
+                            self._hotkey_diagnostics[mode].update(state="failed", error=str(exc), error_code=getattr(exc, "error_code", 0))
+                        errors.append(f"全局快捷键注销失败：{exc}")
+            for mode, identifier in _HOTKEY_IDS.items():
+                actual = manager.binding(identifier)
+                row = self._hotkey_diagnostics[mode]
+                if actual is None:
+                    self._effective_hotkey_text.pop(identifier, None)
+                    continue
+                requested = desired.get(identifier)
+                if requested and actual == requested[1] and row["state"] != "invalid":
+                    # A failed group rollback can leave this new registration
+                    # active. Preserve the failure, but report the actual key.
+                    self._effective_hotkey_text[identifier] = str(row["requested"])
+                    if row["state"] != "failed":
+                        row["state"] = "registered"
+                elif actual != before.get(identifier):
+                    self._effective_hotkey_text.pop(identifier, None)
+                if row["state"] == "failed" and actual == before.get(identifier):
+                    row["state"] = "restored"
+                row["effective"] = self._effective_hotkey_text.get(identifier, f"VK {actual.virtual_key:#x}")
+                row["virtual_key"] = actual.virtual_key
+                row["modifiers"] = actual.modifiers
+                if not paused and self._settings.enabled:
                     self._hotkey_modes[identifier] = mode
-            for identifier, mode in retain_after_error.items():
-                if manager.binding(identifier) is not None:
-                    self._hotkey_modes[identifier] = mode
-            retained_ids = set(retain_after_error)
-            for identifier in sorted(existing_ids - desired.keys() - retained_ids):
-                try:
-                    manager.unbind(identifier)
-                except Exception as exc:  # noqa: BLE001 - report stale registrations
-                    errors.append(f"全局快捷键注销失败：{exc}")
 
         if self._autostart_manager is not None:
             try:
@@ -1033,6 +1178,8 @@ class ScreenshotAgent(QObject):
         return errors
 
     def _hotkey_pressed(self, identifier: int, lparam: int) -> None:
+        if self._recording_leases or self._shutting_down or not self._settings.enabled:
+            return
         manager = self._hotkey_manager
         if manager is None:
             return
@@ -1043,25 +1190,123 @@ class ScreenshotAgent(QObject):
         except Exception:  # noqa: BLE001 - ignore malformed native messages
             return
         mode = self._hotkey_modes.get(binding.identifier) if binding is not None else None
+        configured = self._settings.hotkeys.get(mode) if mode is not None else None
+        if configured is None or not configured.enabled:
+            return
         if mode is not None:
-            self.begin_capture(self._request(mode))
+            row = self._hotkey_diagnostics.get(mode)
+            if row is not None:
+                row["last_received_at"] = datetime.now().isoformat(timespec="milliseconds")
+            try:
+                self._enqueue_capture(self._request(mode), source="hotkey")
+            except AgentCommandError as exc:
+                self._capture_failed(str(exc))
 
-    def _enqueue_ipc_capture(self, request: CaptureRequest) -> None:
+    def retry_hotkeys(self) -> dict[str, object]:
+        self._integration_errors = [*self._initialization_errors, *self._apply_windows_settings()]
+        return self.status()
+
+    def set_hotkey_recording(self, owner: str, active: bool) -> dict[str, object]:
+        was_paused = bool(self._recording_leases)
+        if active:
+            if owner not in self._recording_leases and len(self._recording_leases) >= 16:
+                raise AgentCommandError("快捷键录入会话过多，请关闭其它设置窗口后重试。")
+            self._recording_leases[owner] = time.monotonic() + _RECORDING_LEASE_SECONDS
+            self._recording_timer.start()
+        else:
+            self._recording_leases.pop(owner, None)
+        if was_paused != bool(self._recording_leases):
+            if active:
+                pending = self._active_capture_request
+                if pending is not None and pending.metadata.get("_trigger_source") == "hotkey":
+                    # A delayed hotkey may already have left the dispatch queue.
+                    # It must not open a selector over the recording editor.
+                    self._coordinator.cancel(emit_signal=False)
+                    self._trace_capture(pending, "recording_paused")
+                    self._active_capture_request = None
+                    if self._overlay is not None:
+                        self._overlay.close()
+                        self._overlay = None
+                retained = []
+                for request in self._ipc_capture_queue:
+                    if request.metadata.get("_trigger_source") == "hotkey":
+                        self._trace_capture(request, "recording_paused")
+                    else:
+                        retained.append(request)
+                self._ipc_capture_queue.clear()
+                self._ipc_capture_queue.extend(retained)
+            self.retry_hotkeys()
+        if not self._recording_leases:
+            self._recording_timer.stop()
+        return self.status()
+
+    def _expire_recording_leases(self) -> None:
+        now = time.monotonic()
+        for owner, deadline in tuple(self._recording_leases.items()):
+            if deadline <= now:
+                self.set_hotkey_recording(owner, False)
+
+    def _trace_capture(self, request: CaptureRequest, stage: str, **details: object) -> None:
+        trigger_id = str(request.metadata.get("_trigger_id", ""))
+        if not trigger_id:
+            return
+        entry = next((item for item in reversed(self._capture_history) if item["trigger_id"] == trigger_id), None)
+        if entry is not None:
+            entry["stage"] = stage
+            entry[f"{stage}_ms"] = round((time.perf_counter() - float(entry["received_counter"])) * 1_000, 3)
+            entry.update(details)
+
+    def _enqueue_capture(self, request: CaptureRequest, *, source: str, trigger_id: str | None = None) -> dict[str, object]:
+        if self._shutting_down:
+            raise AgentCommandError("截图工具正在退出，未接受新的截图。")
+        if source == "hotkey":
+            for queued in self._ipc_capture_queue:
+                if queued.mode is request.mode and queued.metadata.get("_trigger_source") == source:
+                    return {"accepted": True, "coalesced": True, "trigger_id": queued.metadata["_trigger_id"], "mode": request.mode.value, "queued": len(self._ipc_capture_queue)}
+        if len(self._ipc_capture_queue) >= _MAX_CAPTURE_QUEUE:
+            raise AgentCommandError("截图请求队列已满，请稍后重试。", result={"accepted": False, "queued": len(self._ipc_capture_queue)})
+        trigger_id = trigger_id or uuid4().hex
+        request = replace(request, metadata={**request.metadata, "_trigger_id": trigger_id, "_trigger_source": source})
+        # perf_counter uses QPC on Windows, including Python versions whose
+        # monotonic clock only resolves roughly 15.6 ms intervals.
+        self._capture_history.append({"trigger_id": trigger_id, "source": source, "mode": request.mode.value, "stage": "received", "received_counter": time.perf_counter(), "received_at": datetime.now().isoformat(timespec="milliseconds")})
         self._ipc_capture_queue.append(request)
         if not self._ipc_capture_timer.isActive():
             self._ipc_capture_timer.start()
+        return {"accepted": True, "trigger_id": trigger_id, "mode": request.mode.value, "queued": len(self._ipc_capture_queue)}
+
+    def _enqueue_ipc_capture(self, request: CaptureRequest) -> None:
+        self._enqueue_capture(request, source="ipc")
 
     def _dispatch_next_ipc_capture(self) -> None:
         if not self._ipc_capture_queue:
             return
         request = self._ipc_capture_queue.popleft()
-        self.begin_capture(request)
+        try:
+            self.begin_capture(request)
+        except Exception as exc:  # noqa: BLE001 - one bad request must not stall later work
+            message = str(exc) or type(exc).__name__
+            self._trace_capture(request, "capture_failed", error=message)
+            self._coordinator.cancel(emit_signal=False)
+            self._active_capture_request = None
+            self._capture_failed(message)
         if self._ipc_capture_queue:
             self._ipc_capture_timer.start()
 
+    def _queue_ui_capture(self, request: CaptureRequest) -> None:
+        try:
+            self._enqueue_capture(request, source="tray")
+        except AgentCommandError as exc:
+            self._capture_failed(str(exc))
+
     def begin_capture(self, request: CaptureRequest) -> None:
+        if self._shutting_down:
+            self._trace_capture(request, "shutdown_rejected")
+            return
+        self._trace_capture(request, "dispatched")
         session = self._annotation_session
         if session is not None:
+            self._trace_capture(request, "annotation_active")
             activate = getattr(session, "activate_session", None)
             if callable(activate):
                 activate("已有截图正在标注，请先完成或取消。")
@@ -1100,6 +1345,9 @@ class ScreenshotAgent(QObject):
             request = replace(request, metadata=metadata)
         if previous_overlay is not None and request.delay_ms < 80:
             request = replace(request, delay_ms=80)
+        if self._active_capture_request is not None:
+            self._trace_capture(self._active_capture_request, "superseded")
+        self._active_capture_request = request
         self._coordinator.start(request)
 
     def _request(self, mode: CaptureMode, *, delay_ms: int | None = None) -> CaptureRequest:
@@ -1139,6 +1387,10 @@ class ScreenshotAgent(QObject):
         scroll.setWidgetResizable(True)
         scroll.setProperty("redirectEditorWheel", True)
         page = ScreenshotSettingsPage(self._settings)
+        from fdm.ui.screenshot_hotkey_status import ScreenshotHotkeyStatusController
+
+        dialog._hotkey_status_controller = ScreenshotHotkeyStatusController(page, self.handle_command)
+        dialog.finished.connect(dialog._hotkey_status_controller.close)
         page.set_agent_status(True, f"已注册 {len(self._hotkey_modes)} 个全局快捷键")
         scroll.setWidget(page)
         layout.addWidget(scroll, 1)
@@ -1206,9 +1458,11 @@ class ScreenshotAgent(QObject):
         dialog.destroyed.connect(lambda: self._clear_settings_window(dialog))
         self._settings_window = dialog
         dialog.show()
+        dialog._hotkey_status_controller.refresh()
 
     def _save_settings_page(self, page: object, dialog: QDialog) -> None:
         try:
+            dialog._hotkey_status_controller.finish_recording()
             settings = page.settings()
             result = self.reload_settings({"settings": settings.to_dict()})
         except Exception as exc:  # noqa: BLE001 - visible settings save boundary
@@ -1254,7 +1508,7 @@ class ScreenshotAgent(QObject):
         for seconds in (3, 5, 10):
             action = QAction(f"{seconds} 秒后区域截图", delay_menu)
             action.triggered.connect(
-                lambda _checked=False, value=seconds: self.begin_capture(
+                lambda _checked=False, value=seconds: self._queue_ui_capture(
                     self._request(CaptureMode.REGION, delay_ms=value * 1000)
                 )
             )
@@ -1267,7 +1521,7 @@ class ScreenshotAgent(QObject):
         menu.addAction(settings_action)
         menu.addSeparator()
         quit_action = QAction("退出截图工具", menu)
-        quit_action.triggered.connect(self._application.quit)
+        quit_action.triggered.connect(self.request_shutdown)
         menu.addAction(quit_action)
         return menu
 
@@ -1292,14 +1546,14 @@ class ScreenshotAgent(QObject):
             minimum_delay = 80
         if request.delay_ms < minimum_delay:
             request = replace(request, delay_ms=minimum_delay)
-        self.begin_capture(request)
+        self._queue_ui_capture(request)
 
     def _tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason in {
             QSystemTrayIcon.ActivationReason.Trigger,
             QSystemTrayIcon.ActivationReason.DoubleClick,
         }:
-            self.begin_capture(self._request(CaptureMode.REGION))
+            self._queue_ui_capture(self._request(CaptureMode.REGION))
 
     def _show_selection_overlay(self, request: CaptureRequest, candidates: object) -> None:
         if self._overlay is not None:
@@ -1331,12 +1585,17 @@ class ScreenshotAgent(QObject):
         overlay.cancelled.connect(overlay.close)
         overlay.destroyed.connect(lambda: self._clear_overlay(overlay))
         overlay.begin()
+        self._trace_capture(request, "overlay_shown")
 
     def _clear_overlay(self, overlay: ScreenshotOverlay) -> None:
         if self._overlay is overlay:
             self._overlay = None
 
     def _capture_ready(self, frame: CapturedFrame) -> None:
+        if self._shutting_down:
+            return
+        self._active_capture_request = None
+        self._trace_capture(CaptureRequest(frame.mode, metadata=frame.metadata), "image_ready")
         if frame.mode is CaptureMode.CU5:
             self._remember_cu5_match(
                 getattr(self._coordinator.backend, "last_cu5_match", None)
@@ -1349,7 +1608,10 @@ class ScreenshotAgent(QObject):
         if open_editor:
             self._open_inline_annotation(frame)
             return
-        self._publish_capture(frame.image, frame.mode, capture_rect=frame.rect)
+        if isinstance(self._output_service, ScreenshotOutputService):
+            self._output_async(frame.image, frame.mode, frame.rect, trace_metadata=frame.metadata)
+        else:
+            self._publish_capture(frame.image, frame.mode, capture_rect=frame.rect)
 
     def _open_inline_annotation(self, frame: CapturedFrame) -> None:
         if self._annotation_session is not None:
@@ -1418,6 +1680,9 @@ class ScreenshotAgent(QObject):
             return
         if not isinstance(image, QImage) or image.isNull():
             session.output_failed("编辑器返回了空截图。")
+            return
+        if isinstance(self._output_service, ScreenshotOutputService):
+            self._output_async(image, frame.mode, frame.rect, operation=operation, path=path, session=session, trace_metadata=frame.metadata)
             return
         if operation == "configured":
             success = self._publish_capture(
@@ -1529,6 +1794,9 @@ class ScreenshotAgent(QObject):
         if not isinstance(image, QImage) or image.isNull():
             self._capture_failed("编辑器返回了空截图。")
             return
+        if isinstance(self._output_service, ScreenshotOutputService):
+            self._output_async(image, frame.mode, frame.rect, session=editor, trace_metadata=frame.metadata)
+            return
         if self._publish_capture(
             image,
             frame.mode,
@@ -1550,6 +1818,9 @@ class ScreenshotAgent(QObject):
             return
         if not isinstance(image, QImage) or image.isNull():
             self._capture_failed("编辑器返回了空截图。")
+            return
+        if isinstance(self._output_service, ScreenshotOutputService):
+            self._output_async(image, frame.mode, frame.rect, operation=operation, path=path, session=editor, trace_metadata=frame.metadata)
             return
         try:
             if operation == "copy":
@@ -1670,7 +1941,14 @@ class ScreenshotAgent(QObject):
             self._last_output_error = str(exc) or type(exc).__name__
             self._capture_failed(self._last_output_error)
             return False
+        return self._report_output_result(result, mode, capture_rect, require_all_outputs)
+
+    def _report_output_result(self, result: OutputResult, mode: CaptureMode, capture_rect: object, require_all_outputs: bool, *, region_sequence: int | None = None) -> bool:
         if result.errors:
+            if result.saved_path is None and not result.copied_to_clipboard:
+                self._last_output_error = result.failure_summary
+                self._capture_failed(self._last_output_error)
+                return False
             completed: list[str] = []
             if result.saved_path is not None:
                 completed.append(f"已保存到 {result.saved_path}")
@@ -1682,7 +1960,7 @@ class ScreenshotAgent(QObject):
                 f"{prefix}；{result.failure_summary}",
                 QSystemTrayIcon.MessageIcon.Warning,
             )
-            self._remember_last_region_after_success(mode, capture_rect)
+            self._remember_last_region_after_success(mode, capture_rect, output_sequence=region_sequence)
             self._last_output_error = result.failure_summary
             return not require_all_outputs
         if result.notification_requested:
@@ -1692,13 +1970,101 @@ class ScreenshotAgent(QObject):
             if result.copied_to_clipboard:
                 details.append("已复制到剪贴板")
             self.tray.showMessage("截图完成", "；".join(details) or "截图处理完成。")
-        self._remember_last_region_after_success(mode, capture_rect)
+        self._remember_last_region_after_success(mode, capture_rect, output_sequence=region_sequence)
         return True
+
+    def _output_async(
+        self, image: QImage, mode: CaptureMode, capture_rect: object, *,
+        operation: str = "configured", path: str = "", session: QWidget | None = None,
+        trace_metadata: Mapping[str, object] | None = None,
+    ) -> None:
+        from fdm.services.screenshot_output_worker import ScreenshotOutputQueue
+
+        if self._shutting_down:
+            return
+        if session is not None and any(job["session"] is session for job in self._output_jobs.values()):
+            return
+        self._output_sequence += 1
+        settings = self._settings.normalized()
+        tasks = settings.after_capture_tasks if operation == "configured" else (
+            (AfterCaptureTask.COPY_CLIPBOARD,) if operation == "copy" else (AfterCaptureTask.SAVE,)
+        )
+        job: dict[str, object] = {
+            "mode": mode, "rect": capture_rect, "session": session,
+            "copied": False, "errors": [], "notification": settings.notification,
+            "metadata": dict(trace_metadata or {}),
+            "sequence": self._output_sequence,
+        }
+        if AfterCaptureTask.COPY_CLIPBOARD in tasks:
+            try:
+                self._output_service.copy_to_clipboard(image)
+                job["copied"] = True
+            except Exception as exc:
+                job["errors"].append(f"复制到剪贴板失败：{exc}")
+        if AfterCaptureTask.SAVE not in tasks:
+            self._finish_async_output(job, OutputResult())
+            return
+        if self._output_queue is None:
+            self._output_queue = ScreenshotOutputQueue(self, service=self._output_service)
+            self._output_queue.completed.connect(self._output_completed)
+            self._output_queue.failed.connect(self._output_failed)
+        try:
+            job_id = self._output_queue.submit(
+                image, settings, mode=mode, captured_at=datetime.now().astimezone(),
+                output_path=path if operation == "save_as" else None,
+            )
+        except Exception as exc:
+            job["errors"].append(str(exc))
+            self._finish_async_output(job, OutputResult())
+            return
+        self._output_jobs[job_id] = job
+        if session is not None:
+            session.setEnabled(False)
+        self._trace_capture(CaptureRequest(mode, metadata=job["metadata"]), "output_queued")
+
+    def _output_completed(self, job_id: str, result: OutputResult) -> None:
+        job = self._output_jobs.pop(job_id, None)
+        if job is not None:
+            self._finish_async_output(job, result)
+
+    def _output_failed(self, job_id: str, error: str) -> None:
+        job = self._output_jobs.pop(job_id, None)
+        if job is not None:
+            job["errors"].append(error)
+            self._finish_async_output(job, OutputResult())
+
+    def _finish_async_output(self, job: dict[str, object], saved: OutputResult) -> None:
+        from shiboken6 import isValid
+
+        result = replace(saved, copied_to_clipboard=bool(job["copied"]), errors=tuple(job["errors"]), notification_requested=bool(job["notification"]))
+        self._last_output_error = ""
+        session = job["session"]
+        success = self._report_output_result(
+            result, job["mode"], job["rect"], session is not None,
+            region_sequence=int(job["sequence"]),
+        )
+        self._trace_capture(CaptureRequest(job["mode"], metadata=job["metadata"]), "completed" if success else "output_failed", error=result.failure_summary)
+        if session is None or not isValid(session) or session is not self._annotation_session:
+            return
+        if self._shutting_down and not success:
+            self._shutdown_output_failed = True
+        session.setEnabled(True)
+        if isinstance(session, InlineAnnotationOverlay):
+            if success:
+                session.output_succeeded()
+            else:
+                session.output_failed(self._last_output_error or "截图输出失败。")
+        else:
+            session.setEnabled(True)
+            if success:
+                session.close()
 
     def _remember_last_region_after_success(
         self,
         mode: CaptureMode,
         capture_rect: object | None,
+        *,
+        output_sequence: int | None = None,
     ) -> None:
         from fdm.services.screenshot_capture import CaptureRect
 
@@ -1707,6 +2073,10 @@ class ScreenshotAgent(QObject):
         rect = capture_rect.normalized()
         if not rect.valid:
             return
+        if output_sequence is not None:
+            if output_sequence < self._last_successful_region_output_sequence:
+                return
+            self._last_successful_region_output_sequence = output_sequence
         self._coordinator.set_last_region(rect)
         if self._settings_read_only or rect == self._settings.last_region:
             return
@@ -1728,6 +2098,17 @@ class ScreenshotAgent(QObject):
     def _forget_editor(self, editor: ScreenshotEditor) -> None:
         if editor in self._editors:
             self._editors.remove(editor)
+
+    def _capture_backend_failed(self, message: str) -> None:
+        if self._active_capture_request is not None:
+            self._trace_capture(self._active_capture_request, "capture_failed", error=str(message))
+            self._active_capture_request = None
+        self._capture_failed(message)
+
+    def _capture_cancelled(self) -> None:
+        if self._active_capture_request is not None:
+            self._trace_capture(self._active_capture_request, "cancelled")
+            self._active_capture_request = None
 
     def _capture_failed(self, message: str) -> None:
         self.tray.showMessage("截图失败", str(message), QSystemTrayIcon.MessageIcon.Warning)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+from collections.abc import Iterable
 from dataclasses import dataclass
 import sys
 from typing import Protocol
@@ -19,10 +20,43 @@ class WindowsHotkeyUnavailableError(RuntimeError):
     """Raised when the Win32 hotkey API is requested on another platform."""
 
 
+def hotkey_error_message(error_code: int) -> str:
+    """Describe the actual Win32 failure without guessing which app owns a key."""
+    error_code = int(error_code)
+    if error_code == 1409:
+        return "该组合键已被系统或其它程序占用，请更换组合键或释放占用后重试"
+    if error_code == 87:
+        return "快捷键参数无效，请检查按键和修饰键设置"
+    if error_code == 5:
+        return "Windows 拒绝访问，系统错误码 5"
+    if error_code:
+        return f"Windows 操作失败，系统错误码 {error_code}"
+    return "Windows 操作失败，未提供系统错误码"
+
+
+@dataclass(frozen=True, slots=True)
+class HotkeyOperationFailure:
+    identifier: int
+    operation: str
+    error_code: int
+    message: str
+
+
 class HotkeyRegistrationError(RuntimeError):
-    def __init__(self, message: str, *, error_code: int = 0) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_code: int = 0,
+        identifier: int | None = None,
+        operation: str = "register",
+        rollback_errors: tuple[HotkeyOperationFailure, ...] = (),
+    ) -> None:
         super().__init__(message)
         self.error_code = int(error_code)
+        self.identifier = identifier
+        self.operation = operation
+        self.rollback_errors = rollback_errors
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,9 +147,10 @@ class _CtypesGlobalHotkeyApi:
 class WindowsGlobalHotkeyManager:
     """Owns process-global Win32 hotkeys for one native message window.
 
-    Rebinding is transactional where Win32 permits it: the old binding is
-    unregistered, the new binding is attempted, and the old binding is restored
-    if the new chord is already owned by another process.
+    Group changes release affected bindings before registering replacements,
+    allowing two actions to exchange keys. Win32 offers no atomic replacement:
+    failures trigger best-effort restoration, and ``bindings`` always reflects
+    successful native operations, including any unsuccessful rollback.
     """
 
     def __init__(
@@ -139,54 +174,117 @@ class WindowsGlobalHotkeyManager:
 
     def bind(self, binding: HotkeyBinding) -> HotkeyBinding:
         requested = binding.normalized()
-        previous = self._bindings.get(requested.identifier)
-        if previous == requested:
-            return requested
+        desired = dict(self._bindings)
+        desired[requested.identifier] = requested
+        self.bind_all(desired.values())
+        return requested
 
-        if previous is not None:
-            removed, error_code = self._api.unregister_hot_key(
-                self._hwnd,
-                previous.identifier,
-            )
-            if not removed:
+    def bind_all(self, bindings: Iterable[HotkeyBinding]) -> tuple[HotkeyBinding, ...]:
+        """Replace the complete binding set, restoring old keys on failure.
+
+        Validation completes before any native changes. Unchanged bindings are
+        retained. A failed replacement can leave a partial set if Windows also
+        rejects rollback; callers must read ``bindings`` after an exception.
+        Call this on the same thread that owns the native message window.
+        """
+        desired: dict[int, HotkeyBinding] = {}
+        chords: dict[tuple[int, int], int] = {}
+        for binding in bindings:
+            requested = binding.normalized()
+            chord = (requested.modifiers, requested.virtual_key)
+            if requested.identifier in desired:
                 raise HotkeyRegistrationError(
-                    "无法释放原全局快捷键，快捷键未修改。",
-                    error_code=error_code,
+                    f"全局快捷键 ID {requested.identifier} 重复，快捷键未修改。",
+                    error_code=87,
+                    identifier=requested.identifier,
+                    operation="validate",
                 )
+            if chord in chords:
+                raise HotkeyRegistrationError(
+                    f"快捷键 {chords[chord]} 与 {requested.identifier} 使用相同组合键，"
+                    "请为不同操作设置不同组合键。快捷键未修改。",
+                    error_code=87,
+                    identifier=requested.identifier,
+                    operation="validate",
+                )
+            desired[requested.identifier] = requested
+            chords[chord] = requested.identifier
 
-        registered, error_code = self._api.register_hot_key(
-            self._hwnd,
-            requested.identifier,
-            requested.modifiers,
-            requested.virtual_key,
-        )
-        if registered:
-            self._bindings[requested.identifier] = requested
-            return requested
+        previous = dict(self._bindings)
+        for identifier in sorted(previous):
+            if previous[identifier] == desired.get(identifier):
+                continue
+            removed, error_code = self._api.unregister_hot_key(self._hwnd, identifier)
+            if not removed:
+                self._raise_with_restoration(
+                    previous, identifier, "unregister", error_code,
+                )
+            self._bindings.pop(identifier)
 
-        if previous is not None:
+        for identifier, requested in sorted(desired.items()):
+            if self._bindings.get(identifier) == requested:
+                continue
+            registered, error_code = self._api.register_hot_key(
+                self._hwnd, identifier, requested.modifiers, requested.virtual_key,
+            )
+            if not registered:
+                self._raise_with_restoration(
+                    previous, identifier, "register", error_code,
+                )
+            self._bindings[identifier] = requested
+        return self.bindings
+
+    def _raise_with_restoration(
+        self,
+        previous: dict[int, HotkeyBinding],
+        identifier: int,
+        operation: str,
+        error_code: int,
+    ) -> None:
+        failures: list[HotkeyOperationFailure] = []
+        # Remove every newly registered key before restoring any old one, so a
+        # partially completed exchange cannot obstruct restoration unnecessarily.
+        for current_id, current in tuple(sorted(self._bindings.items())):
+            if current == previous.get(current_id):
+                continue
+            removed, remove_error = self._api.unregister_hot_key(self._hwnd, current_id)
+            if removed:
+                self._bindings.pop(current_id)
+            else:
+                failures.append(HotkeyOperationFailure(
+                    current_id, "unregister", remove_error,
+                    f"无法释放新快捷键：{hotkey_error_message(remove_error)}。",
+                ))
+        for old_id, old in sorted(previous.items()):
+            if self._bindings.get(old_id) == old:
+                continue
+            if old_id in self._bindings:
+                # RegisterHotKey does not replace an existing registration with
+                # the same id. Do not create multiple registrations for one id.
+                continue
             restored, restore_error = self._api.register_hot_key(
-                self._hwnd,
-                previous.identifier,
-                previous.modifiers,
-                previous.virtual_key,
+                self._hwnd, old_id, old.modifiers, old.virtual_key,
             )
             if restored:
-                self._bindings[previous.identifier] = previous
-                raise HotkeyRegistrationError(
-                    "新快捷键已被其它程序占用，已恢复原快捷键。",
-                    error_code=error_code,
-                )
-            self._bindings.pop(previous.identifier, None)
-            raise HotkeyRegistrationError(
-                "新快捷键注册失败，且原快捷键恢复失败。"
-                f"（新错误 {error_code}，恢复错误 {restore_error}）",
-                error_code=error_code or restore_error,
-            )
+                self._bindings[old_id] = old
+            else:
+                failures.append(HotkeyOperationFailure(
+                    old_id, "restore", restore_error,
+                    f"原快捷键恢复失败：{hotkey_error_message(restore_error)}。",
+                ))
 
+        action = "无法释放原全局快捷键" if operation == "unregister" else "快捷键注册失败"
+        message = f"{action}：{hotkey_error_message(error_code)}。"
+        if failures:
+            message += "未能完整恢复原快捷键设置，请检查当前生效状态并重试。"
+        elif previous:
+            message += "已恢复原快捷键设置。"
         raise HotkeyRegistrationError(
-            "快捷键已被其它程序占用或系统拒绝注册。",
+            message,
             error_code=error_code,
+            identifier=identifier,
+            operation=operation,
+            rollback_errors=tuple(failures),
         )
 
     def unbind(self, identifier: int) -> bool:
@@ -197,8 +295,10 @@ class WindowsGlobalHotkeyManager:
         removed, error_code = self._api.unregister_hot_key(self._hwnd, identifier)
         if not removed:
             raise HotkeyRegistrationError(
-                "无法注销全局快捷键。",
+                f"无法注销全局快捷键：{hotkey_error_message(error_code)}。",
                 error_code=error_code,
+                identifier=identifier,
+                operation="unregister",
             )
         self._bindings.pop(identifier, None)
         return True
@@ -244,6 +344,7 @@ class WindowsGlobalHotkeyManager:
 
 __all__ = [
     "HotkeyBinding",
+    "HotkeyOperationFailure",
     "HotkeyRegistrationError",
     "GlobalHotkeyNativeApi",
     "MOD_ALT",
@@ -254,4 +355,5 @@ __all__ = [
     "WM_HOTKEY",
     "WindowsGlobalHotkeyManager",
     "WindowsHotkeyUnavailableError",
+    "hotkey_error_message",
 ]

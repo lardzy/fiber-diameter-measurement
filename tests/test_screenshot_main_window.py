@@ -94,8 +94,16 @@ class ScreenshotMainWindowTests(unittest.TestCase):
             "fdm.ui.main_window.AppSettingsIO.save"
         )
         self._app_settings_save_patcher.start()
+        # The lifecycle client below intentionally does not implement native
+        # launch/registry integration. Keep this unit fixture independent of
+        # the real HKCU Run entry on Windows as well as on other platforms.
+        self._autostart_patcher = patch.object(
+            MainWindow, "_sync_screenshot_autostart", new=lambda _window, **_kwargs: True,
+        )
+        self._autostart_patcher.start()
 
     def tearDown(self) -> None:
+        self._autostart_patcher.stop()
         self._app_settings_save_patcher.stop()
 
     def _window(self) -> MainWindow:

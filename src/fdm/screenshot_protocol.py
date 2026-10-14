@@ -30,6 +30,8 @@ class CommandType(str, Enum):
     DIAGNOSE_CU5 = "diagnose_cu5"
     SHOW_SETTINGS = "show_settings"
     UPDATE_SETTINGS = "update_settings"
+    RETRY_HOTKEYS = "retry_hotkeys"
+    HOTKEY_RECORDING = "hotkey_recording"
     SHUTDOWN = "shutdown"
 
     @classmethod

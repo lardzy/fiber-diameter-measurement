@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import time
 from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -121,13 +122,24 @@ def test_overlay_real_mouse_click_accepts_nested_window_candidate() -> None:
     overlay.selectionAccepted.connect(accepted.append)
     try:
         overlay.begin()
-        QTest.qWait(10)
+        assert QTest.qWaitForWindowExposed(overlay, 1000)
         click_position = QPoint(150, 150)
-        QTest.mouseMove(overlay, click_position)
+        # Exercise QWindow -> QWidget event delivery explicitly. QWidget's
+        # QTest mouseMove uses desktop cursor routing, which the Windows VM
+        # does not reliably deliver to this layered probe window. This checks
+        # Qt interaction, not physical-mouse/native hit-testing acceptance.
+        native_window = overlay.windowHandle()
+        assert native_window is not None
+        QTest.mouseMove(native_window, QPoint(5, 5))
+        QTest.qWait(10)
+        QTest.mouseMove(native_window, click_position)
+        deadline = time.monotonic() + 1.0
+        while overlay.selected_candidate != child and time.monotonic() < deadline:
+            QTest.qWait(10)
         assert overlay.selected_candidate == child
 
         QTest.mouseClick(
-            overlay,
+            native_window,
             Qt.MouseButton.LeftButton,
             Qt.KeyboardModifier.NoModifier,
             click_position,
@@ -164,8 +176,11 @@ def test_overlay_candidate_cutout_stays_hit_testable_with_near_transparent_alpha
         app.processEvents()
 
         rendered = overlay.grab().toImage()
-        assert rendered.pixelColor(150, 150).alpha() == 1
-        assert rendered.pixelColor(700, 500).alpha() == 92
+        # grab() retains the native backing-store size (e.g. 1600x1200 for an
+        # 800x600 widget at 200%). QImage pixelColor takes storage pixels.
+        ratio = rendered.devicePixelRatio()
+        assert rendered.pixelColor(round(150 * ratio), round(150 * ratio)).alpha() == 1
+        assert rendered.pixelColor(round(700 * ratio), round(500 * ratio)).alpha() == 92
     finally:
         overlay.close()
 

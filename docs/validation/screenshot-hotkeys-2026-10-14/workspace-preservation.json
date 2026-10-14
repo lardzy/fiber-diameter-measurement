@@ -1,0 +1,58 @@
+{
+  "macOS": {
+    "head": "391d9262f99ed39d4b052433ffe6819b4f6415d5",
+    "branch": "main",
+    "staged_unchanged": true,
+    "staged_patch_sha256": "4d5deb4821e4f88794d1f0b336219e70a2e04895bd4debacb3100a2f60907b18",
+    "source_matches": {
+      "scripts/validate_screenshot_hotkeys_windows.py": true,
+      "src/fdm/platform/windows_global_hotkey.py": true,
+      "src/fdm/screenshot_agent.py": true,
+      "src/fdm/screenshot_protocol.py": true,
+      "src/fdm/screenshot_settings.py": true,
+      "src/fdm/services/screenshot_output_worker.py": true,
+      "src/fdm/ui/main_window.py": true,
+      "src/fdm/ui/screenshot_hotkey_edit.py": true,
+      "src/fdm/ui/screenshot_hotkey_status.py": true,
+      "src/fdm/ui/screenshot_settings_page.py": true,
+      "tests/test_screenshot_agent.py": true,
+      "tests/test_screenshot_agent_async_output.py": true,
+      "tests/test_screenshot_hotkey_dispatch.py": true,
+      "tests/test_screenshot_hotkey_status.py": true,
+      "tests/test_screenshot_main_window.py": true,
+      "tests/test_screenshot_output_worker.py": true,
+      "tests/test_screenshot_overlay_editor.py": true,
+      "tests/test_screenshot_settings.py": true,
+      "tests/test_screenshot_settings_page.py": true,
+      "tests/test_windows_global_hotkey.py": true
+    }
+  },
+  "Windows": {
+    "head": "391d9262f99ed39d4b052433ffe6819b4f6415d5",
+    "branch": "main",
+    "staged_unchanged": true,
+    "staged_patch_sha256": "4d5deb4821e4f88794d1f0b336219e70a2e04895bd4debacb3100a2f60907b18",
+    "source_matches": {
+      "scripts/validate_screenshot_hotkeys_windows.py": true,
+      "src/fdm/platform/windows_global_hotkey.py": true,
+      "src/fdm/screenshot_agent.py": true,
+      "src/fdm/screenshot_protocol.py": true,
+      "src/fdm/screenshot_settings.py": true,
+      "src/fdm/services/screenshot_output_worker.py": true,
+      "src/fdm/ui/main_window.py": true,
+      "src/fdm/ui/screenshot_hotkey_edit.py": true,
+      "src/fdm/ui/screenshot_hotkey_status.py": true,
+      "src/fdm/ui/screenshot_settings_page.py": true,
+      "tests/test_screenshot_agent.py": true,
+      "tests/test_screenshot_agent_async_output.py": true,
+      "tests/test_screenshot_hotkey_dispatch.py": true,
+      "tests/test_screenshot_hotkey_status.py": true,
+      "tests/test_screenshot_main_window.py": true,
+      "tests/test_screenshot_output_worker.py": true,
+      "tests/test_screenshot_overlay_editor.py": true,
+      "tests/test_screenshot_settings.py": true,
+      "tests/test_screenshot_settings_page.py": true,
+      "tests/test_windows_global_hotkey.py": true
+    }
+  }
+}

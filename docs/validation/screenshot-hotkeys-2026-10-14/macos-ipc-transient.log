@@ -1,0 +1,29 @@
+..F..................................................................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 63%]
+...................................................................... [ 84%]
+................................ [ 93%]
+......................                                               [100%]
+=================================== FAILURES ===================================
+______________ test_single_instance_elects_a_qlocalserver_primary ______________
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-59/test_single_instance_elects_a_0')
+
+    def test_single_instance_elects_a_qlocalserver_primary(tmp_path: Path) -> None:
+        instance = ScreenshotSingleInstance(
+            f"fdm-shot-{uuid4().hex[:8]}",
+            lock_file_path=tmp_path / "primary.lock",
+        )
+        try:
+            result = instance.start_or_forward(
+                IPCCommand(CommandType.STATUS),
+                timeout_ms=5,
+            )
+>           assert result.primary and not result.forwarded
+E           AssertionError: assert (False)
+E            +  where False = AgentStartResult(primary=False, forwarded=False, response=None, error='无法建立截图工具本机服务：QLocalServer::listen: Unknown error 1').primary
+
+tests/test_screenshot_agent.py:247: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_screenshot_agent.py::test_single_instance_elects_a_qlocalserver_primary
+1 failed, 339 passed, 46 subtests passed in 7.84s

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -352,7 +353,7 @@ def test_ipc_capture_returns_before_backend_runs_and_dispatches_next_turn(
             IPCCommand.capture(CaptureMode.FULL_SCREEN)
         )
 
-        assert response == {
+        assert {key: response[key] for key in ("accepted", "mode", "queued")} == {
             "accepted": True,
             "mode": CaptureMode.FULL_SCREEN.value,
             "queued": 1,
@@ -428,6 +429,7 @@ def test_agent_ui_requests_keep_all_overlay_candidates_and_settle_tray_menu(
                 CaptureMode.ACTIVE_WINDOW,
             ):
                 agent._begin_tray_capture(mode)
+                QTest.qWait(1)
                 assert start.call_args.args[0].delay_ms >= 150
 
         menu_labels = [action.text() for action in agent.tray.contextMenu().actions()]
@@ -549,12 +551,26 @@ def test_smart_overlay_real_click_reaches_capture_ready(
         agent.begin_capture(CaptureRequest(CaptureMode.SMART))
         overlay = agent._overlay
         assert overlay is not None
-        QTest.mouseMove(overlay, click_position)
+        assert QTest.qWaitForWindowExposed(overlay, 1000)
+        # Drive actual QWindow -> QWidget handlers without relying on the VM
+        # desktop's SetCursorPos routing into a layered window. Physical mouse
+        # delivery/native hit testing remains a separate device acceptance.
+        native_window = overlay.windowHandle()
+        assert native_window is not None
+        QTest.mouseMove(native_window, QPoint(5, 5))
+        QTest.qWait(10)
+        QTest.mouseMove(native_window, click_position)
+        deadline = time.monotonic() + 1.0
+        while (
+            overlay.selected_candidate is None
+            or overlay.selected_candidate.handle != expected_handle
+        ) and time.monotonic() < deadline:
+            QTest.qWait(10)
         assert overlay.selected_candidate is not None
         assert overlay.selected_candidate.handle == expected_handle
 
         QTest.mouseClick(
-            overlay,
+            native_window,
             Qt.MouseButton.LeftButton,
             Qt.KeyboardModifier.NoModifier,
             click_position,

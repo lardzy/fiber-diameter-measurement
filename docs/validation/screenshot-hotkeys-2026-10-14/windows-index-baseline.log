@@ -1,0 +1,266 @@
+{
+  "platform": "windows",
+  "index_sources": [
+    {
+      "module": "fdm.platform.windows_global_hotkey",
+      "index_sha256": "0208a7e3edc4b8ae2c7586c14fa7a1fc00626d671e13d40b139c150f45434b61"
+    },
+    {
+      "module": "fdm.screenshot_agent",
+      "index_sha256": "de7965932984863e54cb1607e1d26ea6c35c201042a02a6ca4f3ce8a0f271128"
+    },
+    {
+      "module": "fdm.screenshot_protocol",
+      "index_sha256": "2e031a7e34e38660d54389a2ef6c9d1307c5e2475913f95b6d24ae23702fb42c"
+    },
+    {
+      "module": "fdm.screenshot_settings",
+      "index_sha256": "8e22191c91b52e21bb234f0b46a539e3bee460f7f51f036d418efb43e310a70e"
+    },
+    {
+      "module": "fdm.ui.main_window",
+      "index_sha256": "4739782c334e96d3eac45ba443a9e99fdf8cc89f33840b0816edd5a592dd49b1"
+    },
+    {
+      "module": "fdm.ui.screenshot_settings_page",
+      "index_sha256": "80ed1972e62e2d45c0c0e5d796fb1098714ae2a282bac41ae463c62edf1f70d1"
+    }
+  ]
+}
+.FFFFF                                                                   [100%]
+================================== FAILURES ===================================
+___ test_smart_overlay_real_click_reaches_capture_ready[taskbar-style-root] ___
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-11/test_smart_overlay_real_click_1')
+candidates = (WindowCandidate(handle=200, rect=CaptureRect(x=0, y=560, width=800, height=40), client_rect=None, title='', class_nam...parent_handle=0, depth=0, z_order=0, visible=True, minimized=False, capture_safe=True, metadata={'root_handle': 200}),)
+click_position = PySide6.QtCore.QPoint(200, 580), expected_handle = 200
+
+    @pytest.mark.parametrize(
+        ("candidates", "click_position", "expected_handle"),
+        (
+            (
+                (
+                    WindowCandidate(
+                        100,
+                        CaptureRect(50, 50, 500, 400),
+                        z_order=0,
+                        metadata={"root_handle": 100},
+                    ),
+                    WindowCandidate(
+                        101,
+                        CaptureRect(100, 100, 200, 120),
+                        parent_handle=100,
+                        depth=1,
+                        z_order=1,
+                        metadata={
+                            "root_handle": 100,
+                            "ancestor_handles": (100,),
+                        },
+                    ),
+                ),
+                QPoint(150, 150),
+                101,
+            ),
+            (
+                (
+                    WindowCandidate(
+                        200,
+                        CaptureRect(0, 560, 800, 40),
+                        z_order=0,
+                        metadata={"root_handle": 200},
+                    ),
+                ),
+                QPoint(200, 580),
+                200,
+            ),
+        ),
+        ids=("nested-window", "taskbar-style-root"),
+    )
+    def test_smart_overlay_real_click_reaches_capture_ready(
+        tmp_path: Path,
+        candidates: tuple[WindowCandidate, ...],
+        click_position: QPoint,
+        expected_handle: int,
+    ) -> None:
+        app = _app()
+
+        class _CandidateBackend(_CaptureBackend):
+            def windows(self, *, include_children: bool = True):
+                return candidates
+
+        coordinator = CaptureCoordinator(_CandidateBackend())
+        agent = ScreenshotAgent(
+            app,
+            coordinator,
+            settings_path=tmp_path / "settings.json",
+            output_service=_OutputService(),
+            cu5_locator=_Locator(),
+        )
+        ready: list[CapturedFrame] = []
+        coordinator.captureReady.connect(ready.append)
+        try:
+            agent.begin_capture(CaptureRequest(CaptureMode.SMART))
+            overlay = agent._overlay
+            assert overlay is not None
+            QTest.mouseMove(overlay, click_position)
+>           assert overlay.selected_candidate is not None
+E           assert None is not None
+E            +  where None = <fdm.ui.screenshot_overlay.ScreenshotOverlay(0x22fca5776b0) at 0x0000022FDA7AFDC0>.selected_candidate
+
+tests\test_screenshot_agent.py:554: AssertionError
+_ ScreenshotMainWindowTests.test_failed_initial_settings_sync_stops_only_the_new_agent _
+
+self = <test_screenshot_main_window.ScreenshotMainWindowTests testMethod=test_failed_initial_settings_sync_stops_only_the_new_agent>
+
+    def test_failed_initial_settings_sync_stops_only_the_new_agent(self) -> None:
+        window = self._window()
+        client = _FakeScreenshotClient()
+
+        def reject_update(_settings, **_kwargs):
+            response = IPCResponse.failure("update", "settings rejected")
+            raise ScreenshotAgentCommandError("settings rejected", response=response)
+
+        client.update_settings = reject_update  # type: ignore[method-assign]
+        window._screenshot_agent_client = client  # noqa: SLF001
+        try:
+            with (
+                patch(
+                    "fdm.ui.main_window.ScreenshotSettingsIO.update",
+                    side_effect=lambda mutator, *_args, **_kwargs: mutator(
+                        window._screenshot_settings  # noqa: SLF001
+                    ),
+                ),
+                patch("fdm.ui.main_window.QMessageBox.warning"),
+            ):
+                window.screenshot_tool_action.setChecked(True)
+
+>           self.assertEqual(client.started, 1)
+E           AssertionError: 0 != 1
+
+tests\test_screenshot_main_window.py:215: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+Traceback (most recent call last):
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\src\fdm\ui\main_window.py", line 21347, in _toggle_screenshot_tool
+    requested = bool(enabled)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\src\fdm\ui\main_window.py", line 21261, in _sync_screenshot_autostart
+    remote = ScreenshotSettings.from_dict(payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_FakeScreenshotClient' object has no attribute 'launch_spec'
+_ ScreenshotMainWindowTests.test_switch_starts_and_explicitly_stops_detached_companion _
+
+self = <test_screenshot_main_window.ScreenshotMainWindowTests testMethod=test_switch_starts_and_explicitly_stops_detached_companion>
+
+    def test_switch_starts_and_explicitly_stops_detached_companion(self) -> None:
+        window = self._window()
+        client = _FakeScreenshotClient()
+        window._screenshot_agent_client = client  # noqa: SLF001
+        try:
+            with (
+                patch(
+                    "fdm.ui.main_window.ScreenshotSettingsIO.load",
+                    side_effect=lambda: window._screenshot_settings,  # noqa: SLF001
+                ),
+                patch("fdm.ui.main_window.ScreenshotSettingsIO.save"),
+                patch(
+                    "fdm.ui.main_window.ScreenshotSettingsIO.update",
+                    side_effect=lambda mutator, *_args, **_kwargs: mutator(
+                        window._screenshot_settings  # noqa: SLF001
+                    ),
+                ),
+            ):
+                window.screenshot_tool_action.setChecked(True)
+>               self.assertEqual(client.started, 1)
+E               AssertionError: 0 != 1
+
+tests\test_screenshot_main_window.py:151: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+Traceback (most recent call last):
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\src\fdm\ui\main_window.py", line 21347, in _toggle_screenshot_tool
+    requested = bool(enabled)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\src\fdm\ui\main_window.py", line 21261, in _sync_screenshot_autostart
+    remote = ScreenshotSettings.from_dict(payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_FakeScreenshotClient' object has no attribute 'launch_spec'
+________ test_overlay_real_mouse_click_accepts_nested_window_candidate ________
+
+    def test_overlay_real_mouse_click_accepts_nested_window_candidate() -> None:
+        _app()
+        screen = ScreenInfo(
+            "primary",
+            CaptureRect(0, 0, 800, 600),
+            CaptureRect(0, 0, 800, 600),
+            1.0,
+            True,
+        )
+        parent = WindowCandidate(
+            1,
+            CaptureRect(50, 50, 500, 400),
+            depth=0,
+            z_order=0,
+            metadata={"root_handle": 1},
+        )
+        child = WindowCandidate(
+            2,
+            CaptureRect(100, 100, 200, 120),
+            parent_handle=1,
+            depth=1,
+            z_order=1,
+            metadata={"root_handle": 1, "ancestor_handles": (1,)},
+        )
+        overlay = ScreenshotOverlay((screen,), (parent, child))
+        accepted: list[object] = []
+        overlay.selectionAccepted.connect(accepted.append)
+        try:
+            overlay.begin()
+            QTest.qWait(10)
+            click_position = QPoint(150, 150)
+            QTest.mouseMove(overlay, click_position)
+>           assert overlay.selected_candidate == child
+E           AssertionError: assert None == WindowCandidate(handle=2, rect=CaptureRect(x=100, y=100, width=200, height=120), client_rect=None, title='', class_nam...=1, z_order=1, visible=True, minimized=False, capture_safe=True, metadata={'root_handle': 1, 'ancestor_handles': (1,)})
+E            +  where None = <fdm.ui.screenshot_overlay.ScreenshotOverlay(0x22fcdc2b1c0) at 0x0000022FDA7ADF80>.selected_candidate
+
+tests\test_screenshot_overlay_editor.py:127: AssertionError
+_ test_overlay_candidate_cutout_stays_hit_testable_with_near_transparent_alpha _
+
+    def test_overlay_candidate_cutout_stays_hit_testable_with_near_transparent_alpha() -> None:
+        app = _app()
+        screen = ScreenInfo(
+            "primary",
+            CaptureRect(0, 0, 800, 600),
+            CaptureRect(0, 0, 800, 600),
+            1.0,
+            True,
+        )
+        candidate = WindowCandidate(
+            1,
+            CaptureRect(100, 100, 200, 120),
+            z_order=0,
+            metadata={"root_handle": 1},
+        )
+        overlay = ScreenshotOverlay((screen,), (candidate,))
+        try:
+            overlay.begin()
+            overlay._refresh_hover(QPoint(150, 150))
+            overlay.repaint()
+            app.processEvents()
+
+            rendered = overlay.grab().toImage()
+>           assert rendered.pixelColor(150, 150).alpha() == 1
+E           assert 92 == 1
+E            +  where 92 = <built-in method alpha of PySide6.QtGui.QColor object at 0x0000022FE35EFC40>()
+E            +    where <built-in method alpha of PySide6.QtGui.QColor object at 0x0000022FE35EFC40> = PySide6.QtGui.QColor.fromRgbF(0.000000, 0.000000, 0.000000, 0.360784).alpha
+E            +      where PySide6.QtGui.QColor.fromRgbF(0.000000, 0.000000, 0.000000, 0.360784) = <built-in method pixelColor of PySide6.QtGui.QImage object at 0x0000022FE35EFC00>(150, 150)
+E            +        where <built-in method pixelColor of PySide6.QtGui.QImage object at 0x0000022FE35EFC00> = <PySide6.QtGui.QImage(QSize(1600, 1200),format=QImage::Format_ARGB32_Premultiplied,depth=32,devicePixelRatio=2,bytesPerLine=6400,sizeInBytes=7680000) at 0x0000022FE35EFC00>.pixelColor
+
+tests\test_screenshot_overlay_editor.py:167: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_screenshot_agent.py::test_smart_overlay_real_click_reaches_capture_ready[taskbar-style-root]
+FAILED tests/test_screenshot_main_window.py::ScreenshotMainWindowTests::test_failed_initial_settings_sync_stops_only_the_new_agent
+FAILED tests/test_screenshot_main_window.py::ScreenshotMainWindowTests::test_switch_starts_and_explicitly_stops_detached_companion
+FAILED tests/test_screenshot_overlay_editor.py::test_overlay_real_mouse_click_accepts_nested_window_candidate
+FAILED tests/test_screenshot_overlay_editor.py::test_overlay_candidate_cutout_stays_hit_testable_with_near_transparent_alpha
+5 failed, 1 passed in 3.45s

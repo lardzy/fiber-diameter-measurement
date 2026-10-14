@@ -136,6 +136,8 @@ class AfterCaptureTask(str, Enum):
 class HotkeyBinding:
     sequence: str = ""
     enabled: bool = True
+    native_virtual_key: int | None = None
+    native_modifiers: int | None = None
 
     def normalized(self) -> "HotkeyBinding":
         raw_sequence = str(self.sequence or "").strip()
@@ -145,11 +147,25 @@ class HotkeyBinding:
         if plus_key:
             parts.append("+")
         sequence = "+".join(_canonical_hotkey_token(part) for part in parts)
-        return HotkeyBinding(sequence=sequence, enabled=bool(self.enabled and sequence))
+        native_key, native_modifiers = _normalize_native_hotkey(
+            sequence, self.native_virtual_key, self.native_modifiers
+        )
+        return HotkeyBinding(
+            sequence=sequence,
+            enabled=bool(self.enabled and sequence),
+            native_virtual_key=native_key,
+            native_modifiers=native_modifiers,
+        )
 
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized()
-        return {"sequence": normalized.sequence, "enabled": normalized.enabled}
+        payload: dict[str, object] = {
+            "sequence": normalized.sequence, "enabled": normalized.enabled
+        }
+        if normalized.native_virtual_key is not None:
+            payload["native_virtual_key"] = normalized.native_virtual_key
+            payload["native_modifiers"] = normalized.native_modifiers
+        return payload
 
     @classmethod
     def from_value(
@@ -168,7 +184,47 @@ class HotkeyBinding:
         return cls(
             sequence=str(value.get("sequence", fallback.sequence) or ""),
             enabled=_normalize_bool(value.get("enabled"), fallback.enabled),
+            native_virtual_key=value.get("native_virtual_key"),
+            native_modifiers=value.get("native_modifiers"),
         ).normalized()
+
+
+def _normalize_native_hotkey(
+    sequence: str, virtual_key: object, modifiers: object
+) -> tuple[int | None, int | None]:
+    """Keep recorded Windows key identity without trusting malformed metadata.
+
+    The displayed character can vary with the keyboard layout, so only the
+    modifier prefix can be compared to PortableText without a Windows layout.
+    Editors must clear this pair when the sequence is changed as text.
+    """
+
+    if (
+        not sequence
+        or type(virtual_key) is not int
+        or type(modifiers) is not int
+        or not 1 <= virtual_key <= 0xFE
+        or modifiers < 0
+        or modifiers & ~0x0F
+        or virtual_key in {0x10, 0x11, 0x12, 0x5B, 0x5C, *range(0xA0, 0xA6), 0xE5}
+    ):
+        return None, None
+    source = sequence[:-1] if sequence.endswith("+") else sequence
+    tokens = [part.strip().casefold() for part in source.split("+") if part.strip()]
+    if not sequence.endswith("+"):
+        tokens = tokens[:-1]
+    modifier_values = {
+        "alt": 0x01, "ctrl": 0x02, "control": 0x02, "shift": 0x04,
+        "meta": 0x08, "win": 0x08, "super": 0x08, "num": 0,
+    }
+    expected = 0
+    for token in tokens:
+        if token not in modifier_values:
+            return None, None
+        expected |= modifier_values[token]
+    if modifiers != expected:
+        return None, None
+    return virtual_key, modifiers
 
 
 def default_hotkeys() -> dict[CaptureMode, HotkeyBinding]:

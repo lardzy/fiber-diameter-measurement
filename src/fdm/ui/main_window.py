@@ -21071,6 +21071,14 @@ class MainWindow(QMainWindow):
             screenshot_status.running,
             status_error,
         )
+        from fdm.ui.screenshot_hotkey_status import ScreenshotHotkeyStatusController
+
+        hotkey_status = ScreenshotHotkeyStatusController.for_client(
+            dialog._screenshot_settings_widget, self._screenshot_agent_client,
+        )
+        dialog._hotkey_status_controller = hotkey_status
+        dialog.finished.connect(hotkey_status.close)
+        dialog._screenshot_settings_widget.set_hotkey_diagnostics(screenshot_status.result.get("hotkeys", ()))
         dialog.screenshotCu5DiagnosticRequested.connect(
             lambda: self._diagnose_cu5_preview(dialog)
         )
@@ -21099,6 +21107,13 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
+        hotkey_status = getattr(dialog, "_hotkey_status_controller", None)
+        if hotkey_status is not None:
+            try:
+                hotkey_status.finish_recording()
+            except Exception as exc:
+                QMessageBox.warning(dialog, "快捷键录入尚未结束", str(exc))
+                return
         new_settings = dialog.app_settings()
         new_screenshot_settings = dialog.screenshot_settings()
         if self._slide_acquisition_active():

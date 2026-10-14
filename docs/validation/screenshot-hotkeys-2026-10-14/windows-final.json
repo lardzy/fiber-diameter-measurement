@@ -1,0 +1,3064 @@
+{
+  "started_at": "2026-10-14T15:22:19.865379+00:00",
+  "ok": true,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+  "perf_counter_resolution_seconds": 4.166666666666667e-08,
+  "input_kind": "synthetic Win32 SendInput through actual RegisterHotKey/WM_HOTKEY",
+  "timing_origin": "application WM_HOTKEY receipt, not physical keyboard or host-to-guest latency",
+  "limitations": [
+    "No physical-key, Parallels host interception, elevated foreground, secure desktop, or keyboard-layout acceptance.",
+    "Slow output is a controlled 300 ms delay before actual PNG encoding and saving.",
+    "A registration conflict or inability to focus the probe fails that scenario; it is never counted as success."
+  ],
+  "scenarios": [
+    {
+      "name": "registration_conflict",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "",
+          "state": "failed",
+          "error_code": 1409,
+          "error": "快捷键注册失败：该组合键已被系统或其它程序占用，请更换组合键或释放占用后重试。",
+          "last_received_at": null
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:20.411",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:20.343",
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "2daa142369de458c9e8577c3af75ad0b",
+            "source": "hotkey",
+            "mode": "last_region",
+            "stage": "completed",
+            "received_counter": 2924.338852833,
+            "received_at": "2026-10-14T23:22:20.343",
+            "dispatched_ms": 1.521,
+            "image_ready_ms": 21.008,
+            "output_queued_ms": 24.949,
+            "completed_ms": 33.359,
+            "error": ""
+          },
+          {
+            "trigger_id": "8ba381436a4e4ad59adc892543e8ce5e",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2924.404544916,
+            "received_at": "2026-10-14T23:22:20.411",
+            "dispatched_ms": 0.659,
+            "image_ready_ms": 75.676,
+            "output_queued_ms": 82.364,
+            "completed_ms": 175.616,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 2,
+          "p50_ms": 1.09,
+          "p95_ms": 1.521,
+          "max_ms": 1.521
+        },
+        "received_to_image_ready": {
+          "count": 2,
+          "p50_ms": 48.342,
+          "p95_ms": 75.676,
+          "max_ms": 75.676
+        },
+        "received_to_completed": {
+          "count": 2,
+          "p50_ms": 104.488,
+          "p95_ms": 175.616,
+          "max_ms": 175.616
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\registration_conflict\\captures\\Screenshot_2026-10-14_23-22-20.png",
+          "bytes": 1460,
+          "sha256": "c6a8f246976ad48901b86274929de0a724a2dfd3c107fd2a813b71a08a047971",
+          "width": 96,
+          "height": 64
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\registration_conflict\\captures\\Screenshot_2026-10-14_23-22-20_001.png",
+          "bytes": 432440,
+          "sha256": "cee8f5438d8331f9df91f5ecd8353fb96b4405488e6a370d72cb7268141072bb",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 2,
+      "native_receipts": [
+        {
+          "identifier": 24324,
+          "time": 2924.338912875,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2924.404576208,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "normal_capture_latency",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "sample_count": 30,
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:27.638",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "f9c31e10734f4f55b3bc69158086bd7a",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2924.882929291,
+            "received_at": "2026-10-14T23:22:20.891",
+            "dispatched_ms": 0.671,
+            "image_ready_ms": 67.815,
+            "output_queued_ms": 75.24,
+            "completed_ms": 172.446,
+            "error": ""
+          },
+          {
+            "trigger_id": "df2d87d54f644e67ba224c0ccde5c789",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2925.123273208,
+            "received_at": "2026-10-14T23:22:21.126",
+            "dispatched_ms": 0.565,
+            "image_ready_ms": 64.567,
+            "output_queued_ms": 71.164,
+            "completed_ms": 165.094,
+            "error": ""
+          },
+          {
+            "trigger_id": "2928d07636934fe785023893d22571c2",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2925.354812041,
+            "received_at": "2026-10-14T23:22:21.354",
+            "dispatched_ms": 0.769,
+            "image_ready_ms": 66.656,
+            "output_queued_ms": 72.917,
+            "completed_ms": 167.095,
+            "error": ""
+          },
+          {
+            "trigger_id": "6d53920e50264ef8aff920d91d20e8d3",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2925.588081416,
+            "received_at": "2026-10-14T23:22:21.594",
+            "dispatched_ms": 0.52,
+            "image_ready_ms": 66.773,
+            "output_queued_ms": 73.148,
+            "completed_ms": 164.905,
+            "error": ""
+          },
+          {
+            "trigger_id": "ea7640f9d9e14e7195f1fca87706603b",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2925.819116666,
+            "received_at": "2026-10-14T23:22:21.825",
+            "dispatched_ms": 0.538,
+            "image_ready_ms": 59.571,
+            "output_queued_ms": 66.049,
+            "completed_ms": 151.549,
+            "error": ""
+          },
+          {
+            "trigger_id": "fea13e21d6bd46f6ac81019ab25ccf52",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2926.047633416,
+            "received_at": "2026-10-14T23:22:22.055",
+            "dispatched_ms": 0.572,
+            "image_ready_ms": 64.351,
+            "output_queued_ms": 70.585,
+            "completed_ms": 157.34,
+            "error": ""
+          },
+          {
+            "trigger_id": "da22f54e8989461c962f4d024008b2b7",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2926.283175333,
+            "received_at": "2026-10-14T23:22:22.290",
+            "dispatched_ms": 0.578,
+            "image_ready_ms": 62.386,
+            "output_queued_ms": 68.78,
+            "completed_ms": 160.107,
+            "error": ""
+          },
+          {
+            "trigger_id": "7e6cc7f750b943d5ae754a39d1066ab1",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2926.514893375,
+            "received_at": "2026-10-14T23:22:22.522",
+            "dispatched_ms": 0.575,
+            "image_ready_ms": 63.045,
+            "output_queued_ms": 69.505,
+            "completed_ms": 155.912,
+            "error": ""
+          },
+          {
+            "trigger_id": "804da060a16c4528ab4e2ee6f1d300b8",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2926.748569375,
+            "received_at": "2026-10-14T23:22:22.756",
+            "dispatched_ms": 0.561,
+            "image_ready_ms": 62.661,
+            "output_queued_ms": 68.803,
+            "completed_ms": 163.278,
+            "error": ""
+          },
+          {
+            "trigger_id": "85debb04dd084640a1b3031701dc43d9",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2926.986896958,
+            "received_at": "2026-10-14T23:22:22.993",
+            "dispatched_ms": 0.666,
+            "image_ready_ms": 67.436,
+            "output_queued_ms": 74.129,
+            "completed_ms": 162.96,
+            "error": ""
+          },
+          {
+            "trigger_id": "5b62643e5a604470bf6471c282fba58f",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2927.232472666,
+            "received_at": "2026-10-14T23:22:23.239",
+            "dispatched_ms": 0.556,
+            "image_ready_ms": 62.76,
+            "output_queued_ms": 69.288,
+            "completed_ms": 164.167,
+            "error": ""
+          },
+          {
+            "trigger_id": "e3ee9e236a4d4c6cb38eee4ea2e2eb76",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2927.464280625,
+            "received_at": "2026-10-14T23:22:23.472",
+            "dispatched_ms": 0.581,
+            "image_ready_ms": 64.023,
+            "output_queued_ms": 70.371,
+            "completed_ms": 159.369,
+            "error": ""
+          },
+          {
+            "trigger_id": "c47a37b572504a39a00ef582936add74",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2927.698492416,
+            "received_at": "2026-10-14T23:22:23.705",
+            "dispatched_ms": 0.704,
+            "image_ready_ms": 61.405,
+            "output_queued_ms": 67.63,
+            "completed_ms": 156.582,
+            "error": ""
+          },
+          {
+            "trigger_id": "ffb75318c455476aa5dd3f9c0bd3ccdd",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2927.93105775,
+            "received_at": "2026-10-14T23:22:23.938",
+            "dispatched_ms": 0.516,
+            "image_ready_ms": 64.602,
+            "output_queued_ms": 71.093,
+            "completed_ms": 159.651,
+            "error": ""
+          },
+          {
+            "trigger_id": "8414d3079199426bb25046d8060b0b5a",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2928.156110708,
+            "received_at": "2026-10-14T23:22:24.163",
+            "dispatched_ms": 0.652,
+            "image_ready_ms": 67.145,
+            "output_queued_ms": 73.88,
+            "completed_ms": 168.298,
+            "error": ""
+          },
+          {
+            "trigger_id": "65c89b01aa2c4c038407487f796c80ea",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2928.390155041,
+            "received_at": "2026-10-14T23:22:24.398",
+            "dispatched_ms": 0.59,
+            "image_ready_ms": 64.642,
+            "output_queued_ms": 71.145,
+            "completed_ms": 158.102,
+            "error": ""
+          },
+          {
+            "trigger_id": "1b26406805494d1cb0b7460e20cfdb7d",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2928.615026041,
+            "received_at": "2026-10-14T23:22:24.622",
+            "dispatched_ms": 0.531,
+            "image_ready_ms": 72.136,
+            "output_queued_ms": 78.378,
+            "completed_ms": 168.52,
+            "error": ""
+          },
+          {
+            "trigger_id": "4597d2965ab043928a014c12d65a7be5",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2928.850088708,
+            "received_at": "2026-10-14T23:22:24.857",
+            "dispatched_ms": 0.514,
+            "image_ready_ms": 63.046,
+            "output_queued_ms": 69.568,
+            "completed_ms": 163.027,
+            "error": ""
+          },
+          {
+            "trigger_id": "13832762be3a404bb18932711766deb6",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2929.082368041,
+            "received_at": "2026-10-14T23:22:25.089",
+            "dispatched_ms": 0.569,
+            "image_ready_ms": 63.734,
+            "output_queued_ms": 70.244,
+            "completed_ms": 160.686,
+            "error": ""
+          },
+          {
+            "trigger_id": "1f5c3ebfd8cf409f8d1f459384947483",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2929.315377291,
+            "received_at": "2026-10-14T23:22:25.322",
+            "dispatched_ms": 0.557,
+            "image_ready_ms": 62.744,
+            "output_queued_ms": 69.22,
+            "completed_ms": 164.597,
+            "error": ""
+          },
+          {
+            "trigger_id": "ee6a239bb3554335beae05efe4e3c35d",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2929.561686416,
+            "received_at": "2026-10-14T23:22:25.569",
+            "dispatched_ms": 0.518,
+            "image_ready_ms": 60.794,
+            "output_queued_ms": 67.084,
+            "completed_ms": 159.317,
+            "error": ""
+          },
+          {
+            "trigger_id": "8006d49c5b624c8fb1de043fa4d97fb9",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2929.789970375,
+            "received_at": "2026-10-14T23:22:25.797",
+            "dispatched_ms": 0.571,
+            "image_ready_ms": 63.629,
+            "output_queued_ms": 69.886,
+            "completed_ms": 162.381,
+            "error": ""
+          },
+          {
+            "trigger_id": "bd9e15d11d124157a637e0c1feb6d772",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2930.019245541,
+            "received_at": "2026-10-14T23:22:26.027",
+            "dispatched_ms": 0.623,
+            "image_ready_ms": 68.38,
+            "output_queued_ms": 74.736,
+            "completed_ms": 166.02,
+            "error": ""
+          },
+          {
+            "trigger_id": "fd421aaa17e04606b27c91a5277a59da",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2930.251574333,
+            "received_at": "2026-10-14T23:22:26.259",
+            "dispatched_ms": 0.698,
+            "image_ready_ms": 60.688,
+            "output_queued_ms": 67.18,
+            "completed_ms": 159.726,
+            "error": ""
+          },
+          {
+            "trigger_id": "03e37b40aef94ce0bab66d95cf369a6c",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2930.484697,
+            "received_at": "2026-10-14T23:22:26.491",
+            "dispatched_ms": 0.596,
+            "image_ready_ms": 60.707,
+            "output_queued_ms": 67.234,
+            "completed_ms": 157.617,
+            "error": ""
+          },
+          {
+            "trigger_id": "65728663807842659a89702d233676c2",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2930.714440166,
+            "received_at": "2026-10-14T23:22:26.721",
+            "dispatched_ms": 0.513,
+            "image_ready_ms": 63.477,
+            "output_queued_ms": 69.737,
+            "completed_ms": 160.71,
+            "error": ""
+          },
+          {
+            "trigger_id": "c08984c732174bc884230efbb8b30fd4",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2930.940193166,
+            "received_at": "2026-10-14T23:22:26.948",
+            "dispatched_ms": 0.549,
+            "image_ready_ms": 65.454,
+            "output_queued_ms": 72.476,
+            "completed_ms": 164.016,
+            "error": ""
+          },
+          {
+            "trigger_id": "4caa95825d14400996c151cad3f40fbc",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2931.169887458,
+            "received_at": "2026-10-14T23:22:27.178",
+            "dispatched_ms": 0.575,
+            "image_ready_ms": 60.256,
+            "output_queued_ms": 66.565,
+            "completed_ms": 159.158,
+            "error": ""
+          },
+          {
+            "trigger_id": "0e6bab9cd1054d93ac9a15850eb71c00",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2931.397467875,
+            "received_at": "2026-10-14T23:22:27.404",
+            "dispatched_ms": 0.534,
+            "image_ready_ms": 63.568,
+            "output_queued_ms": 70.255,
+            "completed_ms": 160.218,
+            "error": ""
+          },
+          {
+            "trigger_id": "c2c5ea2fb0814ad0a2fa3f805ea2b8b9",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2931.630855625,
+            "received_at": "2026-10-14T23:22:27.638",
+            "dispatched_ms": 0.698,
+            "image_ready_ms": 63.833,
+            "output_queued_ms": 70.055,
+            "completed_ms": 157.627,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 30,
+          "p50_ms": 0.571,
+          "p95_ms": 0.704,
+          "max_ms": 0.769
+        },
+        "received_to_image_ready": {
+          "count": 30,
+          "p50_ms": 63.681,
+          "p95_ms": 68.38,
+          "max_ms": 72.136
+        },
+        "received_to_completed": {
+          "count": 30,
+          "p50_ms": 160.698,
+          "p95_ms": 168.52,
+          "max_ms": 172.446
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-20.png",
+          "bytes": 432334,
+          "sha256": "d75159287982aa1c1f4c0bf4d58641de6579dc3be879d423062c498374f98dd5",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-21.png",
+          "bytes": 432443,
+          "sha256": "6098eae8c87ea70461d0afd35e7ed1ec92d9b9b83bb4d74e0eebc392da4b45d5",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-21_001.png",
+          "bytes": 432893,
+          "sha256": "abc7045312806a9669283eccf7c886e471e1b1310a3b6850318af3222d3b6818",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-21_002.png",
+          "bytes": 433326,
+          "sha256": "9ddc060a1482aef8b863493db322b5e0ed4439fe4797654fb67ec18f977221d0",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-21_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-22.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-22_001.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-22_002.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-22_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-23.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-23_001.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-23_002.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-23_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-24.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-24_001.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-24_002.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-24_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-24_004.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-25.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-25_001.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-25_002.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-25_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-26.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-26_001.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-26_002.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-26_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-27.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-27_001.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-27_002.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\normal_capture_latency\\captures\\Screenshot_2026-10-14_23-22-27_003.png",
+          "bytes": 433071,
+          "sha256": "b3e180269edb73dfe69feed3c747a38506c857973fe17d0a0ced1dd2090f3a57",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 30,
+      "native_message_count": 30,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2924.88310375,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2925.123309833,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2925.354849875,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2925.588119708,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2925.819151666,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2926.047670083,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2926.283212083,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2926.514933791,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2926.748601875,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2926.986954625,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2927.23251175,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2927.464321958,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2927.698526375,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2927.931091083,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2928.156145875,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2928.390190666,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2928.615058208,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2928.850119,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2929.082407791,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2929.315421083,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2929.561716708,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2929.790003166,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2930.0192775,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2930.251604791,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2930.4847305,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2930.714473583,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2930.940225708,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2931.16992325,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2931.397500083,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2931.630889125,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "recording_pause_restore",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:28.563",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "aa8bce435b6f4a4cba9d4f70a6c186d3",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2932.108648291,
+            "received_at": "2026-10-14T23:22:28.112",
+            "dispatched_ms": 0.53,
+            "image_ready_ms": 66.143,
+            "output_queued_ms": 73.418,
+            "completed_ms": 167.196,
+            "error": ""
+          },
+          {
+            "trigger_id": "ba0851c3bf494095a691e9fef815258d",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2932.556067875,
+            "received_at": "2026-10-14T23:22:28.563",
+            "dispatched_ms": 1.114,
+            "image_ready_ms": 90.965,
+            "output_queued_ms": 97.45,
+            "completed_ms": 190.452,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 2,
+          "p50_ms": 0.822,
+          "p95_ms": 1.114,
+          "max_ms": 1.114
+        },
+        "received_to_image_ready": {
+          "count": 2,
+          "p50_ms": 78.554,
+          "p95_ms": 90.965,
+          "max_ms": 90.965
+        },
+        "received_to_completed": {
+          "count": 2,
+          "p50_ms": 178.824,
+          "p95_ms": 190.452,
+          "max_ms": 190.452
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\recording_pause_restore\\captures\\Screenshot_2026-10-14_23-22-28.png",
+          "bytes": 432357,
+          "sha256": "64619274a3dbb03571af23d355c6cc060d5a4c08ec20b4c7e1fe9d525e55599a",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\recording_pause_restore\\captures\\Screenshot_2026-10-14_23-22-28_001.png",
+          "bytes": 432446,
+          "sha256": "fd4802624485dc346d00ef3854b3a5f0a56d512294f16101865da19c88fa9a37",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 2,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2932.108675208,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2932.556125541,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "group_swap",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:29.144",
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:29.082",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "d1923054f1e04fff9ad4e689ab559f9d",
+            "source": "hotkey",
+            "mode": "last_region",
+            "stage": "completed",
+            "received_counter": 2933.07639075,
+            "received_at": "2026-10-14T23:22:29.082",
+            "dispatched_ms": 0.586,
+            "image_ready_ms": 17.581,
+            "output_queued_ms": 18.52,
+            "completed_ms": 28.968,
+            "error": ""
+          },
+          {
+            "trigger_id": "83c53f821fae41a285ca7b89ab108b82",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2933.137601166,
+            "received_at": "2026-10-14T23:22:29.144",
+            "dispatched_ms": 0.572,
+            "image_ready_ms": 68.358,
+            "output_queued_ms": 75.016,
+            "completed_ms": 167.637,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 2,
+          "p50_ms": 0.579,
+          "p95_ms": 0.586,
+          "max_ms": 0.586
+        },
+        "received_to_image_ready": {
+          "count": 2,
+          "p50_ms": 42.97,
+          "p95_ms": 68.358,
+          "max_ms": 68.358
+        },
+        "received_to_completed": {
+          "count": 2,
+          "p50_ms": 98.302,
+          "p95_ms": 167.637,
+          "max_ms": 167.637
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\group_swap\\captures\\Screenshot_2026-10-14_23-22-29.png",
+          "bytes": 1460,
+          "sha256": "c6a8f246976ad48901b86274929de0a724a2dfd3c107fd2a813b71a08a047971",
+          "width": 96,
+          "height": 64
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\group_swap\\captures\\Screenshot_2026-10-14_23-22-29_001.png",
+          "bytes": 432343,
+          "sha256": "326408855b458feff9f7cb1de0e0ff068113e2c3cca913f97eed8ed3554c3a69",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 2,
+      "native_receipts": [
+        {
+          "identifier": 24324,
+          "time": 2933.076423375,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2933.137632541,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "editor_native_recording",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "recorded_binding": {
+        "sequence": "Ctrl+Alt+Shift+F9",
+        "enabled": true,
+        "native_virtual_key": 120,
+        "native_modifiers": 7
+      },
+      "recorded_binding_after_blur": {
+        "sequence": "Ctrl+Alt+Shift+F9",
+        "enabled": true,
+        "native_virtual_key": 120,
+        "native_modifiers": 7
+      },
+      "focus_pause_and_restore_verified": true,
+      "editor_native_events": [
+        {
+          "event": "press",
+          "qt_key": 16777249,
+          "native_virtual_key": 17,
+          "native_scan_code": 0,
+          "qt_modifiers": 67108864,
+          "auto_repeat": false
+        },
+        {
+          "event": "press",
+          "qt_key": 16777248,
+          "native_virtual_key": 16,
+          "native_scan_code": 0,
+          "qt_modifiers": 100663296,
+          "auto_repeat": false
+        },
+        {
+          "event": "press",
+          "qt_key": 16777251,
+          "native_virtual_key": 18,
+          "native_scan_code": 0,
+          "qt_modifiers": 234881024,
+          "auto_repeat": false
+        },
+        {
+          "event": "press",
+          "qt_key": 16777272,
+          "native_virtual_key": 120,
+          "native_scan_code": 0,
+          "qt_modifiers": 234881024,
+          "auto_repeat": false
+        },
+        {
+          "event": "release",
+          "qt_key": 16777272,
+          "native_virtual_key": 120,
+          "native_scan_code": 0,
+          "qt_modifiers": 234881024,
+          "auto_repeat": false
+        },
+        {
+          "event": "release",
+          "qt_key": 16777251,
+          "native_virtual_key": 18,
+          "native_scan_code": 0,
+          "qt_modifiers": 100663296,
+          "auto_repeat": false
+        },
+        {
+          "event": "release",
+          "qt_key": 16777248,
+          "native_virtual_key": 16,
+          "native_scan_code": 0,
+          "qt_modifiers": 67108864,
+          "auto_repeat": false
+        },
+        {
+          "event": "release",
+          "qt_key": 16777249,
+          "native_virtual_key": 17,
+          "native_scan_code": 0,
+          "qt_modifiers": 0,
+          "auto_repeat": false
+        }
+      ],
+      "editor_recording_transitions": [
+        {
+          "active": true,
+          "hotkeys_paused": true,
+          "registered_hotkeys": 0
+        },
+        {
+          "active": false,
+          "hotkeys_paused": false,
+          "registered_hotkeys": 2
+        }
+      ],
+      "editor_sequence_changes": [
+        {
+          "sequence": "Ctrl+Alt+Shift+F9",
+          "binding_at_signal": {
+            "sequence": "Ctrl+Alt+Shift+F9",
+            "enabled": true
+          },
+          "is_recording": true
+        },
+        {
+          "sequence": "Ctrl+Alt+Shift+F9",
+          "binding_at_signal": {
+            "sequence": "Ctrl+Alt+Shift+F9",
+            "enabled": true,
+            "native_virtual_key": 120,
+            "native_modifiers": 7
+          },
+          "is_recording": false
+        }
+      ],
+      "editor_callback_errors": [],
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:29.991",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "f0041cdcddc34836a6cd1773f981eb35",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2933.622292708,
+            "received_at": "2026-10-14T23:22:29.629",
+            "dispatched_ms": 0.847,
+            "image_ready_ms": 68.047,
+            "output_queued_ms": 74.906,
+            "completed_ms": 165.689,
+            "error": ""
+          },
+          {
+            "trigger_id": "7856b0fedad44789812f83efa1a9ec27",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2933.98350725,
+            "received_at": "2026-10-14T23:22:29.991",
+            "dispatched_ms": 0.797,
+            "image_ready_ms": 72.853,
+            "output_queued_ms": 79.501,
+            "completed_ms": 171.434,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 2,
+          "p50_ms": 0.822,
+          "p95_ms": 0.847,
+          "max_ms": 0.847
+        },
+        "received_to_image_ready": {
+          "count": 2,
+          "p50_ms": 70.45,
+          "p95_ms": 72.853,
+          "max_ms": 72.853
+        },
+        "received_to_completed": {
+          "count": 2,
+          "p50_ms": 168.561,
+          "p95_ms": 171.434,
+          "max_ms": 171.434
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\editor_native_recording\\captures\\Screenshot_2026-10-14_23-22-29.png",
+          "bytes": 432343,
+          "sha256": "31e6645a1680e0a9ce336fc0f7f5b92f0d93866ced50e80856e340fa0ca469d4",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\editor_native_recording\\captures\\Screenshot_2026-10-14_23-22-30.png",
+          "bytes": 441762,
+          "sha256": "252380070a76ab41d02102da127627a73ab1826e733244f6b02a8b896b985540",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 2,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2933.622324708,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2933.983542958,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "repeat_keydown_one_stroke",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:30.896",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "fbd05d1f52de4362a451bf08059944b6",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2934.495421583,
+            "received_at": "2026-10-14T23:22:30.497",
+            "dispatched_ms": 0.42,
+            "image_ready_ms": 61.527,
+            "output_queued_ms": 68.307,
+            "completed_ms": 159.559,
+            "error": ""
+          },
+          {
+            "trigger_id": "47cde22a092048bb80ad49342c318d35",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2934.889245041,
+            "received_at": "2026-10-14T23:22:30.896",
+            "dispatched_ms": 0.914,
+            "image_ready_ms": 80.021,
+            "output_queued_ms": 86.553,
+            "completed_ms": 176.499,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 2,
+          "p50_ms": 0.667,
+          "p95_ms": 0.914,
+          "max_ms": 0.914
+        },
+        "received_to_image_ready": {
+          "count": 2,
+          "p50_ms": 70.774,
+          "p95_ms": 80.021,
+          "max_ms": 80.021
+        },
+        "received_to_completed": {
+          "count": 2,
+          "p50_ms": 168.029,
+          "p95_ms": 176.499,
+          "max_ms": 176.499
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\repeat_keydown_one_stroke\\captures\\Screenshot_2026-10-14_23-22-30.png",
+          "bytes": 432343,
+          "sha256": "33bf071754fe917f939b4a853be8a33ea10c070187c8a909467a059a901834fb",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\repeat_keydown_one_stroke\\captures\\Screenshot_2026-10-14_23-22-30_001.png",
+          "bytes": 432301,
+          "sha256": "1ed96c163805ef4140f35c0b9fa46da5a00ebee1b748a7b78dd973f9417871a3",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 2,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2934.495447916,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24323,
+          "time": 2934.889336291,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "slow_output_sync_reference",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "synchronous_save_ms": 412.463,
+      "synthetic_send_to_received_ms": 361.069,
+      "injected_save_delay_ms": 300,
+      "reference_direct_save_count": 1,
+      "heartbeat_gaps": {
+        "count": 22,
+        "p50_ms": 10.035,
+        "p95_ms": 69.312,
+        "max_ms": 413.269
+      },
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:31.942",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "1ea9260fe3e2471ba0f635df3309f836",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2935.934901708,
+            "received_at": "2026-10-14T23:22:31.942",
+            "dispatched_ms": 0.593,
+            "image_ready_ms": 61.587,
+            "output_queued_ms": 68.409,
+            "completed_ms": 159.356,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 1,
+          "p50_ms": 0.593,
+          "p95_ms": 0.593,
+          "max_ms": 0.593
+        },
+        "received_to_image_ready": {
+          "count": 1,
+          "p50_ms": 61.587,
+          "p95_ms": 61.587,
+          "max_ms": 61.587
+        },
+        "received_to_completed": {
+          "count": 1,
+          "p50_ms": 159.356,
+          "p95_ms": 159.356,
+          "max_ms": 159.356
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\slow_output_sync_reference\\captures\\Screenshot_2026-10-14_23-22-31.png",
+          "bytes": 432029,
+          "sha256": "9d1466a6042890713a46601b316aadf4d3a8afa0cf552c3b7ebb77d60a5a4a31",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\slow_output_sync_reference\\captures\\Screenshot_2026-10-14_23-22-32.png",
+          "bytes": 433040,
+          "sha256": "d5e095d32b89303caeb5e3f05833dfc7c6d5d645626e4a647c68f4e10cbf6545",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 1,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2935.93493725,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "slow_output_responsiveness",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "injected_save_delay_ms": 300,
+      "synthetic_send_to_received_ms": 0.621,
+      "heartbeat_count": 74,
+      "heartbeat_gaps": {
+        "count": 73,
+        "p50_ms": 10.02,
+        "p95_ms": 13.489,
+        "max_ms": 21.062
+      },
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Ctrl+Alt+Shift+F9",
+            "effective": "Ctrl+Alt+Shift+F9",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:32.397",
+            "virtual_key": 120,
+            "modifiers": 16391
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:32.479",
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "2abcd2f04e6f4dfb9d233508ff84fd42",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2936.389754125,
+            "received_at": "2026-10-14T23:22:32.397",
+            "dispatched_ms": 0.533,
+            "image_ready_ms": 67.84,
+            "output_queued_ms": 74.767,
+            "completed_ms": 509.373,
+            "error": ""
+          },
+          {
+            "trigger_id": "76c584e25c91487e9d224f59ee6fdebd",
+            "source": "hotkey",
+            "mode": "last_region",
+            "stage": "completed",
+            "received_counter": 2936.47218025,
+            "received_at": "2026-10-14T23:22:32.479",
+            "dispatched_ms": 0.802,
+            "image_ready_ms": 19.763,
+            "output_queued_ms": 20.379,
+            "completed_ms": 732.451,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 2,
+          "p50_ms": 0.667,
+          "p95_ms": 0.802,
+          "max_ms": 0.802
+        },
+        "received_to_image_ready": {
+          "count": 2,
+          "p50_ms": 43.802,
+          "p95_ms": 67.84,
+          "max_ms": 67.84
+        },
+        "received_to_completed": {
+          "count": 2,
+          "p50_ms": 620.912,
+          "p95_ms": 732.451,
+          "max_ms": 732.451
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\slow_output_responsiveness\\captures\\Screenshot_2026-10-14_23-22-32.png",
+          "bytes": 432068,
+          "sha256": "8a8c5aa109d81be447cd1911048b7aec62230248a52df0d0f0d937d3eeb310f1",
+          "width": 2582,
+          "height": 1644
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\slow_output_responsiveness\\captures\\Screenshot_2026-10-14_23-22-32_001.png",
+          "bytes": 1460,
+          "sha256": "c6a8f246976ad48901b86274929de0a724a2dfd3c107fd2a813b71a08a047971",
+          "width": 96,
+          "height": 64
+        }
+      ],
+      "saved_file_count": 2,
+      "native_message_count": 2,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2936.389780458,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        },
+        {
+          "identifier": 24324,
+          "time": 2936.472233416,
+          "stage_at_signal": "received",
+          "slow_save_active": true
+        }
+      ]
+    },
+    {
+      "name": "printscreen_global_registration",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "printscreen_registration": {
+        "mode": "full_screen",
+        "requested": "Print",
+        "effective": "Print",
+        "state": "registered",
+        "error_code": 0,
+        "error": "",
+        "last_received_at": null,
+        "virtual_key": 44,
+        "modifiers": 16384
+      },
+      "printscreen_global_result": "RegisterHotKey_to_WM_HOTKEY_and_actual_saved_capture",
+      "foreground_after_global_printscreen": {
+        "hwnd": 1377430,
+        "class_name": "Qt6102QWindowIcon"
+      },
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Print",
+            "effective": "Print",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:33.476",
+            "virtual_key": 44,
+            "modifiers": 16384
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "b5493050b5cd45ecb4dbaadc90d59e63",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2937.469398166,
+            "received_at": "2026-10-14T23:22:33.477",
+            "dispatched_ms": 0.355,
+            "image_ready_ms": 62.425,
+            "output_queued_ms": 69.316,
+            "completed_ms": 157.705,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 1,
+          "p50_ms": 0.355,
+          "p95_ms": 0.355,
+          "max_ms": 0.355
+        },
+        "received_to_image_ready": {
+          "count": 1,
+          "p50_ms": 62.425,
+          "p95_ms": 62.425,
+          "max_ms": 62.425
+        },
+        "received_to_completed": {
+          "count": 1,
+          "p50_ms": 157.705,
+          "p95_ms": 157.705,
+          "max_ms": 157.705
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\printscreen_global_registration\\captures\\Screenshot_2026-10-14_23-22-33.png",
+          "bytes": 432345,
+          "sha256": "beb7cf37f77fe8a8c5c61a9dfa416c30b1f364707b0327a5ca9c3e0002e903b6",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 1,
+      "native_message_count": 1,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2937.469431166,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    },
+    {
+      "name": "editor_printscreen_recording",
+      "ok": true,
+      "capture_backend": "WindowsScreenshotBackend",
+      "initial_hotkeys": [
+        {
+          "mode": "region",
+          "requested": "Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "window",
+          "requested": "Alt+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        },
+        {
+          "mode": "full_screen",
+          "requested": "Ctrl+Alt+Shift+F9",
+          "effective": "Ctrl+Alt+Shift+F9",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 120,
+          "modifiers": 16391
+        },
+        {
+          "mode": "last_region",
+          "requested": "Ctrl+Alt+Shift+F10",
+          "effective": "Ctrl+Alt+Shift+F10",
+          "state": "registered",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null,
+          "virtual_key": 121,
+          "modifiers": 16391
+        },
+        {
+          "mode": "cu5",
+          "requested": "Ctrl+Shift+Print",
+          "effective": "",
+          "state": "disabled",
+          "error_code": 0,
+          "error": "",
+          "last_received_at": null
+        }
+      ],
+      "recorded_binding": {
+        "sequence": "",
+        "enabled": false
+      },
+      "foreground_after_printscreen": {
+        "hwnd": 722098,
+        "class_name": "XamlWindow"
+      },
+      "printscreen_result": "no_printscreen_event_reached_editor",
+      "acceptance": "limited",
+      "limitation": "No PrintScreen press/release reached the focused editor. System or another application interception is possible; the interceptor is not identified. PrintScreen recording compatibility is NOT validated in this run.",
+      "editor_native_events": [],
+      "editor_recording_transitions": [
+        {
+          "active": true,
+          "hotkeys_paused": true,
+          "registered_hotkeys": 0
+        },
+        {
+          "active": false,
+          "hotkeys_paused": false,
+          "registered_hotkeys": 2
+        }
+      ],
+      "editor_sequence_changes": [
+        {
+          "sequence": "",
+          "binding_at_signal": {
+            "sequence": "",
+            "enabled": false
+          },
+          "is_recording": false
+        }
+      ],
+      "editor_callback_errors": [],
+      "special_menu_sequence_changes": [
+        {
+          "phase": "action_trigger",
+          "sequence": "Print",
+          "binding_at_signal": {
+            "sequence": "Print",
+            "enabled": true
+          },
+          "is_recording": true
+        },
+        {
+          "phase": "action_trigger",
+          "sequence": "Print",
+          "binding_at_signal": {
+            "sequence": "Print",
+            "enabled": true,
+            "native_virtual_key": 44,
+            "native_modifiers": 0
+          },
+          "is_recording": false
+        }
+      ],
+      "special_menu_action": {
+        "text": "Print Screen",
+        "object_name": "screenshotSpecialHotkey_full_screen_0",
+        "data": "Print"
+      },
+      "special_menu_binding_immediate": {
+        "sequence": "Print",
+        "enabled": true,
+        "native_virtual_key": 44,
+        "native_modifiers": 0
+      },
+      "special_menu_editor_binding_after_pump": {
+        "sequence": "Print",
+        "enabled": true,
+        "native_virtual_key": 44,
+        "native_modifiers": 0
+      },
+      "special_menu_binding": {
+        "sequence": "Print",
+        "enabled": true,
+        "native_virtual_key": 44,
+        "native_modifiers": 0
+      },
+      "special_menu_registration": {
+        "mode": "full_screen",
+        "requested": "Print",
+        "effective": "Print",
+        "state": "registered",
+        "error_code": 0,
+        "error": "",
+        "last_received_at": null,
+        "virtual_key": 44,
+        "modifiers": 16384
+      },
+      "special_menu_result": "menu_action_native_metadata_registration_WM_HOTKEY_and_actual_saved_capture",
+      "final_status": {
+        "running": true,
+        "settings_loaded": true,
+        "settings_error": "",
+        "settings_read_only": false,
+        "background_resident": true,
+        "autostart": false,
+        "registered_hotkeys": 2,
+        "hotkeys": [
+          {
+            "mode": "region",
+            "requested": "Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "window",
+            "requested": "Alt+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          },
+          {
+            "mode": "full_screen",
+            "requested": "Print",
+            "effective": "Print",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": "2026-10-14T23:22:34.857",
+            "virtual_key": 44,
+            "modifiers": 16384
+          },
+          {
+            "mode": "last_region",
+            "requested": "Ctrl+Alt+Shift+F10",
+            "effective": "Ctrl+Alt+Shift+F10",
+            "state": "registered",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null,
+            "virtual_key": 121,
+            "modifiers": 16391
+          },
+          {
+            "mode": "cu5",
+            "requested": "Ctrl+Shift+Print",
+            "effective": "",
+            "state": "disabled",
+            "error_code": 0,
+            "error": "",
+            "last_received_at": null
+          }
+        ],
+        "hotkeys_paused": false,
+        "capture_queue_depth": 0,
+        "capture_queue_limit": 8,
+        "output_pending": 0,
+        "recent_captures": [
+          {
+            "trigger_id": "e1f0714cab394efc86d305112d2f6e74",
+            "source": "hotkey",
+            "mode": "full_screen",
+            "stage": "completed",
+            "received_counter": 2938.8496815,
+            "received_at": "2026-10-14T23:22:34.857",
+            "dispatched_ms": 0.426,
+            "image_ready_ms": 71.497,
+            "output_queued_ms": 78.301,
+            "completed_ms": 168.609,
+            "error": ""
+          }
+        ],
+        "shutting_down": false,
+        "annotation_active": false,
+        "integration_errors": [],
+        "last_region": {
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 64,
+          "coordinate_space": "physical_pixels"
+        }
+      },
+      "timings": {
+        "received_to_dispatch": {
+          "count": 1,
+          "p50_ms": 0.426,
+          "p95_ms": 0.426,
+          "max_ms": 0.426
+        },
+        "received_to_image_ready": {
+          "count": 1,
+          "p50_ms": 71.497,
+          "p95_ms": 71.497,
+          "max_ms": 71.497
+        },
+        "received_to_completed": {
+          "count": 1,
+          "p50_ms": 168.609,
+          "p95_ms": 168.609,
+          "max_ms": 168.609
+        }
+      },
+      "saved_files": [
+        {
+          "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo\\editor_printscreen_recording\\captures\\Screenshot_2026-10-14_23-22-34.png",
+          "bytes": 461642,
+          "sha256": "9067591e44ec2a8a31b752bf8ee09f942a4c98bd94ec2e30b7a3b17e24285dd7",
+          "width": 2582,
+          "height": 1644
+        }
+      ],
+      "saved_file_count": 1,
+      "native_message_count": 1,
+      "native_receipts": [
+        {
+          "identifier": 24323,
+          "time": 2938.84971925,
+          "stage_at_signal": "received",
+          "slow_save_active": false
+        }
+      ]
+    }
+  ],
+  "source_sha256": {
+    "scripts\\validate_screenshot_hotkeys_windows.py": "d252395b4f6d97c2b340550439fd9647cac3de2c7ee36ced25db8a1ce7d3c85e",
+    "src\\fdm\\screenshot_agent.py": "f58dd3e8c61593ea611663f3e102e0a7f327e5b8815ccdb5bfd291ab7ce416c2",
+    "src\\fdm\\platform\\windows_global_hotkey.py": "329ab1694976f4b52c6ed3a7142d997d55e4480db6d95f8e6e040261719abf2e",
+    "src\\fdm\\services\\screenshot_output_worker.py": "cea4bc962b4733fee4daf0332ba6599f5893d7c53b929535807f65ab2eac8518",
+    "src\\fdm\\ui\\screenshot_hotkey_edit.py": "c5c8f925e5b815647e1fb2dcbb025dc07a679a51eb9b95a05357ba51ac72d9f4",
+    "src\\fdm\\ui\\screenshot_settings_page.py": "e3a08324e8789e61379c9ea08215213e2831c32f7687ebfe9668733392d0c0a1"
+  },
+  "dependencies": {
+    "PySide6": "6.10.2",
+    "numpy": "2.4.3",
+    "mss": null
+  },
+  "original_foreground": {
+    "hwnd": 1246478,
+    "class_name": "CASCADIA_HOSTING_WINDOW_CLASS"
+  },
+  "printscreen_snipping_preference": {
+    "present": false,
+    "value": null,
+    "note": "Absent value; no Windows default is inferred"
+  },
+  "capture_directory": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\hotkey-2026-10-14\\fdm-hotkey-probe-pd39iowo",
+  "capture_files_retained": false,
+  "qt_platform": "windows",
+  "input_struct_bytes": 40,
+  "foreground_restore_attempted": true,
+  "timings": {
+    "received_to_dispatch": {
+      "count": 45,
+      "p50_ms": 0.575,
+      "p95_ms": 0.914,
+      "max_ms": 1.521
+    },
+    "received_to_image_ready": {
+      "count": 45,
+      "p50_ms": 63.833,
+      "p95_ms": 75.676,
+      "max_ms": 90.965
+    },
+    "received_to_completed": {
+      "count": 45,
+      "p50_ms": 162.96,
+      "p95_ms": 190.452,
+      "max_ms": 732.451
+    }
+  },
+  "capture_trace_count": 45,
+  "limited_scenarios": [
+    "editor_printscreen_recording"
+  ],
+  "acceptance": "passed_with_limitations",
+  "finished_at": "2026-10-14T15:22:35.168094+00:00"
+}

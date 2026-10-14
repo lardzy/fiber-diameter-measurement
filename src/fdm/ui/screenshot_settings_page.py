@@ -3,23 +3,25 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 from pathlib import Path
-import re
+import sys
 
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QKeySequence
+from PySide6.QtCore import QTimer, Qt, Signal
+from PySide6.QtGui import QHideEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
-    QKeySequenceEdit,
     QLabel,
     QLineEdit,
+    QMenu,
     QPushButton,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
+from shiboken6 import isValid as is_qobject_valid
 
 from fdm.screenshot_settings import (
     AfterCaptureTask,
@@ -31,6 +33,7 @@ from fdm.screenshot_settings import (
 from fdm.services.screenshot_capture import CaptureMode
 from fdm.services.cu5_preview_locator import Cu5PreviewSelector
 from fdm.ui.widgets import NoWheelComboBox, NoWheelSpinBox
+from fdm.ui.screenshot_hotkey_edit import ScreenshotHotkeyEdit
 
 
 _HOTKEY_ROWS = (
@@ -41,12 +44,25 @@ _HOTKEY_ROWS = (
     (CaptureMode.CU5, "CU 系列实时预览"),
 )
 
+_PRINT_SCREEN_CHOICES = (
+    ("Print", 0x00),
+    ("Alt+Print", 0x01),
+    ("Ctrl+Print", 0x02),
+    ("Shift+Print", 0x04),
+    ("Ctrl+Shift+Print", 0x06),
+    ("Ctrl+Alt+Print", 0x03),
+    ("Alt+Shift+Print", 0x05),
+    ("Ctrl+Alt+Shift+Print", 0x07),
+)
+
 
 class ScreenshotSettingsPage(QWidget):
     """Preferences page for the independent screenshot companion process."""
 
     cu5DiagnosticRequested = Signal()
     cu5CandidateSelectionRequested = Signal(object)
+    hotkeyRecordingChanged = Signal(bool)
+    retryHotkeysRequested = Signal()
 
     def __init__(
         self,
@@ -55,6 +71,8 @@ class ScreenshotSettingsPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._initial_settings = (settings or ScreenshotSettings()).normalized()
+        self._recording_modes: set[CaptureMode] = set()
+        self._recording_emitted = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -183,22 +201,71 @@ class ScreenshotSettingsPage(QWidget):
 
         hotkey_group = QGroupBox("全局快捷键", self)
         hotkey_form = QFormLayout(hotkey_group)
-        self.hotkey_edits: dict[CaptureMode, QKeySequenceEdit] = {}
+        self.hotkey_edits: dict[CaptureMode, ScreenshotHotkeyEdit] = {}
+        self.hotkey_status_labels: dict[CaptureMode, QLabel] = {}
+        self.hotkey_special_buttons: dict[CaptureMode, QToolButton] = {}
         for mode, label in _HOTKEY_ROWS:
-            edit = QKeySequenceEdit(hotkey_group)
+            row = QWidget(hotkey_group)
+            row_layout = QVBoxLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(3)
+            edit = ScreenshotHotkeyEdit(row)
             binding = self._initial_settings.hotkeys.get(mode, HotkeyBinding())
-            edit.setKeySequence(QKeySequence(_portable_sequence(binding.sequence)))
-            edit.setClearButtonEnabled(True)
-            edit.setMaximumSequenceLength(1)
+            edit.set_binding(binding)
+            edit.recordingChanged.connect(
+                lambda active, current_mode=mode: self._hotkey_recording_changed(current_mode, active)
+            )
+            edit.recordingRejected.connect(self._show_recording_rejection)
+            edit.destroyed.connect(
+                lambda _object=None, current_mode=mode: self._hotkey_recording_changed(current_mode, False)
+            )
             self.hotkey_edits[mode] = edit
-            hotkey_form.addRow(label, edit)
+            key_row = QHBoxLayout()
+            key_row.setContentsMargins(0, 0, 0, 0)
+            special_button = QToolButton(row)
+            special_button.setText("特殊键")
+            special_button.setObjectName(f"screenshotSpecialHotkey_{mode.value}")
+            special_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            special_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+            special_button.setToolTip("Print Screen 无法直接录入时，可从此菜单选择组合，无需按下该键。")
+            special_menu = QMenu(special_button)
+            for sequence, modifiers in _PRINT_SCREEN_CHOICES:
+                action = special_menu.addAction(sequence.replace("Print", "Print Screen"))
+                action.setData(sequence)
+                action.setObjectName(f"screenshotSpecialHotkey_{mode.value}_{modifiers}")
+                action.triggered.connect(
+                    lambda _checked=False, current_mode=mode, chord=sequence, flags=modifiers:
+                        self._select_special_hotkey(current_mode, chord, flags)
+                )
+            special_menu.aboutToShow.connect(special_button.setFocus)
+            special_button.setMenu(special_menu)
+            self.hotkey_special_buttons[mode] = special_button
+            key_row.addWidget(edit, 1)
+            key_row.addWidget(special_button)
+            status_label = QLabel("注册状态：尚未检测", row)
+            status_label.setWordWrap(True)
+            self.hotkey_status_labels[mode] = status_label
+            row_layout.addLayout(key_row)
+            row_layout.addWidget(status_label)
+            hotkey_form.addRow(label, row)
         hotkey_hint = QLabel(
             "可直接按下 Print Screen、Menu、` / ·、字母数字、F1–F24、"
-            "导航键、数字小键盘及常见媒体键；若组合被占用，会保留原绑定并提示。",
+            "导航键、数字小键盘及常见媒体键；Print Screen 无法录入时可使用“特殊键”菜单。"
+            "若组合被占用，会尝试恢复原绑定并显示实际生效状态。",
             hotkey_group,
         )
         hotkey_hint.setWordWrap(True)
         hotkey_form.addRow(hotkey_hint)
+        self.hotkey_recording_hint = QLabel(
+            "点击输入框后按下一个组合键；移出输入框并应用设置后，可试按验证是否收到。",
+            hotkey_group,
+        )
+        self.hotkey_recording_hint.setWordWrap(True)
+        hotkey_form.addRow(self.hotkey_recording_hint)
+        self.retry_hotkeys_button = QPushButton("重新注册并检测快捷键", hotkey_group)
+        self.retry_hotkeys_button.setToolTip("重试截图工具当前已保存的绑定；编辑后的组合请先应用设置。")
+        self.retry_hotkeys_button.clicked.connect(self.retryHotkeysRequested)
+        hotkey_form.addRow(self.retry_hotkeys_button)
         layout.addWidget(hotkey_group)
 
         cu5_group = QGroupBox("CU 系列 / Microview 实时预览", self)
@@ -270,8 +337,7 @@ class ScreenshotSettingsPage(QWidget):
             tasks.append(AfterCaptureTask.SAVE)
         hotkeys = dict(self._initial_settings.hotkeys)
         for mode, edit in self.hotkey_edits.items():
-            sequence = edit.keySequence().toString(QKeySequence.SequenceFormat.PortableText)
-            hotkeys[mode] = HotkeyBinding(sequence=sequence, enabled=bool(sequence))
+            hotkeys[mode] = edit.binding()
         updated = replace(
             self._initial_settings,
             enabled=self.resident_checkbox.isChecked(),
@@ -307,6 +373,104 @@ class ScreenshotSettingsPage(QWidget):
         suffix = f"；{detail}" if detail else ""
         self.agent_status_label.setText(f"运行状态：{state}{suffix}")
 
+    def set_hotkey_diagnostics(self, rows: object) -> None:
+        """Refresh agent-owned registration state independently of edited text."""
+
+        if not isinstance(rows, (list, tuple)):
+            return
+        state_labels = {
+            "registered": "已注册", "active": "已注册", "failed": "注册失败",
+            "disabled": "未启用", "suspended": "录入期间暂停",
+            "paused": "录入期间暂停", "restored": "注册失败，已恢复原绑定",
+            "invalid": "组合键无效",
+            "unavailable": "当前环境不支持", "pending": "等待注册",
+        }
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            try:
+                mode = CaptureMode(row.get("mode"))
+            except (ValueError, TypeError):
+                continue
+            label = self.hotkey_status_labels.get(mode)
+            if label is None:
+                continue
+            state = str(row.get("state") or "pending")
+            requested = _diagnostic_sequence(row.get("requested"))
+            effective = _diagnostic_sequence(row.get("effective"))
+            details = [f"注册状态：{state_labels.get(state, '待确认')}"]
+            if effective:
+                details.append(f"当前生效：{effective}")
+            elif requested:
+                details.append(f"请求：{requested}")
+            if requested and effective and requested != effective:
+                details.append(f"未生效的请求：{requested}")
+            error = str(row.get("error") or "").strip()
+            error_code = row.get("error_code")
+            if error_code == 1409:
+                details.append("组合键已被占用，可释放冲突后重试或更换组合")
+            elif error:
+                details.append(error)
+            if error_code not in (None, 0, ""):
+                details.append(f"系统错误码：{error_code}")
+            received = row.get("last_received_at")
+            if received not in (None, "", 0):
+                details.append(f"已收到试按／触发：{received}")
+            label.setText("；".join(details))
+            label.setProperty("hotkeyState", state)
+            label.setProperty("hotkeyErrorCode", error_code)
+
+    def _hotkey_recording_changed(self, mode: CaptureMode, active: bool) -> None:
+        if not is_qobject_valid(self):
+            return
+        if active:
+            self._recording_modes.add(mode)
+            self._emit_recording_state()
+        else:
+            self._recording_modes.discard(mode)
+            # Moving between two editors must not briefly resume global keys.
+            QTimer.singleShot(0, self._emit_recording_state)
+
+    def _emit_recording_state(self) -> None:
+        if not is_qobject_valid(self):
+            return
+        active = bool(self._recording_modes)
+        if active == self._recording_emitted:
+            return
+        self._recording_emitted = active
+        self.retry_hotkeys_button.setEnabled(not active)
+        self.hotkey_recording_hint.setText(
+            "正在录入一个组合键；移出输入框后恢复全局快捷键。Esc 结束录入，退格清除。"
+            if active else
+            "已结束录入；应用设置后可试按，各项状态会显示最后收到的触发。"
+        )
+        self.hotkeyRecordingChanged.emit(active)
+
+    def _show_recording_rejection(self, message: str) -> None:
+        self.hotkey_recording_hint.setText(message)
+
+    def _select_special_hotkey(self, mode: CaptureMode, sequence: str, modifiers: int) -> None:
+        """Configure PrintScreen without relying on delivery of that key."""
+        edit = self.hotkey_edits[mode]
+        edit.set_binding(HotkeyBinding(
+            sequence=sequence,
+            enabled=True,
+            native_virtual_key=0x2C if sys.platform == "win32" else None,
+            native_modifiers=modifiers if sys.platform == "win32" else None,
+        ))
+        # A menu action configures a value; it must not synthesize a keypress.
+        # Move focus out of any editor so the existing recording lease follows
+        # the same release path as an ordinary click outside the input field.
+        focus = self.focusWidget()
+        if focus is not None and focus is not self.hotkey_special_buttons[mode]:
+            focus.clearFocus()
+        self.hotkey_special_buttons[mode].setFocus()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        self._recording_modes.clear()
+        self._emit_recording_state()
+        super().hideEvent(event)
+
     def restore_defaults(self) -> None:
         defaults = ScreenshotSettings().normalized()
         self._initial_settings = defaults
@@ -336,7 +500,7 @@ class ScreenshotSettingsPage(QWidget):
         self.notification_checkbox.setChecked(defaults.notification)
         for mode, edit in self.hotkey_edits.items():
             binding = defaults.hotkeys.get(mode, HotkeyBinding())
-            edit.setKeySequence(QKeySequence(_portable_sequence(binding.sequence)))
+            edit.set_binding(binding)
         self._sync_quality_state()
 
     def set_cu5_diagnostic_status(self, message: str, *, success: bool) -> None:
@@ -454,14 +618,10 @@ class ScreenshotSettingsPage(QWidget):
             self.output_directory_edit.setText(directory)
 
 
-def _portable_sequence(value: str) -> str:
-    # Qt calls the Print Screen key "Print" in PortableText.  Accept the more
-    # familiar persisted spelling as a compatibility alias.
-    return re.sub(
-        r"(?i)(?:print[\s_-]*screen|prt[\s_-]*scn?|snapshot|sysreq)",
-        "Print",
-        str(value or ""),
-    )
+def _diagnostic_sequence(value: object) -> str:
+    if isinstance(value, dict):
+        return str(value.get("sequence") or "").strip()
+    return str(value or "").strip()
 
 
 def _safe_int(value: object) -> int | None:

@@ -185,6 +185,48 @@ def test_hotkey_normalization_preserves_extended_common_keys(
     assert HotkeyBinding(sequence).normalized() == HotkeyBinding(expected)
 
 
+def test_recorded_windows_hotkey_identity_roundtrips_without_changing_old_payloads() -> None:
+    legacy = HotkeyBinding("Ctrl+PrintScreen").to_dict()
+    assert legacy == {"sequence": "Ctrl+Print", "enabled": True}
+    binding = HotkeyBinding("Ctrl+Ö", native_virtual_key=0xBA, native_modifiers=2)
+    settings = ScreenshotSettings(hotkeys={CaptureMode.REGION: binding})
+    payload = settings.to_dict()
+    restored = ScreenshotSettings.from_dict(payload)
+    assert restored.hotkeys[CaptureMode.REGION] == binding
+    assert payload["hotkeys"]["region"]["native_virtual_key"] == 0xBA
+
+
+@pytest.mark.parametrize(
+    ("sequence", "virtual_key", "modifiers"),
+    [
+        ("", 0x41, 0), ("Ctrl+A", 0, 2), ("Ctrl+A", 0x100, 2),
+        ("Ctrl+A", True, 2), ("Ctrl+A", "65", 2), ("Ctrl+A", 65, None),
+        ("Ctrl+A", 65, True), ("Ctrl+A", 65, 0), ("Ctrl+A", 65, 0x4002),
+        ("Ctrl+A", 0x11, 2), ("Ctrl+A", 0xA2, 2), ("Ctrl+A", 0xE5, 2),
+    ],
+)
+def test_invalid_or_inconsistent_windows_hotkey_metadata_falls_back_to_text(
+    sequence: str, virtual_key: object, modifiers: object
+) -> None:
+    actual = HotkeyBinding.from_value({
+        "sequence": sequence, "native_virtual_key": virtual_key,
+        "native_modifiers": modifiers,
+    })
+    assert actual.native_virtual_key is None
+    assert actual.native_modifiers is None
+
+
+@pytest.mark.parametrize(
+    ("sequence", "virtual_key", "modifiers"),
+    [("Ctrl++", 0xBB, 2), ("Num++", 0x6B, 0), ("Meta+Shift+Print", 0x2C, 12)],
+)
+def test_recorded_plus_key_and_keypad_metadata_preserve_modifier_meaning(
+    sequence: str, virtual_key: int, modifiers: int
+) -> None:
+    binding = HotkeyBinding(sequence, True, virtual_key, modifiers)
+    assert binding.normalized() == binding
+
+
 def test_load_recovers_from_corruption_but_protects_future_versions(tmp_path: Path) -> None:
     path = tmp_path / "screenshot-settings.json"
     path.write_text("{broken", encoding="utf-8")

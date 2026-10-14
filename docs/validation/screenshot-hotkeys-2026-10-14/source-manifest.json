@@ -1,0 +1,25 @@
+{
+  "hash_mode": "SHA256 after CRLF to LF normalization",
+  "files": {
+    "scripts/validate_screenshot_hotkeys_windows.py": "d252395b4f6d97c2b340550439fd9647cac3de2c7ee36ced25db8a1ce7d3c85e",
+    "src/fdm/platform/windows_global_hotkey.py": "329ab1694976f4b52c6ed3a7142d997d55e4480db6d95f8e6e040261719abf2e",
+    "src/fdm/screenshot_agent.py": "f58dd3e8c61593ea611663f3e102e0a7f327e5b8815ccdb5bfd291ab7ce416c2",
+    "src/fdm/screenshot_protocol.py": "69a474d67ec20d8631caa106705e7a826420135824aba121609518ae6de4c7e9",
+    "src/fdm/screenshot_settings.py": "df3d0eacf2476c772da997ca535d950e1564401a871cec765656760253c5a7f6",
+    "src/fdm/services/screenshot_output_worker.py": "cea4bc962b4733fee4daf0332ba6599f5893d7c53b929535807f65ab2eac8518",
+    "src/fdm/ui/main_window.py": "c0631e3088f2e81b230df34e50fcee0d242eb7b3952ad1e22acd02992beeacc8",
+    "src/fdm/ui/screenshot_hotkey_edit.py": "c5c8f925e5b815647e1fb2dcbb025dc07a679a51eb9b95a05357ba51ac72d9f4",
+    "src/fdm/ui/screenshot_hotkey_status.py": "4e4766689465e8011acdfe7b0693b157b64231cb4b7d8d57d120768f98b41a56",
+    "src/fdm/ui/screenshot_settings_page.py": "e3a08324e8789e61379c9ea08215213e2831c32f7687ebfe9668733392d0c0a1",
+    "tests/test_screenshot_agent.py": "78b1a68bad129d015f3d125eefc294f2de25e9743fd33cda27678cd35df1209a",
+    "tests/test_screenshot_agent_async_output.py": "3dcac963fcff732892cbd74340a137bfe865756a161376c0a62f8f30aa6534bb",
+    "tests/test_screenshot_hotkey_dispatch.py": "48c42d9cf596ec518f3162998e56cb2f815de29e31802fa824f81f32efc43dca",
+    "tests/test_screenshot_hotkey_status.py": "4358ba1548a17d8b04440e9fff9c34bf78158d8c39df7fd0d9ced6f192ed1862",
+    "tests/test_screenshot_main_window.py": "92ee3b5115732d959f98c9014d5cde980c559fd39484b5f6ee1632cfec88596a",
+    "tests/test_screenshot_output_worker.py": "512884f6a9348c9d5992376e4382d184dd988004f20328131f5821377a2525c8",
+    "tests/test_screenshot_overlay_editor.py": "dd1157a51314b6a5f35981d4aead2870880274bff152ae9584db438624bb18bd",
+    "tests/test_screenshot_settings.py": "72c700f51fcbc1c4ea54b2c9639f5aff08f8cb97ad0783e2cb153f705868cb87",
+    "tests/test_screenshot_settings_page.py": "5656563a93b28a3646fae9c83e60f293d2260b5fd8c21f460a06c6850918956d",
+    "tests/test_windows_global_hotkey.py": "7d457e361ebbd31f07937c0e5cc5aae0a3813fa9b35c98048d943fdc0328f363"
+  }
+}
