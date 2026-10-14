@@ -23,6 +23,14 @@ python setup.py build_ext --inplace --force
 
 默认必须成功编译；不忽略编译错误。`FDM_BUILD_NATIVE=0` 用于在干净环境安装纯 Python 开发版本，不删除之前存在的扩展，也不覆盖运行时的后端选择。其他取值报错。
 
+Windows 打包脚本会自动准备原生扩展。每次构建先用当前打包 Python 的独立子进程检查源码摘要、ABI 和三个内核的实际计算；扩展有效时直接复用，缺失、过期或无法加载时自动重建一次。原来的 `.bat`、onedir 命令和默认安装器命令均走此流程，无需先手工运行上述编译命令。
+
+重建沿用 `setup.py`，强制启用原生构建，在临时目录编译和验证后替换 `src/fdm/_native` 中当前 Python 的扩展，再启动新进程复检。已有的 Python 运行依赖和 egg-info 不会被重新安装或生成。当前环境满足 `build-system.requires` 时直接使用已有工具；否则用同版本、同架构 Python 创建临时虚拟环境，并安装声明的构建依赖（可能需要联网）。编译器和 Windows SDK 仍需预先安装。
+
+编译日志保存在 `build/native-kernels/rebuild-*.log`。编译、替换或复检失败会中止打包，并保留此前的 onedir 输出；被其他程序占用的 `.pyd` 会提示关闭相关程序。打包构建会在子进程中使用 `FDM_BUILD_NATIVE=1`，不受源码对照环境中的 `FDM_BUILD_NATIVE=0` 影响。
+
+自动重建的双平台验证和 Windows `.bat` 实际打包结果见 [2026-10-14 验证记录](validation/native-autobuild-2026-10-14/README.md)。
+
 ```sh
 FDM_BUILD_NATIVE=0 python -m pip install --no-cache-dir .
 ```
@@ -102,7 +110,7 @@ python scripts/build_windows_onedir.py --profile full --public-release --strict-
 python scripts/build_windows_installer.py --reuse-onedir --public-release --strict-asset-hashes
 ```
 
-这里必须使用可编辑安装（`-e`），使原生扩展位于发行脚本实际加载的 `src/fdm/_native` 中。普通 wheel 安装只会把扩展放进安装目录，不能替代源码目录的打包前构建。
+上面的可编辑安装用于准备开发依赖和直接运行源码测试。已有打包环境更新源码后，可以直接运行原来的打包命令，由脚本自动重建源码目录中的扩展；普通 wheel 安装目录中的二进制不能代替该检查。`--reuse-onedir` 继续验证并复用已有冻结包，要求包内原生自检通过，不会单独替换冻结包内部的二进制。
 
 在安装后的目录运行应用的 `--self-check --json`，确认 `functional_checks.native_kernels` 四个 case 均为 true，另一个 `fiber_quick_geometry` 检查仍为 `skimage_zhang`、修订号 3。还需实际操作轮廓对比、普通／分叉测径、计算中取消和关闭窗口；将结果与目标 Windows 环境中的 Python 参考路径配对。正式发布沿用项目原有干净工作区、签名和资源要求。
 

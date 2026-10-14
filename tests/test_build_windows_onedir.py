@@ -16,7 +16,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from build_support import RuntimeProfileCheck
 from build_windows_onedir import (
     build,
-    check_native_build_dependencies,
     check_windows_build_dependencies,
     main as onedir_main,
     run_packaged_self_check,
@@ -42,7 +41,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         )
         self._dependency_mock = self._dependency_patcher.start()
         self.addCleanup(self._dependency_patcher.stop)
-        native_patcher = patch("build_windows_onedir.check_native_build_dependencies", return_value=[])
+        native_patcher = patch("build_windows_onedir.ensure_native_kernels", return_value=[])
         self._native_mock = native_patcher.start()
         self.addCleanup(native_patcher.stop)
 
@@ -55,10 +54,13 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             "cases": {name: True for name in ("boundary_segments", "contour_sections", "prune_short_spurs", "inputs_unchanged")},
         }
 
-    def test_build_rejects_broken_or_stale_native_before_pyinstaller(self) -> None:
+    def test_failed_native_rebuild_preserves_existing_package(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             _prepare_build_root(root)
+            previous = root / "dist/windows/FiberDiameterMeasurement/previous.exe"
+            previous.parent.mkdir(parents=True)
+            previous.write_bytes(b"previous package")
             self._native_mock.return_value = ["native kernel build probe failed: stale binary"]
             with (
                 patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
@@ -68,13 +70,13 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 self.assertEqual(build(True, console=False, bootloader_debug=False, root=root), 1)
             profile_mock.assert_not_called()
             run_mock.assert_not_called()
+            self.assertEqual(previous.read_bytes(), b"previous package")
+            self._native_mock.assert_called_once_with(root)
 
-    def test_native_preflight_executes_probe_and_checks_source(self) -> None:
-        with patch("fdm.services.native_kernels_self_check.run_native_kernels_self_check", return_value=self._native_report()) as probe:
-            self.assertEqual(check_native_build_dependencies(), [])
-            probe.assert_called_once_with(validate_source=True)
-        with patch("fdm.services.native_kernels_self_check.run_native_kernels_self_check", side_effect=ImportError("bad DLL")):
-            self.assertIn("bad DLL", check_native_build_dependencies()[0])
+    def test_missing_native_is_deferred_to_automatic_builder(self) -> None:
+        with patch("build_windows_onedir.importlib.util.find_spec", return_value=object()) as find:
+            self.assertEqual(check_windows_build_dependencies("core", root=PROJECT_ROOT), [])
+        self.assertNotIn("fdm._native._kernels", [call.args[0] for call in find.call_args_list])
 
     def test_cli_public_release_excludes_both_private_components(self) -> None:
         with (
@@ -147,6 +149,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             profile_mock.assert_not_called()
             run_mock.assert_not_called()
             self._dependency_mock.assert_called_once_with("full", root=root)
+            self._native_mock.assert_not_called()
 
     def test_dependency_probe_reports_the_scikit_image_distribution_name(self) -> None:
         with patch("build_windows_onedir.importlib.util.find_spec", side_effect=lambda name: None if name == "skimage" else object()):
@@ -392,6 +395,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 result = build(clean=True, console=False, bootloader_debug=False, profile="core", root=root)
 
             self.assertEqual(result, 0)
+            self._native_mock.assert_called_once_with(root)
             self_check_mock.assert_called_once_with(
                 app_dir, report_path=root / "build" / "self-check" / "packaged-runtime.json"
             )

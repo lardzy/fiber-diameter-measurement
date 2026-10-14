@@ -311,6 +311,8 @@ python scripts/build_windows_onedir.py
 
 使用锁定依赖可执行 `uv sync --frozen --extra area-infer --extra packaging`。测径依赖的 scikit-image / SciPy 由专用 PyInstaller 钩子收集；构建后的 `--self-check --json` 必须通过编译后端和实际测宽检查，安装器复用已有 onedir 时同样检查。
 
+原有 `.bat` 和 Python 打包命令会自动检查原生计算扩展，缺失、过期或无法加载时自动编译并复检，有效时直接复用。Windows 构建机需安装支持 C++17 的 MSVC Build Tools 和 Windows SDK；缺少 Python 构建依赖时脚本会在临时虚拟环境中安装，不改写现有运行依赖和 egg-info。无需每次手工重新安装项目。日志位于 `build/native-kernels/rebuild-*.log`；详情见 [原生内核构建说明](docs/native-kernels.md)。
+
 公开 checkout 通常不含私有面积模型和原始记录模板，应显式生成公开 onedir：
 
 ```powershell

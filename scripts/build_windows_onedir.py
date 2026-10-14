@@ -23,6 +23,7 @@ from build_support import (
     write_release_manifest,
     write_installer_version_include,
 )
+from native_build import ensure_native_kernels
 
 
 _DISTRIBUTION_NAMES_BY_MODULE = {
@@ -43,6 +44,9 @@ def check_windows_build_dependencies(
     resolved = resolve_runtime_profile(project_root, str(profile or "").strip().lower())
     missing: list[str] = []
     for module_name in resolved.required_python_modules:
+        if module_name == "fdm._native._kernels":
+            # The dedicated preflight below builds this dependency when needed.
+            continue
         try:
             available = importlib.util.find_spec(module_name) is not None
         except (ImportError, ModuleNotFoundError, ValueError):
@@ -56,19 +60,6 @@ def check_area_runtime_dependencies(*, root: Path | None = None) -> list[str]:
     """Backward-compatible full-build dependency probe."""
 
     return check_windows_build_dependencies("full", root=root)
-
-
-def check_native_build_dependencies() -> list[str]:
-    """Execute native kernels; find_spec alone cannot detect bad or stale DLLs."""
-    try:
-        from fdm.services.native_kernels_self_check import native_probe_passed, run_native_kernels_self_check
-
-        report = run_native_kernels_self_check(validate_source=True)
-        if not native_probe_passed(report):
-            return ["native kernel build probe returned a failure"]
-    except Exception as exc:  # noqa: BLE001 - report import and binary compatibility failures
-        return [f"native kernel build probe failed: {exc}"]
-    return []
 
 
 def check_magic_segment_runtime_assets(root: Path) -> list[str]:
@@ -298,22 +289,11 @@ def build(
             + ", ".join(missing_image_dependencies),
             file=sys.stderr,
         )
-        if "fdm._native._kernels" in missing_image_dependencies:
-            print(
-                "Build the native extension with this Python: python -m pip install "
-                "--no-cache-dir --no-deps -e . (FDM_BUILD_NATIVE must be unset or 1).",
-                file=sys.stderr,
-            )
         return 1
 
-    native_errors = check_native_build_dependencies()
+    native_errors = ensure_native_kernels(root)
     if native_errors:
-        print(
-            "\n".join(native_errors)
-            + "\nRebuild with this Python: python -m pip install --no-cache-dir --no-deps -e . "
-            "(FDM_BUILD_NATIVE must be unset or 1).",
-            file=sys.stderr,
-        )
+        print("\n".join(native_errors), file=sys.stderr)
         return 1
 
     try:
