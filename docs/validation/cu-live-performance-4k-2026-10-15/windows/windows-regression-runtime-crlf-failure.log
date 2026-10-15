@@ -1,0 +1,828 @@
+.F............. [  1%]
+...F................................... [  4%]
+.............................................................................................................. [ 14%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 33%]
+........................................................................ [ 40%]
+........................................................................ [ 46%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
+........................................................................ [ 65%]
+........................................................................ [ 72%]
+........................................................................ [ 78%]
+........................................................................ [ 84%]
+........................................................................ [ 91%]
+........................................................................ [ 97%]
+..........................                                         [100%]
+================================== FAILURES ===================================
+_ BuildSupportTests.test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache _
+
+self = <test_build_support.BuildSupportTests testMethod=test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache>
+
+    def test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache(self) -> None:
+>       datas = collect_runtime_datas(PROJECT_ROOT)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-cu-live-opt4k-20261015')
+profile = 'full'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -> list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+>           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'full' failed asset preflight:
+E             runtime/area-infer/app/engine.py (expected size 40255, sha256 2876ded96056ee25adb7bf2af7948f34f001c8f15824bb0a7e870be50d7734db; found size 41223, sha256 144cede759e3498f6a31dab22e974541d96042d3128aef0acec4637f887eaa16)
+E             runtime/area-infer/app/main.py (expected size 4583, sha256 5bc50a574c521cf7aec2edde408397a7346002308dc77e5cccce5a08715aad62; found size 4724, sha256 897328abfbf0a302e600860cbe4ca844478b13183a71af28bf613fd1abaeeb9b)
+E             runtime/area-infer/app/model_metadata.py (expected size 3245, sha256 3717f589592853bbd919bdd9e94d402d9f6ed400d58809d30ed2629d5074997d; found size 3340, sha256 9bb04b04b92a02db6cf54fa9212ef45e0e8ab47a2bb77ee419b9f39906232d17)
+E             runtime/area-infer/app/request_limits.py (expected size 3259, sha256 8cba336ac0546a2d5e7edbe4d175e2ae17889fc397afb911adbbc5f54c663c20; found size 3347, sha256 098b855ff4e96237800382a93e8e6661b2bc9f808e01e32713b36c63a0d5dd93)
+E             runtime/area-infer/app/security.py (expected size 1535, sha256 063660e70c08334b9414fb2d147a9aba84416e8fb2760a98d2a525fbf74f8216; found size 1581, sha256 96970e54c30acda206a05408e43a07a308101d50faa6623d9c2c3f891da352a3)
+E             runtime/area-infer/vendor/yolact/LICENSE (expected size 1069, sha256 2c78d4b5c5e95a30267630bd1f77b7607e18216776c0e5b64f8085fbe101b450; found size 1090, sha256 a25fc4092b588197ad41a62a3cd8be3ca35a5c7f86dd6040a24bcff1d96cfc79)
+E             runtime/area-infer/vendor/yolact/backbone.py (expected size 17343, sha256 0d9242165f7f4d7d7240681450524ee4f112decc08f4d6f1668ba43931441605; found size 17802, sha256 45164d033a7c58ec538a0b0b3b24aef9ca6ae771fd6a7f45feac227bf5c51759)
+E             runtime/area-infer/vendor/yolact/yolact.py (expected size 31589, sha256 376e3c347946f4479c82c3a82c4782c7322ba42eb3cf9915a66f2c49d7fd897b; found size 32314, sha256 c1124179076981e885cf68c6bd6c4978b6254d04c1ba86cc7ea14b63479a15a2)
+E             runtime/area-infer/vendor/yolact/data/__init__.py (expected size 66, sha256 f16fff91eb3318f3b1cff844386e6a956319a361192c2dc9d498238383b03ed2; found size 71, sha256 715ff24337ef8f4ec967901611151eb3caecc95c11a84e9ee92bc75ad97f3363)
+E             runtime/area-infer/vendor/yolact/data/coco.py (expected size 10858, sha256 593f72b88d7cebfb20e10ab25b0c09c32f9a3365c4871798b4229986d8b72955; found size 11142, sha256 2921bf58fde8cd9d977443f85c0a73f842096e205e7cbfafa01a81318b239515)
+E             runtime/area-infer/vendor/yolact/data/config.py (expected size 31172, sha256 f1386cb5787eb260638f127a8bb6d04843506c527aa85c655574967819238139; found size 31998, sha256 e0e9ce7525fe1e6a4603057f918fd6c5a22b24ef9618a7d463e12813f585f7d1)
+E             runtime/area-infer/vendor/yolact/layers/__init__.py (expected size 48, sha256 e4a6bf6c44d23bce70391a4ace320c3ca1082ea54bf0947fcb47a4dcde5a936e; found size 50, sha256 ac6fd54b222e6b8293e15bac7fe3e881e2edcf0e2fbef27d78a14bfa66d1f980)
+E             runtime/area-infer/vendor/yolact/layers/box_utils.py (expected size 14960, sha256 04e04083276923f3bd22eba40a00c8b0824b5ce3b859a2e0e93f0faeed9c047a; found size 15349, sha256 b0a7220fcbdc9bdc5b9a2d270eb3b348f237efdb9bdab2583d1830ea7ac17c8c)
+E             runtime/area-infer/vendor/yolact/layers/interpolate.py (expected size 412, sha256 e502fdd29086933d3a5aa10cfaa19b3063d97609e0aed217771001d9b87251a3; found size 429, sha256 7c392fee0921a16a683714018d6b47072eeeff64a2256425bbcc17e4cf9d562c)
+E             runtime/area-infer/vendor/yolact/layers/output_utils.py (expected size 6932, sha256 dd6aefba0a814d90c4fab526ef24d61f6575f6eab29ced1ff38460717d6db310; found size 7120, sha256 59aca245ac599dae718cfaf2ee41c567420172dc5526d685c74375e04a33b37b)
+E             runtime/area-infer/vendor/yolact/layers/functions/__init__.py (expected size 53, sha256 9735d1ce1895e808b5314d6d0b38775457a8804cd878473acdb994d376846f59; found size 57, sha256 c30b02f571155c57640692fc0d7d5cbfbc39c9dc7f4c51a1c8d96d2b3b8ec736)
+E             runtime/area-infer/vendor/yolact/layers/functions/detection.py (expected size 8882, sha256 20c51f9965d694e8cb5f1cff3bffdf9071a2fa8dcd366a83dd184a2a7ae8f9d8; found size 9110, sha256 7218e06e6b79ca8a4fca504a2e36044e442c0e31cf4551fee6ff0f572ff2fae0)
+E             runtime/area-infer/vendor/yolact/layers/modules/__init__.py (expected size 68, sha256 caf17e0318ed2c2112a20f1182876e254df430b83ec3ffbad20ec5b9ede9a46a; found size 71, sha256 49be5262b0650d017c972bd689cf44b5913e1e23056259acc5012924cc9437b5)
+E             runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py (expected size 31337, sha256 886b3dcf046f09d44d782f1e5bbb07d13928c508d61ad4a43b876c13492cd195; found size 32031, sha256 567d3e614febaa33a660240ab05ec48bb6c05a11b394b1d93a57cc3a6cf05405)
+E             runtime/area-infer/vendor/yolact/utils/augmentations.py (expected size 23925, sha256 5c303203ad90060262dbdcf5a9d5e67a6e88aa23e7d80562d94aeaa08dda09bd; found size 24613, sha256 1b04c9a4c0b4955d4ed011e3d08be2048da3f76b5ab077a643101b4118e7a8c4)
+E             runtime/area-infer/vendor/yolact/utils/cython_nms.pyx (expected size 2457, sha256 c93ed690a0aae988e08c18b463b28bf388f340cb2ad28152821b42e2654bd21a; found size 2531, sha256 7bfaf8b25ab732d493606104ca32bea2457dd33078415b153e0128c0fd0eed6d)
+E             runtime/area-infer/vendor/yolact/utils/functions.py (expected size 6503, sha256 e3adc9e8121c0a20c95539bee00045f541427d883fdbbb8ca05a0d160203c902; found size 6715, sha256 996f9baaed47944e355c2f933539622dee1bf17732adc2375352456ecb2fdc09)
+E             runtime/area-infer/vendor/yolact/utils/logger.py (expected size 15327, sha256 0c8d6e490a05b3045592fc16038c133dda125b1d13f381c97d86e6d889810465; found size 15816, sha256 832ab96147468f007e235924c1ee288ac35420cc590e212ba2cee21c27b013db)
+E             runtime/area-infer/vendor/yolact/utils/nvinfo.py (expected size 2402, sha256 6621b1da7d3f20039a1ce124f1ba42454a41d08b9d60bb75a41623fd61862b44; found size 2464, sha256 23e6d750ec18e82c4a3ee8114799074cd6a7d34fbbbf4ec9b291a0dc2de73692)
+E             runtime/area-infer/vendor/yolact/utils/timer.py (expected size 3508, sha256 082ecd0fdd58a9e66fa7e8e9618e22ed3886ca1ceef286aa9e265d98bf35cfd2; found size 3639, sha256 bf01a730090424dd2d96f20b82c27ebac3e27abf08a35f6343f2a3a592c21613)
+
+scripts\build_support.py:697: RuntimeError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/app/engine.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 41223 != 40255
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/app/main.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 4724 != 4583
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/app/model_metadata.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 3340 != 3245
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/app/request_limits.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 3347 != 3259
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/app/security.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 1581 != 1535
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/LICENSE') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 1090 != 1069
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/backbone.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 17802 != 17343
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/yolact.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 32314 != 31589
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/data/__init__.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 71 != 66
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/data/coco.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 11142 != 10858
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/data/config.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 31998 != 31172
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/__init__.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 50 != 48
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/box_utils.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 15349 != 14960
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/interpolate.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 429 != 412
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/output_utils.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 7120 != 6932
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/functions/__init__.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 57 != 53
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/functions/detection.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 9110 != 8882
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/modules/__init__.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 71 != 68
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 32031 != 31337
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/utils/augmentations.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 24613 != 23925
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/utils/cython_nms.pyx') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 2531 != 2457
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/utils/functions.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 6715 != 6503
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/utils/logger.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 15816 != 15327
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/utils/nvinfo.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 2464 != 2402
+
+tests\test_build_support.py:260: AssertionError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-infer/vendor/yolact/utils/timer.py') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+E               AssertionError: 3639 != 3508
+
+tests\test_build_support.py:260: AssertionError
+__ BuildSupportTests.test_runtime_profiles_keep_core_small_and_full_complete __
+
+self = <test_build_support.BuildSupportTests testMethod=test_runtime_profiles_keep_core_small_and_full_complete>
+
+    def test_runtime_profiles_keep_core_small_and_full_complete(self) -> None:
+        core = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "core")}
+>       full = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "full")}
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:194: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-cu-live-opt4k-20261015')
+profile = 'full'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -> list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+>           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'full' failed asset preflight:
+E             runtime/area-infer/app/engine.py (expected size 40255, sha256 2876ded96056ee25adb7bf2af7948f34f001c8f15824bb0a7e870be50d7734db; found size 41223, sha256 144cede759e3498f6a31dab22e974541d96042d3128aef0acec4637f887eaa16)
+E             runtime/area-infer/app/main.py (expected size 4583, sha256 5bc50a574c521cf7aec2edde408397a7346002308dc77e5cccce5a08715aad62; found size 4724, sha256 897328abfbf0a302e600860cbe4ca844478b13183a71af28bf613fd1abaeeb9b)
+E             runtime/area-infer/app/model_metadata.py (expected size 3245, sha256 3717f589592853bbd919bdd9e94d402d9f6ed400d58809d30ed2629d5074997d; found size 3340, sha256 9bb04b04b92a02db6cf54fa9212ef45e0e8ab47a2bb77ee419b9f39906232d17)
+E             runtime/area-infer/app/request_limits.py (expected size 3259, sha256 8cba336ac0546a2d5e7edbe4d175e2ae17889fc397afb911adbbc5f54c663c20; found size 3347, sha256 098b855ff4e96237800382a93e8e6661b2bc9f808e01e32713b36c63a0d5dd93)
+E             runtime/area-infer/app/security.py (expected size 1535, sha256 063660e70c08334b9414fb2d147a9aba84416e8fb2760a98d2a525fbf74f8216; found size 1581, sha256 96970e54c30acda206a05408e43a07a308101d50faa6623d9c2c3f891da352a3)
+E             runtime/area-infer/vendor/yolact/LICENSE (expected size 1069, sha256 2c78d4b5c5e95a30267630bd1f77b7607e18216776c0e5b64f8085fbe101b450; found size 1090, sha256 a25fc4092b588197ad41a62a3cd8be3ca35a5c7f86dd6040a24bcff1d96cfc79)
+E             runtime/area-infer/vendor/yolact/backbone.py (expected size 17343, sha256 0d9242165f7f4d7d7240681450524ee4f112decc08f4d6f1668ba43931441605; found size 17802, sha256 45164d033a7c58ec538a0b0b3b24aef9ca6ae771fd6a7f45feac227bf5c51759)
+E             runtime/area-infer/vendor/yolact/yolact.py (expected size 31589, sha256 376e3c347946f4479c82c3a82c4782c7322ba42eb3cf9915a66f2c49d7fd897b; found size 32314, sha256 c1124179076981e885cf68c6bd6c4978b6254d04c1ba86cc7ea14b63479a15a2)
+E             runtime/area-infer/vendor/yolact/data/__init__.py (expected size 66, sha256 f16fff91eb3318f3b1cff844386e6a956319a361192c2dc9d498238383b03ed2; found size 71, sha256 715ff24337ef8f4ec967901611151eb3caecc95c11a84e9ee92bc75ad97f3363)
+E             runtime/area-infer/vendor/yolact/data/coco.py (expected size 10858, sha256 593f72b88d7cebfb20e10ab25b0c09c32f9a3365c4871798b4229986d8b72955; found size 11142, sha256 2921bf58fde8cd9d977443f85c0a73f842096e205e7cbfafa01a81318b239515)
+E             runtime/area-infer/vendor/yolact/data/config.py (expected size 31172, sha256 f1386cb5787eb260638f127a8bb6d04843506c527aa85c655574967819238139; found size 31998, sha256 e0e9ce7525fe1e6a4603057f918fd6c5a22b24ef9618a7d463e12813f585f7d1)
+E             runtime/area-infer/vendor/yolact/layers/__init__.py (expected size 48, sha256 e4a6bf6c44d23bce70391a4ace320c3ca1082ea54bf0947fcb47a4dcde5a936e; found size 50, sha256 ac6fd54b222e6b8293e15bac7fe3e881e2edcf0e2fbef27d78a14bfa66d1f980)
+E             runtime/area-infer/vendor/yolact/layers/box_utils.py (expected size 14960, sha256 04e04083276923f3bd22eba40a00c8b0824b5ce3b859a2e0e93f0faeed9c047a; found size 15349, sha256 b0a7220fcbdc9bdc5b9a2d270eb3b348f237efdb9bdab2583d1830ea7ac17c8c)
+E             runtime/area-infer/vendor/yolact/layers/interpolate.py (expected size 412, sha256 e502fdd29086933d3a5aa10cfaa19b3063d97609e0aed217771001d9b87251a3; found size 429, sha256 7c392fee0921a16a683714018d6b47072eeeff64a2256425bbcc17e4cf9d562c)
+E             runtime/area-infer/vendor/yolact/layers/output_utils.py (expected size 6932, sha256 dd6aefba0a814d90c4fab526ef24d61f6575f6eab29ced1ff38460717d6db310; found size 7120, sha256 59aca245ac599dae718cfaf2ee41c567420172dc5526d685c74375e04a33b37b)
+E             runtime/area-infer/vendor/yolact/layers/functions/__init__.py (expected size 53, sha256 9735d1ce1895e808b5314d6d0b38775457a8804cd878473acdb994d376846f59; found size 57, sha256 c30b02f571155c57640692fc0d7d5cbfbc39c9dc7f4c51a1c8d96d2b3b8ec736)
+E             runtime/area-infer/vendor/yolact/layers/functions/detection.py (expected size 8882, sha256 20c51f9965d694e8cb5f1cff3bffdf9071a2fa8dcd366a83dd184a2a7ae8f9d8; found size 9110, sha256 7218e06e6b79ca8a4fca504a2e36044e442c0e31cf4551fee6ff0f572ff2fae0)
+E             runtime/area-infer/vendor/yolact/layers/modules/__init__.py (expected size 68, sha256 caf17e0318ed2c2112a20f1182876e254df430b83ec3ffbad20ec5b9ede9a46a; found size 71, sha256 49be5262b0650d017c972bd689cf44b5913e1e23056259acc5012924cc9437b5)
+E             runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py (expected size 31337, sha256 886b3dcf046f09d44d782f1e5bbb07d13928c508d61ad4a43b876c13492cd195; found size 32031, sha256 567d3e614febaa33a660240ab05ec48bb6c05a11b394b1d93a57cc3a6cf05405)
+E             runtime/area-infer/vendor/yolact/utils/augmentations.py (expected size 23925, sha256 5c303203ad90060262dbdcf5a9d5e67a6e88aa23e7d80562d94aeaa08dda09bd; found size 24613, sha256 1b04c9a4c0b4955d4ed011e3d08be2048da3f76b5ab077a643101b4118e7a8c4)
+E             runtime/area-infer/vendor/yolact/utils/cython_nms.pyx (expected size 2457, sha256 c93ed690a0aae988e08c18b463b28bf388f340cb2ad28152821b42e2654bd21a; found size 2531, sha256 7bfaf8b25ab732d493606104ca32bea2457dd33078415b153e0128c0fd0eed6d)
+E             runtime/area-infer/vendor/yolact/utils/functions.py (expected size 6503, sha256 e3adc9e8121c0a20c95539bee00045f541427d883fdbbb8ca05a0d160203c902; found size 6715, sha256 996f9baaed47944e355c2f933539622dee1bf17732adc2375352456ecb2fdc09)
+E             runtime/area-infer/vendor/yolact/utils/logger.py (expected size 15327, sha256 0c8d6e490a05b3045592fc16038c133dda125b1d13f381c97d86e6d889810465; found size 15816, sha256 832ab96147468f007e235924c1ee288ac35420cc590e212ba2cee21c27b013db)
+E             runtime/area-infer/vendor/yolact/utils/nvinfo.py (expected size 2402, sha256 6621b1da7d3f20039a1ce124f1ba42454a41d08b9d60bb75a41623fd61862b44; found size 2464, sha256 23e6d750ec18e82c4a3ee8114799074cd6a7d34fbbbf4ec9b291a0dc2de73692)
+E             runtime/area-infer/vendor/yolact/utils/timer.py (expected size 3508, sha256 082ecd0fdd58a9e66fa7e8e9618e22ed3886ca1ceef286aa9e265d98bf35cfd2; found size 3639, sha256 bf01a730090424dd2d96f20b82c27ebac3e27abf08a35f6343f2a3a592c21613)
+
+scripts\build_support.py:697: RuntimeError
+=========================== short test summary info ===========================
+FAILED tests/test_build_support.py::BuildSupportTests::test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache
+SUBFAILED(source='runtime/area-infer/app/engine.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/app/main.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/app/model_metadata.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/app/request_limits.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/app/security.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/LICENSE') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/backbone.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/yolact.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/data/__init__.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/data/coco.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/data/config.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/__init__.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/box_utils.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/interpolate.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/output_utils.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/functions/__init__.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/functions/detection.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/modules/__init__.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/utils/augmentations.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/utils/cython_nms.pyx') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/utils/functions.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/utils/logger.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/utils/nvinfo.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-infer/vendor/yolact/utils/timer.py') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+FAILED tests/test_build_support.py::BuildSupportTests::test_runtime_profiles_keep_core_small_and_full_complete
+27 failed, 1124 passed, 105 subtests passed in 118.93s (0:01:58)

@@ -30,36 +30,49 @@ class MotionResult:
 def reduced_gray(pixels: np.ndarray, factor: int = 3) -> np.ndarray:
     height, width = pixels.shape[:2]
     if pixels.ndim == 3:
-        pixels = cv2.cvtColor(pixels, cv2.COLOR_BGRA2GRAY if pixels.shape[2] == 4 else cv2.COLOR_BGR2GRAY)
+        code = cv2.COLOR_BGRA2GRAY if pixels.shape[2] == 4 else cv2.COLOR_BGR2GRAY
+        if pixels.flags.c_contiguous and 2048**2 < height * width <= 2**31 - 1:
+            # Color conversion is per-pixel. A single row view borrows the same
+            # owned frame, keeping the same OpenCV arithmetic without hundreds
+            # of Python/GIL handoffs or a parallel loop over image rows. Restore
+            # the original geometry before the unchanged whole-image resize.
+            pixels = cv2.cvtColor(pixels.reshape(1, height * width, pixels.shape[2]), code).reshape(height, width)
+        elif height * width > 2048**2:
+            # Keep OpenCV's exact per-pixel conversion and whole-image resize.
+            # Small complete-row calls avoid its large color-conversion tasks
+            # competing with the ordered FFT worker and automatic process. No
+            # global setNumThreads change leaks into other application tools.
+            gray = np.empty((height, width), dtype=np.uint8)
+            block_rows = max(1, 65535 // width)
+            for y in range(0, height, block_rows):
+                cv2.cvtColor(pixels[y:y + block_rows], code, dst=gray[y:y + block_rows])
+            pixels = gray
+        else:
+            pixels = cv2.cvtColor(pixels, code)
     small = cv2.resize(pixels, (max(1, width // factor), max(1, height // factor)),
                        interpolation=cv2.INTER_LINEAR)
     return np.ascontiguousarray(small)
 
 
 def dark_centroid(gray: np.ndarray) -> tuple[int, int]:
-    weights = 255 - gray
-    # Reductions avoid full-frame float64 x/y grids.
-    columns = weights.sum(axis=0, dtype=np.int64)
-    rows = weights.sum(axis=1, dtype=np.int64)
-    total = int(columns.sum())
-    if total == 0:
-        # Recorded CU output, with an explicit zero-mass branch replacing its
-        # undefined division/conversion rather than inheriting that defect.
-        return (-1, -1)
-    return (int(columns @ np.arange(gray.shape[1], dtype=np.int64)) // total,
-            int(rows @ np.arange(gray.shape[0], dtype=np.int64)) // total)
+    from fdm._native import require_native
+    return tuple(require_native().cu_motion_centroid(gray))
 
 
 def gray_spectrum(gray: np.ndarray) -> np.ndarray:
     # The reference stores gray / 255 in a float32 complex matrix before DFT.
     # The lookup has exactly the same double-division then float32 rounding as
     # the reference, without a full-size float64 temporary on every frame.
-    normalized = _GRAY_NORMALIZATION[gray]
+    normalized = cv2.LUT(gray, _GRAY_NORMALIZATION)
     return cv2.dft(normalized, flags=cv2.DFT_COMPLEX_OUTPUT)
 
 
 def correlation_shift(reference_fft: np.ndarray, current: np.ndarray) -> tuple[int, int]:
     spectrum = gray_spectrum(current)
+    return correlation_from_spectrum(reference_fft, spectrum)
+
+
+def correlation_from_spectrum(reference_fft: np.ndarray, spectrum: np.ndarray) -> tuple[int, int]:
     product = cv2.mulSpectrums(spectrum, reference_fft, flags=0, conjB=True)
     correlated = cv2.idft(product, flags=cv2.DFT_SCALE)
     from fdm._native import require_native
@@ -91,7 +104,8 @@ def correlation_peak_reference(correlated: np.ndarray) -> tuple[int, int]:
 
 
 def compare_geometry(reference: np.ndarray, current: np.ndarray, *, centroid_limit=2,
-                     translation_limit=25, reference_fft=None, reference_centroid=None):
+                     translation_limit=25, reference_fft=None, reference_centroid=None,
+                     current_centroid=None, current_fft=None):
     """First CU comparison stage on already reduced gray images.
 
     This small pure helper also permits replay of the recorded 37-case probes
@@ -102,11 +116,13 @@ def compare_geometry(reference: np.ndarray, current: np.ndarray, *, centroid_lim
     if reference.dtype != np.uint8 or current.dtype != np.uint8:
         raise TypeError("视场比较灰度图必须为 uint8。")
     center_a = dark_centroid(reference) if reference_centroid is None else reference_centroid
-    center_b = dark_centroid(current)
+    center_b = dark_centroid(current) if current_centroid is None else current_centroid
     delta = (center_b[0] - center_a[0], center_b[1] - center_a[1])
     if max(abs(delta[0]), abs(delta[1])) > centroid_limit:
         return "centroid", delta, (0, 0)
-    shift = correlation_shift(gray_spectrum(reference) if reference_fft is None else reference_fft, current)
+    reference_fft = gray_spectrum(reference) if reference_fft is None else reference_fft
+    shift = (correlation_shift(reference_fft, current) if current_fft is None else
+             correlation_from_spectrum(reference_fft, current_fft))
     return ("translation" if max(abs(shift[0]), abs(shift[1])) > translation_limit else "stable"), delta, shift
 
 
@@ -127,6 +143,38 @@ def sobel_fraction(previous: np.ndarray, current: np.ndarray, *, legacy_signed=F
     if legacy_signed:
         changed &= edges <= 127
     return float(np.count_nonzero(changed)) / edges.size
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedMotion:
+    gray: np.ndarray
+    centroid: tuple[int, int]
+    spectrum: np.ndarray
+
+
+class MotionPreparer:
+    """Single-worker, reference-independent preparation for an owned frame.
+
+    A repeated gray image may share immutable preparation arrays. Exact array
+    equality is required; source identity or a hash never substitutes for it.
+    The ordered detector alone owns the field reference and previous image.
+    """
+    def __init__(self):
+        self.previous: PreparedMotion | None = None
+
+    def prepare(self, frame: FrameHandle) -> PreparedMotion:
+        gray = reduced_gray(frame.pixels)
+        if self.previous is not None and np.array_equal(gray, self.previous.gray):
+            return self.previous
+        prepared = PreparedMotion(gray, dark_centroid(gray), gray_spectrum(gray))
+        gray.setflags(write=False)
+        prepared.spectrum.setflags(write=False)
+        self.previous = prepared
+        return prepared
+
+    @property
+    def retained_bytes(self):
+        return 0 if self.previous is None else self.previous.gray.nbytes + self.previous.spectrum.nbytes
 
 
 class FieldMotionDetector:
@@ -152,11 +200,11 @@ class FieldMotionDetector:
         gray = reduced_gray(frame.pixels)
         self.set_reference_reduced(gray, (frame.source_id, frame.generation, frame.size))
 
-    def set_reference_reduced(self, gray: np.ndarray, source_key) -> None:
+    def set_reference_reduced(self, gray: np.ndarray, source_key, prepared=None) -> None:
         self.reference = gray
         self.previous = gray
-        self.reference_centroid = dark_centroid(gray)
-        self.reference_fft = gray_spectrum(gray)
+        self.reference_centroid = dark_centroid(gray) if prepared is None else prepared.centroid
+        self.reference_fft = gray_spectrum(gray) if prepared is None else prepared.spectrum
         self.source_key = source_key
         self._geometry_pixels = self._geometry_result = None
 
@@ -170,10 +218,13 @@ class FieldMotionDetector:
         key = (frame.source_id, frame.generation, frame.size)
         return self.compare_reduced(reduced_gray(frame.pixels), key, frame.frame_id, frame.sequence)
 
-    def compare_reduced(self, current: np.ndarray, key, frame_id: str, sequence: int) -> MotionResult:
+    def compare_prepared(self, prepared: PreparedMotion, key, frame_id: str, sequence: int) -> MotionResult:
+        return self.compare_reduced(prepared.gray, key, frame_id, sequence, prepared=prepared)
+
+    def compare_reduced(self, current: np.ndarray, key, frame_id: str, sequence: int, *, prepared=None) -> MotionResult:
         """Compare an owned small gray image after its full frame is released."""
         if self.reference is None or self.source_key != key:
-            self.set_reference_reduced(current, key)
+            self.set_reference_reduced(current, key, prepared)
             return MotionResult(frame_id, sequence, True, "reference")
         # Exact equality proves that this frame has the already computed
         # geometry against the unchanged reference. A timestamp or hash is not
@@ -185,7 +236,9 @@ class FieldMotionDetector:
         else:
             reason, delta, shift = compare_geometry(self.reference, current,
                 centroid_limit=self.centroid_limit, translation_limit=self.translation_limit,
-                reference_fft=self.reference_fft, reference_centroid=self.reference_centroid)
+                reference_fft=self.reference_fft, reference_centroid=self.reference_centroid,
+                current_centroid=None if prepared is None else prepared.centroid,
+                current_fft=None if prepared is None else prepared.spectrum)
             self._geometry_pixels = current
             self._geometry_result = reason, delta, shift
         if reason != "stable":

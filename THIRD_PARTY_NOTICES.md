@@ -14,6 +14,7 @@ files included by those components.
 | scikit-image | BSD-3-Clause and component notices; <https://github.com/scikit-image/scikit-image/blob/v0.26.0/LICENSE.txt> |
 | SciPy | BSD-3-Clause and bundled library notices; <https://github.com/scipy/scipy/blob/main/LICENSE.txt> |
 | lazy-loader | BSD-3-Clause; <https://github.com/scientific-python/lazy-loader/blob/main/LICENSE.md> |
+| python-zlib-ng 1.0.0 / zlib-ng (lossless live evidence PNG) | PSF-2.0 / Zlib; unmodified upstream libraries; full terms in `fdm/_native/licenses/zlib-ng.txt`; <https://github.com/pycompression/python-zlib-ng> |
 | Pillow | HPND; <https://github.com/python-pillow/Pillow/blob/main/LICENSE> |
 | tifffile | BSD-3-Clause; <https://github.com/cgohlke/tifffile/blob/master/LICENSE> |
 | openpyxl | MIT; <https://foss.heptapod.net/openpyxl/openpyxl/-/blob/branch/3.1/LICENCE.rst> |

@@ -1,0 +1,114 @@
+{
+  "seconds": 2.0610362919978797,
+  "top_processes": [
+    {
+      "pid": 0,
+      "name": "System Idle Process",
+      "cpu_percent": 302.4873955026658,
+      "rss": 8192
+    },
+    {
+      "pid": 3012,
+      "name": "python.exe",
+      "cpu_percent": 77.32760486498215,
+      "rss": 429879296
+    },
+    {
+      "pid": 4,
+      "name": "System",
+      "cpu_percent": 9.097365278233195,
+      "rss": 1191936
+    },
+    {
+      "pid": 10988,
+      "name": "python.exe",
+      "cpu_percent": 3.0324550927443976,
+      "rss": 31244288
+    },
+    {
+      "pid": 3988,
+      "name": "MsMpEng.exe",
+      "cpu_percent": 2.2743413195582987,
+      "rss": 442384384
+    },
+    {
+      "pid": 1232,
+      "name": "dwm.exe",
+      "cpu_percent": 1.5162275463721988,
+      "rss": 209145856
+    },
+    {
+      "pid": 6800,
+      "name": "explorer.exe",
+      "cpu_percent": 1.5162275463721988,
+      "rss": 600985600
+    },
+    {
+      "pid": 7876,
+      "name": "WindowsTerminal.exe",
+      "cpu_percent": 1.5162275463721988,
+      "rss": 406433792
+    },
+    {
+      "pid": 4048,
+      "name": "prl_cc.exe",
+      "cpu_percent": 0.7581137731860994,
+      "rss": 53600256
+    },
+    {
+      "pid": 124,
+      "name": "Registry",
+      "cpu_percent": 0.0,
+      "rss": 40562688
+    },
+    {
+      "pid": 536,
+      "name": "fontdrvhost.exe",
+      "cpu_percent": 0.0,
+      "rss": 6246400
+    },
+    {
+      "pid": 552,
+      "name": "smss.exe",
+      "cpu_percent": 0.0,
+      "rss": 1880064
+    }
+  ],
+  "memory": {
+    "total": 17173250048,
+    "available": 10280787968,
+    "percent": 40.1,
+    "used": 6892462080,
+    "free": 10280787968
+  },
+  "cpu_times_before": {
+    "user": 20573.078125,
+    "system": 10272.67187500003,
+    "idle": 149464.20312499997,
+    "interrupt": 799.59375,
+    "dpc": 266.15625
+  },
+  "cpu_times_after": {
+    "user": 20573.640625,
+    "system": 10274.09375,
+    "idle": 149470.46875,
+    "interrupt": 799.609375,
+    "dpc": 266.15625
+  },
+  "disk_before": {
+    "read_count": 1559760,
+    "write_count": 2859884,
+    "read_bytes": 97304697856,
+    "write_bytes": 175653181440,
+    "read_time": 422,
+    "write_time": 418
+  },
+  "disk_after": {
+    "read_count": 1559760,
+    "write_count": 2859922,
+    "read_bytes": 97304697856,
+    "write_bytes": 175655483392,
+    "read_time": 422,
+    "write_time": 418
+  }
+}

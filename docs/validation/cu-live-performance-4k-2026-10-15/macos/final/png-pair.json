@@ -1,0 +1,2840 @@
+{
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+    "executable": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+    "cpu_count": 18,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": "3.0.4",
+      "psutil": "7.2.2",
+      "zlib-ng": "1.0.0"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 18,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": "5049422a640a02734b48f6b7fd4bad913efc05df",
+    "source_sha256": {
+      "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+      "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+      "native/windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src/fdm/live_experiment/capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src/fdm/live_experiment/controller.py": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2",
+      "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+      "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+      "src/fdm/live_experiment/models.py": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+      "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+      "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+      "src/fdm/live_experiment/sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src/fdm/live_experiment/window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+      "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "9c67da55c36bfd33c6f3d128d7d4e1e0e56f4f1090bfdacd0f8824625f4acc89",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    }
+  },
+  "warmup": 5,
+  "samples": 30,
+  "reference_sha256": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+  "benchmark_sha256": "451ba99572fd246767a5fb4704105b34ed0db343f0cca3948e052dc85be12065",
+  "cases": [
+    {
+      "width": 2048,
+      "scenario": "uniform_stripes",
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "a43ef203a6a1eff42a0dfaf4ac03118ddc11df35de5dcf44627ad2ddc7ad7b73",
+      "production_compression_level": 1,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 13430,
+          "sha256": "0842780bbf2db2c2ddaac91d4aa78a7b138c3da33497c6511f0b66703b39b495",
+          "workspace_bytes": 2109441,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 86442,
+          "sha256": "cca53868bce4aaa22cb7662acb6445f70b37e22497c0ba5cae5fe34233573b11",
+          "workspace_bytes": 4186282,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 18.229958,
+          "production_ms": 4.88825
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.583708,
+          "r4_reference_ms": 17.138
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.1225,
+          "production_ms": 4.691375
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.683542,
+          "r4_reference_ms": 17.058458
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 16.912667,
+          "production_ms": 4.559625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.437042,
+          "r4_reference_ms": 16.334708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 16.298292,
+          "production_ms": 4.60525
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.565875,
+          "r4_reference_ms": 19.580458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.363417,
+          "production_ms": 4.564667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.629583,
+          "r4_reference_ms": 17.089375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.129083,
+          "production_ms": 4.461167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.534875,
+          "r4_reference_ms": 17.088625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 16.545083,
+          "production_ms": 4.481625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.254292,
+          "r4_reference_ms": 16.251458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 16.206917,
+          "production_ms": 4.861958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.598958,
+          "r4_reference_ms": 19.162875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.274083,
+          "production_ms": 4.736083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.764542,
+          "r4_reference_ms": 17.144208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.076833,
+          "production_ms": 4.741583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.593625,
+          "r4_reference_ms": 16.697167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 16.30225,
+          "production_ms": 4.273791
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.522375,
+          "r4_reference_ms": 16.180666
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 16.839083,
+          "production_ms": 4.912584
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.8055,
+          "r4_reference_ms": 17.735083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.078959,
+          "production_ms": 4.54075
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.757042,
+          "r4_reference_ms": 17.161583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.227167,
+          "production_ms": 4.853625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.514625,
+          "r4_reference_ms": 17.398125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.37175,
+          "production_ms": 4.550666
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.333042,
+          "r4_reference_ms": 16.43625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.053125,
+          "production_ms": 4.969958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.67225,
+          "r4_reference_ms": 17.162791
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.080334,
+          "production_ms": 4.807458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 4.512792,
+          "r4_reference_ms": 17.1805
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 17.213208,
+          "production_ms": 4.313834
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 17.089,
+          "p95_ms": 18.520368599999994,
+          "p99_ms": 19.45935893,
+          "max_ms": 19.580458,
+          "samples_ms": [
+            16.334708,
+            16.298292,
+            19.580458,
+            17.363417,
+            17.089375,
+            17.129083,
+            17.088625,
+            16.545083,
+            16.251458,
+            16.206917,
+            19.162875,
+            17.274083,
+            17.144208,
+            17.076833,
+            16.697167,
+            16.30225,
+            16.180666,
+            16.839083,
+            17.735083,
+            17.078959,
+            17.161583,
+            17.227167,
+            17.398125,
+            17.37175,
+            16.43625,
+            17.053125,
+            17.162791,
+            17.080334,
+            17.1805,
+            17.213208
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 4.579750000000001,
+          "p95_ms": 4.8898022999999995,
+          "p99_ms": 4.95331954,
+          "max_ms": 4.969958,
+          "samples_ms": [
+            4.437042,
+            4.60525,
+            4.565875,
+            4.564667,
+            4.629583,
+            4.461167,
+            4.534875,
+            4.481625,
+            4.254292,
+            4.861958,
+            4.598958,
+            4.736083,
+            4.764542,
+            4.741583,
+            4.593625,
+            4.273791,
+            4.522375,
+            4.912584,
+            4.8055,
+            4.54075,
+            4.757042,
+            4.853625,
+            4.514625,
+            4.550666,
+            4.333042,
+            4.969958,
+            4.67225,
+            4.807458,
+            4.512792,
+            4.313834
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 1.353873415995622,
+        "process_cpu_seconds": 1.3693600000000001,
+        "before": {
+          "process_cpu_seconds": 0.128304,
+          "python_threads": 1,
+          "rss_bytes": 80986112,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 80986112,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 1.497664,
+          "python_threads": 1,
+          "rss_bytes": 243318784,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 243318784,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 13,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 243351552,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 243351552,
+        "sampled_max_native_threads": 2,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 2048,
+      "scenario": "stripes_one_bit_noise",
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "ad4e14331aeabab50d88e5d13c1bb7a2f29b902587ada38480ea1f485264461e",
+      "production_compression_level": 0,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 1922626,
+          "sha256": "70a68eba66d93f4f9e64cfb29e5dfed05c6ea2d5d5a169f7eb514feeb665a260",
+          "workspace_bytes": 2109441,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 8388729,
+          "sha256": "283e806cce096a0537aa7927f9bc2a3ee5d5d2bc410cb3831f24dc7378c6553f",
+          "workspace_bytes": 4186282,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 65.558792,
+          "production_ms": 17.960834
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.681125,
+          "r4_reference_ms": 65.181459
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 65.504,
+          "production_ms": 8.472708
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 11.310208,
+          "r4_reference_ms": 78.909458
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 67.606875,
+          "production_ms": 8.611458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 11.242709,
+          "r4_reference_ms": 77.718667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 77.397125,
+          "production_ms": 7.910208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.435,
+          "r4_reference_ms": 78.207125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 72.84575,
+          "production_ms": 8.387208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.1775,
+          "r4_reference_ms": 77.364417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 79.102459,
+          "production_ms": 8.679875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 16.94175,
+          "r4_reference_ms": 66.696333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 66.54725,
+          "production_ms": 8.303625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.200708,
+          "r4_reference_ms": 67.106292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 70.707875,
+          "production_ms": 17.608875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.88825,
+          "r4_reference_ms": 65.041042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 64.315916,
+          "production_ms": 9.769875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.625792,
+          "r4_reference_ms": 77.336
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 66.635625,
+          "production_ms": 7.995625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.397709,
+          "r4_reference_ms": 79.164833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 74.612583,
+          "production_ms": 8.088958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.378375,
+          "r4_reference_ms": 78.73275
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 76.883792,
+          "production_ms": 8.584792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.511334,
+          "r4_reference_ms": 73.622208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 80.983167,
+          "production_ms": 8.740041
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.989375,
+          "r4_reference_ms": 73.410833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 68.520917,
+          "production_ms": 17.587458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.91,
+          "r4_reference_ms": 67.379791
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 66.674875,
+          "production_ms": 8.43675
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.954709,
+          "r4_reference_ms": 86.365958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 81.8605,
+          "production_ms": 9.199292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.409459,
+          "r4_reference_ms": 80.945125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 79.327583,
+          "production_ms": 8.22875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.597958,
+          "r4_reference_ms": 75.230417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 82.417875,
+          "production_ms": 8.992417
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 76.05710450000001,
+          "p95_ms": 82.16705625,
+          "p99_ms": 85.22101393000001,
+          "max_ms": 86.365958,
+          "samples_ms": [
+            77.718667,
+            77.397125,
+            78.207125,
+            72.84575,
+            77.364417,
+            79.102459,
+            66.696333,
+            66.54725,
+            67.106292,
+            70.707875,
+            65.041042,
+            64.315916,
+            77.336,
+            66.635625,
+            79.164833,
+            74.612583,
+            78.73275,
+            76.883792,
+            73.622208,
+            80.983167,
+            73.410833,
+            68.520917,
+            67.379791,
+            66.674875,
+            86.365958,
+            81.8605,
+            80.945125,
+            79.327583,
+            75.230417,
+            82.417875
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 8.6528335,
+          "p95_ms": 17.296889399999998,
+          "p99_ms": 17.602664070000003,
+          "max_ms": 17.608875,
+          "samples_ms": [
+            11.242709,
+            7.910208,
+            8.435,
+            8.387208,
+            8.1775,
+            8.679875,
+            16.94175,
+            8.303625,
+            8.200708,
+            17.608875,
+            8.88825,
+            9.769875,
+            8.625792,
+            7.995625,
+            9.397709,
+            8.088958,
+            8.378375,
+            8.584792,
+            8.511334,
+            8.740041,
+            8.989375,
+            17.587458,
+            8.91,
+            8.43675,
+            8.954709,
+            9.199292,
+            9.409459,
+            8.22875,
+            8.597958,
+            8.992417
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 4.336344541006838,
+        "process_cpu_seconds": 4.338121999999999,
+        "before": {
+          "process_cpu_seconds": 1.534086,
+          "python_threads": 1,
+          "rss_bytes": 246464512,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 246464512,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 5.872208,
+          "python_threads": 1,
+          "rss_bytes": 272187392,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 272187392,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 39,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 272220160,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 272220160,
+        "sampled_max_native_threads": 2,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 2048,
+      "scenario": "gradient_with_noise",
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "957514076ecf3b6cc7b37a3bd33258bd3ee763d8a170b50746d364f01927af23",
+      "production_compression_level": 0,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 5671664,
+          "sha256": "e140bd39099bdc4b63452459f140dce05a695bd3b16620af937632fb89641eeb",
+          "workspace_bytes": 2109441,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 8388729,
+          "sha256": "a8500432130ac87485f40cb18e028dddf25871b7af5ff58c0181a99f90909a0e",
+          "workspace_bytes": 4186282,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 62.345708,
+          "production_ms": 8.46275
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.091167,
+          "r4_reference_ms": 65.613958
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 62.464458,
+          "production_ms": 17.031916
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.741667,
+          "r4_reference_ms": 60.8255
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 59.614416,
+          "production_ms": 8.689875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.840625,
+          "r4_reference_ms": 59.988459
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 61.924417,
+          "production_ms": 9.222417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.748,
+          "r4_reference_ms": 60.140209
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 60.656625,
+          "production_ms": 19.375666
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.468,
+          "r4_reference_ms": 64.118083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 62.403125,
+          "production_ms": 8.558167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.662333,
+          "r4_reference_ms": 72.364583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 64.926375,
+          "production_ms": 8.929667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.39325,
+          "r4_reference_ms": 74.02275
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 71.213834,
+          "production_ms": 8.466042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.44625,
+          "r4_reference_ms": 72.368958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 70.130708,
+          "production_ms": 8.51025
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.573166,
+          "r4_reference_ms": 69.960792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 76.689041,
+          "production_ms": 8.419792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.286292,
+          "r4_reference_ms": 71.868042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 72.226416,
+          "production_ms": 8.40225
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.161417,
+          "r4_reference_ms": 60.372833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 72.746333,
+          "production_ms": 9.770208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 19.874791,
+          "r4_reference_ms": 60.981292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 62.843125,
+          "production_ms": 8.2755
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.64625,
+          "r4_reference_ms": 60.036166
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 59.321042,
+          "production_ms": 9.091917
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.698583,
+          "r4_reference_ms": 60.094333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 59.568125,
+          "production_ms": 8.952084
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 11.761667,
+          "r4_reference_ms": 61.206292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 60.142083,
+          "production_ms": 17.973792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.103167,
+          "r4_reference_ms": 63.191458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 59.759,
+          "production_ms": 17.075625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 9.148209,
+          "r4_reference_ms": 68.485291
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 65.424417,
+          "production_ms": 8.439667
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 63.0172915,
+          "p95_ms": 73.44836235,
+          "p99_ms": 75.91581661000001,
+          "max_ms": 76.689041,
+          "samples_ms": [
+            59.988459,
+            61.924417,
+            60.140209,
+            60.656625,
+            64.118083,
+            62.403125,
+            72.364583,
+            64.926375,
+            74.02275,
+            71.213834,
+            72.368958,
+            70.130708,
+            69.960792,
+            76.689041,
+            71.868042,
+            72.226416,
+            60.372833,
+            72.746333,
+            60.981292,
+            62.843125,
+            60.036166,
+            59.321042,
+            60.094333,
+            59.568125,
+            61.206292,
+            60.142083,
+            63.191458,
+            59.759,
+            68.485291,
+            65.424417
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 8.9408755,
+          "p95_ms": 18.744822699999997,
+          "p99_ms": 19.730044749999998,
+          "max_ms": 19.874791,
+          "samples_ms": [
+            8.840625,
+            9.222417,
+            8.748,
+            19.375666,
+            9.468,
+            8.558167,
+            9.662333,
+            8.929667,
+            9.39325,
+            8.466042,
+            8.44625,
+            8.51025,
+            8.573166,
+            8.419792,
+            9.286292,
+            8.40225,
+            8.161417,
+            9.770208,
+            19.874791,
+            8.2755,
+            8.64625,
+            9.091917,
+            8.698583,
+            8.952084,
+            11.761667,
+            17.973792,
+            9.103167,
+            17.075625,
+            9.148209,
+            8.439667
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 4.141616458000499,
+        "process_cpu_seconds": 4.194356,
+        "before": {
+          "process_cpu_seconds": 5.91581,
+          "python_threads": 1,
+          "rss_bytes": 356155392,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 356155392,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 10.110166,
+          "python_threads": 1,
+          "rss_bytes": 412172288,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 412172288,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 38,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 412172288,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 412172288,
+        "sampled_max_native_threads": 2,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 4096,
+      "scenario": "uniform_stripes",
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "169d2f1e8757234c7538aa842d129f3b622880eeedda98e8bc8ce667be656694",
+      "production_compression_level": 1,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 41935,
+          "sha256": "1422ef6c1ddbdc83a142489bda5735dad1cd6f4cea080972fd45bafb409fb4d3",
+          "workspace_bytes": 2121729,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 336326,
+          "sha256": "7d5d8e4f5961afac1af704715f29c55169d2b907491aa3e532cca6eb75ee6596",
+          "workspace_bytes": 4186197,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 65.572042,
+          "production_ms": 23.515208
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 14.845042,
+          "r4_reference_ms": 69.364042
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 73.939834,
+          "production_ms": 16.120875
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.951167,
+          "r4_reference_ms": 64.369041
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 73.624375,
+          "production_ms": 15.734708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.099333,
+          "r4_reference_ms": 60.663708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 61.435791,
+          "production_ms": 24.957042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.552292,
+          "r4_reference_ms": 69.559958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 70.060084,
+          "production_ms": 16.156916
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.806417,
+          "r4_reference_ms": 61.482375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 69.296333,
+          "production_ms": 18.699542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.953416,
+          "r4_reference_ms": 64.420375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 62.060333,
+          "production_ms": 23.328458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 17.014333,
+          "r4_reference_ms": 73.178959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 71.699666,
+          "production_ms": 15.307958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 16.213084,
+          "r4_reference_ms": 64.588708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 63.647083,
+          "production_ms": 15.668417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 17.307875,
+          "r4_reference_ms": 71.504584
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 60.752625,
+          "production_ms": 18.931
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.562417,
+          "r4_reference_ms": 72.163709
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 69.387625,
+          "production_ms": 15.546542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 24.919375,
+          "r4_reference_ms": 63.939667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 62.263667,
+          "production_ms": 24.638916
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.826333,
+          "r4_reference_ms": 72.692209
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 72.323958,
+          "production_ms": 14.807458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.718459,
+          "r4_reference_ms": 65.143167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 69.533417,
+          "production_ms": 15.145875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.605333,
+          "r4_reference_ms": 64.273125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 63.308083,
+          "production_ms": 17.082292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.082667,
+          "r4_reference_ms": 76.383583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 71.153792,
+          "production_ms": 15.219542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.051041,
+          "r4_reference_ms": 62.951
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 72.968333,
+          "production_ms": 16.042584
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 15.686959,
+          "r4_reference_ms": 61.507875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 64.061292,
+          "production_ms": 17.15375
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 64.8659375,
+          "p95_ms": 73.08417730000001,
+          "p99_ms": 75.45424204000001,
+          "max_ms": 76.383583,
+          "samples_ms": [
+            60.663708,
+            61.435791,
+            69.559958,
+            70.060084,
+            61.482375,
+            69.296333,
+            64.420375,
+            62.060333,
+            73.178959,
+            71.699666,
+            64.588708,
+            63.647083,
+            71.504584,
+            60.752625,
+            72.163709,
+            69.387625,
+            63.939667,
+            62.263667,
+            72.692209,
+            72.323958,
+            65.143167,
+            69.533417,
+            64.273125,
+            63.308083,
+            76.383583,
+            71.153792,
+            62.951,
+            72.968333,
+            61.507875,
+            64.061292
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 15.816375,
+          "p95_ms": 24.793168449999996,
+          "p99_ms": 24.94611857,
+          "max_ms": 24.957042,
+          "samples_ms": [
+            15.099333,
+            24.957042,
+            15.552292,
+            16.156916,
+            15.806417,
+            18.699542,
+            15.953416,
+            23.328458,
+            17.014333,
+            15.307958,
+            16.213084,
+            15.668417,
+            17.307875,
+            18.931,
+            15.562417,
+            15.546542,
+            24.919375,
+            24.638916,
+            15.826333,
+            14.807458,
+            15.718459,
+            15.145875,
+            15.605333,
+            17.082292,
+            15.082667,
+            15.219542,
+            15.051041,
+            16.042584,
+            15.686959,
+            17.15375
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 4.7201851249992615,
+        "process_cpu_seconds": 4.824002999999999,
+        "before": {
+          "process_cpu_seconds": 10.12486,
+          "python_threads": 1,
+          "rss_bytes": 412172288,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 412172288,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 14.948863,
+          "python_threads": 1,
+          "rss_bytes": 445972480,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 445972480,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 43,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 446005248,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 446005248,
+        "sampled_max_native_threads": 2,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 4096,
+      "scenario": "stripes_one_bit_noise",
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "7716a02c8dece2e3c02811434e5cc1a65695847f5aaa9c14c8dd6821bbce0300",
+      "production_compression_level": 0,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 7675954,
+          "sha256": "a616cec49f0f62122f855e892e3ce7288b43e3a27190762edc803e1d98e74835",
+          "workspace_bytes": 2121729,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 33552004,
+          "sha256": "c706ebd4d794c65c37590250b044b7111c9e5abe7c543764f8b4287728c8e085",
+          "workspace_bytes": 4186197,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 276.086833,
+          "production_ms": 29.3065
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.563042,
+          "r4_reference_ms": 283.324625
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 278.919125,
+          "production_ms": 28.322459
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.870084,
+          "r4_reference_ms": 292.790292
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 285.616084,
+          "production_ms": 38.729208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.333833,
+          "r4_reference_ms": 283.703792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 290.343334,
+          "production_ms": 30.932125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 39.107917,
+          "r4_reference_ms": 278.631584
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 290.870875,
+          "production_ms": 30.941833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 38.5415,
+          "r4_reference_ms": 289.977333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 280.545375,
+          "production_ms": 30.381708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.838708,
+          "r4_reference_ms": 301.466833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 293.257625,
+          "production_ms": 31.804625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.257667,
+          "r4_reference_ms": 283.482542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 288.068791,
+          "production_ms": 29.644292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 38.868416,
+          "r4_reference_ms": 290.370583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 290.351708,
+          "production_ms": 29.695291
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.555959,
+          "r4_reference_ms": 287.55375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 285.132458,
+          "production_ms": 31.403334
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.374292,
+          "r4_reference_ms": 276.184417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 282.224791,
+          "production_ms": 34.377875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 38.383583,
+          "r4_reference_ms": 275.663208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 279.48125,
+          "production_ms": 29.585792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 38.872875,
+          "r4_reference_ms": 284.797125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 291.539167,
+          "production_ms": 29.742709
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.563209,
+          "r4_reference_ms": 293.544292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 276.093083,
+          "production_ms": 41.3495
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.444708,
+          "r4_reference_ms": 365.325
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 275.688666,
+          "production_ms": 29.708417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.1365,
+          "r4_reference_ms": 290.440583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 283.59425,
+          "production_ms": 40.563458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.21125,
+          "r4_reference_ms": 281.9935
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 287.532208,
+          "production_ms": 32.279584
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 42.294958,
+          "r4_reference_ms": 295.832416
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 272.209375,
+          "production_ms": 31.163125
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 286.332333,
+          "p95_ms": 298.93134535,
+          "p99_ms": 346.80613157000005,
+          "max_ms": 365.325,
+          "samples_ms": [
+            283.703792,
+            290.343334,
+            278.631584,
+            290.870875,
+            289.977333,
+            280.545375,
+            301.466833,
+            293.257625,
+            283.482542,
+            288.068791,
+            290.370583,
+            290.351708,
+            287.55375,
+            285.132458,
+            276.184417,
+            282.224791,
+            275.663208,
+            279.48125,
+            284.797125,
+            291.539167,
+            293.544292,
+            276.093083,
+            365.325,
+            275.688666,
+            290.440583,
+            283.59425,
+            281.9935,
+            287.532208,
+            295.832416,
+            272.209375
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 31.052478999999998,
+          "p95_ms": 40.995781099999995,
+          "p99_ms": 42.02077518,
+          "max_ms": 42.294958,
+          "samples_ms": [
+            30.333833,
+            30.932125,
+            39.107917,
+            30.941833,
+            38.5415,
+            30.381708,
+            30.838708,
+            31.804625,
+            31.257667,
+            29.644292,
+            38.868416,
+            29.695291,
+            29.555959,
+            31.403334,
+            29.374292,
+            34.377875,
+            38.383583,
+            29.585792,
+            38.872875,
+            29.742709,
+            31.563209,
+            41.3495,
+            30.444708,
+            29.708417,
+            30.1365,
+            40.563458,
+            30.21125,
+            32.279584,
+            42.294958,
+            31.163125
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 16.537051875013276,
+        "process_cpu_seconds": 16.760777,
+        "before": {
+          "process_cpu_seconds": 14.990862,
+          "python_threads": 1,
+          "rss_bytes": 445972480,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 445972480,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 31.751639,
+          "python_threads": 1,
+          "rss_bytes": 515604480,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 515604480,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 147,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 515637248,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 515637248,
+        "sampled_max_native_threads": 2,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 4096,
+      "scenario": "gradient_with_noise",
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "53186de2b0d1da9763f9f66d1b7cb565bdbc47ad1e61282ed86a377bc11daf0d",
+      "production_compression_level": 0,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 22677556,
+          "sha256": "c99ac4368d45320b7f149ba1cb3869826f390bf4f38b68b8d444516635cef079",
+          "workspace_bytes": 2121729,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 33552004,
+          "sha256": "6053367430a3063ea6356818ba752252d906cfe58123fb8d57c5a1ec3b8b5058",
+          "workspace_bytes": 4186197,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 260.814209,
+          "production_ms": 29.693209
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 40.728333,
+          "r4_reference_ms": 259.522542
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 268.238542,
+          "production_ms": 30.880083
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 41.6965,
+          "r4_reference_ms": 257.129917
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 252.892959,
+          "production_ms": 40.420542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.956458,
+          "r4_reference_ms": 264.85325
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 258.601625,
+          "production_ms": 32.793709
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.051417,
+          "r4_reference_ms": 266.485708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 284.884542,
+          "production_ms": 31.889334
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.764375,
+          "r4_reference_ms": 268.345791
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 258.569125,
+          "production_ms": 31.594458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 42.761083,
+          "r4_reference_ms": 260.312959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 263.474333,
+          "production_ms": 31.680125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 39.37875,
+          "r4_reference_ms": 261.524666
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 261.427958,
+          "production_ms": 29.621667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.334416,
+          "r4_reference_ms": 265.640875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 257.316834,
+          "production_ms": 40.8155
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 34.960833,
+          "r4_reference_ms": 259.218416
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 255.890708,
+          "production_ms": 30.388459
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 32.109,
+          "r4_reference_ms": 264.304959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 251.341541,
+          "production_ms": 31.980292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 39.733667,
+          "r4_reference_ms": 260.117792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 259.83725,
+          "production_ms": 31.031625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.834375,
+          "r4_reference_ms": 254.837583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 252.136417,
+          "production_ms": 40.791833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.2145,
+          "r4_reference_ms": 274.528583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 262.002292,
+          "production_ms": 40.972958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.129083,
+          "r4_reference_ms": 261.994083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 267.993708,
+          "production_ms": 31.452333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.845375,
+          "r4_reference_ms": 268.766167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 265.079292,
+          "production_ms": 33.90725
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.677667,
+          "r4_reference_ms": 265.686833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 260.166666,
+          "production_ms": 36.128
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 33.1845,
+          "r4_reference_ms": 271.566042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 262.003917,
+          "production_ms": 31.270583
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 261.9981875,
+          "p95_ms": 273.19543955,
+          "p99_ms": 281.88131389,
+          "max_ms": 284.884542,
+          "samples_ms": [
+            264.85325,
+            258.601625,
+            266.485708,
+            284.884542,
+            268.345791,
+            258.569125,
+            260.312959,
+            263.474333,
+            261.524666,
+            261.427958,
+            265.640875,
+            257.316834,
+            259.218416,
+            255.890708,
+            264.304959,
+            251.341541,
+            260.117792,
+            259.83725,
+            254.837583,
+            252.136417,
+            274.528583,
+            262.002292,
+            261.994083,
+            267.993708,
+            268.766167,
+            265.079292,
+            265.686833,
+            260.166666,
+            271.566042,
+            262.003917
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 31.804875000000003,
+          "p95_ms": 40.9021019,
+          "p99_ms": 42.24252675,
+          "max_ms": 42.761083,
+          "samples_ms": [
+            29.956458,
+            32.793709,
+            29.051417,
+            31.889334,
+            31.764375,
+            31.594458,
+            42.761083,
+            31.680125,
+            39.37875,
+            29.621667,
+            29.334416,
+            40.8155,
+            34.960833,
+            30.388459,
+            32.109,
+            31.980292,
+            39.733667,
+            31.031625,
+            30.834375,
+            40.791833,
+            30.2145,
+            40.972958,
+            30.129083,
+            31.452333,
+            31.845375,
+            33.90725,
+            31.677667,
+            36.128,
+            33.1845,
+            31.270583
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 16.164479584011133,
+        "process_cpu_seconds": 16.476507,
+        "before": {
+          "process_cpu_seconds": 31.909252,
+          "python_threads": 1,
+          "rss_bytes": 851066880,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 851066880,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 48.385759,
+          "python_threads": 1,
+          "rss_bytes": 856571904,
+          "native_threads": 1,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 856571904,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 139,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 856604672,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 856604672,
+        "sampled_max_native_threads": 2,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    }
+  ],
+  "limits": [
+    "Synthetic pixels; ratios are not microscopy storage estimates.",
+    "Timing includes encoding, hash, file writes, fsync and atomic replace; excludes decode verification.",
+    "Sampled RSS includes outside-timer decoding and retained fixture images, not codec-only RSS."
+  ]
+}

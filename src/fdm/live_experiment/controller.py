@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import math
 import threading
@@ -18,7 +18,7 @@ import uuid
 from PySide6.QtCore import QObject, QTimer, Signal, Slot, Qt
 
 from .frames import FrameHandle, FrameBudget, FrameBudgetExceeded, PresentedFrameToken, acquisition_reservation
-from .motion import FieldMotionDetector, MOTION_REVISION, reduced_gray
+from .motion import FieldMotionDetector, MotionPreparer, MOTION_REVISION, reduced_gray
 from .evidence import EvidenceStore
 
 
@@ -70,6 +70,15 @@ class MeasurementIntent:
     measurement_number: int | None = None
 
 
+@dataclass(slots=True)
+class _MotionFrame:
+    frame: FrameHandle | None
+    lease: str | None
+    prepared: object = None
+    lock: object = field(default_factory=threading.Lock)
+    armed: bool = False
+
+
 class LiveExperimentController(QObject):
     changed = Signal()
     fieldChanged = Signal(int, str)
@@ -78,9 +87,11 @@ class LiveExperimentController(QObject):
     recordsAccepted = Signal(object)
     resultRejected = Signal(str)
     candidatesChanged = Signal(object)
+    frameReady = Signal(object)
     _completionAvailable = Signal()
 
-    def __init__(self, session, *, evidence_directory=None, parent=None, manual_service=None):
+    def __init__(self, session, *, evidence_directory=None, parent=None, manual_service=None,
+                 verify_before_present=False):
         super().__init__(parent)
         self.session = session
         self.budget = FrameBudget()
@@ -93,6 +104,7 @@ class LiveExperimentController(QObject):
         self._source_identity = None
         self._latest_frame_lease = None
         self._presented_frame_lease = None
+        self._presentation_lease = None
         self._draft_lease = None
         self.state = "unavailable"
         self.draft: tuple[PresentedFrameToken, tuple[float, float]] | None = None
@@ -106,6 +118,13 @@ class LiveExperimentController(QObject):
         self._manual = manual_service
         self._manual_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-live-manual")
         self._motion_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-live-motion")
+        self.verify_before_present = verify_before_present
+        self._prepare_pool = (ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-live-prepare")
+                              if verify_before_present else None)
+        self._preparer = MotionPreparer()
+        self._prepare_future = None
+        self._motion_item = None
+        self._last_prepare_sequence = -1
         self._motion = FieldMotionDetector()
         self._motion_future = None
         self._motion_reset = True
@@ -208,6 +227,7 @@ class LiveExperimentController(QObject):
                 self._release_frame_reference("_presented_frame_lease")
                 self._presented_frame_lease = self.budget.acquire(token.frame, preview=True)
             self.presented = token
+            self._release_frame_reference("_presentation_lease")
 
     def unavailable(self, reason: str):
         if self.state != "unavailable":
@@ -215,6 +235,7 @@ class LiveExperimentController(QObject):
         self.latest_frame = self.presented = None
         self._release_frame_reference("_latest_frame_lease")
         self._release_frame_reference("_presented_frame_lease")
+        self._release_frame_reference("_presentation_lease")
         self.calibration = None
         self.state = "unavailable"
         self.statusChanged.emit(reason)
@@ -242,6 +263,7 @@ class LiveExperimentController(QObject):
             self._automatic_context = None
         self._motion_reset = True
         self._motion_sequence = -1
+        self._last_prepare_sequence = -1
         self._stable_count = 0
         self.state = "unavailable" if self.latest_frame is None else "stabilizing" if self.latest_frame.live else "ready"
         self.fieldChanged.emit(self.field_epoch, reason)
@@ -252,7 +274,8 @@ class LiveExperimentController(QObject):
     def start(self, point: tuple[float, float]):
         if self._closed:
             raise RuntimeError("试验工作区已关闭。")
-        if self.state != "ready" or self.presented is None:
+        if (self.state != "ready" or self.presented is None
+                or self.presented.field_epoch != self.field_epoch):
             raise ValueError("请等待图像来源和视场稳定。")
         if self.calibration is None:
             raise ValueError("请先设置当前图像来源的标定。")
@@ -440,6 +463,9 @@ class LiveExperimentController(QObject):
     def _submit_motion_if_needed(self):
         if self._closed:
             return
+        if self.verify_before_present:
+            self._advance_motion_pipeline()
+            return
         frame = self.latest_frame
         if frame and frame.live and self._motion_future is None and frame.sequence > self._motion_sequence:
             now = time.perf_counter()
@@ -461,6 +487,102 @@ class LiveExperimentController(QObject):
                     self._last_motion_submit = now
                     future.add_done_callback(self._request_poll)
 
+    def _release_motion_item(self, item):
+        if item is not None:
+            with item.lock:
+                item.armed = False
+                if item.lease is not None:
+                    self.budget.release(item.lease)
+                    item.lease = None
+                item.frame = item.prepared = None
+
+    @staticmethod
+    def _submit_pipeline(pool, function, item, *args):
+        # ThreadPoolExecutor may enqueue a WorkItem before Thread.start fails.
+        # A rejected submission must leave that residual work inert.
+        with item.lock:
+            item.armed = False
+            future = pool.submit(function, item, *args)
+            item.armed = True
+            return future
+
+    def _prepare_motion_work(self, item):
+        with item.lock:
+            if not item.armed:
+                return None
+            frame = item.frame
+        return self._preparer.prepare(frame)
+
+    def _prepared_motion_work(self, item, reset):
+        with item.lock:
+            if not item.armed:
+                return None
+            frame, prepared = item.frame, item.prepared
+        if reset:
+            self._motion.reset()
+        return self._motion.compare_prepared(prepared,
+            (frame.source_id, frame.generation, frame.size), frame.frame_id, frame.sequence)
+
+    def _advance_motion_pipeline(self):
+        """One preparation slot, one ordered decision slot, newest arrival only.
+
+        Neither worker publishes Qt state. Every in-flight raw frame has its
+        own budget lease, including the handoff to a not-yet-painted canvas.
+        """
+        if self._prepare_future is not None:
+            epoch, future, item = self._prepare_future
+            if future.done() and (epoch != self.field_epoch or self._motion_future is None):
+                self._prepare_future = None
+                try:
+                    prepared = future.result()
+                    if epoch == self.field_epoch:
+                        item.prepared = prepared
+                        decision = self._submit_pipeline(self._motion_pool, self._prepared_motion_work,
+                                                         item, self._motion_reset)
+                        self._motion_future = (epoch, decision)
+                        self._motion_item = item
+                        self._motion_reset = False
+                        item = None  # Decision now owns the lease.
+                        decision.add_done_callback(self._request_poll)
+                except Exception as exc:
+                    if epoch == self.field_epoch:
+                        self.unavailable(f"视场检测失败：{exc}")
+                    exc.__traceback__ = None
+                finally:
+                    self._release_motion_item(item)
+        frame = self.latest_frame
+        if (frame is None or not frame.live or self._prepare_future is not None
+                or frame.sequence <= self._last_prepare_sequence):
+            return
+        # Bound high-rate sources, without the old 40 ms idle gap reducing a
+        # 30 Hz stream to alternating display frames. No input queue accumulates.
+        now = time.perf_counter()
+        if now - self._last_motion_submit < .025:
+            return
+        try:
+            item = _MotionFrame(frame, self.budget.acquire(frame))
+        except FrameBudgetExceeded:
+            self.statusChanged.emit("图像缓冲已满，等待当前任务释放；当前草稿和视场记录保留。")
+            return
+        try:
+            future = self._submit_pipeline(self._prepare_pool, self._prepare_motion_work, item)
+        except Exception as exc:
+            self._release_motion_item(item)
+            self.unavailable(f"视场检测无法启动：{exc}")
+            exc.__traceback__ = None
+            return
+        self._prepare_future = (self.field_epoch, future, item)
+        self._last_prepare_sequence = frame.sequence
+        self._last_motion_submit = now
+        future.add_done_callback(self._request_poll)
+
+    def _present_motion_frame(self, item):
+        # Completion is handled on Qt before any record can enter the ledger.
+        # A moving frame is also displayed, after end_field has cleared markers;
+        # two stable decisions are still required before accepting new gestures.
+        self._presentation_lease = self.budget.replace(self._presentation_lease, item.frame, preview=True)
+        self.frameReady.emit(item.frame)
+
     def poll(self):
         if self._closed or self._polling:
             return
@@ -474,6 +596,7 @@ class LiveExperimentController(QObject):
         if self._motion_future and self._motion_future[1].done():
             epoch, future = self._motion_future
             self._motion_future = None
+            item, self._motion_item = self._motion_item, None
             try:
                 result = future.result()
                 if epoch == self.field_epoch:
@@ -486,9 +609,14 @@ class LiveExperimentController(QObject):
                             if self.state != "ready":
                                 self.statusChanged.emit("视场稳定，可以测量")
                             self.state = "ready"
+                    if item is not None:
+                        self._present_motion_frame(item)
             except Exception as exc:
                 if epoch == self.field_epoch:
                     self.unavailable(f"视场检测失败：{exc}")
+                exc.__traceback__ = None
+            finally:
+                self._release_motion_item(item)
         self._submit_motion_if_needed()
         deadline = time.perf_counter() + 0.004
         while self._jobs and self._jobs[0][1].done() and time.perf_counter() < deadline:
@@ -880,6 +1008,16 @@ class LiveExperimentController(QObject):
         # The at-most-one queued motion job owns a frame lease. Let its bounded
         # reduction run so its finally releases that lease even during close.
         self._motion_pool.shutdown(wait=True, cancel_futures=False)
+        if self._prepare_pool is not None:
+            self._prepare_pool.shutdown(wait=True, cancel_futures=False)
+        if self._prepare_future is not None:
+            self._release_motion_item(self._prepare_future[2])
+            self._prepare_future = None
+        self._release_motion_item(self._motion_item)
+        self._motion_item = None
+        self._motion_future = None
+        self._preparer.previous = None
+        self._motion.reset()
         if self._automatic:
             self._automatic.close()
         for entry in self.evidence.close():
@@ -888,3 +1026,4 @@ class LiveExperimentController(QObject):
         self.presented = self.latest_frame = None
         self._release_frame_reference("_latest_frame_lease")
         self._release_frame_reference("_presented_frame_lease")
+        self._release_frame_reference("_presentation_lease")

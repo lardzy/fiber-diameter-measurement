@@ -1,3 +1,7 @@
 # Retain the original Windows validation bytes: reports refer to their SHA256.
 docs/validation/cu-live-measurement-2026-10-15/**/*.json -text
 docs/validation/cu-manual-motion-capture-20261015/**/*.json -text
+docs/validation/cu-live-performance-4k-2026-10-15/**/*.json -text
+docs/validation/cu-live-performance-4k-2026-10-15/**/*.log -text
+docs/validation/cu-live-performance-4k-2026-10-15/**/*.xml -text
+docs/validation/cu-live-performance-4k-2026-10-15/**/*.progress -text

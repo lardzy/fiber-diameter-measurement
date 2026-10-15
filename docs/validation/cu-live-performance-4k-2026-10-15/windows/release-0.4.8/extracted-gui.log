@@ -1,0 +1,583 @@
+C:\tmp\fdm-cu-live-opt4k-20261015\build\opt4k\release-0.4.8\gui\20261015-133942-709b258e59c14909848576db18db62aa\result.json
+{
+    "schema":  2,
+    "started_at":  "2026-10-15T13:39:42.1112797+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-unpacked-0.4.8-20261015\\{app}\\FiberDiameterMeasurement.exe",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa",
+    "config":  "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa\\isolated-config",
+    "pid":  10996,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  true,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "当前图片",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "当前图片",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QToolButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 260,
+                                                                 70,
+                                                                 154,
+                                                                 78
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483069
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "本机相机",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "本机相机",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QToolButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 422,
+                                                                 70,
+                                                                 154,
+                                                                 78
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483068
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "CU 实时画面",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "CU 实时画面",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QToolButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 584,
+                                                                 70,
+                                                                 196,
+                                                                 78
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483067
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "分析当前视场",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "分析当前视场",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QToolButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 1598,
+                                                                 70,
+                                                                 202,
+                                                                 78
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483032
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "当前视场",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "当前视场",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Tab",
+                                                  "class":  "QTabBar",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 14,
+                                                                 1180,
+                                                                 576,
+                                                                 70
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483018
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "SelectionPatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              },
+                                              {
+                                                  "name":  "当前视场",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.TabItem",
+                                                  "class":  "",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 14,
+                                                                 1180,
+                                                                 136,
+                                                                 70
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483017
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern",
+                                                                   "SelectionItemPatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "试验历史（全部操作者）",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "试验历史（全部操作者）",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.TabItem",
+                                                  "class":  "",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 150,
+                                                                 1180,
+                                                                 304,
+                                                                 70
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147482907
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern",
+                                                                   "SelectionItemPatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "全图候选",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "全图候选",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.TabItem",
+                                                  "class":  "",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 454,
+                                                                 1180,
+                                                                 136,
+                                                                 70
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147482906
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern",
+                                                                   "SelectionItemPatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "改名",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "改名",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QPushButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 2382,
+                                                                 332,
+                                                                 92,
+                                                                 72
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147483008
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "撤销",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "撤销",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QPushButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 1734,
+                                                                 1046,
+                                                                 238,
+                                                                 72
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147482989
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "重做",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "重做",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QPushButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 1984,
+                                                                 1046,
+                                                                 240,
+                                                                 72
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147482988
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         },
+                         {
+                             "name":  "保存项目",
+                             "present":  true,
+                             "visible":  true,
+                             "elements":  [
+                                              {
+                                                  "name":  "保存项目",
+                                                  "process_id":  10996,
+                                                  "type":  "ControlType.Button",
+                                                  "class":  "QPushButton",
+                                                  "automation_id":  "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+                                                  "native_handle":  0,
+                                                  "enabled":  true,
+                                                  "offscreen":  false,
+                                                  "bounds":  [
+                                                                 1734,
+                                                                 1214,
+                                                                 740,
+                                                                 72
+                                                             ],
+                                                  "help_text":  "",
+                                                  "runtime_id":  [
+                                                                     42,
+                                                                     787904,
+                                                                     4,
+                                                                     -2147482984
+                                                                 ],
+                                                  "patterns":  [
+                                                                   "InvokePatternIdentifiers.Pattern",
+                                                                   "ValuePatternIdentifiers.Pattern"
+                                                               ]
+                                              }
+                                          ]
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  true,
+    "unsaved_dialog":  {
+                           "title":  "未保存的改动",
+                           "buttons":  [
+                                           {
+                                               "name":  "保存",
+                                               "process_id":  10996,
+                                               "type":  "ControlType.Button",
+                                               "class":  "QPushButton",
+                                               "automation_id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                                               "native_handle":  0,
+                                               "enabled":  true,
+                                               "offscreen":  false,
+                                               "bounds":  [
+                                                              1424,
+                                                              828,
+                                                              92,
+                                                              72
+                                                          ],
+                                               "help_text":  "",
+                                               "runtime_id":  [
+                                                                  42,
+                                                                  853440,
+                                                                  4,
+                                                                  -2147482896
+                                                              ],
+                                               "patterns":  [
+                                                                "InvokePatternIdentifiers.Pattern",
+                                                                "ValuePatternIdentifiers.Pattern"
+                                                            ]
+                                           },
+                                           {
+                                               "name":  "放弃",
+                                               "process_id":  10996,
+                                               "type":  "ControlType.Button",
+                                               "class":  "QPushButton",
+                                               "automation_id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                                               "native_handle":  0,
+                                               "enabled":  true,
+                                               "offscreen":  false,
+                                               "bounds":  [
+                                                              1528,
+                                                              828,
+                                                              92,
+                                                              72
+                                                          ],
+                                               "help_text":  "",
+                                               "runtime_id":  [
+                                                                  42,
+                                                                  853440,
+                                                                  4,
+                                                                  -2147482895
+                                                              ],
+                                               "patterns":  [
+                                                                "InvokePatternIdentifiers.Pattern",
+                                                                "ValuePatternIdentifiers.Pattern"
+                                                            ]
+                                           },
+                                           {
+                                               "name":  "取消",
+                                               "process_id":  10996,
+                                               "type":  "ControlType.Button",
+                                               "class":  "QPushButton",
+                                               "automation_id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                                               "native_handle":  0,
+                                               "enabled":  true,
+                                               "offscreen":  false,
+                                               "bounds":  [
+                                                              1632,
+                                                              828,
+                                                              92,
+                                                              72
+                                                          ],
+                                               "help_text":  "",
+                                               "runtime_id":  [
+                                                                  42,
+                                                                  853440,
+                                                                  4,
+                                                                  -2147482894
+                                                              ],
+                                               "patterns":  [
+                                                                "InvokePatternIdentifiers.Pattern",
+                                                                "ValuePatternIdentifiers.Pattern"
+                                                            ]
+                                           }
+                                       ],
+                           "choice":  "放弃",
+                           "action":  "InvokePattern"
+                       },
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa\\02-after-entry-invocation-uia.json",
+                      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa\\03-live-workspace-ready-uia.json",
+                      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa\\04-after-workspace-close-uia.json",
+                      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\gui\\20261015-133942-709b258e59c14909848576db18db62aa\\05-unsaved-dialog-before-decision-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "main_title":  "显微测量工作台",
+    "entry_element":  {
+                          "name":  "实时试验",
+                          "process_id":  10996,
+                          "type":  "ControlType.MenuItem",
+                          "class":  "QAction",
+                          "automation_id":  "QApplication.MainWindow.QMenuBar.QAction.QMenu.QAction",
+                          "native_handle":  0,
+                          "enabled":  true,
+                          "offscreen":  false,
+                          "bounds":  [
+                                         646,
+                                         112,
+                                         164,
+                                         68
+                                     ],
+                          "help_text":  "",
+                          "runtime_id":  [
+                                             42,
+                                             591294,
+                                             4,
+                                             -2147483071
+                                         ],
+                          "patterns":  [
+                                           "InvokePatternIdentifiers.Pattern",
+                                           "ValuePatternIdentifiers.Pattern"
+                                       ]
+                      },
+    "entry_action":  "InvokePattern",
+    "live_element":  {
+                         "name":  "实时试验 · 纤维直径与含量",
+                         "process_id":  10996,
+                         "type":  "ControlType.Window",
+                         "class":  "LiveExperimentWorkspace",
+                         "automation_id":  "QApplication.LiveExperimentWorkspace",
+                         "native_handle":  787904,
+                         "enabled":  true,
+                         "offscreen":  false,
+                         "bounds":  [
+                                        14,
+                                        58,
+                                        2480,
+                                        1604
+                                    ],
+                         "help_text":  "",
+                         "runtime_id":  [
+                                            42,
+                                            787904
+                                        ],
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "WindowPatternIdentifiers.Pattern",
+                                          "TransformPatternIdentifiers.Pattern"
+                                      ]
+                     },
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-15T13:39:53.8188391+08:00"
+}

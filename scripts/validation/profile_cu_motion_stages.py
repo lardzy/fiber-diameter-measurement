@@ -73,7 +73,7 @@ def staged_compare(detector, frame):
         if max(abs(delta[0]), abs(delta[1])) > detector.centroid_limit:
             reason = "centroid"
         else:
-            normalized = measured(stages, "normalization", lambda: motion._GRAY_NORMALIZATION[current])
+            normalized = measured(stages, "normalization", lambda: cv2.LUT(current, motion._GRAY_NORMALIZATION))
             spectrum = measured(stages, "forward_dft", lambda:
                 cv2.dft(normalized, flags=cv2.DFT_COMPLEX_OUTPUT))
             del normalized
@@ -170,7 +170,7 @@ def case(args, size, base, noisy):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--sizes", type=int, nargs="+", choices=SIZES, default=list(SIZES))
+    parser.add_argument("--sizes", type=int, nargs="+", choices=SIZES, default=[2048, 4096])
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--samples", type=int, default=30)
     parser.add_argument("--opencv-threads", type=int, default=None)
@@ -210,6 +210,8 @@ def main(argv=None):
         "cases": []}
     rng = np.random.default_rng(20261015)
     for size in SIZES:
+        if size > max(args.sizes):
+            break
         shape = (size * 2 // 3, size, 3)
         base = rng.integers(40, 216, shape, dtype=np.uint8)
         noisy = np.bitwise_xor(base, rng.integers(0, 2, shape, dtype=np.uint8))

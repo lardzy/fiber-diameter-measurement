@@ -1,0 +1,148 @@
+[
+  {
+    "name": "manual-statistics",
+    "args": [
+      "scripts/benchmark_cu_live_measurement.py",
+      "--modes",
+      "manual",
+      "statistics",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/manual-statistics.json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.7159168720245361,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/manual-statistics.log"
+  },
+  {
+    "name": "motion",
+    "args": [
+      "scripts/validation/benchmark_cu_motion.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/motion.json"
+    ],
+    "exit_code": 0,
+    "seconds": 5.260941743850708,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/motion.log"
+  },
+  {
+    "name": "ui-stable",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "stable",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-stable.json"
+    ],
+    "exit_code": 0,
+    "seconds": 17.39640188217163,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-stable.log"
+  },
+  {
+    "name": "ui-dynamic",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "lsb-noise",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-dynamic.json"
+    ],
+    "exit_code": 0,
+    "seconds": 16.839744091033936,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-dynamic.log"
+  },
+  {
+    "name": "ui-joint-stable",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "stable",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-joint-stable.json",
+      "--background-automatic",
+      "multiscale"
+    ],
+    "exit_code": 0,
+    "seconds": 21.462088108062744,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-joint-stable.log"
+  },
+  {
+    "name": "ui-joint-dynamic",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "lsb-noise",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-joint-dynamic.json",
+      "--background-automatic",
+      "multiscale"
+    ],
+    "exit_code": 0,
+    "seconds": 20.761574745178223,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/ui-joint-dynamic.log"
+  },
+  {
+    "name": "png-pair",
+    "args": [
+      "scripts/validation/benchmark_cu_png_stream_pair.py",
+      "--reference",
+      "build/cu-live-optimization/reference/png_stream_r4.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/png-pair.json"
+    ],
+    "exit_code": 0,
+    "seconds": 47.687376260757446,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/png-pair.log"
+  },
+  {
+    "name": "motion-stages",
+    "args": [
+      "scripts/validation/profile_cu_motion_stages.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/motion-stages.json"
+    ],
+    "exit_code": 0,
+    "seconds": 3.938120126724243,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/motion-stages.log"
+  },
+  {
+    "name": "workspace-4k-short",
+    "args": [
+      "scripts/validation/soak_cu_workspace.py",
+      "--size",
+      "4096",
+      "--duration-seconds",
+      "60",
+      "--minimum-accepted",
+      "100",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/workspace-4k-short.json"
+    ],
+    "exit_code": 0,
+    "seconds": 60.78728413581848,
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/workspace-4k-short.log"
+  }
+]

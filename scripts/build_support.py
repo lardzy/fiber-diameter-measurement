@@ -833,6 +833,7 @@ def _release_dependency_versions() -> dict[str, str]:
         "scipy",
         "lazy-loader",
         "Pillow",
+        "zlib-ng",
         "tifffile",
         "openpyxl",
         "et_xmlfile",

@@ -1,0 +1,22 @@
+...FF..........                                                          [100%]
+=================================== FAILURES ===================================
+____ test_image_page_fits_supported_small_workspace_without_scrolling[dark] ____
+tests/test_export_options_dialog.py:177: in test_image_page_fits_supported_small_workspace_without_scrolling
+    assert page.verticalScrollBar().maximum() == 0
+E   assert 9 == 0
+E    +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x13103f480>()
+E    +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x13103f480> = <PySide6.QtWidgets.QScrollBar(0x600002c5f0c0) at 0x13103f480>.maximum
+E    +      where <PySide6.QtWidgets.QScrollBar(0x600002c5f0c0) at 0x13103f480> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x131025a40>()
+E    +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x131025a40> = <PySide6.QtWidgets.QScrollArea(0x174e828a0) at 0x131025a40>.verticalScrollBar
+___ test_image_page_fits_supported_small_workspace_without_scrolling[light] ____
+tests/test_export_options_dialog.py:177: in test_image_page_fits_supported_small_workspace_without_scrolling
+    assert page.verticalScrollBar().maximum() == 0
+E   assert 9 == 0
+E    +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x1310ee300>()
+E    +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x1310ee300> = <PySide6.QtWidgets.QScrollBar(0x600002c31440) at 0x1310ee300>.maximum
+E    +      where <PySide6.QtWidgets.QScrollBar(0x600002c31440) at 0x1310ee300> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x1310ed740>()
+E    +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x1310ed740> = <PySide6.QtWidgets.QScrollArea(0x17988aec0) at 0x1310ed740>.verticalScrollBar
+=========================== short test summary info ============================
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]
+2 failed, 13 passed in 0.83s

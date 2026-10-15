@@ -1,0 +1,122 @@
+[
+  {
+    "path": "THIRD_PARTY_NOTICES.md",
+    "sha256": "4b0b7674040b242927ac2d9d7bab72e9ed6e68255452b666017739646b88a36d"
+  },
+  {
+    "path": "native/kernels.cpp",
+    "sha256": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e"
+  },
+  {
+    "path": "packaging/pyinstaller/fdm_onedir.spec",
+    "sha256": "cacde67a1408ae137a24db400a1955d610a52be58ca10d46bb9431307ac99361"
+  },
+  {
+    "path": "pyproject.toml",
+    "sha256": "aa41d6411a46e29a64eeea3fe81883c6d99658eabc29f800fa920b2baa9643d4"
+  },
+  {
+    "path": "runtime_assets.toml",
+    "sha256": "c76911f0220aa069f4941747ff81058d8ec34fe1a60759d06cb977e974da7ed4"
+  },
+  {
+    "path": "scripts/benchmark_cu_live_measurement.py",
+    "sha256": "5d0a4b9a953253e1bbe63e27bce021eea2fdd3bcb45a9fd74d61864d92c0a653"
+  },
+  {
+    "path": "scripts/benchmark_cu_live_ui.py",
+    "sha256": "ac4a09bcc08e7db9f6f5b572ba33887b625a2430c9b71e39b03bd6c247bc7d0b"
+  },
+  {
+    "path": "scripts/build_support.py",
+    "sha256": "b70628fad2c043ad617ac3ca747c2a2f5bbacc79d037d47f72876b36fc39c9f6"
+  },
+  {
+    "path": "scripts/probe_cu_automatic_frozen.py",
+    "sha256": "a2095f8f5b86396e6b9ab64d64ae0861494b77b0caf0d72d0c21946bd22fdc48"
+  },
+  {
+    "path": "scripts/validation/benchmark_cu_motion.py",
+    "sha256": "607540943c6e56c374880e7a46fdb025dfe456e6b775f75c7a029b6d4a4989ea"
+  },
+  {
+    "path": "scripts/validation/benchmark_cu_png.py",
+    "sha256": "68e4da8afdb934f3161172d1c70f88d9e37e2026b8b5678148d5b980bd44d36f"
+  },
+  {
+    "path": "scripts/validation/profile_cu_motion_stages.py",
+    "sha256": "3d92c0512a8a9f9839219965098f5a5bd127d1c9298a3b536631ddc3a6063253"
+  },
+  {
+    "path": "scripts/validation/soak_cu_workspace.py",
+    "sha256": "d840ef80310e1cacc774a8017298e0646b04feae27b55636049067d9498f6ad3"
+  },
+  {
+    "path": "src/fdm/live_experiment/controller.py",
+    "sha256": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2"
+  },
+  {
+    "path": "src/fdm/live_experiment/motion.py",
+    "sha256": "54d426bc3233157394c060be29f42f3bbd0c75af71f349880c38e5cf939bf7bb"
+  },
+  {
+    "path": "src/fdm/live_experiment/png_stream.py",
+    "sha256": "11fc050eb76c0097991efd37f2f5f5c52ec1f3adec350c825a812b84a31c93d6"
+  },
+  {
+    "path": "src/fdm/services/cu_automatic_worker.py",
+    "sha256": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8"
+  },
+  {
+    "path": "src/fdm/services/cu_live_self_check.py",
+    "sha256": "646a00d04ea298481635e5b75c3a62d47018e9f6b62f65df268534033cc5c7ef"
+  },
+  {
+    "path": "src/fdm/ui/live_experiment_workspace.py",
+    "sha256": "f7dceb89712fd823670dfdf0d82ae6aa7827e51aa1f47bd7974b0c0e0df15724"
+  },
+  {
+    "path": "tests/test_build_support.py",
+    "sha256": "52dc940a75206776510f26718adbfae492a83824b00a61554159fbfa0c818f40"
+  },
+  {
+    "path": "tests/test_build_windows_onedir.py",
+    "sha256": "70cd22f58bc124bf4ec5432f3e18053ea7477f802e98a827beb66195d80f4461"
+  },
+  {
+    "path": "tests/test_cu_automatic_worker.py",
+    "sha256": "f3edd0ac9b597f31d343442f379d7fffc860d0dd3a1918efc0506abfc0805f74"
+  },
+  {
+    "path": "tests/test_cu_live_self_check.py",
+    "sha256": "2858d0d95f6daf392456452d62f90628daec8ea151a1e66f2e0463935b41af77"
+  },
+  {
+    "path": "tests/test_live_experiment_png_stream.py",
+    "sha256": "df63cc45e50126d484af0c222693dcc35d6f91b481f86072e3dcb23b03d064f7"
+  },
+  {
+    "path": "tests/test_release_self_check.py",
+    "sha256": "374068f90f944ff9952a4037ee9143c600be398e0d2adfbdabfb3846de8539b3"
+  },
+  {
+    "path": "uv.lock",
+    "sha256": "2bf8eed62f2b70ba949af0ff245e1587eb799920a7b5a03ac2c222ee4f0fb906"
+  },
+  {
+    "path": "src/fdm/_native/licenses/zlib-ng.txt",
+    "sha256": "45413e194984348a88b874963d9b9b5090f248008acf7bbf05d48f7e7d04d4c3"
+  },
+  {
+    "path": "tests/test_live_experiment_motion_preparation.py",
+    "sha256": "38b6f977efb84e2446e84b7a05556a6cfebd5e85087a7e2abdb9c8c9eb5ad574"
+  },
+  {
+    "path": "tests/test_live_experiment_motion_pipeline.py",
+    "sha256": "c13cd76945acc33fe0413aea2b2a4aa93cd275c42842d5c00751169be3fab00a"
+  },
+  {
+    "path": "scripts/validation/benchmark_cu_png_stream_pair.py",
+    "sha256": "451ba99572fd246767a5fb4704105b34ed0db343f0cca3948e052dc85be12065"
+  }
+]

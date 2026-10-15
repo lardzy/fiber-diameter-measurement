@@ -23,7 +23,7 @@
 
 画面沿用恢复的 CU 类别颜色，标记格式为“场内序号 [类别号]”，配高对比标签；滚轮缩放、中键平移、双击中键或“适应画面”恢复显示。变换显示取消未完成手势，已入账历史不受影响。详细迁移对照见 [CU 操作过渡说明](cu-live-transition.md)。
 
-入账前必须核验当前最新已显示帧。核验期间显示又向前推进时，核验目标也随之推进，但等待起点不重置；超过两秒明确拒绝本次入账。该规则同样适用于越限保留和整批全图确认。不会为了持续噪声输入下的吞吐量，允许未经检查的新画面绕过移动清场规则。
+入账前必须核验当前最新已显示帧。生产工作区将灰度／频谱预处理和有序判定分为两个后台阶段，画布持续接收已完成核验的帧，实际绘制后才登记已显示帧。新到但尚未显示的帧不会延后当前入账；显示又向前推进时，核验目标也随之推进，但等待起点不重置；超过两秒明确拒绝本次入账。该规则同样适用于越限保留和整批全图确认。不会为了持续噪声输入下的吞吐量，允许未经检查的新画面绕过移动清场规则。
 
 遇到暂停先看状态栏：视场移动时等待“视场就绪”后重新测量；核验超时的结果未入账，稳定后重测。缓冲暂满时等待任务或原图写入释放，不必点“新视场”，已有记录不会因此清除。来源不可用时检查连接并重新选择来源、核对标定；若提示旧来源仍在释放资源，稍后重试切换或关闭。
 
@@ -47,12 +47,12 @@
 - `live_experiment/controller.py`：手势、异步顺序提交、运动屏障、视场版本、入账、候选审核。
 - `live_experiment/motion.py`：CU 参考比较与相邻帧变化；生产修正有符号强变化计数。
 - `live_experiment/models.py`、`statistics.py`：试验账本、增量统计、撤销／重做、方法和材料快照。
-- `live_experiment/evidence.py`、`png_stream.py`、`project_assets.py`：异步证据、逐行无损编码、去重、摘要验证与项目资源落盘；另存为成功后同步更新历史原图引用。
+- `live_experiment/evidence.py`、`png_stream.py`、`project_assets.py`：异步证据、分块无损编码、去重、摘要验证与项目资源落盘；另存为成功后同步更新历史原图引用。
 - `live_experiment/sources.py`、`capture_helper.py`：相机与 CU 来源、世代、断流与共享内存桥。
 - `native/cu_manual.cpp`、`native/cu_automatic.cpp`：计算内核；`native/windows_capture.cpp` 独立编译为 Windows 捕获扩展。
 - `ui/live_experiment_workspace.py`：独立工作区；主窗口只负责入口和项目生命周期。
 
-512 MiB 预算计入保留帧、共享采集余量和 PNG 编码工作区。逐行 PNG 不创建完整 RGB 副本或完整压缩数组；工作区按 2 MiB 加两条扫描行预留，同一串行写入器取最大值，独立写入器相加。该预算是应用缓冲账本，不是整个进程的操作系统内存上限；Qt、SDK、算法、Python 账本和驱动仍需分别纳入实际峰值报告。
+512 MiB 预算计入保留帧、共享采集余量和 PNG 编码工作区。分块 PNG 不创建完整 RGB 副本或完整压缩数组；工作区按 2 MiB 加两块扫描行预留，同一串行写入器取最大值，独立写入器相加。编码器固定使用 zlib-ng 1.0.0；不易压缩的图像使用标准 PNG 的无压缩 DEFLATE 数据块，以文件体积换取写入速度，像素及透明度不变。该预算是应用缓冲账本，不是整个进程的操作系统内存上限；Qt、SDK、算法、Python 账本和驱动仍需分别纳入实际峰值报告。
 
 ## 构建与复现
 
@@ -71,13 +71,13 @@ Windows 实际 Qt 工作区的采样使用以下 PowerShell 命令，在没有�
 ```powershell
 $env:QT_QPA_PLATFORM = "windows"
 python scripts/benchmark_cu_live_ui.py --motion-input lsb-noise --output results/cu-live-ui-windows.json
-python scripts/validation/soak_cu_workspace.py --qt-platform windows --output results/cu-live-hour-windows.json
+python scripts/validation/soak_cu_workspace.py --qt-platform windows --size 4096 --duration-seconds 600 --minimum-accepted 2000 --output results/cu-live-2000-windows.json
 ```
 
-后一条默认运行真实 QPainter／QTest 工作区一小时、30 Hz 输入、每秒四次测量尝试、原图保存和每十秒一次传统全图分析。macOS 可显式使用 `--qt-platform offscreen`，其结果不替代 Windows 桌面验收。旧 `benchmark_cu_live_measurement.py --modes soak` 是无真实画布的控制器诊断，不能用来替代这项验收；程序退出码也不能替代报告中的性能门槛判定。
+后一条按实际通常不超过 2,000 根的使用规模，在 4096×2730 分辨率运行真实 QPainter／QTest 工作区十分钟，以至少 2,000 条为目标，包含 30 Hz 输入、每秒四次测量尝试、原图保存和每十秒一次传统全图分析。没有给产品增加 2,000 条上限。macOS 可显式使用 `--qt-platform offscreen`，其结果不替代 Windows 桌面验收。旧 `benchmark_cu_live_measurement.py --modes soak` 是无真实画布的控制器诊断，不能用来替代这项验收；程序退出码也不能替代报告中的性能门槛判定。
 
 回放 CU 原金样需要外部证据目录 `/Volumes/LARD/cu_reverse`（Windows 使用同步后的验证子目录），不将旧软件二进制或原实验文件嵌入发行包。正式采样需在正确性测试结束后串行运行，固定来源摘要、环境、线程、预热和采样次数。
 
 ## 验收边界
 
-本目录的实现说明不等于验收结论。画面持续更新也不等于测量已经入账；高分辨率动态输入可能触发核验超时，须分别检查测量成功率和延迟。实际测试、性能、Windows 包路径和已知差异以 `docs/validation/cu-live-measurement-2026-10-15/` 报告为准。Parallels 的窗口捕获与安装包测试不能替代真实相机／采集卡、30 FPS 设备流、带时间戳运动录像以及物理计量验证。
+本目录的实现说明不等于验收结论。画面持续更新也不等于测量已经入账；高分辨率动态输入可能触发核验超时，须分别检查测量成功率和延迟。本轮按 4K 为优化上限，默认短程采样为 2K／4K；不新增产品分辨率硬限制。4K 优化复测见 [本轮报告](validation/cu-live-performance-4k-2026-10-15/REPORT.md)，此前测试、Windows 包路径和已知差异保留在 `docs/validation/cu-live-measurement-2026-10-15/`。Parallels 的窗口捕获与安装包测试不能替代真实相机／采集卡、30 FPS 设备流、带时间戳运动录像以及物理计量验证。

@@ -49,7 +49,7 @@ def main():
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--samples", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=5)
-    parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096, 6144])
+    parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096])
     parser.add_argument("--opencv-threads", type=int, default=None)
     args = parser.parse_args()
     if args.opencv_threads is not None:

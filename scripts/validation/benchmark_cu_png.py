@@ -33,7 +33,7 @@ def inputs(width):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--size", type=int, default=6144)
+    parser.add_argument("--size", type=int, default=4096)
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--samples", type=int, default=10)
     args = parser.parse_args()

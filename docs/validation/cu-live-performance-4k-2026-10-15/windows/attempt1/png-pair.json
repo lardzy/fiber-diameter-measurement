@@ -1,0 +1,2840 @@
+{
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "ARM64",
+    "processor": "ARMv8 (64-bit) Family 8 Model 0 Revision   0,  ",
+    "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+    "cpu_count": 4,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": null,
+      "psutil": "7.2.2",
+      "zlib-ng": "1.0.0"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 4,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": null,
+    "source_sha256": {
+      "native\\cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+      "native\\cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native\\cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native\\cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native\\kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+      "native\\windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src\\fdm\\live_experiment\\__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src\\fdm\\live_experiment\\capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src\\fdm\\live_experiment\\controller.py": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2",
+      "src\\fdm\\live_experiment\\evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+      "src\\fdm\\live_experiment\\exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src\\fdm\\live_experiment\\frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+      "src\\fdm\\live_experiment\\models.py": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "src\\fdm\\live_experiment\\motion.py": "54d426bc3233157394c060be29f42f3bbd0c75af71f349880c38e5cf939bf7bb",
+      "src\\fdm\\live_experiment\\persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src\\fdm\\live_experiment\\png_stream.py": "11fc050eb76c0097991efd37f2f5f5c52ec1f3adec350c825a812b84a31c93d6",
+      "src\\fdm\\live_experiment\\presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src\\fdm\\live_experiment\\project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+      "src\\fdm\\live_experiment\\sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src\\fdm\\live_experiment\\statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src\\fdm\\live_experiment\\window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src\\fdm\\services\\cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src\\fdm\\services\\cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+      "src\\fdm\\services\\cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "9c67da55c36bfd33c6f3d128d7d4e1e0e56f4f1090bfdacd0f8824625f4acc89",
+      "python_abi": "cpython-312",
+      "python_version": "3.12.13",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "MSVC 1944"
+    }
+  },
+  "warmup": 5,
+  "samples": 30,
+  "reference_sha256": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+  "benchmark_sha256": "451ba99572fd246767a5fb4704105b34ed0db343f0cca3948e052dc85be12065",
+  "cases": [
+    {
+      "width": 2048,
+      "scenario": "uniform_stripes",
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "a43ef203a6a1eff42a0dfaf4ac03118ddc11df35de5dcf44627ad2ddc7ad7b73",
+      "production_compression_level": 1,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 13430,
+          "sha256": "0842780bbf2db2c2ddaac91d4aa78a7b138c3da33497c6511f0b66703b39b495",
+          "workspace_bytes": 2109441,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 86709,
+          "sha256": "60103eae0eefbaff36d1ad13017779d6d77394960f7a947e35ab4a9f315b34e4",
+          "workspace_bytes": 2613290,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.7495,
+          "production_ms": 8.966125
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.545333,
+          "r4_reference_ms": 28.617875
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.020291,
+          "production_ms": 8.542459
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.439916,
+          "r4_reference_ms": 27.031042
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.099208,
+          "production_ms": 8.446583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 11.90675,
+          "r4_reference_ms": 27.031833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 31.111834,
+          "production_ms": 8.529375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.443959,
+          "r4_reference_ms": 29.93125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.01675,
+          "production_ms": 8.230709
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.316292,
+          "r4_reference_ms": 27.012208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 30.1165,
+          "production_ms": 8.354958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.339834,
+          "r4_reference_ms": 27.062792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 30.413375,
+          "production_ms": 8.662458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.616084,
+          "r4_reference_ms": 26.565125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 26.709584,
+          "production_ms": 8.641417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.463333,
+          "r4_reference_ms": 26.280125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 29.70275,
+          "production_ms": 8.308959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.366958,
+          "r4_reference_ms": 31.007708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 28.452709,
+          "production_ms": 8.499083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.312083,
+          "r4_reference_ms": 26.769084
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 30.092875,
+          "production_ms": 8.38675
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.163,
+          "r4_reference_ms": 29.7315
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 26.607042,
+          "production_ms": 8.09275
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 7.912416,
+          "r4_reference_ms": 26.770416
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.917,
+          "production_ms": 8.28575
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.178583,
+          "r4_reference_ms": 27.014917
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.227625,
+          "production_ms": 8.034792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.067959,
+          "r4_reference_ms": 27.104292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.442291,
+          "production_ms": 8.295084
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 11.49525,
+          "r4_reference_ms": 27.29625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.4425,
+          "production_ms": 8.413166
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.267209,
+          "r4_reference_ms": 30.485375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 27.298792,
+          "production_ms": 7.962083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 8.059708,
+          "r4_reference_ms": 27.248916
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 30.216125,
+          "production_ms": 7.98525
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 27.297521,
+          "p95_ms": 30.772658149999998,
+          "p99_ms": 31.081637460000003,
+          "max_ms": 31.111834,
+          "samples_ms": [
+            27.031833,
+            31.111834,
+            29.93125,
+            27.01675,
+            27.012208,
+            30.1165,
+            27.062792,
+            30.413375,
+            26.565125,
+            26.709584,
+            26.280125,
+            29.70275,
+            31.007708,
+            28.452709,
+            26.769084,
+            30.092875,
+            29.7315,
+            26.607042,
+            26.770416,
+            27.917,
+            27.014917,
+            27.227625,
+            27.104292,
+            27.442291,
+            27.29625,
+            27.4425,
+            30.485375,
+            27.298792,
+            27.248916,
+            30.216125
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 8.3141875,
+          "p95_ms": 10.220493599999992,
+          "p99_ms": 11.787415000000001,
+          "max_ms": 11.90675,
+          "samples_ms": [
+            11.90675,
+            8.529375,
+            8.443959,
+            8.230709,
+            8.316292,
+            8.354958,
+            8.339834,
+            8.662458,
+            8.616084,
+            8.641417,
+            8.463333,
+            8.308959,
+            8.366958,
+            8.499083,
+            8.312083,
+            8.38675,
+            8.163,
+            8.09275,
+            7.912416,
+            8.28575,
+            8.178583,
+            8.034792,
+            8.067959,
+            8.295084,
+            11.49525,
+            8.413166,
+            8.267209,
+            7.962083,
+            8.059708,
+            7.98525
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 3.1569399580039317,
+        "process_cpu_seconds": 2.84375,
+        "before": {
+          "process_cpu_seconds": 0.3125,
+          "python_threads": 1,
+          "rss_bytes": 74567680,
+          "native_threads": 8,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 74567680,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.15625,
+          "python_threads": 1,
+          "rss_bytes": 76595200,
+          "native_threads": 8,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 76595200,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 29,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 90525696,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 90525696,
+        "sampled_max_native_threads": 9,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 2048,
+      "scenario": "stripes_one_bit_noise",
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "ad4e14331aeabab50d88e5d13c1bb7a2f29b902587ada38480ea1f485264461e",
+      "production_compression_level": 1,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 1922626,
+          "sha256": "70a68eba66d93f4f9e64cfb29e5dfed05c6ea2d5d5a169f7eb514feeb665a260",
+          "workspace_bytes": 2109441,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 3383167,
+          "sha256": "44ddb8a4d7297552626021c5bcd48765afd9884fc471e5f4144ad6530ce7f7ae",
+          "workspace_bytes": 2613290,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.51475,
+          "production_ms": 49.681125
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.790333,
+          "r4_reference_ms": 142.357833
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 143.268625,
+          "production_ms": 46.607584
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.652167,
+          "r4_reference_ms": 143.644334
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.220709,
+          "production_ms": 47.298959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.55625,
+          "r4_reference_ms": 142.115125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.840916,
+          "production_ms": 46.892458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 46.583709,
+          "r4_reference_ms": 142.565459
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.815584,
+          "production_ms": 43.548167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 46.571125,
+          "r4_reference_ms": 146.937333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 141.88375,
+          "production_ms": 43.286875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 43.261209,
+          "r4_reference_ms": 145.817125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 141.959167,
+          "production_ms": 43.243667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 43.36825,
+          "r4_reference_ms": 146.168083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.148583,
+          "production_ms": 43.268959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 43.406833,
+          "r4_reference_ms": 148.251875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 147.9205,
+          "production_ms": 48.554375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 44.354292,
+          "r4_reference_ms": 143.413708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 144.914542,
+          "production_ms": 44.8005
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 44.080375,
+          "r4_reference_ms": 146.485042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 148.96025,
+          "production_ms": 44.013958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 44.038458,
+          "r4_reference_ms": 142.147458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 144.933167,
+          "production_ms": 46.979083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 43.853792,
+          "r4_reference_ms": 161.646666
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 145.113875,
+          "production_ms": 46.3385
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.868416,
+          "r4_reference_ms": 142.548125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.255375,
+          "production_ms": 46.860041
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.734459,
+          "r4_reference_ms": 149.044292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 143.363709,
+          "production_ms": 43.832167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.290625,
+          "r4_reference_ms": 143.422458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 142.694416,
+          "production_ms": 44.728125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.429875,
+          "r4_reference_ms": 142.226292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 141.347334,
+          "production_ms": 44.4365
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 47.322167,
+          "r4_reference_ms": 142.033708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 141.292167,
+          "production_ms": 44.127625
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 143.10231249999998,
+          "p95_ms": 149.0064731,
+          "p99_ms": 157.99197754000002,
+          "max_ms": 161.646666,
+          "samples_ms": [
+            142.115125,
+            142.840916,
+            142.565459,
+            142.815584,
+            146.937333,
+            141.88375,
+            145.817125,
+            141.959167,
+            146.168083,
+            142.148583,
+            148.251875,
+            147.9205,
+            143.413708,
+            144.914542,
+            146.485042,
+            148.96025,
+            142.147458,
+            144.933167,
+            161.646666,
+            145.113875,
+            142.548125,
+            142.255375,
+            149.044292,
+            143.363709,
+            143.422458,
+            142.694416,
+            142.226292,
+            141.347334,
+            142.033708,
+            141.292167
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 44.5823125,
+          "p95_ms": 47.80813535,
+          "p99_ms": 48.35544689,
+          "max_ms": 48.554375,
+          "samples_ms": [
+            47.55625,
+            46.892458,
+            46.583709,
+            43.548167,
+            46.571125,
+            43.286875,
+            43.261209,
+            43.243667,
+            43.36825,
+            43.268959,
+            43.406833,
+            48.554375,
+            44.354292,
+            44.8005,
+            44.080375,
+            44.013958,
+            44.038458,
+            46.979083,
+            43.853792,
+            46.3385,
+            47.868416,
+            46.860041,
+            47.734459,
+            43.832167,
+            47.290625,
+            44.728125,
+            47.429875,
+            44.4365,
+            47.322167,
+            44.127625
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 9.941971000000194,
+        "process_cpu_seconds": 9.734375,
+        "before": {
+          "process_cpu_seconds": 3.1875,
+          "python_threads": 1,
+          "rss_bytes": 88592384,
+          "native_threads": 8,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 88592384,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 12.921875,
+          "python_threads": 1,
+          "rss_bytes": 89751552,
+          "native_threads": 7,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 89751552,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 90,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 107552768,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 107552768,
+        "sampled_max_native_threads": 9,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 2048,
+      "scenario": "gradient_with_noise",
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "957514076ecf3b6cc7b37a3bd33258bd3ee763d8a170b50746d364f01927af23",
+      "production_compression_level": 0,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 5671664,
+          "sha256": "e140bd39099bdc4b63452459f140dce05a695bd3b16620af937632fb89641eeb",
+          "workspace_bytes": 2109441,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 8389039,
+          "sha256": "ee010c240451c4b05f5086efed6a5e42a0c762566123e1ef4341c846c88ae6d7",
+          "workspace_bytes": 2613290,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 149.767625,
+          "production_ms": 26.881333
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.776041,
+          "r4_reference_ms": 152.172416
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 150.353375,
+          "production_ms": 27.053666
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.529542,
+          "r4_reference_ms": 151.955542
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 150.520167,
+          "production_ms": 26.749125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.454041,
+          "r4_reference_ms": 152.501833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 150.958959,
+          "production_ms": 26.529875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.78925,
+          "r4_reference_ms": 151.032041
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 149.507625,
+          "production_ms": 27.04225
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.836333,
+          "r4_reference_ms": 149.465167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 149.680625,
+          "production_ms": 27.277167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.3565,
+          "r4_reference_ms": 150.152334
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 151.427084,
+          "production_ms": 27.355334
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.068042,
+          "r4_reference_ms": 150.472792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 149.233875,
+          "production_ms": 26.86425
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.841042,
+          "r4_reference_ms": 149.214708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 148.803584,
+          "production_ms": 31.055042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.98775,
+          "r4_reference_ms": 153.59175
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 152.370167,
+          "production_ms": 27.164417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.726416,
+          "r4_reference_ms": 150.005916
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 158.030625,
+          "production_ms": 27.387125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 30.851708,
+          "r4_reference_ms": 150.276125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 150.685,
+          "production_ms": 27.547958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 29.991667,
+          "r4_reference_ms": 173.635917
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 150.673292,
+          "production_ms": 27.608459
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.072,
+          "r4_reference_ms": 151.982417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 148.935542,
+          "production_ms": 26.992542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.756,
+          "r4_reference_ms": 155.644959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 151.546583,
+          "production_ms": 27.075458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.859334,
+          "r4_reference_ms": 151.01475
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 152.284417,
+          "production_ms": 26.858083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.945167,
+          "r4_reference_ms": 152.708667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 151.920625,
+          "production_ms": 26.937125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 26.565,
+          "r4_reference_ms": 151.681667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 151.440417,
+          "production_ms": 26.798042
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 151.0233955,
+          "p95_ms": 156.95707529999999,
+          "p99_ms": 169.11038232,
+          "max_ms": 173.635917,
+          "samples_ms": [
+            152.501833,
+            150.958959,
+            151.032041,
+            149.507625,
+            149.465167,
+            149.680625,
+            150.152334,
+            151.427084,
+            150.472792,
+            149.233875,
+            149.214708,
+            148.803584,
+            153.59175,
+            152.370167,
+            150.005916,
+            158.030625,
+            150.276125,
+            150.685,
+            173.635917,
+            150.673292,
+            151.982417,
+            148.935542,
+            155.644959,
+            151.546583,
+            151.01475,
+            152.284417,
+            152.708667,
+            151.920625,
+            151.681667,
+            151.440417
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 27.1199375,
+          "p95_ms": 30.464689549999996,
+          "p99_ms": 30.99607514,
+          "max_ms": 31.055042,
+          "samples_ms": [
+            28.454041,
+            26.529875,
+            29.78925,
+            27.04225,
+            28.836333,
+            27.277167,
+            29.3565,
+            27.355334,
+            29.068042,
+            26.86425,
+            26.841042,
+            31.055042,
+            27.98775,
+            27.164417,
+            26.726416,
+            27.387125,
+            30.851708,
+            27.547958,
+            29.991667,
+            27.608459,
+            27.072,
+            26.992542,
+            26.756,
+            27.075458,
+            26.859334,
+            26.858083,
+            26.945167,
+            26.937125,
+            26.565,
+            26.798042
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 9.891201083999476,
+        "process_cpu_seconds": 9.625,
+        "before": {
+          "process_cpu_seconds": 13.046875,
+          "python_threads": 1,
+          "rss_bytes": 80502784,
+          "native_threads": 8,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 80502784,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 22.671875,
+          "python_threads": 1,
+          "rss_bytes": 82194432,
+          "native_threads": 7,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 82194432,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 90,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 95420416,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 95420416,
+        "sampled_max_native_threads": 9,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 4096,
+      "scenario": "uniform_stripes",
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "169d2f1e8757234c7538aa842d129f3b622880eeedda98e8bc8ce667be656694",
+      "production_compression_level": 1,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 41935,
+          "sha256": "1422ef6c1ddbdc83a142489bda5735dad1cd6f4cea080972fd45bafb409fb4d3",
+          "workspace_bytes": 2121729,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 337406,
+          "sha256": "33a0880dabdd96c516bddace6d2db965e41179f27135b478abf94f1fb8cb2294",
+          "workspace_bytes": 2613269,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 95.863334,
+          "production_ms": 31.244
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.098791,
+          "r4_reference_ms": 97.788458
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 97.91775,
+          "production_ms": 27.880459
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.922041,
+          "r4_reference_ms": 97.719875
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 97.414542,
+          "production_ms": 27.998583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.082542,
+          "r4_reference_ms": 98.374834
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 98.763875,
+          "production_ms": 27.834292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.975792,
+          "r4_reference_ms": 98.7355
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 99.78525,
+          "production_ms": 27.877875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.083583,
+          "r4_reference_ms": 99.94125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 99.575458,
+          "production_ms": 31.169458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.367084,
+          "r4_reference_ms": 99.862541
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 99.710958,
+          "production_ms": 28.105084
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.351417,
+          "r4_reference_ms": 99.840375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 99.983334,
+          "production_ms": 31.314625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.152833,
+          "r4_reference_ms": 96.046208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 100.452166,
+          "production_ms": 28.60125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.637833,
+          "r4_reference_ms": 97.469458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 99.000625,
+          "production_ms": 30.010458
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.381708,
+          "r4_reference_ms": 94.887792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 98.4155,
+          "production_ms": 27.980125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.309291,
+          "r4_reference_ms": 98.31875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 97.276041,
+          "production_ms": 27.964792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.7265,
+          "r4_reference_ms": 95.2895
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 97.260792,
+          "production_ms": 31.325208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 31.597084,
+          "r4_reference_ms": 100.224333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 94.865625,
+          "production_ms": 30.726375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.844667,
+          "r4_reference_ms": 96.519833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 97.54575,
+          "production_ms": 28.224333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 35.863459,
+          "r4_reference_ms": 93.397291
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 96.939042,
+          "production_ms": 27.977625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 28.161167,
+          "r4_reference_ms": 96.796542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 96.739667,
+          "production_ms": 31.0865
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 27.946709,
+          "r4_reference_ms": 98.091667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 97.518625,
+          "production_ms": 27.798042
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 98.2052085,
+          "p95_ms": 100.11588345,
+          "p99_ms": 100.38609443,
+          "max_ms": 100.452166,
+          "samples_ms": [
+            98.374834,
+            98.763875,
+            98.7355,
+            99.78525,
+            99.94125,
+            99.575458,
+            99.862541,
+            99.710958,
+            99.840375,
+            99.983334,
+            96.046208,
+            100.452166,
+            97.469458,
+            99.000625,
+            94.887792,
+            98.4155,
+            98.31875,
+            97.276041,
+            95.2895,
+            97.260792,
+            100.224333,
+            94.865625,
+            96.519833,
+            97.54575,
+            93.397291,
+            96.939042,
+            96.796542,
+            96.739667,
+            98.091667,
+            97.518625
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 28.19275,
+          "p95_ms": 31.493584,
+          "p99_ms": 34.62621025,
+          "max_ms": 35.863459,
+          "samples_ms": [
+            28.082542,
+            27.834292,
+            27.975792,
+            27.877875,
+            28.083583,
+            31.169458,
+            31.367084,
+            28.105084,
+            28.351417,
+            31.314625,
+            28.152833,
+            28.60125,
+            28.637833,
+            30.010458,
+            28.381708,
+            27.980125,
+            28.309291,
+            27.964792,
+            27.7265,
+            31.325208,
+            31.597084,
+            30.726375,
+            27.844667,
+            28.224333,
+            35.863459,
+            27.977625,
+            28.161167,
+            31.0865,
+            27.946709,
+            27.798042
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 10.87370783300139,
+        "process_cpu_seconds": 10.609375,
+        "before": {
+          "process_cpu_seconds": 22.6875,
+          "python_threads": 1,
+          "rss_bytes": 107044864,
+          "native_threads": 7,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 107044864,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 33.296875,
+          "python_threads": 1,
+          "rss_bytes": 107388928,
+          "native_threads": 7,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 107388928,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 99,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 174493696,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 174493696,
+        "sampled_max_native_threads": 9,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 4096,
+      "scenario": "stripes_one_bit_noise",
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "7716a02c8dece2e3c02811434e5cc1a65695847f5aaa9c14c8dd6821bbce0300",
+      "production_compression_level": 1,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 7675954,
+          "sha256": "a616cec49f0f62122f855e892e3ce7288b43e3a27190762edc803e1d98e74835",
+          "workspace_bytes": 2121729,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 13516857,
+          "sha256": "9393b9137ab26c07b44032e8e58a1d6e90e7782889046fdf7eae73bea44707d8",
+          "workspace_bytes": 2613269,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 549.2575,
+          "production_ms": 176.488208
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 175.188958,
+          "r4_reference_ms": 546.8895
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 549.239375,
+          "production_ms": 170.007542
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 174.702292,
+          "r4_reference_ms": 549.206541
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 559.372625,
+          "production_ms": 178.065459
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.966792,
+          "r4_reference_ms": 547.668083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 551.796541,
+          "production_ms": 171.639667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 171.920041,
+          "r4_reference_ms": 557.703166
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 546.393834,
+          "production_ms": 171.016542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.607458,
+          "r4_reference_ms": 550.485667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 547.132958,
+          "production_ms": 173.730917
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 173.01825,
+          "r4_reference_ms": 547.103416
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 547.120875,
+          "production_ms": 170.009917
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.524625,
+          "r4_reference_ms": 553.299167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 549.045709,
+          "production_ms": 171.2035
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.686375,
+          "r4_reference_ms": 548.883666
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 546.548084,
+          "production_ms": 177.314542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 173.227459,
+          "r4_reference_ms": 545.505125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 547.524125,
+          "production_ms": 175.35325
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 174.229459,
+          "r4_reference_ms": 577.431375
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 546.464916,
+          "production_ms": 169.61875
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.311458,
+          "r4_reference_ms": 542.595083
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 546.078916,
+          "production_ms": 169.813708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 171.161833,
+          "r4_reference_ms": 559.643792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 564.689875,
+          "production_ms": 170.206333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.717625,
+          "r4_reference_ms": 544.369542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 548.7245,
+          "production_ms": 170.177208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 172.423417,
+          "r4_reference_ms": 543.758833
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 549.147583,
+          "production_ms": 215.160625
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.82575,
+          "r4_reference_ms": 551.556917
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 556.644625,
+          "production_ms": 170.128667
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 170.935417,
+          "r4_reference_ms": 542.948
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 547.747583,
+          "production_ms": 174.512959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 178.34025,
+          "r4_reference_ms": 548.161583
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 543.551208,
+          "production_ms": 174.180209
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 547.7078329999999,
+          "p95_ms": 562.41913765,
+          "p99_ms": 573.73634,
+          "max_ms": 577.431375,
+          "samples_ms": [
+            547.668083,
+            551.796541,
+            557.703166,
+            546.393834,
+            550.485667,
+            547.132958,
+            547.103416,
+            547.120875,
+            553.299167,
+            549.045709,
+            548.883666,
+            546.548084,
+            545.505125,
+            547.524125,
+            577.431375,
+            546.464916,
+            542.595083,
+            546.078916,
+            559.643792,
+            564.689875,
+            544.369542,
+            548.7245,
+            543.758833,
+            549.147583,
+            551.556917,
+            556.644625,
+            542.948,
+            547.747583,
+            548.161583,
+            543.551208
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 171.08918749999998,
+          "p95_ms": 177.87868139999998,
+          "p99_ms": 204.48271625000004,
+          "max_ms": 215.160625,
+          "samples_ms": [
+            170.966792,
+            171.639667,
+            171.920041,
+            171.016542,
+            170.607458,
+            173.730917,
+            173.01825,
+            170.009917,
+            170.524625,
+            171.2035,
+            170.686375,
+            177.314542,
+            173.227459,
+            175.35325,
+            174.229459,
+            169.61875,
+            170.311458,
+            169.813708,
+            171.161833,
+            170.206333,
+            170.717625,
+            170.177208,
+            172.423417,
+            215.160625,
+            170.82575,
+            170.128667,
+            170.935417,
+            174.512959,
+            178.34025,
+            174.180209
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 37.385455208001076,
+        "process_cpu_seconds": 37.03125,
+        "before": {
+          "process_cpu_seconds": 33.4375,
+          "python_threads": 1,
+          "rss_bytes": 140627968,
+          "native_threads": 7,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 140627968,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 70.46875,
+          "python_threads": 1,
+          "rss_bytes": 139386880,
+          "native_threads": 4,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 139386880,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 336,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 214040576,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 214040576,
+        "sampled_max_native_threads": 9,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    },
+    {
+      "width": 4096,
+      "scenario": "gradient_with_noise",
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "53186de2b0d1da9763f9f66d1b7cb565bdbc47ad1e61282ed86a377bc11daf0d",
+      "production_compression_level": 0,
+      "outputs": {
+        "r4_reference": {
+          "bytes": 22677556,
+          "sha256": "c99ac4368d45320b7f149ba1cb3869826f390bf4f38b68b8d444516635cef079",
+          "workspace_bytes": 2121729,
+          "encoder": "png-row-sub-rle-v1"
+        },
+        "production": {
+          "bytes": 33553198,
+          "sha256": "4e6bc7a34cf1392492d10bbfeb70409f2c274d10a5c3ac49274204d04fcf3a68",
+          "workspace_bytes": 2613269,
+          "encoder": "png-block-fast-v2"
+        }
+      },
+      "exact_roundtrips": {
+        "r4_reference": 35,
+        "production": 35
+      },
+      "trials": [
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 577.412375,
+          "production_ms": 99.675083
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 103.763042,
+          "r4_reference_ms": 570.207375
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 578.462666,
+          "production_ms": 102.788875
+        },
+        {
+          "warmup": true,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 101.668708,
+          "r4_reference_ms": 572.139708
+        },
+        {
+          "warmup": true,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 571.186542,
+          "production_ms": 98.306041
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 101.750166,
+          "r4_reference_ms": 568.19075
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 570.892625,
+          "production_ms": 102.204542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 102.97375,
+          "r4_reference_ms": 587.919417
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 570.954292,
+          "production_ms": 102.864042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 103.931041,
+          "r4_reference_ms": 573.768125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 572.237583,
+          "production_ms": 100.808834
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 112.8155,
+          "r4_reference_ms": 578.002167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 643.175709,
+          "production_ms": 101.249708
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 103.59325,
+          "r4_reference_ms": 571.448542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 571.456416,
+          "production_ms": 100.676042
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 101.192833,
+          "r4_reference_ms": 569.164084
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 580.280709,
+          "production_ms": 102.807167
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 104.674125,
+          "r4_reference_ms": 571.177292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 577.51375,
+          "production_ms": 98.351041
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 102.274875,
+          "r4_reference_ms": 573.511209
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 568.765292,
+          "production_ms": 102.221125
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 114.966625,
+          "r4_reference_ms": 588.747084
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 893.270333,
+          "production_ms": 107.868541
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 102.392375,
+          "r4_reference_ms": 578.644958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 567.97275,
+          "production_ms": 101.874792
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 98.84575,
+          "r4_reference_ms": 569.354
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 664.105166,
+          "production_ms": 118.365958
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 140.9445,
+          "r4_reference_ms": 649.520166
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 607.422042,
+          "production_ms": 108.010208
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 112.165625,
+          "r4_reference_ms": 585.742542
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 591.1805,
+          "production_ms": 102.199292
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 105.09175,
+          "r4_reference_ms": 584.062333
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 580.89625,
+          "production_ms": 102.841584
+        },
+        {
+          "warmup": false,
+          "order": [
+            "production",
+            "r4_reference"
+          ],
+          "production_ms": 103.387958,
+          "r4_reference_ms": 583.928959
+        },
+        {
+          "warmup": false,
+          "order": [
+            "r4_reference",
+            "production"
+          ],
+          "r4_reference_ms": 598.081583,
+          "production_ms": 103.251333
+        }
+      ],
+      "metrics": {
+        "r4_reference": {
+          "count": 30,
+          "p50_ms": 578.3235625,
+          "p95_ms": 657.541916,
+          "p99_ms": 826.8124345700003,
+          "max_ms": 893.270333,
+          "samples_ms": [
+            568.19075,
+            570.892625,
+            587.919417,
+            570.954292,
+            573.768125,
+            572.237583,
+            578.002167,
+            643.175709,
+            571.448542,
+            571.456416,
+            569.164084,
+            580.280709,
+            571.177292,
+            577.51375,
+            573.511209,
+            568.765292,
+            588.747084,
+            893.270333,
+            578.644958,
+            567.97275,
+            569.354,
+            664.105166,
+            649.520166,
+            607.422042,
+            585.742542,
+            591.1805,
+            584.062333,
+            580.89625,
+            583.928959,
+            598.081583
+          ]
+        },
+        "production": {
+          "count": 30,
+          "p50_ms": 102.852813,
+          "p95_ms": 116.83625814999999,
+          "p99_ms": 134.39672282000004,
+          "max_ms": 140.9445,
+          "samples_ms": [
+            101.750166,
+            102.204542,
+            102.97375,
+            102.864042,
+            103.931041,
+            100.808834,
+            112.8155,
+            101.249708,
+            103.59325,
+            100.676042,
+            101.192833,
+            102.807167,
+            104.674125,
+            98.351041,
+            102.274875,
+            102.221125,
+            114.966625,
+            107.868541,
+            102.392375,
+            101.874792,
+            98.84575,
+            118.365958,
+            140.9445,
+            108.010208,
+            112.165625,
+            102.199292,
+            105.09175,
+            102.841584,
+            103.387958,
+            103.251333
+          ]
+        }
+      },
+      "resources": {
+        "wall_seconds": 37.98966420899524,
+        "process_cpu_seconds": 37.421875,
+        "before": {
+          "process_cpu_seconds": 70.875,
+          "python_threads": 1,
+          "rss_bytes": 105816064,
+          "native_threads": 4,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 105816064,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 108.296875,
+          "python_threads": 1,
+          "rss_bytes": 105857024,
+          "native_threads": 4,
+          "children": [],
+          "children_rss_bytes": 0,
+          "total_rss_bytes": 105857024,
+          "children_cpu_seconds": 0,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 338,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 199057408,
+        "sampled_max_children_rss_bytes": 0,
+        "sampled_max_total_rss_bytes": 199057408,
+        "sampled_max_native_threads": 6,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      }
+    }
+  ],
+  "limits": [
+    "Synthetic pixels; ratios are not microscopy storage estimates.",
+    "Timing includes encoding, hash, file writes, fsync and atomic replace; excludes decode verification.",
+    "Sampled RSS includes outside-timer decoding and retained fixture images, not codec-only RSS."
+  ]
+}

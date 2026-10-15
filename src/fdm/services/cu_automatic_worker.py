@@ -11,6 +11,7 @@ from collections import deque
 import multiprocessing as mp
 from multiprocessing import shared_memory
 import os
+import sys
 import threading
 from time import monotonic
 import uuid
@@ -21,7 +22,36 @@ from fdm.services.compute_budget import HEAVY_COMPUTE_BUDGET
 DEFAULT_MEMORY_BUDGET = 2 * 1024**3
 
 
+def _configure_worker_scheduling():
+    """Keep the isolated Windows analysis below interactive work priority.
+
+    This runs only inside the child. No GUI/capture thread priority changes,
+    affinity restrictions, algorithm changes or timeout extensions are made.
+    Failure is returned in worker diagnostics, never mistaken for success.
+    """
+    if sys.platform != "win32":
+        return {"policy": "platform_default", "applied": True}
+    import ctypes
+    from ctypes import wintypes
+    try:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.argtypes = []
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel32.SetPriorityClass.restype = wintypes.BOOL
+        kernel32.GetPriorityClass.argtypes = [wintypes.HANDLE]
+        kernel32.GetPriorityClass.restype = wintypes.DWORD
+        process = kernel32.GetCurrentProcess()
+        if not kernel32.SetPriorityClass(process, 0x4000):  # BELOW_NORMAL_PRIORITY_CLASS
+            raise ctypes.WinError(ctypes.get_last_error())
+        actual = int(kernel32.GetPriorityClass(process))
+        return {"policy": "below_normal", "applied": actual == 0x4000, "priority_class": actual}
+    except OSError as exc:
+        return {"policy": "below_normal", "applied": False, "error": str(exc)}
+
+
 def _worker_main(connection, cancelled) -> None:
+    scheduling = _configure_worker_scheduling()
     # Configure before importing the native image stack in this fresh process.
     for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[name] = "1"
@@ -49,6 +79,8 @@ def _worker_main(connection, cancelled) -> None:
             finally:
                 if segment is not None:
                     segment.close()
+            response["worker_runtime"] = {"scheduling": scheduling, "opencv_requested_threads": 1,
+                                          "opencv_threads": cv2.getNumThreads()}
             connection.send(response)
     except (EOFError, BrokenPipeError, OSError):
         return

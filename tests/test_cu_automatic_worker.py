@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import sys
 import unittest
 from multiprocessing import shared_memory
 
@@ -38,6 +39,12 @@ class CuAutomaticWorkerTests(unittest.TestCase):
                 response = wait_result(worker)
                 self.assertEqual(response["task_id"], identifier)
                 self.assertIsNone(response["error"])
+                runtime = response["worker_runtime"]
+                self.assertEqual(runtime["opencv_requested_threads"], 1)
+                self.assertTrue(runtime["scheduling"]["applied"], runtime)
+                if sys.platform == "win32":
+                    self.assertEqual(runtime["opencv_threads"], 1)
+                    self.assertEqual(runtime["scheduling"]["priority_class"], 0x4000)
                 self.assertEqual(response["result"]["status"], "ok")
                 self.assertGreater(response["result"]["candidates"][0]["width_px"], 6)
                 with self.assertRaises(FileNotFoundError):

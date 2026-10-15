@@ -1,0 +1,7 @@
+   PreventUserIdleDisplaySleep    1
+   PreventUserIdleSystemSleep     1
+   pid 3976(caffeinate): [0x0001a18100018c6f] 00:14:40 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+	Details: caffeinate asserting on behalf of '.venv/bin/python' (pid 3975)
+   pid 3976(caffeinate): [0x0001a18100058c70] 00:14:40 PreventUserIdleDisplaySleep named: "caffeinate command-line tool"  
+	Details: caffeinate asserting on behalf of '.venv/bin/python' (pid 3975)
+   pid 382(powerd): [0x0001a07d00018c30] 00:19:00 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  

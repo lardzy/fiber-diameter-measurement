@@ -1,0 +1,640 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+    "executable": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+    "cpu_count": 18,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": "3.0.4",
+      "psutil": "7.2.2",
+      "zlib-ng": "1.0.0"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 18,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": "5049422a640a02734b48f6b7fd4bad913efc05df",
+    "source_sha256": {
+      "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+      "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+      "native/windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src/fdm/live_experiment/capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src/fdm/live_experiment/controller.py": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2",
+      "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+      "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+      "src/fdm/live_experiment/models.py": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+      "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+      "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+      "src/fdm/live_experiment/sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src/fdm/live_experiment/window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+      "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+      "scripts/validation/soak_cu_workspace.py": "0afc51c8963e312ada715a0f599b85c5a32d6d3813e960abb115b31400f34813",
+      "src/fdm/ui/live_experiment_workspace.py": "f7dceb89712fd823670dfdf0d82ae6aa7827e51aa1f47bd7974b0c0e0df15724"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "9c67da55c36bfd33c6f3d128d7d4e1e0e56f4f1090bfdacd0f8824625f4acc89",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    },
+    "opencv_requested_threads": null,
+    "qt_platform": "offscreen",
+    "parallel_framework": [
+      "Parallel framework:            GCD"
+    ]
+  },
+  "parameters": {
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/workspace-4k-short.json",
+    "duration_seconds": 60.0,
+    "minimum_accepted": 100,
+    "frame_hz": 30,
+    "measurement_hz": 4,
+    "motion_interval_seconds": 10,
+    "size": 4096,
+    "save_images": true,
+    "evidence_dir": null,
+    "drain_timeout_seconds": 60,
+    "window_width": 1240,
+    "window_height": 840,
+    "qt_platform": null,
+    "opencv_threads": null
+  },
+  "limits": [
+    "Actual QTest input, QWidget/QPainter and event loop; physical display scan-out is not measured.",
+    "Existing sparse-stripe fixture and its vertical 12-pixel translation; no camera/CU hardware acceptance.",
+    "Frame budget includes two retained source arrays and next delivery; algorithm/Qt/PNG RSS reported separately.",
+    "Metric reservoirs are bounded; the production ledger and undo history intentionally retain accepted records.",
+    "Resource sampling covers active work and queue drain; post-run PNG verification and ledger reload are separate."
+  ],
+  "started_at_utc": "2026-10-15T03:22:11.436325+00:00",
+  "display": {
+    "window_size": [
+      1240,
+      840
+    ],
+    "canvas_size": [
+      846,
+      553
+    ],
+    "device_pixel_ratio": 1.0,
+    "logical_dpi": 96.0,
+    "screen_size": [
+      800,
+      800
+    ]
+  },
+  "resources": {
+    "wall_seconds": 60.01966783399985,
+    "process_cpu_seconds": 27.043060999999998,
+    "before": {
+      "process_cpu_seconds": 0.574061,
+      "python_threads": 5,
+      "rss_bytes": 376913920,
+      "native_threads": 31,
+      "children": [],
+      "children_rss_bytes": 0,
+      "total_rss_bytes": 376913920,
+      "children_cpu_seconds": 0,
+      "resource_provider": "psutil"
+    },
+    "after": {
+      "process_cpu_seconds": 27.617122,
+      "python_threads": 7,
+      "rss_bytes": 508641280,
+      "native_threads": 16,
+      "children": [
+        {
+          "pid": 99450,
+          "name": "python3.13",
+          "rss_bytes": 15155200,
+          "cpu_seconds": 0.020959540999999998,
+          "native_threads": 1
+        },
+        {
+          "pid": 99451,
+          "name": "python3.13",
+          "rss_bytes": 380403712,
+          "cpu_seconds": 2.869305456,
+          "native_threads": 1
+        }
+      ],
+      "children_rss_bytes": 395558912,
+      "total_rss_bytes": 904200192,
+      "children_cpu_seconds": 2.890264997,
+      "resource_provider": "psutil"
+    },
+    "sampling_interval_ms": 100,
+    "sample_count": 509,
+    "children_sampled_peaks": [
+      {
+        "pid": 99450,
+        "name": "python3.13",
+        "sampled_peak_rss_bytes": 15155200,
+        "maximum_observed_cpu_seconds": 0.020959540999999998,
+        "sampled_peak_native_threads": 1
+      },
+      {
+        "pid": 99451,
+        "name": "python3.13",
+        "sampled_peak_rss_bytes": 491388928,
+        "maximum_observed_cpu_seconds": 2.869305456,
+        "sampled_peak_native_threads": 1
+      }
+    ],
+    "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+    "sampled_max_rss_bytes": 540557312,
+    "sampled_max_children_rss_bytes": 506544128,
+    "sampled_max_total_rss_bytes": 1045168128,
+    "sampled_max_native_threads": 35,
+    "sampled_max_process_lifetime_peak_rss_bytes": null
+  },
+  "generated_during_run": 1801,
+  "frame_budget_peak_bytes": 239009877,
+  "motion_retained_bytes": 11179350,
+  "motion_preparation_retained_bytes": 11179350,
+  "requested_seconds": 60.0,
+  "active_seconds": 60.00039499999548,
+  "drain_seconds": 0.0059788750077132136,
+  "formal_one_hour_target": false,
+  "shape": [
+    2730,
+    4096,
+    3
+  ],
+  "fixture_kind": "sparse",
+  "translation_pixels": [
+    0,
+    12
+  ],
+  "motion_preflight": [
+    {
+      "frame_id": "preflight:1",
+      "sequence": 1,
+      "stable": false,
+      "reason": "appearance",
+      "centroid_delta": [
+        0,
+        1
+      ],
+      "translation": [
+        0,
+        4
+      ],
+      "changed_fraction": 0.05301775147928994
+    },
+    {
+      "frame_id": "preflight:1",
+      "sequence": 1,
+      "stable": false,
+      "reason": "appearance",
+      "centroid_delta": [
+        0,
+        -1
+      ],
+      "translation": [
+        0,
+        -4
+      ],
+      "changed_fraction": 0.05301775147928994
+    }
+  ],
+  "source_pool_sha256": [
+    "5dcfb68630b665ad49c057e39ef75c1c4372ff28b340e006cf5a56b1aabdd329",
+    "751e87fdd075d550a88b4cfbd27641c88c2a3e7cdbad29799aa067b61815b562"
+  ],
+  "source_retained_bytes": 67092480,
+  "acquisition_reserved_bytes": 100638720,
+  "verify_before_present": true,
+  "distinct_painted_fps": 29.93313627352179,
+  "generated_fps": 30.01646905824763,
+  "counters": {
+    "phase": "cleanup",
+    "paint_count": 2418,
+    "distinct_paints": 1796,
+    "last_painted_sequence": 1801,
+    "attempt_slots": 239,
+    "first_clicks": 238,
+    "submitted": 238,
+    "accepted": 238,
+    "records_painted": 238,
+    "generated": 1803,
+    "field_changes": 5,
+    "old_epoch_accepted": 0,
+    "old_scene_accepted": 0,
+    "unmapped_accepted": 0,
+    "wrong_width": 0,
+    "expected_motion_cancelled": 0,
+    "rejected_without_motion": 0,
+    "submitted_motion_cancelled": 0,
+    "submitted_rejected_other": 0,
+    "draft_motion_cancelled": 0,
+    "draft_lost_without_submission": 0,
+    "accepted_unpainted_due_motion": 0,
+    "accepted_unpainted_other": 0,
+    "transition_inputs": 5,
+    "transition_clear_events": 5,
+    "transition_completed": 5,
+    "unexpected_field_changes": 0,
+    "gui_publish_over_4ms": 2,
+    "fatal": false
+  },
+  "metrics": {
+    "first_click_to_draft_paint": {
+      "count": 238,
+      "p50_ms": 2.708208005060442,
+      "p95_ms": 3.6980061944632316,
+      "p99_ms": 12.656343032285802,
+      "max_ms": 17.818374995840713,
+      "observations": 238,
+      "exact_max_ms": 17.818374995840713,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "second_click_to_accept": {
+      "count": 238,
+      "p50_ms": 2.06227049784502,
+      "p95_ms": 2.2156144004839007,
+      "p99_ms": 15.198813962051643,
+      "max_ms": 16.880458002560772,
+      "observations": 238,
+      "exact_max_ms": 16.880458002560772,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "second_click_to_record_paint": {
+      "count": 238,
+      "p50_ms": 5.231854003795888,
+      "p95_ms": 8.258806196681547,
+      "p99_ms": 20.471879665128654,
+      "max_ms": 21.012915996834636,
+      "observations": 238,
+      "exact_max_ms": 21.012915996834636,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "accept_to_record_paint": {
+      "count": 238,
+      "p50_ms": 3.1446249995497055,
+      "p95_ms": 4.4772519002435684,
+      "p99_ms": 17.264085416536542,
+      "max_ms": 18.78766599111259,
+      "observations": 238,
+      "exact_max_ms": 18.78766599111259,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "compute_done_to_accept": {
+      "count": 238,
+      "p50_ms": 1.7802295042201877,
+      "p95_ms": 1.8984563503181562,
+      "p99_ms": 9.375446995545644,
+      "max_ms": 16.616542008705437,
+      "observations": 238,
+      "exact_max_ms": 16.616542008705437,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "canvas_paint_duration": {
+      "count": 2418,
+      "p50_ms": 1.0257289977744222,
+      "p95_ms": 1.6810811459436081,
+      "p99_ms": 2.108970532135572,
+      "max_ms": 16.402665991336107,
+      "observations": 2418,
+      "exact_max_ms": 16.402665991336107,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "gui_publish_ms": {
+      "count": 238,
+      "p50_ms": 0.3996665036538616,
+      "p95_ms": 0.49847954142023804,
+      "p99_ms": 0.5697339205653407,
+      "max_ms": 15.191207989118993,
+      "observations": 238,
+      "exact_max_ms": 15.191207989118993,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "gui_publish_failed_ms": {
+      "count": 0,
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null,
+      "max_ms": null,
+      "observations": 0,
+      "exact_max_ms": 0.0,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "frame_age_at_first_paint": {
+      "count": 1796,
+      "p50_ms": 11.038312506570946,
+      "p95_ms": 24.98876049867249,
+      "p99_ms": 32.46258300860061,
+      "max_ms": 64.89616699400358,
+      "observations": 1796,
+      "exact_max_ms": 64.89616699400358,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "event_loop_gap": {
+      "count": 32564,
+      "p50_ms": 1.5531249955529347,
+      "p95_ms": 2.920577696932014,
+      "p99_ms": 9.072790214559063,
+      "max_ms": 20.973416001652367,
+      "observations": 32564,
+      "exact_max_ms": 20.973416001652367,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "source_snapshot_and_handoff": {
+      "count": 1801,
+      "p50_ms": 2.322291999007575,
+      "p95_ms": 5.194124998524785,
+      "p99_ms": 13.415291992714629,
+      "max_ms": 16.668707990902476,
+      "observations": 1801,
+      "exact_max_ms": 16.668707990902476,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_first_paint": {
+      "count": 5,
+      "p50_ms": 57.84979200689122,
+      "p95_ms": 64.3741751962807,
+      "p99_ms": 64.791768634459,
+      "max_ms": 64.89616699400358,
+      "observations": 5,
+      "exact_max_ms": 64.89616699400358,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_motion_complete": {
+      "count": 5,
+      "p50_ms": 54.52912500186358,
+      "p95_ms": 60.74139160045888,
+      "p99_ms": 61.252478320966475,
+      "max_ms": 61.38025000109337,
+      "observations": 5,
+      "exact_max_ms": 61.38025000109337,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "motion_complete_to_clear": {
+      "count": 5,
+      "p50_ms": 1.4735419972566888,
+      "p95_ms": 1.6684754111338407,
+      "p99_ms": 1.6750622924882919,
+      "max_ms": 1.6767090128269047,
+      "observations": 5,
+      "exact_max_ms": 1.6767090128269047,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_clear": {
+      "count": 5,
+      "p50_ms": 54.82920800568536,
+      "p95_ms": 62.03000060340855,
+      "p99_ms": 62.4634673219407,
+      "max_ms": 62.571834001573734,
+      "observations": 5,
+      "exact_max_ms": 62.571834001573734,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_clear_paint": {
+      "count": 5,
+      "p50_ms": 57.84979200689122,
+      "p95_ms": 64.3741751962807,
+      "p99_ms": 64.791768634459,
+      "max_ms": 64.89616699400358,
+      "observations": 5,
+      "exact_max_ms": 64.89616699400358,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "clear_to_clear_paint": {
+      "count": 5,
+      "p50_ms": 2.5489999970886856,
+      "p95_ms": 2.95371719985269,
+      "p99_ms": 3.0072106409352273,
+      "max_ms": 3.0205840012058616,
+      "observations": 5,
+      "exact_max_ms": 3.0205840012058616,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    }
+  },
+  "latency_by_fifteen_minutes": [
+    {
+      "start_seconds": 0,
+      "end_seconds": 60.0,
+      "metrics": {
+        "first_click_to_draft_paint": {
+          "count": 238,
+          "p50_ms": 2.708208005060442,
+          "p95_ms": 3.6980061944632316,
+          "p99_ms": 12.656343032285802,
+          "max_ms": 17.818374995840713,
+          "observations": 238,
+          "exact_max_ms": 17.818374995840713,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_accept": {
+          "count": 238,
+          "p50_ms": 2.06227049784502,
+          "p95_ms": 2.2156144004839007,
+          "p99_ms": 15.198813962051643,
+          "max_ms": 16.880458002560772,
+          "observations": 238,
+          "exact_max_ms": 16.880458002560772,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_record_paint": {
+          "count": 238,
+          "p50_ms": 5.231854003795888,
+          "p95_ms": 8.258806196681547,
+          "p99_ms": 20.471879665128654,
+          "max_ms": 21.012915996834636,
+          "observations": 238,
+          "exact_max_ms": 21.012915996834636,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "gui_publish_ms": {
+          "count": 238,
+          "p50_ms": 0.3996665036538616,
+          "p95_ms": 0.49847954142023804,
+          "p99_ms": 0.5697339205653407,
+          "max_ms": 15.191207989118993,
+          "observations": 238,
+          "exact_max_ms": 15.191207989118993,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        }
+      }
+    }
+  ],
+  "queue_max": {
+    "manual_jobs": 0,
+    "pending_classification": 0,
+    "confirmation": 0,
+    "evidence_writes": 1,
+    "mailbox": 1,
+    "automatic_inflight": 1,
+    "motion_preparing": 1,
+    "motion_deciding": 1,
+    "tracked_intents": 0,
+    "awaiting_record_paint": 1
+  },
+  "history_count": 238,
+  "undo_history_count": 238,
+  "field_count": 6,
+  "evidence_states": {
+    "saved": 238
+  },
+  "evidence_file_count": 238,
+  "evidence_bytes": 80168544,
+  "evidence_directory": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/workspace-4k-short-evidence",
+  "evidence_verification": {
+    "unique_files_checked": 238,
+    "unique_png_payloads_decoded": 2,
+    "missing_or_wrong_hash": 0,
+    "wrong_pixels_or_dimensions": 0,
+    "extra_files": 0,
+    "seconds": 0.09564566699555144
+  },
+  "ledger_snapshot": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/workspace-4k-short-ledger.json",
+  "ledger_snapshot_sha256": "aca1cb49410e3c8dd411239979fc9fa47d730bab997336b43cea9c92a5c72d0e",
+  "motion_transition_examples": [
+    {
+      "input_at": 104171.722003458,
+      "input_sequence": 302,
+      "scene": 1,
+      "transition_id": 1,
+      "motion_sequence": 302,
+      "motion_completed_at": 104171.780189416,
+      "motion_reason": "appearance",
+      "cleared_at": 104171.781866125,
+      "cleared_epoch": 2,
+      "first_painted_at": 104171.784289666,
+      "clear_painted_at": 104171.784289666
+    },
+    {
+      "input_at": 104181.755211833,
+      "input_sequence": 603,
+      "scene": 0,
+      "transition_id": 2,
+      "motion_sequence": 603,
+      "motion_completed_at": 104181.79520825,
+      "motion_reason": "appearance",
+      "cleared_at": 104181.796843791,
+      "cleared_epoch": 3,
+      "first_painted_at": 104181.799530041,
+      "clear_painted_at": 104181.799530041
+    },
+    {
+      "input_at": 104191.723319875,
+      "input_sequence": 902,
+      "scene": 1,
+      "transition_id": 3,
+      "motion_sequence": 902,
+      "motion_completed_at": 104191.774229916,
+      "motion_reason": "appearance",
+      "cleared_at": 104191.775703458,
+      "cleared_epoch": 4,
+      "first_painted_at": 104191.778252458,
+      "clear_painted_at": 104191.778252458
+    },
+    {
+      "input_at": 104201.719339583,
+      "input_sequence": 1202,
+      "scene": 0,
+      "transition_id": 4,
+      "motion_sequence": 1202,
+      "motion_completed_at": 104201.773868708,
+      "motion_reason": "appearance",
+      "cleared_at": 104201.774168791,
+      "cleared_epoch": 5,
+      "first_painted_at": 104201.777189375,
+      "clear_painted_at": 104201.777189375
+    },
+    {
+      "input_at": 104211.723320916,
+      "input_sequence": 1502,
+      "scene": 1,
+      "transition_id": 5,
+      "motion_sequence": 1502,
+      "motion_completed_at": 104211.784701166,
+      "motion_reason": "appearance",
+      "cleared_at": 104211.78589275,
+      "cleared_epoch": 6,
+      "first_painted_at": 104211.788217083,
+      "clear_painted_at": 104211.788217083
+    }
+  ],
+  "unresolved_motion_transitions": [],
+  "errors": {},
+  "unexpected_rejections": {},
+  "expected_motion_rejections": {},
+  "skipped_attempts": {
+    "field_not_ready": 1
+  },
+  "status_counts": {
+    "视场稳定，可以测量": 6,
+    "视场已变化，请重新测量": 5,
+    "试验工作区已关闭": 1
+  },
+  "violation_examples": [],
+  "exception_examples": [],
+  "background_automatic_results": {
+    "ok": 6
+  },
+  "background_automatic_latency": {
+    "count": 6,
+    "p50_ms": 461.1307914965437,
+    "p95_ms": 552.7245730008872,
+    "p99_ms": 576.0985146036546,
+    "max_ms": 581.9420000043465,
+    "observations": 6,
+    "exact_max_ms": 581.9420000043465,
+    "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+  },
+  "automatic_candidates_entered_ledger": 0,
+  "checks": {
+    "requested_duration_completed": true,
+    "minimum_accepted_reached": true,
+    "all_records_have_valid_field": true,
+    "old_epoch_accepted_zero": true,
+    "old_scene_accepted_zero": true,
+    "accepted_event_count_matches_ledger": true,
+    "all_accepted_mapped_to_click_intent": true,
+    "submitted_intents_accounted_for": true,
+    "accepted_paint_outcomes_accounted_for": true,
+    "undo_history_preserves_each_measurement": true,
+    "ledger_snapshot_roundtrip_exact": true,
+    "background_automatic_executed": true,
+    "no_automatic_candidates_entered_ledger": true,
+    "known_width_unchanged": true,
+    "evidence_complete": true,
+    "evidence_files_exist_and_match_pixels": true,
+    "queues_drained_before_deadline": true,
+    "frame_budget_within_512_mib": true,
+    "all_frame_leases_released": true,
+    "producer_stopped": true,
+    "unexpected_errors_zero": true,
+    "scheduled_motion_detected": true,
+    "unexpected_field_changes_zero": true,
+    "unexpected_rejections_zero": true
+  },
+  "passed": true,
+  "frame_budget_after_close": 0
+}

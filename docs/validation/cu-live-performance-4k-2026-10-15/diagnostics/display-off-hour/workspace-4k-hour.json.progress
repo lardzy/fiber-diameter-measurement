@@ -1,0 +1,9 @@
+{
+  "elapsed_seconds": 540.5550694999984,
+  "accepted": 1698,
+  "distinct_painted_fps": 9.344098843938443,
+  "evidence_pending": 0,
+  "frame_budget_bytes": 167731200,
+  "old_epoch_accepted": 0,
+  "old_scene_accepted": 0
+}

@@ -1,0 +1,2945 @@
+{
+  "rows": [
+    {
+      "intent_id": "52a4671f6b6246689d3aa7332cc1dcab",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.056916,
+          "cpu_cycles": 182666
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.789125,
+          "cpu_cycles": 441866
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.988458,
+          "cpu_cycles": 1087865
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.210458,
+          "cpu_cycles": 671732
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.029,
+          "cpu_cycles": 92267
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.740375,
+          "cpu_cycles": 2365329
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.020334,
+          "cpu_cycles": 66266
+        }
+      ],
+      "wall_ms": 2.73625,
+      "cpu_cycles": 6217990
+    },
+    {
+      "intent_id": "c524cdafc6aa49da9073247d7147c258",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.038167,
+          "cpu_cycles": 122534
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.023292,
+          "cpu_cycles": 73467
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.177208,
+          "cpu_cycles": 566668
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.147542,
+          "cpu_cycles": 471066
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.091375,
+          "cpu_cycles": 13333
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.161667,
+          "cpu_cycles": 516799
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.01475,
+          "cpu_cycles": 47333
+        }
+      ],
+      "wall_ms": 0.71825,
+      "cpu_cycles": 2044398
+    },
+    {
+      "intent_id": "2753a447aa3e4fa694f212724cfc1a8a",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.056459,
+          "cpu_cycles": 181466
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.020583,
+          "cpu_cycles": 65466
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.192625,
+          "cpu_cycles": 615998
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.132959,
+          "cpu_cycles": 423600
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.083417,
+          "cpu_cycles": 19333
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.180833,
+          "cpu_cycles": 576400
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015125,
+          "cpu_cycles": 48666
+        }
+      ],
+      "wall_ms": 0.724416,
+      "cpu_cycles": 2082662
+    },
+    {
+      "intent_id": "5e4dffd5833543a385d31dd6d7375195",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.049333,
+          "cpu_cycles": 157733
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.024916,
+          "cpu_cycles": 79200
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.209666,
+          "cpu_cycles": 670265
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.126792,
+          "cpu_cycles": 403733
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.080666,
+          "cpu_cycles": 11067
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.16625,
+          "cpu_cycles": 530399
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.011042,
+          "cpu_cycles": 35067
+        }
+      ],
+      "wall_ms": 0.694291,
+      "cpu_cycles": 1986665
+    },
+    {
+      "intent_id": "6d5856aaf3ef4c45b137caf1ebd9ff33",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.051417,
+          "cpu_cycles": 164933
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02425,
+          "cpu_cycles": 77600
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.216292,
+          "cpu_cycles": 691733
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.1895,
+          "cpu_cycles": 569067
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003833,
+          "cpu_cycles": 12266
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.242125,
+          "cpu_cycles": 772532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015292,
+          "cpu_cycles": 48799
+        }
+      ],
+      "wall_ms": 0.788583,
+      "cpu_cycles": 2491997
+    },
+    {
+      "intent_id": "62bab68d62d14be98947dbdf6bd4ac01",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.043833,
+          "cpu_cycles": 140800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.025375,
+          "cpu_cycles": 80933
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.186667,
+          "cpu_cycles": 597599
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.135,
+          "cpu_cycles": 430400
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003834,
+          "cpu_cycles": 12667
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.553084,
+          "cpu_cycles": 1766131
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.016,
+          "cpu_cycles": 51200
+        }
+      ],
+      "wall_ms": 1.004958,
+      "cpu_cycles": 3219597
+    },
+    {
+      "intent_id": "2b21e60c7b9e45309f162e037d413cfd",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.031625,
+          "cpu_cycles": 101867
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.024,
+          "cpu_cycles": 76399
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.15675,
+          "cpu_cycles": 501331
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.133792,
+          "cpu_cycles": 426666
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003542,
+          "cpu_cycles": 11733
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.268,
+          "cpu_cycles": 855332
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015,
+          "cpu_cycles": 47867
+        }
+      ],
+      "wall_ms": 0.673916,
+      "cpu_cycles": 2158529
+    },
+    {
+      "intent_id": "aa0d5804f86a419cabfe80c85ba3894c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.05975,
+          "cpu_cycles": 190933
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.028584,
+          "cpu_cycles": 91467
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.228041,
+          "cpu_cycles": 729866
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.163458,
+          "cpu_cycles": 521199
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.105167,
+          "cpu_cycles": 15467
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.267792,
+          "cpu_cycles": 855732
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.012,
+          "cpu_cycles": 38666
+        }
+      ],
+      "wall_ms": 0.908459,
+      "cpu_cycles": 2602262
+    },
+    {
+      "intent_id": "13708e58cfe44fe1886890335b7a7d0b",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.049667,
+          "cpu_cycles": 159067
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02875,
+          "cpu_cycles": 91333
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.195292,
+          "cpu_cycles": 624266
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.12825,
+          "cpu_cycles": 408932
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.0035,
+          "cpu_cycles": 11333
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.258416,
+          "cpu_cycles": 824266
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015667,
+          "cpu_cycles": 50000
+        }
+      ],
+      "wall_ms": 0.708666,
+      "cpu_cycles": 2269062
+    },
+    {
+      "intent_id": "46d35f214e1046f884ae478d854265cc",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.047167,
+          "cpu_cycles": 153333
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.028083,
+          "cpu_cycles": 88800
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.211167,
+          "cpu_cycles": 675331
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.152417,
+          "cpu_cycles": 485199
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.0095,
+          "cpu_cycles": 30800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.332125,
+          "cpu_cycles": 1059865
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.014208,
+          "cpu_cycles": 45066
+        }
+      ],
+      "wall_ms": 0.83175,
+      "cpu_cycles": 2663193
+    },
+    {
+      "intent_id": "8748dd938ea04ba8aa236c3a8b614791",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.035167,
+          "cpu_cycles": 112667
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.022041,
+          "cpu_cycles": 70266
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.169792,
+          "cpu_cycles": 543065
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.177167,
+          "cpu_cycles": 565465
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 1.058125,
+          "cpu_cycles": 13600
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.319125,
+          "cpu_cycles": 1021465
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.013375,
+          "cpu_cycles": 65600
+        }
+      ],
+      "wall_ms": 1.9985,
+      "cpu_cycles": 2821194
+    },
+    {
+      "intent_id": "b5f6669f73da4e22a9a46a84e0046546",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.050583,
+          "cpu_cycles": 162133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.025333,
+          "cpu_cycles": 80133
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.199417,
+          "cpu_cycles": 637466
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.143833,
+          "cpu_cycles": 458532
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003875,
+          "cpu_cycles": 12800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.249875,
+          "cpu_cycles": 796532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015292,
+          "cpu_cycles": 52133
+        }
+      ],
+      "wall_ms": 0.813375,
+      "cpu_cycles": 2363195
+    },
+    {
+      "intent_id": "eed8b42569da490690bc4938b14b6b98",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.02775,
+          "cpu_cycles": 89200
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.022666,
+          "cpu_cycles": 71600
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.148292,
+          "cpu_cycles": 473866
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.129459,
+          "cpu_cycles": 412400
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.077833,
+          "cpu_cycles": 11734
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.232542,
+          "cpu_cycles": 742265
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.013083,
+          "cpu_cycles": 41600
+        }
+      ],
+      "wall_ms": 0.684333,
+      "cpu_cycles": 1962665
+    },
+    {
+      "intent_id": "38aba6e68c574951a7f9630148c8b42a",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.057834,
+          "cpu_cycles": 186800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.033333,
+          "cpu_cycles": 106133
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.2485,
+          "cpu_cycles": 780932
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.168583,
+          "cpu_cycles": 538266
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003583,
+          "cpu_cycles": 11600
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.339542,
+          "cpu_cycles": 1083199
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.021125,
+          "cpu_cycles": 71199
+        }
+      ],
+      "wall_ms": 1.034375,
+      "cpu_cycles": 2953330
+    },
+    {
+      "intent_id": "7cb1c85749f947f1ad659d9e835a3bde",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.046208,
+          "cpu_cycles": 148133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.023625,
+          "cpu_cycles": 74533
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.183459,
+          "cpu_cycles": 586399
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.12475,
+          "cpu_cycles": 397466
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.082,
+          "cpu_cycles": 13866
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.282167,
+          "cpu_cycles": 900532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.010708,
+          "cpu_cycles": 34267
+        }
+      ],
+      "wall_ms": 0.785834,
+      "cpu_cycles": 2278929
+    },
+    {
+      "intent_id": "d1fbb471755342e0a9a78a52deffe0da",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.052292,
+          "cpu_cycles": 167733
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.025875,
+          "cpu_cycles": 83200
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.211875,
+          "cpu_cycles": 677600
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.173041,
+          "cpu_cycles": 552133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004,
+          "cpu_cycles": 13200
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.381625,
+          "cpu_cycles": 1218264
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.019583,
+          "cpu_cycles": 67467
+        }
+      ],
+      "wall_ms": 1.046125,
+      "cpu_cycles": 3017731
+    },
+    {
+      "intent_id": "276ade85a278436481e96485964a5357",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.040834,
+          "cpu_cycles": 130800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.027083,
+          "cpu_cycles": 86400
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.175541,
+          "cpu_cycles": 561734
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.139,
+          "cpu_cycles": 443333
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003542,
+          "cpu_cycles": 11734
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.295292,
+          "cpu_cycles": 941865
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.013708,
+          "cpu_cycles": 43866
+        }
+      ],
+      "wall_ms": 0.736958,
+      "cpu_cycles": 2360664
+    },
+    {
+      "intent_id": "f5d9dcf1c7cf488786e33a4f51f69460",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.046209,
+          "cpu_cycles": 148133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.027708,
+          "cpu_cycles": 88800
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.23175,
+          "cpu_cycles": 741466
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.14175,
+          "cpu_cycles": 452133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.09475,
+          "cpu_cycles": 15067
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.308583,
+          "cpu_cycles": 984932
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015125,
+          "cpu_cycles": 48000
+        }
+      ],
+      "wall_ms": 0.9195,
+      "cpu_cycles": 2684264
+    },
+    {
+      "intent_id": "1078d995c15448749ba296231232240e",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.060333,
+          "cpu_cycles": 193200
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.029958,
+          "cpu_cycles": 95600
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.221834,
+          "cpu_cycles": 709466
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.152708,
+          "cpu_cycles": 487466
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.093125,
+          "cpu_cycles": 12667
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.34375,
+          "cpu_cycles": 1097465
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.017209,
+          "cpu_cycles": 55200
+        }
+      ],
+      "wall_ms": 0.965125,
+      "cpu_cycles": 2818399
+    },
+    {
+      "intent_id": "41e7cfa3648c43e0ac2cd36f94353e5c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.059791,
+          "cpu_cycles": 191866
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.031708,
+          "cpu_cycles": 101066
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.253291,
+          "cpu_cycles": 810531
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.17175,
+          "cpu_cycles": 548533
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.010042,
+          "cpu_cycles": 31867
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.375917,
+          "cpu_cycles": 1179466
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.01625,
+          "cpu_cycles": 52266
+        }
+      ],
+      "wall_ms": 1.1105,
+      "cpu_cycles": 3114396
+    },
+    {
+      "intent_id": "ed79ce85539f4fd18974e73ff35359e6",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.067791,
+          "cpu_cycles": 181999
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.025375,
+          "cpu_cycles": 80400
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.221417,
+          "cpu_cycles": 673332
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.13425,
+          "cpu_cycles": 428133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004208,
+          "cpu_cycles": 13866
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.300542,
+          "cpu_cycles": 958532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.019334,
+          "cpu_cycles": 61733
+        }
+      ],
+      "wall_ms": 0.794292,
+      "cpu_cycles": 2509329
+    },
+    {
+      "intent_id": "5f65b259992e427788f3c4e426345e9f",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.030125,
+          "cpu_cycles": 96534
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02025,
+          "cpu_cycles": 64266
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.149875,
+          "cpu_cycles": 479332
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.130958,
+          "cpu_cycles": 417599
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.083334,
+          "cpu_cycles": 11200
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.299292,
+          "cpu_cycles": 909199
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.018833,
+          "cpu_cycles": 63733
+        }
+      ],
+      "wall_ms": 0.935542,
+      "cpu_cycles": 2283728
+    },
+    {
+      "intent_id": "e9d0533ab16746e1bc1f5de3e3e48d2f",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.049125,
+          "cpu_cycles": 157600
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.023,
+          "cpu_cycles": 73066
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.181833,
+          "cpu_cycles": 581597
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.126208,
+          "cpu_cycles": 402133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.08325,
+          "cpu_cycles": 11733
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.331875,
+          "cpu_cycles": 1059865
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.013209,
+          "cpu_cycles": 42134
+        }
+      ],
+      "wall_ms": 0.840458,
+      "cpu_cycles": 2448128
+    },
+    {
+      "intent_id": "701bf5447004404b96ea7272219bc13c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.055083,
+          "cpu_cycles": 176666
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.0245,
+          "cpu_cycles": 77600
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.195375,
+          "cpu_cycles": 624665
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.137791,
+          "cpu_cycles": 438933
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004291,
+          "cpu_cycles": 14134
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.349875,
+          "cpu_cycles": 1115998
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.01625,
+          "cpu_cycles": 52266
+        }
+      ],
+      "wall_ms": 0.836209,
+      "cpu_cycles": 2677596
+    },
+    {
+      "intent_id": "c5b28a810033412cb8fee4c21fc09d90",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.050542,
+          "cpu_cycles": 162133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.025416,
+          "cpu_cycles": 80266
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.190667,
+          "cpu_cycles": 609998
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.124167,
+          "cpu_cycles": 395599
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.015583,
+          "cpu_cycles": 50134
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.323334,
+          "cpu_cycles": 1031865
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015083,
+          "cpu_cycles": 47733
+        }
+      ],
+      "wall_ms": 0.781166,
+      "cpu_cycles": 2502127
+    },
+    {
+      "intent_id": "998721944f6e403fb701702bf280f578",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.03,
+          "cpu_cycles": 96666
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.021833,
+          "cpu_cycles": 69067
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.157708,
+          "cpu_cycles": 503731
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.122042,
+          "cpu_cycles": 388533
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004084,
+          "cpu_cycles": 13467
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.316458,
+          "cpu_cycles": 1009598
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.014125,
+          "cpu_cycles": 44667
+        }
+      ],
+      "wall_ms": 0.708,
+      "cpu_cycles": 2267063
+    },
+    {
+      "intent_id": "6d46466170ea497bb70f98ac42c39e91",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.062291,
+          "cpu_cycles": 199999
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.031333,
+          "cpu_cycles": 100134
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.248042,
+          "cpu_cycles": 793599
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.178,
+          "cpu_cycles": 567866
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.0045,
+          "cpu_cycles": 14533
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.462625,
+          "cpu_cycles": 1475998
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.0295,
+          "cpu_cycles": 74666
+        }
+      ],
+      "wall_ms": 1.163458,
+      "cpu_cycles": 3419192
+    },
+    {
+      "intent_id": "e811dceae824465a92c697f04dee356d",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.05625,
+          "cpu_cycles": 180400
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.024625,
+          "cpu_cycles": 78667
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.215709,
+          "cpu_cycles": 689866
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.164083,
+          "cpu_cycles": 522799
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004084,
+          "cpu_cycles": 13333
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.463541,
+          "cpu_cycles": 1474131
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.01825,
+          "cpu_cycles": 60133
+        }
+      ],
+      "wall_ms": 1.128167,
+      "cpu_cycles": 3237596
+    },
+    {
+      "intent_id": "55893bba8a484667acb5ab979c22d667",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.060375,
+          "cpu_cycles": 193466
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.023416,
+          "cpu_cycles": 74267
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.218583,
+          "cpu_cycles": 698799
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.124416,
+          "cpu_cycles": 396399
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004167,
+          "cpu_cycles": 13600
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.326792,
+          "cpu_cycles": 1043599
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.014625,
+          "cpu_cycles": 46400
+        }
+      ],
+      "wall_ms": 0.800625,
+      "cpu_cycles": 2568797
+    },
+    {
+      "intent_id": "8bf87e85dc134c35bb741095dfd72ab1",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.029041,
+          "cpu_cycles": 93066
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.022917,
+          "cpu_cycles": 73067
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.15125,
+          "cpu_cycles": 483333
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.1195,
+          "cpu_cycles": 380932
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003333,
+          "cpu_cycles": 10934
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.30275,
+          "cpu_cycles": 966132
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.012208,
+          "cpu_cycles": 38934
+        }
+      ],
+      "wall_ms": 0.675125,
+      "cpu_cycles": 2161730
+    },
+    {
+      "intent_id": "f568057ea0c04da9aeebc33befad38a6",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.064417,
+          "cpu_cycles": 206666
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.034292,
+          "cpu_cycles": 109199
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.289458,
+          "cpu_cycles": 888397
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.179667,
+          "cpu_cycles": 574133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.091875,
+          "cpu_cycles": 11333
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.402166,
+          "cpu_cycles": 1265998
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.014959,
+          "cpu_cycles": 48000
+        }
+      ],
+      "wall_ms": 1.122083,
+      "cpu_cycles": 3276526
+    },
+    {
+      "intent_id": "9d16144bdf0d41efbe5cd6679b06ad96",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.060916,
+          "cpu_cycles": 195467
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.033709,
+          "cpu_cycles": 107600
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.248833,
+          "cpu_cycles": 796000
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.151042,
+          "cpu_cycles": 481200
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.005166,
+          "cpu_cycles": 16666
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.434959,
+          "cpu_cycles": 1389465
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015417,
+          "cpu_cycles": 49200
+        }
+      ],
+      "wall_ms": 1.003291,
+      "cpu_cycles": 3215863
+    },
+    {
+      "intent_id": "23ee2057a56e4325be04aa647d3a1d66",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.050708,
+          "cpu_cycles": 162667
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.024333,
+          "cpu_cycles": 77066
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.190208,
+          "cpu_cycles": 608132
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.13225,
+          "cpu_cycles": 421732
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004167,
+          "cpu_cycles": 13600
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.340375,
+          "cpu_cycles": 1086532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.011209,
+          "cpu_cycles": 36400
+        }
+      ],
+      "wall_ms": 0.862792,
+      "cpu_cycles": 2512528
+    },
+    {
+      "intent_id": "abb68bbf77954564b4ab97dfde1c6225",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.061459,
+          "cpu_cycles": 196266
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.028792,
+          "cpu_cycles": 92000
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.222167,
+          "cpu_cycles": 710798
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.16075,
+          "cpu_cycles": 512666
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004666,
+          "cpu_cycles": 14800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.354208,
+          "cpu_cycles": 1130532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.012833,
+          "cpu_cycles": 40933
+        }
+      ],
+      "wall_ms": 0.871292,
+      "cpu_cycles": 2794264
+    },
+    {
+      "intent_id": "e9b0ff8ba7514fdcac90393bd0f7fc2c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.061417,
+          "cpu_cycles": 197333
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.03025,
+          "cpu_cycles": 120133
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.424791,
+          "cpu_cycles": 743598
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.167083,
+          "cpu_cycles": 533066
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004459,
+          "cpu_cycles": 14533
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.36975,
+          "cpu_cycles": 1180531
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.013292,
+          "cpu_cycles": 42666
+        }
+      ],
+      "wall_ms": 1.092125,
+      "cpu_cycles": 2883061
+    },
+    {
+      "intent_id": "6c9d8ce56c5b4bb388c1235390cec074",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.070042,
+          "cpu_cycles": 224133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.592375,
+          "cpu_cycles": 469199
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.89175,
+          "cpu_cycles": 1180931
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.15775,
+          "cpu_cycles": 504266
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.028417,
+          "cpu_cycles": 89866
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.610333,
+          "cpu_cycles": 1828797
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015333,
+          "cpu_cycles": 49466
+        }
+      ],
+      "wall_ms": 1.921666,
+      "cpu_cycles": 4161060
+    },
+    {
+      "intent_id": "49ef005e8baf4fa19b5b64c61caa7dd2",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.044125,
+          "cpu_cycles": 141733
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.034917,
+          "cpu_cycles": 111599
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.193083,
+          "cpu_cycles": 617865
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.137125,
+          "cpu_cycles": 437999
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.039125,
+          "cpu_cycles": 19600
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.188875,
+          "cpu_cycles": 603199
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.017459,
+          "cpu_cycles": 58800
+        }
+      ],
+      "wall_ms": 0.75725,
+      "cpu_cycles": 2211726
+    },
+    {
+      "intent_id": "b66d5f84cec34dfa8bed27b8020d6094",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.071875,
+          "cpu_cycles": 230133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.030292,
+          "cpu_cycles": 96666
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.244542,
+          "cpu_cycles": 782665
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.146625,
+          "cpu_cycles": 468133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004042,
+          "cpu_cycles": 13066
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.223292,
+          "cpu_cycles": 711466
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.025083,
+          "cpu_cycles": 92666
+        }
+      ],
+      "wall_ms": 0.835833,
+      "cpu_cycles": 2570397
+    },
+    {
+      "intent_id": "128006e11ecf4e5d8df986f0bcb89117",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.072959,
+          "cpu_cycles": 234133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02875,
+          "cpu_cycles": 91867
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.237375,
+          "cpu_cycles": 759733
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.129667,
+          "cpu_cycles": 413199
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003875,
+          "cpu_cycles": 12400
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.2275,
+          "cpu_cycles": 725866
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.019584,
+          "cpu_cycles": 65467
+        }
+      ],
+      "wall_ms": 0.875708,
+      "cpu_cycles": 2453197
+    },
+    {
+      "intent_id": "c2bc3597c6c745e498a5b28e300282bf",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.054292,
+          "cpu_cycles": 173733
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.024667,
+          "cpu_cycles": 78400
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.201042,
+          "cpu_cycles": 642665
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.144333,
+          "cpu_cycles": 460133
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003792,
+          "cpu_cycles": 12533
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.2065,
+          "cpu_cycles": 659065
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015792,
+          "cpu_cycles": 51067
+        }
+      ],
+      "wall_ms": 0.784375,
+      "cpu_cycles": 2251596
+    },
+    {
+      "intent_id": "a9e3b0834bc14547a9df37e87bc682f8",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.033542,
+          "cpu_cycles": 108000
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.023291,
+          "cpu_cycles": 74267
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.154292,
+          "cpu_cycles": 493068
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.133667,
+          "cpu_cycles": 426666
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003667,
+          "cpu_cycles": 12133
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.483208,
+          "cpu_cycles": 1542531
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015958,
+          "cpu_cycles": 50934
+        }
+      ],
+      "wall_ms": 0.885542,
+      "cpu_cycles": 2836932
+    },
+    {
+      "intent_id": "50b4de3368d841ef9fdfef9c3725d3d9",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.047083,
+          "cpu_cycles": 150400
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.031542,
+          "cpu_cycles": 100800
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.193916,
+          "cpu_cycles": 620132
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.123958,
+          "cpu_cycles": 395733
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.012,
+          "cpu_cycles": 38800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.237375,
+          "cpu_cycles": 757065
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.012917,
+          "cpu_cycles": 41467
+        }
+      ],
+      "wall_ms": 0.721041,
+      "cpu_cycles": 2261597
+    },
+    {
+      "intent_id": "dee353467c184a839162a00482ab44ff",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.057417,
+          "cpu_cycles": 184267
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.0345,
+          "cpu_cycles": 109999
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.212291,
+          "cpu_cycles": 679332
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.131541,
+          "cpu_cycles": 419199
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.024417,
+          "cpu_cycles": 18000
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.27275,
+          "cpu_cycles": 825465
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.054375,
+          "cpu_cycles": 87199
+        }
+      ],
+      "wall_ms": 0.884333,
+      "cpu_cycles": 2532928
+    },
+    {
+      "intent_id": "b38ab7937d3d40869612ef67240b1e37",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.059542,
+          "cpu_cycles": 190933
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.033625,
+          "cpu_cycles": 107467
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.204417,
+          "cpu_cycles": 653866
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.134625,
+          "cpu_cycles": 429332
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.042375,
+          "cpu_cycles": 18267
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.2575,
+          "cpu_cycles": 822799
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015292,
+          "cpu_cycles": 49200
+        }
+      ],
+      "wall_ms": 0.84825,
+      "cpu_cycles": 2433462
+    },
+    {
+      "intent_id": "6015886ba3244f7283178cbefb8935a2",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.057458,
+          "cpu_cycles": 184133
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.034333,
+          "cpu_cycles": 109466
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.209125,
+          "cpu_cycles": 669065
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.131792,
+          "cpu_cycles": 420533
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003417,
+          "cpu_cycles": 11200
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.306708,
+          "cpu_cycles": 977332
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.012916,
+          "cpu_cycles": 41467
+        }
+      ],
+      "wall_ms": 0.772458,
+      "cpu_cycles": 2473597
+    },
+    {
+      "intent_id": "f7220c03ad254d56884d1477ccd0e7c2",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.034792,
+          "cpu_cycles": 111733
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02325,
+          "cpu_cycles": 74133
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.150959,
+          "cpu_cycles": 482533
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.117917,
+          "cpu_cycles": 376266
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003375,
+          "cpu_cycles": 10933
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.25325,
+          "cpu_cycles": 790798
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.013334,
+          "cpu_cycles": 42534
+        }
+      ],
+      "wall_ms": 0.662916,
+      "cpu_cycles": 1994131
+    },
+    {
+      "intent_id": "0e905f050ba6471d9073ae46ce4c787e",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.046709,
+          "cpu_cycles": 149599
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.042208,
+          "cpu_cycles": 149066
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.248125,
+          "cpu_cycles": 669332
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.131959,
+          "cpu_cycles": 421599
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.03475,
+          "cpu_cycles": 23067
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.240625,
+          "cpu_cycles": 767332
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.017125,
+          "cpu_cycles": 48400
+        }
+      ],
+      "wall_ms": 0.8625,
+      "cpu_cycles": 2387062
+    },
+    {
+      "intent_id": "34149ef2639141219adfeb155425edc3",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.059417,
+          "cpu_cycles": 190399
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02675,
+          "cpu_cycles": 85334
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.206166,
+          "cpu_cycles": 659333
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.135208,
+          "cpu_cycles": 430933
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.085292,
+          "cpu_cycles": 20267
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.275667,
+          "cpu_cycles": 880532
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.023333,
+          "cpu_cycles": 126266
+        }
+      ],
+      "wall_ms": 1.142667,
+      "cpu_cycles": 2728797
+    },
+    {
+      "intent_id": "55077e5cd7604287807883f38599f1af",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.047084,
+          "cpu_cycles": 150933
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.029291,
+          "cpu_cycles": 97466
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.189709,
+          "cpu_cycles": 606930
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.129959,
+          "cpu_cycles": 414399
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.667209,
+          "cpu_cycles": 12134
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.306958,
+          "cpu_cycles": 981332
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.016625,
+          "cpu_cycles": 53334
+        }
+      ],
+      "wall_ms": 1.448958,
+      "cpu_cycles": 2571596
+    },
+    {
+      "intent_id": "067c918f3609498e843a8cde875669b9",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.061,
+          "cpu_cycles": 195866
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.028708,
+          "cpu_cycles": 91466
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.219125,
+          "cpu_cycles": 701199
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.129208,
+          "cpu_cycles": 411732
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.088375,
+          "cpu_cycles": 12133
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.3055,
+          "cpu_cycles": 976398
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.025042,
+          "cpu_cycles": 86134
+        }
+      ],
+      "wall_ms": 4.849875,
+      "cpu_cycles": 2823061
+    },
+    {
+      "intent_id": "439539124e724bdf81b3e923b3bca265",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.06075,
+          "cpu_cycles": 194266
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.045916,
+          "cpu_cycles": 145867
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.257667,
+          "cpu_cycles": 825466
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.182166,
+          "cpu_cycles": 581465
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003875,
+          "cpu_cycles": 12533
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.318459,
+          "cpu_cycles": 1016265
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.014959,
+          "cpu_cycles": 49333
+        }
+      ],
+      "wall_ms": 1.594625,
+      "cpu_cycles": 2955194
+    },
+    {
+      "intent_id": "c4b14519c3fb4b608285c5dad78a8a26",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.04575,
+          "cpu_cycles": 146800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.030583,
+          "cpu_cycles": 97733
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.185834,
+          "cpu_cycles": 594400
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.1345,
+          "cpu_cycles": 428800
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003917,
+          "cpu_cycles": 12667
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.310917,
+          "cpu_cycles": 992798
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.017208,
+          "cpu_cycles": 54933
+        }
+      ],
+      "wall_ms": 0.766584,
+      "cpu_cycles": 2456266
+    },
+    {
+      "intent_id": "52b36b97577c4ba79b6b302ca07488e8",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.047584,
+          "cpu_cycles": 152800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.032833,
+          "cpu_cycles": 104533
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.198291,
+          "cpu_cycles": 634132
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.130833,
+          "cpu_cycles": 416799
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.023667,
+          "cpu_cycles": 19334
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.288208,
+          "cpu_cycles": 919199
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.059625,
+          "cpu_cycles": 46133
+        }
+      ],
+      "wall_ms": 0.868084,
+      "cpu_cycles": 2538528
+    },
+    {
+      "intent_id": "5469f831d458470cb23ce2158ff3916c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.065916,
+          "cpu_cycles": 211200
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.044708,
+          "cpu_cycles": 160000
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.268459,
+          "cpu_cycles": 780266
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.131875,
+          "cpu_cycles": 421599
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.023208,
+          "cpu_cycles": 18400
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.42625,
+          "cpu_cycles": 1221329
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.014542,
+          "cpu_cycles": 46933
+        }
+      ],
+      "wall_ms": 0.990083,
+      "cpu_cycles": 2918127
+    },
+    {
+      "intent_id": "39b431446c9f4089ac8e5dd19fe72ae1",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.044333,
+          "cpu_cycles": 142267
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.028334,
+          "cpu_cycles": 90666
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.191166,
+          "cpu_cycles": 610665
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.139292,
+          "cpu_cycles": 444933
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.00875,
+          "cpu_cycles": 27734
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.477208,
+          "cpu_cycles": 1097065
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.018167,
+          "cpu_cycles": 68533
+        }
+      ],
+      "wall_ms": 1.030167,
+      "cpu_cycles": 2772664
+    },
+    {
+      "intent_id": "a4faa3f38db4429db518785459e9ce64",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.04875,
+          "cpu_cycles": 155866
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.027292,
+          "cpu_cycles": 87200
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.182875,
+          "cpu_cycles": 583731
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.128959,
+          "cpu_cycles": 410533
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.115666,
+          "cpu_cycles": 27200
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.345167,
+          "cpu_cycles": 1051465
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.017625,
+          "cpu_cycles": 58667
+        }
+      ],
+      "wall_ms": 1.06075,
+      "cpu_cycles": 2708395
+    },
+    {
+      "intent_id": "e907d370be244f648077f38b1781576f",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.073958,
+          "cpu_cycles": 237600
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.042625,
+          "cpu_cycles": 144400
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.282333,
+          "cpu_cycles": 852132
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.175334,
+          "cpu_cycles": 525599
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.031833,
+          "cpu_cycles": 17067
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.374667,
+          "cpu_cycles": 1196398
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.017209,
+          "cpu_cycles": 63067
+        }
+      ],
+      "wall_ms": 1.109083,
+      "cpu_cycles": 3200265
+    },
+    {
+      "intent_id": "56ca0f16c98348318db99edf69dc3045",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.062875,
+          "cpu_cycles": 201333
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.033417,
+          "cpu_cycles": 106533
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.218167,
+          "cpu_cycles": 697599
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.133958,
+          "cpu_cycles": 426800
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.027917,
+          "cpu_cycles": 18134
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.332458,
+          "cpu_cycles": 1061732
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.040291,
+          "cpu_cycles": 123333
+        }
+      ],
+      "wall_ms": 1.446334,
+      "cpu_cycles": 2845597
+    },
+    {
+      "intent_id": "85e59450e7df489ebf208a9857911b5c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.043166,
+          "cpu_cycles": 138400
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.035625,
+          "cpu_cycles": 130800
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.269,
+          "cpu_cycles": 622666
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.122584,
+          "cpu_cycles": 390800
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.069,
+          "cpu_cycles": 27733
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.352791,
+          "cpu_cycles": 1057332
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.01525,
+          "cpu_cycles": 56400
+        }
+      ],
+      "wall_ms": 1.152334,
+      "cpu_cycles": 2674798
+    },
+    {
+      "intent_id": "bf0667747b6b4daeae5ecc87f0eece7c",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.046333,
+          "cpu_cycles": 148933
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.031042,
+          "cpu_cycles": 99200
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.194667,
+          "cpu_cycles": 622533
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.140292,
+          "cpu_cycles": 447733
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003916,
+          "cpu_cycles": 12533
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.330875,
+          "cpu_cycles": 1056265
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015292,
+          "cpu_cycles": 48933
+        }
+      ],
+      "wall_ms": 0.794916,
+      "cpu_cycles": 2547329
+    },
+    {
+      "intent_id": "8653604605c345edb0abac9c54fc944e",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.047583,
+          "cpu_cycles": 152533
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.030084,
+          "cpu_cycles": 96000
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.208167,
+          "cpu_cycles": 650799
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.164709,
+          "cpu_cycles": 524932
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.003667,
+          "cpu_cycles": 11867
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.387584,
+          "cpu_cycles": 1236931
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.020041,
+          "cpu_cycles": 64266
+        }
+      ],
+      "wall_ms": 0.9085,
+      "cpu_cycles": 2893861
+    },
+    {
+      "intent_id": "9bf9e19ea25240669f0b1fa734262bde",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.040916,
+          "cpu_cycles": 131867
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.023292,
+          "cpu_cycles": 74000
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.177,
+          "cpu_cycles": 566399
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.1345,
+          "cpu_cycles": 428666
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.106875,
+          "cpu_cycles": 12800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.389209,
+          "cpu_cycles": 1241998
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.019167,
+          "cpu_cycles": 61733
+        }
+      ],
+      "wall_ms": 0.958958,
+      "cpu_cycles": 2754660
+    },
+    {
+      "intent_id": "228ca21b81544968a874be98598fd01e",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.041167,
+          "cpu_cycles": 132399
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.029417,
+          "cpu_cycles": 94400
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.228958,
+          "cpu_cycles": 733465
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.125708,
+          "cpu_cycles": 400266
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.085458,
+          "cpu_cycles": 22400
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.331375,
+          "cpu_cycles": 1059731
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.044292,
+          "cpu_cycles": 56000
+        }
+      ],
+      "wall_ms": 1.054958,
+      "cpu_cycles": 2805729
+    },
+    {
+      "intent_id": "f4fe7549c4ab4687bdeb80ee89aea13f",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.056291,
+          "cpu_cycles": 181333
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.030208,
+          "cpu_cycles": 96267
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.35875,
+          "cpu_cycles": 686133
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.182541,
+          "cpu_cycles": 583865
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.004083,
+          "cpu_cycles": 13333
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.476375,
+          "cpu_cycles": 1536931
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.018833,
+          "cpu_cycles": 60933
+        }
+      ],
+      "wall_ms": 1.240042,
+      "cpu_cycles": 3568927
+    },
+    {
+      "intent_id": "d3f915c758b84e23b800492050d8980f",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.056667,
+          "cpu_cycles": 182000
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.027708,
+          "cpu_cycles": 88266
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.203875,
+          "cpu_cycles": 651865
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.143125,
+          "cpu_cycles": 456666
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.005209,
+          "cpu_cycles": 16800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.575125,
+          "cpu_cycles": 1499064
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.019333,
+          "cpu_cycles": 62533
+        }
+      ],
+      "wall_ms": 1.105125,
+      "cpu_cycles": 3204794
+    },
+    {
+      "intent_id": "f45dfe96df8b4db28be86a0337385e23",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.06275,
+          "cpu_cycles": 201466
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.02725,
+          "cpu_cycles": 86933
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.241042,
+          "cpu_cycles": 771464
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.1355,
+          "cpu_cycles": 431733
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.09225,
+          "cpu_cycles": 18933
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.359542,
+          "cpu_cycles": 1149199
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015,
+          "cpu_cycles": 48000
+        }
+      ],
+      "wall_ms": 1.162333,
+      "cpu_cycles": 2829327
+    },
+    {
+      "intent_id": "f0e45749880a469c9d2ecbc86204f782",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.062625,
+          "cpu_cycles": 200800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.028417,
+          "cpu_cycles": 90666
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.216166,
+          "cpu_cycles": 691598
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.132458,
+          "cpu_cycles": 422399
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.01175,
+          "cpu_cycles": 37733
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.425958,
+          "cpu_cycles": 1304397
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.016459,
+          "cpu_cycles": 54400
+        }
+      ],
+      "wall_ms": 1.133042,
+      "cpu_cycles": 3004392
+    },
+    {
+      "intent_id": "d2385d76efb446549ac07e80bdb8734d",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.068792,
+          "cpu_cycles": 220799
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.029542,
+          "cpu_cycles": 93734
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.231084,
+          "cpu_cycles": 739467
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.141167,
+          "cpu_cycles": 450533
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.089667,
+          "cpu_cycles": 20400
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.397,
+          "cpu_cycles": 1268531
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.015625,
+          "cpu_cycles": 51466
+        }
+      ],
+      "wall_ms": 1.296417,
+      "cpu_cycles": 3106795
+    },
+    {
+      "intent_id": "59d389793a9e4931a18d6c70a33d9405",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.077625,
+          "cpu_cycles": 247867
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.043667,
+          "cpu_cycles": 175334
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.391542,
+          "cpu_cycles": 956533
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.158458,
+          "cpu_cycles": 506266
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.0365,
+          "cpu_cycles": 24800
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.4975,
+          "cpu_cycles": 1332531
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.029416,
+          "cpu_cycles": 101067
+        }
+      ],
+      "wall_ms": 2.276041,
+      "cpu_cycles": 3616932
+    },
+    {
+      "intent_id": "1248193e386b40efadd381b633a6ce81",
+      "phases": [
+        {
+          "phase": "FrameBudget.acquire_with_scratch",
+          "wall_ms": 0.047458,
+          "cpu_cycles": 152800
+        },
+        {
+          "phase": "ThreadPoolExecutor.submit",
+          "wall_ms": 0.030542,
+          "cpu_cycles": 97066
+        },
+        {
+          "phase": "EvidenceStore.reserve",
+          "wall_ms": 0.191875,
+          "cpu_cycles": 613466
+        },
+        {
+          "phase": "ExperimentSession.add_measurement",
+          "wall_ms": 0.1275,
+          "cpu_cycles": 405866
+        },
+        {
+          "phase": "LiveExperimentController._ensure_field",
+          "wall_ms": 0.019542,
+          "cpu_cycles": 82399
+        },
+        {
+          "phase": "LiveExperimentWorkspace._record_accepted",
+          "wall_ms": 0.401042,
+          "cpu_cycles": 1281465
+        },
+        {
+          "phase": "LiveExperimentWorkspace._changed",
+          "wall_ms": 0.019584,
+          "cpu_cycles": 65867
+        }
+      ],
+      "wall_ms": 1.05525,
+      "cpu_cycles": 2961329
+    }
+  ],
+  "instrumentation": "Nested wall and QueryThreadCycleTime phases add diagnostic overhead; not formal acceptance."
+}

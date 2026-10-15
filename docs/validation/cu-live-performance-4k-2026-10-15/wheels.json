@@ -1,0 +1,14 @@
+[
+  {
+    "filename": "zlib_ng-1.0.0-cp312-cp312-win_amd64.whl",
+    "sha256": "c6e16cb8cb140bc3e76f95294f91939929a0a3fcc0fbb6ba4191fc24dc15dea9",
+    "url": "https://files.pythonhosted.org/packages/98/c7/b6684511acc5e026650e98e029b34fa801750d29654172a1d651f619d348/zlib_ng-1.0.0-cp312-cp312-win_amd64.whl",
+    "bytes": 93520
+  },
+  {
+    "filename": "zlib_ng-1.0.0-cp313-cp313-macosx_11_0_arm64.whl",
+    "sha256": "8da943c739ffc86679979dcb654294e6bf7d40829de7dca43d453b46b251435c",
+    "url": "https://files.pythonhosted.org/packages/e1/eb/293e0f4b1598a82972cb45aa80c0b2cac88f6b0f7877081e77aba1abe668/zlib_ng-1.0.0-cp313-cp313-macosx_11_0_arm64.whl",
+    "bytes": 91290
+  }
+]

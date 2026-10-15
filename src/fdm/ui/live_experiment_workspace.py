@@ -451,8 +451,9 @@ class LiveExperimentWorkspace(QMainWindow):
         self._pending_display_id = None
         self._statistics_pool = None
         self._statistics_job = None
-        self.controller = LiveExperimentController(session, parent=self)
+        self.controller = LiveExperimentController(session, parent=self, verify_before_present=True)
         self.canvas = LiveMeasurementCanvas(self.controller)
+        self.controller.frameReady.connect(self.canvas.set_frame)
         self._last_summary_revision = -1
         self._record_model_revision = -1
         self._static_generation = 0
@@ -854,7 +855,7 @@ class LiveExperimentWorkspace(QMainWindow):
         if id(self.host.project) != self.project_identity:
             self.close()
             return
-        if self.controller.receive_frame(frame):
+        if self.controller.receive_frame(frame) and not frame.live:
             self.canvas.set_frame(frame)
 
     def _calibrate(self):

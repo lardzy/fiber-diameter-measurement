@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "validation_kind": "same-installer-extracted-payload-not-registered-install",
+  "installer": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.8-no-area-models.exe",
+  "installer_sha256": "d58001fe9a97cd307d0561bee9b8836a95e8891eb5286f29e1aad025d4c8e20f",
+  "extracted_app": "C:\\tmp\\fdm-cu-live-unpacked-0.4.8-20261015\\{app}",
+  "manifest_sha256": "5a9fc493dad056ee7ea492fa3b4cd96ba1acad33efc482308ba6f4993e14bc3a",
+  "files_verified": 4778,
+  "frozen_final_wording_checks": {
+    "latest_measurement_label": true,
+    "pending_and_failed_operation_tooltip": true,
+    "obsolete_last_valid_record_absent": true
+  },
+  "private_content_templates": [
+    "runtime\\content-templates\\-26-中空度原始记录（原号902）-集团-2023.6.13.xlsm",
+    "runtime\\content-templates\\-纤维平均直径试验记录(GBT 36422).xlsm",
+    "runtime\\content-templates\\-面积法-定量试验原始记录-新系统.xlsm",
+    "runtime\\content-templates\\sheet1.xlsm"
+  ],
+  "excluded_components": [
+    "area-models"
+  ],
+  "selfcheck_report": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\extracted-installer-selfcheck-final.json",
+  "selfcheck_sha256": "75470df0cbb083d3ec3f7df7b47ab066f7ed37def4a3b37e0025d00d98fc3b95",
+  "existing_install_record_before": [
+    {
+      "hive": "HKLM",
+      "view": "64",
+      "values": {
+        "DisplayVersion": "0.4.7",
+        "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+        "UninstallString": "\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe\""
+      }
+    }
+  ],
+  "existing_install_record_after": [
+    {
+      "hive": "HKLM",
+      "view": "64",
+      "values": {
+        "DisplayVersion": "0.4.7",
+        "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+        "UninstallString": "\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe\""
+      }
+    }
+  ],
+  "existing_installation_unchanged": true
+}

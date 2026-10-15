@@ -1,0 +1,31 @@
+{
+  "started_at_utc": "2026-10-15T04:07:31.973147+00:00",
+  "validation_only_power_assertion": {
+    "host": "caffeinate -di -t 4500, bound to runner lifetime",
+    "guest": "SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED)",
+    "previous_state": 2147483648,
+    "settings_modified": false
+  },
+  "stop_file": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\hour-awake\\stop.request",
+  "pid": 436,
+  "args": [
+    "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+    "-X",
+    "utf8",
+    "-u",
+    "scripts/validation/soak_cu_workspace.py",
+    "--size",
+    "4096",
+    "--duration-seconds",
+    "3600",
+    "--minimum-accepted",
+    "10000",
+    "--stop-file",
+    "build\\opt4k\\hour-awake\\stop.request",
+    "--output",
+    "build\\opt4k\\hour-awake\\workspace-4k-hour.json"
+  ],
+  "exit_code": 1,
+  "finished_at_utc": "2026-10-15T04:39:47.118349+00:00",
+  "guest_assertion_release_result": 2147483651
+}

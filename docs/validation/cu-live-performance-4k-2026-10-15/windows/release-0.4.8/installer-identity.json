@@ -1,0 +1,13 @@
+{
+  "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.8-no-area-models.exe",
+  "size": 398758036,
+  "sha256": "d58001fe9a97cd307d0561bee9b8836a95e8891eb5286f29e1aad025d4c8e20f",
+  "version": "0.4.8",
+  "profile": "full",
+  "excluded_components": [
+    "area-models"
+  ],
+  "included_components": [
+    "content-templates"
+  ]
+}

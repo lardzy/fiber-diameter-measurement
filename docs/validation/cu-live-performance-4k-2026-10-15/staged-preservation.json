@@ -1,0 +1,65 @@
+{
+  "all_original_staged_blobs_except_main_window_identical": true,
+  "postcommit_staged_patch_byte_identical": true,
+  "staged_patch_sha256": "b242806f2d04ac018da29d7dbd78f8993172fa4598c3c0c71cfc64624ae60347",
+  "original_staged_path_count": 15,
+  "checks": [
+    {
+      "path": ".idea/.gitignore",
+      "preserved": true
+    },
+    {
+      "path": ".idea/modules.xml",
+      "preserved": true
+    },
+    {
+      "path": "docs/research/jev-applicability-2026-09-20.md",
+      "preserved": true
+    },
+    {
+      "path": "docs/research/jev-open-source-vision-alternatives-2026-09-20.md",
+      "preserved": true
+    },
+    {
+      "path": "src/fdm/ui/digital_slide_canvas.py",
+      "preserved": true
+    },
+    {
+      "path": "src/fiber_diameter_measurement.egg-info/PKG-INFO",
+      "preserved": true
+    },
+    {
+      "path": "src/fiber_diameter_measurement.egg-info/SOURCES.txt",
+      "preserved": true
+    },
+    {
+      "path": "src/fiber_diameter_measurement.egg-info/dependency_links.txt",
+      "preserved": true
+    },
+    {
+      "path": "src/fiber_diameter_measurement.egg-info/entry_points.txt",
+      "preserved": true
+    },
+    {
+      "path": "src/fiber_diameter_measurement.egg-info/requires.txt",
+      "preserved": true
+    },
+    {
+      "path": "src/fiber_diameter_measurement.egg-info/top_level.txt",
+      "preserved": true
+    },
+    {
+      "path": "tests/test_digital_slide_boundary_feedback.py",
+      "preserved": true
+    },
+    {
+      "path": "tests/test_digital_slide_overlay_lifecycle.py",
+      "preserved": true
+    },
+    {
+      "path": "tests/test_ui_canvas_and_export.py",
+      "preserved": true
+    }
+  ],
+  "verified_after_version_048_packaging_at_utc": "2026-10-15T05:46:25.145954+00:00"
+}

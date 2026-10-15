@@ -1,0 +1,600 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "ARM64",
+    "processor": "ARMv8 (64-bit) Family 8 Model 0 Revision   0,  ",
+    "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+    "cpu_count": 4,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": null,
+      "psutil": "7.2.2",
+      "zlib-ng": "1.0.0"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 4,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": null,
+    "source_sha256": {
+      "native\\cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+      "native\\cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native\\cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native\\cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native\\kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+      "native\\windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src\\fdm\\live_experiment\\__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src\\fdm\\live_experiment\\capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src\\fdm\\live_experiment\\controller.py": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2",
+      "src\\fdm\\live_experiment\\evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+      "src\\fdm\\live_experiment\\exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src\\fdm\\live_experiment\\frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+      "src\\fdm\\live_experiment\\models.py": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "src\\fdm\\live_experiment\\motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+      "src\\fdm\\live_experiment\\persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src\\fdm\\live_experiment\\png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+      "src\\fdm\\live_experiment\\presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src\\fdm\\live_experiment\\project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+      "src\\fdm\\live_experiment\\sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src\\fdm\\live_experiment\\statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src\\fdm\\live_experiment\\window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src\\fdm\\services\\cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src\\fdm\\services\\cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+      "src\\fdm\\services\\cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+      "scripts/validation/soak_cu_workspace.py": "0afc51c8963e312ada715a0f599b85c5a32d6d3813e960abb115b31400f34813",
+      "src/fdm/ui/live_experiment_workspace.py": "f7dceb89712fd823670dfdf0d82ae6aa7827e51aa1f47bd7974b0c0e0df15724"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "9c67da55c36bfd33c6f3d128d7d4e1e0e56f4f1090bfdacd0f8824625f4acc89",
+      "python_abi": "cpython-312",
+      "python_version": "3.12.13",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "MSVC 1944"
+    },
+    "opencv_requested_threads": null,
+    "qt_platform": "windows",
+    "parallel_framework": [
+      "Parallel framework:            Concurrency"
+    ]
+  },
+  "parameters": {
+    "output": "build\\opt4k\\sampler-diagnostic\\2-on\\result.json",
+    "duration_seconds": 30.0,
+    "minimum_accepted": 30,
+    "frame_hz": 30,
+    "measurement_hz": 4,
+    "motion_interval_seconds": 10,
+    "size": 4096,
+    "save_images": true,
+    "evidence_dir": null,
+    "drain_timeout_seconds": 60,
+    "window_width": 1240,
+    "window_height": 840,
+    "qt_platform": null,
+    "opencv_threads": null
+  },
+  "limits": [
+    "Actual QTest input, QWidget/QPainter and event loop; physical display scan-out is not measured.",
+    "Existing sparse-stripe fixture and its vertical 12-pixel translation; no camera/CU hardware acceptance.",
+    "Frame budget includes two retained source arrays and next delivery; algorithm/Qt/PNG RSS reported separately.",
+    "Metric reservoirs are bounded; the production ledger and undo history intentionally retain accepted records.",
+    "Resource sampling covers active work and queue drain; post-run PNG verification and ledger reload are separate."
+  ],
+  "started_at_utc": "2026-10-15T04:01:46.634374+00:00",
+  "display": {
+    "window_size": [
+      1240,
+      840
+    ],
+    "canvas_size": [
+      845,
+      554
+    ],
+    "device_pixel_ratio": 2.0,
+    "logical_dpi": 96.0,
+    "screen_size": [
+      1291,
+      822
+    ]
+  },
+  "resources": {
+    "wall_seconds": 30.140848415998335,
+    "process_cpu_seconds": 24.109375,
+    "before": {
+      "process_cpu_seconds": 1.046875,
+      "python_threads": 5,
+      "rss_bytes": 437186560,
+      "native_threads": 22,
+      "children": [],
+      "children_rss_bytes": 0,
+      "total_rss_bytes": 437186560,
+      "children_cpu_seconds": 0,
+      "resource_provider": "psutil"
+    },
+    "after": {
+      "process_cpu_seconds": 25.15625,
+      "python_threads": 7,
+      "rss_bytes": 361046016,
+      "native_threads": 23,
+      "children": [
+        {
+          "pid": 6244,
+          "name": "python.exe",
+          "rss_bytes": 58585088,
+          "cpu_seconds": 6.25,
+          "native_threads": 4
+        }
+      ],
+      "children_rss_bytes": 58585088,
+      "total_rss_bytes": 419631104,
+      "children_cpu_seconds": 6.25,
+      "resource_provider": "psutil"
+    },
+    "sampling_interval_ms": 100,
+    "sample_count": 285,
+    "children_sampled_peaks": [
+      {
+        "pid": 6244,
+        "name": "python.exe",
+        "sampled_peak_rss_bytes": 331186176,
+        "maximum_observed_cpu_seconds": 6.25,
+        "sampled_peak_native_threads": 5
+      }
+    ],
+    "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+    "sampled_max_rss_bytes": 546586624,
+    "sampled_max_children_rss_bytes": 331186176,
+    "sampled_max_total_rss_bytes": 858095616,
+    "sampled_max_native_threads": 26,
+    "sampled_max_process_lifetime_peak_rss_bytes": null
+  },
+  "generated_during_run": 900,
+  "frame_budget_peak_bytes": 306102357,
+  "motion_retained_bytes": 11179350,
+  "motion_preparation_retained_bytes": 11179350,
+  "requested_seconds": 30.0,
+  "active_seconds": 30.077835249998316,
+  "drain_seconds": 0.05917000000044936,
+  "formal_one_hour_target": false,
+  "shape": [
+    2730,
+    4096,
+    3
+  ],
+  "fixture_kind": "sparse",
+  "translation_pixels": [
+    0,
+    12
+  ],
+  "motion_preflight": [
+    {
+      "frame_id": "preflight:1",
+      "sequence": 1,
+      "stable": false,
+      "reason": "appearance",
+      "centroid_delta": [
+        0,
+        1
+      ],
+      "translation": [
+        0,
+        4
+      ],
+      "changed_fraction": 0.05301775147928994
+    },
+    {
+      "frame_id": "preflight:1",
+      "sequence": 1,
+      "stable": false,
+      "reason": "appearance",
+      "centroid_delta": [
+        0,
+        -1
+      ],
+      "translation": [
+        0,
+        -4
+      ],
+      "changed_fraction": 0.05301775147928994
+    }
+  ],
+  "source_pool_sha256": [
+    "5dcfb68630b665ad49c057e39ef75c1c4372ff28b340e006cf5a56b1aabdd329",
+    "751e87fdd075d550a88b4cfbd27641c88c2a3e7cdbad29799aa067b61815b562"
+  ],
+  "source_retained_bytes": 67092480,
+  "acquisition_reserved_bytes": 100638720,
+  "verify_before_present": true,
+  "distinct_painted_fps": 9.209439366153038,
+  "generated_fps": 29.92236617161637,
+  "counters": {
+    "phase": "cleanup",
+    "paint_count": 478,
+    "distinct_paints": 277,
+    "last_painted_sequence": 908,
+    "attempt_slots": 97,
+    "first_clicks": 96,
+    "submitted": 96,
+    "accepted": 95,
+    "records_painted": 95,
+    "generated": 909,
+    "field_changes": 3,
+    "old_epoch_accepted": 0,
+    "old_scene_accepted": 0,
+    "unmapped_accepted": 0,
+    "wrong_width": 0,
+    "expected_motion_cancelled": 1,
+    "rejected_without_motion": 0,
+    "submitted_motion_cancelled": 1,
+    "submitted_rejected_other": 0,
+    "draft_motion_cancelled": 0,
+    "draft_lost_without_submission": 0,
+    "accepted_unpainted_due_motion": 0,
+    "accepted_unpainted_other": 0,
+    "transition_inputs": 3,
+    "transition_clear_events": 3,
+    "transition_completed": 3,
+    "unexpected_field_changes": 0,
+    "gui_publish_over_4ms": 0,
+    "fatal": false
+  },
+  "metrics": {
+    "first_click_to_draft_paint": {
+      "count": 96,
+      "p50_ms": 6.966354496398708,
+      "p95_ms": 12.791707998985657,
+      "p99_ms": 21.52423894731322,
+      "max_ms": 41.82237499480834,
+      "observations": 96,
+      "exact_max_ms": 41.82237499480834,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "second_click_to_accept": {
+      "count": 95,
+      "p50_ms": 2.7134170013596304,
+      "p95_ms": 10.806124904775048,
+      "p99_ms": 101.10834299935959,
+      "max_ms": 103.61320800438989,
+      "observations": 95,
+      "exact_max_ms": 103.61320800438989,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "second_click_to_record_paint": {
+      "count": 95,
+      "p50_ms": 11.282416999165434,
+      "p95_ms": 26.234562603349328,
+      "p99_ms": 120.39848896252808,
+      "max_ms": 124.59175000549294,
+      "observations": 95,
+      "exact_max_ms": 124.59175000549294,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "accept_to_record_paint": {
+      "count": 95,
+      "p50_ms": 8.651750002172776,
+      "p95_ms": 16.138458697241727,
+      "p99_ms": 24.20279446174391,
+      "max_ms": 25.01358299923595,
+      "observations": 95,
+      "exact_max_ms": 25.01358299923595,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "compute_done_to_accept": {
+      "count": 95,
+      "p50_ms": 1.881625001260545,
+      "p95_ms": 7.1686544979456785,
+      "p99_ms": 98.46744802212925,
+      "max_ms": 99.26237499894341,
+      "observations": 95,
+      "exact_max_ms": 99.26237499894341,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "canvas_paint_duration": {
+      "count": 478,
+      "p50_ms": 3.4813960010069422,
+      "p95_ms": 5.97248750127619,
+      "p99_ms": 8.19736000019475,
+      "max_ms": 17.9071250022389,
+      "observations": 478,
+      "exact_max_ms": 17.9071250022389,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "gui_publish_ms": {
+      "count": 95,
+      "p50_ms": 0.7123329996829852,
+      "p95_ms": 1.5655034992960277,
+      "p99_ms": 2.332444477506215,
+      "max_ms": 2.450375002808869,
+      "observations": 95,
+      "exact_max_ms": 2.450375002808869,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "gui_publish_failed_ms": {
+      "count": 0,
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null,
+      "max_ms": null,
+      "observations": 0,
+      "exact_max_ms": 0.0,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "frame_age_at_first_paint": {
+      "count": 277,
+      "p50_ms": 154.63204200204927,
+      "p95_ms": 334.53679160011234,
+      "p99_ms": 353.355037001893,
+      "max_ms": 373.51858399779303,
+      "observations": 277,
+      "exact_max_ms": 373.51858399779303,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "event_loop_gap": {
+      "count": 1198,
+      "p50_ms": 4.460916501557222,
+      "p95_ms": 101.7579437466338,
+      "p99_ms": 194.39580197540633,
+      "max_ms": 212.05616699444363,
+      "observations": 1198,
+      "exact_max_ms": 212.05616699444363,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "source_snapshot_and_handoff": {
+      "count": 900,
+      "p50_ms": 12.323979499342386,
+      "p95_ms": 16.341537148400672,
+      "p99_ms": 36.0384275860997,
+      "max_ms": 44.51929200149607,
+      "observations": 900,
+      "exact_max_ms": 44.51929200149607,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_first_paint": {
+      "count": 3,
+      "p50_ms": 146.97795899701305,
+      "p95_ms": 197.71564529801253,
+      "p99_ms": 202.22566185810138,
+      "max_ms": 203.3531659981236,
+      "observations": 3,
+      "exact_max_ms": 203.3531659981236,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_motion_complete": {
+      "count": 3,
+      "p50_ms": 105.66316700715106,
+      "p95_ms": 186.1869167019904,
+      "p99_ms": 193.3445833415317,
+      "max_ms": 195.134000001417,
+      "observations": 3,
+      "exact_max_ms": 195.134000001417,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "motion_complete_to_clear": {
+      "count": 3,
+      "p50_ms": 0.7910409985925071,
+      "p95_ms": 51.200716901075786,
+      "p99_ms": 55.68157698129653,
+      "max_ms": 56.801792001351714,
+      "observations": 3,
+      "exact_max_ms": 56.801792001351714,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_clear": {
+      "count": 3,
+      "p50_ms": 141.65733399568126,
+      "p95_ms": 190.4982702995767,
+      "p99_ms": 194.83968685992295,
+      "max_ms": 195.92504100000951,
+      "observations": 3,
+      "exact_max_ms": 195.92504100000951,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_clear_paint": {
+      "count": 3,
+      "p50_ms": 146.97795899701305,
+      "p95_ms": 197.71564529801253,
+      "p99_ms": 202.22566185810138,
+      "max_ms": 203.3531659981236,
+      "observations": 3,
+      "exact_max_ms": 203.3531659981236,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "clear_to_clear_paint": {
+      "count": 3,
+      "p50_ms": 7.428124998114072,
+      "p95_ms": 9.660387799522141,
+      "p99_ms": 9.858811159647303,
+      "max_ms": 9.908416999678593,
+      "observations": 3,
+      "exact_max_ms": 9.908416999678593,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    }
+  },
+  "latency_by_fifteen_minutes": [
+    {
+      "start_seconds": 0,
+      "end_seconds": 30.0,
+      "metrics": {
+        "first_click_to_draft_paint": {
+          "count": 96,
+          "p50_ms": 6.966354496398708,
+          "p95_ms": 12.791707998985657,
+          "p99_ms": 21.52423894731322,
+          "max_ms": 41.82237499480834,
+          "observations": 96,
+          "exact_max_ms": 41.82237499480834,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_accept": {
+          "count": 95,
+          "p50_ms": 2.7134170013596304,
+          "p95_ms": 10.806124904775048,
+          "p99_ms": 101.10834299935959,
+          "max_ms": 103.61320800438989,
+          "observations": 95,
+          "exact_max_ms": 103.61320800438989,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_record_paint": {
+          "count": 95,
+          "p50_ms": 11.282416999165434,
+          "p95_ms": 26.234562603349328,
+          "p99_ms": 120.39848896252808,
+          "max_ms": 124.59175000549294,
+          "observations": 95,
+          "exact_max_ms": 124.59175000549294,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "gui_publish_ms": {
+          "count": 95,
+          "p50_ms": 0.7123329996829852,
+          "p95_ms": 1.5655034992960277,
+          "p99_ms": 2.332444477506215,
+          "max_ms": 2.450375002808869,
+          "observations": 95,
+          "exact_max_ms": 2.450375002808869,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        }
+      }
+    }
+  ],
+  "queue_max": {
+    "manual_jobs": 1,
+    "pending_classification": 0,
+    "confirmation": 0,
+    "evidence_writes": 1,
+    "mailbox": 1,
+    "automatic_inflight": 1,
+    "motion_preparing": 1,
+    "motion_deciding": 1,
+    "tracked_intents": 1,
+    "awaiting_record_paint": 1
+  },
+  "history_count": 95,
+  "undo_history_count": 95,
+  "field_count": 3,
+  "evidence_states": {
+    "saved": 95
+  },
+  "evidence_file_count": 95,
+  "evidence_bytes": 32000487,
+  "evidence_directory": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\sampler-diagnostic\\2-on\\result-evidence",
+  "evidence_verification": {
+    "unique_files_checked": 95,
+    "unique_png_payloads_decoded": 2,
+    "missing_or_wrong_hash": 0,
+    "wrong_pixels_or_dimensions": 0,
+    "extra_files": 0,
+    "seconds": 0.5847658749989932
+  },
+  "ledger_snapshot": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\sampler-diagnostic\\2-on\\result-ledger.json",
+  "ledger_snapshot_sha256": "b5854065acd2c3cdc7353c0cf7ce0963b311c8cde7f7d495e01a2b40a0684919",
+  "motion_transition_examples": [
+    {
+      "input_at": 45617.201973041,
+      "input_sequence": 307,
+      "scene": 1,
+      "transition_id": 1,
+      "motion_sequence": 307,
+      "motion_completed_at": 45617.286828583,
+      "motion_reason": "appearance",
+      "cleared_at": 45617.343630375,
+      "cleared_epoch": 2,
+      "first_painted_at": 45617.348951,
+      "clear_painted_at": 45617.348951
+    },
+    {
+      "input_at": 45627.2017985,
+      "input_sequence": 607,
+      "scene": 0,
+      "transition_id": 2,
+      "motion_sequence": 607,
+      "motion_completed_at": 45627.3969325,
+      "motion_reason": "appearance",
+      "cleared_at": 45627.397723541,
+      "cleared_epoch": 3,
+      "first_painted_at": 45627.405151666,
+      "clear_painted_at": 45627.405151666
+    },
+    {
+      "input_at": 45637.201820708,
+      "input_sequence": 907,
+      "scene": 1,
+      "transition_id": 3,
+      "motion_sequence": 908,
+      "motion_completed_at": 45637.307483875,
+      "motion_reason": "appearance",
+      "cleared_at": 45637.308233041,
+      "cleared_epoch": 4,
+      "first_painted_at": 45637.318141458,
+      "clear_painted_at": 45637.318141458
+    }
+  ],
+  "unresolved_motion_transitions": [],
+  "errors": {},
+  "unexpected_rejections": {},
+  "expected_motion_rejections": {},
+  "skipped_attempts": {
+    "field_not_ready": 1
+  },
+  "status_counts": {
+    "视场稳定，可以测量": 3,
+    "视场已变化，请重新测量": 3,
+    "试验工作区已关闭": 1
+  },
+  "violation_examples": [],
+  "exception_examples": [],
+  "background_automatic_results": {
+    "ok": 3
+  },
+  "background_automatic_latency": {
+    "count": 3,
+    "p50_ms": 2158.5657079995144,
+    "p95_ms": 2720.890470804443,
+    "p99_ms": 2770.874894164881,
+    "max_ms": 2783.3710000049905,
+    "observations": 3,
+    "exact_max_ms": 2783.3710000049905,
+    "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+  },
+  "automatic_candidates_entered_ledger": 0,
+  "checks": {
+    "requested_duration_completed": true,
+    "minimum_accepted_reached": true,
+    "all_records_have_valid_field": true,
+    "old_epoch_accepted_zero": true,
+    "old_scene_accepted_zero": true,
+    "accepted_event_count_matches_ledger": true,
+    "all_accepted_mapped_to_click_intent": true,
+    "submitted_intents_accounted_for": true,
+    "accepted_paint_outcomes_accounted_for": true,
+    "undo_history_preserves_each_measurement": true,
+    "ledger_snapshot_roundtrip_exact": true,
+    "background_automatic_executed": true,
+    "no_automatic_candidates_entered_ledger": true,
+    "known_width_unchanged": true,
+    "evidence_complete": true,
+    "evidence_files_exist_and_match_pixels": true,
+    "queues_drained_before_deadline": true,
+    "frame_budget_within_512_mib": true,
+    "all_frame_leases_released": true,
+    "producer_stopped": true,
+    "unexpected_errors_zero": true,
+    "scheduled_motion_detected": true,
+    "unexpected_field_changes_zero": true,
+    "unexpected_rejections_zero": true
+  },
+  "passed": true,
+  "frame_budget_after_close": 0
+}

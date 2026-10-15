@@ -1,0 +1,72 @@
+{
+  "base_commit": "5049422a640a02734b48f6b7fd4bad913efc05df",
+  "files": [
+    {
+      "path": "native/kernels.cpp",
+      "sha256": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e"
+    },
+    {
+      "path": "src/fdm/live_experiment/motion.py",
+      "sha256": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259"
+    },
+    {
+      "path": "src/fdm/live_experiment/controller.py",
+      "sha256": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2"
+    },
+    {
+      "path": "src/fdm/live_experiment/png_stream.py",
+      "sha256": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550"
+    },
+    {
+      "path": "src/fdm/ui/live_experiment_workspace.py",
+      "sha256": "f7dceb89712fd823670dfdf0d82ae6aa7827e51aa1f47bd7974b0c0e0df15724"
+    },
+    {
+      "path": "src/fdm/services/cu_automatic_worker.py",
+      "sha256": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8"
+    },
+    {
+      "path": "src/fdm/services/cu_live_self_check.py",
+      "sha256": "bc697814afcacba1daaa561bdb55f7bf7c6649b9ee8f0022a9f93fa5d89a71fa"
+    },
+    {
+      "path": "scripts/benchmark_cu_live_ui.py",
+      "sha256": "ac4a09bcc08e7db9f6f5b572ba33887b625a2430c9b71e39b03bd6c247bc7d0b"
+    },
+    {
+      "path": "scripts/validation/profile_cu_motion_stages.py",
+      "sha256": "d29141f5cc8d37008b5bd02f7f0373905bf461550fc5946af1d9d9072f227f4b"
+    },
+    {
+      "path": "scripts/validation/soak_cu_workspace.py",
+      "sha256": "60ccb76c45a82dc5d5b8781cc6d9df771be3ef43c65eef66daac47344ace2c96"
+    },
+    {
+      "path": "scripts/validation/benchmark_cu_png_stream_pair.py",
+      "sha256": "451ba99572fd246767a5fb4704105b34ed0db343f0cca3948e052dc85be12065"
+    },
+    {
+      "path": "src/fdm/version.py",
+      "sha256": "fa526575502b0282474044b51e11a0a7ba99479dfe284858d0d6f00bbedfb2d6"
+    },
+    {
+      "path": "packaging/inno-setup/version.auto.iss",
+      "sha256": "c692a048bc841669ae0209c400ab4379771a05a1aba5927bb554089cb931d378"
+    },
+    {
+      "path": "README.md",
+      "sha256": "3dbd94c47e8c2f4786ba8ebed506bde0c359623632ea3130cbf7bdfd4a7c0148"
+    }
+  ],
+  "unchanged_algorithms": [
+    "native/cu_manual.cpp",
+    "native/cu_automatic.cpp",
+    "src/fdm/services/cu_manual_measurement.py",
+    "src/fdm/services/cu_automatic_measurement.py",
+    "src/fdm/live_experiment/models.py",
+    "src/fdm/live_experiment/statistics.py"
+  ],
+  "all_listed_algorithms_equal_to_base_commit": true,
+  "harness_note": "Production optimization unchanged since short3 and release-final (0.4.7); application and installer version now 0.4.8. Endurance run stopped cooperatively at user request after 7460 accepted records. User scope is usual 2000 records, up to 4K; no product limit introduced.",
+  "application_version": "0.4.8"
+}

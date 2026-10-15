@@ -1,0 +1,63 @@
+[
+  {
+    "label": "install-record-before",
+    "args": [
+      "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\validate-extracted.py",
+      "before"
+    ],
+    "exit_code": 0,
+    "seconds": 2.023932933807373
+  },
+  {
+    "label": "extract-installer",
+    "args": [
+      "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\validation-tools\\innounp.exe",
+      "-x",
+      "-b",
+      "-a",
+      "-u",
+      "-o",
+      "-dC:\\tmp\\fdm-cu-live-unpacked-0.4.8-20261015",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.8-no-area-models.exe"
+    ],
+    "exit_code": 0,
+    "seconds": 26.224851846694946
+  },
+  {
+    "label": "validate-extracted",
+    "args": [
+      "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\validate-extracted.py"
+    ],
+    "exit_code": 0,
+    "seconds": 18.02398157119751
+  },
+  {
+    "label": "extracted-code",
+    "args": [
+      "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\verify-frozen-code.py",
+      "C:\\tmp\\fdm-cu-live-unpacked-0.4.8-20261015\\{app}",
+      "--label",
+      "extracted-048"
+    ],
+    "exit_code": 0,
+    "seconds": 2.014909267425537
+  },
+  {
+    "label": "extracted-gui",
+    "args": [
+      "powershell.exe",
+      "-NoProfile",
+      "-NonInteractive",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\probe-gui.ps1",
+      "-AcknowledgeIsolatedEmptyProject"
+    ],
+    "exit_code": 0,
+    "seconds": 14.040245056152344
+  }
+]

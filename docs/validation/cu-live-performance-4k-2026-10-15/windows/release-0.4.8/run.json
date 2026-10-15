@@ -1,0 +1,48 @@
+[
+  {
+    "label": "version-build-regression",
+    "args": [
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_build_support.py",
+      "tests/test_build_windows_onedir.py",
+      "tests/test_build_windows_installer.py",
+      "--junitxml=C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-0.4.8\\version-build-regression.xml"
+    ],
+    "exit_code": 0,
+    "seconds": 20.011885404586792
+  },
+  {
+    "label": "full-build",
+    "args": [
+      "scripts/build_windows_onedir.py",
+      "--profile",
+      "full",
+      "--exclude-area-models"
+    ],
+    "exit_code": 0,
+    "seconds": 2535.1087465286255
+  },
+  {
+    "label": "full-code",
+    "args": [
+      "build/opt4k/release-0.4.8/verify-frozen-code.py",
+      "dist/windows/FiberDiameterMeasurement",
+      "--label",
+      "full-048"
+    ],
+    "exit_code": 0,
+    "seconds": 5.061492443084717
+  },
+  {
+    "label": "installer",
+    "args": [
+      "scripts/build_windows_installer.py",
+      "--reuse-onedir",
+      "--exclude-area-models"
+    ],
+    "exit_code": 0,
+    "seconds": 160.25493478775024
+  }
+]

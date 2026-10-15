@@ -1,0 +1,5247 @@
+{
+  "schema_version": 2,
+  "purpose": "post-remediation sequential diagnostic; not before-baseline, GUI or parallel throughput acceptance",
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+    "executable": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+    "cpu_count": 18,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": "3.0.4",
+      "psutil": "7.2.2",
+      "zlib-ng": "1.0.0"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 18,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": "5049422a640a02734b48f6b7fd4bad913efc05df",
+    "source_sha256": {
+      "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+      "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+      "native/windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src/fdm/live_experiment/capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src/fdm/live_experiment/controller.py": "ffb517f934992fd4eac4d8c19f74113012a47d7e3b8cda9ecfff1a1f8642e0c2",
+      "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+      "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+      "src/fdm/live_experiment/models.py": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+      "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+      "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+      "src/fdm/live_experiment/sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src/fdm/live_experiment/window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+      "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+      "scripts/validation/profile_cu_motion_stages.py": "d29141f5cc8d37008b5bd02f7f0373905bf461550fc5946af1d9d9072f227f4b",
+      "scripts/validation/benchmark_cu_motion.py": "607540943c6e56c374880e7a46fdb025dfe456e6b775f75c7a029b6d4a4989ea",
+      "scripts/benchmark_cu_live_measurement.py": "5d0a4b9a953253e1bbe63e27bce021eea2fdd3bcb45a9fd74d61864d92c0a653",
+      "scripts/benchmark_cu_live_ui.py": "ac4a09bcc08e7db9f6f5b572ba33887b625a2430c9b71e39b03bd6c247bc7d0b"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "9c67da55c36bfd33c6f3d128d7d4e1e0e56f4f1090bfdacd0f8824625f4acc89",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    },
+    "opencv_requested_threads": null,
+    "opencv_reported_threads": 18,
+    "opencv_parallel_framework": "Parallel framework:            GCD"
+  },
+  "parameters": {
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-optimization/macos-formal/motion-stages.json",
+    "sizes": [
+      2048,
+      4096
+    ],
+    "warmup": 5,
+    "samples": 30,
+    "opencv_threads": null
+  },
+  "fixture": {
+    "source": "scripts/validation/benchmark_cu_motion.py",
+    "seed": 20261015,
+    "canonical_rng_size_order": [
+      2048,
+      4096,
+      6144
+    ],
+    "gray_reduction_factor": 3,
+    "base": "uint8 RNG integers [40,216), shape (width*2//3,width,3)",
+    "noise": "base XOR independently drawn uint8 integers [0,2)",
+    "unique_marker": "16 adjacent 6x6 BGR blocks at (12,12), values 200/201 encode sequence",
+    "reference": "unmodified base; every measured current includes the sequence marker"
+  },
+  "limits": [
+    "Uses unchanged cv2.dft/mulSpectrums/idft flags and float32 normalization; no other FFT library.",
+    "Sobel timing includes the exact uint8 max(absdiff)<=8 shortcut; native peak uses one contiguous parity-preserving scan.",
+    "Reference initialization, acquisition/frame allocation and hashes are excluded from sample timings.",
+    "Instrumented operations run sequentially. Preparation/decision sums are not evidence of parallel speedup or bounded frame age.",
+    "Compare final MotionResult exactly; this is not a new intermediate-bit regression for another FFT implementation.",
+    "Unique marker defeats consecutive exact-pixel cache hits; no claim about natural-camera content is implied.",
+    "CPU/GPU frame-budget, GUI presentation, PNG and automatic-worker contention are outside this diagnostic.",
+    "Run only when exclusive benchmark ownership is available; Windows x64 emulation may exceed the intended macOS runtime."
+  ],
+  "cases": [
+    {
+      "width": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "reduced_shape": [
+        455,
+        682
+      ],
+      "samples": 30,
+      "warmup": 5,
+      "case_wall_seconds": 0.7331212909921305,
+      "reference_sha256": "059ebb9210d8cb1bd9bc3ff7614794dce5d0c5284902ac9ec8fbca6bc4698911",
+      "noise_source_sha256": "427e284b8f301cca5b21f1a49fcc3d3ed00e301dd7dc389ff90332c2df552065",
+      "reference_centroid": [
+        340,
+        226
+      ],
+      "reference_fft_sha256": "e88c62e539a8abd048ce0623d843b7592afa55a17bba78712eaaedb50c7cf8b2",
+      "result_disagreements_including_warmup": 0,
+      "geometry_cache_hits_including_warmup": 0,
+      "duplicate_consecutive_reduced_frames_including_warmup": 0,
+      "all_frames_use_full_geometry": true,
+      "all_results_stable": true,
+      "metrics": {
+        "gray_reduce": {
+          "count": 30,
+          "p50_ms": 0.383104,
+          "p95_ms": 0.4213849,
+          "p99_ms": 0.7096797500000003,
+          "max_ms": 0.827166,
+          "samples_ms": [
+            0.262875,
+            0.393667,
+            0.369916,
+            0.390375,
+            0.420583,
+            0.422041,
+            0.388,
+            0.393959,
+            0.380416,
+            0.383625,
+            0.373166,
+            0.411542,
+            0.827166,
+            0.256625,
+            0.267416,
+            0.257458,
+            0.277375,
+            0.401875,
+            0.399042,
+            0.396375,
+            0.4025,
+            0.257792,
+            0.377458,
+            0.393833,
+            0.4115,
+            0.382583,
+            0.254375,
+            0.264958,
+            0.250708,
+            0.264625
+          ]
+        },
+        "geometry_cache_check": {
+          "count": 30,
+          "p50_ms": 0.038938,
+          "p95_ms": 0.1171786499999999,
+          "p99_ms": 0.13285403,
+          "max_ms": 0.133084,
+          "samples_ms": [
+            0.068875,
+            0.0135,
+            0.026167,
+            0.030375,
+            0.077209,
+            0.031958,
+            0.025625,
+            0.133084,
+            0.011833,
+            0.046583,
+            0.051417,
+            0.085542,
+            0.132291,
+            0.06025,
+            0.065333,
+            0.027666,
+            0.039334,
+            0.077125,
+            0.063833,
+            0.026458,
+            0.038542,
+            0.01175,
+            0.01175,
+            0.027083,
+            0.037084,
+            0.028541,
+            0.039666,
+            0.0155,
+            0.041792,
+            0.098708
+          ]
+        },
+        "centroid": {
+          "count": 30,
+          "p50_ms": 0.0914165,
+          "p95_ms": 0.09477759999999999,
+          "p99_ms": 0.09670722000000001,
+          "max_ms": 0.097166,
+          "samples_ms": [
+            0.093792,
+            0.086167,
+            0.092209,
+            0.091,
+            0.092083,
+            0.091625,
+            0.089292,
+            0.088375,
+            0.083709,
+            0.08875,
+            0.090125,
+            0.089458,
+            0.092375,
+            0.095584,
+            0.092917,
+            0.0915,
+            0.093083,
+            0.091167,
+            0.092917,
+            0.090958,
+            0.091584,
+            0.090833,
+            0.086791,
+            0.091333,
+            0.093583,
+            0.088792,
+            0.091041,
+            0.0935,
+            0.097166,
+            0.091625
+          ]
+        },
+        "normalization": {
+          "count": 30,
+          "p50_ms": 0.0605,
+          "p95_ms": 0.13077919999999998,
+          "p99_ms": 0.13524379,
+          "max_ms": 0.136041,
+          "samples_ms": [
+            0.070375,
+            0.061167,
+            0.06325,
+            0.121042,
+            0.059083,
+            0.038542,
+            0.059792,
+            0.05875,
+            0.059708,
+            0.09275,
+            0.061458,
+            0.058958,
+            0.064792,
+            0.059833,
+            0.136041,
+            0.066458,
+            0.063,
+            0.055416,
+            0.043959,
+            0.037208,
+            0.038,
+            0.039625,
+            0.080208,
+            0.133292,
+            0.058,
+            0.036042,
+            0.127708,
+            0.081375,
+            0.084416,
+            0.058084
+          ]
+        },
+        "forward_dft": {
+          "count": 30,
+          "p50_ms": 2.566479,
+          "p95_ms": 2.6517833,
+          "p99_ms": 2.71871407,
+          "max_ms": 2.740875,
+          "samples_ms": [
+            2.575958,
+            2.664458,
+            2.579625,
+            2.529625,
+            2.575208,
+            2.63175,
+            2.47275,
+            2.466166,
+            2.473833,
+            2.439083,
+            2.481542,
+            2.522791,
+            2.572958,
+            2.740875,
+            2.635917,
+            2.54425,
+            2.565917,
+            2.550833,
+            2.544083,
+            2.576417,
+            2.567041,
+            2.547875,
+            2.598334,
+            2.604458,
+            2.557875,
+            2.543125,
+            2.551417,
+            2.618666,
+            2.636292,
+            2.579333
+          ]
+        },
+        "mul_spectrums": {
+          "count": 30,
+          "p50_ms": 0.260771,
+          "p95_ms": 0.29556874999999994,
+          "p99_ms": 0.30453589,
+          "max_ms": 0.304959,
+          "samples_ms": [
+            0.282541,
+            0.3035,
+            0.285875,
+            0.248292,
+            0.266666,
+            0.245125,
+            0.239,
+            0.239584,
+            0.231708,
+            0.226708,
+            0.256875,
+            0.255459,
+            0.279375,
+            0.304959,
+            0.272292,
+            0.254875,
+            0.265,
+            0.263667,
+            0.256083,
+            0.264,
+            0.243917,
+            0.259959,
+            0.257166,
+            0.265666,
+            0.244792,
+            0.261583,
+            0.265959,
+            0.268084,
+            0.268,
+            0.25475
+          ]
+        },
+        "inverse_dft": {
+          "count": 30,
+          "p50_ms": 4.783541,
+          "p95_ms": 5.358937499999999,
+          "p99_ms": 5.888791070000001,
+          "max_ms": 5.982292,
+          "samples_ms": [
+            4.811958,
+            4.806709,
+            4.800041,
+            4.830792,
+            4.805916,
+            4.679083,
+            4.678333,
+            4.629083,
+            4.639375,
+            4.632417,
+            4.704583,
+            4.658333,
+            4.666208,
+            5.982292,
+            4.991125,
+            4.783416,
+            4.806209,
+            4.76775,
+            4.783666,
+            4.801708,
+            4.796291,
+            4.777792,
+            4.79475,
+            4.806709,
+            4.658791,
+            4.656542,
+            4.671708,
+            5.659875,
+            4.953375,
+            4.780167
+          ]
+        },
+        "native_peak": {
+          "count": 30,
+          "p50_ms": 0.19474950000000002,
+          "p95_ms": 0.2043981,
+          "p99_ms": 0.20494949999999998,
+          "max_ms": 0.205167,
+          "samples_ms": [
+            0.195209,
+            0.194666,
+            0.197791,
+            0.196667,
+            0.194583,
+            0.189125,
+            0.189708,
+            0.188667,
+            0.189333,
+            0.189666,
+            0.189916,
+            0.190709,
+            0.193708,
+            0.205167,
+            0.204417,
+            0.196834,
+            0.194958,
+            0.194833,
+            0.195334,
+            0.194375,
+            0.194375,
+            0.196625,
+            0.1955,
+            0.1985,
+            0.189792,
+            0.191791,
+            0.190208,
+            0.204375,
+            0.202292,
+            0.195041
+          ]
+        },
+        "sobel": {
+          "count": 30,
+          "p50_ms": 0.07975,
+          "p95_ms": 0.13046264999999999,
+          "p99_ms": 0.13828375,
+          "max_ms": 0.139625,
+          "samples_ms": [
+            0.063667,
+            0.091916,
+            0.063375,
+            0.060125,
+            0.096792,
+            0.082375,
+            0.081375,
+            0.062791,
+            0.10075,
+            0.063625,
+            0.135,
+            0.139625,
+            0.092166,
+            0.124917,
+            0.046333,
+            0.046375,
+            0.089375,
+            0.058084,
+            0.053,
+            0.098416,
+            0.078125,
+            0.06475,
+            0.123166,
+            0.056959,
+            0.103083,
+            0.102125,
+            0.04425,
+            0.0565,
+            0.042458,
+            0.10675
+          ]
+        },
+        "production_ms": {
+          "count": 30,
+          "p50_ms": 8.521291999999999,
+          "p95_ms": 9.818812499999996,
+          "p99_ms": 10.52051482,
+          "max_ms": 10.521542,
+          "samples_ms": [
+            8.302125,
+            8.5755,
+            8.472291,
+            8.452917,
+            8.542291,
+            8.567333,
+            8.269916,
+            8.381667,
+            8.061541,
+            8.447542,
+            8.129916,
+            8.285625,
+            8.512542,
+            10.518,
+            8.743917,
+            8.553459,
+            8.530791,
+            8.446417,
+            8.371375,
+            8.530042,
+            8.640292,
+            8.553208,
+            8.663667,
+            8.627875,
+            8.160084,
+            8.334042,
+            8.96425,
+            10.521542,
+            8.826666,
+            8.458917
+          ]
+        },
+        "instrumented_ms": {
+          "count": 30,
+          "p50_ms": 8.5240625,
+          "p95_ms": 9.23585815,
+          "p99_ms": 9.85280943,
+          "max_ms": 10.065041,
+          "samples_ms": [
+            8.477583,
+            8.691208,
+            8.560208,
+            8.566042,
+            8.635875,
+            8.569125,
+            8.320709,
+            8.308125,
+            8.232542,
+            8.219583,
+            8.397875,
+            8.491625,
+            9.116875,
+            10.065041,
+            8.769875,
+            8.320333,
+            8.511416,
+            8.537208,
+            8.486,
+            8.536709,
+            8.496333,
+            8.29775,
+            8.573958,
+            8.655125,
+            8.645792,
+            8.497333,
+            8.312625,
+            9.333208,
+            8.626625,
+            8.494291
+          ]
+        },
+        "preparation_sum_ms": {
+          "count": 30,
+          "p50_ms": 3.081375,
+          "p95_ms": 3.2150603500000003,
+          "p99_ms": 3.46032225,
+          "max_ms": 3.5572909999999998,
+          "samples_ms": [
+            3.003,
+            3.2054590000000003,
+            3.105,
+            3.1320419999999998,
+            3.146957,
+            3.1839579999999996,
+            3.009834,
+            3.00725,
+            2.9976659999999997,
+            3.004208,
+            3.006291,
+            3.0827489999999997,
+            3.5572909999999998,
+            3.152917,
+            3.132291,
+            2.959666,
+            2.9993749999999997,
+            3.099291,
+            3.080001,
+            3.1009580000000003,
+            3.0991250000000004,
+            2.936125,
+            3.142791,
+            3.222916,
+            3.120958,
+            3.0505419999999996,
+            3.0245409999999997,
+            3.0584990000000003,
+            3.068582,
+            2.9936670000000003
+          ]
+        },
+        "decision_sum_ms": {
+          "count": 30,
+          "p50_ms": 5.305917,
+          "p95_ms": 5.885233849999999,
+          "p99_ms": 6.49306971,
+          "max_ms": 6.617335,
+          "samples_ms": [
+            5.353375,
+            5.3967909999999994,
+            5.347082,
+            5.335876,
+            5.363957,
+            5.195708000000001,
+            5.188416,
+            5.120125,
+            5.161166000000001,
+            5.1124160000000005,
+            5.286374,
+            5.244126,
+            5.231457,
+            6.617335,
+            5.5141670000000005,
+            5.2815,
+            5.355542,
+            5.284334,
+            5.288083,
+            5.358498999999999,
+            5.312708,
+            5.299126,
+            5.370582,
+            5.327833999999999,
+            5.196458,
+            5.212041,
+            5.172124999999999,
+            6.188834000000001,
+            5.466125,
+            5.336708
+          ]
+        }
+      },
+      "trials": [
+        {
+          "sequence": 1,
+          "warmup": true,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "32a23dc94c8ce3153b283dbf6989969caa7cf67b79a4b5b0f022e58fe5591706",
+          "reduced_sha256": "c5a8c6bf9d60392f62f0750caf51e4841a560bb7a195c82a6b3e6eedcf33e2da",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.397,
+          "instrumented_ms": 8.767125,
+          "stages_ms": {
+            "gray_reduce": 0.466583,
+            "geometry_cache_check": 0.000375,
+            "centroid": 0.091459,
+            "normalization": 0.063875,
+            "forward_dft": 2.483542,
+            "mul_spectrums": 0.2795,
+            "inverse_dft": 4.604791,
+            "native_peak": 0.190667,
+            "sobel": 0.447625
+          },
+          "preparation_sum_ms": 3.1054589999999997,
+          "decision_sum_ms": 5.522583,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:1",
+            "sequence": 1,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0004382714060133415
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:1",
+            "sequence": 1,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0004382714060133415
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 2,
+          "warmup": true,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "3ce37b2c779c8fd4d9ad1dc005b1e92919238e41c2b1022a5b1f8cd2de0bdb13",
+          "reduced_sha256": "a6d5adc8e1be90a07ddba74ec0adc5fe319b679c32309ba3698167a28dc28926",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 11.470459,
+          "instrumented_ms": 11.677625,
+          "stages_ms": {
+            "gray_reduce": 0.250208,
+            "geometry_cache_check": 0.090167,
+            "centroid": 0.094583,
+            "normalization": 0.062708,
+            "forward_dft": 2.544083,
+            "mul_spectrums": 0.298041,
+            "inverse_dft": 7.595292,
+            "native_peak": 0.493083,
+            "sobel": 0.075958
+          },
+          "preparation_sum_ms": 2.951582,
+          "decision_sum_ms": 8.462374,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:2",
+            "sequence": 2,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:2",
+            "sequence": 2,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 3,
+          "warmup": true,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "5ffcfc17bf890fd4f7ecf2dd5f6d2df9c4f81f541e5e3e19fdde0905f9ca1cf8",
+          "reduced_sha256": "d0a8ae3fcd7e3d5ed21e0a7ee101a8427d80eaaf7e0e1e26db212de368812bbc",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 9.949542,
+          "instrumented_ms": 8.49425,
+          "stages_ms": {
+            "gray_reduce": 0.264125,
+            "geometry_cache_check": 0.04575,
+            "centroid": 0.090792,
+            "normalization": 0.141375,
+            "forward_dft": 2.554458,
+            "mul_spectrums": 0.268,
+            "inverse_dft": 4.803708,
+            "native_peak": 0.196625,
+            "sobel": 0.057042
+          },
+          "preparation_sum_ms": 3.05075,
+          "decision_sum_ms": 5.325375,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:3",
+            "sequence": 3,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:3",
+            "sequence": 3,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 4,
+          "warmup": true,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "381a75776b8f2c99876fde3d6d0e04a8587db12f5e6f0c62af1e7fba47095d89",
+          "reduced_sha256": "64ed0036cdd9f385f86fea34b94ae5a6bd90e6afc0b1beff10be58e5f8524847",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.686875,
+          "instrumented_ms": 8.533375,
+          "stages_ms": {
+            "gray_reduce": 0.282708,
+            "geometry_cache_check": 0.036125,
+            "centroid": 0.09475,
+            "normalization": 0.043792,
+            "forward_dft": 2.558583,
+            "mul_spectrums": 0.310584,
+            "inverse_dft": 4.824959,
+            "native_peak": 0.198583,
+            "sobel": 0.067041
+          },
+          "preparation_sum_ms": 2.979833,
+          "decision_sum_ms": 5.401167,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:4",
+            "sequence": 4,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:4",
+            "sequence": 4,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 5,
+          "warmup": true,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "aa25c7a6bdb5cb51f76fdca42642abbb04c46a25bb9e008539d62c119cbc1154",
+          "reduced_sha256": "c06f98fe7a18a31e6dfb453a15df43163bee801f1ffea753e1eabcd8edb5db7e",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.429792,
+          "instrumented_ms": 8.429292,
+          "stages_ms": {
+            "gray_reduce": 0.257,
+            "geometry_cache_check": 0.013125,
+            "centroid": 0.092459,
+            "normalization": 0.146333,
+            "forward_dft": 2.551792,
+            "mul_spectrums": 0.263833,
+            "inverse_dft": 4.809125,
+            "native_peak": 0.199208,
+            "sobel": 0.02575
+          },
+          "preparation_sum_ms": 3.0475839999999996,
+          "decision_sum_ms": 5.297916,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:5",
+            "sequence": 5,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:5",
+            "sequence": 5,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 6,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "4a4e33f3ac1a3f3f88d2cbe945459d21fb46c1867154005eebaa2002d2102c4c",
+          "reduced_sha256": "5ad8af696b99d45a8bbb5a73e75d561fb4e19b34692ac06ff3a1049bf5dc84e8",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.302125,
+          "instrumented_ms": 8.477583,
+          "stages_ms": {
+            "gray_reduce": 0.262875,
+            "geometry_cache_check": 0.068875,
+            "centroid": 0.093792,
+            "normalization": 0.070375,
+            "forward_dft": 2.575958,
+            "mul_spectrums": 0.282541,
+            "inverse_dft": 4.811958,
+            "native_peak": 0.195209,
+            "sobel": 0.063667
+          },
+          "preparation_sum_ms": 3.003,
+          "decision_sum_ms": 5.353375,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:6",
+            "sequence": 6,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:6",
+            "sequence": 6,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 7,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "9fda23aca0a087e76eb914c40b714d46e5d86bed453e7d19e59c3aab7410902d",
+          "reduced_sha256": "0e13144f6707bc0943b72696442289ed30cceff327405c71bd7a7428d4235f1f",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.5755,
+          "instrumented_ms": 8.691208,
+          "stages_ms": {
+            "gray_reduce": 0.393667,
+            "geometry_cache_check": 0.0135,
+            "centroid": 0.086167,
+            "normalization": 0.061167,
+            "forward_dft": 2.664458,
+            "mul_spectrums": 0.3035,
+            "inverse_dft": 4.806709,
+            "native_peak": 0.194666,
+            "sobel": 0.091916
+          },
+          "preparation_sum_ms": 3.2054590000000003,
+          "decision_sum_ms": 5.3967909999999994,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:7",
+            "sequence": 7,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:7",
+            "sequence": 7,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 8,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "7bef0f49e43c22c9181e2aacbcd79da323a7a2a1c10ce8b4390396c3c05a3b82",
+          "reduced_sha256": "bf6c4f02dfc4733105bb0f78ed8bb65e450c3f280b56603cfa55c973a270a717",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.472291,
+          "instrumented_ms": 8.560208,
+          "stages_ms": {
+            "gray_reduce": 0.369916,
+            "geometry_cache_check": 0.026167,
+            "centroid": 0.092209,
+            "normalization": 0.06325,
+            "forward_dft": 2.579625,
+            "mul_spectrums": 0.285875,
+            "inverse_dft": 4.800041,
+            "native_peak": 0.197791,
+            "sobel": 0.063375
+          },
+          "preparation_sum_ms": 3.105,
+          "decision_sum_ms": 5.347082,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:8",
+            "sequence": 8,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:8",
+            "sequence": 8,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 9,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "450c484a7d6972b227f5dab2066c63ef207bba91d357249dd8a452b1327b1455",
+          "reduced_sha256": "654ddaf5ddd1e032b7faad7a9c9da0748c206ab7ec49dcb4ee248a6c62f53c70",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.452917,
+          "instrumented_ms": 8.566042,
+          "stages_ms": {
+            "gray_reduce": 0.390375,
+            "geometry_cache_check": 0.030375,
+            "centroid": 0.091,
+            "normalization": 0.121042,
+            "forward_dft": 2.529625,
+            "mul_spectrums": 0.248292,
+            "inverse_dft": 4.830792,
+            "native_peak": 0.196667,
+            "sobel": 0.060125
+          },
+          "preparation_sum_ms": 3.1320419999999998,
+          "decision_sum_ms": 5.335876,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:9",
+            "sequence": 9,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:9",
+            "sequence": 9,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 10,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "e21dc4356a0f39906bd2fdab9d88b8be606f668f9028265760575f7ea59f87e8",
+          "reduced_sha256": "4aee29e9aa25476473b10c1d9758af3f9e7ed1823f7c7ca230a2e449533e2af5",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.542291,
+          "instrumented_ms": 8.635875,
+          "stages_ms": {
+            "gray_reduce": 0.420583,
+            "geometry_cache_check": 0.077209,
+            "centroid": 0.092083,
+            "normalization": 0.059083,
+            "forward_dft": 2.575208,
+            "mul_spectrums": 0.266666,
+            "inverse_dft": 4.805916,
+            "native_peak": 0.194583,
+            "sobel": 0.096792
+          },
+          "preparation_sum_ms": 3.146957,
+          "decision_sum_ms": 5.363957,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:10",
+            "sequence": 10,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:10",
+            "sequence": 10,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 11,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "dc35b5ea7f50cfb038154f5abbcec50c902f05e4d0457863f9865b0f68dea5c3",
+          "reduced_sha256": "c35ff1e3c8265b3d50fb5369480bfad99f90d7b7b0958b27b88910f87cdab15f",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.567333,
+          "instrumented_ms": 8.569125,
+          "stages_ms": {
+            "gray_reduce": 0.422041,
+            "geometry_cache_check": 0.031958,
+            "centroid": 0.091625,
+            "normalization": 0.038542,
+            "forward_dft": 2.63175,
+            "mul_spectrums": 0.245125,
+            "inverse_dft": 4.679083,
+            "native_peak": 0.189125,
+            "sobel": 0.082375
+          },
+          "preparation_sum_ms": 3.1839579999999996,
+          "decision_sum_ms": 5.195708000000001,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:11",
+            "sequence": 11,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:11",
+            "sequence": 11,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 12,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "bd6daeebc02e889be20346fcc0b2c6df9d4d7d8300983038dc2f818adf2ba29e",
+          "reduced_sha256": "25d0e3068359526fae15ad3fa389743a99b9d303e197651c1d913e88da6b37e3",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.269916,
+          "instrumented_ms": 8.320709,
+          "stages_ms": {
+            "gray_reduce": 0.388,
+            "geometry_cache_check": 0.025625,
+            "centroid": 0.089292,
+            "normalization": 0.059792,
+            "forward_dft": 2.47275,
+            "mul_spectrums": 0.239,
+            "inverse_dft": 4.678333,
+            "native_peak": 0.189708,
+            "sobel": 0.081375
+          },
+          "preparation_sum_ms": 3.009834,
+          "decision_sum_ms": 5.188416,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:12",
+            "sequence": 12,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:12",
+            "sequence": 12,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 13,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "92ec93be8fdfdb780c528011530fe4a58869b3c10456c61a3c14a050f89f3420",
+          "reduced_sha256": "4ae60fd5aaff6428566359a40261b0332f01aa2cdc7bf03029abcf2c2bb4654d",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.381667,
+          "instrumented_ms": 8.308125,
+          "stages_ms": {
+            "gray_reduce": 0.393959,
+            "geometry_cache_check": 0.133084,
+            "centroid": 0.088375,
+            "normalization": 0.05875,
+            "forward_dft": 2.466166,
+            "mul_spectrums": 0.239584,
+            "inverse_dft": 4.629083,
+            "native_peak": 0.188667,
+            "sobel": 0.062791
+          },
+          "preparation_sum_ms": 3.00725,
+          "decision_sum_ms": 5.120125,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:13",
+            "sequence": 13,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:13",
+            "sequence": 13,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 14,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "250ecbe53d80b492b4759d30b306fb6a3fc8d900cf10afce267add9c0346bb8c",
+          "reduced_sha256": "bd4c23e476bd194f8c39cba2d6c3fbedad6ee633dfac2499bc50b264c25e2601",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.061541,
+          "instrumented_ms": 8.232542,
+          "stages_ms": {
+            "gray_reduce": 0.380416,
+            "geometry_cache_check": 0.011833,
+            "centroid": 0.083709,
+            "normalization": 0.059708,
+            "forward_dft": 2.473833,
+            "mul_spectrums": 0.231708,
+            "inverse_dft": 4.639375,
+            "native_peak": 0.189333,
+            "sobel": 0.10075
+          },
+          "preparation_sum_ms": 2.9976659999999997,
+          "decision_sum_ms": 5.161166000000001,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:14",
+            "sequence": 14,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:14",
+            "sequence": 14,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 15,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "6ede822fa399652fe3cfcad7cb36ba54dc15aad9a31f9ab80df3b693504c545c",
+          "reduced_sha256": "b01d3ea99083377056ea6a68e0cebd8a54e99548001f742d57b86eb8b71f51e0",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.447542,
+          "instrumented_ms": 8.219583,
+          "stages_ms": {
+            "gray_reduce": 0.383625,
+            "geometry_cache_check": 0.046583,
+            "centroid": 0.08875,
+            "normalization": 0.09275,
+            "forward_dft": 2.439083,
+            "mul_spectrums": 0.226708,
+            "inverse_dft": 4.632417,
+            "native_peak": 0.189666,
+            "sobel": 0.063625
+          },
+          "preparation_sum_ms": 3.004208,
+          "decision_sum_ms": 5.1124160000000005,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:15",
+            "sequence": 15,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:15",
+            "sequence": 15,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 16,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "c7909ccf3edd9cc63c588edd4d32255783ebf0ec6373908c45fcc155da321a50",
+          "reduced_sha256": "4a01b11f4f509bd48b4a5240f3586541d82da4c901fc1bed20b8ebe86121b7f5",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.129916,
+          "instrumented_ms": 8.397875,
+          "stages_ms": {
+            "gray_reduce": 0.373166,
+            "geometry_cache_check": 0.051417,
+            "centroid": 0.090125,
+            "normalization": 0.061458,
+            "forward_dft": 2.481542,
+            "mul_spectrums": 0.256875,
+            "inverse_dft": 4.704583,
+            "native_peak": 0.189916,
+            "sobel": 0.135
+          },
+          "preparation_sum_ms": 3.006291,
+          "decision_sum_ms": 5.286374,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:16",
+            "sequence": 16,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:16",
+            "sequence": 16,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 17,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "b79671e2336d434d7421c176ea12e0a147f4e6b902c6c37881411acae1af4774",
+          "reduced_sha256": "513b6bf051f641cec8c011d86ea1a2662a1f844fc6f85c78afb5aee606eaa12d",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.285625,
+          "instrumented_ms": 8.491625,
+          "stages_ms": {
+            "gray_reduce": 0.411542,
+            "geometry_cache_check": 0.085542,
+            "centroid": 0.089458,
+            "normalization": 0.058958,
+            "forward_dft": 2.522791,
+            "mul_spectrums": 0.255459,
+            "inverse_dft": 4.658333,
+            "native_peak": 0.190709,
+            "sobel": 0.139625
+          },
+          "preparation_sum_ms": 3.0827489999999997,
+          "decision_sum_ms": 5.244126,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:17",
+            "sequence": 17,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:17",
+            "sequence": 17,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 18,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "a5ba1a098d91705fcc2760092c712cc1cf734a6a988e1955cb83c3b5d65868c9",
+          "reduced_sha256": "37395fd9e591c0139261116776039242cb74e78b1064b4930e2aae5f6153e916",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.512542,
+          "instrumented_ms": 9.116875,
+          "stages_ms": {
+            "gray_reduce": 0.827166,
+            "geometry_cache_check": 0.132291,
+            "centroid": 0.092375,
+            "normalization": 0.064792,
+            "forward_dft": 2.572958,
+            "mul_spectrums": 0.279375,
+            "inverse_dft": 4.666208,
+            "native_peak": 0.193708,
+            "sobel": 0.092166
+          },
+          "preparation_sum_ms": 3.5572909999999998,
+          "decision_sum_ms": 5.231457,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:18",
+            "sequence": 18,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:18",
+            "sequence": 18,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 19,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "ca66ffcaab21ffe3da4a1f518eefce651d743526531eb130b814f8241db468a2",
+          "reduced_sha256": "3cdac29a07439be9cb6e76e5901e5c0c1d838aaa3df40da2085c356318607e7b",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 10.518,
+          "instrumented_ms": 10.065041,
+          "stages_ms": {
+            "gray_reduce": 0.256625,
+            "geometry_cache_check": 0.06025,
+            "centroid": 0.095584,
+            "normalization": 0.059833,
+            "forward_dft": 2.740875,
+            "mul_spectrums": 0.304959,
+            "inverse_dft": 5.982292,
+            "native_peak": 0.205167,
+            "sobel": 0.124917
+          },
+          "preparation_sum_ms": 3.152917,
+          "decision_sum_ms": 6.617335,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:19",
+            "sequence": 19,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:19",
+            "sequence": 19,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 20,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "7b94b8f112cfaceb8f805935841d75aadefb01df6e9aca0941ed5f140c506709",
+          "reduced_sha256": "c242dcdca3fc468a84c1223bd8c63b8002a9a02863cf1ae888f1c4d56e58986e",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.743917,
+          "instrumented_ms": 8.769875,
+          "stages_ms": {
+            "gray_reduce": 0.267416,
+            "geometry_cache_check": 0.065333,
+            "centroid": 0.092917,
+            "normalization": 0.136041,
+            "forward_dft": 2.635917,
+            "mul_spectrums": 0.272292,
+            "inverse_dft": 4.991125,
+            "native_peak": 0.204417,
+            "sobel": 0.046333
+          },
+          "preparation_sum_ms": 3.132291,
+          "decision_sum_ms": 5.5141670000000005,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:20",
+            "sequence": 20,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:20",
+            "sequence": 20,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 21,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "26618eaa3fe0008d31938af6a0cac7aef32d92acb2e34ff87b4c80722b3d4f2a",
+          "reduced_sha256": "6a3a1f3a373a91af8a34d6d2fc3348f830a7e94939f5dffd3b8e1bf080a0dbb8",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.553459,
+          "instrumented_ms": 8.320333,
+          "stages_ms": {
+            "gray_reduce": 0.257458,
+            "geometry_cache_check": 0.027666,
+            "centroid": 0.0915,
+            "normalization": 0.066458,
+            "forward_dft": 2.54425,
+            "mul_spectrums": 0.254875,
+            "inverse_dft": 4.783416,
+            "native_peak": 0.196834,
+            "sobel": 0.046375
+          },
+          "preparation_sum_ms": 2.959666,
+          "decision_sum_ms": 5.2815,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:21",
+            "sequence": 21,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:21",
+            "sequence": 21,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 22,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "42186f889a0b22255b378d5354441420a6040df50a91c4c8a70b4e7891c939c4",
+          "reduced_sha256": "d6d05e726283fb78a48b7a9f76a2c7ddce92962b4cf129b588d4b2be9981b8b4",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.530791,
+          "instrumented_ms": 8.511416,
+          "stages_ms": {
+            "gray_reduce": 0.277375,
+            "geometry_cache_check": 0.039334,
+            "centroid": 0.093083,
+            "normalization": 0.063,
+            "forward_dft": 2.565917,
+            "mul_spectrums": 0.265,
+            "inverse_dft": 4.806209,
+            "native_peak": 0.194958,
+            "sobel": 0.089375
+          },
+          "preparation_sum_ms": 2.9993749999999997,
+          "decision_sum_ms": 5.355542,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:22",
+            "sequence": 22,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:22",
+            "sequence": 22,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 23,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "93c177ed693231731f84b13f153dbf710e7c6304399194f3f97a04cf502d4a77",
+          "reduced_sha256": "573e833f37bcad5640ce66f88014d968b8e18b1fdb716f8fc609ef2c2da9cf24",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.446417,
+          "instrumented_ms": 8.537208,
+          "stages_ms": {
+            "gray_reduce": 0.401875,
+            "geometry_cache_check": 0.077125,
+            "centroid": 0.091167,
+            "normalization": 0.055416,
+            "forward_dft": 2.550833,
+            "mul_spectrums": 0.263667,
+            "inverse_dft": 4.76775,
+            "native_peak": 0.194833,
+            "sobel": 0.058084
+          },
+          "preparation_sum_ms": 3.099291,
+          "decision_sum_ms": 5.284334,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:23",
+            "sequence": 23,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:23",
+            "sequence": 23,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 24,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "489844cd16f90d7c6c2415a0e0d038ca555c6cee53c07dc27e16332ac5876f22",
+          "reduced_sha256": "04b95ba70bf0c067bfafdbb9f20977a4816cd48e702e6842da78b4e64c5cb39a",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.371375,
+          "instrumented_ms": 8.486,
+          "stages_ms": {
+            "gray_reduce": 0.399042,
+            "geometry_cache_check": 0.063833,
+            "centroid": 0.092917,
+            "normalization": 0.043959,
+            "forward_dft": 2.544083,
+            "mul_spectrums": 0.256083,
+            "inverse_dft": 4.783666,
+            "native_peak": 0.195334,
+            "sobel": 0.053
+          },
+          "preparation_sum_ms": 3.080001,
+          "decision_sum_ms": 5.288083,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:24",
+            "sequence": 24,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:24",
+            "sequence": 24,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 25,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "4b98ba4403f6b715fbc767383c2f9c9b9492916881b9f941086d82668268faf0",
+          "reduced_sha256": "35ffe0dc5451d37247d4e7c324bdf7a8c25216b45776f03ec8994eb334259ebf",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.530042,
+          "instrumented_ms": 8.536709,
+          "stages_ms": {
+            "gray_reduce": 0.396375,
+            "geometry_cache_check": 0.026458,
+            "centroid": 0.090958,
+            "normalization": 0.037208,
+            "forward_dft": 2.576417,
+            "mul_spectrums": 0.264,
+            "inverse_dft": 4.801708,
+            "native_peak": 0.194375,
+            "sobel": 0.098416
+          },
+          "preparation_sum_ms": 3.1009580000000003,
+          "decision_sum_ms": 5.358498999999999,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:25",
+            "sequence": 25,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:25",
+            "sequence": 25,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 26,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "9bf74f4c50b4adbe7d198167b04fbaf9bf9e5d6a420e9a71f11c1b901b1c069a",
+          "reduced_sha256": "4c7f0ac391c28b37bc6abe6203e21e93cf69b63a82d9027b38748dcc4b24107d",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.640292,
+          "instrumented_ms": 8.496333,
+          "stages_ms": {
+            "gray_reduce": 0.4025,
+            "geometry_cache_check": 0.038542,
+            "centroid": 0.091584,
+            "normalization": 0.038,
+            "forward_dft": 2.567041,
+            "mul_spectrums": 0.243917,
+            "inverse_dft": 4.796291,
+            "native_peak": 0.194375,
+            "sobel": 0.078125
+          },
+          "preparation_sum_ms": 3.0991250000000004,
+          "decision_sum_ms": 5.312708,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:26",
+            "sequence": 26,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:26",
+            "sequence": 26,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 27,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "657c3ae29015b460578f02e34fb67dfbfe93ed67026159a16ed16b721893be19",
+          "reduced_sha256": "584367b622ebadb9247b23ef9b81a85b0bc8eae25cac20a22eee8e3e81643366",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.553208,
+          "instrumented_ms": 8.29775,
+          "stages_ms": {
+            "gray_reduce": 0.257792,
+            "geometry_cache_check": 0.01175,
+            "centroid": 0.090833,
+            "normalization": 0.039625,
+            "forward_dft": 2.547875,
+            "mul_spectrums": 0.259959,
+            "inverse_dft": 4.777792,
+            "native_peak": 0.196625,
+            "sobel": 0.06475
+          },
+          "preparation_sum_ms": 2.936125,
+          "decision_sum_ms": 5.299126,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:27",
+            "sequence": 27,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:27",
+            "sequence": 27,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 28,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "08f2b251e392d354f275ad5fd051941b6e664d3fdf8e1546bbd38cd0c2ed5c93",
+          "reduced_sha256": "74066b013cb494385cee671367f3a0331d2b297d13dc496be94373ed8d499707",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.663667,
+          "instrumented_ms": 8.573958,
+          "stages_ms": {
+            "gray_reduce": 0.377458,
+            "geometry_cache_check": 0.01175,
+            "centroid": 0.086791,
+            "normalization": 0.080208,
+            "forward_dft": 2.598334,
+            "mul_spectrums": 0.257166,
+            "inverse_dft": 4.79475,
+            "native_peak": 0.1955,
+            "sobel": 0.123166
+          },
+          "preparation_sum_ms": 3.142791,
+          "decision_sum_ms": 5.370582,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:28",
+            "sequence": 28,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:28",
+            "sequence": 28,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 29,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "870f2c664c53ce1dae3517f9965115f04ed9451d9de71807aa1aba72b3b4295e",
+          "reduced_sha256": "cb57e516987a9049d1859680d898dd32e176a5b05185f1c2c146b9fbfea249ea",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.627875,
+          "instrumented_ms": 8.655125,
+          "stages_ms": {
+            "gray_reduce": 0.393833,
+            "geometry_cache_check": 0.027083,
+            "centroid": 0.091333,
+            "normalization": 0.133292,
+            "forward_dft": 2.604458,
+            "mul_spectrums": 0.265666,
+            "inverse_dft": 4.806709,
+            "native_peak": 0.1985,
+            "sobel": 0.056959
+          },
+          "preparation_sum_ms": 3.222916,
+          "decision_sum_ms": 5.327833999999999,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:29",
+            "sequence": 29,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:29",
+            "sequence": 29,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 30,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "efb57c0e3ace126c3d93d95ec9c90f41d00f987c262959577f0150efa8a5b25a",
+          "reduced_sha256": "d86da281c2a0f7266d01deeb2c3f5e88a8bab5f492edab1ef1176f0831d23bd2",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.160084,
+          "instrumented_ms": 8.645792,
+          "stages_ms": {
+            "gray_reduce": 0.4115,
+            "geometry_cache_check": 0.037084,
+            "centroid": 0.093583,
+            "normalization": 0.058,
+            "forward_dft": 2.557875,
+            "mul_spectrums": 0.244792,
+            "inverse_dft": 4.658791,
+            "native_peak": 0.189792,
+            "sobel": 0.103083
+          },
+          "preparation_sum_ms": 3.120958,
+          "decision_sum_ms": 5.196458,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:30",
+            "sequence": 30,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:30",
+            "sequence": 30,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 31,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "a02f1dfb0fe350cf741b0838c9b6c356b04a2ba85a7af460fd4c3c81990346df",
+          "reduced_sha256": "718452765e6665b4215b073dc3d5c64097181804b3bb800a395e747a901c65f5",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.334042,
+          "instrumented_ms": 8.497333,
+          "stages_ms": {
+            "gray_reduce": 0.382583,
+            "geometry_cache_check": 0.028541,
+            "centroid": 0.088792,
+            "normalization": 0.036042,
+            "forward_dft": 2.543125,
+            "mul_spectrums": 0.261583,
+            "inverse_dft": 4.656542,
+            "native_peak": 0.191791,
+            "sobel": 0.102125
+          },
+          "preparation_sum_ms": 3.0505419999999996,
+          "decision_sum_ms": 5.212041,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:31",
+            "sequence": 31,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:31",
+            "sequence": 31,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 32,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "3b3d903455b0550abdf1390a15d9ee1ac4423681dfe90683d151ee7262b3d95b",
+          "reduced_sha256": "7af7cdbcf3318c2749496921f7fcbdd713e6afd05aeb90375087f57c0e772a45",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.96425,
+          "instrumented_ms": 8.312625,
+          "stages_ms": {
+            "gray_reduce": 0.254375,
+            "geometry_cache_check": 0.039666,
+            "centroid": 0.091041,
+            "normalization": 0.127708,
+            "forward_dft": 2.551417,
+            "mul_spectrums": 0.265959,
+            "inverse_dft": 4.671708,
+            "native_peak": 0.190208,
+            "sobel": 0.04425
+          },
+          "preparation_sum_ms": 3.0245409999999997,
+          "decision_sum_ms": 5.172124999999999,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:32",
+            "sequence": 32,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:32",
+            "sequence": 32,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 33,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "24e7b0b227a4d5977a3ad6a0b277c369e1cb8546829291f01e7ee600b19bb2ae",
+          "reduced_sha256": "d63340281eb653a9f39d83b85db067f267cf886745a0a0cd033d353d8fb666c5",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 10.521542,
+          "instrumented_ms": 9.333208,
+          "stages_ms": {
+            "gray_reduce": 0.264958,
+            "geometry_cache_check": 0.0155,
+            "centroid": 0.0935,
+            "normalization": 0.081375,
+            "forward_dft": 2.618666,
+            "mul_spectrums": 0.268084,
+            "inverse_dft": 5.659875,
+            "native_peak": 0.204375,
+            "sobel": 0.0565
+          },
+          "preparation_sum_ms": 3.0584990000000003,
+          "decision_sum_ms": 6.188834000000001,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:33",
+            "sequence": 33,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:33",
+            "sequence": 33,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 34,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "0d8b3a736cba271c9e3795bded43e8053dfd5390c6640c367f83189e73995f51",
+          "reduced_sha256": "04f5f5cca8293e61a5704b1c7914a0cf61b46f37168c2bbc83877990acd63e2e",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.826666,
+          "instrumented_ms": 8.626625,
+          "stages_ms": {
+            "gray_reduce": 0.250708,
+            "geometry_cache_check": 0.041792,
+            "centroid": 0.097166,
+            "normalization": 0.084416,
+            "forward_dft": 2.636292,
+            "mul_spectrums": 0.268,
+            "inverse_dft": 4.953375,
+            "native_peak": 0.202292,
+            "sobel": 0.042458
+          },
+          "preparation_sum_ms": 3.068582,
+          "decision_sum_ms": 5.466125,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:34",
+            "sequence": 34,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:34",
+            "sequence": 34,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 35,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "83221b2bf56bda9fb2ebd7713abc68a7cc8facc889be39dae6b4e0765d819a31",
+          "reduced_sha256": "e048892d3416a5f25f6357ca939cb9c931d6f764af2a1e0a77e84ff7889af864",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 8.458917,
+          "instrumented_ms": 8.494291,
+          "stages_ms": {
+            "gray_reduce": 0.264625,
+            "geometry_cache_check": 0.098708,
+            "centroid": 0.091625,
+            "normalization": 0.058084,
+            "forward_dft": 2.579333,
+            "mul_spectrums": 0.25475,
+            "inverse_dft": 4.780167,
+            "native_peak": 0.195041,
+            "sobel": 0.10675
+          },
+          "preparation_sum_ms": 2.9936670000000003,
+          "decision_sum_ms": 5.336708,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:35",
+            "sequence": 35,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:35",
+            "sequence": 35,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        }
+      ]
+    },
+    {
+      "width": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "reduced_shape": [
+        910,
+        1365
+      ],
+      "samples": 30,
+      "warmup": 5,
+      "case_wall_seconds": 2.6945028339978307,
+      "reference_sha256": "9f9b9360d9643c52b984b9b54ba0c3e65962d8c9ecd99b48381e2e11431eb370",
+      "noise_source_sha256": "a3fcf49c29d58a7f560c42bcae4ae5507fd09984a357ce70c7c00953541d39b0",
+      "reference_centroid": [
+        681,
+        454
+      ],
+      "reference_fft_sha256": "b29b8efb9f00af2e8b5dd4108d36396416a50b9176fb2e8a59dc11e1045e6719",
+      "result_disagreements_including_warmup": 0,
+      "geometry_cache_hits_including_warmup": 0,
+      "duplicate_consecutive_reduced_frames_including_warmup": 0,
+      "all_frames_use_full_geometry": true,
+      "all_results_stable": true,
+      "metrics": {
+        "gray_reduce": {
+          "count": 30,
+          "p50_ms": 1.553208,
+          "p95_ms": 1.67722965,
+          "p99_ms": 1.9190434300000003,
+          "max_ms": 2.012375,
+          "samples_ms": [
+            1.566833,
+            1.588208,
+            1.611541,
+            1.553,
+            1.542,
+            1.48875,
+            1.623667,
+            1.624084,
+            1.574667,
+            2.012375,
+            1.652042,
+            1.542416,
+            1.48975,
+            1.585292,
+            1.5715,
+            1.532833,
+            1.573583,
+            1.553416,
+            1.549334,
+            1.529667,
+            1.499041,
+            1.469417,
+            1.518416,
+            1.463791,
+            1.511625,
+            1.481542,
+            1.492958,
+            1.660959,
+            1.6605,
+            1.690542
+          ]
+        },
+        "geometry_cache_check": {
+          "count": 30,
+          "p50_ms": 0.112833,
+          "p95_ms": 0.14328924999999998,
+          "p99_ms": 0.15659657000000002,
+          "max_ms": 0.160125,
+          "samples_ms": [
+            0.114958,
+            0.11875,
+            0.12075,
+            0.119458,
+            0.119375,
+            0.046833,
+            0.129666,
+            0.131125,
+            0.041041,
+            0.056125,
+            0.160125,
+            0.110708,
+            0.104958,
+            0.137583,
+            0.044959,
+            0.095584,
+            0.126709,
+            0.116375,
+            0.045792,
+            0.11825,
+            0.041542,
+            0.041708,
+            0.0925,
+            0.040875,
+            0.147958,
+            0.041458,
+            0.127083,
+            0.124667,
+            0.05375,
+            0.046417
+          ]
+        },
+        "centroid": {
+          "count": 30,
+          "p50_ms": 0.35233349999999997,
+          "p95_ms": 0.37360639999999995,
+          "p99_ms": 0.44200643000000006,
+          "max_ms": 0.467333,
+          "samples_ms": [
+            0.364333,
+            0.361958,
+            0.364666,
+            0.351667,
+            0.339916,
+            0.343125,
+            0.364459,
+            0.361083,
+            0.35475,
+            0.467333,
+            0.353792,
+            0.35225,
+            0.342166,
+            0.360625,
+            0.362417,
+            0.348291,
+            0.354542,
+            0.350375,
+            0.352417,
+            0.343417,
+            0.331458,
+            0.330584,
+            0.331417,
+            0.348542,
+            0.333417,
+            0.322709,
+            0.330875,
+            0.362,
+            0.38,
+            0.365792
+          ]
+        },
+        "normalization": {
+          "count": 30,
+          "p50_ms": 0.3032495,
+          "p95_ms": 0.3259189,
+          "p99_ms": 0.33621375,
+          "max_ms": 0.339875,
+          "samples_ms": [
+            0.312584,
+            0.306042,
+            0.17275,
+            0.313125,
+            0.304833,
+            0.169334,
+            0.165417,
+            0.339875,
+            0.301,
+            0.324292,
+            0.17525,
+            0.301666,
+            0.294917,
+            0.1835,
+            0.311791,
+            0.298958,
+            0.207625,
+            0.307125,
+            0.314958,
+            0.319666,
+            0.312042,
+            0.29575,
+            0.310458,
+            0.31,
+            0.297459,
+            0.313833,
+            0.32725,
+            0.179375,
+            0.183,
+            0.165458
+          ]
+        },
+        "forward_dft": {
+          "count": 30,
+          "p50_ms": 11.700521,
+          "p95_ms": 13.609904349999999,
+          "p99_ms": 13.94118843,
+          "max_ms": 14.03075,
+          "samples_ms": [
+            11.998542,
+            12.1095,
+            11.871,
+            11.663292,
+            11.45925,
+            13.721917,
+            11.99025,
+            12.044791,
+            11.73775,
+            14.03075,
+            11.6515,
+            11.626583,
+            11.404917,
+            11.985291,
+            12.001458,
+            11.63525,
+            12.093541,
+            11.776875,
+            11.640208,
+            11.272167,
+            11.029708,
+            11.4895,
+            11.037083,
+            11.198041,
+            11.07875,
+            11.002375,
+            11.034917,
+            13.473,
+            12.644625,
+            12.428584
+          ]
+        },
+        "mul_spectrums": {
+          "count": 30,
+          "p50_ms": 0.650542,
+          "p95_ms": 0.7205412999999999,
+          "p99_ms": 0.72646939,
+          "max_ms": 0.728125,
+          "samples_ms": [
+            0.65875,
+            0.681375,
+            0.635125,
+            0.639916,
+            0.648167,
+            0.670875,
+            0.667875,
+            0.672958,
+            0.660125,
+            0.71825,
+            0.629625,
+            0.626083,
+            0.652917,
+            0.657125,
+            0.683416,
+            0.630709,
+            0.684417,
+            0.70725,
+            0.645917,
+            0.627084,
+            0.613667,
+            0.62125,
+            0.620292,
+            0.647959,
+            0.631333,
+            0.598834,
+            0.611125,
+            0.722416,
+            0.728125,
+            0.685292
+          ]
+        },
+        "inverse_dft": {
+          "count": 30,
+          "p50_ms": 16.4055205,
+          "p95_ms": 18.191991549999997,
+          "p99_ms": 18.94631004,
+          "max_ms": 19.184291,
+          "samples_ms": [
+            16.8205,
+            16.847042,
+            16.407291,
+            16.333,
+            15.861667,
+            19.184291,
+            16.839833,
+            16.887958,
+            16.566083,
+            16.944208,
+            16.337584,
+            16.275,
+            17.975334,
+            16.908,
+            16.840209,
+            16.40375,
+            18.363667,
+            16.349792,
+            16.36875,
+            15.6205,
+            15.503041,
+            15.562,
+            15.496416,
+            15.538917,
+            15.515875,
+            15.508834,
+            15.503791,
+            17.982166,
+            17.577417,
+            17.566959
+          ]
+        },
+        "native_peak": {
+          "count": 30,
+          "p50_ms": 0.7530005,
+          "p95_ms": 0.8117464999999999,
+          "p99_ms": 0.81655168,
+          "max_ms": 0.817917,
+          "samples_ms": [
+            0.79275,
+            0.778041,
+            0.753209,
+            0.751625,
+            0.718416,
+            0.778375,
+            0.774125,
+            0.7875,
+            0.750292,
+            0.764125,
+            0.750583,
+            0.744416,
+            0.7545,
+            0.77625,
+            0.78975,
+            0.7555,
+            0.778541,
+            0.752792,
+            0.752417,
+            0.715417,
+            0.717083,
+            0.714583,
+            0.710917,
+            0.712125,
+            0.712625,
+            0.710209,
+            0.7115,
+            0.813209,
+            0.809959,
+            0.817917
+          ]
+        },
+        "sobel": {
+          "count": 30,
+          "p50_ms": 0.0791045,
+          "p95_ms": 0.23344984999999985,
+          "p99_ms": 0.28583357000000004,
+          "max_ms": 0.297917,
+          "samples_ms": [
+            0.25625,
+            0.205375,
+            0.072791,
+            0.065541,
+            0.065,
+            0.125,
+            0.205583,
+            0.066375,
+            0.297917,
+            0.078417,
+            0.06675,
+            0.102208,
+            0.069166,
+            0.080709,
+            0.128459,
+            0.079292,
+            0.078917,
+            0.119333,
+            0.072041,
+            0.064042,
+            0.203959,
+            0.07275,
+            0.171041,
+            0.183541,
+            0.068459,
+            0.059625,
+            0.121291,
+            0.086917,
+            0.078292,
+            0.076958
+          ]
+        },
+        "production_ms": {
+          "count": 30,
+          "p50_ms": 32.0181665,
+          "p95_ms": 36.93855639999999,
+          "p99_ms": 38.1279125,
+          "max_ms": 38.274,
+          "samples_ms": [
+            32.9055,
+            32.911833,
+            31.820416,
+            31.71175,
+            30.726167,
+            30.429708,
+            32.907709,
+            32.6275,
+            34.518208,
+            33.463541,
+            31.924917,
+            31.879958,
+            37.77025,
+            32.692292,
+            32.93625,
+            32.111416,
+            32.91975,
+            32.693833,
+            31.796083,
+            31.703375,
+            30.524083,
+            30.291833,
+            30.495208,
+            30.426791,
+            30.405667,
+            30.890417,
+            30.478042,
+            38.274,
+            35.922042,
+            34.152667
+          ]
+        },
+        "instrumented_ms": {
+          "count": 30,
+          "p50_ms": 32.0960415,
+          "p95_ms": 35.503941850000004,
+          "p99_ms": 36.29142093,
+          "max_ms": 36.61175,
+          "samples_ms": [
+            32.942042,
+            33.064709,
+            32.083917,
+            31.851625,
+            31.115916,
+            36.61175,
+            32.842167,
+            32.9905,
+            32.354458,
+            35.507167,
+            31.853834,
+            31.733709,
+            33.160542,
+            32.763208,
+            32.799,
+            31.840292,
+            34.348375,
+            32.108166,
+            31.797917,
+            30.669208,
+            30.30425,
+            30.666958,
+            30.339708,
+            30.531542,
+            30.350916,
+            30.089833,
+            30.307292,
+            35.5,
+            34.226625,
+            33.907334
+          ]
+        },
+        "preparation_sum_ms": {
+          "count": 30,
+          "p50_ms": 13.9246255,
+          "p95_ms": 15.701619599999999,
+          "p99_ms": 16.51237904,
+          "max_ms": 16.83475,
+          "samples_ms": [
+            14.242292,
+            14.365708000000001,
+            14.019957,
+            13.881084,
+            13.645999000000002,
+            15.723125999999999,
+            14.143792999999999,
+            14.369833,
+            13.968167,
+            16.83475,
+            13.832584,
+            13.822915,
+            13.531749999999999,
+            14.114708,
+            14.247166,
+            13.815332,
+            14.229291,
+            13.987791,
+            13.856917,
+            13.464917,
+            13.172248999999999,
+            13.585251,
+            13.197374000000002,
+            13.320374,
+            13.221250999999999,
+            13.120459,
+            13.186,
+            15.675334000000001,
+            14.868125,
+            14.650376000000001
+          ]
+        },
+        "decision_sum_ms": {
+          "count": 30,
+          "p50_ms": 17.899209,
+          "p95_ms": 19.770166699999997,
+          "p99_ms": 20.51117129,
+          "max_ms": 20.758541,
+          "samples_ms": [
+            18.52825,
+            18.511833,
+            17.868416,
+            17.790081999999998,
+            17.29325,
+            20.758541,
+            18.487416,
+            18.414791,
+            18.274417,
+            18.505,
+            17.784542,
+            17.747707,
+            19.451917,
+            18.422084,
+            18.441834,
+            17.869251,
+            19.905542,
+            17.929167,
+            17.839125,
+            17.027043,
+            17.03775,
+            16.970582999999998,
+            16.998666,
+            17.082542,
+            16.928292,
+            16.877502,
+            16.947707,
+            19.604708,
+            19.193793,
+            19.147126
+          ]
+        }
+      },
+      "trials": [
+        {
+          "sequence": 1,
+          "warmup": true,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "3f08131f9962972b363136d0f128f8e6286a25cfb348300d978d3d89ff70b850",
+          "reduced_sha256": "818fa60b2a47a11be3325e0497e7eccbe903cb62eef6e7a25007bf1f964b7023",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 35.824792,
+          "instrumented_ms": 33.680333,
+          "stages_ms": {
+            "gray_reduce": 1.605666,
+            "geometry_cache_check": 0.000292,
+            "centroid": 0.361375,
+            "normalization": 0.169958,
+            "forward_dft": 12.009375,
+            "mul_spectrums": 0.68425,
+            "inverse_dft": 16.407958,
+            "native_peak": 0.753292,
+            "sobel": 1.597584
+          },
+          "preparation_sum_ms": 14.146374,
+          "decision_sum_ms": 19.443084,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:1",
+            "sequence": 1,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.00010948758201505454
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:1",
+            "sequence": 1,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.00010948758201505454
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 2,
+          "warmup": true,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "67268c4ea7795e575ee5c71e277fe166fde21c6f8f3b5cc20e0b4fe7db27f9b3",
+          "reduced_sha256": "8c8d4c22c5f032cabb75c4b332d5c73fba3d7e09fdcf56864013c8ef796e87cb",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.303208,
+          "instrumented_ms": 32.080833,
+          "stages_ms": {
+            "gray_reduce": 1.61975,
+            "geometry_cache_check": 0.133333,
+            "centroid": 0.355792,
+            "normalization": 0.299208,
+            "forward_dft": 11.6445,
+            "mul_spectrums": 0.6455,
+            "inverse_dft": 16.384125,
+            "native_peak": 0.758792,
+            "sobel": 0.184875
+          },
+          "preparation_sum_ms": 13.91925,
+          "decision_sum_ms": 17.973292,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:2",
+            "sequence": 2,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:2",
+            "sequence": 2,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 3,
+          "warmup": true,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "5d0a04a96bc39f467f452c98f634473d74dd9b9428f4bc707fd7edad50e6d78c",
+          "reduced_sha256": "134a153d798a979fb97ba1c1e5624d2cfafe82a13c3f43c664f354b810e2e43e",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.78225,
+          "instrumented_ms": 31.401792,
+          "stages_ms": {
+            "gray_reduce": 1.554708,
+            "geometry_cache_check": 0.156125,
+            "centroid": 0.344416,
+            "normalization": 0.291708,
+            "forward_dft": 11.506,
+            "mul_spectrums": 0.642,
+            "inverse_dft": 15.935666,
+            "native_peak": 0.727833,
+            "sobel": 0.169333
+          },
+          "preparation_sum_ms": 13.696832,
+          "decision_sum_ms": 17.474832,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:3",
+            "sequence": 3,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:3",
+            "sequence": 3,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 4,
+          "warmup": true,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "768c23c56423a544d6d91a9f9790aa780f7cb093a95b6fc5002ca902df663a48",
+          "reduced_sha256": "040f7f0c64089006959ef8e743a1700af9bb09eb4e368d5647283b68a780e364",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 35.403083,
+          "instrumented_ms": 36.02275,
+          "stages_ms": {
+            "gray_reduce": 1.600458,
+            "geometry_cache_check": 0.126416,
+            "centroid": 0.345167,
+            "normalization": 0.170583,
+            "forward_dft": 13.802375,
+            "mul_spectrums": 0.676583,
+            "inverse_dft": 18.367417,
+            "native_peak": 0.779667,
+            "sobel": 0.079542
+          },
+          "preparation_sum_ms": 15.918583,
+          "decision_sum_ms": 19.903209,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:4",
+            "sequence": 4,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:4",
+            "sequence": 4,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 5,
+          "warmup": true,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "e1817c4e7351f5d5e525b1f6ce5b601c95af8e2c87aae4aaafa19c89a4796b8b",
+          "reduced_sha256": "99e80533452842e30addb9b79e01dc86c37938f98ef41c13f266e0ffe52f28ef",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 34.406375,
+          "instrumented_ms": 33.395875,
+          "stages_ms": {
+            "gray_reduce": 1.665167,
+            "geometry_cache_check": 0.050583,
+            "centroid": 0.376625,
+            "normalization": 0.331167,
+            "forward_dft": 12.475542,
+            "mul_spectrums": 0.6625,
+            "inverse_dft": 16.898667,
+            "native_peak": 0.773709,
+            "sobel": 0.072125
+          },
+          "preparation_sum_ms": 14.848501,
+          "decision_sum_ms": 18.407001,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:5",
+            "sequence": 5,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:5",
+            "sequence": 5,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 6,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "866b6cf8fa39d60203bca094be4ccc33aaa3243e11b7b83ebc766487734ac357",
+          "reduced_sha256": "4a57331fad73e7f4a9029ec6a6fff3c22e8ddce0ccda2fd7d4290ed5bd450015",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.9055,
+          "instrumented_ms": 32.942042,
+          "stages_ms": {
+            "gray_reduce": 1.566833,
+            "geometry_cache_check": 0.114958,
+            "centroid": 0.364333,
+            "normalization": 0.312584,
+            "forward_dft": 11.998542,
+            "mul_spectrums": 0.65875,
+            "inverse_dft": 16.8205,
+            "native_peak": 0.79275,
+            "sobel": 0.25625
+          },
+          "preparation_sum_ms": 14.242292,
+          "decision_sum_ms": 18.52825,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:6",
+            "sequence": 6,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:6",
+            "sequence": 6,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 7,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "60feb35bd8746aa2e62d0ba526eac83ab5ed5579ea0044423a8f35dc2ff1f3e0",
+          "reduced_sha256": "9c582d0d9486f96bc719a979b04e8a4d7eba6ca049ea9c5229f5d49412f4d915",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.911833,
+          "instrumented_ms": 33.064709,
+          "stages_ms": {
+            "gray_reduce": 1.588208,
+            "geometry_cache_check": 0.11875,
+            "centroid": 0.361958,
+            "normalization": 0.306042,
+            "forward_dft": 12.1095,
+            "mul_spectrums": 0.681375,
+            "inverse_dft": 16.847042,
+            "native_peak": 0.778041,
+            "sobel": 0.205375
+          },
+          "preparation_sum_ms": 14.365708000000001,
+          "decision_sum_ms": 18.511833,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:7",
+            "sequence": 7,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:7",
+            "sequence": 7,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 8,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "e63f764bd54395d847112c97d6d7d5cfe57d41d672d8ada155d1606f9b56bbfd",
+          "reduced_sha256": "2f8f7c144a1038e5408b584f22f57e0c8fb4e4890d4e217914b2983886ffb815",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.820416,
+          "instrumented_ms": 32.083917,
+          "stages_ms": {
+            "gray_reduce": 1.611541,
+            "geometry_cache_check": 0.12075,
+            "centroid": 0.364666,
+            "normalization": 0.17275,
+            "forward_dft": 11.871,
+            "mul_spectrums": 0.635125,
+            "inverse_dft": 16.407291,
+            "native_peak": 0.753209,
+            "sobel": 0.072791
+          },
+          "preparation_sum_ms": 14.019957,
+          "decision_sum_ms": 17.868416,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:8",
+            "sequence": 8,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:8",
+            "sequence": 8,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 9,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "9297ec1670db7a505de185678167f8ee90661b74fd645ec11185bb16f8f5c1a2",
+          "reduced_sha256": "0ad9f7e533fa9e556f39dff4e52c7478335790ad636108a96fb6318c189473e5",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.71175,
+          "instrumented_ms": 31.851625,
+          "stages_ms": {
+            "gray_reduce": 1.553,
+            "geometry_cache_check": 0.119458,
+            "centroid": 0.351667,
+            "normalization": 0.313125,
+            "forward_dft": 11.663292,
+            "mul_spectrums": 0.639916,
+            "inverse_dft": 16.333,
+            "native_peak": 0.751625,
+            "sobel": 0.065541
+          },
+          "preparation_sum_ms": 13.881084,
+          "decision_sum_ms": 17.790081999999998,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:9",
+            "sequence": 9,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:9",
+            "sequence": 9,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 10,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "947bbfa31a718d00a32b0dc4abe53eca959b1178e02bdd2caee684fe850cc55e",
+          "reduced_sha256": "7587abaf37e31d61895d3035ba879bfff65dfeab56ab23c30c17c2ecf8ea0a83",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.726167,
+          "instrumented_ms": 31.115916,
+          "stages_ms": {
+            "gray_reduce": 1.542,
+            "geometry_cache_check": 0.119375,
+            "centroid": 0.339916,
+            "normalization": 0.304833,
+            "forward_dft": 11.45925,
+            "mul_spectrums": 0.648167,
+            "inverse_dft": 15.861667,
+            "native_peak": 0.718416,
+            "sobel": 0.065
+          },
+          "preparation_sum_ms": 13.645999000000002,
+          "decision_sum_ms": 17.29325,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:10",
+            "sequence": 10,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:10",
+            "sequence": 10,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 11,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "e0a6fdb3d09a7570b0a4b6a79f4bb774de57232d9559f4d81bd66cd3ea90c5b9",
+          "reduced_sha256": "e8a8974706e17567284abe7dd89e7e5594d764ac07312eaddd6041799afd1fd7",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.429708,
+          "instrumented_ms": 36.61175,
+          "stages_ms": {
+            "gray_reduce": 1.48875,
+            "geometry_cache_check": 0.046833,
+            "centroid": 0.343125,
+            "normalization": 0.169334,
+            "forward_dft": 13.721917,
+            "mul_spectrums": 0.670875,
+            "inverse_dft": 19.184291,
+            "native_peak": 0.778375,
+            "sobel": 0.125
+          },
+          "preparation_sum_ms": 15.723125999999999,
+          "decision_sum_ms": 20.758541,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:11",
+            "sequence": 11,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:11",
+            "sequence": 11,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 12,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "65926f595e2b98e69640a7d56b33d3bf4e353ea0ccf87342d4e140063ec26371",
+          "reduced_sha256": "4f2572005a8534a61bb6ea60938da16295df842b66ac5344f8648424dd9d25a4",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.907709,
+          "instrumented_ms": 32.842167,
+          "stages_ms": {
+            "gray_reduce": 1.623667,
+            "geometry_cache_check": 0.129666,
+            "centroid": 0.364459,
+            "normalization": 0.165417,
+            "forward_dft": 11.99025,
+            "mul_spectrums": 0.667875,
+            "inverse_dft": 16.839833,
+            "native_peak": 0.774125,
+            "sobel": 0.205583
+          },
+          "preparation_sum_ms": 14.143792999999999,
+          "decision_sum_ms": 18.487416,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:12",
+            "sequence": 12,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:12",
+            "sequence": 12,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 13,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "29d6ba638dfd80ef33688feb26edebd0aea782ec5347cde8ef5500ae58ce814a",
+          "reduced_sha256": "cb6e3a4a8eda99c4f6b7d3232445397319c843de18e4c3db13f815e9fa2e33b8",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.6275,
+          "instrumented_ms": 32.9905,
+          "stages_ms": {
+            "gray_reduce": 1.624084,
+            "geometry_cache_check": 0.131125,
+            "centroid": 0.361083,
+            "normalization": 0.339875,
+            "forward_dft": 12.044791,
+            "mul_spectrums": 0.672958,
+            "inverse_dft": 16.887958,
+            "native_peak": 0.7875,
+            "sobel": 0.066375
+          },
+          "preparation_sum_ms": 14.369833,
+          "decision_sum_ms": 18.414791,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:13",
+            "sequence": 13,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:13",
+            "sequence": 13,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 14,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "1bdab53451edbc4b1ffa304fbb47cb244d876c43a05b3e4944b978962ed88ba5",
+          "reduced_sha256": "b6c074870aeefc0e76f11e982cc6605324201276a7e48ebfb75351a770240e4d",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 34.518208,
+          "instrumented_ms": 32.354458,
+          "stages_ms": {
+            "gray_reduce": 1.574667,
+            "geometry_cache_check": 0.041041,
+            "centroid": 0.35475,
+            "normalization": 0.301,
+            "forward_dft": 11.73775,
+            "mul_spectrums": 0.660125,
+            "inverse_dft": 16.566083,
+            "native_peak": 0.750292,
+            "sobel": 0.297917
+          },
+          "preparation_sum_ms": 13.968167,
+          "decision_sum_ms": 18.274417,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:14",
+            "sequence": 14,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:14",
+            "sequence": 14,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 15,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "889351951054d85d20b4067c5af5b491006c8569c32c632a32592d4dd30c5a56",
+          "reduced_sha256": "93e4d4d41d4f3a96be8751e47b45b41962859c2b8c2c6c170f67900b9746fa6a",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 33.463541,
+          "instrumented_ms": 35.507167,
+          "stages_ms": {
+            "gray_reduce": 2.012375,
+            "geometry_cache_check": 0.056125,
+            "centroid": 0.467333,
+            "normalization": 0.324292,
+            "forward_dft": 14.03075,
+            "mul_spectrums": 0.71825,
+            "inverse_dft": 16.944208,
+            "native_peak": 0.764125,
+            "sobel": 0.078417
+          },
+          "preparation_sum_ms": 16.83475,
+          "decision_sum_ms": 18.505,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:15",
+            "sequence": 15,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:15",
+            "sequence": 15,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 16,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "985409d8b456f6216959e91310ae1e27e4c124a12d3a994d113d354503c46af5",
+          "reduced_sha256": "27d02f8f48c60e8ff6cf16a7105d9efa57120d38210c6c8897cf9dc786be1c29",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.924917,
+          "instrumented_ms": 31.853834,
+          "stages_ms": {
+            "gray_reduce": 1.652042,
+            "geometry_cache_check": 0.160125,
+            "centroid": 0.353792,
+            "normalization": 0.17525,
+            "forward_dft": 11.6515,
+            "mul_spectrums": 0.629625,
+            "inverse_dft": 16.337584,
+            "native_peak": 0.750583,
+            "sobel": 0.06675
+          },
+          "preparation_sum_ms": 13.832584,
+          "decision_sum_ms": 17.784542,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:16",
+            "sequence": 16,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:16",
+            "sequence": 16,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 17,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "15f1101e4adab9ad59825528c4368b8b9e026529dcfbcac4183ae7c8d15c9c3c",
+          "reduced_sha256": "da947423bceb5c35c92aac3b4d8b1db8bc2a9aa23a75796a516c0d4f3c7b16fe",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.879958,
+          "instrumented_ms": 31.733709,
+          "stages_ms": {
+            "gray_reduce": 1.542416,
+            "geometry_cache_check": 0.110708,
+            "centroid": 0.35225,
+            "normalization": 0.301666,
+            "forward_dft": 11.626583,
+            "mul_spectrums": 0.626083,
+            "inverse_dft": 16.275,
+            "native_peak": 0.744416,
+            "sobel": 0.102208
+          },
+          "preparation_sum_ms": 13.822915,
+          "decision_sum_ms": 17.747707,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:17",
+            "sequence": 17,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:17",
+            "sequence": 17,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 18,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "d37564e02bc3945370c026704c6d16705789c498d9d72509203e983b18ac00cb",
+          "reduced_sha256": "5c8aa3f410a956fef74754d5dbd0cd7ebeffcc26de77fed609e14c40afee9ea1",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 37.77025,
+          "instrumented_ms": 33.160542,
+          "stages_ms": {
+            "gray_reduce": 1.48975,
+            "geometry_cache_check": 0.104958,
+            "centroid": 0.342166,
+            "normalization": 0.294917,
+            "forward_dft": 11.404917,
+            "mul_spectrums": 0.652917,
+            "inverse_dft": 17.975334,
+            "native_peak": 0.7545,
+            "sobel": 0.069166
+          },
+          "preparation_sum_ms": 13.531749999999999,
+          "decision_sum_ms": 19.451917,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:18",
+            "sequence": 18,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:18",
+            "sequence": 18,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 19,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "a9277690e1f6050dde111a0cc12d55865e56fc1ea14f83b3728e569bd57aafce",
+          "reduced_sha256": "4b58d7ff27d77a7332b44b53678a66908a1f6b0b385058a88ecbcbb7f9457d76",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.692292,
+          "instrumented_ms": 32.763208,
+          "stages_ms": {
+            "gray_reduce": 1.585292,
+            "geometry_cache_check": 0.137583,
+            "centroid": 0.360625,
+            "normalization": 0.1835,
+            "forward_dft": 11.985291,
+            "mul_spectrums": 0.657125,
+            "inverse_dft": 16.908,
+            "native_peak": 0.77625,
+            "sobel": 0.080709
+          },
+          "preparation_sum_ms": 14.114708,
+          "decision_sum_ms": 18.422084,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:19",
+            "sequence": 19,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:19",
+            "sequence": 19,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 20,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "b22142ae5a8b4b93db5e1ce934742ddabcfb8acd89014bafa5433f3d77fb9846",
+          "reduced_sha256": "9c835d8ff2b2950d04b2b5ee9acef81c7731b2d0445aa11cdccec9f0d2f732c2",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.93625,
+          "instrumented_ms": 32.799,
+          "stages_ms": {
+            "gray_reduce": 1.5715,
+            "geometry_cache_check": 0.044959,
+            "centroid": 0.362417,
+            "normalization": 0.311791,
+            "forward_dft": 12.001458,
+            "mul_spectrums": 0.683416,
+            "inverse_dft": 16.840209,
+            "native_peak": 0.78975,
+            "sobel": 0.128459
+          },
+          "preparation_sum_ms": 14.247166,
+          "decision_sum_ms": 18.441834,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:20",
+            "sequence": 20,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:20",
+            "sequence": 20,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 21,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "649e83f7062a5383635fdeddd24b2c05d13e14569679b479b733d082296c39fb",
+          "reduced_sha256": "8d97e0053c1f7c3533840f73dcc97c007fb1e35262a95f52c71943ea1b986b30",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.111416,
+          "instrumented_ms": 31.840292,
+          "stages_ms": {
+            "gray_reduce": 1.532833,
+            "geometry_cache_check": 0.095584,
+            "centroid": 0.348291,
+            "normalization": 0.298958,
+            "forward_dft": 11.63525,
+            "mul_spectrums": 0.630709,
+            "inverse_dft": 16.40375,
+            "native_peak": 0.7555,
+            "sobel": 0.079292
+          },
+          "preparation_sum_ms": 13.815332,
+          "decision_sum_ms": 17.869251,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:21",
+            "sequence": 21,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:21",
+            "sequence": 21,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 22,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "eaccb7bcee9ca0857c5359d808c8c4659417baf8bf705e90cb6dcf7757e2e7c6",
+          "reduced_sha256": "fec46b6cddecaf5dab32c825e40c0eeec1af5cbed62d580257e2de79509a5472",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.91975,
+          "instrumented_ms": 34.348375,
+          "stages_ms": {
+            "gray_reduce": 1.573583,
+            "geometry_cache_check": 0.126709,
+            "centroid": 0.354542,
+            "normalization": 0.207625,
+            "forward_dft": 12.093541,
+            "mul_spectrums": 0.684417,
+            "inverse_dft": 18.363667,
+            "native_peak": 0.778541,
+            "sobel": 0.078917
+          },
+          "preparation_sum_ms": 14.229291,
+          "decision_sum_ms": 19.905542,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:22",
+            "sequence": 22,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:22",
+            "sequence": 22,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 23,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "e3484d1e0bfbb573f5f19472991bb2585026b03740c3ee6dc10af3579af543fa",
+          "reduced_sha256": "cf237e6110ab83b6af88e9392c0ae41867cfc288ee5467fce4d1acabb8e30a80",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 32.693833,
+          "instrumented_ms": 32.108166,
+          "stages_ms": {
+            "gray_reduce": 1.553416,
+            "geometry_cache_check": 0.116375,
+            "centroid": 0.350375,
+            "normalization": 0.307125,
+            "forward_dft": 11.776875,
+            "mul_spectrums": 0.70725,
+            "inverse_dft": 16.349792,
+            "native_peak": 0.752792,
+            "sobel": 0.119333
+          },
+          "preparation_sum_ms": 13.987791,
+          "decision_sum_ms": 17.929167,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:23",
+            "sequence": 23,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:23",
+            "sequence": 23,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 24,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "c5d81f6efef0c500463387d122dfdca1b8c1ad334bd52305805241b2a0a5bc01",
+          "reduced_sha256": "1f98c872f1764760c8b05f0407c116d198439a4da0ad814c9366ea584f153a0e",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.796083,
+          "instrumented_ms": 31.797917,
+          "stages_ms": {
+            "gray_reduce": 1.549334,
+            "geometry_cache_check": 0.045792,
+            "centroid": 0.352417,
+            "normalization": 0.314958,
+            "forward_dft": 11.640208,
+            "mul_spectrums": 0.645917,
+            "inverse_dft": 16.36875,
+            "native_peak": 0.752417,
+            "sobel": 0.072041
+          },
+          "preparation_sum_ms": 13.856917,
+          "decision_sum_ms": 17.839125,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:24",
+            "sequence": 24,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:24",
+            "sequence": 24,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 25,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "895fda5fd55e3848bd7cafe494a450329e1056c545eb523f3922a487930b7f92",
+          "reduced_sha256": "4e29bd5fd2ff2d0bc47532be564a12571eec094f1da3ba264517fc63d8e0fdf2",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 31.703375,
+          "instrumented_ms": 30.669208,
+          "stages_ms": {
+            "gray_reduce": 1.529667,
+            "geometry_cache_check": 0.11825,
+            "centroid": 0.343417,
+            "normalization": 0.319666,
+            "forward_dft": 11.272167,
+            "mul_spectrums": 0.627084,
+            "inverse_dft": 15.6205,
+            "native_peak": 0.715417,
+            "sobel": 0.064042
+          },
+          "preparation_sum_ms": 13.464917,
+          "decision_sum_ms": 17.027043,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:25",
+            "sequence": 25,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:25",
+            "sequence": 25,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 26,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "c9993bb8ad8d9762d510b9987210be36f07e77cdc5d3bf1b5f59f8e274012dc7",
+          "reduced_sha256": "df7a333e48c8978cf2e3b66710821c704cdd083522226b6ec838aece82094170",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.524083,
+          "instrumented_ms": 30.30425,
+          "stages_ms": {
+            "gray_reduce": 1.499041,
+            "geometry_cache_check": 0.041542,
+            "centroid": 0.331458,
+            "normalization": 0.312042,
+            "forward_dft": 11.029708,
+            "mul_spectrums": 0.613667,
+            "inverse_dft": 15.503041,
+            "native_peak": 0.717083,
+            "sobel": 0.203959
+          },
+          "preparation_sum_ms": 13.172248999999999,
+          "decision_sum_ms": 17.03775,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:26",
+            "sequence": 26,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:26",
+            "sequence": 26,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 27,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "72a7c1b34bcfd9b3c8e292bd68ede5cb26dd828e1cd97768557d1023dc1827bc",
+          "reduced_sha256": "f385636e0c07c489b10c4b820d58b9d521fc6107a3df3e8ff707456a19926af9",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.291833,
+          "instrumented_ms": 30.666958,
+          "stages_ms": {
+            "gray_reduce": 1.469417,
+            "geometry_cache_check": 0.041708,
+            "centroid": 0.330584,
+            "normalization": 0.29575,
+            "forward_dft": 11.4895,
+            "mul_spectrums": 0.62125,
+            "inverse_dft": 15.562,
+            "native_peak": 0.714583,
+            "sobel": 0.07275
+          },
+          "preparation_sum_ms": 13.585251,
+          "decision_sum_ms": 16.970582999999998,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:27",
+            "sequence": 27,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:27",
+            "sequence": 27,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 28,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "c787b0c0ed29d1f12a787cc1a5b31159e4c4e65814e617946b151d5028d5aaa4",
+          "reduced_sha256": "1525944a4897618789f197361baa38e1c7735f434b68a1171056b157ce9b3b3f",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.495208,
+          "instrumented_ms": 30.339708,
+          "stages_ms": {
+            "gray_reduce": 1.518416,
+            "geometry_cache_check": 0.0925,
+            "centroid": 0.331417,
+            "normalization": 0.310458,
+            "forward_dft": 11.037083,
+            "mul_spectrums": 0.620292,
+            "inverse_dft": 15.496416,
+            "native_peak": 0.710917,
+            "sobel": 0.171041
+          },
+          "preparation_sum_ms": 13.197374000000002,
+          "decision_sum_ms": 16.998666,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:28",
+            "sequence": 28,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:28",
+            "sequence": 28,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 29,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "46b6b95321e0d808d631277930babbf0b2a3db57568baefbb4d2a41de8cec828",
+          "reduced_sha256": "f461e4ca5863c2620413255241a38a56b2c14ff134a33f2a2ecaf5feb71a5089",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.426791,
+          "instrumented_ms": 30.531542,
+          "stages_ms": {
+            "gray_reduce": 1.463791,
+            "geometry_cache_check": 0.040875,
+            "centroid": 0.348542,
+            "normalization": 0.31,
+            "forward_dft": 11.198041,
+            "mul_spectrums": 0.647959,
+            "inverse_dft": 15.538917,
+            "native_peak": 0.712125,
+            "sobel": 0.183541
+          },
+          "preparation_sum_ms": 13.320374,
+          "decision_sum_ms": 17.082542,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:29",
+            "sequence": 29,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:29",
+            "sequence": 29,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 30,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "f5bd112d79b7d1ae74c7fa124fe93b5a2c25ecdbd4720b81f5773f9ef2094584",
+          "reduced_sha256": "f1b2dc886be85b88f943f2d901ae538348ef90d4f4ad61b6e230807423ed2c57",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.405667,
+          "instrumented_ms": 30.350916,
+          "stages_ms": {
+            "gray_reduce": 1.511625,
+            "geometry_cache_check": 0.147958,
+            "centroid": 0.333417,
+            "normalization": 0.297459,
+            "forward_dft": 11.07875,
+            "mul_spectrums": 0.631333,
+            "inverse_dft": 15.515875,
+            "native_peak": 0.712625,
+            "sobel": 0.068459
+          },
+          "preparation_sum_ms": 13.221250999999999,
+          "decision_sum_ms": 16.928292,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:30",
+            "sequence": 30,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:30",
+            "sequence": 30,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 31,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "955feac97c338160cf27a796039687c839fdcb6495f28e801b522c0aa6afd6b2",
+          "reduced_sha256": "08637ff57be8495df1cac5689d92b0363e92b304207416b6163a6dcc5c078422",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.890417,
+          "instrumented_ms": 30.089833,
+          "stages_ms": {
+            "gray_reduce": 1.481542,
+            "geometry_cache_check": 0.041458,
+            "centroid": 0.322709,
+            "normalization": 0.313833,
+            "forward_dft": 11.002375,
+            "mul_spectrums": 0.598834,
+            "inverse_dft": 15.508834,
+            "native_peak": 0.710209,
+            "sobel": 0.059625
+          },
+          "preparation_sum_ms": 13.120459,
+          "decision_sum_ms": 16.877502,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:31",
+            "sequence": 31,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:31",
+            "sequence": 31,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 32,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "75c6bbb6e22fa540e18376e0def612116a7ee0d2591ca5a56b8fdf241b0de00f",
+          "reduced_sha256": "083a848c0fd30942639a0e6d8dce71cdaa92120d75ec9744db525562c0370b6a",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 30.478042,
+          "instrumented_ms": 30.307292,
+          "stages_ms": {
+            "gray_reduce": 1.492958,
+            "geometry_cache_check": 0.127083,
+            "centroid": 0.330875,
+            "normalization": 0.32725,
+            "forward_dft": 11.034917,
+            "mul_spectrums": 0.611125,
+            "inverse_dft": 15.503791,
+            "native_peak": 0.7115,
+            "sobel": 0.121291
+          },
+          "preparation_sum_ms": 13.186,
+          "decision_sum_ms": 16.947707,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:32",
+            "sequence": 32,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:32",
+            "sequence": 32,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 33,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "d0a8056a09f26cab8a89d4808991bf3215938dc5c7fadf391016344477869df9",
+          "reduced_sha256": "5e21fca7ebd7a6c2b4c876bc42b580824dd16c45a6d917572e4fc62ff9a11417",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 38.274,
+          "instrumented_ms": 35.5,
+          "stages_ms": {
+            "gray_reduce": 1.660959,
+            "geometry_cache_check": 0.124667,
+            "centroid": 0.362,
+            "normalization": 0.179375,
+            "forward_dft": 13.473,
+            "mul_spectrums": 0.722416,
+            "inverse_dft": 17.982166,
+            "native_peak": 0.813209,
+            "sobel": 0.086917
+          },
+          "preparation_sum_ms": 15.675334000000001,
+          "decision_sum_ms": 19.604708,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:33",
+            "sequence": 33,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:33",
+            "sequence": 33,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 34,
+          "warmup": false,
+          "execution_order": [
+            "instrumented",
+            "production"
+          ],
+          "frame_sha256": "d1ad80b2f20ae89ebb756abd4257d99190edc3dfd293787cd866601721c9a8a6",
+          "reduced_sha256": "4cd3c8eae281e408c9b470bd8a349b5c09a0f2819dc9bdb8bb8eff38fea67d9f",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 35.922042,
+          "instrumented_ms": 34.226625,
+          "stages_ms": {
+            "gray_reduce": 1.6605,
+            "geometry_cache_check": 0.05375,
+            "centroid": 0.38,
+            "normalization": 0.183,
+            "forward_dft": 12.644625,
+            "mul_spectrums": 0.728125,
+            "inverse_dft": 17.577417,
+            "native_peak": 0.809959,
+            "sobel": 0.078292
+          },
+          "preparation_sum_ms": 14.868125,
+          "decision_sum_ms": 19.193793,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:34",
+            "sequence": 34,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:34",
+            "sequence": 34,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        },
+        {
+          "sequence": 35,
+          "warmup": false,
+          "execution_order": [
+            "production",
+            "instrumented"
+          ],
+          "frame_sha256": "29dc77084eacd32df6b50949b99bf851ac4e309e2c85c056a18820d5fed269c6",
+          "reduced_sha256": "84382b1e94846e9926a4bc0aa07219048f642091a2efe757965b1bd8e5b06c97",
+          "equal_to_previous_reduced": false,
+          "geometry_cache_hit": false,
+          "production_ms": 34.152667,
+          "instrumented_ms": 33.907334,
+          "stages_ms": {
+            "gray_reduce": 1.690542,
+            "geometry_cache_check": 0.046417,
+            "centroid": 0.365792,
+            "normalization": 0.165458,
+            "forward_dft": 12.428584,
+            "mul_spectrums": 0.685292,
+            "inverse_dft": 17.566959,
+            "native_peak": 0.817917,
+            "sobel": 0.076958
+          },
+          "preparation_sum_ms": 14.650376000000001,
+          "decision_sum_ms": 19.147126,
+          "production_result": {
+            "frame_id": "motion-stage-profile:0:35",
+            "sequence": 35,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "instrumented_result": {
+            "frame_id": "motion-stage-profile:0:35",
+            "sequence": 35,
+            "stable": true,
+            "reason": "stable",
+            "centroid_delta": [
+              0,
+              0
+            ],
+            "translation": [
+              0,
+              0
+            ],
+            "changed_fraction": 0.0
+          },
+          "result_exact": true
+        }
+      ]
+    }
+  ],
+  "source_changed_during_run": [],
+  "wall_seconds": 3.808643750002375,
+  "correctness_passed": true
+}

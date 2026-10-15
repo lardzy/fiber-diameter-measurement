@@ -111,7 +111,7 @@ for package_name in sorted(collection_packages):
             f"{package_name}: {exc}"
         ) from exc
 
-for distribution_name in ("tifffile", "openpyxl", "et_xmlfile"):
+for distribution_name in ("tifffile", "openpyxl", "et_xmlfile", "zlib-ng"):
     try:
         # Keep package versions and the license files stored in dist-info
         # available to the packaged self-check and the installed application.

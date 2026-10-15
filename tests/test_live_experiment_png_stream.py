@@ -69,7 +69,7 @@ def test_png_stream_chunks_have_bounded_idat_payload_valid_crc_and_one_zlib_stre
     scanlines = inflater.decompress(compressed) + inflater.flush()
     assert inflater.eof and not inflater.unused_data
     assert len(scanlines) == 256 * (256 * 4 + 1)
-    assert all(scanlines[row * (256 * 4 + 1)] == 1 for row in range(256))
+    assert all(scanlines[row * (256 * 4 + 1)] == 0 for row in range(256))
     np.testing.assert_array_equal(decode(data), pixels)
 
 
@@ -89,7 +89,8 @@ def test_png_stream_bounds_each_compressor_input_even_for_a_very_wide_row(monkey
             return self.inner.flush(*args)
 
     monkeypatch.setattr(png_stream.zlib, "compressobj", Compressor)
-    pixels = np.random.default_rng(3).integers(0, 256, (2, 25000, 3), dtype=np.uint8)
+    width = png_stream.COMPRESS_INPUT_BYTES // 3 + 17
+    pixels = np.random.default_rng(3).integers(0, 256, (2, width, 3), dtype=np.uint8)
     target = io.BytesIO()
     write_png_stream(pixels, target)
     assert max(lengths) <= png_stream.COMPRESS_INPUT_BYTES
@@ -166,8 +167,50 @@ def test_png_stream_invalid_input_is_rejected_before_writing(pixels):
     assert target.getvalue() == b""
 
 
-def test_png_workspace_is_two_rows_plus_fixed_codec_allowance():
-    assert png_workspace_bytes(6144, 3) == 2 * 1024**2 + 2 * 6144 * 3 + 1
+def test_png_workspace_covers_both_blocks_and_codec_with_no_height_term():
+    for width in (1, 4096, 6144, 100000):
+        for channels in (1, 3, 4):
+            row_bytes = width * channels
+            rows = max(1, png_stream.SCANLINE_BLOCK_BYTES // (row_bytes + 1))
+            assert png_workspace_bytes(width, channels) == (
+                png_stream.CODEC_ALLOWANCE_BYTES + rows * (2 * row_bytes + 1))
     for width, channels in ((True, 3), (0, 3), (1, 2), (1, False)):
         with pytest.raises(ValueError):
             png_workspace_bytes(width, channels)
+
+
+def test_fast_storage_probe_is_bounded_and_chooses_compressible_and_noisy_paths(monkeypatch):
+    original = png_stream.zlib.compress
+    sample_sizes = []
+
+    def measured(data, *args, **kwargs):
+        sample_sizes.append(len(data))
+        return original(data, *args, **kwargs)
+
+    monkeypatch.setattr(png_stream.zlib, "compress", measured)
+    assert png_stream._compression_level(np.full((1024, 4096, 3), 200, np.uint8)) == 1
+    noise = np.random.default_rng(75).integers(0, 256, (512, 4096, 4), np.uint8)
+    noise.flags.writeable = False
+    assert png_stream._compression_level(noise[::-1, ::-1]) == 0
+    sensor = np.random.default_rng(75).integers(200, 202, (512, 4096, 3), np.uint8)
+    assert png_stream._compression_level(sensor) == 0
+    assert max(sample_sizes) <= png_stream.COMPRESSION_SAMPLE_BYTES
+    target = io.BytesIO()
+    write_png_stream(noise, target)
+    np.testing.assert_array_equal(decode(target.getvalue()), noise)
+
+
+def test_probe_failure_traceback_does_not_pin_input(monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("compression probe failed")
+
+    monkeypatch.setattr(png_stream.zlib, "compress", fail)
+    pixels = np.zeros((37, 53, 3), np.uint8)
+    reference = weakref.ref(pixels)
+    try:
+        write_png_stream(pixels, io.BytesIO())
+    except RuntimeError as error:
+        failure = error
+    del pixels
+    assert failure.__traceback__ is not None
+    assert reference() is None

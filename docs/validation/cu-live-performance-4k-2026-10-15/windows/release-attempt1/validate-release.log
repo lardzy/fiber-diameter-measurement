@@ -1,0 +1,19 @@
+START windows-regression
+DONE windows-regression 0 61.9
+START manual-gold
+DONE manual-gold 0 0.95
+START motion-gold
+DONE motion-gold 0 0.34
+START automatic-gold
+DONE automatic-gold 0 9.95
+START core-build
+DONE core-build 0 616.62
+START core-frozen-code
+DONE core-frozen-code 0 0.48
+START full-build
+DONE full-build 0 536.07
+START full-frozen-code
+DONE full-frozen-code 0 0.47
+START installer
+DONE installer 0 197.4
+{'path': 'C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-no-area-models.exe', 'size': 398784756, 'sha256': '9b1a7632707a22f4e1a0b3be7e1588a964449099dc5d40160791fac5ae0d6e85'}

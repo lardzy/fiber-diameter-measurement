@@ -2,7 +2,7 @@
 
     python scripts/benchmark_cu_live_ui.py --output results/cu-live-ui.json
 
-Runs 2K/4K/6K, five warmups and thirty QTest two-click measurements, with PNG
+Runs 2K/4K by default, five warmups and thirty QTest two-click measurements, with PNG
 saving off and on. Frames enter the actual latest-only workspace mailbox from
 a producer thread; real QWidget paintEvent and controller kernels run. This is
 an offscreen rendering benchmark, not screen-presentation or camera acceptance.
@@ -217,6 +217,8 @@ def run_case(args, size, save_images):
                 automatic_results.append({"status": response["result"]["status"],
                     "candidates": len(response["result"].get("candidates", [])), "error": response.get("error"),
                     "task_id": response["task_id"], "phase": automatic_phase,
+                    "worker_runtime": response.get("worker_runtime"),
+                    "received_during_measurements": state["sample_start"] is not None and state["sample_end"] is None,
                     # Receipt on the GUI thread, not the worker's finish time.
                     "received_monotonic": time.perf_counter()})
                 automatic_active = None
@@ -292,9 +294,16 @@ def run_case(args, size, save_images):
                 wait_for(lambda: time.perf_counter() >= pause_end, args.interval_ms / 1000 + 1)
             automatic_enabled = False
             state["sample_end"] = time.perf_counter()
+            automatic_timeline["measurement_ended_at"] = state["sample_end"]
             state["generated_at_sample_end"] = generated[0]
         if not wait_for(lambda: not controller._jobs and not controller.evidence.pending, 30):
             raise RuntimeError("Measurement/evidence queues did not drain")
+        # Fast manual trials can finish before the full-frame task. Validate its
+        # actual result without extending the measured latency/FPS window or
+        # mistaking a teardown cancellation for a completed analysis. The worker
+        # still owns its unchanged 30-second hard timeout.
+        if automatic is not None and not wait_for(lambda: automatic_active is None, 35):
+            raise RuntimeError("Background task did not return after its bounded deadline")
         if args.screenshot:
             args.screenshot.parent.mkdir(parents=True, exist_ok=True)
             if not workspace.grab().save(str(args.screenshot)):
@@ -331,6 +340,8 @@ def run_case(args, size, save_images):
             "evidence_states": dict(Counter((record.evidence or {}).get("state", "missing") for record in session.measurements.values())),
             "frame_budget_peak_bytes": controller.budget.peak_bytes,
             "motion_reduced_retained_bytes": controller._motion.retained_bytes,
+            "motion_preparation_retained_bytes": controller._preparer.retained_bytes,
+            "verify_before_present": controller.verify_before_present,
             "resources": resources.result,
             "boundary": "actual QWidget paint, Qt input and event loop; synthetic source, no physical camera or compositor presentation measurement"}
     finally:
@@ -354,7 +365,7 @@ def run_case(args, size, save_images):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096, 6144])
+    parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096])
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--samples", type=int, default=30)
     parser.add_argument("--frame-hz", type=float, default=30)

@@ -33,6 +33,7 @@ def main() -> int:
                   and result["status"] == "ok" and len(result["candidates"]) == 1
                   and abs(result["candidates"][0]["width_px"] - expected) < 1e-8)
             rows.append({"algorithm": algorithm, "ok": ok, "pid": worker._process.pid,
+                         "worker_runtime": response.get("worker_runtime"),
                          "elapsed_ms": (time.monotonic() - start) * 1000, "result": result})
     output = {"ok": all(row["ok"] for row in rows) and rows[0]["pid"] == rows[1]["pid"],
               "frozen": bool(getattr(sys, "frozen", False)), "native_build_info": build_info(), "cases": rows}

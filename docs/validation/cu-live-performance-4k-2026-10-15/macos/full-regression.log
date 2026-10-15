@@ -1,0 +1,128 @@
+................................................................. [  1%]
+........................................................................ [  2%]
+................................................................. [  4%]
+....FFF.FF......................................................... [  5%]
+........................................................................... [  7%]
+............................................ [  8%]
+........................................................................ [  9%]
+.............................................................. [ 10%]
+........................................................................ [ 12%]
+.............................................................. [ 13%]
+.................................................... [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+........F...............F.FFF.................................... [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+......................................FF....................... [ 34%]
+.......................................................................... [ 35%]
+................................................... [ 36%]
+........................................................................ [ 38%]
+................................................. [ 39%]
+.......................................... [ 40%]
+........................................ [ 41%]
+.................... [ 41%]
+............................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+...................................................................... [ 62%]
+...................................................... [ 63%]
+........................................................................ [ 65%]
+................................................................................................................................................................F....F............ [ 68%]
+........................................................................ [ 70%]
+...................................................................... [ 71%]
+................................................................ [ 73%]
+................................................................... [ 74%]
+.................................................................. [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+...............................................F........................ [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+.................................................................................................. [ 90%]
+.................................................................... [ 91%]
+........................................................................ [ 93%]
+............................................................ [ 94%]
+..................................................................... [ 95%]
+......................................................... [ 96%]
+........................................................................ [ 98%]
+...........................................................Fatal Python error: Segmentation fault
+
+Thread 0x000000706a84b000 (most recent call first):
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 359 in wait
+  File "/opt/miniconda3/lib/python3.13/multiprocessing/queues.py", line 249 in _feed
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 995 in run
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Thread 0x000000702629f000 (most recent call first):
+  File "/opt/miniconda3/lib/python3.13/selectors.py", line 398 in select
+  File "/opt/miniconda3/lib/python3.13/multiprocessing/connection.py", line 1148 in wait
+  File "/opt/miniconda3/lib/python3.13/concurrent/futures/process.py", line 416 in wait_result_broken_or_wakeup
+  File "/opt/miniconda3/lib/python3.13/concurrent/futures/process.py", line 343 in run
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Thread 0x000000701dcff000 (most recent call first):
+  File "/opt/miniconda3/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 995 in run
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/opt/miniconda3/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x00000001ecfabf80 (most recent call first):
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/src/fdm/ui/theme.py", line 170 in apply_application_theme
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/tests/test_workbench_workflows.py", line 267 in test_theme_switch_preserves_widget_class_fonts
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/python.py", line 166 in pytest_pyfunc_call
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/python.py", line 1720 in runtest
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/runner.py", line 179 in pytest_runtest_call
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/runner.py", line 245 in <lambda>
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/runner.py", line 353 in from_call
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/runner.py", line 244 in call_and_report
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/runner.py", line 137 in runtestprotocol
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/runner.py", line 118 in pytest_runtest_protocol
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/main.py", line 396 in pytest_runtestloop
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/main.py", line 372 in _main
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/main.py", line 318 in wrap_session
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/main.py", line 365 in pytest_cmdline_main
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121 in _multicall
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120 in _hookexec
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512 in __call__
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py", line 199 in main
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py", line 223 in console_main
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/pytest/__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 198 in _run_module_as_main
+
+Extension modules: shiboken6.Shiboken, PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, PIL._imaging, PySide6.QtTest, PySide6.QtNetwork, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, PIL._imagingft, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._pcg64, numpy.random._generator, numpy.random._mt19937, numpy.random._philox, numpy.random._sfc64, numpy.random.mtrand, PySide6.QtDataVisualization, PySide6.QtOpenGLWidgets, PySide6.QtOpenGL, zlib_ng.zlib_ng, PIL._imagingmath, _cyutility, scipy._cyutility, scipy._lib._ccallback_c, scipy.ndimage._nd_image, scipy.ndimage._rank_filter_1d, scipy.special._ufuncs_cxx, scipy.linalg._fblas, scipy.linalg._flapack, scipy.linalg._batched_linalg, scipy.linalg._cythonized_array_utils, scipy.linalg._solve_toeplitz, scipy.linalg._internal_matfuncs, scipy.linalg._linalg_pythran, scipy.linalg.cython_blas, scipy.linalg.cython_lapack, scipy.linalg._decomp_update, scipy.special._ellip_harm_2, scipy.special._special_ufuncs, scipy.special._gufuncs, scipy.special._ufuncs, scipy.special._specfun, scipy.special._comb, _ni_label, scipy.ndimage._ni_label, scipy.sparse._sparsetools, _csparsetools, scipy.sparse._csparsetools, scipy.spatial._ckdtree, scipy.spatial._hausdorff, scipy.spatial._distance_wrap, scipy._lib.messagestream, scipy.spatial._qhull, scipy.spatial._voronoi, scipy.spatial.transform._rotation_cy, scipy.spatial.transform._rigid_transform_cy, skimage.morphology._misc_cy, skimage.measure._ccomp, _skeletonize_lee_cy, skimage.morphology._skeletonize_lee_cy, skimage.morphology._skeletonize_various_cy, skimage._shared.geometry, skimage.measure._pnpoly, skimage.morphology._convex_hull, skimage.morphology._grayreconstruct, skimage.morphology._extrema_cy, skimage.morphology._flood_fill_cy, skimage.morphology._max_tree, psutil._psutil_osx, PIL._avif, PIL._webp (total: 85)

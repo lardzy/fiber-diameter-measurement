@@ -431,7 +431,8 @@ def environment():
     native = _native.require_native(validate_source=True)
     paths = [*sorted((ROOT / "native").glob("**/*.*")),
              *sorted((ROOT / "src/fdm/live_experiment").glob("*.py")),
-             ROOT / "src/fdm/services/cu_manual_measurement.py", ROOT / "src/fdm/services/cu_automatic_measurement.py"]
+             ROOT / "src/fdm/services/cu_manual_measurement.py", ROOT / "src/fdm/services/cu_automatic_measurement.py",
+             ROOT / "src/fdm/services/cu_automatic_worker.py"]
     sources = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
                for path in paths if path.is_file() and path.suffix in (".py", ".cpp", ".h", ".hpp")}
     try:
@@ -439,7 +440,7 @@ def environment():
     except (OSError, subprocess.SubprocessError):
         commit = None
     dependencies = {}
-    for name in ("numpy", "opencv-python", "PySide6", "pybind11", "psutil"):
+    for name in ("numpy", "opencv-python", "PySide6", "pybind11", "psutil", "zlib-ng"):
         try:
             dependencies[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
@@ -457,7 +458,7 @@ def parse_arguments(argv=None):
     parser.add_argument("--modes", nargs="+", choices=("manual", "statistics", "automatic", "soak"), default=["manual", "statistics", "automatic"])
     parser.add_argument("--samples", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=5)
-    parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096, 6144])
+    parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096])
     parser.add_argument("--automatic-size", type=int, default=2048)
     parser.add_argument("--automatic-budget-mib", type=int, default=2048)
     parser.add_argument("--duration-seconds", type=float, default=3600)

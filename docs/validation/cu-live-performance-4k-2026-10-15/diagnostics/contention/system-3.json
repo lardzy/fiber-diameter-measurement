@@ -1,0 +1,6392 @@
+[
+  {
+    "time": 42179.111795375,
+    "cpu": {
+      "user": 18628.015624999996,
+      "system": 9516.87500000003,
+      "idle": 140569.96874999997,
+      "interrupt": 754.296875,
+      "dpc": 255.609375
+    },
+    "memory": {
+      "total": 17173250048,
+      "available": 10951974912,
+      "percent": 36.2,
+      "used": 6221275136,
+      "free": 10951974912
+    },
+    "disk": {
+      "read_count": 1555511,
+      "write_count": 2782378,
+      "read_bytes": 97085630464,
+      "write_bytes": 160551076352,
+      "read_time": 420,
+      "write_time": 406
+    },
+    "processes": [
+      {
+        "pid": 0,
+        "name": "System Idle Process",
+        "cpu": 140570.01562499997,
+        "rss": 8192
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpu": 1074.859375,
+        "rss": 1179648
+      },
+      {
+        "pid": 124,
+        "name": "Registry",
+        "cpu": 2.5,
+        "rss": 41467904
+      },
+      {
+        "pid": 536,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.03125,
+        "rss": 6246400
+      },
+      {
+        "pid": 552,
+        "name": "smss.exe",
+        "cpu": 0.0625,
+        "rss": 1880064
+      },
+      {
+        "pid": 728,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.171875,
+        "rss": 10993664
+      },
+      {
+        "pid": 748,
+        "name": "csrss.exe",
+        "cpu": 3.234375,
+        "rss": 9293824
+      },
+      {
+        "pid": 820,
+        "name": "svchost.exe",
+        "cpu": 44.140625,
+        "rss": 55013376
+      },
+      {
+        "pid": 828,
+        "name": "wininit.exe",
+        "cpu": 1.59375,
+        "rss": 11788288
+      },
+      {
+        "pid": 836,
+        "name": "csrss.exe",
+        "cpu": 27.171875,
+        "rss": 39256064
+      },
+      {
+        "pid": 932,
+        "name": "winlogon.exe",
+        "cpu": 0.234375,
+        "rss": 19652608
+      },
+      {
+        "pid": 980,
+        "name": "services.exe",
+        "cpu": 12.96875,
+        "rss": 13516800
+      },
+      {
+        "pid": 988,
+        "name": "lsass.exe",
+        "cpu": 16.375,
+        "rss": 35606528
+      },
+      {
+        "pid": 1100,
+        "name": "svchost.exe",
+        "cpu": 46.59375,
+        "rss": 21614592
+      },
+      {
+        "pid": 1124,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 17727488
+      },
+      {
+        "pid": 1160,
+        "name": "svchost.exe",
+        "cpu": 1.703125,
+        "rss": 13926400
+      },
+      {
+        "pid": 1232,
+        "name": "dwm.exe",
+        "cpu": 391.671875,
+        "rss": 249438208
+      },
+      {
+        "pid": 1432,
+        "name": "svchost.exe",
+        "cpu": 0.625,
+        "rss": 11911168
+      },
+      {
+        "pid": 1440,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8159232
+      },
+      {
+        "pid": 1448,
+        "name": "svchost.exe",
+        "cpu": 2.0625,
+        "rss": 9453568
+      },
+      {
+        "pid": 1556,
+        "name": "svchost.exe",
+        "cpu": 6.109375,
+        "rss": 14671872
+      },
+      {
+        "pid": 1568,
+        "name": "svchost.exe",
+        "cpu": 3.65625,
+        "rss": 20566016
+      },
+      {
+        "pid": 1620,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 16625664
+      },
+      {
+        "pid": 1628,
+        "name": "svchost.exe",
+        "cpu": 2.765625,
+        "rss": 12713984
+      },
+      {
+        "pid": 1636,
+        "name": "svchost.exe",
+        "cpu": 0.4375,
+        "rss": 19959808
+      },
+      {
+        "pid": 1644,
+        "name": "svchost.exe",
+        "cpu": 0.203125,
+        "rss": 16429056
+      },
+      {
+        "pid": 1788,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 13340672
+      },
+      {
+        "pid": 1828,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 10780672
+      },
+      {
+        "pid": 1848,
+        "name": "svchost.exe",
+        "cpu": 0.9375,
+        "rss": 19132416
+      },
+      {
+        "pid": 1880,
+        "name": "svchost.exe",
+        "cpu": 8.421875,
+        "rss": 25047040
+      },
+      {
+        "pid": 1924,
+        "name": "svchost.exe",
+        "cpu": 1.625,
+        "rss": 12214272
+      },
+      {
+        "pid": 1996,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8704000
+      },
+      {
+        "pid": 2072,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 20918272
+      },
+      {
+        "pid": 2084,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 15822848
+      },
+      {
+        "pid": 2236,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.1875,
+        "rss": 18706432
+      },
+      {
+        "pid": 2348,
+        "name": "python.exe",
+        "cpu": 0.015625,
+        "rss": 7671808
+      },
+      {
+        "pid": 2420,
+        "name": "svchost.exe",
+        "cpu": 4.671875,
+        "rss": 24899584
+      },
+      {
+        "pid": 2432,
+        "name": "XtaCache.exe",
+        "cpu": 28.109375,
+        "rss": 8962048
+      },
+      {
+        "pid": 2448,
+        "name": "AppActions.exe",
+        "cpu": 1.484375,
+        "rss": 49872896
+      },
+      {
+        "pid": 2504,
+        "name": "spoolsv.exe",
+        "cpu": 0.21875,
+        "rss": 24461312
+      },
+      {
+        "pid": 2512,
+        "name": "svchost.exe",
+        "cpu": 26.71875,
+        "rss": 23511040
+      },
+      {
+        "pid": 2520,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 13799424
+      },
+      {
+        "pid": 2532,
+        "name": "svchost.exe",
+        "cpu": 1.140625,
+        "rss": 8757248
+      },
+      {
+        "pid": 2628,
+        "name": "MemCompression",
+        "cpu": 1.8125,
+        "rss": 36184064
+      },
+      {
+        "pid": 2648,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13623296
+      },
+      {
+        "pid": 2676,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13217792
+      },
+      {
+        "pid": 2692,
+        "name": "svchost.exe",
+        "cpu": 17.65625,
+        "rss": 21209088
+      },
+      {
+        "pid": 2700,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 13578240
+      },
+      {
+        "pid": 2724,
+        "name": "conhost.exe",
+        "cpu": 0.015625,
+        "rss": 13758464
+      },
+      {
+        "pid": 2808,
+        "name": "svchost.exe",
+        "cpu": 0.875,
+        "rss": 23764992
+      },
+      {
+        "pid": 2856,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 10059776
+      },
+      {
+        "pid": 2956,
+        "name": "svchost.exe",
+        "cpu": 26.140625,
+        "rss": 29368320
+      },
+      {
+        "pid": 2964,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 24616960
+      },
+      {
+        "pid": 2972,
+        "name": "svchost.exe",
+        "cpu": 63.328125,
+        "rss": 35020800
+      },
+      {
+        "pid": 2988,
+        "name": "svchost.exe",
+        "cpu": 1.796875,
+        "rss": 28536832
+      },
+      {
+        "pid": 3068,
+        "name": "SnippingTool.exe",
+        "cpu": 1.203125,
+        "rss": 219156480
+      },
+      {
+        "pid": 3116,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 12562432
+      },
+      {
+        "pid": 3148,
+        "name": "svchost.exe",
+        "cpu": 11.609375,
+        "rss": 52842496
+      },
+      {
+        "pid": 3196,
+        "name": "svchost.exe",
+        "cpu": 0.21875,
+        "rss": 13463552
+      },
+      {
+        "pid": 3204,
+        "name": "ShellExperienceHost.exe",
+        "cpu": 0.5625,
+        "rss": 96669696
+      },
+      {
+        "pid": 3216,
+        "name": "SnippingTool.exe",
+        "cpu": 1.5,
+        "rss": 424304640
+      },
+      {
+        "pid": 3288,
+        "name": "python.exe",
+        "cpu": 4.921875,
+        "rss": 7286784
+      },
+      {
+        "pid": 3352,
+        "name": "svchost.exe",
+        "cpu": 39.765625,
+        "rss": 24674304
+      },
+      {
+        "pid": 3364,
+        "name": "svchost.exe",
+        "cpu": 0.5625,
+        "rss": 13344768
+      },
+      {
+        "pid": 3452,
+        "name": "svchost.exe",
+        "cpu": 0.234375,
+        "rss": 19181568
+      },
+      {
+        "pid": 3484,
+        "name": "tomcat10.exe",
+        "cpu": 78.921875,
+        "rss": 253210624
+      },
+      {
+        "pid": 3548,
+        "name": "OfficeClickToRun.exe",
+        "cpu": 5.40625,
+        "rss": 101404672
+      },
+      {
+        "pid": 3580,
+        "name": "svchost.exe",
+        "cpu": 22.203125,
+        "rss": 46817280
+      },
+      {
+        "pid": 3620,
+        "name": "svchost.exe",
+        "cpu": 21.484375,
+        "rss": 63574016
+      },
+      {
+        "pid": 3680,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 14553088
+      },
+      {
+        "pid": 3696,
+        "name": "conhost.exe",
+        "cpu": 6.546875,
+        "rss": 14704640
+      },
+      {
+        "pid": 3704,
+        "name": "MpDefenderCoreService.exe",
+        "cpu": 2.546875,
+        "rss": 35598336
+      },
+      {
+        "pid": 3752,
+        "name": "svchost.exe",
+        "cpu": 0.265625,
+        "rss": 20238336
+      },
+      {
+        "pid": 3772,
+        "name": "svchost.exe",
+        "cpu": 1.28125,
+        "rss": 15659008
+      },
+      {
+        "pid": 3804,
+        "name": "lmgrd.exe",
+        "cpu": 0.046875,
+        "rss": 18964480
+      },
+      {
+        "pid": 3848,
+        "name": "MSOfficePLUSService.exe",
+        "cpu": 14.15625,
+        "rss": 102948864
+      },
+      {
+        "pid": 3860,
+        "name": "coherence.exe",
+        "cpu": 0.109375,
+        "rss": 10170368
+      },
+      {
+        "pid": 3904,
+        "name": "prl_tools_service.exe",
+        "cpu": 30.859375,
+        "rss": 35647488
+      },
+      {
+        "pid": 3960,
+        "name": "dllhost.exe",
+        "cpu": 0.125,
+        "rss": 14589952
+      },
+      {
+        "pid": 3976,
+        "name": "svchost.exe",
+        "cpu": 0.671875,
+        "rss": 34562048
+      },
+      {
+        "pid": 3988,
+        "name": "MsMpEng.exe",
+        "cpu": 1799.84375,
+        "rss": 471453696
+      },
+      {
+        "pid": 4048,
+        "name": "prl_cc.exe",
+        "cpu": 27.3125,
+        "rss": 53444608
+      },
+      {
+        "pid": 4116,
+        "name": "conhost.exe",
+        "cpu": 8.015625,
+        "rss": 13168640
+      },
+      {
+        "pid": 4172,
+        "name": "msedgewebview2.exe",
+        "cpu": 7.796875,
+        "rss": 140705792
+      },
+      {
+        "pid": 4272,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 13733888
+      },
+      {
+        "pid": 4368,
+        "name": "coherence.exe",
+        "cpu": 0.0625,
+        "rss": 13742080
+      },
+      {
+        "pid": 4388,
+        "name": "prl_tools.exe",
+        "cpu": 1.515625,
+        "rss": 17104896
+      },
+      {
+        "pid": 4504,
+        "name": "dllhost.exe",
+        "cpu": 0.484375,
+        "rss": 22913024
+      },
+      {
+        "pid": 4572,
+        "name": "svchost.exe",
+        "cpu": 1.9375,
+        "rss": 32968704
+      },
+      {
+        "pid": 4700,
+        "name": "SystemSettings.exe",
+        "cpu": 0.765625,
+        "rss": 11575296
+      },
+      {
+        "pid": 4816,
+        "name": "lmgrd.exe",
+        "cpu": 1.21875,
+        "rss": 26660864
+      },
+      {
+        "pid": 4996,
+        "name": "svchost.exe",
+        "cpu": 1.59375,
+        "rss": 32120832
+      },
+      {
+        "pid": 5052,
+        "name": "python.exe",
+        "cpu": 0.0,
+        "rss": 7667712,
+        "threads": [
+          {
+            "id": 7224,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 9668,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 11852,
+            "user_time": 0.0,
+            "system_time": 0.0
+          }
+        ],
+        "io": {
+          "read_count": 0,
+          "write_count": 0,
+          "read_bytes": 0,
+          "write_bytes": 0,
+          "other_count": 121,
+          "other_bytes": 4218
+        }
+      },
+      {
+        "pid": 5132,
+        "name": "svchost.exe",
+        "cpu": 0.90625,
+        "rss": 51605504
+      },
+      {
+        "pid": 5172,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 14508032
+      },
+      {
+        "pid": 5240,
+        "name": "AggregatorHost.exe",
+        "cpu": 0.609375,
+        "rss": 19632128
+      },
+      {
+        "pid": 5272,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 12967936
+      },
+      {
+        "pid": 5560,
+        "name": "ApplicationFrameHost.exe",
+        "cpu": 0.375,
+        "rss": 55181312
+      },
+      {
+        "pid": 5624,
+        "name": "powershell.exe",
+        "cpu": 1.21875,
+        "rss": 6967296
+      },
+      {
+        "pid": 5640,
+        "name": "svchost.exe",
+        "cpu": 5.875,
+        "rss": 26386432
+      },
+      {
+        "pid": 5644,
+        "name": "svchost.exe",
+        "cpu": 1.328125,
+        "rss": 22319104
+      },
+      {
+        "pid": 5656,
+        "name": "svchost.exe",
+        "cpu": 0.03125,
+        "rss": 12816384
+      },
+      {
+        "pid": 5660,
+        "name": "svchost.exe",
+        "cpu": 52.03125,
+        "rss": 35192832
+      },
+      {
+        "pid": 5792,
+        "name": "taskhostw.exe",
+        "cpu": 1.59375,
+        "rss": 25743360
+      },
+      {
+        "pid": 5800,
+        "name": "sihost.exe",
+        "cpu": 11.90625,
+        "rss": 63750144
+      },
+      {
+        "pid": 5816,
+        "name": "DefenderSessionHelper.exe",
+        "cpu": 0.0,
+        "rss": 7188480
+      },
+      {
+        "pid": 5860,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 28073984
+      },
+      {
+        "pid": 5868,
+        "name": "svchost.exe",
+        "cpu": 0.25,
+        "rss": 14802944
+      },
+      {
+        "pid": 5928,
+        "name": "msdtc.exe",
+        "cpu": 0.203125,
+        "rss": 17580032
+      },
+      {
+        "pid": 5992,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 37851136
+      },
+      {
+        "pid": 6008,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 9342976
+      },
+      {
+        "pid": 6224,
+        "name": "clash-verge.exe",
+        "cpu": 61.25,
+        "rss": 17616896
+      },
+      {
+        "pid": 6300,
+        "name": "TextInputHost.exe",
+        "cpu": 15.28125,
+        "rss": 112078848
+      },
+      {
+        "pid": 6348,
+        "name": "svchost.exe",
+        "cpu": 0.71875,
+        "rss": 21463040
+      },
+      {
+        "pid": 6768,
+        "name": "svchost.exe",
+        "cpu": 0.09375,
+        "rss": 15523840
+      },
+      {
+        "pid": 6800,
+        "name": "explorer.exe",
+        "cpu": 131.109375,
+        "rss": 564002816
+      },
+      {
+        "pid": 6848,
+        "name": "ShellHost.exe",
+        "cpu": 1.015625,
+        "rss": 50413568
+      },
+      {
+        "pid": 6856,
+        "name": "svchost.exe",
+        "cpu": 0.359375,
+        "rss": 26275840
+      },
+      {
+        "pid": 6888,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.53125,
+        "rss": 32104448
+      },
+      {
+        "pid": 6900,
+        "name": "CrossDeviceService.exe",
+        "cpu": 1.484375,
+        "rss": 117366784
+      },
+      {
+        "pid": 7280,
+        "name": "SearchHost.exe",
+        "cpu": 3.265625,
+        "rss": 139448320
+      },
+      {
+        "pid": 7296,
+        "name": "StartMenuExperienceHost.exe",
+        "cpu": 3.859375,
+        "rss": 196583424
+      },
+      {
+        "pid": 7304,
+        "name": "CrossDeviceResume.exe",
+        "cpu": 0.453125,
+        "rss": 48889856
+      },
+      {
+        "pid": 7332,
+        "name": "powershell.exe",
+        "cpu": 3.578125,
+        "rss": 94277632
+      },
+      {
+        "pid": 7432,
+        "name": "WidgetBoard.exe",
+        "cpu": 0.6875,
+        "rss": 41181184
+      },
+      {
+        "pid": 7468,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.984375,
+        "rss": 54464512
+      },
+      {
+        "pid": 7520,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 20725760
+      },
+      {
+        "pid": 7876,
+        "name": "WindowsTerminal.exe",
+        "cpu": 32.875,
+        "rss": 306679808
+      },
+      {
+        "pid": 8052,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.25,
+        "rss": 15339520
+      },
+      {
+        "pid": 8436,
+        "name": "WidgetService.exe",
+        "cpu": 0.71875,
+        "rss": 31690752
+      },
+      {
+        "pid": 8488,
+        "name": "conhost.exe",
+        "cpu": 1.84375,
+        "rss": 2777088
+      },
+      {
+        "pid": 8516,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.75,
+        "rss": 76640256
+      },
+      {
+        "pid": 8524,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.921875,
+        "rss": 45019136
+      },
+      {
+        "pid": 8660,
+        "name": "OpenConsole.exe",
+        "cpu": 0.1875,
+        "rss": 14602240
+      },
+      {
+        "pid": 8752,
+        "name": "OpenConsole.exe",
+        "cpu": 0.015625,
+        "rss": 18268160
+      },
+      {
+        "pid": 8896,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.265625,
+        "rss": 26222592
+      },
+      {
+        "pid": 8980,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.140625,
+        "rss": 66523136
+      },
+      {
+        "pid": 9120,
+        "name": "MicrosoftStartFeedProvider.exe",
+        "cpu": 1.921875,
+        "rss": 50360320
+      },
+      {
+        "pid": 9160,
+        "name": "WmiPrvSE.exe",
+        "cpu": 0.046875,
+        "rss": 19427328
+      },
+      {
+        "pid": 9300,
+        "name": "python.exe",
+        "cpu": 1.25,
+        "rss": 33533952
+      },
+      {
+        "pid": 9312,
+        "name": "svchost.exe",
+        "cpu": 0.015625,
+        "rss": 12050432
+      },
+      {
+        "pid": 9460,
+        "name": "ChsIME.exe",
+        "cpu": 0.15625,
+        "rss": 13987840
+      },
+      {
+        "pid": 9504,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.5,
+        "rss": 8900608
+      },
+      {
+        "pid": 9556,
+        "name": "NisSrv.exe",
+        "cpu": 6.171875,
+        "rss": 19529728
+      },
+      {
+        "pid": 9568,
+        "name": "powershell.exe",
+        "cpu": 0.203125,
+        "rss": 79429632
+      },
+      {
+        "pid": 9640,
+        "name": "svchost.exe",
+        "cpu": 1.765625,
+        "rss": 46653440
+      },
+      {
+        "pid": 9716,
+        "name": "svchost.exe",
+        "cpu": 0.78125,
+        "rss": 20606976
+      },
+      {
+        "pid": 9740,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.8125,
+        "rss": 6848512
+      },
+      {
+        "pid": 9800,
+        "name": "svchost.exe",
+        "cpu": 0.0625,
+        "rss": 12947456
+      },
+      {
+        "pid": 9984,
+        "name": "ctfmon.exe",
+        "cpu": 78.6875,
+        "rss": 80424960
+      },
+      {
+        "pid": 10136,
+        "name": "verge-mihomo.exe",
+        "cpu": 130.609375,
+        "rss": 24530944
+      },
+      {
+        "pid": 10156,
+        "name": "conhost.exe",
+        "cpu": 0.0625,
+        "rss": 2584576
+      },
+      {
+        "pid": 10260,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.203125,
+        "rss": 16412672
+      },
+      {
+        "pid": 10280,
+        "name": "svchost.exe",
+        "cpu": 0.59375,
+        "rss": 17993728
+      },
+      {
+        "pid": 10460,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.78125,
+        "rss": 112476160
+      },
+      {
+        "pid": 10576,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.359375,
+        "rss": 28946432
+      },
+      {
+        "pid": 10580,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.421875,
+        "rss": 31084544
+      },
+      {
+        "pid": 10900,
+        "name": "MoNotificationUx.exe",
+        "cpu": 0.03125,
+        "rss": 17915904
+      },
+      {
+        "pid": 10916,
+        "name": "SecurityHealthSystray.exe",
+        "cpu": 0.203125,
+        "rss": 16568320
+      },
+      {
+        "pid": 10960,
+        "name": "SecurityHealthService.exe",
+        "cpu": 2.984375,
+        "rss": 30949376
+      },
+      {
+        "pid": 11064,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.046875,
+        "rss": 2461696
+      },
+      {
+        "pid": 11132,
+        "name": "M365Copilot.exe",
+        "cpu": 4.953125,
+        "rss": 143503360
+      },
+      {
+        "pid": 11236,
+        "name": "SearchIndexer.exe",
+        "cpu": 38.578125,
+        "rss": 42688512
+      },
+      {
+        "pid": 11348,
+        "name": "msedgewebview2.exe",
+        "cpu": 2.625,
+        "rss": 4804608
+      },
+      {
+        "pid": 11636,
+        "name": "ansyslmd.exe",
+        "cpu": 1.953125,
+        "rss": 35172352
+      },
+      {
+        "pid": 11652,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 31760384
+      },
+      {
+        "pid": 11756,
+        "name": "svchost.exe",
+        "cpu": 0.46875,
+        "rss": 34525184
+      },
+      {
+        "pid": 12028,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 27078656
+      }
+    ]
+  },
+  {
+    "time": 42180.206015625,
+    "cpu": {
+      "user": 18628.968749999996,
+      "system": 9517.84375000003,
+      "idle": 140572.45312499997,
+      "interrupt": 754.359375,
+      "dpc": 255.625
+    },
+    "memory": {
+      "total": 17173250048,
+      "available": 10494533632,
+      "percent": 38.9,
+      "used": 6678716416,
+      "free": 10494533632
+    },
+    "disk": {
+      "read_count": 1555511,
+      "write_count": 2782407,
+      "read_bytes": 97085630464,
+      "write_bytes": 160551612928,
+      "read_time": 420,
+      "write_time": 406
+    },
+    "processes": [
+      {
+        "pid": 0,
+        "name": "System Idle Process",
+        "cpu": 140572.46874999997,
+        "rss": 8192
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpu": 1074.90625,
+        "rss": 1179648
+      },
+      {
+        "pid": 124,
+        "name": "Registry",
+        "cpu": 2.5,
+        "rss": 41467904
+      },
+      {
+        "pid": 536,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.03125,
+        "rss": 6246400
+      },
+      {
+        "pid": 552,
+        "name": "smss.exe",
+        "cpu": 0.0625,
+        "rss": 1880064
+      },
+      {
+        "pid": 728,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.171875,
+        "rss": 10993664
+      },
+      {
+        "pid": 748,
+        "name": "csrss.exe",
+        "cpu": 3.234375,
+        "rss": 9293824
+      },
+      {
+        "pid": 820,
+        "name": "svchost.exe",
+        "cpu": 44.140625,
+        "rss": 55017472
+      },
+      {
+        "pid": 828,
+        "name": "wininit.exe",
+        "cpu": 1.59375,
+        "rss": 11788288
+      },
+      {
+        "pid": 836,
+        "name": "csrss.exe",
+        "cpu": 27.171875,
+        "rss": 56135680
+      },
+      {
+        "pid": 932,
+        "name": "winlogon.exe",
+        "cpu": 0.234375,
+        "rss": 19652608
+      },
+      {
+        "pid": 980,
+        "name": "services.exe",
+        "cpu": 12.96875,
+        "rss": 13516800
+      },
+      {
+        "pid": 988,
+        "name": "lsass.exe",
+        "cpu": 16.375,
+        "rss": 35622912
+      },
+      {
+        "pid": 1100,
+        "name": "svchost.exe",
+        "cpu": 46.609375,
+        "rss": 21774336
+      },
+      {
+        "pid": 1124,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 17727488
+      },
+      {
+        "pid": 1160,
+        "name": "svchost.exe",
+        "cpu": 1.703125,
+        "rss": 13926400
+      },
+      {
+        "pid": 1232,
+        "name": "dwm.exe",
+        "cpu": 391.75,
+        "rss": 234835968
+      },
+      {
+        "pid": 1432,
+        "name": "svchost.exe",
+        "cpu": 0.625,
+        "rss": 11911168
+      },
+      {
+        "pid": 1440,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8159232
+      },
+      {
+        "pid": 1448,
+        "name": "svchost.exe",
+        "cpu": 2.0625,
+        "rss": 9457664
+      },
+      {
+        "pid": 1556,
+        "name": "svchost.exe",
+        "cpu": 6.109375,
+        "rss": 14671872
+      },
+      {
+        "pid": 1568,
+        "name": "svchost.exe",
+        "cpu": 3.65625,
+        "rss": 20566016
+      },
+      {
+        "pid": 1620,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 16625664
+      },
+      {
+        "pid": 1628,
+        "name": "svchost.exe",
+        "cpu": 2.765625,
+        "rss": 12713984
+      },
+      {
+        "pid": 1636,
+        "name": "svchost.exe",
+        "cpu": 0.4375,
+        "rss": 19959808
+      },
+      {
+        "pid": 1644,
+        "name": "svchost.exe",
+        "cpu": 0.203125,
+        "rss": 16429056
+      },
+      {
+        "pid": 1788,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 13340672
+      },
+      {
+        "pid": 1828,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 10780672
+      },
+      {
+        "pid": 1848,
+        "name": "svchost.exe",
+        "cpu": 0.9375,
+        "rss": 19132416
+      },
+      {
+        "pid": 1880,
+        "name": "svchost.exe",
+        "cpu": 8.421875,
+        "rss": 25047040
+      },
+      {
+        "pid": 1924,
+        "name": "svchost.exe",
+        "cpu": 1.625,
+        "rss": 12214272
+      },
+      {
+        "pid": 1996,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8704000
+      },
+      {
+        "pid": 2072,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 20918272
+      },
+      {
+        "pid": 2084,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 15822848
+      },
+      {
+        "pid": 2236,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.1875,
+        "rss": 18706432
+      },
+      {
+        "pid": 2348,
+        "name": "python.exe",
+        "cpu": 0.015625,
+        "rss": 7671808
+      },
+      {
+        "pid": 2420,
+        "name": "svchost.exe",
+        "cpu": 4.671875,
+        "rss": 24899584
+      },
+      {
+        "pid": 2432,
+        "name": "XtaCache.exe",
+        "cpu": 28.140625,
+        "rss": 9596928
+      },
+      {
+        "pid": 2448,
+        "name": "AppActions.exe",
+        "cpu": 1.484375,
+        "rss": 49872896
+      },
+      {
+        "pid": 2504,
+        "name": "spoolsv.exe",
+        "cpu": 0.21875,
+        "rss": 24461312
+      },
+      {
+        "pid": 2512,
+        "name": "svchost.exe",
+        "cpu": 26.71875,
+        "rss": 23511040
+      },
+      {
+        "pid": 2520,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 13799424
+      },
+      {
+        "pid": 2532,
+        "name": "svchost.exe",
+        "cpu": 1.140625,
+        "rss": 8769536
+      },
+      {
+        "pid": 2628,
+        "name": "MemCompression",
+        "cpu": 1.8125,
+        "rss": 36184064
+      },
+      {
+        "pid": 2648,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13623296
+      },
+      {
+        "pid": 2676,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13217792
+      },
+      {
+        "pid": 2692,
+        "name": "svchost.exe",
+        "cpu": 17.765625,
+        "rss": 34357248
+      },
+      {
+        "pid": 2700,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 13578240
+      },
+      {
+        "pid": 2724,
+        "name": "conhost.exe",
+        "cpu": 0.015625,
+        "rss": 13758464
+      },
+      {
+        "pid": 2808,
+        "name": "svchost.exe",
+        "cpu": 0.875,
+        "rss": 23764992
+      },
+      {
+        "pid": 2856,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 10059776
+      },
+      {
+        "pid": 2956,
+        "name": "svchost.exe",
+        "cpu": 26.140625,
+        "rss": 29331456
+      },
+      {
+        "pid": 2964,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 24616960
+      },
+      {
+        "pid": 2972,
+        "name": "svchost.exe",
+        "cpu": 63.328125,
+        "rss": 35020800
+      },
+      {
+        "pid": 2988,
+        "name": "svchost.exe",
+        "cpu": 1.796875,
+        "rss": 28536832
+      },
+      {
+        "pid": 3068,
+        "name": "SnippingTool.exe",
+        "cpu": 1.203125,
+        "rss": 219156480
+      },
+      {
+        "pid": 3116,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 12578816
+      },
+      {
+        "pid": 3148,
+        "name": "svchost.exe",
+        "cpu": 11.609375,
+        "rss": 52842496
+      },
+      {
+        "pid": 3196,
+        "name": "svchost.exe",
+        "cpu": 0.21875,
+        "rss": 13463552
+      },
+      {
+        "pid": 3204,
+        "name": "ShellExperienceHost.exe",
+        "cpu": 0.5625,
+        "rss": 96669696
+      },
+      {
+        "pid": 3216,
+        "name": "SnippingTool.exe",
+        "cpu": 1.5,
+        "rss": 424304640
+      },
+      {
+        "pid": 3288,
+        "name": "python.exe",
+        "cpu": 4.921875,
+        "rss": 7286784
+      },
+      {
+        "pid": 3352,
+        "name": "svchost.exe",
+        "cpu": 39.765625,
+        "rss": 25370624
+      },
+      {
+        "pid": 3364,
+        "name": "svchost.exe",
+        "cpu": 0.5625,
+        "rss": 13344768
+      },
+      {
+        "pid": 3452,
+        "name": "svchost.exe",
+        "cpu": 0.234375,
+        "rss": 19181568
+      },
+      {
+        "pid": 3484,
+        "name": "tomcat10.exe",
+        "cpu": 78.921875,
+        "rss": 253210624
+      },
+      {
+        "pid": 3548,
+        "name": "OfficeClickToRun.exe",
+        "cpu": 5.40625,
+        "rss": 101404672
+      },
+      {
+        "pid": 3580,
+        "name": "svchost.exe",
+        "cpu": 22.203125,
+        "rss": 46817280
+      },
+      {
+        "pid": 3620,
+        "name": "svchost.exe",
+        "cpu": 21.484375,
+        "rss": 63553536
+      },
+      {
+        "pid": 3680,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 14553088
+      },
+      {
+        "pid": 3696,
+        "name": "conhost.exe",
+        "cpu": 6.546875,
+        "rss": 14704640
+      },
+      {
+        "pid": 3704,
+        "name": "MpDefenderCoreService.exe",
+        "cpu": 2.546875,
+        "rss": 35598336
+      },
+      {
+        "pid": 3752,
+        "name": "svchost.exe",
+        "cpu": 0.265625,
+        "rss": 20238336
+      },
+      {
+        "pid": 3772,
+        "name": "svchost.exe",
+        "cpu": 1.28125,
+        "rss": 15683584
+      },
+      {
+        "pid": 3804,
+        "name": "lmgrd.exe",
+        "cpu": 0.046875,
+        "rss": 18964480
+      },
+      {
+        "pid": 3848,
+        "name": "MSOfficePLUSService.exe",
+        "cpu": 14.15625,
+        "rss": 102625280
+      },
+      {
+        "pid": 3860,
+        "name": "coherence.exe",
+        "cpu": 0.109375,
+        "rss": 10170368
+      },
+      {
+        "pid": 3904,
+        "name": "prl_tools_service.exe",
+        "cpu": 30.859375,
+        "rss": 35647488
+      },
+      {
+        "pid": 3960,
+        "name": "dllhost.exe",
+        "cpu": 0.125,
+        "rss": 14589952
+      },
+      {
+        "pid": 3976,
+        "name": "svchost.exe",
+        "cpu": 0.671875,
+        "rss": 34562048
+      },
+      {
+        "pid": 3988,
+        "name": "MsMpEng.exe",
+        "cpu": 1800.015625,
+        "rss": 469676032
+      },
+      {
+        "pid": 4048,
+        "name": "prl_cc.exe",
+        "cpu": 27.328125,
+        "rss": 53649408
+      },
+      {
+        "pid": 4116,
+        "name": "conhost.exe",
+        "cpu": 8.015625,
+        "rss": 13168640
+      },
+      {
+        "pid": 4172,
+        "name": "msedgewebview2.exe",
+        "cpu": 7.796875,
+        "rss": 140705792
+      },
+      {
+        "pid": 4272,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 13733888
+      },
+      {
+        "pid": 4368,
+        "name": "coherence.exe",
+        "cpu": 0.0625,
+        "rss": 13742080
+      },
+      {
+        "pid": 4388,
+        "name": "prl_tools.exe",
+        "cpu": 1.515625,
+        "rss": 17104896
+      },
+      {
+        "pid": 4504,
+        "name": "dllhost.exe",
+        "cpu": 0.484375,
+        "rss": 22913024
+      },
+      {
+        "pid": 4572,
+        "name": "svchost.exe",
+        "cpu": 1.9375,
+        "rss": 32968704
+      },
+      {
+        "pid": 4700,
+        "name": "SystemSettings.exe",
+        "cpu": 0.765625,
+        "rss": 11575296
+      },
+      {
+        "pid": 4816,
+        "name": "lmgrd.exe",
+        "cpu": 1.21875,
+        "rss": 26660864
+      },
+      {
+        "pid": 4996,
+        "name": "svchost.exe",
+        "cpu": 1.59375,
+        "rss": 32120832
+      },
+      {
+        "pid": 5052,
+        "name": "python.exe",
+        "cpu": 0.0,
+        "rss": 7647232,
+        "threads": [
+          {
+            "id": 7224,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 9668,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 11852,
+            "user_time": 0.0,
+            "system_time": 0.0
+          }
+        ],
+        "io": {
+          "read_count": 0,
+          "write_count": 0,
+          "read_bytes": 0,
+          "write_bytes": 0,
+          "other_count": 121,
+          "other_bytes": 4218
+        }
+      },
+      {
+        "pid": 5132,
+        "name": "svchost.exe",
+        "cpu": 0.90625,
+        "rss": 51605504
+      },
+      {
+        "pid": 5172,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 14508032
+      },
+      {
+        "pid": 5240,
+        "name": "AggregatorHost.exe",
+        "cpu": 0.609375,
+        "rss": 19632128
+      },
+      {
+        "pid": 5272,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 12967936
+      },
+      {
+        "pid": 5560,
+        "name": "ApplicationFrameHost.exe",
+        "cpu": 0.375,
+        "rss": 55181312
+      },
+      {
+        "pid": 5624,
+        "name": "powershell.exe",
+        "cpu": 1.21875,
+        "rss": 6967296
+      },
+      {
+        "pid": 5640,
+        "name": "svchost.exe",
+        "cpu": 5.875,
+        "rss": 26402816
+      },
+      {
+        "pid": 5644,
+        "name": "svchost.exe",
+        "cpu": 1.328125,
+        "rss": 22319104
+      },
+      {
+        "pid": 5656,
+        "name": "svchost.exe",
+        "cpu": 0.03125,
+        "rss": 12816384
+      },
+      {
+        "pid": 5660,
+        "name": "svchost.exe",
+        "cpu": 52.03125,
+        "rss": 35188736
+      },
+      {
+        "pid": 5792,
+        "name": "taskhostw.exe",
+        "cpu": 1.59375,
+        "rss": 25743360
+      },
+      {
+        "pid": 5800,
+        "name": "sihost.exe",
+        "cpu": 11.90625,
+        "rss": 63750144
+      },
+      {
+        "pid": 5816,
+        "name": "DefenderSessionHelper.exe",
+        "cpu": 0.0,
+        "rss": 7188480
+      },
+      {
+        "pid": 5860,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 28073984
+      },
+      {
+        "pid": 5868,
+        "name": "svchost.exe",
+        "cpu": 0.25,
+        "rss": 14802944
+      },
+      {
+        "pid": 5928,
+        "name": "msdtc.exe",
+        "cpu": 0.203125,
+        "rss": 17580032
+      },
+      {
+        "pid": 5992,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 37851136
+      },
+      {
+        "pid": 6008,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 9342976
+      },
+      {
+        "pid": 6224,
+        "name": "clash-verge.exe",
+        "cpu": 61.25,
+        "rss": 17616896
+      },
+      {
+        "pid": 6300,
+        "name": "TextInputHost.exe",
+        "cpu": 15.28125,
+        "rss": 112062464
+      },
+      {
+        "pid": 6348,
+        "name": "svchost.exe",
+        "cpu": 0.71875,
+        "rss": 21463040
+      },
+      {
+        "pid": 6644,
+        "name": "python.exe",
+        "cpu": 1.453125,
+        "rss": 461008896
+      },
+      {
+        "pid": 6768,
+        "name": "svchost.exe",
+        "cpu": 0.09375,
+        "rss": 15523840
+      },
+      {
+        "pid": 6800,
+        "name": "explorer.exe",
+        "cpu": 131.140625,
+        "rss": 563994624
+      },
+      {
+        "pid": 6848,
+        "name": "ShellHost.exe",
+        "cpu": 1.015625,
+        "rss": 50413568
+      },
+      {
+        "pid": 6856,
+        "name": "svchost.exe",
+        "cpu": 0.359375,
+        "rss": 26275840
+      },
+      {
+        "pid": 6888,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.53125,
+        "rss": 32104448
+      },
+      {
+        "pid": 6900,
+        "name": "CrossDeviceService.exe",
+        "cpu": 1.484375,
+        "rss": 117366784
+      },
+      {
+        "pid": 7280,
+        "name": "SearchHost.exe",
+        "cpu": 3.265625,
+        "rss": 139448320
+      },
+      {
+        "pid": 7296,
+        "name": "StartMenuExperienceHost.exe",
+        "cpu": 3.859375,
+        "rss": 196583424
+      },
+      {
+        "pid": 7304,
+        "name": "CrossDeviceResume.exe",
+        "cpu": 0.453125,
+        "rss": 48889856
+      },
+      {
+        "pid": 7332,
+        "name": "powershell.exe",
+        "cpu": 3.578125,
+        "rss": 94257152
+      },
+      {
+        "pid": 7432,
+        "name": "WidgetBoard.exe",
+        "cpu": 0.6875,
+        "rss": 41181184
+      },
+      {
+        "pid": 7468,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.984375,
+        "rss": 54464512
+      },
+      {
+        "pid": 7520,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 20725760
+      },
+      {
+        "pid": 7876,
+        "name": "WindowsTerminal.exe",
+        "cpu": 32.875,
+        "rss": 306671616
+      },
+      {
+        "pid": 8052,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.25,
+        "rss": 15339520
+      },
+      {
+        "pid": 8436,
+        "name": "WidgetService.exe",
+        "cpu": 0.71875,
+        "rss": 31690752
+      },
+      {
+        "pid": 8488,
+        "name": "conhost.exe",
+        "cpu": 1.84375,
+        "rss": 2777088
+      },
+      {
+        "pid": 8516,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.75,
+        "rss": 76640256
+      },
+      {
+        "pid": 8524,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.921875,
+        "rss": 45019136
+      },
+      {
+        "pid": 8660,
+        "name": "OpenConsole.exe",
+        "cpu": 0.1875,
+        "rss": 14602240
+      },
+      {
+        "pid": 8752,
+        "name": "OpenConsole.exe",
+        "cpu": 0.015625,
+        "rss": 18268160
+      },
+      {
+        "pid": 8896,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.265625,
+        "rss": 26222592
+      },
+      {
+        "pid": 8980,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.140625,
+        "rss": 66523136
+      },
+      {
+        "pid": 9120,
+        "name": "MicrosoftStartFeedProvider.exe",
+        "cpu": 1.921875,
+        "rss": 50360320
+      },
+      {
+        "pid": 9160,
+        "name": "WmiPrvSE.exe",
+        "cpu": 0.046875,
+        "rss": 19603456
+      },
+      {
+        "pid": 9300,
+        "name": "python.exe",
+        "cpu": 1.296875,
+        "rss": 33857536
+      },
+      {
+        "pid": 9312,
+        "name": "svchost.exe",
+        "cpu": 0.015625,
+        "rss": 12050432
+      },
+      {
+        "pid": 9460,
+        "name": "ChsIME.exe",
+        "cpu": 0.15625,
+        "rss": 13987840
+      },
+      {
+        "pid": 9504,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.5,
+        "rss": 8900608
+      },
+      {
+        "pid": 9556,
+        "name": "NisSrv.exe",
+        "cpu": 6.171875,
+        "rss": 19529728
+      },
+      {
+        "pid": 9568,
+        "name": "powershell.exe",
+        "cpu": 0.203125,
+        "rss": 79429632
+      },
+      {
+        "pid": 9640,
+        "name": "svchost.exe",
+        "cpu": 1.765625,
+        "rss": 46653440
+      },
+      {
+        "pid": 9716,
+        "name": "svchost.exe",
+        "cpu": 0.78125,
+        "rss": 20606976
+      },
+      {
+        "pid": 9740,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.8125,
+        "rss": 6848512
+      },
+      {
+        "pid": 9800,
+        "name": "svchost.exe",
+        "cpu": 0.0625,
+        "rss": 12947456
+      },
+      {
+        "pid": 9984,
+        "name": "ctfmon.exe",
+        "cpu": 78.703125,
+        "rss": 80449536
+      },
+      {
+        "pid": 10136,
+        "name": "verge-mihomo.exe",
+        "cpu": 130.609375,
+        "rss": 24530944
+      },
+      {
+        "pid": 10156,
+        "name": "conhost.exe",
+        "cpu": 0.0625,
+        "rss": 2584576
+      },
+      {
+        "pid": 10260,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.203125,
+        "rss": 16412672
+      },
+      {
+        "pid": 10280,
+        "name": "svchost.exe",
+        "cpu": 0.59375,
+        "rss": 17993728
+      },
+      {
+        "pid": 10460,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.78125,
+        "rss": 112476160
+      },
+      {
+        "pid": 10576,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.359375,
+        "rss": 28946432
+      },
+      {
+        "pid": 10580,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.421875,
+        "rss": 31084544
+      },
+      {
+        "pid": 10900,
+        "name": "MoNotificationUx.exe",
+        "cpu": 0.03125,
+        "rss": 17915904
+      },
+      {
+        "pid": 10916,
+        "name": "SecurityHealthSystray.exe",
+        "cpu": 0.203125,
+        "rss": 16568320
+      },
+      {
+        "pid": 10960,
+        "name": "SecurityHealthService.exe",
+        "cpu": 2.984375,
+        "rss": 30949376
+      },
+      {
+        "pid": 11064,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.046875,
+        "rss": 2461696
+      },
+      {
+        "pid": 11132,
+        "name": "M365Copilot.exe",
+        "cpu": 4.953125,
+        "rss": 143491072
+      },
+      {
+        "pid": 11236,
+        "name": "SearchIndexer.exe",
+        "cpu": 38.578125,
+        "rss": 42659840
+      },
+      {
+        "pid": 11348,
+        "name": "msedgewebview2.exe",
+        "cpu": 2.625,
+        "rss": 4804608
+      },
+      {
+        "pid": 11636,
+        "name": "ansyslmd.exe",
+        "cpu": 1.953125,
+        "rss": 35172352
+      },
+      {
+        "pid": 11652,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 31760384
+      },
+      {
+        "pid": 11756,
+        "name": "svchost.exe",
+        "cpu": 0.46875,
+        "rss": 34525184
+      },
+      {
+        "pid": 12028,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 27078656
+      }
+    ]
+  },
+  {
+    "time": 42181.299735916,
+    "cpu": {
+      "user": 18630.781249999996,
+      "system": 9519.56250000003,
+      "idle": 140573.29687499997,
+      "interrupt": 754.40625,
+      "dpc": 255.625
+    },
+    "memory": {
+      "total": 17173250048,
+      "available": 10559852544,
+      "percent": 38.5,
+      "used": 6613397504,
+      "free": 10559852544
+    },
+    "disk": {
+      "read_count": 1555511,
+      "write_count": 2782578,
+      "read_bytes": 97085630464,
+      "write_bytes": 160638382592,
+      "read_time": 420,
+      "write_time": 406
+    },
+    "processes": [
+      {
+        "pid": 0,
+        "name": "System Idle Process",
+        "cpu": 140573.31249999997,
+        "rss": 8192
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpu": 1075.171875,
+        "rss": 1179648
+      },
+      {
+        "pid": 124,
+        "name": "Registry",
+        "cpu": 2.5,
+        "rss": 41467904
+      },
+      {
+        "pid": 536,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.03125,
+        "rss": 6246400
+      },
+      {
+        "pid": 552,
+        "name": "smss.exe",
+        "cpu": 0.0625,
+        "rss": 1880064
+      },
+      {
+        "pid": 728,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.171875,
+        "rss": 10993664
+      },
+      {
+        "pid": 748,
+        "name": "csrss.exe",
+        "cpu": 3.234375,
+        "rss": 9293824
+      },
+      {
+        "pid": 820,
+        "name": "svchost.exe",
+        "cpu": 44.140625,
+        "rss": 55013376
+      },
+      {
+        "pid": 828,
+        "name": "wininit.exe",
+        "cpu": 1.59375,
+        "rss": 11788288
+      },
+      {
+        "pid": 836,
+        "name": "csrss.exe",
+        "cpu": 27.171875,
+        "rss": 56074240
+      },
+      {
+        "pid": 932,
+        "name": "winlogon.exe",
+        "cpu": 0.234375,
+        "rss": 19652608
+      },
+      {
+        "pid": 980,
+        "name": "services.exe",
+        "cpu": 12.96875,
+        "rss": 13516800
+      },
+      {
+        "pid": 988,
+        "name": "lsass.exe",
+        "cpu": 16.375,
+        "rss": 35606528
+      },
+      {
+        "pid": 1100,
+        "name": "svchost.exe",
+        "cpu": 46.609375,
+        "rss": 21528576
+      },
+      {
+        "pid": 1124,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 17727488
+      },
+      {
+        "pid": 1160,
+        "name": "svchost.exe",
+        "cpu": 1.703125,
+        "rss": 13926400
+      },
+      {
+        "pid": 1232,
+        "name": "dwm.exe",
+        "cpu": 391.796875,
+        "rss": 228745216
+      },
+      {
+        "pid": 1432,
+        "name": "svchost.exe",
+        "cpu": 0.625,
+        "rss": 11911168
+      },
+      {
+        "pid": 1440,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8159232
+      },
+      {
+        "pid": 1448,
+        "name": "svchost.exe",
+        "cpu": 2.0625,
+        "rss": 9453568
+      },
+      {
+        "pid": 1556,
+        "name": "svchost.exe",
+        "cpu": 6.109375,
+        "rss": 14671872
+      },
+      {
+        "pid": 1568,
+        "name": "svchost.exe",
+        "cpu": 3.65625,
+        "rss": 20566016
+      },
+      {
+        "pid": 1620,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 16625664
+      },
+      {
+        "pid": 1628,
+        "name": "svchost.exe",
+        "cpu": 2.765625,
+        "rss": 12713984
+      },
+      {
+        "pid": 1636,
+        "name": "svchost.exe",
+        "cpu": 0.4375,
+        "rss": 19959808
+      },
+      {
+        "pid": 1644,
+        "name": "svchost.exe",
+        "cpu": 0.203125,
+        "rss": 16429056
+      },
+      {
+        "pid": 1788,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 13340672
+      },
+      {
+        "pid": 1828,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 10780672
+      },
+      {
+        "pid": 1848,
+        "name": "svchost.exe",
+        "cpu": 0.9375,
+        "rss": 19132416
+      },
+      {
+        "pid": 1880,
+        "name": "svchost.exe",
+        "cpu": 8.421875,
+        "rss": 25075712
+      },
+      {
+        "pid": 1924,
+        "name": "svchost.exe",
+        "cpu": 1.625,
+        "rss": 12214272
+      },
+      {
+        "pid": 1996,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8704000
+      },
+      {
+        "pid": 2072,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 20918272
+      },
+      {
+        "pid": 2084,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 15822848
+      },
+      {
+        "pid": 2236,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.1875,
+        "rss": 18706432
+      },
+      {
+        "pid": 2348,
+        "name": "python.exe",
+        "cpu": 0.015625,
+        "rss": 7671808
+      },
+      {
+        "pid": 2420,
+        "name": "svchost.exe",
+        "cpu": 4.671875,
+        "rss": 24899584
+      },
+      {
+        "pid": 2432,
+        "name": "XtaCache.exe",
+        "cpu": 28.140625,
+        "rss": 9592832
+      },
+      {
+        "pid": 2448,
+        "name": "AppActions.exe",
+        "cpu": 1.484375,
+        "rss": 49872896
+      },
+      {
+        "pid": 2504,
+        "name": "spoolsv.exe",
+        "cpu": 0.21875,
+        "rss": 24461312
+      },
+      {
+        "pid": 2512,
+        "name": "svchost.exe",
+        "cpu": 26.71875,
+        "rss": 23511040
+      },
+      {
+        "pid": 2520,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 13799424
+      },
+      {
+        "pid": 2532,
+        "name": "svchost.exe",
+        "cpu": 1.140625,
+        "rss": 8757248
+      },
+      {
+        "pid": 2628,
+        "name": "MemCompression",
+        "cpu": 1.8125,
+        "rss": 36184064
+      },
+      {
+        "pid": 2648,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13623296
+      },
+      {
+        "pid": 2676,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13217792
+      },
+      {
+        "pid": 2692,
+        "name": "svchost.exe",
+        "cpu": 17.765625,
+        "rss": 24055808
+      },
+      {
+        "pid": 2700,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 13578240
+      },
+      {
+        "pid": 2724,
+        "name": "conhost.exe",
+        "cpu": 0.015625,
+        "rss": 13758464
+      },
+      {
+        "pid": 2808,
+        "name": "svchost.exe",
+        "cpu": 0.875,
+        "rss": 23764992
+      },
+      {
+        "pid": 2856,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 10059776
+      },
+      {
+        "pid": 2956,
+        "name": "svchost.exe",
+        "cpu": 26.140625,
+        "rss": 29261824
+      },
+      {
+        "pid": 2964,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 24616960
+      },
+      {
+        "pid": 2972,
+        "name": "svchost.exe",
+        "cpu": 63.328125,
+        "rss": 35020800
+      },
+      {
+        "pid": 2988,
+        "name": "svchost.exe",
+        "cpu": 1.796875,
+        "rss": 28536832
+      },
+      {
+        "pid": 3068,
+        "name": "SnippingTool.exe",
+        "cpu": 1.203125,
+        "rss": 219156480
+      },
+      {
+        "pid": 3116,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 12562432
+      },
+      {
+        "pid": 3148,
+        "name": "svchost.exe",
+        "cpu": 11.609375,
+        "rss": 52842496
+      },
+      {
+        "pid": 3196,
+        "name": "svchost.exe",
+        "cpu": 0.21875,
+        "rss": 13463552
+      },
+      {
+        "pid": 3204,
+        "name": "ShellExperienceHost.exe",
+        "cpu": 0.5625,
+        "rss": 96669696
+      },
+      {
+        "pid": 3216,
+        "name": "SnippingTool.exe",
+        "cpu": 1.5,
+        "rss": 424304640
+      },
+      {
+        "pid": 3288,
+        "name": "python.exe",
+        "cpu": 4.921875,
+        "rss": 7286784
+      },
+      {
+        "pid": 3352,
+        "name": "svchost.exe",
+        "cpu": 39.765625,
+        "rss": 24752128
+      },
+      {
+        "pid": 3364,
+        "name": "svchost.exe",
+        "cpu": 0.5625,
+        "rss": 13344768
+      },
+      {
+        "pid": 3452,
+        "name": "svchost.exe",
+        "cpu": 0.234375,
+        "rss": 19181568
+      },
+      {
+        "pid": 3484,
+        "name": "tomcat10.exe",
+        "cpu": 78.921875,
+        "rss": 253210624
+      },
+      {
+        "pid": 3548,
+        "name": "OfficeClickToRun.exe",
+        "cpu": 5.40625,
+        "rss": 101404672
+      },
+      {
+        "pid": 3580,
+        "name": "svchost.exe",
+        "cpu": 22.203125,
+        "rss": 46817280
+      },
+      {
+        "pid": 3620,
+        "name": "svchost.exe",
+        "cpu": 21.484375,
+        "rss": 63553536
+      },
+      {
+        "pid": 3680,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 14553088
+      },
+      {
+        "pid": 3696,
+        "name": "conhost.exe",
+        "cpu": 6.546875,
+        "rss": 14704640
+      },
+      {
+        "pid": 3704,
+        "name": "MpDefenderCoreService.exe",
+        "cpu": 2.546875,
+        "rss": 35598336
+      },
+      {
+        "pid": 3752,
+        "name": "svchost.exe",
+        "cpu": 0.265625,
+        "rss": 20238336
+      },
+      {
+        "pid": 3772,
+        "name": "svchost.exe",
+        "cpu": 1.28125,
+        "rss": 15659008
+      },
+      {
+        "pid": 3804,
+        "name": "lmgrd.exe",
+        "cpu": 0.046875,
+        "rss": 18964480
+      },
+      {
+        "pid": 3848,
+        "name": "MSOfficePLUSService.exe",
+        "cpu": 14.15625,
+        "rss": 102625280
+      },
+      {
+        "pid": 3860,
+        "name": "coherence.exe",
+        "cpu": 0.109375,
+        "rss": 10170368
+      },
+      {
+        "pid": 3904,
+        "name": "prl_tools_service.exe",
+        "cpu": 30.859375,
+        "rss": 35647488
+      },
+      {
+        "pid": 3960,
+        "name": "dllhost.exe",
+        "cpu": 0.125,
+        "rss": 14589952
+      },
+      {
+        "pid": 3976,
+        "name": "svchost.exe",
+        "cpu": 0.671875,
+        "rss": 34562048
+      },
+      {
+        "pid": 3988,
+        "name": "MsMpEng.exe",
+        "cpu": 1800.03125,
+        "rss": 469299200
+      },
+      {
+        "pid": 4048,
+        "name": "prl_cc.exe",
+        "cpu": 27.328125,
+        "rss": 53321728
+      },
+      {
+        "pid": 4116,
+        "name": "conhost.exe",
+        "cpu": 8.015625,
+        "rss": 13168640
+      },
+      {
+        "pid": 4172,
+        "name": "msedgewebview2.exe",
+        "cpu": 7.796875,
+        "rss": 140705792
+      },
+      {
+        "pid": 4272,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 13733888
+      },
+      {
+        "pid": 4368,
+        "name": "coherence.exe",
+        "cpu": 0.0625,
+        "rss": 13742080
+      },
+      {
+        "pid": 4388,
+        "name": "prl_tools.exe",
+        "cpu": 1.515625,
+        "rss": 17104896
+      },
+      {
+        "pid": 4504,
+        "name": "dllhost.exe",
+        "cpu": 0.484375,
+        "rss": 22913024
+      },
+      {
+        "pid": 4572,
+        "name": "svchost.exe",
+        "cpu": 1.9375,
+        "rss": 32968704
+      },
+      {
+        "pid": 4700,
+        "name": "SystemSettings.exe",
+        "cpu": 0.765625,
+        "rss": 11575296
+      },
+      {
+        "pid": 4816,
+        "name": "lmgrd.exe",
+        "cpu": 1.21875,
+        "rss": 26660864
+      },
+      {
+        "pid": 4996,
+        "name": "svchost.exe",
+        "cpu": 1.59375,
+        "rss": 32120832
+      },
+      {
+        "pid": 5052,
+        "name": "python.exe",
+        "cpu": 0.0,
+        "rss": 7647232,
+        "threads": [
+          {
+            "id": 7224,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 9668,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 11852,
+            "user_time": 0.0,
+            "system_time": 0.0
+          }
+        ],
+        "io": {
+          "read_count": 0,
+          "write_count": 0,
+          "read_bytes": 0,
+          "write_bytes": 0,
+          "other_count": 121,
+          "other_bytes": 4218
+        }
+      },
+      {
+        "pid": 5132,
+        "name": "svchost.exe",
+        "cpu": 0.90625,
+        "rss": 51605504
+      },
+      {
+        "pid": 5172,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 14508032
+      },
+      {
+        "pid": 5240,
+        "name": "AggregatorHost.exe",
+        "cpu": 0.609375,
+        "rss": 19632128
+      },
+      {
+        "pid": 5272,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 12967936
+      },
+      {
+        "pid": 5560,
+        "name": "ApplicationFrameHost.exe",
+        "cpu": 0.375,
+        "rss": 55181312
+      },
+      {
+        "pid": 5624,
+        "name": "powershell.exe",
+        "cpu": 1.21875,
+        "rss": 6967296
+      },
+      {
+        "pid": 5640,
+        "name": "svchost.exe",
+        "cpu": 5.890625,
+        "rss": 26337280
+      },
+      {
+        "pid": 5644,
+        "name": "svchost.exe",
+        "cpu": 1.328125,
+        "rss": 22319104
+      },
+      {
+        "pid": 5656,
+        "name": "svchost.exe",
+        "cpu": 0.03125,
+        "rss": 12816384
+      },
+      {
+        "pid": 5660,
+        "name": "svchost.exe",
+        "cpu": 52.03125,
+        "rss": 35192832
+      },
+      {
+        "pid": 5792,
+        "name": "taskhostw.exe",
+        "cpu": 1.59375,
+        "rss": 25743360
+      },
+      {
+        "pid": 5800,
+        "name": "sihost.exe",
+        "cpu": 11.90625,
+        "rss": 63750144
+      },
+      {
+        "pid": 5816,
+        "name": "DefenderSessionHelper.exe",
+        "cpu": 0.0,
+        "rss": 7188480
+      },
+      {
+        "pid": 5860,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 28073984
+      },
+      {
+        "pid": 5868,
+        "name": "svchost.exe",
+        "cpu": 0.25,
+        "rss": 14802944
+      },
+      {
+        "pid": 5928,
+        "name": "msdtc.exe",
+        "cpu": 0.203125,
+        "rss": 17580032
+      },
+      {
+        "pid": 5992,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 37851136
+      },
+      {
+        "pid": 6008,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 9342976
+      },
+      {
+        "pid": 6224,
+        "name": "clash-verge.exe",
+        "cpu": 61.25,
+        "rss": 17616896
+      },
+      {
+        "pid": 6300,
+        "name": "TextInputHost.exe",
+        "cpu": 15.28125,
+        "rss": 111980544
+      },
+      {
+        "pid": 6348,
+        "name": "svchost.exe",
+        "cpu": 0.71875,
+        "rss": 21463040
+      },
+      {
+        "pid": 6644,
+        "name": "python.exe",
+        "cpu": 4.625,
+        "rss": 447508480
+      },
+      {
+        "pid": 6768,
+        "name": "svchost.exe",
+        "cpu": 0.09375,
+        "rss": 15523840
+      },
+      {
+        "pid": 6800,
+        "name": "explorer.exe",
+        "cpu": 131.140625,
+        "rss": 563924992
+      },
+      {
+        "pid": 6848,
+        "name": "ShellHost.exe",
+        "cpu": 1.015625,
+        "rss": 50413568
+      },
+      {
+        "pid": 6856,
+        "name": "svchost.exe",
+        "cpu": 0.359375,
+        "rss": 26275840
+      },
+      {
+        "pid": 6888,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.53125,
+        "rss": 32104448
+      },
+      {
+        "pid": 6900,
+        "name": "CrossDeviceService.exe",
+        "cpu": 1.484375,
+        "rss": 117366784
+      },
+      {
+        "pid": 7280,
+        "name": "SearchHost.exe",
+        "cpu": 3.265625,
+        "rss": 139448320
+      },
+      {
+        "pid": 7296,
+        "name": "StartMenuExperienceHost.exe",
+        "cpu": 3.859375,
+        "rss": 196583424
+      },
+      {
+        "pid": 7304,
+        "name": "CrossDeviceResume.exe",
+        "cpu": 0.453125,
+        "rss": 48889856
+      },
+      {
+        "pid": 7332,
+        "name": "powershell.exe",
+        "cpu": 3.578125,
+        "rss": 94257152
+      },
+      {
+        "pid": 7432,
+        "name": "WidgetBoard.exe",
+        "cpu": 0.6875,
+        "rss": 41181184
+      },
+      {
+        "pid": 7468,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.984375,
+        "rss": 54464512
+      },
+      {
+        "pid": 7520,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 20725760
+      },
+      {
+        "pid": 7876,
+        "name": "WindowsTerminal.exe",
+        "cpu": 32.875,
+        "rss": 306634752
+      },
+      {
+        "pid": 8052,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.25,
+        "rss": 15339520
+      },
+      {
+        "pid": 8436,
+        "name": "WidgetService.exe",
+        "cpu": 0.71875,
+        "rss": 31690752
+      },
+      {
+        "pid": 8488,
+        "name": "conhost.exe",
+        "cpu": 1.84375,
+        "rss": 2777088
+      },
+      {
+        "pid": 8516,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.75,
+        "rss": 76640256
+      },
+      {
+        "pid": 8524,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.921875,
+        "rss": 45019136
+      },
+      {
+        "pid": 8660,
+        "name": "OpenConsole.exe",
+        "cpu": 0.1875,
+        "rss": 14602240
+      },
+      {
+        "pid": 8752,
+        "name": "OpenConsole.exe",
+        "cpu": 0.015625,
+        "rss": 18268160
+      },
+      {
+        "pid": 8896,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.265625,
+        "rss": 26222592
+      },
+      {
+        "pid": 8980,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.140625,
+        "rss": 66523136
+      },
+      {
+        "pid": 9120,
+        "name": "MicrosoftStartFeedProvider.exe",
+        "cpu": 1.921875,
+        "rss": 50360320
+      },
+      {
+        "pid": 9160,
+        "name": "WmiPrvSE.exe",
+        "cpu": 0.046875,
+        "rss": 19443712
+      },
+      {
+        "pid": 9300,
+        "name": "python.exe",
+        "cpu": 1.40625,
+        "rss": 33857536
+      },
+      {
+        "pid": 9312,
+        "name": "svchost.exe",
+        "cpu": 0.015625,
+        "rss": 12050432
+      },
+      {
+        "pid": 9460,
+        "name": "ChsIME.exe",
+        "cpu": 0.15625,
+        "rss": 13987840
+      },
+      {
+        "pid": 9504,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.5,
+        "rss": 8900608
+      },
+      {
+        "pid": 9556,
+        "name": "NisSrv.exe",
+        "cpu": 6.171875,
+        "rss": 19529728
+      },
+      {
+        "pid": 9568,
+        "name": "powershell.exe",
+        "cpu": 0.203125,
+        "rss": 79429632
+      },
+      {
+        "pid": 9640,
+        "name": "svchost.exe",
+        "cpu": 1.765625,
+        "rss": 46653440
+      },
+      {
+        "pid": 9716,
+        "name": "svchost.exe",
+        "cpu": 0.78125,
+        "rss": 20606976
+      },
+      {
+        "pid": 9740,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.8125,
+        "rss": 6848512
+      },
+      {
+        "pid": 9800,
+        "name": "svchost.exe",
+        "cpu": 0.0625,
+        "rss": 12947456
+      },
+      {
+        "pid": 9984,
+        "name": "ctfmon.exe",
+        "cpu": 78.703125,
+        "rss": 80384000
+      },
+      {
+        "pid": 10136,
+        "name": "verge-mihomo.exe",
+        "cpu": 130.609375,
+        "rss": 24530944
+      },
+      {
+        "pid": 10156,
+        "name": "conhost.exe",
+        "cpu": 0.0625,
+        "rss": 2584576
+      },
+      {
+        "pid": 10260,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.203125,
+        "rss": 16412672
+      },
+      {
+        "pid": 10280,
+        "name": "svchost.exe",
+        "cpu": 0.59375,
+        "rss": 17993728
+      },
+      {
+        "pid": 10460,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.78125,
+        "rss": 112476160
+      },
+      {
+        "pid": 10576,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.359375,
+        "rss": 28946432
+      },
+      {
+        "pid": 10580,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.421875,
+        "rss": 31084544
+      },
+      {
+        "pid": 10900,
+        "name": "MoNotificationUx.exe",
+        "cpu": 0.03125,
+        "rss": 17915904
+      },
+      {
+        "pid": 10916,
+        "name": "SecurityHealthSystray.exe",
+        "cpu": 0.203125,
+        "rss": 16568320
+      },
+      {
+        "pid": 10960,
+        "name": "SecurityHealthService.exe",
+        "cpu": 2.984375,
+        "rss": 30949376
+      },
+      {
+        "pid": 11064,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.046875,
+        "rss": 2461696
+      },
+      {
+        "pid": 11132,
+        "name": "M365Copilot.exe",
+        "cpu": 4.953125,
+        "rss": 143491072
+      },
+      {
+        "pid": 11236,
+        "name": "SearchIndexer.exe",
+        "cpu": 38.578125,
+        "rss": 42672128
+      },
+      {
+        "pid": 11348,
+        "name": "msedgewebview2.exe",
+        "cpu": 2.625,
+        "rss": 4804608
+      },
+      {
+        "pid": 11636,
+        "name": "ansyslmd.exe",
+        "cpu": 1.953125,
+        "rss": 35172352
+      },
+      {
+        "pid": 11652,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 31760384
+      },
+      {
+        "pid": 11756,
+        "name": "svchost.exe",
+        "cpu": 0.46875,
+        "rss": 34525184
+      },
+      {
+        "pid": 12028,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 27078656
+      }
+    ]
+  },
+  {
+    "time": 42182.477886583,
+    "cpu": {
+      "user": 18632.874999999996,
+      "system": 9521.34375000003,
+      "idle": 140574.10937499997,
+      "interrupt": 754.484375,
+      "dpc": 255.625
+    },
+    "memory": {
+      "total": 17173250048,
+      "available": 10535194624,
+      "percent": 38.7,
+      "used": 6638055424,
+      "free": 10535194624
+    },
+    "disk": {
+      "read_count": 1555511,
+      "write_count": 2782773,
+      "read_bytes": 97085630464,
+      "write_bytes": 160741593600,
+      "read_time": 420,
+      "write_time": 406
+    },
+    "processes": [
+      {
+        "pid": 0,
+        "name": "System Idle Process",
+        "cpu": 140574.12499999997,
+        "rss": 8192
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpu": 1075.328125,
+        "rss": 1179648
+      },
+      {
+        "pid": 124,
+        "name": "Registry",
+        "cpu": 2.5,
+        "rss": 41467904
+      },
+      {
+        "pid": 536,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.03125,
+        "rss": 6246400
+      },
+      {
+        "pid": 552,
+        "name": "smss.exe",
+        "cpu": 0.0625,
+        "rss": 1880064
+      },
+      {
+        "pid": 728,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.171875,
+        "rss": 10993664
+      },
+      {
+        "pid": 748,
+        "name": "csrss.exe",
+        "cpu": 3.234375,
+        "rss": 9293824
+      },
+      {
+        "pid": 820,
+        "name": "svchost.exe",
+        "cpu": 44.140625,
+        "rss": 55013376
+      },
+      {
+        "pid": 828,
+        "name": "wininit.exe",
+        "cpu": 1.59375,
+        "rss": 11788288
+      },
+      {
+        "pid": 836,
+        "name": "csrss.exe",
+        "cpu": 27.171875,
+        "rss": 56074240
+      },
+      {
+        "pid": 932,
+        "name": "winlogon.exe",
+        "cpu": 0.234375,
+        "rss": 19652608
+      },
+      {
+        "pid": 980,
+        "name": "services.exe",
+        "cpu": 12.96875,
+        "rss": 13516800
+      },
+      {
+        "pid": 988,
+        "name": "lsass.exe",
+        "cpu": 16.375,
+        "rss": 35606528
+      },
+      {
+        "pid": 1100,
+        "name": "svchost.exe",
+        "cpu": 46.609375,
+        "rss": 21524480
+      },
+      {
+        "pid": 1124,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 17727488
+      },
+      {
+        "pid": 1160,
+        "name": "svchost.exe",
+        "cpu": 1.703125,
+        "rss": 13926400
+      },
+      {
+        "pid": 1232,
+        "name": "dwm.exe",
+        "cpu": 391.828125,
+        "rss": 228212736
+      },
+      {
+        "pid": 1432,
+        "name": "svchost.exe",
+        "cpu": 0.625,
+        "rss": 11911168
+      },
+      {
+        "pid": 1440,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8159232
+      },
+      {
+        "pid": 1448,
+        "name": "svchost.exe",
+        "cpu": 2.0625,
+        "rss": 9453568
+      },
+      {
+        "pid": 1556,
+        "name": "svchost.exe",
+        "cpu": 6.109375,
+        "rss": 14671872
+      },
+      {
+        "pid": 1568,
+        "name": "svchost.exe",
+        "cpu": 3.65625,
+        "rss": 20566016
+      },
+      {
+        "pid": 1620,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 16625664
+      },
+      {
+        "pid": 1628,
+        "name": "svchost.exe",
+        "cpu": 2.765625,
+        "rss": 12713984
+      },
+      {
+        "pid": 1636,
+        "name": "svchost.exe",
+        "cpu": 0.4375,
+        "rss": 19959808
+      },
+      {
+        "pid": 1644,
+        "name": "svchost.exe",
+        "cpu": 0.203125,
+        "rss": 16429056
+      },
+      {
+        "pid": 1788,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 13340672
+      },
+      {
+        "pid": 1828,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 10780672
+      },
+      {
+        "pid": 1848,
+        "name": "svchost.exe",
+        "cpu": 0.9375,
+        "rss": 19132416
+      },
+      {
+        "pid": 1880,
+        "name": "svchost.exe",
+        "cpu": 8.421875,
+        "rss": 25071616
+      },
+      {
+        "pid": 1924,
+        "name": "svchost.exe",
+        "cpu": 1.625,
+        "rss": 12214272
+      },
+      {
+        "pid": 1996,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8704000
+      },
+      {
+        "pid": 2072,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 20918272
+      },
+      {
+        "pid": 2084,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 15822848
+      },
+      {
+        "pid": 2236,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.1875,
+        "rss": 18706432
+      },
+      {
+        "pid": 2348,
+        "name": "python.exe",
+        "cpu": 0.015625,
+        "rss": 7671808
+      },
+      {
+        "pid": 2420,
+        "name": "svchost.exe",
+        "cpu": 4.671875,
+        "rss": 24899584
+      },
+      {
+        "pid": 2432,
+        "name": "XtaCache.exe",
+        "cpu": 28.140625,
+        "rss": 9584640
+      },
+      {
+        "pid": 2448,
+        "name": "AppActions.exe",
+        "cpu": 1.484375,
+        "rss": 49872896
+      },
+      {
+        "pid": 2504,
+        "name": "spoolsv.exe",
+        "cpu": 0.21875,
+        "rss": 24461312
+      },
+      {
+        "pid": 2512,
+        "name": "svchost.exe",
+        "cpu": 26.71875,
+        "rss": 23511040
+      },
+      {
+        "pid": 2520,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 13799424
+      },
+      {
+        "pid": 2532,
+        "name": "svchost.exe",
+        "cpu": 1.140625,
+        "rss": 8757248
+      },
+      {
+        "pid": 2628,
+        "name": "MemCompression",
+        "cpu": 1.8125,
+        "rss": 36184064
+      },
+      {
+        "pid": 2648,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13623296
+      },
+      {
+        "pid": 2676,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13217792
+      },
+      {
+        "pid": 2692,
+        "name": "svchost.exe",
+        "cpu": 17.765625,
+        "rss": 23883776
+      },
+      {
+        "pid": 2700,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 13578240
+      },
+      {
+        "pid": 2724,
+        "name": "conhost.exe",
+        "cpu": 0.015625,
+        "rss": 13758464
+      },
+      {
+        "pid": 2808,
+        "name": "svchost.exe",
+        "cpu": 0.875,
+        "rss": 23764992
+      },
+      {
+        "pid": 2856,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 10059776
+      },
+      {
+        "pid": 2956,
+        "name": "svchost.exe",
+        "cpu": 26.140625,
+        "rss": 29261824
+      },
+      {
+        "pid": 2964,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 24616960
+      },
+      {
+        "pid": 2972,
+        "name": "svchost.exe",
+        "cpu": 63.328125,
+        "rss": 35020800
+      },
+      {
+        "pid": 2988,
+        "name": "svchost.exe",
+        "cpu": 1.796875,
+        "rss": 28536832
+      },
+      {
+        "pid": 3068,
+        "name": "SnippingTool.exe",
+        "cpu": 1.203125,
+        "rss": 219156480
+      },
+      {
+        "pid": 3116,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 12562432
+      },
+      {
+        "pid": 3148,
+        "name": "svchost.exe",
+        "cpu": 11.609375,
+        "rss": 52842496
+      },
+      {
+        "pid": 3196,
+        "name": "svchost.exe",
+        "cpu": 0.21875,
+        "rss": 13463552
+      },
+      {
+        "pid": 3204,
+        "name": "ShellExperienceHost.exe",
+        "cpu": 0.5625,
+        "rss": 96669696
+      },
+      {
+        "pid": 3216,
+        "name": "SnippingTool.exe",
+        "cpu": 1.5,
+        "rss": 424304640
+      },
+      {
+        "pid": 3288,
+        "name": "python.exe",
+        "cpu": 4.921875,
+        "rss": 7286784
+      },
+      {
+        "pid": 3352,
+        "name": "svchost.exe",
+        "cpu": 39.765625,
+        "rss": 24752128
+      },
+      {
+        "pid": 3364,
+        "name": "svchost.exe",
+        "cpu": 0.5625,
+        "rss": 13344768
+      },
+      {
+        "pid": 3452,
+        "name": "svchost.exe",
+        "cpu": 0.234375,
+        "rss": 19181568
+      },
+      {
+        "pid": 3484,
+        "name": "tomcat10.exe",
+        "cpu": 78.921875,
+        "rss": 253210624
+      },
+      {
+        "pid": 3548,
+        "name": "OfficeClickToRun.exe",
+        "cpu": 5.40625,
+        "rss": 101404672
+      },
+      {
+        "pid": 3580,
+        "name": "svchost.exe",
+        "cpu": 22.203125,
+        "rss": 46817280
+      },
+      {
+        "pid": 3620,
+        "name": "svchost.exe",
+        "cpu": 21.484375,
+        "rss": 63553536
+      },
+      {
+        "pid": 3680,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 14536704
+      },
+      {
+        "pid": 3696,
+        "name": "conhost.exe",
+        "cpu": 6.546875,
+        "rss": 14704640
+      },
+      {
+        "pid": 3704,
+        "name": "MpDefenderCoreService.exe",
+        "cpu": 2.546875,
+        "rss": 35598336
+      },
+      {
+        "pid": 3752,
+        "name": "svchost.exe",
+        "cpu": 0.265625,
+        "rss": 20238336
+      },
+      {
+        "pid": 3772,
+        "name": "svchost.exe",
+        "cpu": 1.28125,
+        "rss": 15659008
+      },
+      {
+        "pid": 3804,
+        "name": "lmgrd.exe",
+        "cpu": 0.046875,
+        "rss": 18964480
+      },
+      {
+        "pid": 3848,
+        "name": "MSOfficePLUSService.exe",
+        "cpu": 14.15625,
+        "rss": 102625280
+      },
+      {
+        "pid": 3860,
+        "name": "coherence.exe",
+        "cpu": 0.109375,
+        "rss": 10170368
+      },
+      {
+        "pid": 3904,
+        "name": "prl_tools_service.exe",
+        "cpu": 30.859375,
+        "rss": 35647488
+      },
+      {
+        "pid": 3960,
+        "name": "dllhost.exe",
+        "cpu": 0.125,
+        "rss": 14589952
+      },
+      {
+        "pid": 3976,
+        "name": "svchost.exe",
+        "cpu": 0.671875,
+        "rss": 34562048
+      },
+      {
+        "pid": 3988,
+        "name": "MsMpEng.exe",
+        "cpu": 1800.046875,
+        "rss": 469090304
+      },
+      {
+        "pid": 4048,
+        "name": "prl_cc.exe",
+        "cpu": 27.328125,
+        "rss": 53317632
+      },
+      {
+        "pid": 4116,
+        "name": "conhost.exe",
+        "cpu": 8.015625,
+        "rss": 13168640
+      },
+      {
+        "pid": 4172,
+        "name": "msedgewebview2.exe",
+        "cpu": 7.796875,
+        "rss": 140705792
+      },
+      {
+        "pid": 4272,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 13733888
+      },
+      {
+        "pid": 4368,
+        "name": "coherence.exe",
+        "cpu": 0.0625,
+        "rss": 13742080
+      },
+      {
+        "pid": 4388,
+        "name": "prl_tools.exe",
+        "cpu": 1.515625,
+        "rss": 17104896
+      },
+      {
+        "pid": 4504,
+        "name": "dllhost.exe",
+        "cpu": 0.484375,
+        "rss": 22913024
+      },
+      {
+        "pid": 4572,
+        "name": "svchost.exe",
+        "cpu": 1.9375,
+        "rss": 32968704
+      },
+      {
+        "pid": 4700,
+        "name": "SystemSettings.exe",
+        "cpu": 0.765625,
+        "rss": 11575296
+      },
+      {
+        "pid": 4816,
+        "name": "lmgrd.exe",
+        "cpu": 1.21875,
+        "rss": 26660864
+      },
+      {
+        "pid": 4996,
+        "name": "svchost.exe",
+        "cpu": 1.59375,
+        "rss": 32120832
+      },
+      {
+        "pid": 5052,
+        "name": "python.exe",
+        "cpu": 0.0,
+        "rss": 7647232,
+        "threads": [
+          {
+            "id": 7224,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 9668,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 11852,
+            "user_time": 0.0,
+            "system_time": 0.0
+          }
+        ],
+        "io": {
+          "read_count": 0,
+          "write_count": 0,
+          "read_bytes": 0,
+          "write_bytes": 0,
+          "other_count": 121,
+          "other_bytes": 4218
+        }
+      },
+      {
+        "pid": 5132,
+        "name": "svchost.exe",
+        "cpu": 0.90625,
+        "rss": 51605504
+      },
+      {
+        "pid": 5172,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 14508032
+      },
+      {
+        "pid": 5240,
+        "name": "AggregatorHost.exe",
+        "cpu": 0.609375,
+        "rss": 19632128
+      },
+      {
+        "pid": 5272,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 12967936
+      },
+      {
+        "pid": 5560,
+        "name": "ApplicationFrameHost.exe",
+        "cpu": 0.375,
+        "rss": 55181312
+      },
+      {
+        "pid": 5624,
+        "name": "powershell.exe",
+        "cpu": 1.21875,
+        "rss": 6967296
+      },
+      {
+        "pid": 5640,
+        "name": "svchost.exe",
+        "cpu": 5.890625,
+        "rss": 26337280
+      },
+      {
+        "pid": 5644,
+        "name": "svchost.exe",
+        "cpu": 1.328125,
+        "rss": 22319104
+      },
+      {
+        "pid": 5656,
+        "name": "svchost.exe",
+        "cpu": 0.03125,
+        "rss": 12816384
+      },
+      {
+        "pid": 5660,
+        "name": "svchost.exe",
+        "cpu": 52.03125,
+        "rss": 35192832
+      },
+      {
+        "pid": 5792,
+        "name": "taskhostw.exe",
+        "cpu": 1.59375,
+        "rss": 25743360
+      },
+      {
+        "pid": 5800,
+        "name": "sihost.exe",
+        "cpu": 11.90625,
+        "rss": 63750144
+      },
+      {
+        "pid": 5816,
+        "name": "DefenderSessionHelper.exe",
+        "cpu": 0.0,
+        "rss": 7188480
+      },
+      {
+        "pid": 5860,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 28073984
+      },
+      {
+        "pid": 5868,
+        "name": "svchost.exe",
+        "cpu": 0.25,
+        "rss": 14802944
+      },
+      {
+        "pid": 5928,
+        "name": "msdtc.exe",
+        "cpu": 0.203125,
+        "rss": 17580032
+      },
+      {
+        "pid": 5992,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 37851136
+      },
+      {
+        "pid": 6008,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 9342976
+      },
+      {
+        "pid": 6224,
+        "name": "clash-verge.exe",
+        "cpu": 61.25,
+        "rss": 17616896
+      },
+      {
+        "pid": 6300,
+        "name": "TextInputHost.exe",
+        "cpu": 15.28125,
+        "rss": 111980544
+      },
+      {
+        "pid": 6348,
+        "name": "svchost.exe",
+        "cpu": 0.71875,
+        "rss": 21463040
+      },
+      {
+        "pid": 6644,
+        "name": "python.exe",
+        "cpu": 8.078125,
+        "rss": 442224640
+      },
+      {
+        "pid": 6768,
+        "name": "svchost.exe",
+        "cpu": 0.09375,
+        "rss": 15511552
+      },
+      {
+        "pid": 6800,
+        "name": "explorer.exe",
+        "cpu": 131.140625,
+        "rss": 563924992
+      },
+      {
+        "pid": 6848,
+        "name": "ShellHost.exe",
+        "cpu": 1.015625,
+        "rss": 50413568
+      },
+      {
+        "pid": 6856,
+        "name": "svchost.exe",
+        "cpu": 0.359375,
+        "rss": 26275840
+      },
+      {
+        "pid": 6888,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.53125,
+        "rss": 32104448
+      },
+      {
+        "pid": 6900,
+        "name": "CrossDeviceService.exe",
+        "cpu": 1.484375,
+        "rss": 117366784
+      },
+      {
+        "pid": 7280,
+        "name": "SearchHost.exe",
+        "cpu": 3.265625,
+        "rss": 139448320
+      },
+      {
+        "pid": 7296,
+        "name": "StartMenuExperienceHost.exe",
+        "cpu": 3.859375,
+        "rss": 196583424
+      },
+      {
+        "pid": 7304,
+        "name": "CrossDeviceResume.exe",
+        "cpu": 0.453125,
+        "rss": 48889856
+      },
+      {
+        "pid": 7332,
+        "name": "powershell.exe",
+        "cpu": 3.578125,
+        "rss": 94257152
+      },
+      {
+        "pid": 7432,
+        "name": "WidgetBoard.exe",
+        "cpu": 0.6875,
+        "rss": 41181184
+      },
+      {
+        "pid": 7468,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.984375,
+        "rss": 54464512
+      },
+      {
+        "pid": 7520,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 20725760
+      },
+      {
+        "pid": 7876,
+        "name": "WindowsTerminal.exe",
+        "cpu": 32.875,
+        "rss": 306634752
+      },
+      {
+        "pid": 8052,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.25,
+        "rss": 15339520
+      },
+      {
+        "pid": 8436,
+        "name": "WidgetService.exe",
+        "cpu": 0.71875,
+        "rss": 31690752
+      },
+      {
+        "pid": 8488,
+        "name": "conhost.exe",
+        "cpu": 1.84375,
+        "rss": 2777088
+      },
+      {
+        "pid": 8516,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.75,
+        "rss": 76640256
+      },
+      {
+        "pid": 8524,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.921875,
+        "rss": 45019136
+      },
+      {
+        "pid": 8660,
+        "name": "OpenConsole.exe",
+        "cpu": 0.1875,
+        "rss": 14602240
+      },
+      {
+        "pid": 8752,
+        "name": "OpenConsole.exe",
+        "cpu": 0.015625,
+        "rss": 18268160
+      },
+      {
+        "pid": 8896,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.265625,
+        "rss": 26222592
+      },
+      {
+        "pid": 8980,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.140625,
+        "rss": 66523136
+      },
+      {
+        "pid": 9120,
+        "name": "MicrosoftStartFeedProvider.exe",
+        "cpu": 1.921875,
+        "rss": 50360320
+      },
+      {
+        "pid": 9160,
+        "name": "WmiPrvSE.exe",
+        "cpu": 0.046875,
+        "rss": 19443712
+      },
+      {
+        "pid": 9300,
+        "name": "python.exe",
+        "cpu": 1.53125,
+        "rss": 33857536
+      },
+      {
+        "pid": 9312,
+        "name": "svchost.exe",
+        "cpu": 0.015625,
+        "rss": 12050432
+      },
+      {
+        "pid": 9460,
+        "name": "ChsIME.exe",
+        "cpu": 0.15625,
+        "rss": 13987840
+      },
+      {
+        "pid": 9504,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.5,
+        "rss": 8900608
+      },
+      {
+        "pid": 9556,
+        "name": "NisSrv.exe",
+        "cpu": 6.171875,
+        "rss": 19529728
+      },
+      {
+        "pid": 9568,
+        "name": "powershell.exe",
+        "cpu": 0.203125,
+        "rss": 79429632
+      },
+      {
+        "pid": 9640,
+        "name": "svchost.exe",
+        "cpu": 1.765625,
+        "rss": 46653440
+      },
+      {
+        "pid": 9716,
+        "name": "svchost.exe",
+        "cpu": 0.78125,
+        "rss": 20606976
+      },
+      {
+        "pid": 9740,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.8125,
+        "rss": 6848512
+      },
+      {
+        "pid": 9800,
+        "name": "svchost.exe",
+        "cpu": 0.0625,
+        "rss": 12947456
+      },
+      {
+        "pid": 9984,
+        "name": "ctfmon.exe",
+        "cpu": 78.703125,
+        "rss": 80384000
+      },
+      {
+        "pid": 10136,
+        "name": "verge-mihomo.exe",
+        "cpu": 130.609375,
+        "rss": 24530944
+      },
+      {
+        "pid": 10156,
+        "name": "conhost.exe",
+        "cpu": 0.0625,
+        "rss": 2584576
+      },
+      {
+        "pid": 10260,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.203125,
+        "rss": 16412672
+      },
+      {
+        "pid": 10280,
+        "name": "svchost.exe",
+        "cpu": 0.59375,
+        "rss": 17993728
+      },
+      {
+        "pid": 10460,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.78125,
+        "rss": 112476160
+      },
+      {
+        "pid": 10576,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.359375,
+        "rss": 28946432
+      },
+      {
+        "pid": 10580,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.421875,
+        "rss": 31084544
+      },
+      {
+        "pid": 10900,
+        "name": "MoNotificationUx.exe",
+        "cpu": 0.03125,
+        "rss": 17915904
+      },
+      {
+        "pid": 10916,
+        "name": "SecurityHealthSystray.exe",
+        "cpu": 0.203125,
+        "rss": 16568320
+      },
+      {
+        "pid": 10960,
+        "name": "SecurityHealthService.exe",
+        "cpu": 2.984375,
+        "rss": 30949376
+      },
+      {
+        "pid": 11064,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.046875,
+        "rss": 2461696
+      },
+      {
+        "pid": 11132,
+        "name": "M365Copilot.exe",
+        "cpu": 4.953125,
+        "rss": 143491072
+      },
+      {
+        "pid": 11236,
+        "name": "SearchIndexer.exe",
+        "cpu": 38.609375,
+        "rss": 42684416
+      },
+      {
+        "pid": 11348,
+        "name": "msedgewebview2.exe",
+        "cpu": 2.625,
+        "rss": 4804608
+      },
+      {
+        "pid": 11636,
+        "name": "ansyslmd.exe",
+        "cpu": 1.953125,
+        "rss": 35172352
+      },
+      {
+        "pid": 11652,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 31760384
+      },
+      {
+        "pid": 11756,
+        "name": "svchost.exe",
+        "cpu": 0.46875,
+        "rss": 34525184
+      },
+      {
+        "pid": 12028,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 27078656
+      }
+    ]
+  },
+  {
+    "time": 42183.638445083,
+    "cpu": {
+      "user": 18634.828124999996,
+      "system": 9523.28125000003,
+      "idle": 140574.84374999997,
+      "interrupt": 754.59375,
+      "dpc": 255.640625
+    },
+    "memory": {
+      "total": 17173250048,
+      "available": 10479009792,
+      "percent": 39.0,
+      "used": 6694240256,
+      "free": 10479009792
+    },
+    "disk": {
+      "read_count": 1555511,
+      "write_count": 2782944,
+      "read_bytes": 97085630464,
+      "write_bytes": 160844014080,
+      "read_time": 420,
+      "write_time": 407
+    },
+    "processes": [
+      {
+        "pid": 0,
+        "name": "System Idle Process",
+        "cpu": 140574.85937499997,
+        "rss": 8192
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpu": 1075.484375,
+        "rss": 1179648
+      },
+      {
+        "pid": 124,
+        "name": "Registry",
+        "cpu": 2.5,
+        "rss": 41467904
+      },
+      {
+        "pid": 536,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.03125,
+        "rss": 6246400
+      },
+      {
+        "pid": 552,
+        "name": "smss.exe",
+        "cpu": 0.0625,
+        "rss": 1880064
+      },
+      {
+        "pid": 728,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.171875,
+        "rss": 10993664
+      },
+      {
+        "pid": 748,
+        "name": "csrss.exe",
+        "cpu": 3.234375,
+        "rss": 9293824
+      },
+      {
+        "pid": 820,
+        "name": "svchost.exe",
+        "cpu": 44.140625,
+        "rss": 55013376
+      },
+      {
+        "pid": 828,
+        "name": "wininit.exe",
+        "cpu": 1.59375,
+        "rss": 11788288
+      },
+      {
+        "pid": 836,
+        "name": "csrss.exe",
+        "cpu": 27.203125,
+        "rss": 56074240
+      },
+      {
+        "pid": 932,
+        "name": "winlogon.exe",
+        "cpu": 0.234375,
+        "rss": 19652608
+      },
+      {
+        "pid": 980,
+        "name": "services.exe",
+        "cpu": 12.96875,
+        "rss": 13516800
+      },
+      {
+        "pid": 988,
+        "name": "lsass.exe",
+        "cpu": 16.375,
+        "rss": 35590144
+      },
+      {
+        "pid": 1100,
+        "name": "svchost.exe",
+        "cpu": 46.609375,
+        "rss": 21487616
+      },
+      {
+        "pid": 1124,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 17727488
+      },
+      {
+        "pid": 1160,
+        "name": "svchost.exe",
+        "cpu": 1.703125,
+        "rss": 13926400
+      },
+      {
+        "pid": 1232,
+        "name": "dwm.exe",
+        "cpu": 391.859375,
+        "rss": 228216832
+      },
+      {
+        "pid": 1432,
+        "name": "svchost.exe",
+        "cpu": 0.625,
+        "rss": 11911168
+      },
+      {
+        "pid": 1440,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8159232
+      },
+      {
+        "pid": 1448,
+        "name": "svchost.exe",
+        "cpu": 2.0625,
+        "rss": 9453568
+      },
+      {
+        "pid": 1556,
+        "name": "svchost.exe",
+        "cpu": 6.109375,
+        "rss": 14671872
+      },
+      {
+        "pid": 1568,
+        "name": "svchost.exe",
+        "cpu": 3.65625,
+        "rss": 20566016
+      },
+      {
+        "pid": 1620,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 16625664
+      },
+      {
+        "pid": 1628,
+        "name": "svchost.exe",
+        "cpu": 2.765625,
+        "rss": 12713984
+      },
+      {
+        "pid": 1636,
+        "name": "svchost.exe",
+        "cpu": 0.4375,
+        "rss": 19959808
+      },
+      {
+        "pid": 1644,
+        "name": "svchost.exe",
+        "cpu": 0.203125,
+        "rss": 16429056
+      },
+      {
+        "pid": 1788,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 13340672
+      },
+      {
+        "pid": 1828,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 10780672
+      },
+      {
+        "pid": 1848,
+        "name": "svchost.exe",
+        "cpu": 0.9375,
+        "rss": 19132416
+      },
+      {
+        "pid": 1880,
+        "name": "svchost.exe",
+        "cpu": 8.421875,
+        "rss": 25071616
+      },
+      {
+        "pid": 1924,
+        "name": "svchost.exe",
+        "cpu": 1.625,
+        "rss": 12214272
+      },
+      {
+        "pid": 1996,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8704000
+      },
+      {
+        "pid": 2072,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 20918272
+      },
+      {
+        "pid": 2084,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 15822848
+      },
+      {
+        "pid": 2236,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.1875,
+        "rss": 18706432
+      },
+      {
+        "pid": 2348,
+        "name": "python.exe",
+        "cpu": 0.015625,
+        "rss": 7671808
+      },
+      {
+        "pid": 2420,
+        "name": "svchost.exe",
+        "cpu": 4.671875,
+        "rss": 24899584
+      },
+      {
+        "pid": 2432,
+        "name": "XtaCache.exe",
+        "cpu": 28.140625,
+        "rss": 9584640
+      },
+      {
+        "pid": 2448,
+        "name": "AppActions.exe",
+        "cpu": 1.484375,
+        "rss": 49872896
+      },
+      {
+        "pid": 2504,
+        "name": "spoolsv.exe",
+        "cpu": 0.21875,
+        "rss": 24461312
+      },
+      {
+        "pid": 2512,
+        "name": "svchost.exe",
+        "cpu": 26.71875,
+        "rss": 23511040
+      },
+      {
+        "pid": 2520,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 13799424
+      },
+      {
+        "pid": 2532,
+        "name": "svchost.exe",
+        "cpu": 1.140625,
+        "rss": 8757248
+      },
+      {
+        "pid": 2628,
+        "name": "MemCompression",
+        "cpu": 1.8125,
+        "rss": 36184064
+      },
+      {
+        "pid": 2648,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13623296
+      },
+      {
+        "pid": 2676,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13217792
+      },
+      {
+        "pid": 2692,
+        "name": "svchost.exe",
+        "cpu": 17.765625,
+        "rss": 23883776
+      },
+      {
+        "pid": 2700,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 13578240
+      },
+      {
+        "pid": 2724,
+        "name": "conhost.exe",
+        "cpu": 0.015625,
+        "rss": 13758464
+      },
+      {
+        "pid": 2808,
+        "name": "svchost.exe",
+        "cpu": 0.875,
+        "rss": 23764992
+      },
+      {
+        "pid": 2856,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 10059776
+      },
+      {
+        "pid": 2956,
+        "name": "svchost.exe",
+        "cpu": 26.140625,
+        "rss": 29261824
+      },
+      {
+        "pid": 2964,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 24616960
+      },
+      {
+        "pid": 2972,
+        "name": "svchost.exe",
+        "cpu": 63.328125,
+        "rss": 35020800
+      },
+      {
+        "pid": 2988,
+        "name": "svchost.exe",
+        "cpu": 1.796875,
+        "rss": 28536832
+      },
+      {
+        "pid": 3068,
+        "name": "SnippingTool.exe",
+        "cpu": 1.203125,
+        "rss": 219156480
+      },
+      {
+        "pid": 3116,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 12562432
+      },
+      {
+        "pid": 3148,
+        "name": "svchost.exe",
+        "cpu": 11.609375,
+        "rss": 52842496
+      },
+      {
+        "pid": 3196,
+        "name": "svchost.exe",
+        "cpu": 0.21875,
+        "rss": 13463552
+      },
+      {
+        "pid": 3204,
+        "name": "ShellExperienceHost.exe",
+        "cpu": 0.5625,
+        "rss": 96669696
+      },
+      {
+        "pid": 3216,
+        "name": "SnippingTool.exe",
+        "cpu": 1.5,
+        "rss": 424304640
+      },
+      {
+        "pid": 3288,
+        "name": "python.exe",
+        "cpu": 4.921875,
+        "rss": 7286784
+      },
+      {
+        "pid": 3352,
+        "name": "svchost.exe",
+        "cpu": 39.765625,
+        "rss": 24662016
+      },
+      {
+        "pid": 3364,
+        "name": "svchost.exe",
+        "cpu": 0.5625,
+        "rss": 13344768
+      },
+      {
+        "pid": 3452,
+        "name": "svchost.exe",
+        "cpu": 0.234375,
+        "rss": 19181568
+      },
+      {
+        "pid": 3484,
+        "name": "tomcat10.exe",
+        "cpu": 78.921875,
+        "rss": 253210624
+      },
+      {
+        "pid": 3548,
+        "name": "OfficeClickToRun.exe",
+        "cpu": 5.40625,
+        "rss": 101404672
+      },
+      {
+        "pid": 3580,
+        "name": "svchost.exe",
+        "cpu": 22.203125,
+        "rss": 46817280
+      },
+      {
+        "pid": 3620,
+        "name": "svchost.exe",
+        "cpu": 21.484375,
+        "rss": 63553536
+      },
+      {
+        "pid": 3680,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 14548992
+      },
+      {
+        "pid": 3696,
+        "name": "conhost.exe",
+        "cpu": 6.546875,
+        "rss": 14704640
+      },
+      {
+        "pid": 3704,
+        "name": "MpDefenderCoreService.exe",
+        "cpu": 2.546875,
+        "rss": 35598336
+      },
+      {
+        "pid": 3752,
+        "name": "svchost.exe",
+        "cpu": 0.265625,
+        "rss": 20238336
+      },
+      {
+        "pid": 3772,
+        "name": "svchost.exe",
+        "cpu": 1.28125,
+        "rss": 15659008
+      },
+      {
+        "pid": 3804,
+        "name": "lmgrd.exe",
+        "cpu": 0.046875,
+        "rss": 18964480
+      },
+      {
+        "pid": 3848,
+        "name": "MSOfficePLUSService.exe",
+        "cpu": 14.15625,
+        "rss": 102625280
+      },
+      {
+        "pid": 3860,
+        "name": "coherence.exe",
+        "cpu": 0.109375,
+        "rss": 10170368
+      },
+      {
+        "pid": 3904,
+        "name": "prl_tools_service.exe",
+        "cpu": 30.859375,
+        "rss": 35647488
+      },
+      {
+        "pid": 3960,
+        "name": "dllhost.exe",
+        "cpu": 0.125,
+        "rss": 14589952
+      },
+      {
+        "pid": 3976,
+        "name": "svchost.exe",
+        "cpu": 0.671875,
+        "rss": 34562048
+      },
+      {
+        "pid": 3988,
+        "name": "MsMpEng.exe",
+        "cpu": 1800.0625,
+        "rss": 469090304
+      },
+      {
+        "pid": 4048,
+        "name": "prl_cc.exe",
+        "cpu": 27.328125,
+        "rss": 53260288
+      },
+      {
+        "pid": 4116,
+        "name": "conhost.exe",
+        "cpu": 8.015625,
+        "rss": 13168640
+      },
+      {
+        "pid": 4172,
+        "name": "msedgewebview2.exe",
+        "cpu": 7.796875,
+        "rss": 140705792
+      },
+      {
+        "pid": 4272,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 13733888
+      },
+      {
+        "pid": 4368,
+        "name": "coherence.exe",
+        "cpu": 0.0625,
+        "rss": 13742080
+      },
+      {
+        "pid": 4388,
+        "name": "prl_tools.exe",
+        "cpu": 1.515625,
+        "rss": 17104896
+      },
+      {
+        "pid": 4504,
+        "name": "dllhost.exe",
+        "cpu": 0.484375,
+        "rss": 22913024
+      },
+      {
+        "pid": 4572,
+        "name": "svchost.exe",
+        "cpu": 1.9375,
+        "rss": 32968704
+      },
+      {
+        "pid": 4700,
+        "name": "SystemSettings.exe",
+        "cpu": 0.765625,
+        "rss": 11575296
+      },
+      {
+        "pid": 4816,
+        "name": "lmgrd.exe",
+        "cpu": 1.21875,
+        "rss": 26660864
+      },
+      {
+        "pid": 4996,
+        "name": "svchost.exe",
+        "cpu": 1.59375,
+        "rss": 32120832
+      },
+      {
+        "pid": 5052,
+        "name": "python.exe",
+        "cpu": 0.0,
+        "rss": 7647232,
+        "threads": [
+          {
+            "id": 7224,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 9668,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 11852,
+            "user_time": 0.0,
+            "system_time": 0.0
+          }
+        ],
+        "io": {
+          "read_count": 0,
+          "write_count": 0,
+          "read_bytes": 0,
+          "write_bytes": 0,
+          "other_count": 121,
+          "other_bytes": 4218
+        }
+      },
+      {
+        "pid": 5132,
+        "name": "svchost.exe",
+        "cpu": 0.90625,
+        "rss": 51605504
+      },
+      {
+        "pid": 5172,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 14508032
+      },
+      {
+        "pid": 5240,
+        "name": "AggregatorHost.exe",
+        "cpu": 0.609375,
+        "rss": 19632128
+      },
+      {
+        "pid": 5272,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 12967936
+      },
+      {
+        "pid": 5560,
+        "name": "ApplicationFrameHost.exe",
+        "cpu": 0.375,
+        "rss": 55181312
+      },
+      {
+        "pid": 5624,
+        "name": "powershell.exe",
+        "cpu": 1.21875,
+        "rss": 6967296
+      },
+      {
+        "pid": 5640,
+        "name": "svchost.exe",
+        "cpu": 5.890625,
+        "rss": 26337280
+      },
+      {
+        "pid": 5644,
+        "name": "svchost.exe",
+        "cpu": 1.328125,
+        "rss": 22319104
+      },
+      {
+        "pid": 5656,
+        "name": "svchost.exe",
+        "cpu": 0.03125,
+        "rss": 12816384
+      },
+      {
+        "pid": 5660,
+        "name": "svchost.exe",
+        "cpu": 52.03125,
+        "rss": 35188736
+      },
+      {
+        "pid": 5792,
+        "name": "taskhostw.exe",
+        "cpu": 1.59375,
+        "rss": 25743360
+      },
+      {
+        "pid": 5800,
+        "name": "sihost.exe",
+        "cpu": 11.90625,
+        "rss": 63750144
+      },
+      {
+        "pid": 5816,
+        "name": "DefenderSessionHelper.exe",
+        "cpu": 0.0,
+        "rss": 7188480
+      },
+      {
+        "pid": 5860,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 28073984
+      },
+      {
+        "pid": 5868,
+        "name": "svchost.exe",
+        "cpu": 0.25,
+        "rss": 14802944
+      },
+      {
+        "pid": 5928,
+        "name": "msdtc.exe",
+        "cpu": 0.203125,
+        "rss": 17580032
+      },
+      {
+        "pid": 5992,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 37851136
+      },
+      {
+        "pid": 6008,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 9342976
+      },
+      {
+        "pid": 6224,
+        "name": "clash-verge.exe",
+        "cpu": 61.25,
+        "rss": 17616896
+      },
+      {
+        "pid": 6300,
+        "name": "TextInputHost.exe",
+        "cpu": 15.28125,
+        "rss": 111980544
+      },
+      {
+        "pid": 6348,
+        "name": "svchost.exe",
+        "cpu": 0.71875,
+        "rss": 21463040
+      },
+      {
+        "pid": 6644,
+        "name": "python.exe",
+        "cpu": 11.59375,
+        "rss": 513089536
+      },
+      {
+        "pid": 6768,
+        "name": "svchost.exe",
+        "cpu": 0.09375,
+        "rss": 15519744
+      },
+      {
+        "pid": 6800,
+        "name": "explorer.exe",
+        "cpu": 131.140625,
+        "rss": 563896320
+      },
+      {
+        "pid": 6848,
+        "name": "ShellHost.exe",
+        "cpu": 1.015625,
+        "rss": 50413568
+      },
+      {
+        "pid": 6856,
+        "name": "svchost.exe",
+        "cpu": 0.359375,
+        "rss": 26275840
+      },
+      {
+        "pid": 6888,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.53125,
+        "rss": 32104448
+      },
+      {
+        "pid": 6900,
+        "name": "CrossDeviceService.exe",
+        "cpu": 1.484375,
+        "rss": 117366784
+      },
+      {
+        "pid": 7280,
+        "name": "SearchHost.exe",
+        "cpu": 3.265625,
+        "rss": 139448320
+      },
+      {
+        "pid": 7296,
+        "name": "StartMenuExperienceHost.exe",
+        "cpu": 3.859375,
+        "rss": 196583424
+      },
+      {
+        "pid": 7304,
+        "name": "CrossDeviceResume.exe",
+        "cpu": 0.453125,
+        "rss": 48889856
+      },
+      {
+        "pid": 7332,
+        "name": "powershell.exe",
+        "cpu": 3.59375,
+        "rss": 94257152
+      },
+      {
+        "pid": 7432,
+        "name": "WidgetBoard.exe",
+        "cpu": 0.6875,
+        "rss": 41181184
+      },
+      {
+        "pid": 7468,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.984375,
+        "rss": 54464512
+      },
+      {
+        "pid": 7520,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 20725760
+      },
+      {
+        "pid": 7876,
+        "name": "WindowsTerminal.exe",
+        "cpu": 32.875,
+        "rss": 306626560
+      },
+      {
+        "pid": 8052,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.25,
+        "rss": 15339520
+      },
+      {
+        "pid": 8436,
+        "name": "WidgetService.exe",
+        "cpu": 0.71875,
+        "rss": 31690752
+      },
+      {
+        "pid": 8488,
+        "name": "conhost.exe",
+        "cpu": 1.84375,
+        "rss": 2777088
+      },
+      {
+        "pid": 8516,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.75,
+        "rss": 76640256
+      },
+      {
+        "pid": 8524,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.921875,
+        "rss": 45019136
+      },
+      {
+        "pid": 8660,
+        "name": "OpenConsole.exe",
+        "cpu": 0.1875,
+        "rss": 14602240
+      },
+      {
+        "pid": 8752,
+        "name": "OpenConsole.exe",
+        "cpu": 0.015625,
+        "rss": 18268160
+      },
+      {
+        "pid": 8896,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.265625,
+        "rss": 26222592
+      },
+      {
+        "pid": 8980,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.140625,
+        "rss": 66523136
+      },
+      {
+        "pid": 9120,
+        "name": "MicrosoftStartFeedProvider.exe",
+        "cpu": 1.921875,
+        "rss": 50360320
+      },
+      {
+        "pid": 9160,
+        "name": "WmiPrvSE.exe",
+        "cpu": 0.046875,
+        "rss": 19443712
+      },
+      {
+        "pid": 9300,
+        "name": "python.exe",
+        "cpu": 1.640625,
+        "rss": 33857536
+      },
+      {
+        "pid": 9312,
+        "name": "svchost.exe",
+        "cpu": 0.015625,
+        "rss": 12050432
+      },
+      {
+        "pid": 9460,
+        "name": "ChsIME.exe",
+        "cpu": 0.15625,
+        "rss": 13987840
+      },
+      {
+        "pid": 9504,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.5,
+        "rss": 8900608
+      },
+      {
+        "pid": 9556,
+        "name": "NisSrv.exe",
+        "cpu": 6.171875,
+        "rss": 19529728
+      },
+      {
+        "pid": 9568,
+        "name": "powershell.exe",
+        "cpu": 0.203125,
+        "rss": 79429632
+      },
+      {
+        "pid": 9640,
+        "name": "svchost.exe",
+        "cpu": 1.765625,
+        "rss": 46653440
+      },
+      {
+        "pid": 9716,
+        "name": "svchost.exe",
+        "cpu": 0.78125,
+        "rss": 20606976
+      },
+      {
+        "pid": 9740,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.8125,
+        "rss": 6848512
+      },
+      {
+        "pid": 9800,
+        "name": "svchost.exe",
+        "cpu": 0.0625,
+        "rss": 12947456
+      },
+      {
+        "pid": 9984,
+        "name": "ctfmon.exe",
+        "cpu": 78.703125,
+        "rss": 80384000
+      },
+      {
+        "pid": 10136,
+        "name": "verge-mihomo.exe",
+        "cpu": 130.609375,
+        "rss": 24530944
+      },
+      {
+        "pid": 10156,
+        "name": "conhost.exe",
+        "cpu": 0.0625,
+        "rss": 2584576
+      },
+      {
+        "pid": 10260,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.203125,
+        "rss": 16412672
+      },
+      {
+        "pid": 10280,
+        "name": "svchost.exe",
+        "cpu": 0.59375,
+        "rss": 17993728
+      },
+      {
+        "pid": 10460,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.78125,
+        "rss": 112476160
+      },
+      {
+        "pid": 10576,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.359375,
+        "rss": 28946432
+      },
+      {
+        "pid": 10580,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.421875,
+        "rss": 31084544
+      },
+      {
+        "pid": 10900,
+        "name": "MoNotificationUx.exe",
+        "cpu": 0.03125,
+        "rss": 17915904
+      },
+      {
+        "pid": 10916,
+        "name": "SecurityHealthSystray.exe",
+        "cpu": 0.203125,
+        "rss": 16568320
+      },
+      {
+        "pid": 10960,
+        "name": "SecurityHealthService.exe",
+        "cpu": 2.984375,
+        "rss": 30949376
+      },
+      {
+        "pid": 11064,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.046875,
+        "rss": 2461696
+      },
+      {
+        "pid": 11132,
+        "name": "M365Copilot.exe",
+        "cpu": 4.953125,
+        "rss": 143491072
+      },
+      {
+        "pid": 11236,
+        "name": "SearchIndexer.exe",
+        "cpu": 38.609375,
+        "rss": 42659840
+      },
+      {
+        "pid": 11348,
+        "name": "msedgewebview2.exe",
+        "cpu": 2.625,
+        "rss": 4804608
+      },
+      {
+        "pid": 11636,
+        "name": "ansyslmd.exe",
+        "cpu": 1.953125,
+        "rss": 35172352
+      },
+      {
+        "pid": 11652,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 31760384
+      },
+      {
+        "pid": 11756,
+        "name": "svchost.exe",
+        "cpu": 0.46875,
+        "rss": 34525184
+      },
+      {
+        "pid": 12028,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 27078656
+      }
+    ]
+  },
+  {
+    "time": 42184.808647041,
+    "cpu": {
+      "user": 18636.999999999996,
+      "system": 9525.26562500003,
+      "idle": 140575.37499999997,
+      "interrupt": 754.765625,
+      "dpc": 255.640625
+    },
+    "memory": {
+      "total": 17173250048,
+      "available": 10498625536,
+      "percent": 38.9,
+      "used": 6674624512,
+      "free": 10498625536
+    },
+    "disk": {
+      "read_count": 1555511,
+      "write_count": 2783216,
+      "read_bytes": 97085630464,
+      "write_bytes": 161013662208,
+      "read_time": 420,
+      "write_time": 407
+    },
+    "processes": [
+      {
+        "pid": 0,
+        "name": "System Idle Process",
+        "cpu": 140575.39062499997,
+        "rss": 8192
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpu": 1075.6875,
+        "rss": 1179648
+      },
+      {
+        "pid": 124,
+        "name": "Registry",
+        "cpu": 2.5,
+        "rss": 41467904
+      },
+      {
+        "pid": 536,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.03125,
+        "rss": 6246400
+      },
+      {
+        "pid": 552,
+        "name": "smss.exe",
+        "cpu": 0.0625,
+        "rss": 1880064
+      },
+      {
+        "pid": 728,
+        "name": "fontdrvhost.exe",
+        "cpu": 0.171875,
+        "rss": 10993664
+      },
+      {
+        "pid": 748,
+        "name": "csrss.exe",
+        "cpu": 3.234375,
+        "rss": 9293824
+      },
+      {
+        "pid": 820,
+        "name": "svchost.exe",
+        "cpu": 44.140625,
+        "rss": 54947840
+      },
+      {
+        "pid": 828,
+        "name": "wininit.exe",
+        "cpu": 1.59375,
+        "rss": 11788288
+      },
+      {
+        "pid": 836,
+        "name": "csrss.exe",
+        "cpu": 27.21875,
+        "rss": 56074240
+      },
+      {
+        "pid": 932,
+        "name": "winlogon.exe",
+        "cpu": 0.234375,
+        "rss": 19652608
+      },
+      {
+        "pid": 980,
+        "name": "services.exe",
+        "cpu": 12.96875,
+        "rss": 13516800
+      },
+      {
+        "pid": 988,
+        "name": "lsass.exe",
+        "cpu": 16.375,
+        "rss": 35606528
+      },
+      {
+        "pid": 1100,
+        "name": "svchost.exe",
+        "cpu": 46.609375,
+        "rss": 21450752
+      },
+      {
+        "pid": 1124,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 17727488
+      },
+      {
+        "pid": 1160,
+        "name": "svchost.exe",
+        "cpu": 1.703125,
+        "rss": 13926400
+      },
+      {
+        "pid": 1232,
+        "name": "dwm.exe",
+        "cpu": 391.890625,
+        "rss": 228147200
+      },
+      {
+        "pid": 1432,
+        "name": "svchost.exe",
+        "cpu": 0.625,
+        "rss": 11911168
+      },
+      {
+        "pid": 1440,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8159232
+      },
+      {
+        "pid": 1448,
+        "name": "svchost.exe",
+        "cpu": 2.0625,
+        "rss": 9453568
+      },
+      {
+        "pid": 1556,
+        "name": "svchost.exe",
+        "cpu": 6.109375,
+        "rss": 14635008
+      },
+      {
+        "pid": 1568,
+        "name": "svchost.exe",
+        "cpu": 3.65625,
+        "rss": 20566016
+      },
+      {
+        "pid": 1620,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 16625664
+      },
+      {
+        "pid": 1628,
+        "name": "svchost.exe",
+        "cpu": 2.765625,
+        "rss": 12713984
+      },
+      {
+        "pid": 1636,
+        "name": "svchost.exe",
+        "cpu": 0.4375,
+        "rss": 19947520
+      },
+      {
+        "pid": 1644,
+        "name": "svchost.exe",
+        "cpu": 0.203125,
+        "rss": 16429056
+      },
+      {
+        "pid": 1788,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 13340672
+      },
+      {
+        "pid": 1828,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 10780672
+      },
+      {
+        "pid": 1848,
+        "name": "svchost.exe",
+        "cpu": 0.9375,
+        "rss": 19132416
+      },
+      {
+        "pid": 1880,
+        "name": "svchost.exe",
+        "cpu": 8.421875,
+        "rss": 25071616
+      },
+      {
+        "pid": 1924,
+        "name": "svchost.exe",
+        "cpu": 1.625,
+        "rss": 12214272
+      },
+      {
+        "pid": 1996,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 8704000
+      },
+      {
+        "pid": 2072,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 20918272
+      },
+      {
+        "pid": 2084,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 15822848
+      },
+      {
+        "pid": 2236,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.1875,
+        "rss": 18706432
+      },
+      {
+        "pid": 2348,
+        "name": "python.exe",
+        "cpu": 0.015625,
+        "rss": 7671808
+      },
+      {
+        "pid": 2420,
+        "name": "svchost.exe",
+        "cpu": 4.671875,
+        "rss": 24899584
+      },
+      {
+        "pid": 2432,
+        "name": "XtaCache.exe",
+        "cpu": 28.140625,
+        "rss": 9584640
+      },
+      {
+        "pid": 2448,
+        "name": "AppActions.exe",
+        "cpu": 1.484375,
+        "rss": 49872896
+      },
+      {
+        "pid": 2504,
+        "name": "spoolsv.exe",
+        "cpu": 0.21875,
+        "rss": 24461312
+      },
+      {
+        "pid": 2512,
+        "name": "svchost.exe",
+        "cpu": 26.71875,
+        "rss": 23511040
+      },
+      {
+        "pid": 2520,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 13799424
+      },
+      {
+        "pid": 2532,
+        "name": "svchost.exe",
+        "cpu": 1.140625,
+        "rss": 8757248
+      },
+      {
+        "pid": 2628,
+        "name": "MemCompression",
+        "cpu": 1.8125,
+        "rss": 36184064
+      },
+      {
+        "pid": 2648,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13623296
+      },
+      {
+        "pid": 2676,
+        "name": "svchost.exe",
+        "cpu": 0.109375,
+        "rss": 13217792
+      },
+      {
+        "pid": 2692,
+        "name": "svchost.exe",
+        "cpu": 17.765625,
+        "rss": 23883776
+      },
+      {
+        "pid": 2700,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 13578240
+      },
+      {
+        "pid": 2724,
+        "name": "conhost.exe",
+        "cpu": 0.015625,
+        "rss": 13758464
+      },
+      {
+        "pid": 2808,
+        "name": "svchost.exe",
+        "cpu": 0.875,
+        "rss": 23764992
+      },
+      {
+        "pid": 2856,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 10059776
+      },
+      {
+        "pid": 2956,
+        "name": "svchost.exe",
+        "cpu": 26.140625,
+        "rss": 29261824
+      },
+      {
+        "pid": 2964,
+        "name": "svchost.exe",
+        "cpu": 0.28125,
+        "rss": 24616960
+      },
+      {
+        "pid": 2972,
+        "name": "svchost.exe",
+        "cpu": 63.328125,
+        "rss": 35020800
+      },
+      {
+        "pid": 2988,
+        "name": "svchost.exe",
+        "cpu": 1.796875,
+        "rss": 28536832
+      },
+      {
+        "pid": 3068,
+        "name": "SnippingTool.exe",
+        "cpu": 1.203125,
+        "rss": 219156480
+      },
+      {
+        "pid": 3116,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 12537856
+      },
+      {
+        "pid": 3148,
+        "name": "svchost.exe",
+        "cpu": 11.609375,
+        "rss": 52842496
+      },
+      {
+        "pid": 3196,
+        "name": "svchost.exe",
+        "cpu": 0.21875,
+        "rss": 13463552
+      },
+      {
+        "pid": 3204,
+        "name": "ShellExperienceHost.exe",
+        "cpu": 0.5625,
+        "rss": 96669696
+      },
+      {
+        "pid": 3216,
+        "name": "SnippingTool.exe",
+        "cpu": 1.5,
+        "rss": 424304640
+      },
+      {
+        "pid": 3288,
+        "name": "python.exe",
+        "cpu": 4.921875,
+        "rss": 7286784
+      },
+      {
+        "pid": 3352,
+        "name": "svchost.exe",
+        "cpu": 39.765625,
+        "rss": 24662016
+      },
+      {
+        "pid": 3364,
+        "name": "svchost.exe",
+        "cpu": 0.5625,
+        "rss": 13344768
+      },
+      {
+        "pid": 3452,
+        "name": "svchost.exe",
+        "cpu": 0.234375,
+        "rss": 19181568
+      },
+      {
+        "pid": 3484,
+        "name": "tomcat10.exe",
+        "cpu": 78.921875,
+        "rss": 253210624
+      },
+      {
+        "pid": 3548,
+        "name": "OfficeClickToRun.exe",
+        "cpu": 5.40625,
+        "rss": 101404672
+      },
+      {
+        "pid": 3580,
+        "name": "svchost.exe",
+        "cpu": 22.203125,
+        "rss": 46817280
+      },
+      {
+        "pid": 3620,
+        "name": "svchost.exe",
+        "cpu": 21.484375,
+        "rss": 63553536
+      },
+      {
+        "pid": 3680,
+        "name": "svchost.exe",
+        "cpu": 0.125,
+        "rss": 14548992
+      },
+      {
+        "pid": 3696,
+        "name": "conhost.exe",
+        "cpu": 6.546875,
+        "rss": 14704640
+      },
+      {
+        "pid": 3704,
+        "name": "MpDefenderCoreService.exe",
+        "cpu": 2.546875,
+        "rss": 35598336
+      },
+      {
+        "pid": 3752,
+        "name": "svchost.exe",
+        "cpu": 0.265625,
+        "rss": 20238336
+      },
+      {
+        "pid": 3772,
+        "name": "svchost.exe",
+        "cpu": 1.28125,
+        "rss": 15659008
+      },
+      {
+        "pid": 3804,
+        "name": "lmgrd.exe",
+        "cpu": 0.046875,
+        "rss": 18964480
+      },
+      {
+        "pid": 3848,
+        "name": "MSOfficePLUSService.exe",
+        "cpu": 14.15625,
+        "rss": 102625280
+      },
+      {
+        "pid": 3860,
+        "name": "coherence.exe",
+        "cpu": 0.109375,
+        "rss": 10170368
+      },
+      {
+        "pid": 3904,
+        "name": "prl_tools_service.exe",
+        "cpu": 30.859375,
+        "rss": 35647488
+      },
+      {
+        "pid": 3960,
+        "name": "dllhost.exe",
+        "cpu": 0.125,
+        "rss": 14589952
+      },
+      {
+        "pid": 3976,
+        "name": "svchost.exe",
+        "cpu": 0.671875,
+        "rss": 34562048
+      },
+      {
+        "pid": 3988,
+        "name": "MsMpEng.exe",
+        "cpu": 1800.09375,
+        "rss": 469123072
+      },
+      {
+        "pid": 4048,
+        "name": "prl_cc.exe",
+        "cpu": 27.328125,
+        "rss": 53260288
+      },
+      {
+        "pid": 4116,
+        "name": "conhost.exe",
+        "cpu": 8.015625,
+        "rss": 13168640
+      },
+      {
+        "pid": 4172,
+        "name": "msedgewebview2.exe",
+        "cpu": 7.796875,
+        "rss": 140705792
+      },
+      {
+        "pid": 4272,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 13733888
+      },
+      {
+        "pid": 4368,
+        "name": "coherence.exe",
+        "cpu": 0.0625,
+        "rss": 13742080
+      },
+      {
+        "pid": 4388,
+        "name": "prl_tools.exe",
+        "cpu": 1.515625,
+        "rss": 17104896
+      },
+      {
+        "pid": 4504,
+        "name": "dllhost.exe",
+        "cpu": 0.484375,
+        "rss": 22913024
+      },
+      {
+        "pid": 4572,
+        "name": "svchost.exe",
+        "cpu": 1.9375,
+        "rss": 32968704
+      },
+      {
+        "pid": 4700,
+        "name": "SystemSettings.exe",
+        "cpu": 0.765625,
+        "rss": 11575296
+      },
+      {
+        "pid": 4816,
+        "name": "lmgrd.exe",
+        "cpu": 1.21875,
+        "rss": 26660864
+      },
+      {
+        "pid": 4996,
+        "name": "svchost.exe",
+        "cpu": 1.59375,
+        "rss": 32120832
+      },
+      {
+        "pid": 5052,
+        "name": "python.exe",
+        "cpu": 0.0,
+        "rss": 7647232,
+        "threads": [
+          {
+            "id": 7224,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 9668,
+            "user_time": 0.0,
+            "system_time": 0.0
+          },
+          {
+            "id": 11852,
+            "user_time": 0.0,
+            "system_time": 0.0
+          }
+        ],
+        "io": {
+          "read_count": 0,
+          "write_count": 0,
+          "read_bytes": 0,
+          "write_bytes": 0,
+          "other_count": 121,
+          "other_bytes": 4218
+        }
+      },
+      {
+        "pid": 5132,
+        "name": "svchost.exe",
+        "cpu": 0.90625,
+        "rss": 51605504
+      },
+      {
+        "pid": 5172,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 14508032
+      },
+      {
+        "pid": 5240,
+        "name": "AggregatorHost.exe",
+        "cpu": 0.609375,
+        "rss": 19632128
+      },
+      {
+        "pid": 5272,
+        "name": "svchost.exe",
+        "cpu": 0.078125,
+        "rss": 12967936
+      },
+      {
+        "pid": 5560,
+        "name": "ApplicationFrameHost.exe",
+        "cpu": 0.375,
+        "rss": 55181312
+      },
+      {
+        "pid": 5624,
+        "name": "powershell.exe",
+        "cpu": 1.21875,
+        "rss": 6967296
+      },
+      {
+        "pid": 5640,
+        "name": "svchost.exe",
+        "cpu": 5.890625,
+        "rss": 26337280
+      },
+      {
+        "pid": 5644,
+        "name": "svchost.exe",
+        "cpu": 1.328125,
+        "rss": 22319104
+      },
+      {
+        "pid": 5656,
+        "name": "svchost.exe",
+        "cpu": 0.03125,
+        "rss": 12816384
+      },
+      {
+        "pid": 5660,
+        "name": "svchost.exe",
+        "cpu": 52.03125,
+        "rss": 34717696
+      },
+      {
+        "pid": 5792,
+        "name": "taskhostw.exe",
+        "cpu": 1.59375,
+        "rss": 25743360
+      },
+      {
+        "pid": 5800,
+        "name": "sihost.exe",
+        "cpu": 11.90625,
+        "rss": 63750144
+      },
+      {
+        "pid": 5816,
+        "name": "DefenderSessionHelper.exe",
+        "cpu": 0.0,
+        "rss": 7188480
+      },
+      {
+        "pid": 5860,
+        "name": "svchost.exe",
+        "cpu": 0.40625,
+        "rss": 28073984
+      },
+      {
+        "pid": 5868,
+        "name": "svchost.exe",
+        "cpu": 0.25,
+        "rss": 14802944
+      },
+      {
+        "pid": 5928,
+        "name": "msdtc.exe",
+        "cpu": 0.203125,
+        "rss": 17580032
+      },
+      {
+        "pid": 5992,
+        "name": "svchost.exe",
+        "cpu": 1.0625,
+        "rss": 37851136
+      },
+      {
+        "pid": 6008,
+        "name": "svchost.exe",
+        "cpu": 0.046875,
+        "rss": 9342976
+      },
+      {
+        "pid": 6224,
+        "name": "clash-verge.exe",
+        "cpu": 61.25,
+        "rss": 17616896
+      },
+      {
+        "pid": 6300,
+        "name": "TextInputHost.exe",
+        "cpu": 15.28125,
+        "rss": 111980544
+      },
+      {
+        "pid": 6348,
+        "name": "svchost.exe",
+        "cpu": 0.71875,
+        "rss": 21463040
+      },
+      {
+        "pid": 6644,
+        "name": "python.exe",
+        "cpu": 15.046875,
+        "rss": 450846720
+      },
+      {
+        "pid": 6768,
+        "name": "svchost.exe",
+        "cpu": 0.09375,
+        "rss": 15519744
+      },
+      {
+        "pid": 6800,
+        "name": "explorer.exe",
+        "cpu": 131.140625,
+        "rss": 563654656
+      },
+      {
+        "pid": 6848,
+        "name": "ShellHost.exe",
+        "cpu": 1.015625,
+        "rss": 50413568
+      },
+      {
+        "pid": 6856,
+        "name": "svchost.exe",
+        "cpu": 0.359375,
+        "rss": 26275840
+      },
+      {
+        "pid": 6888,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.53125,
+        "rss": 32104448
+      },
+      {
+        "pid": 6900,
+        "name": "CrossDeviceService.exe",
+        "cpu": 1.484375,
+        "rss": 117366784
+      },
+      {
+        "pid": 7280,
+        "name": "SearchHost.exe",
+        "cpu": 3.265625,
+        "rss": 139448320
+      },
+      {
+        "pid": 7296,
+        "name": "StartMenuExperienceHost.exe",
+        "cpu": 3.859375,
+        "rss": 196583424
+      },
+      {
+        "pid": 7304,
+        "name": "CrossDeviceResume.exe",
+        "cpu": 0.453125,
+        "rss": 48889856
+      },
+      {
+        "pid": 7332,
+        "name": "powershell.exe",
+        "cpu": 3.59375,
+        "rss": 94257152
+      },
+      {
+        "pid": 7432,
+        "name": "WidgetBoard.exe",
+        "cpu": 0.6875,
+        "rss": 41181184
+      },
+      {
+        "pid": 7468,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.984375,
+        "rss": 54464512
+      },
+      {
+        "pid": 7520,
+        "name": "svchost.exe",
+        "cpu": 0.1875,
+        "rss": 20725760
+      },
+      {
+        "pid": 7876,
+        "name": "WindowsTerminal.exe",
+        "cpu": 32.875,
+        "rss": 306626560
+      },
+      {
+        "pid": 8052,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.25,
+        "rss": 15339520
+      },
+      {
+        "pid": 8436,
+        "name": "WidgetService.exe",
+        "cpu": 0.71875,
+        "rss": 31690752
+      },
+      {
+        "pid": 8488,
+        "name": "conhost.exe",
+        "cpu": 1.84375,
+        "rss": 2777088
+      },
+      {
+        "pid": 8516,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.75,
+        "rss": 76640256
+      },
+      {
+        "pid": 8524,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.921875,
+        "rss": 45019136
+      },
+      {
+        "pid": 8660,
+        "name": "OpenConsole.exe",
+        "cpu": 0.1875,
+        "rss": 14602240
+      },
+      {
+        "pid": 8752,
+        "name": "OpenConsole.exe",
+        "cpu": 0.015625,
+        "rss": 18268160
+      },
+      {
+        "pid": 8896,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.265625,
+        "rss": 26222592
+      },
+      {
+        "pid": 8980,
+        "name": "msedgewebview2.exe",
+        "cpu": 1.140625,
+        "rss": 66523136
+      },
+      {
+        "pid": 9120,
+        "name": "MicrosoftStartFeedProvider.exe",
+        "cpu": 1.921875,
+        "rss": 50360320
+      },
+      {
+        "pid": 9160,
+        "name": "WmiPrvSE.exe",
+        "cpu": 0.046875,
+        "rss": 19443712
+      },
+      {
+        "pid": 9300,
+        "name": "python.exe",
+        "cpu": 1.703125,
+        "rss": 33857536
+      },
+      {
+        "pid": 9312,
+        "name": "svchost.exe",
+        "cpu": 0.015625,
+        "rss": 12050432
+      },
+      {
+        "pid": 9460,
+        "name": "ChsIME.exe",
+        "cpu": 0.15625,
+        "rss": 13987840
+      },
+      {
+        "pid": 9504,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.5,
+        "rss": 8900608
+      },
+      {
+        "pid": 9556,
+        "name": "NisSrv.exe",
+        "cpu": 6.171875,
+        "rss": 19529728
+      },
+      {
+        "pid": 9568,
+        "name": "powershell.exe",
+        "cpu": 0.203125,
+        "rss": 79429632
+      },
+      {
+        "pid": 9640,
+        "name": "svchost.exe",
+        "cpu": 1.765625,
+        "rss": 46653440
+      },
+      {
+        "pid": 9716,
+        "name": "svchost.exe",
+        "cpu": 0.78125,
+        "rss": 20606976
+      },
+      {
+        "pid": 9740,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.8125,
+        "rss": 6848512
+      },
+      {
+        "pid": 9800,
+        "name": "svchost.exe",
+        "cpu": 0.0625,
+        "rss": 12947456
+      },
+      {
+        "pid": 9984,
+        "name": "ctfmon.exe",
+        "cpu": 78.703125,
+        "rss": 80384000
+      },
+      {
+        "pid": 10136,
+        "name": "verge-mihomo.exe",
+        "cpu": 130.609375,
+        "rss": 24530944
+      },
+      {
+        "pid": 10156,
+        "name": "conhost.exe",
+        "cpu": 0.0625,
+        "rss": 2584576
+      },
+      {
+        "pid": 10260,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.203125,
+        "rss": 16412672
+      },
+      {
+        "pid": 10280,
+        "name": "svchost.exe",
+        "cpu": 0.59375,
+        "rss": 17993728
+      },
+      {
+        "pid": 10460,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.78125,
+        "rss": 112476160
+      },
+      {
+        "pid": 10576,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.359375,
+        "rss": 28946432
+      },
+      {
+        "pid": 10580,
+        "name": "RuntimeBroker.exe",
+        "cpu": 0.421875,
+        "rss": 31084544
+      },
+      {
+        "pid": 10900,
+        "name": "MoNotificationUx.exe",
+        "cpu": 0.03125,
+        "rss": 17915904
+      },
+      {
+        "pid": 10916,
+        "name": "SecurityHealthSystray.exe",
+        "cpu": 0.203125,
+        "rss": 16568320
+      },
+      {
+        "pid": 10960,
+        "name": "SecurityHealthService.exe",
+        "cpu": 2.984375,
+        "rss": 30973952
+      },
+      {
+        "pid": 11064,
+        "name": "msedgewebview2.exe",
+        "cpu": 0.046875,
+        "rss": 2461696
+      },
+      {
+        "pid": 11132,
+        "name": "M365Copilot.exe",
+        "cpu": 4.953125,
+        "rss": 143491072
+      },
+      {
+        "pid": 11236,
+        "name": "SearchIndexer.exe",
+        "cpu": 38.609375,
+        "rss": 42659840
+      },
+      {
+        "pid": 11348,
+        "name": "msedgewebview2.exe",
+        "cpu": 2.625,
+        "rss": 4804608
+      },
+      {
+        "pid": 11636,
+        "name": "ansyslmd.exe",
+        "cpu": 1.953125,
+        "rss": 35172352
+      },
+      {
+        "pid": 11652,
+        "name": "svchost.exe",
+        "cpu": 0.296875,
+        "rss": 31760384
+      },
+      {
+        "pid": 11756,
+        "name": "svchost.exe",
+        "cpu": 0.46875,
+        "rss": 34525184
+      },
+      {
+        "pid": 12028,
+        "name": "svchost.exe",
+        "cpu": 0.375,
+        "rss": 27078656
+      }
+    ]
+  }
+]

@@ -408,7 +408,7 @@ def fmt(value):return 'missing' if value is None else f'{value:.3f}' if number(v
 
 def markdown(report):
     lines=['# CU performance read-only audit','',
-        'Thresholds are fixed by performance-acceptance-rules.md. FAIL/INCOMPLETE cannot be replaced by fast successful samples.','',
+        f"Thresholds are fixed by {Path(report['rules_path']).name}. FAIL/INCOMPLETE cannot be replaced by fast successful samples.",'',
         '| file / size / PNG / input / auto | overall | success / formal attempts | draft P95/P99 | visible P95/P99 | GUI max | paint FPS | PNG+auto P95 relative |',
         '|---|---|---|---|---|---|---|---|']
     for row in report['ui_cases']:

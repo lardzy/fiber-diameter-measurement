@@ -1,0 +1,1679 @@
+{
+  "completed": true,
+  "mode": "one pytest subprocess per test module",
+  "test_files": 207,
+  "passed": 4768,
+  "subtests_passed": 1650,
+  "failed_cases": [
+    "FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]",
+    "FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]",
+    "FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down",
+    "FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults",
+    "SUBFAILED(size=(1536, 864)) tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable"
+  ],
+  "same_failed_cases_as_r3": true,
+  "timed_out_files": [],
+  "seconds": 439.8711574077606,
+  "files": [
+    {
+      "file": "tests/test_advanced_analysis_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8989157676696777,
+      "summary": "5 passed, 7 subtests passed in 0.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_advanced_analysis_dialog.log"
+    },
+    {
+      "file": "tests/test_advanced_analysis_registry.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7348940372467041,
+      "summary": "10 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_advanced_analysis_registry.log"
+    },
+    {
+      "file": "tests/test_advanced_image_analysis.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7311890125274658,
+      "summary": "29 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_advanced_image_analysis.log"
+    },
+    {
+      "file": "tests/test_analysis_artifacts.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7883069515228271,
+      "summary": "39 passed in 0.54s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_artifacts.log"
+    },
+    {
+      "file": "tests/test_analysis_asset_io.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.6783690452575684,
+      "summary": "11 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_asset_io.log"
+    },
+    {
+      "file": "tests/test_analysis_batch.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7843329906463623,
+      "summary": "28 passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_batch.log"
+    },
+    {
+      "file": "tests/test_analysis_batch_export.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7781078815460205,
+      "summary": "7 passed in 0.52s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_batch_export.log"
+    },
+    {
+      "file": "tests/test_analysis_batch_ui.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8364400863647461,
+      "summary": "4 passed in 0.55s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_batch_ui.log"
+    },
+    {
+      "file": "tests/test_analysis_export.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7797250747680664,
+      "summary": "8 passed in 0.49s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_export.log"
+    },
+    {
+      "file": "tests/test_analysis_parameters_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.319823980331421,
+      "summary": "11 passed in 1.02s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_parameters_dialog.log"
+    },
+    {
+      "file": "tests/test_analysis_profiles.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7300701141357422,
+      "summary": "6 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_profiles.log"
+    },
+    {
+      "file": "tests/test_analysis_results_center.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0563230514526367,
+      "summary": "12 passed, 7 subtests passed in 0.78s",
+      "log": "build/cu-live-optimization/isolated-tests/test_analysis_results_center.log"
+    },
+    {
+      "file": "tests/test_annotation_display_modes.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1648688316345215,
+      "summary": "32 passed in 0.86s",
+      "log": "build/cu-live-optimization/isolated-tests/test_annotation_display_modes.log"
+    },
+    {
+      "file": "tests/test_application_launch.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7867860794067383,
+      "summary": "11 passed in 0.51s",
+      "log": "build/cu-live-optimization/isolated-tests/test_application_launch.log"
+    },
+    {
+      "file": "tests/test_area_derived_geometry.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3311641216278076,
+      "summary": "26 passed in 1.03s",
+      "log": "build/cu-live-optimization/isolated-tests/test_area_derived_geometry.log"
+    },
+    {
+      "file": "tests/test_area_handle_cache.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7271919250488281,
+      "summary": "5 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_area_handle_cache.log"
+    },
+    {
+      "file": "tests/test_area_inference.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.7155370712280273,
+      "summary": "25 passed, 5 subtests passed in 3.10s",
+      "log": "build/cu-live-optimization/isolated-tests/test_area_inference.log"
+    },
+    {
+      "file": "tests/test_associated_file_open.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.2497992515563965,
+      "summary": "8 passed in 1.90s",
+      "log": "build/cu-live-optimization/isolated-tests/test_associated_file_open.log"
+    },
+    {
+      "file": "tests/test_async_measurement_commits.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.0948801040649414,
+      "summary": "7 passed in 1.81s",
+      "log": "build/cu-live-optimization/isolated-tests/test_async_measurement_commits.log"
+    },
+    {
+      "file": "tests/test_atomic_io.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.701219081878662,
+      "summary": "8 passed in 1.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_atomic_io.log"
+    },
+    {
+      "file": "tests/test_background_task_controllers.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1598927974700928,
+      "summary": "16 passed in 0.84s",
+      "log": "build/cu-live-optimization/isolated-tests/test_background_task_controllers.log"
+    },
+    {
+      "file": "tests/test_build_support.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.9064481258392334,
+      "summary": "20 passed, 57 subtests passed in 2.65s",
+      "log": "build/cu-live-optimization/isolated-tests/test_build_support.log"
+    },
+    {
+      "file": "tests/test_build_windows_installer.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.777209997177124,
+      "summary": "19 passed, 16 subtests passed in 0.50s",
+      "log": "build/cu-live-optimization/isolated-tests/test_build_windows_installer.log"
+    },
+    {
+      "file": "tests/test_build_windows_onedir.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1006438732147217,
+      "summary": "26 passed, 44 subtests passed in 0.81s",
+      "log": "build/cu-live-optimization/isolated-tests/test_build_windows_onedir.log"
+    },
+    {
+      "file": "tests/test_cancellation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0498390197753906,
+      "summary": "2 passed in 0.65s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cancellation.log"
+    },
+    {
+      "file": "tests/test_canvas_benchmark.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.983613967895508,
+      "summary": "23 passed, 124 subtests passed in 4.40s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_benchmark.log"
+    },
+    {
+      "file": "tests/test_canvas_construction_integration.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.802988052368164,
+      "summary": "46 passed in 1.30s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_construction_integration.log"
+    },
+    {
+      "file": "tests/test_canvas_construction_visual_regression.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.6394376754760742,
+      "summary": "5 passed in 1.12s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_construction_visual_regression.log"
+    },
+    {
+      "file": "tests/test_canvas_drag_performance.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.2785229682922363,
+      "summary": "10 passed in 0.83s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_drag_performance.log"
+    },
+    {
+      "file": "tests/test_canvas_interaction_invalidation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.4928131103515625,
+      "summary": "16 passed, 8 subtests passed in 0.99s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_interaction_invalidation.log"
+    },
+    {
+      "file": "tests/test_canvas_lifecycle.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.9558570384979248,
+      "summary": "4 passed in 1.52s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_lifecycle.log"
+    },
+    {
+      "file": "tests/test_canvas_navigator.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.989300012588501,
+      "summary": "7 passed in 0.64s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_navigator.log"
+    },
+    {
+      "file": "tests/test_canvas_overlay_accuracy_matrix.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.870396852493286,
+      "summary": "21 passed in 2.50s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_overlay_accuracy_matrix.log"
+    },
+    {
+      "file": "tests/test_canvas_overlay_cache.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1423158645629883,
+      "summary": "37 passed, 2 subtests passed in 0.82s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_overlay_cache.log"
+    },
+    {
+      "file": "tests/test_canvas_overlay_handoff.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.587599992752075,
+      "summary": "47 passed in 3.09s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_overlay_handoff.log"
+    },
+    {
+      "file": "tests/test_canvas_overlay_state_regressions.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.4917519092559814,
+      "summary": "9 passed in 0.98s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_overlay_state_regressions.log"
+    },
+    {
+      "file": "tests/test_canvas_progressive_overlay.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.468503952026367,
+      "summary": "25 passed in 1.90s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_progressive_overlay.log"
+    },
+    {
+      "file": "tests/test_canvas_render_pipeline.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.5583019256591797,
+      "summary": "19 passed, 10 subtests passed in 1.10s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_render_pipeline.log"
+    },
+    {
+      "file": "tests/test_canvas_roi_capture.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1553349494934082,
+      "summary": "6 passed in 0.72s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_roi_capture.log"
+    },
+    {
+      "file": "tests/test_canvas_tool_strategies.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.035099744796753,
+      "summary": "12 passed in 0.68s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_tool_strategies.log"
+    },
+    {
+      "file": "tests/test_canvas_view_transform.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0799620151519775,
+      "summary": "7 passed in 0.71s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_view_transform.log"
+    },
+    {
+      "file": "tests/test_canvas_visual_settings_signature.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0030851364135742,
+      "summary": "5 passed, 17 subtests passed in 0.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_canvas_visual_settings_signature.log"
+    },
+    {
+      "file": "tests/test_capture_and_cu_scale.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9359040260314941,
+      "summary": "29 passed, 3 subtests passed in 0.58s",
+      "log": "build/cu-live-optimization/isolated-tests/test_capture_and_cu_scale.log"
+    },
+    {
+      "file": "tests/test_construction_export.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.7413430213928223,
+      "summary": "6 passed in 1.28s",
+      "log": "build/cu-live-optimization/isolated-tests/test_construction_export.log"
+    },
+    {
+      "file": "tests/test_construction_geometry.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.21514892578125,
+      "summary": "80 passed in 0.73s",
+      "log": "build/cu-live-optimization/isolated-tests/test_construction_geometry.log"
+    },
+    {
+      "file": "tests/test_construction_operations.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.2593729496002197,
+      "summary": "17 passed in 0.81s",
+      "log": "build/cu-live-optimization/isolated-tests/test_construction_operations.log"
+    },
+    {
+      "file": "tests/test_construction_persistence.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1429290771484375,
+      "summary": "13 passed in 0.71s",
+      "log": "build/cu-live-optimization/isolated-tests/test_construction_persistence.log"
+    },
+    {
+      "file": "tests/test_construction_spatial_index.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3314940929412842,
+      "summary": "18 passed in 0.84s",
+      "log": "build/cu-live-optimization/isolated-tests/test_construction_spatial_index.log"
+    },
+    {
+      "file": "tests/test_construction_widgets.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.739212989807129,
+      "summary": "53 passed in 4.26s",
+      "log": "build/cu-live-optimization/isolated-tests/test_construction_widgets.log"
+    },
+    {
+      "file": "tests/test_contour_comparison.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.2604448795318604,
+      "summary": "36 passed in 0.88s",
+      "log": "build/cu-live-optimization/isolated-tests/test_contour_comparison.log"
+    },
+    {
+      "file": "tests/test_contour_comparison_ui.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 32.24973106384277,
+      "summary": "50 passed in 31.91s",
+      "log": "build/cu-live-optimization/isolated-tests/test_contour_comparison_ui.log"
+    },
+    {
+      "file": "tests/test_contour_comparison_wand.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7817332744598389,
+      "summary": "5 passed in 0.49s",
+      "log": "build/cu-live-optimization/isolated-tests/test_contour_comparison_wand.log"
+    },
+    {
+      "file": "tests/test_cu5_preview_locator.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0759801864624023,
+      "summary": "23 passed in 0.66s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu5_preview_locator.log"
+    },
+    {
+      "file": "tests/test_cu_automatic_compute_budget.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.473489761352539,
+      "summary": "5 passed in 0.90s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_automatic_compute_budget.log"
+    },
+    {
+      "file": "tests/test_cu_automatic_high_resolution.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.5972650051116943,
+      "summary": "1 passed in 1.10s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_automatic_high_resolution.log"
+    },
+    {
+      "file": "tests/test_cu_automatic_measurement.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3807518482208252,
+      "summary": "10 passed, 7 subtests passed in 0.98s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_automatic_measurement.log"
+    },
+    {
+      "file": "tests/test_cu_automatic_worker.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.1478347778320312,
+      "summary": "5 passed in 1.68s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_automatic_worker.log"
+    },
+    {
+      "file": "tests/test_cu_live_performance_audit.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3344557285308838,
+      "summary": "20 passed in 0.85s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_live_performance_audit.log"
+    },
+    {
+      "file": "tests/test_cu_live_self_check.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.4847729206085205,
+      "summary": "30 passed in 0.95s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_live_self_check.log"
+    },
+    {
+      "file": "tests/test_cu_manual_measurement.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.145482063293457,
+      "summary": "29 passed in 0.73s",
+      "log": "build/cu-live-optimization/isolated-tests/test_cu_manual_measurement.log"
+    },
+    {
+      "file": "tests/test_dataset_export.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9970879554748535,
+      "summary": "7 passed in 0.59s",
+      "log": "build/cu-live-optimization/isolated-tests/test_dataset_export.log"
+    },
+    {
+      "file": "tests/test_dataset_export_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1519668102264404,
+      "summary": "2 passed in 0.75s",
+      "log": "build/cu-live-optimization/isolated-tests/test_dataset_export_dialog.log"
+    },
+    {
+      "file": "tests/test_device_image_import.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 7.490884065628052,
+      "summary": "21 passed in 7.15s",
+      "log": "build/cu-live-optimization/isolated-tests/test_device_image_import.log"
+    },
+    {
+      "file": "tests/test_digital_slide.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8938770294189453,
+      "summary": "62 passed in 0.58s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide.log"
+    },
+    {
+      "file": "tests/test_digital_slide_acquisition_responsiveness.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 11.24537706375122,
+      "summary": "22 passed in 10.92s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_acquisition_responsiveness.log"
+    },
+    {
+      "file": "tests/test_digital_slide_annotation_display.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.386480808258057,
+      "summary": "58 passed in 4.06s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_annotation_display.log"
+    },
+    {
+      "file": "tests/test_digital_slide_boundary_feedback.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.507863998413086,
+      "summary": "23 passed in 2.24s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_boundary_feedback.log"
+    },
+    {
+      "file": "tests/test_digital_slide_browse_renderer.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.132858991622925,
+      "summary": "50 passed in 3.88s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_browse_renderer.log"
+    },
+    {
+      "file": "tests/test_digital_slide_compression_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9466490745544434,
+      "summary": "6 passed in 0.65s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_compression_dialog.log"
+    },
+    {
+      "file": "tests/test_digital_slide_configuration.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.936469316482544,
+      "summary": "25 passed in 1.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_configuration.log"
+    },
+    {
+      "file": "tests/test_digital_slide_count_preview.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.9880383014678955,
+      "summary": "174 passed in 4.72s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_count_preview.log"
+    },
+    {
+      "file": "tests/test_digital_slide_decode_threading.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8830850124359131,
+      "summary": "5 passed in 0.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_decode_threading.log"
+    },
+    {
+      "file": "tests/test_digital_slide_overlay_lifecycle.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8314371109008789,
+      "summary": "15 passed in 0.57s",
+      "log": "build/cu-live-optimization/isolated-tests/test_digital_slide_overlay_lifecycle.log"
+    },
+    {
+      "file": "tests/test_display_adjustment_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8397111892700195,
+      "summary": "9 passed, 7 subtests passed in 0.58s",
+      "log": "build/cu-live-optimization/isolated-tests/test_display_adjustment_dialog.log"
+    },
+    {
+      "file": "tests/test_draft_preview_cache.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.044240951538086,
+      "summary": "17 passed in 0.77s",
+      "log": "build/cu-live-optimization/isolated-tests/test_draft_preview_cache.log"
+    },
+    {
+      "file": "tests/test_export_options_dialog.py",
+      "exit_code": 1,
+      "timed_out": false,
+      "seconds": 1.0609359741210938,
+      "summary": "2 failed, 13 passed in 0.80s",
+      "log": "build/cu-live-optimization/isolated-tests/test_export_options_dialog.log"
+    },
+    {
+      "file": "tests/test_export_service.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7842440605163574,
+      "summary": "41 passed, 4 subtests passed in 0.50s",
+      "log": "build/cu-live-optimization/isolated-tests/test_export_service.log"
+    },
+    {
+      "file": "tests/test_fiber_quick_geometry.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.064558982849121,
+      "summary": "29 passed, 138 subtests passed in 1.79s",
+      "log": "build/cu-live-optimization/isolated-tests/test_fiber_quick_geometry.log"
+    },
+    {
+      "file": "tests/test_fullscreen_controller.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8448197841644287,
+      "summary": "3 passed in 0.58s",
+      "log": "build/cu-live-optimization/isolated-tests/test_fullscreen_controller.log"
+    },
+    {
+      "file": "tests/test_fullscreen_shortcuts.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.256194829940796,
+      "summary": "6 passed in 1.98s",
+      "log": "build/cu-live-optimization/isolated-tests/test_fullscreen_shortcuts.log"
+    },
+    {
+      "file": "tests/test_geometry.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7315590381622314,
+      "summary": "5 passed, 2 subtests passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_geometry.log"
+    },
+    {
+      "file": "tests/test_group_manager.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.6728782653808594,
+      "summary": "4 passed in 0.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_group_manager.log"
+    },
+    {
+      "file": "tests/test_history_and_sidecar.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7265448570251465,
+      "summary": "6 passed in 0.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_history_and_sidecar.log"
+    },
+    {
+      "file": "tests/test_history_state_stamps.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1678781509399414,
+      "summary": "11 passed in 0.88s",
+      "log": "build/cu-live-optimization/isolated-tests/test_history_state_stamps.log"
+    },
+    {
+      "file": "tests/test_image_analysis_controller.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8347299098968506,
+      "summary": "29 passed, 21 subtests passed in 0.54s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_analysis_controller.log"
+    },
+    {
+      "file": "tests/test_image_analysis_services.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7280571460723877,
+      "summary": "17 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_analysis_services.log"
+    },
+    {
+      "file": "tests/test_image_batch.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7367939949035645,
+      "summary": "19 passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_batch.log"
+    },
+    {
+      "file": "tests/test_image_batch_controller.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7260239124298096,
+      "summary": "4 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_batch_controller.log"
+    },
+    {
+      "file": "tests/test_image_batch_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8993608951568604,
+      "summary": "6 passed in 0.62s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_batch_dialog.log"
+    },
+    {
+      "file": "tests/test_image_parameter_audit.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.721825122833252,
+      "summary": "4 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_parameter_audit.log"
+    },
+    {
+      "file": "tests/test_image_parameter_data.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7263238430023193,
+      "summary": "6 passed in 0.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_parameter_data.log"
+    },
+    {
+      "file": "tests/test_image_parameter_widgets.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8994181156158447,
+      "summary": "26 passed in 0.62s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_parameter_widgets.log"
+    },
+    {
+      "file": "tests/test_image_parameter_workbench_integration.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.896294116973877,
+      "summary": "17 passed in 0.62s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_parameter_workbench_integration.log"
+    },
+    {
+      "file": "tests/test_image_processing_models.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.731827974319458,
+      "summary": "15 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_processing_models.log"
+    },
+    {
+      "file": "tests/test_image_processing_services.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8379180431365967,
+      "summary": "73 passed, 64 subtests passed in 0.53s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_processing_services.log"
+    },
+    {
+      "file": "tests/test_image_processing_tiled.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7862451076507568,
+      "summary": "20 passed, 21 subtests passed in 0.50s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_processing_tiled.log"
+    },
+    {
+      "file": "tests/test_image_processing_workbench.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.720264196395874,
+      "summary": "43 passed, 922 subtests passed in 1.41s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_processing_workbench.log"
+    },
+    {
+      "file": "tests/test_image_recipe_presets.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7332680225372314,
+      "summary": "5 passed, 6 subtests passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_image_recipe_presets.log"
+    },
+    {
+      "file": "tests/test_length_units.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8339211940765381,
+      "summary": "29 passed, 1 warning in 0.59s",
+      "log": "build/cu-live-optimization/isolated-tests/test_length_units.log"
+    },
+    {
+      "file": "tests/test_live_experiment_canvas_navigation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.679142951965332,
+      "summary": "1 passed in 0.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_canvas_navigation.log"
+    },
+    {
+      "file": "tests/test_live_experiment_content_models.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7270610332489014,
+      "summary": "40 passed in 0.49s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_content_models.log"
+    },
+    {
+      "file": "tests/test_live_experiment_content_project_assets.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.728262186050415,
+      "summary": "10 passed in 0.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_content_project_assets.log"
+    },
+    {
+      "file": "tests/test_live_experiment_content_statistics.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1061277389526367,
+      "summary": "210 passed in 0.82s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_content_statistics.log"
+    },
+    {
+      "file": "tests/test_live_experiment_content_workspace.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.6916961669921875,
+      "summary": "76 passed in 1.38s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_content_workspace.log"
+    },
+    {
+      "file": "tests/test_live_experiment_cu_transition.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9459528923034668,
+      "summary": "4 passed in 0.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_cu_transition.log"
+    },
+    {
+      "file": "tests/test_live_experiment_evidence.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7814137935638428,
+      "summary": "12 passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_evidence.log"
+    },
+    {
+      "file": "tests/test_live_experiment_motion_peak.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8380050659179688,
+      "summary": "119 passed in 0.53s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_motion_peak.log"
+    },
+    {
+      "file": "tests/test_live_experiment_motion_pipeline.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.051361083984375,
+      "summary": "13 passed in 0.80s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_motion_pipeline.log"
+    },
+    {
+      "file": "tests/test_live_experiment_motion_preparation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.76981782913208,
+      "summary": "43 passed in 1.49s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_motion_preparation.log"
+    },
+    {
+      "file": "tests/test_live_experiment_motion_reference.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8363132476806641,
+      "summary": "122 passed in 0.55s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_motion_reference.log"
+    },
+    {
+      "file": "tests/test_live_experiment_motion_remediation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7829649448394775,
+      "summary": "27 passed in 0.49s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_motion_remediation.log"
+    },
+    {
+      "file": "tests/test_live_experiment_png_stream.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7829031944274902,
+      "summary": "32 passed in 0.52s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_png_stream.log"
+    },
+    {
+      "file": "tests/test_live_experiment_post_classification.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9535019397735596,
+      "summary": "22 passed in 0.68s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_post_classification.log"
+    },
+    {
+      "file": "tests/test_live_experiment_project_lifecycle.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9959611892700195,
+      "summary": "5 passed in 0.73s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_project_lifecycle.log"
+    },
+    {
+      "file": "tests/test_live_experiment_runtime.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8898599147796631,
+      "summary": "10 passed in 0.61s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_runtime.log"
+    },
+    {
+      "file": "tests/test_live_experiment_save_rebase.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.2729430198669434,
+      "summary": "5 passed in 0.97s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_save_rebase.log"
+    },
+    {
+      "file": "tests/test_live_experiment_scratch_budget.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7261431217193604,
+      "summary": "14 passed in 0.44s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_scratch_budget.log"
+    },
+    {
+      "file": "tests/test_live_experiment_sources.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3318259716033936,
+      "summary": "40 passed in 1.04s",
+      "log": "build/cu-live-optimization/isolated-tests/test_live_experiment_sources.log"
+    },
+    {
+      "file": "tests/test_magic_roi_performance.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.0357820987701416,
+      "summary": "35 passed in 1.75s",
+      "log": "build/cu-live-optimization/isolated-tests/test_magic_roi_performance.log"
+    },
+    {
+      "file": "tests/test_main_window_analysis_batch.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.6498119831085205,
+      "summary": "13 passed in 3.32s",
+      "log": "build/cu-live-optimization/isolated-tests/test_main_window_analysis_batch.log"
+    },
+    {
+      "file": "tests/test_main_window_analysis_integration.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.725698232650757,
+      "summary": "19 passed in 4.33s",
+      "log": "build/cu-live-optimization/isolated-tests/test_main_window_analysis_integration.log"
+    },
+    {
+      "file": "tests/test_main_window_display_adjustment.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.0401611328125,
+      "summary": "6 passed in 1.70s",
+      "log": "build/cu-live-optimization/isolated-tests/test_main_window_display_adjustment.log"
+    },
+    {
+      "file": "tests/test_main_window_image_batch.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.0227882862091064,
+      "summary": "6 passed in 1.73s",
+      "log": "build/cu-live-optimization/isolated-tests/test_main_window_image_batch.log"
+    },
+    {
+      "file": "tests/test_main_window_image_processing.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.164851188659668,
+      "summary": "10 passed in 2.86s",
+      "log": "build/cu-live-optimization/isolated-tests/test_main_window_image_processing.log"
+    },
+    {
+      "file": "tests/test_main_window_view_experience.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.394862174987793,
+      "summary": "14 passed, 2 subtests passed in 4.11s",
+      "log": "build/cu-live-optimization/isolated-tests/test_main_window_view_experience.log"
+    },
+    {
+      "file": "tests/test_mask_region.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8829128742218018,
+      "summary": "10 passed in 0.61s",
+      "log": "build/cu-live-optimization/isolated-tests/test_mask_region.log"
+    },
+    {
+      "file": "tests/test_measurement_commit_queue.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7816016674041748,
+      "summary": "1 passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_measurement_commit_queue.log"
+    },
+    {
+      "file": "tests/test_measurement_results_model.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8880393505096436,
+      "summary": "11 passed in 0.60s",
+      "log": "build/cu-live-optimization/isolated-tests/test_measurement_results_model.log"
+    },
+    {
+      "file": "tests/test_measurement_statistics.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7293319702148438,
+      "summary": "11 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_measurement_statistics.log"
+    },
+    {
+      "file": "tests/test_models_project_io.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8400008678436279,
+      "summary": "75 passed, 18 subtests passed in 0.56s",
+      "log": "build/cu-live-optimization/isolated-tests/test_models_project_io.log"
+    },
+    {
+      "file": "tests/test_native_backend.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.772528886795044,
+      "summary": "16 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_native_backend.log"
+    },
+    {
+      "file": "tests/test_native_benchmark.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8362078666687012,
+      "summary": "10 passed in 0.52s",
+      "log": "build/cu-live-optimization/isolated-tests/test_native_benchmark.log"
+    },
+    {
+      "file": "tests/test_native_build.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8892419338226318,
+      "summary": "22 passed in 0.54s",
+      "log": "build/cu-live-optimization/isolated-tests/test_native_build.log"
+    },
+    {
+      "file": "tests/test_native_kernels.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.5184881687164307,
+      "summary": "58 passed in 1.23s",
+      "log": "build/cu-live-optimization/isolated-tests/test_native_kernels.log"
+    },
+    {
+      "file": "tests/test_object_appearance.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9463050365447998,
+      "summary": "28 passed, 8 subtests passed in 0.66s",
+      "log": "build/cu-live-optimization/isolated-tests/test_object_appearance.log"
+    },
+    {
+      "file": "tests/test_object_snap_service.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8202848434448242,
+      "summary": "21 passed in 0.52s",
+      "log": "build/cu-live-optimization/isolated-tests/test_object_snap_service.log"
+    },
+    {
+      "file": "tests/test_operation_diagnostics.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.726517915725708,
+      "summary": "3 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_operation_diagnostics.log"
+    },
+    {
+      "file": "tests/test_overlay_process_renderer.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.349637746810913,
+      "summary": "9 passed in 2.03s",
+      "log": "build/cu-live-optimization/isolated-tests/test_overlay_process_renderer.log"
+    },
+    {
+      "file": "tests/test_overlay_render_self_check.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 5.4730589389801025,
+      "summary": "5 passed in 5.19s",
+      "log": "build/cu-live-optimization/isolated-tests/test_overlay_render_self_check.log"
+    },
+    {
+      "file": "tests/test_p0_project_interaction.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3273437023162842,
+      "summary": "6 passed in 1.04s",
+      "log": "build/cu-live-optimization/isolated-tests/test_p0_project_interaction.log"
+    },
+    {
+      "file": "tests/test_preview_analysis.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3897569179534912,
+      "summary": "25 passed, 12 subtests passed in 1.08s",
+      "log": "build/cu-live-optimization/isolated-tests/test_preview_analysis.log"
+    },
+    {
+      "file": "tests/test_professional_workspace.py",
+      "exit_code": 1,
+      "timed_out": false,
+      "seconds": 6.039309024810791,
+      "summary": "3 failed, 31 passed, 17 subtests passed in 5.71s",
+      "log": "build/cu-live-optimization/isolated-tests/test_professional_workspace.log"
+    },
+    {
+      "file": "tests/test_project_analysis_asset_save.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7245569229125977,
+      "summary": "3 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_analysis_asset_save.log"
+    },
+    {
+      "file": "tests/test_project_analysis_persistence.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7268679141998291,
+      "summary": "12 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_analysis_persistence.log"
+    },
+    {
+      "file": "tests/test_project_background_save.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 7.91776704788208,
+      "summary": "25 passed in 7.62s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_background_save.log"
+    },
+    {
+      "file": "tests/test_project_export_controllers.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7294430732727051,
+      "summary": "21 passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_export_controllers.log"
+    },
+    {
+      "file": "tests/test_project_io_copy_on_write.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9830808639526367,
+      "summary": "6 passed in 0.57s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_io_copy_on_write.log"
+    },
+    {
+      "file": "tests/test_project_raster_asset_reuse.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.7047600746154785,
+      "summary": "24 passed in 1.34s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_raster_asset_reuse.log"
+    },
+    {
+      "file": "tests/test_project_roi.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7194900512695312,
+      "summary": "21 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_project_roi.log"
+    },
+    {
+      "file": "tests/test_prompt_segmentation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.901327133178711,
+      "summary": "30 passed, 2 subtests passed in 1.36s",
+      "log": "build/cu-live-optimization/isolated-tests/test_prompt_segmentation.log"
+    },
+    {
+      "file": "tests/test_qt_callback_lifecycle.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.4897849559783936,
+      "summary": "4 passed in 1.14s",
+      "log": "build/cu-live-optimization/isolated-tests/test_qt_callback_lifecycle.log"
+    },
+    {
+      "file": "tests/test_qt_layout_ownership.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.056279182434082,
+      "summary": "11 passed in 0.76s",
+      "log": "build/cu-live-optimization/isolated-tests/test_qt_layout_ownership.log"
+    },
+    {
+      "file": "tests/test_qt_raster_runtime.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.3179330825805664,
+      "summary": "6 passed in 0.99s",
+      "log": "build/cu-live-optimization/isolated-tests/test_qt_raster_runtime.log"
+    },
+    {
+      "file": "tests/test_raster_and_snap.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7813959121704102,
+      "summary": "10 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_raster_and_snap.log"
+    },
+    {
+      "file": "tests/test_raster_derivation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7248997688293457,
+      "summary": "19 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_raster_derivation.log"
+    },
+    {
+      "file": "tests/test_raster_derivation_dialogs.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8925237655639648,
+      "summary": "11 passed in 0.59s",
+      "log": "build/cu-live-optimization/isolated-tests/test_raster_derivation_dialogs.log"
+    },
+    {
+      "file": "tests/test_raster_export.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.836644172668457,
+      "summary": "12 passed, 13 subtests passed in 0.54s",
+      "log": "build/cu-live-optimization/isolated-tests/test_raster_export.log"
+    },
+    {
+      "file": "tests/test_raster_io.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7696471214294434,
+      "summary": "60 passed in 0.51s",
+      "log": "build/cu-live-optimization/isolated-tests/test_raster_io.log"
+    },
+    {
+      "file": "tests/test_reference_instance_propagation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.721398115158081,
+      "summary": "4 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_reference_instance_propagation.log"
+    },
+    {
+      "file": "tests/test_release_self_check.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.7847471237182617,
+      "summary": "27 passed, 6 subtests passed in 2.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_release_self_check.log"
+    },
+    {
+      "file": "tests/test_rendering_visibility.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.727863073348999,
+      "summary": "21 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_rendering_visibility.log"
+    },
+    {
+      "file": "tests/test_responsive_io.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.4797368049621582,
+      "summary": "2 passed in 1.20s",
+      "log": "build/cu-live-optimization/isolated-tests/test_responsive_io.log"
+    },
+    {
+      "file": "tests/test_roi_manager.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8913881778717041,
+      "summary": "10 passed in 0.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_roi_manager.log"
+    },
+    {
+      "file": "tests/test_runtime_logging.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7209649085998535,
+      "summary": "3 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_runtime_logging.log"
+    },
+    {
+      "file": "tests/test_scale_overlay_control.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.714771032333374,
+      "summary": "9 passed in 1.40s",
+      "log": "build/cu-live-optimization/isolated-tests/test_scale_overlay_control.log"
+    },
+    {
+      "file": "tests/test_scale_overlay_editor.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 6.129395961761475,
+      "summary": "69 passed in 5.76s",
+      "log": "build/cu-live-optimization/isolated-tests/test_scale_overlay_editor.log"
+    },
+    {
+      "file": "tests/test_scale_overlay_pixels.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0428662300109863,
+      "summary": "225 passed in 0.74s",
+      "log": "build/cu-live-optimization/isolated-tests/test_scale_overlay_pixels.log"
+    },
+    {
+      "file": "tests/test_scale_panel_refinements.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.1869709491729736,
+      "summary": "13 passed in 2.84s",
+      "log": "build/cu-live-optimization/isolated-tests/test_scale_panel_refinements.log"
+    },
+    {
+      "file": "tests/test_screen_label_sprite_cache.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0495460033416748,
+      "summary": "15 passed in 0.70s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screen_label_sprite_cache.log"
+    },
+    {
+      "file": "tests/test_screenshot_agent.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.897848129272461,
+      "summary": "31 passed in 1.57s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_agent.log"
+    },
+    {
+      "file": "tests/test_screenshot_agent_async_output.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1546149253845215,
+      "summary": "11 passed in 0.84s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_agent_async_output.log"
+    },
+    {
+      "file": "tests/test_screenshot_agent_client.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7279872894287109,
+      "summary": "9 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_agent_client.log"
+    },
+    {
+      "file": "tests/test_screenshot_annotation_overlay.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.1621630191802979,
+      "summary": "30 passed in 0.87s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_annotation_overlay.log"
+    },
+    {
+      "file": "tests/test_screenshot_capture.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9414100646972656,
+      "summary": "20 passed in 0.65s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_capture.log"
+    },
+    {
+      "file": "tests/test_screenshot_editor.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9380161762237549,
+      "summary": "8 passed in 0.62s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_editor.log"
+    },
+    {
+      "file": "tests/test_screenshot_hotkey_compatibility.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8195569515228271,
+      "summary": "59 passed in 0.50s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_hotkey_compatibility.log"
+    },
+    {
+      "file": "tests/test_screenshot_hotkey_dispatch.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8218650817871094,
+      "summary": "14 passed in 0.54s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_hotkey_dispatch.log"
+    },
+    {
+      "file": "tests/test_screenshot_hotkey_status.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9314229488372803,
+      "summary": "12 passed in 0.66s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_hotkey_status.log"
+    },
+    {
+      "file": "tests/test_screenshot_main_window.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.2571280002593994,
+      "summary": "16 passed in 2.95s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_main_window.log"
+    },
+    {
+      "file": "tests/test_screenshot_output.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7777290344238281,
+      "summary": "10 passed in 0.51s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_output.log"
+    },
+    {
+      "file": "tests/test_screenshot_output_worker.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7858569622039795,
+      "summary": "8 passed in 0.51s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_output_worker.log"
+    },
+    {
+      "file": "tests/test_screenshot_overlay_editor.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8933060169219971,
+      "summary": "8 passed in 0.63s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_overlay_editor.log"
+    },
+    {
+      "file": "tests/test_screenshot_protocol.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7249689102172852,
+      "summary": "5 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_protocol.log"
+    },
+    {
+      "file": "tests/test_screenshot_settings.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7754442691802979,
+      "summary": "32 passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_settings.log"
+    },
+    {
+      "file": "tests/test_screenshot_settings_page.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9946281909942627,
+      "summary": "27 passed, 42 subtests passed in 0.71s",
+      "log": "build/cu-live-optimization/isolated-tests/test_screenshot_settings_page.log"
+    },
+    {
+      "file": "tests/test_segmentation_coordinates.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7302341461181641,
+      "summary": "4 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_segmentation_coordinates.log"
+    },
+    {
+      "file": "tests/test_segmentation_engine_settings.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8946750164031982,
+      "summary": "1 passed in 0.62s",
+      "log": "build/cu-live-optimization/isolated-tests/test_segmentation_engine_settings.log"
+    },
+    {
+      "file": "tests/test_segmentation_engines.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.0558419227600098,
+      "summary": "6 passed in 0.78s",
+      "log": "build/cu-live-optimization/isolated-tests/test_segmentation_engines.log"
+    },
+    {
+      "file": "tests/test_segmentation_source.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7690668106079102,
+      "summary": "3 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_segmentation_source.log"
+    },
+    {
+      "file": "tests/test_settings_dialog_navigation.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.7566163539886475,
+      "summary": "13 passed, 4 subtests passed in 1.43s",
+      "log": "build/cu-live-optimization/isolated-tests/test_settings_dialog_navigation.log"
+    },
+    {
+      "file": "tests/test_statistics_distribution_widget.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9424331188201904,
+      "summary": "11 passed in 0.64s",
+      "log": "build/cu-live-optimization/isolated-tests/test_statistics_distribution_widget.log"
+    },
+    {
+      "file": "tests/test_thread_task_manager.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.9868149757385254,
+      "summary": "4 passed in 0.70s",
+      "log": "build/cu-live-optimization/isolated-tests/test_thread_task_manager.log"
+    },
+    {
+      "file": "tests/test_threshold_adjustment_dialog.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8837378025054932,
+      "summary": "5 passed in 0.56s",
+      "log": "build/cu-live-optimization/isolated-tests/test_threshold_adjustment_dialog.log"
+    },
+    {
+      "file": "tests/test_training_dataset_integration.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.161369800567627,
+      "summary": "1 passed in 0.79s",
+      "log": "build/cu-live-optimization/isolated-tests/test_training_dataset_integration.log"
+    },
+    {
+      "file": "tests/test_tubeness_chain.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7748329639434814,
+      "summary": "4 passed, 4 subtests passed in 0.48s",
+      "log": "build/cu-live-optimization/isolated-tests/test_tubeness_chain.log"
+    },
+    {
+      "file": "tests/test_ui_canvas_and_export.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 94.23191213607788,
+      "summary": "291 passed, 20 subtests passed in 92.45s (0:01:32)",
+      "log": "build/cu-live-optimization/isolated-tests/test_ui_canvas_and_export.log"
+    },
+    {
+      "file": "tests/test_ui_fullscreen_assets.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8369247913360596,
+      "summary": "2 passed in 0.58s",
+      "log": "build/cu-live-optimization/isolated-tests/test_ui_fullscreen_assets.log"
+    },
+    {
+      "file": "tests/test_ui_snapshot.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.734321117401123,
+      "summary": "9 passed, 10 subtests passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_ui_snapshot.log"
+    },
+    {
+      "file": "tests/test_ui_split_tool_button.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.8826858997344971,
+      "summary": "3 passed in 0.58s",
+      "log": "build/cu-live-optimization/isolated-tests/test_ui_split_tool_button.log"
+    },
+    {
+      "file": "tests/test_view_zoom_control.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7329459190368652,
+      "summary": "3 passed in 0.45s",
+      "log": "build/cu-live-optimization/isolated-tests/test_view_zoom_control.log"
+    },
+    {
+      "file": "tests/test_watermark.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 3.3329391479492188,
+      "summary": "74 passed in 2.97s",
+      "log": "build/cu-live-optimization/isolated-tests/test_watermark.log"
+    },
+    {
+      "file": "tests/test_watermark_preferences.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.9778859615325928,
+      "summary": "14 passed in 1.68s",
+      "log": "build/cu-live-optimization/isolated-tests/test_watermark_preferences.log"
+    },
+    {
+      "file": "tests/test_windows_autostart.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7194480895996094,
+      "summary": "4 passed in 0.46s",
+      "log": "build/cu-live-optimization/isolated-tests/test_windows_autostart.log"
+    },
+    {
+      "file": "tests/test_windows_global_hotkey.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7763562202453613,
+      "summary": "19 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_windows_global_hotkey.log"
+    },
+    {
+      "file": "tests/test_windows_screen_capture.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7162606716156006,
+      "summary": "12 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_windows_screen_capture.log"
+    },
+    {
+      "file": "tests/test_windows_window_locator.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.7866637706756592,
+      "summary": "4 passed in 0.47s",
+      "log": "build/cu-live-optimization/isolated-tests/test_windows_window_locator.log"
+    },
+    {
+      "file": "tests/test_workbench_workflows.py",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 6.609292030334473,
+      "summary": "27 passed in 6.26s",
+      "log": "build/cu-live-optimization/isolated-tests/test_workbench_workflows.log"
+    }
+  ],
+  "limits": [
+    "Earlier monolithic sandboxed run reached about 98%, encountered shared-memory sandbox denials and stalled in Qt stylesheet. It was interrupted and exited 139; this separate-process run does not prove the earlier Qt hang fixed.",
+    "The same five pre-existing UI tests still fail; not an all-green full suite."
+  ]
+}

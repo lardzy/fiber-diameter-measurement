@@ -1,0 +1,28 @@
+................F....F...........                      [100%]
+=================================== FAILURES ===================================
+_ ProfessionalWorkspaceTests.test_inspector_sections_remain_contiguous_and_expansion_pushes_down _
+tests/test_professional_workspace.py:715: in test_inspector_sections_remain_contiguous_and_expansion_pushes_down
+    self.assertLessEqual(gap, layout.spacing() + 1)
+E   AssertionError: 345 not less than or equal to 7
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ ProfessionalWorkspaceTests.test_measurement_inspector_uses_locked_section_order_and_defaults _
+tests/test_professional_workspace.py:668: in test_measurement_inspector_uses_locked_section_order_and_defaults
+    self.assertEqual(
+E   AssertionError: Lists differ: [<fdm.ui.scale_overlay_editor.ScaleOverlayPanel(0x[534 chars]200>] != [<fdm.ui.workbench_controls.CurrentMeasurementSumm[522 chars]280>]
+E   
+E   First differing element 0:
+E   <fdm.ui.scale_overlay_editor.ScaleOverlayPanel(0x[48 chars]1200>
+E   <fdm.ui.workbench_controls.CurrentMeasurementSumm[61 chars]6e00>
+E   
+E   Diff is 1113 characters long. Set self.maxDiff to None to see it.
+_ ProfessionalWorkspaceTests.test_responsive_geometry_matrix_keeps_explicit_commands_reachable (size=(1536, 864)) _
+tests/test_professional_workspace.py:571: in test_responsive_geometry_matrix_keeps_explicit_commands_reachable
+    self.assertEqual(window._file_toolbar.toolButtonStyle(), command_style)
+E   AssertionError: <ToolButtonStyle.ToolButtonIconOnly: 0> != <ToolButtonStyle.ToolButtonTextBesideIcon: 2>
+=========================== short test summary info ============================
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults
+SUBFAILED(size=(1536, 864)) tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable
+3 failed, 31 passed, 17 subtests passed in 5.71s

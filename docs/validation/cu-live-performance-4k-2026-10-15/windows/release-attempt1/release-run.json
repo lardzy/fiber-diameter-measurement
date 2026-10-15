@@ -1,0 +1,144 @@
+[
+  {
+    "label": "windows-regression",
+    "args": [
+      "-m",
+      "pytest",
+      "-q",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_build_support.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_build_windows_installer.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_build_windows_onedir.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu5_preview_locator.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_compute_budget.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_high_resolution.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_measurement.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_worker.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_live_performance_audit.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_live_self_check.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_manual_measurement.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_canvas_navigation.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_models.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_project_assets.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_statistics.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_workspace.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_cu_transition.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_evidence.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_peak.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_pipeline.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_preparation.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_reference.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_remediation.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_png_stream.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_post_classification.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_project_lifecycle.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_runtime.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_save_rebase.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_scratch_budget.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_sources.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_backend.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_benchmark.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_build.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_kernels.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_release_self_check.py",
+      "--junitxml=build/opt4k/windows-regression.xml"
+    ],
+    "exit_code": 0,
+    "seconds": 61.895870208740234,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\windows-regression.log"
+  },
+  {
+    "label": "manual-gold",
+    "args": [
+      "scripts/validate_cu_manual_measurement.py",
+      "--reference-root",
+      "validation_reference",
+      "--output",
+      "build/opt4k/manual-gold.json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.9519574642181396,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\manual-gold.log"
+  },
+  {
+    "label": "motion-gold",
+    "args": [
+      "scripts/validation/validate_cu_motion_reference.py",
+      "--output",
+      "build/opt4k/motion-gold.json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.335507869720459,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\motion-gold.log"
+  },
+  {
+    "label": "automatic-gold",
+    "args": [
+      "scripts/validation/validate_cu_automatic_gold.py",
+      "--cu-root",
+      "validation_reference",
+      "--output",
+      "build/opt4k/automatic-gold.json"
+    ],
+    "exit_code": 0,
+    "seconds": 9.951422214508057,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\automatic-gold.log"
+  },
+  {
+    "label": "core-build",
+    "args": [
+      "scripts/build_windows_onedir.py",
+      "--profile",
+      "core"
+    ],
+    "exit_code": 0,
+    "seconds": 616.6196644306183,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\core-build.log"
+  },
+  {
+    "label": "core-frozen-code",
+    "args": [
+      "build/opt4k/verify-frozen-code.py",
+      "dist/windows/FiberDiameterMeasurement",
+      "--label",
+      "core"
+    ],
+    "exit_code": 0,
+    "seconds": 0.4772965908050537,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\core-frozen-code.log"
+  },
+  {
+    "label": "full-build",
+    "args": [
+      "scripts/build_windows_onedir.py",
+      "--profile",
+      "full",
+      "--exclude-area-models"
+    ],
+    "exit_code": 0,
+    "seconds": 536.070328950882,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\full-build.log"
+  },
+  {
+    "label": "full-frozen-code",
+    "args": [
+      "build/opt4k/verify-frozen-code.py",
+      "dist/windows/FiberDiameterMeasurement",
+      "--label",
+      "full"
+    ],
+    "exit_code": 0,
+    "seconds": 0.47077512741088867,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\full-frozen-code.log"
+  },
+  {
+    "label": "installer",
+    "args": [
+      "scripts/build_windows_installer.py",
+      "--reuse-onedir",
+      "--exclude-area-models"
+    ],
+    "exit_code": 0,
+    "seconds": 197.39700865745544,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\installer.log"
+  }
+]

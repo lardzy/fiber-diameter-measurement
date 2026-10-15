@@ -12,9 +12,19 @@ EVIDENCE_CASES = ("evidence_png_gray", "evidence_png_bgr", "evidence_png_bgra",
 
 def complete_report():
     names = ("manual_native", "traditional_native", "multiscale_native", "content_formula",
-             "field_motion", "project_roundtrip", "windows_capture_import", "windows_capture_build",
+             "field_motion", "field_preparation", "project_roundtrip", "windows_capture_import", "windows_capture_build",
              *CONFIGURATION_CASES, *EVIDENCE_CASES)
-    return {"ok": True, "revision": 3, "cases": {name: True for name in names}}
+    return {"ok": True, "revision": 4, "cases": {name: True for name in names}}
+
+
+def test_field_preparation_probe_runs_native_moments_and_ordered_decisions():
+    assert probe._field_preparation_probe()
+
+
+def test_field_preparation_probe_rejects_wrong_moments_even_if_both_paths_share_them(monkeypatch):
+    import fdm.live_experiment.motion as motion
+    monkeypatch.setattr(motion, "dark_centroid", lambda gray: (0, 0))
+    assert not probe._field_preparation_probe()
 
 
 def test_configuration_probe_runs_real_deferred_custom_width_and_history():
@@ -25,7 +35,7 @@ def test_evidence_probe_runs_real_writer_save_and_history_rebase():
     assert probe._evidence_persistence_probe() == {name: True for name in EVIDENCE_CASES}
 
 
-@pytest.mark.parametrize("name", (*CONFIGURATION_CASES, *EVIDENCE_CASES))
+@pytest.mark.parametrize("name", ("field_preparation", *CONFIGURATION_CASES, *EVIDENCE_CASES))
 @pytest.mark.parametrize("failure", ["missing", "false"])
 def test_release_gate_requires_each_actual_configuration_and_evidence_case(name, failure):
     report = complete_report()
@@ -36,7 +46,7 @@ def test_release_gate_requires_each_actual_configuration_and_evidence_case(name,
     assert not probe.cu_live_probe_passed(report)
 
 
-@pytest.mark.parametrize("revision", [1, 2])
+@pytest.mark.parametrize("revision", [1, 2, 3])
 def test_previous_probe_revision_cannot_validate_new_evidence_release(revision):
     report = complete_report()
     report["revision"] = revision

@@ -1,0 +1,195 @@
+[
+  {
+    "name": "windows-regression",
+    "args": [
+      "-m",
+      "pytest",
+      "-q",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_build_support.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_build_windows_installer.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_build_windows_onedir.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu5_preview_locator.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_compute_budget.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_high_resolution.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_measurement.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_automatic_worker.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_live_performance_audit.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_live_self_check.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_cu_manual_measurement.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_canvas_navigation.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_models.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_project_assets.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_statistics.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_content_workspace.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_cu_transition.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_evidence.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_peak.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_pipeline.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_preparation.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_reference.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_motion_remediation.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_png_stream.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_post_classification.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_project_lifecycle.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_runtime.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_save_rebase.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_scratch_budget.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_live_experiment_sources.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_backend.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_benchmark.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_build.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_native_kernels.py",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\tests\\test_release_self_check.py",
+      "--junitxml=C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\windows-regression.xml"
+    ],
+    "exit_code": 0,
+    "seconds": 46.885051250457764,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\windows-regression.log"
+  },
+  {
+    "name": "manual-statistics",
+    "args": [
+      "scripts/benchmark_cu_live_measurement.py",
+      "--modes",
+      "manual",
+      "statistics",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\manual-statistics.json"
+    ],
+    "exit_code": 0,
+    "seconds": 2.0287563800811768,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\manual-statistics.log"
+  },
+  {
+    "name": "motion",
+    "args": [
+      "scripts/validation/benchmark_cu_motion.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\motion.json"
+    ],
+    "exit_code": 0,
+    "seconds": 9.296446323394775,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\motion.log"
+  },
+  {
+    "name": "ui-stable",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "stable",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-stable.json"
+    ],
+    "exit_code": 0,
+    "seconds": 19.50696086883545,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-stable.log"
+  },
+  {
+    "name": "ui-dynamic",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "lsb-noise",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-dynamic.json"
+    ],
+    "exit_code": 0,
+    "seconds": 20.27118706703186,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-dynamic.log"
+  },
+  {
+    "name": "ui-joint-stable",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "stable",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-joint-stable.json",
+      "--background-automatic",
+      "multiscale"
+    ],
+    "exit_code": 0,
+    "seconds": 36.95884037017822,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-joint-stable.log"
+  },
+  {
+    "name": "ui-joint-dynamic",
+    "args": [
+      "scripts/benchmark_cu_live_ui.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--motion-input",
+      "lsb-noise",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-joint-dynamic.json",
+      "--background-automatic",
+      "multiscale"
+    ],
+    "exit_code": 0,
+    "seconds": 45.76668071746826,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\ui-joint-dynamic.log"
+  },
+  {
+    "name": "png-pair",
+    "args": [
+      "scripts/validation/benchmark_cu_png_stream_pair.py",
+      "--reference",
+      "build/opt4k/reference/png_stream_r4.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\png-pair.json"
+    ],
+    "exit_code": 0,
+    "seconds": 122.2054591178894,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\png-pair.log"
+  },
+  {
+    "name": "motion-stages",
+    "args": [
+      "scripts/validation/profile_cu_motion_stages.py",
+      "--sizes",
+      "2048",
+      "4096",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\motion-stages.json"
+    ],
+    "exit_code": 0,
+    "seconds": 7.890836715698242,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\motion-stages.log"
+  },
+  {
+    "name": "workspace-4k-short",
+    "args": [
+      "scripts/validation/soak_cu_workspace.py",
+      "--size",
+      "4096",
+      "--duration-seconds",
+      "60",
+      "--minimum-accepted",
+      "100",
+      "--output",
+      "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\workspace-4k-short.json"
+    ],
+    "exit_code": 0,
+    "seconds": 62.58246207237244,
+    "log": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\formal3\\workspace-4k-short.log"
+  }
+]

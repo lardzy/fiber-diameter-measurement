@@ -1,0 +1,59 @@
+{
+  "kind": "aborted diagnostic; not completed endurance acceptance",
+  "reason": "Repeated ~9.5 FPS for several minutes; preserve artifacts, investigate then rerun",
+  "at": 1792036785.737659,
+  "process": {
+    "pid": 9252,
+    "cmdline": [
+      "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+      "-X",
+      "utf8",
+      "-u",
+      "scripts/validation/soak_cu_workspace.py",
+      "--size",
+      "4096",
+      "--duration-seconds",
+      "3600",
+      "--minimum-accepted",
+      "10000",
+      "--output",
+      "build\\opt4k\\hour\\workspace-4k-hour.json"
+    ],
+    "cwd": "C:\\Users\\LISHUY~1\\AppData\\Local\\Temp"
+  },
+  "children": [
+    {
+      "pid": 3012,
+      "cmdline": [
+        "C:\\Users\\lishuyang\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\python.exe",
+        "-X",
+        "utf8",
+        "-u",
+        "scripts/validation/soak_cu_workspace.py",
+        "--size",
+        "4096",
+        "--duration-seconds",
+        "3600",
+        "--minimum-accepted",
+        "10000",
+        "--output",
+        "build\\opt4k\\hour\\workspace-4k-hour.json"
+      ]
+    },
+    {
+      "pid": 5876,
+      "cmdline": [
+        "C:\\Users\\lishuyang\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\python.exe",
+        "-X",
+        "utf8",
+        "-c",
+        "from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=3012, pipe_handle=4516)",
+        "--multiprocessing-fork"
+      ]
+    }
+  ],
+  "interventions": [
+    "One 2-second read-only system CPU/RSS/disk sampler while running",
+    "Precise termination of this synthetic benchmark and its automatic worker; accepted synthetic in-memory ledger is not persisted; existing PNG files retained"
+  ]
+}

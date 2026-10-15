@@ -1,0 +1,55 @@
+[
+  {
+    "label": "core-build",
+    "args": [
+      "scripts/build_windows_onedir.py",
+      "--profile",
+      "core"
+    ],
+    "exit_code": 0,
+    "seconds": 771.2367284297943
+  },
+  {
+    "label": "core-code",
+    "args": [
+      "build/opt4k/verify-frozen-code.py",
+      "dist/windows/FiberDiameterMeasurement",
+      "--label",
+      "core"
+    ],
+    "exit_code": 0,
+    "seconds": 10.042475700378418
+  },
+  {
+    "label": "full-build",
+    "args": [
+      "scripts/build_windows_onedir.py",
+      "--profile",
+      "full",
+      "--exclude-area-models"
+    ],
+    "exit_code": 0,
+    "seconds": 460.7888240814209
+  },
+  {
+    "label": "full-code",
+    "args": [
+      "build/opt4k/verify-frozen-code.py",
+      "dist/windows/FiberDiameterMeasurement",
+      "--label",
+      "full"
+    ],
+    "exit_code": 0,
+    "seconds": 10.02449893951416
+  },
+  {
+    "label": "installer",
+    "args": [
+      "scripts/build_windows_installer.py",
+      "--reuse-onedir",
+      "--exclude-area-models"
+    ],
+    "exit_code": 0,
+    "seconds": 170.17767024040222
+  }
+]

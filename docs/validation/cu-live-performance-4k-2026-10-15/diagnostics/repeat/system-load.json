@@ -1,0 +1,114 @@
+{
+  "seconds": 2.0858996249953634,
+  "top_processes": [
+    {
+      "pid": 0,
+      "name": "System Idle Process",
+      "cpu_percent": 387.2729494362873,
+      "rss": 8192
+    },
+    {
+      "pid": 10952,
+      "name": "python.exe",
+      "cpu_percent": 3.7453863581845965,
+      "rss": 31559680
+    },
+    {
+      "pid": 4,
+      "name": "System",
+      "cpu_percent": 1.4981545432738388,
+      "rss": 1179648
+    },
+    {
+      "pid": 1232,
+      "name": "dwm.exe",
+      "cpu_percent": 0.7490772716369194,
+      "rss": 206520320
+    },
+    {
+      "pid": 3904,
+      "name": "prl_tools_service.exe",
+      "cpu_percent": 0.7490772716369194,
+      "rss": 35622912
+    },
+    {
+      "pid": 3988,
+      "name": "MsMpEng.exe",
+      "cpu_percent": 0.7490772716369194,
+      "rss": 440971264
+    },
+    {
+      "pid": 124,
+      "name": "Registry",
+      "cpu_percent": 0.0,
+      "rss": 41451520
+    },
+    {
+      "pid": 536,
+      "name": "fontdrvhost.exe",
+      "cpu_percent": 0.0,
+      "rss": 6246400
+    },
+    {
+      "pid": 552,
+      "name": "smss.exe",
+      "cpu_percent": 0.0,
+      "rss": 1880064
+    },
+    {
+      "pid": 728,
+      "name": "fontdrvhost.exe",
+      "cpu_percent": 0.0,
+      "rss": 10993664
+    },
+    {
+      "pid": 748,
+      "name": "csrss.exe",
+      "cpu_percent": 0.0,
+      "rss": 9293824
+    },
+    {
+      "pid": 820,
+      "name": "svchost.exe",
+      "cpu_percent": 0.0,
+      "rss": 54976512
+    }
+  ],
+  "memory": {
+    "total": 17173250048,
+    "available": 11005878272,
+    "percent": 35.9,
+    "used": 6167371776,
+    "free": 11005878272
+  },
+  "cpu_times_before": {
+    "user": 18603.546874999996,
+    "system": 9490.5,
+    "idle": 139206.15625,
+    "interrupt": 752.890625,
+    "dpc": 254.921875
+  },
+  "cpu_times_after": {
+    "user": 18603.562499999996,
+    "system": 9490.640625,
+    "idle": 139214.375,
+    "interrupt": 752.890625,
+    "dpc": 254.921875
+  },
+  "disk_before": {
+    "read_count": 1555484,
+    "write_count": 2779029,
+    "read_bytes": 97084527616,
+    "write_bytes": 159315272192,
+    "read_time": 420,
+    "write_time": 406
+  },
+  "disk_after": {
+    "read_count": 1555484,
+    "write_count": 2779043,
+    "read_bytes": 97084527616,
+    "write_bytes": 159315358208,
+    "read_time": 420,
+    "write_time": 406
+  }
+}

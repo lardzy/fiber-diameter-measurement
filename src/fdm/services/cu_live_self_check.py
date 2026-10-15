@@ -5,7 +5,45 @@ import math
 import sys
 
 
-CU_LIVE_PROBE_REVISION = 3
+CU_LIVE_PROBE_REVISION = 4
+
+
+def _field_preparation_probe():
+    """Run the split production preparation and compare its ordered decisions."""
+    import cv2
+    import numpy as np
+    from fdm.live_experiment.frames import FrameHandle
+    from fdm.live_experiment.motion import FieldMotionDetector, MotionPreparer, reduced_gray
+
+    rng = np.random.default_rng(312)
+    image = rng.integers(30, 220, (240, 320, 3), dtype=np.uint8)
+    image[:, :80] = 0  # An asymmetric dark mass detects an inverted weighting.
+    preparer = MotionPreparer()
+    serial, split = FieldMotionDetector(), FieldMotionDetector()
+    for sequence, pixels in enumerate((image, image ^ 1, np.roll(image, 30, axis=0), image)):
+        frame = FrameHandle.snapshot(pixels, source_id="preparation-probe", sequence=sequence, live=True)
+        prepared = preparer.prepare(frame)
+        expected = serial.compare(frame)
+        actual = split.compare_prepared(prepared, (frame.source_id, frame.generation, frame.size),
+                                        frame.frame_id, frame.sequence)
+        # Independent integer moments also exercise the compiled centroid path.
+        gray = 255 - prepared.gray.astype(np.uint64)
+        mass = int(gray.sum())
+        center = (int((gray.sum(axis=0) * np.arange(gray.shape[1], dtype=np.uint64)).sum()) // mass,
+                  int((gray.sum(axis=1) * np.arange(gray.shape[0], dtype=np.uint64)).sum()) // mass)
+        if (actual != expected or prepared.centroid != center
+                or prepared.gray.flags.writeable or prepared.spectrum.flags.writeable):
+            return False
+    # Exercise the contiguous large-frame view in the frozen application too;
+    # serial and prepared paths alone would otherwise share the same reducer.
+    for channels in (3, 4):
+        large = rng.integers(0, 256, (2049, 2049, channels), dtype=np.uint8)
+        large.flags.writeable = False
+        code = cv2.COLOR_BGRA2GRAY if channels == 4 else cv2.COLOR_BGR2GRAY
+        expected = cv2.resize(cv2.cvtColor(large, code), (683, 683), interpolation=cv2.INTER_LINEAR)
+        if not np.array_equal(reduced_gray(large), expected):
+            return False
+    return True
 
 
 def _content_configuration_probe():
@@ -149,7 +187,7 @@ def _evidence_persistence_probe():
                 continue
             payload = path.read_bytes()
             decoded = cv2.imdecode(np.frombuffer(payload, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-            cases[f"evidence_png_{name}"] = (entry.get("encoder") == "png-row-sub-rle-v1"
+            cases[f"evidence_png_{name}"] = (entry.get("encoder") == "png-block-fast-v2"
                                              and hashlib.sha256(payload).hexdigest() == entry["sha256"]
                                              and decoded is not None and decoded.dtype == np.uint8
                                              and np.array_equal(decoded, pixels))
@@ -191,6 +229,7 @@ def run_cu_live_self_check(*, validate_capture=True):
         "multiscale_native": multiscale["status"] == "ok" and math.isclose(multiscale["candidates"][0]["width_px"], 10.997208727965706, abs_tol=1e-8),
         "content_formula": math.isclose(wool["content"], 85.33239059467755, abs_tol=1e-10),
         "field_motion": detector.compare(first).stable and not detector.compare(second).stable,
+        "field_preparation": _field_preparation_probe(),
         "project_roundtrip": ExperimentSession.from_dict(session.to_dict()).to_dict() == session.to_dict(),
     }
     cases.update(_content_configuration_probe())
@@ -208,7 +247,7 @@ def run_cu_live_self_check(*, validate_capture=True):
 
 def cu_live_probe_passed(report):
     required = {"manual_native", "traditional_native", "multiscale_native", "content_formula",
-                "field_motion", "project_roundtrip", "content_deferred_rebuild",
+                "field_motion", "field_preparation", "project_roundtrip", "content_deferred_rebuild",
                 "content_width_undo", "content_width_redo", "evidence_png_gray",
                 "evidence_png_bgr", "evidence_png_bgra", "evidence_leases_released",
                 "project_asset_rebase"}

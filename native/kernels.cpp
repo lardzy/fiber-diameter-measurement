@@ -447,6 +447,40 @@ py::array_t<bool> prune_short_spurs(const py::array& skeleton, const py::array& 
     return output;
 }
 
+py::tuple cu_motion_centroid(const py::array& gray) {
+    require_dtype<std::uint8_t>(gray, "gray");
+    if (gray.ndim() != 2 || !gray.size()) {
+        throw py::value_error("gray must be a nonempty two-dimensional uint8 array");
+    }
+    const auto pixels = checked_pixels(gray);
+    const auto height = gray.shape(0), width = gray.shape(1);
+    // Bound every integer moment, including adversarial direct extension calls.
+    const auto maximum_coordinate = static_cast<std::uint64_t>(std::max(height, width));
+    if (pixels > std::numeric_limits<std::uint64_t>::max() / 255 / maximum_coordinate) {
+        throw py::value_error("gray dimensions exceed supported integer moments");
+    }
+    const auto* data = static_cast<const std::uint8_t*>(gray.data());
+    const auto row_stride = gray.strides(0), column_stride = gray.strides(1);
+    std::uint64_t mass = 0, moment_x = 0, moment_y = 0;
+    {
+        py::gil_scoped_release release;
+        for (py::ssize_t y = 0; y < height; ++y) {
+            const auto* row = data + y * row_stride;
+            std::uint64_t row_mass = 0, row_x = 0;
+            for (py::ssize_t x = 0; x < width; ++x) {
+                const auto weight = static_cast<std::uint64_t>(255 - row[x * column_stride]);
+                row_mass += weight;
+                row_x += weight * static_cast<std::uint64_t>(x);
+            }
+            mass += row_mass;
+            moment_x += row_x;
+            moment_y += row_mass * static_cast<std::uint64_t>(y);
+        }
+    }
+    if (!mass) return py::make_tuple(-1, -1);
+    return py::make_tuple(moment_x / mass, moment_y / mass);
+}
+
 py::tuple cu_motion_peak(const py::array& correlation) {
     require_c_array(correlation, 3, "correlation");
     require_dtype<float>(correlation, "correlation");
@@ -534,6 +568,7 @@ PYBIND11_MODULE(_kernels, module) {
                py::arg("distance_map").noconvert(), py::arg("checkpoint") = py::none());
     module.def("build_info", &build_info);
     module.def("cu_motion_peak", &cu_motion_peak, py::arg("correlation").noconvert());
+    module.def("cu_motion_centroid", &cu_motion_centroid, py::arg("gray").noconvert());
     register_cu_manual(module);
     register_cu_automatic(module);
 }

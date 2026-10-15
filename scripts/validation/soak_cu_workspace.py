@@ -83,7 +83,8 @@ def run(args):
              "draft_motion_cancelled": 0, "draft_lost_without_submission": 0,
              "accepted_unpainted_due_motion": 0, "accepted_unpainted_other": 0,
              "transition_inputs": 0, "transition_clear_events": 0, "transition_completed": 0,
-             "unexpected_field_changes": 0, "fatal": False}
+             "unexpected_field_changes": 0, "gui_publish_over_4ms": 0, "fatal": False,
+             "stop_requested": False}
     pending, awaiting_paint, completed = {}, {}, {}
     completion_lock = threading.Lock()
     transition_lock = threading.Lock()
@@ -233,6 +234,20 @@ def run(args):
                     "motion_completed_at": time.perf_counter(), "motion_reason": result.reason}
         return result
 
+    original_prepared_motion_work = controller._prepared_motion_work
+
+    def tracked_prepared_motion_work(item, reset):
+        # The production pipeline keeps this frame leased through presentation;
+        # telemetry still retains only primitive metadata after the call.
+        identifier = item.frame.metadata.get("synthetic_transition_id", 0)
+        sequence = item.frame.sequence
+        result = original_prepared_motion_work(item, reset)
+        if result is not None and not result.stable:
+            with transition_lock:
+                last_unstable_motion[0] = {"transition_id": identifier, "motion_sequence": sequence,
+                    "motion_completed_at": time.perf_counter(), "motion_reason": result.reason}
+        return result
+
     def tracked_compute(intent):
         try:
             return original_compute(intent)
@@ -262,6 +277,7 @@ def run(args):
             # Includes synchronous UI signal handlers; the later QPainter wait
             # remains measured separately by accept_to_record_paint.
             elapsed_ms = (time.perf_counter() - started) * 1000
+            state["gui_publish_over_4ms"] += int(elapsed_ms > 4)
             latency("gui_publish_ms", elapsed_ms, trial)
             if not succeeded:
                 metrics["gui_publish_failed_ms"].append(elapsed_ms)
@@ -269,6 +285,7 @@ def run(args):
 
     controller._compute, controller.finish, controller._accept = tracked_compute, tracked_finish, tracked_accept
     controller._motion_work = tracked_motion_work
+    controller._prepared_motion_work = tracked_prepared_motion_work
 
     def on_accepted(record):
         now = time.perf_counter()
@@ -382,6 +399,8 @@ def run(args):
         values = {"manual_jobs": len(controller._jobs), "pending_classification": len(controller.pending_classification),
             "confirmation": int(controller._confirmation is not None), "evidence_writes": len(controller.evidence._futures),
             "mailbox": int(view._frame_mailbox is not None), "automatic_inflight": int(automatic.busy),
+            "motion_preparing": int(controller._prepare_future is not None),
+            "motion_deciding": int(controller._motion_future is not None),
             "tracked_intents": len(pending), "awaiting_record_paint": len(awaiting_paint)}
         for key, value in values.items():
             queue_max[key] = max(queue_max[key], value)
@@ -462,9 +481,15 @@ def run(args):
         generated_at_start = state["generated"]
         measure_due = automatic_due = last_tick = started
         progress_due = started + 60
+        stop_check_due = started
         with ResourceSampler() as resources:
             while time.perf_counter() - started < args.duration_seconds and not state["fatal"]:
                 now = time.perf_counter()
+                if args.stop_file is not None and now >= stop_check_due:
+                    stop_check_due = now + 1
+                    if args.stop_file.exists():
+                        state["stop_requested"] = True
+                        break
                 latency("event_loop_gap", (now - last_tick) * 1000)
                 last_tick = now
                 app.processEvents()
@@ -508,6 +533,11 @@ def run(args):
                     progress_due = now + 60
                     progress = {"elapsed_seconds": now - started, "accepted": state["accepted"],
                         "distinct_painted_fps": state["distinct_paints"] / (now - started),
+                        "generated_fps": (state["generated"] - generated_at_start) / (now - started),
+                        "gui_publish_over_4ms": state["gui_publish_over_4ms"],
+                        "window_active": view.isActiveWindow(),
+                        "window_minimized": view.isMinimized(),
+                        "device_pixel_ratio": view.devicePixelRatioF(),
                         "evidence_pending": len(controller.evidence._futures), "frame_budget_bytes": controller.budget.used_bytes,
                         "old_epoch_accepted": state["old_epoch_accepted"], "old_scene_accepted": state["old_scene_accepted"]}
                     print(json.dumps({"progress": progress}, allow_nan=False), flush=True)
@@ -529,12 +559,12 @@ def run(args):
                 app.processEvents()
                 poll_automatic()
                 queue_observations()
-                if not (controller._jobs or controller.evidence.pending or controller._motion_future
+                if not (controller._jobs or controller.evidence.pending or controller._motion_future or controller._prepare_future
                         or automatic.busy or awaiting_paint or transitions):
                     break
                 time.sleep(.002)
             drain_seconds = time.perf_counter() - drain_start
-            unfinished = bool(controller._jobs or controller.evidence.pending or controller._motion_future
+            unfinished = bool(controller._jobs or controller.evidence.pending or controller._motion_future or controller._prepare_future
                               or automatic.busy or awaiting_paint or transitions)
         screen = view.screen()
         report["display"] = {"window_size": [view.width(), view.height()],
@@ -546,6 +576,7 @@ def run(args):
         report["generated_during_run"] = generated_during_run
         report["frame_budget_peak_bytes"] = controller.budget.peak_bytes
         report["motion_retained_bytes"] = controller._motion.retained_bytes
+        report["motion_preparation_retained_bytes"] = controller._preparer.retained_bytes
     except (Exception, KeyboardInterrupt) as exc:
         errors["run: " + str(exc)] += 1
         if len(exception_examples) < 10:
@@ -653,6 +684,7 @@ def run(args):
         shape=list(pixels.shape), fixture_kind="sparse", translation_pixels=[0, 12], motion_preflight=motion_preflight,
         source_pool_sha256=[input_digest(array) for array in source_pool],
         source_retained_bytes=sum(array.nbytes for array in source_pool), acquisition_reserved_bytes=pixels.nbytes * 3,
+        verify_before_present=controller.verify_before_present,
         distinct_painted_fps=state["distinct_paints"] / run_seconds if run_seconds else 0,
         generated_fps=report.get("generated_during_run", 0) / run_seconds if run_seconds else 0,
         counters={key: value for key, value in state.items() if key not in {"gesture", "publishing_intent", "started"}},
@@ -688,6 +720,7 @@ def main():
     parser.add_argument("--size", type=int, default=2048)
     parser.add_argument("--save-images", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--evidence-dir", type=Path)
+    parser.add_argument("--stop-file", type=Path, help="Cooperative stop request; drain and save, never mark an interrupted hour complete")
     parser.add_argument("--drain-timeout-seconds", type=float, default=60)
     parser.add_argument("--window-width", type=int, default=1240)
     parser.add_argument("--window-height", type=int, default=840)

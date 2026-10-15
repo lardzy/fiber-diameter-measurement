@@ -1,0 +1,370 @@
+{
+  "foreground_pid": 7876,
+  "windows": [
+    {
+      "pid": 11476,
+      "hwnd": 9373126,
+      "visible": true,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        1,
+        0,
+        1254,
+        837
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 9831588,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        320,
+        118,
+        973,
+        634
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 7668400,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        0,
+        0,
+        1253,
+        36
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 9241980,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        0,
+        0,
+        653,
+        36
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 5308766,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        98,
+        98,
+        1067,
+        660
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 30147856,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        74,
+        74,
+        1043,
+        636
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 2426204,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "pid": 11476,
+      "hwnd": 21169552,
+      "visible": false,
+      "minimized": false,
+      "foreground": false,
+      "rect": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "pid": 2056,
+      "priority": 32,
+      "cmdline": [
+        "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+        "-u",
+        "build/opt4k/sampler-diagnostic.py",
+        "off",
+        "build\\opt4k\\sampler-diagnostic\\3-off"
+      ]
+    },
+    {
+      "pid": 11476,
+      "priority": 32,
+      "cmdline": [
+        "C:\\Users\\lishuyang\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\python.exe",
+        "-u",
+        "build/opt4k/sampler-diagnostic.py",
+        "off",
+        "build\\opt4k\\sampler-diagnostic\\3-off"
+      ]
+    }
+  ],
+  "first_result": {
+    "generated_fps": 29.77645109176619,
+    "distinct_painted_fps": 9.537769490331359,
+    "metrics": {
+      "first_click_to_draft_paint": {
+        "count": 98,
+        "p50_ms": 6.427458498365013,
+        "p95_ms": 11.514806147170015,
+        "p99_ms": 24.642487285673287,
+        "max_ms": 38.89166699809721,
+        "observations": 98,
+        "exact_max_ms": 38.89166699809721,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "second_click_to_accept": {
+        "count": 98,
+        "p50_ms": 3.0689164959767368,
+        "p95_ms": 8.951235698623337,
+        "p99_ms": 97.1070339891594,
+        "max_ms": 103.76204200292705,
+        "observations": 98,
+        "exact_max_ms": 103.76204200292705,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "second_click_to_record_paint": {
+        "count": 98,
+        "p50_ms": 11.711999999533873,
+        "p95_ms": 23.948021402247818,
+        "p99_ms": 109.13344023625541,
+        "max_ms": 113.0815420037834,
+        "observations": 98,
+        "exact_max_ms": 113.0815420037834,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "accept_to_record_paint": {
+        "count": 98,
+        "p50_ms": 8.76491699818871,
+        "p95_ms": 17.466631249772036,
+        "p99_ms": 19.051802495523592,
+        "max_ms": 23.188125000160653,
+        "observations": 98,
+        "exact_max_ms": 23.188125000160653,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "compute_done_to_accept": {
+        "count": 98,
+        "p50_ms": 2.2663545023533516,
+        "p95_ms": 6.862416148942419,
+        "p99_ms": 95.5385662536719,
+        "max_ms": 102.18924999935552,
+        "observations": 98,
+        "exact_max_ms": 102.18924999935552,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "canvas_paint_duration": {
+        "count": 489,
+        "p50_ms": 3.5534999988158233,
+        "p95_ms": 6.854083800863008,
+        "p99_ms": 9.533143080479933,
+        "max_ms": 20.763332999194972,
+        "observations": 489,
+        "exact_max_ms": 20.763332999194972,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "gui_publish_ms": {
+        "count": 98,
+        "p50_ms": 0.736561996745877,
+        "p95_ms": 1.809474952096934,
+        "p99_ms": 2.7389155055425367,
+        "max_ms": 3.279125005064998,
+        "observations": 98,
+        "exact_max_ms": 3.279125005064998,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "gui_publish_failed_ms": {
+        "count": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "p99_ms": null,
+        "max_ms": null,
+        "observations": 0,
+        "exact_max_ms": 0.0,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "frame_age_at_first_paint": {
+        "count": 287,
+        "p50_ms": 154.2894169979263,
+        "p95_ms": 272.03231240055175,
+        "p99_ms": 342.94023176218616,
+        "max_ms": 362.3208750068443,
+        "observations": 287,
+        "exact_max_ms": 362.3208750068443,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "event_loop_gap": {
+        "count": 1180,
+        "p50_ms": 4.5668124985240865,
+        "p95_ms": 101.6811517522001,
+        "p99_ms": 109.76891425270878,
+        "max_ms": 212.37445899896557,
+        "observations": 1180,
+        "exact_max_ms": 212.37445899896557,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "source_snapshot_and_handoff": {
+        "count": 896,
+        "p50_ms": 12.436270502803382,
+        "p95_ms": 26.821770248716348,
+        "p99_ms": 41.22359854991368,
+        "max_ms": 55.79908299841918,
+        "observations": 896,
+        "exact_max_ms": 55.79908299841918,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "scene_input_to_first_paint": {
+        "count": 3,
+        "p50_ms": 229.90541699982714,
+        "p95_ms": 230.08417860182817,
+        "p99_ms": 230.10006852200604,
+        "max_ms": 230.1040410020505,
+        "observations": 3,
+        "exact_max_ms": 230.1040410020505,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "scene_input_to_motion_complete": {
+        "count": 3,
+        "p50_ms": 219.1081659984775,
+        "p95_ms": 219.62649219713057,
+        "p99_ms": 219.67256563701085,
+        "max_ms": 219.68408399698092,
+        "observations": 3,
+        "exact_max_ms": 219.68408399698092,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "motion_complete_to_clear": {
+        "count": 3,
+        "p50_ms": 0.43287500011501834,
+        "p95_ms": 1.2896749954961706,
+        "p99_ms": 1.3658349950856064,
+        "max_ms": 1.3848749949829653,
+        "observations": 3,
+        "exact_max_ms": 1.3848749949829653,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "scene_input_to_clear": {
+        "count": 3,
+        "p50_ms": 219.5410409985925,
+        "p95_ms": 219.9515543979942,
+        "p99_ms": 219.988044477941,
+        "max_ms": 219.9971669979277,
+        "observations": 3,
+        "exact_max_ms": 219.9971669979277,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "scene_input_to_clear_paint": {
+        "count": 3,
+        "p50_ms": 229.90541699982714,
+        "p95_ms": 230.08417860182817,
+        "p99_ms": 230.10006852200604,
+        "max_ms": 230.1040410020505,
+        "observations": 3,
+        "exact_max_ms": 230.1040410020505,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      },
+      "clear_to_clear_paint": {
+        "count": 3,
+        "p50_ms": 9.908250001899432,
+        "p95_ms": 10.497525003302144,
+        "p99_ms": 10.54990500342683,
+        "max_ms": 10.563000003458,
+        "observations": 3,
+        "exact_max_ms": 10.563000003458,
+        "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+      }
+    },
+    "background_automatic_latency": {
+      "count": 3,
+      "p50_ms": 2351.8042089999653,
+      "p95_ms": 3748.696045901306,
+      "p99_ms": 3872.8642091814254,
+      "max_ms": 3903.906250001455,
+      "observations": 3,
+      "exact_max_ms": 3903.906250001455,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "resources": {
+      "wall_seconds": 30.254066291992785,
+      "process_cpu_seconds": 24.984375,
+      "before": {
+        "process_cpu_seconds": 1.140625,
+        "python_threads": 5,
+        "rss_bytes": 419717120,
+        "native_threads": 22,
+        "children": [],
+        "children_rss_bytes": 0,
+        "total_rss_bytes": 419717120,
+        "children_cpu_seconds": 0,
+        "resource_provider": "psutil"
+      },
+      "after": {
+        "process_cpu_seconds": 26.125,
+        "python_threads": 7,
+        "rss_bytes": 361152512,
+        "native_threads": 24,
+        "children": [
+          {
+            "pid": 3800,
+            "name": "python.exe",
+            "rss_bytes": 58572800,
+            "cpu_seconds": 6.890625,
+            "native_threads": 4
+          }
+        ],
+        "children_rss_bytes": 58572800,
+        "total_rss_bytes": 419725312,
+        "children_cpu_seconds": 6.890625,
+        "resource_provider": "psutil"
+      },
+      "sampling_interval_ms": 100,
+      "sample_count": 285,
+      "children_sampled_peaks": [
+        {
+          "pid": 3800,
+          "name": "python.exe",
+          "sampled_peak_rss_bytes": 331149312,
+          "maximum_observed_cpu_seconds": 6.890625,
+          "sampled_peak_native_threads": 5
+        }
+      ],
+      "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+      "sampled_max_rss_bytes": 533876736,
+      "sampled_max_children_rss_bytes": 331149312,
+      "sampled_max_total_rss_bytes": 856784896,
+      "sampled_max_native_threads": 26,
+      "sampled_max_process_lifetime_peak_rss_bytes": null
+    }
+  }
+}

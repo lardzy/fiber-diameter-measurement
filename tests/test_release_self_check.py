@@ -180,9 +180,9 @@ class ReleaseSelfCheckTests(unittest.TestCase):
                     # This test isolates Windows overlay gating on a non-Windows
                     # host; real CU/native computations have their own probes.
                     patch("fdm.services.cu_live_self_check.run_cu_live_self_check", return_value={
-                        "ok": True, "revision": 3, "cases": {name: True for name in (
+                        "ok": True, "revision": 4, "cases": {name: True for name in (
                             "manual_native", "traditional_native", "multiscale_native", "content_formula",
-                            "field_motion", "project_roundtrip", "windows_capture_import", "windows_capture_build",
+                            "field_motion", "field_preparation", "project_roundtrip", "windows_capture_import", "windows_capture_build",
                             "content_deferred_rebuild", "content_width_undo", "content_width_redo",
                             "evidence_png_gray", "evidence_png_bgr", "evidence_png_bgra",
                             "evidence_leases_released", "project_asset_rebase")}}),
