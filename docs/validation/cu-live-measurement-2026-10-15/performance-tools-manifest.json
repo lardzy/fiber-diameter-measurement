@@ -1,0 +1,8 @@
+{
+  "scope": "Performance harness only; product code and final release snapshot unchanged.",
+  "files": {
+    "scripts/benchmark_cu_live_ui.py": "dc45983e334186d15d9e9f8ecc1e6063246e27d38f30ea943177a880ab2a3f5e",
+    "scripts/validation/soak_cu_workspace.py": "2ee6fa038d7fc16218b7a0ecfe2f443860ec6d1d1ce36b809e6f9a10db1f723e"
+  },
+  "zip_sha256": "d0e2eab1653e84a1f9d2567dae80bf57d7b4b9b4ae0018be9dbcbff48a55cedb"
+}

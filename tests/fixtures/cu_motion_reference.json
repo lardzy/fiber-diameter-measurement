@@ -1,0 +1,1569 @@
+{
+  "schema_version": 1,
+  "scope": "Recorded mathematical helper observations only; no original executable code. Source images are generated independently in the validation script.",
+  "provenance": [
+    {
+      "path": "probe_cu5_normal.json",
+      "sha256": "88f4b393d07f44a4462a30e5569e2c9b841b504121cfd853b024de6ba3d33331"
+    },
+    {
+      "path": "probe_cu5_retained.json",
+      "sha256": "d7866d379b8fd15f34fd0a88c3a293139376dcce43f7733ac4f008ef96f0e5fa"
+    },
+    {
+      "path": "compare_probe.cpp",
+      "sha256": "a662a4c05b278da0c8771881eb0c041d0c3a2331f6f13b8a2414f321573fe19d"
+    },
+    {
+      "path": "probe_cu6_normal.json",
+      "sha256": "cc80b1c7712962b727b09572318effc1f8b009c37f5586f6abe1121f7399ed75"
+    },
+    {
+      "path": "probe_cu6_retained.json",
+      "sha256": "0db61fc8b77c85fd25b242972cfe655cd8ef0bac4b30bebcd62e54bb83b79fc1"
+    },
+    {
+      "path": "probe_cu6mt_normal.json",
+      "sha256": "5a296458c30790d069e309a8fb24b005457b9e7cbfcefdd75cf74aec45019e3a"
+    },
+    {
+      "path": "probe_cu6mt_retained.json",
+      "sha256": "fa982d287d68c30e0c87541807484da02d4dff577925c3ac6bac92db79c3acee"
+    }
+  ],
+  "products": {
+    "cu5": {
+      "translation_cases": [
+        {
+          "input_wrap_shift_x": 0,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            0
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 1,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            1
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 2,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            2
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 24,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            24
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 25,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            25
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 26,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            26
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        },
+        {
+          "input_wrap_shift_x": 31,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            31
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        },
+        {
+          "input_wrap_shift_x": -25,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            -25
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": -26,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            -26
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        }
+      ],
+      "centroid_gate_cases": [
+        {
+          "axis": "x",
+          "input_shift": 0,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 1,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            60,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            61,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            62,
+            45
+          ],
+          "return": -1
+        },
+        {
+          "axis": "x",
+          "input_shift": -2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            57,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": -3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            56,
+            45
+          ],
+          "return": -1
+        },
+        {
+          "axis": "y",
+          "input_shift": 0,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 1,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            46
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            48
+          ],
+          "return": -1
+        },
+        {
+          "axis": "y",
+          "input_shift": -2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            43
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": -3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            42
+          ],
+          "return": -1
+        }
+      ],
+      "constant_cases": [
+        {
+          "gray": 0,
+          "centroid": [
+            63,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "gray": 100,
+          "centroid": [
+            63,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "gray": 255,
+          "centroid": [
+            -1,
+            -1
+          ],
+          "return": 1
+        }
+      ],
+      "sobel_cases": [
+        {
+          "stripe_amplitude": 0,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 8,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 12,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 16,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 18,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 20,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 24,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 30,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 32,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 40,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 64,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 128,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 255,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        }
+      ]
+    },
+    "cu6": {
+      "translation_cases": [
+        {
+          "input_wrap_shift_x": 0,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            0
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 1,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            1
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 2,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            2
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 24,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            24
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 25,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            25
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 26,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            26
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        },
+        {
+          "input_wrap_shift_x": 31,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            31
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        },
+        {
+          "input_wrap_shift_x": -25,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            -25
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": -26,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            -26
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        }
+      ],
+      "centroid_gate_cases": [
+        {
+          "axis": "x",
+          "input_shift": 0,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 1,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            60,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            61,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            62,
+            45
+          ],
+          "return": -1
+        },
+        {
+          "axis": "x",
+          "input_shift": -2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            57,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": -3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            56,
+            45
+          ],
+          "return": -1
+        },
+        {
+          "axis": "y",
+          "input_shift": 0,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 1,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            46
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            48
+          ],
+          "return": -1
+        },
+        {
+          "axis": "y",
+          "input_shift": -2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            43
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": -3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            42
+          ],
+          "return": -1
+        }
+      ],
+      "constant_cases": [
+        {
+          "gray": 0,
+          "centroid": [
+            63,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "gray": 100,
+          "centroid": [
+            63,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "gray": 255,
+          "centroid": [
+            -1,
+            -1
+          ],
+          "return": 1
+        }
+      ],
+      "sobel_cases": [
+        {
+          "stripe_amplitude": 0,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 8,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 12,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 16,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 18,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 20,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 24,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 30,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 12096,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0.984375,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 32,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 40,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 64,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 128,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 255,
+          "releases": 8,
+          "reduced_size": [
+            128,
+            96
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 12096,
+          "signed_ratio": 0,
+          "return": 1
+        }
+      ]
+    },
+    "cu6mt": {
+      "translation_cases": [
+        {
+          "input_wrap_shift_x": 0,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            0
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 1,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            1
+          ],
+          "peak_mod_squared": 16353238.9703179,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 2,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            2
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 24,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            24
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 25,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            25
+          ],
+          "peak_mod_squared": 16353238.9703179,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": 26,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            26
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        },
+        {
+          "input_wrap_shift_x": 31,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            31
+          ],
+          "peak_mod_squared": 16353238.9703179,
+          "return": -1
+        },
+        {
+          "input_wrap_shift_x": -25,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            -25
+          ],
+          "peak_mod_squared": 16353238.9703179,
+          "return": 1
+        },
+        {
+          "input_wrap_shift_x": -26,
+          "centroid_a": [
+            63,
+            47
+          ],
+          "centroid_b": [
+            63,
+            47
+          ],
+          "peak_shift_yx": [
+            0,
+            -26
+          ],
+          "peak_mod_squared": 16353240.944885254,
+          "return": -1
+        }
+      ],
+      "centroid_gate_cases": [
+        {
+          "axis": "x",
+          "input_shift": 0,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 1,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            60,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            61,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": 3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            62,
+            45
+          ],
+          "return": -1
+        },
+        {
+          "axis": "x",
+          "input_shift": -2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            57,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "x",
+          "input_shift": -3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            56,
+            45
+          ],
+          "return": -1
+        },
+        {
+          "axis": "y",
+          "input_shift": 0,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            45
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 1,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            46
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": 3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            48
+          ],
+          "return": -1
+        },
+        {
+          "axis": "y",
+          "input_shift": -2,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            43
+          ],
+          "return": 1
+        },
+        {
+          "axis": "y",
+          "input_shift": -3,
+          "tolerance": 2,
+          "centroid_a": [
+            59,
+            45
+          ],
+          "centroid_b": [
+            59,
+            42
+          ],
+          "return": -1
+        }
+      ],
+      "constant_cases": [
+        {
+          "gray": 0,
+          "centroid": [
+            63,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "gray": 100,
+          "centroid": [
+            63,
+            47
+          ],
+          "return": 1
+        },
+        {
+          "gray": 255,
+          "centroid": [
+            -1,
+            -1
+          ],
+          "return": 1
+        }
+      ],
+      "sobel_cases": [
+        {
+          "stripe_amplitude": 0,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 8,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 12,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 16,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 0,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 18,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 798,
+          "unsigned_gt70_count": 798,
+          "signed_ratio": 0.18421052631578946,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 20,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 798,
+          "unsigned_gt70_count": 798,
+          "signed_ratio": 0.18421052631578946,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 24,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 1254,
+          "unsigned_gt70_count": 1254,
+          "signed_ratio": 0.2894736842105263,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 30,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 1254,
+          "unsigned_gt70_count": 1254,
+          "signed_ratio": 0.2894736842105263,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 32,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 456,
+          "unsigned_gt70_count": 1254,
+          "signed_ratio": 0.10526315789473684,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 40,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 456,
+          "unsigned_gt70_count": 1710,
+          "signed_ratio": 0.10526315789473684,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 64,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 1710,
+          "signed_ratio": 0,
+          "return": 1
+        },
+        {
+          "stripe_amplitude": 128,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 456,
+          "unsigned_gt70_count": 2166,
+          "signed_ratio": 0.10526315789473684,
+          "return": 0
+        },
+        {
+          "stripe_amplitude": 255,
+          "releases": 8,
+          "reduced_size": [
+            76,
+            57
+          ],
+          "signed_71_127_count": 0,
+          "unsigned_gt70_count": 2166,
+          "signed_ratio": 0,
+          "return": 1
+        }
+      ]
+    }
+  }
+}

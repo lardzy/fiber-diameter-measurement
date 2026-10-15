@@ -1,0 +1,881 @@
+{
+  "format": 3,
+  "revision": "final-r4",
+  "delivery_status": "frozen_package_validation_complete_full_motion_ui_performance_and_soak_separate",
+  "date": "2026-10-15",
+  "version": "0.4.7",
+  "scope": "internal-full-without-area-models",
+  "source": {
+    "destination": "C:\\tmp\\fdm-cu-live-final-r4-20261015",
+    "files": 1008,
+    "zip_sha256": "112b0b0f8c2670c673ebd62052b03f7aa4029615a5cd928782221a0825548c61",
+    "manifest_sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+    "native_source_sha256": "b22a7b134aadbafc1fe91e570c027f62bbdd335620d58c279f89d524eb9b44dc",
+    "old_r1_manifest_sha256": "33d042eb149cc37c2608c459f84ec5c4739f5ea2d649c0cb19ad4dc9448a9564",
+    "runtime_and_reference_read_only_reuse": "C:\\tmp\\fdm-cu-live-20261015",
+    "http_server_stopped": true,
+    "previous_revision": "final-r3",
+    "previous_manifest_sha256": "dbe309b7dfcfd4f731581c583acb5b1d4718be018c3b4e850ccf242947135ef5",
+    "production_delta": [
+      "native/kernels.cpp"
+    ]
+  },
+  "source_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+  "source_branch": "lard/cu-live-measurement",
+  "source_has_uncommitted_changes": true,
+  "source_manifest": {
+    "path": "build/cu-live-windows-final-r4/source-manifest.json",
+    "sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+    "size": 187362
+  },
+  "source_delta_from_r3": {
+    "path": "build/cu-live-windows-final-r4/source-delta-from-r3.json",
+    "sha256": "435bc83897fc48023b386ebbc58e6bb94c9d905dcb3a3a6da96ad3404ca9e88b",
+    "size": 14813
+  },
+  "production_change": "Only two std::isfinite(double) calls in native motion peak replaced by existing strict IEEE finite_distance(double); numeric conversion, magnitude arithmetic and scan order unchanged.",
+  "r4_correctness": {
+    "prepare": {
+      "revision": "final-r4",
+      "phase": "prepare-only",
+      "ok": true,
+      "source": {
+        "destination": "C:\\tmp\\fdm-cu-live-final-r4-20261015",
+        "files": 1008,
+        "zip_sha256": "112b0b0f8c2670c673ebd62052b03f7aa4029615a5cd928782221a0825548c61",
+        "manifest_sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+        "native_source_sha256": "b22a7b134aadbafc1fe91e570c027f62bbdd335620d58c279f89d524eb9b44dc",
+        "old_r1_manifest_sha256": "33d042eb149cc37c2608c459f84ec5c4739f5ea2d649c0cb19ad4dc9448a9564",
+        "runtime_and_reference_read_only_reuse": "C:\\tmp\\fdm-cu-live-20261015",
+        "http_server_stopped": true,
+        "previous_revision": "final-r3",
+        "previous_manifest_sha256": "dbe309b7dfcfd4f731581c583acb5b1d4718be018c3b4e850ccf242947135ef5",
+        "production_delta": [
+          "native/kernels.cpp"
+        ]
+      },
+      "native_build_info": {
+        "api_version": 1,
+        "source_sha256": "b22a7b134aadbafc1fe91e570c027f62bbdd335620d58c279f89d524eb9b44dc",
+        "python_abi": "cpython-312",
+        "python_version": "3.12.13",
+        "pybind11_version": "3.0.4",
+        "build_type": "release",
+        "cpp_standard": 201703,
+        "compiler": "MSVC 1944"
+      },
+      "native_selfcheck_revision": 3,
+      "native_selfcheck_cases": 16,
+      "native_tests": {
+        "passed": 482,
+        "subtests": 145,
+        "seconds": 13.08
+      },
+      "manual": {
+        "cases": 246,
+        "passed": 246,
+        "positive": 192,
+        "positive_bits_equal": 192,
+        "max_absolute_difference_px": 0
+      },
+      "motion": {
+        "cases": 111,
+        "passed": 111
+      },
+      "automatic": {
+        "equal": 175,
+        "capacity_extension": 2,
+        "different": 0,
+        "error": 0
+      },
+      "binaries": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-final-r3-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "size": 419328,
+          "sha256": "f632ac9f98181bf596f33cc05272210c1de7f3db7a2f2e4d70e3021acbd97379"
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "size": 419328,
+          "sha256": "d03b20c350999676300a3aa74dd2e22c36d03f27cb87cb0c08ce493157918e69"
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\src\\fdm\\_native\\_windows_capture.cp312-win_amd64.pyd",
+          "size": 214016,
+          "sha256": "298b113f6aff6906b12bbd0c25bef7ef150a59ce1e753fe21eae7431acad8b8f"
+        }
+      ],
+      "remaining_processes": [],
+      "performance_executed": false,
+      "packaging_executed": false,
+      "transport_incident": "Parallels255 while uploading the golden-launcher: retried identical task auxiliary only; no test/production failure; existing successful native/motion tests not rerun."
+    },
+    "report": {
+      "path": "build/cu-live-windows-final-r4/prepare-result.json",
+      "sha256": "d6a7b104970876c65b930f6671ffc42e705792f2e39b00e393c000f1f7c3eb7d",
+      "size": 2613
+    },
+    "pytest_xml": {
+      "path": "build/cu-live-windows-final-r4/native-motion-final-r4.xml",
+      "sha256": "077ac2fc126f3655ea55765d99b83cce6cd6df331adcbe24a85a493aa7e052c9",
+      "size": 71699
+    },
+    "manual": {
+      "path": "build/cu-live-windows-final-r4/manual-final-r4.json",
+      "sha256": "b15632af0824adfd45fdf175c6b0dad9a0877117040eca545c942a7108e7dd41",
+      "size": 316799
+    },
+    "motion": {
+      "path": "build/cu-live-windows-final-r4/motion-prepaired-final-r4.json",
+      "sha256": "2c8a60786e4b1167787b613e5e0d56efb09fc7578eaa43a223d9adc007e1bcfd",
+      "size": 34437
+    },
+    "automatic": {
+      "path": "build/cu-live-windows-final-r4/automatic-final-r4.json",
+      "sha256": "9dbc735cd628a84a582ef65dc3bf8e283150e0f070b4e9b9b4d017bc43ebf6b3",
+      "size": 86091
+    }
+  },
+  "historical_full_regression_basis": {
+    "revision": "final-r3",
+    "not_rerun_on_r4": true,
+    "reason": "All Python/UI/PNG/statistics source bytes unchanged; R4 runs native/motion and rebuilt-module service/golden regression.",
+    "result": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/full-regression-final-r3.json",
+      "sha256": "d9bf9725b1edca1bd308bd24665585bd066492f596caf6aaa3ec5771cc6fede5",
+      "size": 1563
+    },
+    "summary": {
+      "revision": "r3",
+      "completed": true,
+      "passed": 4606,
+      "subtests_passed": 1650,
+      "failed": 5,
+      "warnings": 1,
+      "seconds": 457.25,
+      "failed_cases": [
+        "FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]",
+        "FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]",
+        "FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down",
+        "FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults",
+        "SUBFAILED(size=(1536, 864)) tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable"
+      ],
+      "same_failed_cases_as_r2": true,
+      "baseline_prechange_verification": "prechange-ui-baseline.log and baseline-snapshot-verification.json in this directory",
+      "log_sha256": "115c237c0c7ec1f22a7cb56aab377ffb7d7eb601e9ebe19c53c4dc3dbfe253d6",
+      "qt_diagnostic_plugin": "read-only per-file/widget counter and per-test lifecycle tracing; no event processing or cleanup added",
+      "faulthandler_dump_only": true,
+      "theme_test_finished_passed_after_diagnostic_dump": true,
+      "limits": [
+        "Earlier Qt native mutex hang root cause remains unproven; this completed R3 run does not establish that prior hang was fixed.",
+        "Five pre-existing failures remain; not an all-green full suite."
+      ]
+    },
+    "log": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/full-regression-final-r3.log",
+      "sha256": "115c237c0c7ec1f22a7cb56aab377ffb7d7eb601e9ebe19c53c4dc3dbfe253d6",
+      "size": 627099
+    }
+  },
+  "paired_peak_microbenchmark": {
+    "scope": "peak-only paired validation, not whole motion/UI acceptance",
+    "macos": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/peak-pair-macos-final-r4.json",
+      "sha256": "6dd3f89ba6087de3dca4de25ea9601453ef2f6fe639e706f3f5dcf617f5a41c4",
+      "size": 237269
+    },
+    "windows": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/peak-pair-windows-final-r4.json",
+      "sha256": "ec428117cc7d6c99b6bc5e752774e74febc7600293e9f1bdf57b9fce4022d4e6",
+      "size": 247994
+    }
+  },
+  "profiles": [
+    {
+      "profile": "core",
+      "ok": true,
+      "clean_build": true,
+      "file_count": 4731,
+      "manifest": {
+        "path": "build/cu-live-windows-final-r4/core-release-manifest-final-r4.json",
+        "sha256": "c1520046612e0315f642cd25fc0521c02e6ec4ca0633c755de75e2f60f6793b9",
+        "size": 801317
+      },
+      "selfcheck": {
+        "path": "build/cu-live-windows-final-r4/core-selfcheck-final-r4.json",
+        "sha256": "076e5f0f7a8d0bfc2e9d91eb7bc6bf3180f9a1d1297049c076bff72899be611b",
+        "size": 21254
+      },
+      "log": {
+        "path": "build/cu-live-windows-final-r4/core-onedir-final-r4.log",
+        "sha256": "69a653f4ce86081291d51f136a0ed1e63ebfd8c8ab0e10a80cf6e09ab121944d",
+        "size": 208589
+      },
+      "actual_pyz_code_check": {
+        "ok": true,
+        "exe": "dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+        "exe_sha256": "13158c9a1a8a568d86b2d73df31fd58233982043c1c3ed4586014a5e650f4662",
+        "checks": [
+          {
+            "module": "fdm.live_experiment.models",
+            "source_sha256": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.ui.live_experiment_workspace",
+            "source_sha256": "ef6903bcc9c23e7628c1cb6b590639ad982150afbc460a44761a9aa84799d4fc",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.motion",
+            "source_sha256": "bb66cdc0171312b4740aeb2ae4b2025a98fe55a89b726716173cfba91daa3e2a",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.controller",
+            "source_sha256": "31670aa913961500c3688bc0ffa1984827f5de93e219087486ccef92d2d7db0a",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.frames",
+            "source_sha256": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.sources",
+            "source_sha256": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.services.cu_live_self_check",
+            "source_sha256": "1ddc9ce397fb83c2c90df9c3065da524237327bdbd897ba7c122084286cc8f78",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.png_stream",
+            "source_sha256": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.evidence",
+            "source_sha256": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.project_assets",
+            "source_sha256": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.ui.project_session_controller",
+            "source_sha256": "cefaaea74c62c90f75ed8d10f3b606064d23312f8728e329ee3e676f6ee9601b",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          }
+        ],
+        "normalization": "Only co_filename ignored; bytecode, constants, nested code, names, flags, arguments, exception/line tables and first lines all compared."
+      },
+      "live_checks": {
+        "cases": {
+          "content_deferred_rebuild": true,
+          "content_formula": true,
+          "content_width_redo": true,
+          "content_width_undo": true,
+          "evidence_leases_released": true,
+          "evidence_png_bgr": true,
+          "evidence_png_bgra": true,
+          "evidence_png_gray": true,
+          "field_motion": true,
+          "manual_native": true,
+          "multiscale_native": true,
+          "project_asset_rebase": true,
+          "project_roundtrip": true,
+          "traditional_native": true,
+          "windows_capture_build": true,
+          "windows_capture_import": true
+        },
+        "hardware_capture_tested": false,
+        "native_build_info": {
+          "api_version": 1,
+          "build_type": "release",
+          "compiler": "MSVC 1944",
+          "cpp_standard": 201703,
+          "pybind11_version": "3.0.4",
+          "python_abi": "cpython-312",
+          "python_version": "3.12.13",
+          "source_sha256": "b22a7b134aadbafc1fe91e570c027f62bbdd335620d58c279f89d524eb9b44dc"
+        },
+        "ok": true,
+        "revision": 3
+      },
+      "native_binaries": [
+        {
+          "path": "fdm/_native/_kernels.cp312-win_amd64.pyd",
+          "size": 419328,
+          "sha256": "d03b20c350999676300a3aa74dd2e22c36d03f27cb87cb0c08ce493157918e69"
+        },
+        {
+          "path": "fdm/_native/_windows_capture.cp312-win_amd64.pyd",
+          "size": 214016,
+          "sha256": "298b113f6aff6906b12bbd0c25bef7ef150a59ce1e753fe21eae7431acad8b8f"
+        }
+      ],
+      "included_components": [
+        "content-templates"
+      ],
+      "excluded_components": []
+    },
+    {
+      "profile": "full",
+      "ok": true,
+      "clean_build": true,
+      "file_count": 4768,
+      "manifest": {
+        "path": "build/cu-live-windows-final-r4/full-release-manifest-final-r4.json",
+        "sha256": "75375ee945c05f11dc7a59241e455b34d7da342a3bd11a6606b87ae7f7f739f8",
+        "size": 809917
+      },
+      "selfcheck": {
+        "path": "build/cu-live-windows-final-r4/full-selfcheck-final-r4.json",
+        "sha256": "f3185283750dd42c9cdebcded9a71862b734fa861cba00a5295745757529f869",
+        "size": 22377
+      },
+      "log": {
+        "path": "build/cu-live-windows-final-r4/full-onedir-final-r4.log",
+        "sha256": "c06eb674000e002f53742960fbd38336319da05046db3b20fc4c7212a80aa10b",
+        "size": 392722
+      },
+      "actual_pyz_code_check": {
+        "ok": true,
+        "exe": "dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+        "exe_sha256": "14184c6f4829b412d4a17ff95e2ddf19cf305ddf954de8691fc5a036ab4c4276",
+        "checks": [
+          {
+            "module": "fdm.live_experiment.models",
+            "source_sha256": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.ui.live_experiment_workspace",
+            "source_sha256": "ef6903bcc9c23e7628c1cb6b590639ad982150afbc460a44761a9aa84799d4fc",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.motion",
+            "source_sha256": "bb66cdc0171312b4740aeb2ae4b2025a98fe55a89b726716173cfba91daa3e2a",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.controller",
+            "source_sha256": "31670aa913961500c3688bc0ffa1984827f5de93e219087486ccef92d2d7db0a",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.frames",
+            "source_sha256": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.sources",
+            "source_sha256": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.services.cu_live_self_check",
+            "source_sha256": "1ddc9ce397fb83c2c90df9c3065da524237327bdbd897ba7c122084286cc8f78",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.png_stream",
+            "source_sha256": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.evidence",
+            "source_sha256": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.live_experiment.project_assets",
+            "source_sha256": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          },
+          {
+            "module": "fdm.ui.project_session_controller",
+            "source_sha256": "cefaaea74c62c90f75ed8d10f3b606064d23312f8728e329ee3e676f6ee9601b",
+            "actual_pyz_equals_compiled_source_ignoring_filename": true
+          }
+        ],
+        "normalization": "Only co_filename ignored; bytecode, constants, nested code, names, flags, arguments, exception/line tables and first lines all compared."
+      },
+      "live_checks": {
+        "cases": {
+          "content_deferred_rebuild": true,
+          "content_formula": true,
+          "content_width_redo": true,
+          "content_width_undo": true,
+          "evidence_leases_released": true,
+          "evidence_png_bgr": true,
+          "evidence_png_bgra": true,
+          "evidence_png_gray": true,
+          "field_motion": true,
+          "manual_native": true,
+          "multiscale_native": true,
+          "project_asset_rebase": true,
+          "project_roundtrip": true,
+          "traditional_native": true,
+          "windows_capture_build": true,
+          "windows_capture_import": true
+        },
+        "hardware_capture_tested": false,
+        "native_build_info": {
+          "api_version": 1,
+          "build_type": "release",
+          "compiler": "MSVC 1944",
+          "cpp_standard": 201703,
+          "pybind11_version": "3.0.4",
+          "python_abi": "cpython-312",
+          "python_version": "3.12.13",
+          "source_sha256": "b22a7b134aadbafc1fe91e570c027f62bbdd335620d58c279f89d524eb9b44dc"
+        },
+        "ok": true,
+        "revision": 3
+      },
+      "native_binaries": [
+        {
+          "path": "fdm/_native/_kernels.cp312-win_amd64.pyd",
+          "size": 419328,
+          "sha256": "d03b20c350999676300a3aa74dd2e22c36d03f27cb87cb0c08ce493157918e69"
+        },
+        {
+          "path": "fdm/_native/_windows_capture.cp312-win_amd64.pyd",
+          "size": 214016,
+          "sha256": "298b113f6aff6906b12bbd0c25bef7ef150a59ce1e753fe21eae7431acad8b8f"
+        }
+      ],
+      "included_components": [
+        "content-templates"
+      ],
+      "excluded_components": [
+        "area-models"
+      ]
+    }
+  ],
+  "installer": {
+    "size": 398816084,
+    "sha256": "6faadecbd90c94a6cb3252dc68fb629e481e6a5408e7d12d4f4fb138b9eaca9a",
+    "name": "fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "guest_path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "host_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/windows-release/final-r4/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "transfer_resumed_at": 0,
+    "chunk_bytes": 2097152,
+    "whole_file_sha256_verified": true
+  },
+  "extracted_payload": {
+    "ok": true,
+    "validation_kind": "same-installer-extracted-payload-not-registered-install",
+    "installer": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "installer_sha256": "6faadecbd90c94a6cb3252dc68fb629e481e6a5408e7d12d4f4fb138b9eaca9a",
+    "extracted_app": "C:\\tmp\\fdm-cu-live-unpacked-final-r4-20261015\\{app}",
+    "manifest_sha256": "75375ee945c05f11dc7a59241e455b34d7da342a3bd11a6606b87ae7f7f739f8",
+    "files_verified": 4768,
+    "frozen_final_wording_checks": {
+      "latest_measurement_label": true,
+      "pending_and_failed_operation_tooltip": true,
+      "obsolete_last_valid_record_absent": true
+    },
+    "private_content_templates": [
+      "runtime\\content-templates\\-26-中空度原始记录（原号902）-集团-2023.6.13.xlsm",
+      "runtime\\content-templates\\-纤维平均直径试验记录(GBT 36422).xlsm",
+      "runtime\\content-templates\\-面积法-定量试验原始记录-新系统.xlsm",
+      "runtime\\content-templates\\sheet1.xlsm"
+    ],
+    "excluded_components": [
+      "area-models"
+    ],
+    "selfcheck_report": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-validation\\extracted-installer-selfcheck-final.json",
+    "selfcheck_sha256": "93818f65b5b62028448da7b61bbf98a06524843b96ec3f347df92d4fb9ea637e",
+    "existing_install_record_before": [
+      {
+        "hive": "HKLM",
+        "view": "64",
+        "values": {
+          "DisplayVersion": "0.4.7",
+          "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+          "UninstallString": "\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe\""
+        }
+      }
+    ],
+    "existing_install_record_after": [
+      {
+        "hive": "HKLM",
+        "view": "64",
+        "values": {
+          "DisplayVersion": "0.4.7",
+          "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+          "UninstallString": "\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe\""
+        }
+      }
+    ],
+    "existing_installation_unchanged": true
+  },
+  "extracted_code_check": {
+    "ok": true,
+    "exe": "C:\\tmp\\fdm-cu-live-unpacked-final-r4-20261015\\{app}\\FiberDiameterMeasurement.exe",
+    "exe_sha256": "14184c6f4829b412d4a17ff95e2ddf19cf305ddf954de8691fc5a036ab4c4276",
+    "checks": [
+      {
+        "module": "fdm.live_experiment.models",
+        "source_sha256": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.ui.live_experiment_workspace",
+        "source_sha256": "ef6903bcc9c23e7628c1cb6b590639ad982150afbc460a44761a9aa84799d4fc",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.motion",
+        "source_sha256": "bb66cdc0171312b4740aeb2ae4b2025a98fe55a89b726716173cfba91daa3e2a",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.controller",
+        "source_sha256": "31670aa913961500c3688bc0ffa1984827f5de93e219087486ccef92d2d7db0a",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.frames",
+        "source_sha256": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.sources",
+        "source_sha256": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.services.cu_live_self_check",
+        "source_sha256": "1ddc9ce397fb83c2c90df9c3065da524237327bdbd897ba7c122084286cc8f78",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.png_stream",
+        "source_sha256": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.evidence",
+        "source_sha256": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.live_experiment.project_assets",
+        "source_sha256": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      },
+      {
+        "module": "fdm.ui.project_session_controller",
+        "source_sha256": "cefaaea74c62c90f75ed8d10f3b606064d23312f8728e329ee3e676f6ee9601b",
+        "actual_pyz_equals_compiled_source_ignoring_filename": true
+      }
+    ],
+    "normalization": "Only co_filename ignored; bytecode, constants, nested code, names, flags, arguments, exception/line tables and first lines all compared."
+  },
+  "actual_extracted_gui": {
+    "schema": 2,
+    "started_at": "2026-10-15T06:35:49.0849006+08:00",
+    "exe": "C:\\tmp\\fdm-cu-live-unpacked-final-r4-20261015\\{app}\\FiberDiameterMeasurement.exe",
+    "run_directory": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-063549-cd0b317ea5c046449f1a8fd462c05686",
+    "config": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-063549-cd0b317ea5c046449f1a8fd462c05686\\isolated-config",
+    "pid": 11920,
+    "isolated_empty_project_verified": true,
+    "main_window": true,
+    "experiment_menu": true,
+    "live_experiment_entry": true,
+    "live_window": true,
+    "key_controls_verified": true,
+    "workspace_closed": true,
+    "graceful_exit": true,
+    "forced_cleanup": false,
+    "exit_code": 0,
+    "ok": true,
+    "errors": [],
+    "key_controls": [
+      {
+        "name": "当前图片",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "本机相机",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "CU 实时画面",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "分析当前视场",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "当前视场",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "试验历史（全部操作者）",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "全图候选",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "改名",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "撤销",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "重做",
+        "present": true,
+        "visible": true
+      },
+      {
+        "name": "保存项目",
+        "present": true,
+        "visible": true
+      }
+    ]
+  },
+  "source_qt_ui_probe": {
+    "scope": "synthetic_source_qt_not_installed_program",
+    "result": {
+      "platform": "Windows-11-10.0.26200-SP0",
+      "qt_platform": "windows",
+      "limits": [
+        "Synthetic static image and QWidget rendering, not a real CU camera stream."
+      ],
+      "sizes": [
+        {
+          "requested": [
+            1280,
+            720
+          ],
+          "actual": [
+            1280,
+            720
+          ],
+          "device_pixel_ratio": 2.0,
+          "category_buttons_visible": {
+            "wool": true,
+            "cashmere": true,
+            "goat_hair": true,
+            "alpaca": true,
+            "rabbit": true,
+            "coarse_rabbit": true,
+            "yak_down": true,
+            "yak_hair": true,
+            "camel_down": true
+          },
+          "keyboard_mode_visible": true,
+          "screenshot": "cu-workspace-1280x720.png"
+        },
+        {
+          "requested": [
+            1330,
+            900
+          ],
+          "actual": [
+            1293,
+            802
+          ],
+          "device_pixel_ratio": 2.0,
+          "category_buttons_visible": {
+            "wool": true,
+            "cashmere": true,
+            "goat_hair": true,
+            "alpaca": true,
+            "rabbit": true,
+            "coarse_rabbit": true,
+            "yak_down": true,
+            "yak_hair": true,
+            "camel_down": true
+          },
+          "keyboard_mode_visible": true,
+          "screenshot": "cu-workspace-1330x900.png"
+        }
+      ],
+      "checks": {
+        "row_count_preserves_selected_category": true,
+        "last_measurement_has_real_operation_identity": true,
+        "right_menu_is_nonmodal": true,
+        "right_menu_obeys_after_selection": true,
+        "operator_rename_preserves_identity": true
+      },
+      "ok": true
+    },
+    "files": [
+      {
+        "path": "build/cu-live-windows-final-r4/ui-probe-final-r4/cu-workspace-1280x720.png",
+        "sha256": "8cc471f4f85005931cd0117948cf3e0fa507e5649fbaf5d2b5e67d033005e230",
+        "size": 139191
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/ui-probe-final-r4/cu-workspace-1330x900.png",
+        "sha256": "7cff168bb23dcbebf41ca428ec37c5f59ae7d66b466c4f55a2e49683e9fa07d0",
+        "size": 145267
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/ui-probe-final-r4/ui-probe.json",
+        "sha256": "4b137612d4573bb9f8b14c734b673c4b0e06c6d34d5dc691c1736819949cf5c5",
+        "size": 1561
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/ui-probe-final-r4/visual-review.json",
+        "sha256": "4f4fd2357f732786aced5ed349b56decec0d8bb52b150d8dc668e72d0af2cac7",
+        "size": 625
+      }
+    ]
+  },
+  "delivery_ui_image": {
+    "image": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/ui-windows-1280x720-r4.png",
+      "sha256": "8cc471f4f85005931cd0117948cf3e0fa507e5649fbaf5d2b5e67d033005e230",
+      "size": 139191
+    },
+    "identity": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/ui-windows-1280x720-r4.identity.json",
+      "sha256": "13dc5fa37989420b0f11e075404549b6e94bfbae118663d884b9a88a77664869",
+      "size": 1142
+    }
+  },
+  "validation_tools_overlay": {
+    "source_manifest_unchanged": true,
+    "tools": [
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_windows_final_r4.py",
+        "sha256": "f14cc1b588c319a7475b9caf10e3bd3b53800948248e9d00c229b3b58811f689",
+        "size": 20759
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_windows_r4_release.py",
+        "sha256": "75331dc32e9a19973f5f57f79748ad75e65678c535be2481d2346393c6785326",
+        "size": 2415
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_validate_frozen_code_r4.py",
+        "sha256": "764f70c80b0209d68d5c37d5a3509ae7e5861154f519a4c3d198274b3fc3f734",
+        "size": 2442
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_validate_extracted_payload_r4.py",
+        "sha256": "667233ce8fde52ac8497fec0930d7d2aee3c4cf5451bcbcea22eed70b5c3f918",
+        "size": 5298
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_probe_frozen_gui_r4.ps1",
+        "sha256": "d6c7cb3914088efeb0c273add722d96e27bc6ba850b64a2d844485f1e5e30271",
+        "size": 19978
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_fetch_windows_artifact_r4.py",
+        "sha256": "9d3380fe8088f1c6d57330d60fa8218e8010fb7de304a3a74562460949e69c00",
+        "size": 4733
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_report_final_r4.py",
+        "sha256": "1c6230438ae6eaca3648a5be6abab16ad5d251f934857e2cc46e42f1c4768f20",
+        "size": 12777
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/validation-tools/cu_release_r4_prepared.md",
+        "sha256": "9bde37375ffccd3940de13ddff4d554f74cd28acd0f68253d4e1cde536e5e5d6",
+        "size": 3541
+      }
+    ],
+    "gui_parse": {
+      "errors": [],
+      "tokens": 2937,
+      "script_sha256": "d6c7cb3914088efeb0c273add722d96e27bc6ba850b64a2d844485f1e5e30271"
+    },
+    "gui_evidence": [
+      {
+        "path": "build/cu-live-windows-final-r4/gui/01-main-before-menu-uia.json",
+        "sha256": "5d4dc368e164f0aa5c88eecbab9f7cde94a349aadc0590175270d0c12367d9fd",
+        "size": 270356
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/gui/02-after-entry-invocation-uia.json",
+        "sha256": "c3892f0b3748d4f1b1d8a312712023bd3c11737f046aa61838cdb6f8ac168faa",
+        "size": 522265
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/gui/03-live-workspace-ready-uia.json",
+        "sha256": "9bf630bf80895273e9b8497c0996e1a4dc8319f8c5a73612fcd65933acfe5faf",
+        "size": 522263
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/gui/04-after-workspace-close-uia.json",
+        "sha256": "5254ae5620140412db149356a781d4bcda774391e421b6f97ff2561ee01382cb",
+        "size": 270289
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/gui/05-unsaved-dialog-before-decision-uia.json",
+        "sha256": "713cf1b482ea200eb94519de7b246dcc72d56f332383eb3cae2d8f47789d1a31",
+        "size": 291777
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/gui/remaining-processes.json",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "size": 2
+      },
+      {
+        "path": "build/cu-live-windows-final-r4/gui/result.json",
+        "sha256": "49ec6da18510e03f7f500aaa41ba523b5b8abd92bddb62b34f802c87d0368e13",
+        "size": 39198
+      }
+    ]
+  },
+  "previous_r3_preserved": {
+    "report": {
+      "path": "docs/validation/cu_windows_release_final_r3_20261015.json",
+      "sha256": "267aa64b241482bb6724d7250d918282fc491961848b03b377bfb3bb4fd209c2",
+      "size": 31771
+    },
+    "installer": {
+      "path": "build/cu-live-measurement/windows-release/final-r3/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+      "sha256": "e341089d859e2db05213dba2c10b16be40150e531fa2dbb6a86381fea3533058",
+      "size": 398844521,
+      "hash_source": "verified_transfer_evidence"
+    },
+    "source_manifest": {
+      "path": "build/cu-live-windows-final-r3/source-manifest.json",
+      "sha256": "dbe309b7dfcfd4f731581c583acb5b1d4718be018c3b4e850ccf242947135ef5",
+      "size": 181434
+    },
+    "native_reference": {
+      "path": "C:\\tmp\\fdm-cu-live-final-r3-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+      "size": 419328,
+      "sha256": "f632ac9f98181bf596f33cc05272210c1de7f3db7a2f2e4d70e3021acbd97379",
+      "purpose": "preserved-r3-read-only-paired-reference"
+    }
+  },
+  "remaining_processes": [],
+  "boundaries": [
+    "Registered installation and shortcut/uninstall flows not executed; the exact installer payload is extracted, fully verified and actually launched while preserving existing AppId registration.",
+    "Real CU device video and Microview capture board still require actual hardware acceptance.",
+    "R3 full regression contains five reproduced baseline failures; not all green and not mislabelled as a fresh R4 full run.",
+    "Peak microbenchmark gains do not establish whole-motion/UI responsiveness or one-hour soak acceptance; separate reports carry those results."
+  ]
+}

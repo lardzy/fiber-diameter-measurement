@@ -1,0 +1,952 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "ARM64",
+    "processor": "ARMv8 (64-bit) Family 8 Model 0 Revision   0,  ",
+    "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+    "cpu_count": 4,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": null,
+      "psutil": "7.2.2"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 4,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": null,
+    "source_sha256": {
+      "native\\cu_automatic.cpp": "19d3f1535b208baa05cf59dc7019ff394f138ab3ed7eba9cd5cb6c6965ec58fa",
+      "native\\cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native\\cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native\\cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native\\kernels.cpp": "544be97bf4b53f6f1d5e58b99bc137cca8ea9f26d639693c2aceda0e0e39d37e",
+      "native\\windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src\\fdm\\live_experiment\\__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src\\fdm\\live_experiment\\capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src\\fdm\\live_experiment\\controller.py": "31670aa913961500c3688bc0ffa1984827f5de93e219087486ccef92d2d7db0a",
+      "src\\fdm\\live_experiment\\evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+      "src\\fdm\\live_experiment\\exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src\\fdm\\live_experiment\\frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+      "src\\fdm\\live_experiment\\models.py": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "src\\fdm\\live_experiment\\motion.py": "bb66cdc0171312b4740aeb2ae4b2025a98fe55a89b726716173cfba91daa3e2a",
+      "src\\fdm\\live_experiment\\persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src\\fdm\\live_experiment\\png_stream.py": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+      "src\\fdm\\live_experiment\\presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src\\fdm\\live_experiment\\project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+      "src\\fdm\\live_experiment\\sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src\\fdm\\live_experiment\\statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src\\fdm\\live_experiment\\window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src\\fdm\\services\\cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src\\fdm\\services\\cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+      "scripts/validation/soak_cu_workspace.py": "2ee6fa038d7fc16218b7a0ecfe2f443860ec6d1d1ce36b809e6f9a10db1f723e",
+      "src/fdm/ui/live_experiment_workspace.py": "ef6903bcc9c23e7628c1cb6b590639ad982150afbc460a44761a9aa84799d4fc"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "b22a7b134aadbafc1fe91e570c027f62bbdd335620d58c279f89d524eb9b44dc",
+      "python_abi": "cpython-312",
+      "python_version": "3.12.13",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "MSVC 1944"
+    },
+    "opencv_requested_threads": null,
+    "qt_platform": "windows",
+    "parallel_framework": [
+      "Parallel framework:            Concurrency"
+    ]
+  },
+  "parameters": {
+    "output": "build\\cu-live-workspace-hour-windows-final-r4.json",
+    "duration_seconds": 3600,
+    "minimum_accepted": 10000,
+    "frame_hz": 30,
+    "measurement_hz": 4,
+    "motion_interval_seconds": 10,
+    "size": 2048,
+    "save_images": true,
+    "evidence_dir": null,
+    "drain_timeout_seconds": 60,
+    "window_width": 1240,
+    "window_height": 840,
+    "qt_platform": "windows",
+    "opencv_threads": null
+  },
+  "limits": [
+    "Actual QTest input, QWidget/QPainter and event loop; physical display scan-out is not measured.",
+    "Existing sparse-stripe fixture and its vertical 12-pixel translation; no camera/CU hardware acceptance.",
+    "Frame budget includes two retained source arrays and next delivery; algorithm/Qt/PNG RSS reported separately.",
+    "Metric reservoirs are bounded; the production ledger and undo history intentionally retain accepted records.",
+    "Resource sampling covers active work and queue drain; post-run PNG verification and ledger reload are separate."
+  ],
+  "started_at_utc": "2026-10-14T22:56:56.404486+00:00",
+  "display": {
+    "window_size": [
+      1240,
+      840
+    ],
+    "canvas_size": [
+      845,
+      554
+    ],
+    "device_pixel_ratio": 2.0,
+    "logical_dpi": 96.0,
+    "screen_size": [
+      1291,
+      822
+    ]
+  },
+  "resources": {
+    "wall_seconds": 3600.0239982919957,
+    "process_cpu_seconds": 2815.71875,
+    "before": {
+      "process_cpu_seconds": 0.890625,
+      "python_threads": 4,
+      "rss_bytes": 236814336,
+      "native_threads": 21,
+      "children": [],
+      "children_rss_bytes": 0,
+      "total_rss_bytes": 236814336,
+      "children_cpu_seconds": 0,
+      "resource_provider": "psutil"
+    },
+    "after": {
+      "process_cpu_seconds": 2816.609375,
+      "python_threads": 6,
+      "rss_bytes": 320311296,
+      "native_threads": 19,
+      "children": [
+        {
+          "pid": 7444,
+          "name": "python.exe",
+          "rss_bytes": 59437056,
+          "cpu_seconds": 153.5,
+          "native_threads": 1
+        }
+      ],
+      "children_rss_bytes": 59437056,
+      "total_rss_bytes": 379748352,
+      "children_cpu_seconds": 153.5,
+      "resource_provider": "psutil"
+    },
+    "sampling_interval_ms": 100,
+    "sample_count": 33829,
+    "children_sampled_peaks": [
+      {
+        "pid": 7444,
+        "name": "python.exe",
+        "sampled_peak_rss_bytes": 150360064,
+        "maximum_observed_cpu_seconds": 153.5,
+        "sampled_peak_native_threads": 5
+      }
+    ],
+    "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+    "sampled_max_rss_bytes": 337174528,
+    "sampled_max_children_rss_bytes": 150360064,
+    "sampled_max_total_rss_bytes": 484700160,
+    "sampled_max_native_threads": 28,
+    "sampled_max_process_lifetime_peak_rss_bytes": null
+  },
+  "generated_during_run": 107999,
+  "frame_budget_peak_bytes": 60815361,
+  "motion_retained_bytes": 3413410,
+  "requested_seconds": 3600,
+  "active_seconds": 3600.0006845829994,
+  "drain_seconds": 0.019568250005249865,
+  "formal_one_hour_target": true,
+  "shape": [
+    1365,
+    2048,
+    3
+  ],
+  "fixture_kind": "sparse",
+  "translation_pixels": [
+    0,
+    12
+  ],
+  "motion_preflight": [
+    {
+      "frame_id": "preflight:1",
+      "sequence": 1,
+      "stable": false,
+      "reason": "appearance",
+      "centroid_delta": [
+        0,
+        2
+      ],
+      "translation": [
+        0,
+        4
+      ],
+      "changed_fraction": 0.1064226096484161
+    },
+    {
+      "frame_id": "preflight:1",
+      "sequence": 1,
+      "stable": false,
+      "reason": "appearance",
+      "centroid_delta": [
+        0,
+        -2
+      ],
+      "translation": [
+        0,
+        -4
+      ],
+      "changed_fraction": 0.1064226096484161
+    }
+  ],
+  "source_pool_sha256": [
+    "4bf3519511badeba7077011fff51c78f62ef6f44f2e35009d9cf076b5bc5a804",
+    "a4ebc2874f40459af97650386d0c948bac7d8d16172dd83b3053ad138ca8ca90"
+  ],
+  "source_retained_bytes": 16773120,
+  "acquisition_reserved_bytes": 25159680,
+  "distinct_painted_fps": 29.998883184242935,
+  "generated_fps": 29.999716517417802,
+  "counters": {
+    "phase": "cleanup",
+    "paint_count": 140777,
+    "distinct_paints": 107996,
+    "last_painted_sequence": 108002,
+    "attempt_slots": 14213,
+    "first_clicks": 14117,
+    "submitted": 14108,
+    "accepted": 14036,
+    "records_painted": 14036,
+    "generated": 108003,
+    "field_changes": 359,
+    "old_epoch_accepted": 0,
+    "old_scene_accepted": 0,
+    "unmapped_accepted": 0,
+    "wrong_width": 0,
+    "expected_motion_cancelled": 81,
+    "rejected_without_motion": 0,
+    "submitted_motion_cancelled": 72,
+    "submitted_rejected_other": 0,
+    "draft_motion_cancelled": 9,
+    "draft_lost_without_submission": 0,
+    "accepted_unpainted_due_motion": 0,
+    "accepted_unpainted_other": 0,
+    "transition_inputs": 359,
+    "transition_clear_events": 359,
+    "transition_completed": 359,
+    "unexpected_field_changes": 0,
+    "fatal": false
+  },
+  "metrics": {
+    "first_click_to_draft_paint": {
+      "count": 14108,
+      "p50_ms": 7.274604000485851,
+      "p95_ms": 12.999385199145763,
+      "p99_ms": 15.963840501863169,
+      "max_ms": 31.24516699972446,
+      "observations": 14108,
+      "exact_max_ms": 31.24516699972446,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "second_click_to_accept": {
+      "count": 14036,
+      "p50_ms": 3.5312919990246883,
+      "p95_ms": 13.482010501320474,
+      "p99_ms": 17.994272902069493,
+      "max_ms": 27.337291998264845,
+      "observations": 14036,
+      "exact_max_ms": 27.337291998264845,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "second_click_to_record_paint": {
+      "count": 14036,
+      "p50_ms": 14.820979000432999,
+      "p95_ms": 27.88025025074603,
+      "p99_ms": 32.52805165138852,
+      "max_ms": 48.48629200205323,
+      "observations": 14036,
+      "exact_max_ms": 48.48629200205323,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "accept_to_record_paint": {
+      "count": 14036,
+      "p50_ms": 11.034812499929103,
+      "p95_ms": 16.250020751613192,
+      "p99_ms": 18.59807520213507,
+      "max_ms": 35.42870799719822,
+      "observations": 14036,
+      "exact_max_ms": 35.42870799719822,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "compute_done_to_accept": {
+      "count": 14036,
+      "p50_ms": 2.724437501456123,
+      "p95_ms": 12.491166999097914,
+      "p99_ms": 16.937327751293182,
+      "max_ms": 26.58845899713924,
+      "observations": 14036,
+      "exact_max_ms": 26.58845899713924,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "canvas_paint_duration": {
+      "count": 100000,
+      "p50_ms": 3.1840205010666978,
+      "p95_ms": 4.932545200063031,
+      "p99_ms": 7.942721075014554,
+      "max_ms": 39.66987499734387,
+      "observations": 140777,
+      "exact_max_ms": 39.66987499734387,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "gui_publish_ms": {
+      "count": 14036,
+      "p50_ms": 0.8219580049626529,
+      "p95_ms": 1.1879579978995025,
+      "p99_ms": 2.1250455996778315,
+      "max_ms": 23.715875002380926,
+      "observations": 14036,
+      "exact_max_ms": 23.715875002380926,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "gui_publish_failed_ms": {
+      "count": 0,
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null,
+      "max_ms": null,
+      "observations": 0,
+      "exact_max_ms": 0.0,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "frame_age_at_first_paint": {
+      "count": 100000,
+      "p50_ms": 12.500250002631219,
+      "p95_ms": 22.6485026985756,
+      "p99_ms": 27.03518267015169,
+      "max_ms": 44.700583999656374,
+      "observations": 107996,
+      "exact_max_ms": 44.80833299749065,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "event_loop_gap": {
+      "count": 100000,
+      "p50_ms": 3.9950624995981343,
+      "p95_ms": 9.206059802272645,
+      "p99_ms": 14.470389584748766,
+      "max_ms": 40.81654199399054,
+      "observations": 773726,
+      "exact_max_ms": 56.64829200395616,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "source_snapshot_and_handoff": {
+      "count": 100000,
+      "p50_ms": 3.4813750025932677,
+      "p95_ms": 5.274643750453829,
+      "p99_ms": 7.0572271703349445,
+      "max_ms": 26.57675000227755,
+      "observations": 107999,
+      "exact_max_ms": 26.57675000227755,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_first_paint": {
+      "count": 359,
+      "p50_ms": 13.217583000368904,
+      "p95_ms": 24.14483809880039,
+      "p99_ms": 27.992601717633082,
+      "max_ms": 33.1902079997235,
+      "observations": 359,
+      "exact_max_ms": 33.1902079997235,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_motion_complete": {
+      "count": 359,
+      "p50_ms": 44.69095799868228,
+      "p95_ms": 65.35742949636186,
+      "p99_ms": 71.22065435898548,
+      "max_ms": 80.81337499970687,
+      "observations": 359,
+      "exact_max_ms": 80.81337499970687,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "motion_complete_to_clear": {
+      "count": 359,
+      "p50_ms": 2.3068749978847336,
+      "p95_ms": 8.334199997625532,
+      "p99_ms": 11.201922780091998,
+      "max_ms": 13.035333002335392,
+      "observations": 359,
+      "exact_max_ms": 13.035333002335392,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_clear": {
+      "count": 359,
+      "p50_ms": 48.32479199831141,
+      "p95_ms": 67.42315839910589,
+      "p99_ms": 75.10342214140113,
+      "max_ms": 83.526874997915,
+      "observations": 359,
+      "exact_max_ms": 83.526874997915,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "scene_input_to_clear_paint": {
+      "count": 359,
+      "p50_ms": 54.45987499842886,
+      "p95_ms": 74.21152969945979,
+      "p99_ms": 85.08984999985843,
+      "max_ms": 89.4518329987477,
+      "observations": 359,
+      "exact_max_ms": 89.4518329987477,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    },
+    "clear_to_clear_paint": {
+      "count": 359,
+      "p50_ms": 6.096500001149252,
+      "p95_ms": 11.75990409683436,
+      "p99_ms": 13.080928140916514,
+      "max_ms": 15.228249998472165,
+      "observations": 359,
+      "exact_max_ms": 15.228249998472165,
+      "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+    }
+  },
+  "latency_by_fifteen_minutes": [
+    {
+      "start_seconds": 0,
+      "end_seconds": 900,
+      "metrics": {
+        "first_click_to_draft_paint": {
+          "count": 3528,
+          "p50_ms": 7.3139164996973705,
+          "p95_ms": 13.031127200702027,
+          "p99_ms": 15.98960941129917,
+          "max_ms": 31.24516699972446,
+          "observations": 3528,
+          "exact_max_ms": 31.24516699972446,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_accept": {
+          "count": 3509,
+          "p50_ms": 3.5636659995361697,
+          "p95_ms": 13.565633400867227,
+          "p99_ms": 18.795518358238052,
+          "max_ms": 26.616625000315253,
+          "observations": 3509,
+          "exact_max_ms": 26.616625000315253,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_record_paint": {
+          "count": 3509,
+          "p50_ms": 14.880541999445995,
+          "p95_ms": 28.27781660016626,
+          "p99_ms": 32.756038280349465,
+          "max_ms": 41.495000001305016,
+          "observations": 3509,
+          "exact_max_ms": 41.495000001305016,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "gui_publish_ms": {
+          "count": 3509,
+          "p50_ms": 0.8247910009231418,
+          "p95_ms": 1.1579168000025675,
+          "p99_ms": 2.056983358197613,
+          "max_ms": 23.715875002380926,
+          "observations": 3509,
+          "exact_max_ms": 23.715875002380926,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        }
+      }
+    },
+    {
+      "start_seconds": 900,
+      "end_seconds": 1800,
+      "metrics": {
+        "first_click_to_draft_paint": {
+          "count": 3529,
+          "p50_ms": 7.2822090005502105,
+          "p95_ms": 12.79435820033541,
+          "p99_ms": 15.79075524117797,
+          "max_ms": 20.521916998404777,
+          "observations": 3529,
+          "exact_max_ms": 20.521916998404777,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_accept": {
+          "count": 3510,
+          "p50_ms": 3.505812501316541,
+          "p95_ms": 13.716234751518636,
+          "p99_ms": 17.846314468333723,
+          "max_ms": 25.124374998995336,
+          "observations": 3510,
+          "exact_max_ms": 25.124374998995336,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_record_paint": {
+          "count": 3510,
+          "p50_ms": 14.815937500316068,
+          "p95_ms": 27.935019047799862,
+          "p99_ms": 32.318519281070614,
+          "max_ms": 42.335458001616644,
+          "observations": 3510,
+          "exact_max_ms": 42.335458001616644,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "gui_publish_ms": {
+          "count": 3510,
+          "p50_ms": 0.8230205003201263,
+          "p95_ms": 1.163189250110008,
+          "p99_ms": 2.082238782822968,
+          "max_ms": 7.789833001879742,
+          "observations": 3510,
+          "exact_max_ms": 7.789833001879742,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        }
+      }
+    },
+    {
+      "start_seconds": 1800,
+      "end_seconds": 2700,
+      "metrics": {
+        "first_click_to_draft_paint": {
+          "count": 3526,
+          "p50_ms": 7.214895498691476,
+          "p95_ms": 12.787239500539727,
+          "p99_ms": 15.307239999856392,
+          "max_ms": 22.142500001791632,
+          "observations": 3526,
+          "exact_max_ms": 22.142500001791632,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_accept": {
+          "count": 3511,
+          "p50_ms": 3.5236250005254988,
+          "p95_ms": 13.154791500710417,
+          "p99_ms": 17.70339640243037,
+          "max_ms": 26.217416998406406,
+          "observations": 3511,
+          "exact_max_ms": 26.217416998406406,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_record_paint": {
+          "count": 3511,
+          "p50_ms": 14.699874998768792,
+          "p95_ms": 27.758187001381884,
+          "p99_ms": 31.835900299483914,
+          "max_ms": 48.48629200205323,
+          "observations": 3511,
+          "exact_max_ms": 48.48629200205323,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "gui_publish_ms": {
+          "count": 3511,
+          "p50_ms": 0.8181669982150197,
+          "p95_ms": 1.2469165012589656,
+          "p99_ms": 2.234941700953642,
+          "max_ms": 14.873708001687191,
+          "observations": 3511,
+          "exact_max_ms": 14.873708001687191,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        }
+      }
+    },
+    {
+      "start_seconds": 2700,
+      "end_seconds": 3600,
+      "metrics": {
+        "first_click_to_draft_paint": {
+          "count": 3525,
+          "p50_ms": 7.2965840008691885,
+          "p95_ms": 13.416682799288534,
+          "p99_ms": 16.24013616295997,
+          "max_ms": 21.407000000181142,
+          "observations": 3525,
+          "exact_max_ms": 21.407000000181142,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_accept": {
+          "count": 3506,
+          "p50_ms": 3.542291498888517,
+          "p95_ms": 13.350291746974108,
+          "p99_ms": 17.936341699169134,
+          "max_ms": 27.337291998264845,
+          "observations": 3506,
+          "exact_max_ms": 27.337291998264845,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "second_click_to_record_paint": {
+          "count": 3506,
+          "p50_ms": 14.883958498103311,
+          "p95_ms": 27.67609375223401,
+          "p99_ms": 33.243098547973155,
+          "max_ms": 47.72758400213206,
+          "observations": 3506,
+          "exact_max_ms": 47.72758400213206,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        },
+        "gui_publish_ms": {
+          "count": 3506,
+          "p50_ms": 0.8226255013141781,
+          "p95_ms": 1.2520834989118157,
+          "p99_ms": 1.917787493948708,
+          "max_ms": 6.245750002563,
+          "observations": 3506,
+          "exact_max_ms": 6.245750002563,
+          "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+        }
+      }
+    }
+  ],
+  "queue_max": {
+    "manual_jobs": 1,
+    "pending_classification": 0,
+    "confirmation": 0,
+    "evidence_writes": 1,
+    "mailbox": 1,
+    "automatic_inflight": 1,
+    "tracked_intents": 1,
+    "awaiting_record_paint": 1
+  },
+  "history_count": 14036,
+  "undo_history_count": 14036,
+  "field_count": 360,
+  "evidence_states": {
+    "saved": 14036
+  },
+  "evidence_file_count": 14036,
+  "evidence_bytes": 187591140,
+  "evidence_directory": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-workspace-hour-windows-final-r4-evidence",
+  "evidence_verification": {
+    "unique_files_checked": 14036,
+    "unique_png_payloads_decoded": 2,
+    "missing_or_wrong_hash": 0,
+    "wrong_pixels_or_dimensions": 0,
+    "extra_files": 0,
+    "seconds": 46.526357333001215
+  },
+  "ledger_snapshot": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-workspace-hour-windows-final-r4-ledger.json",
+  "ledger_snapshot_sha256": "c723dcb1e67e348a00f467e45d0f3c78adc13df703af488fc6f760be967e0278",
+  "motion_transition_examples": [
+    {
+      "input_at": 30210.076805958,
+      "input_sequence": 304,
+      "scene": 1,
+      "first_painted_at": 30210.093573375,
+      "transition_id": 1,
+      "motion_sequence": 304,
+      "motion_completed_at": 30210.111688041,
+      "motion_reason": "appearance",
+      "cleared_at": 30210.1144365,
+      "cleared_epoch": 2,
+      "clear_painted_at": 30210.119631458
+    },
+    {
+      "input_at": 30220.082641,
+      "input_sequence": 604,
+      "scene": 0,
+      "first_painted_at": 30220.110729833,
+      "transition_id": 2,
+      "motion_sequence": 604,
+      "motion_completed_at": 30220.129032625,
+      "motion_reason": "appearance",
+      "cleared_at": 30220.12950875,
+      "cleared_epoch": 3,
+      "clear_painted_at": 30220.134745
+    },
+    {
+      "input_at": 30230.080916458,
+      "input_sequence": 904,
+      "scene": 1,
+      "first_painted_at": 30230.09308125,
+      "transition_id": 3,
+      "motion_sequence": 904,
+      "motion_completed_at": 30230.109874041,
+      "motion_reason": "appearance",
+      "cleared_at": 30230.111035625,
+      "cleared_epoch": 4,
+      "clear_painted_at": 30230.117777916
+    },
+    {
+      "input_at": 30240.077121458,
+      "input_sequence": 1204,
+      "scene": 0,
+      "first_painted_at": 30240.0991325,
+      "transition_id": 4,
+      "motion_sequence": 1204,
+      "motion_completed_at": 30240.115005833,
+      "motion_reason": "appearance",
+      "cleared_at": 30240.115333916,
+      "cleared_epoch": 5,
+      "clear_painted_at": 30240.118900916
+    },
+    {
+      "input_at": 30250.080090666,
+      "input_sequence": 1504,
+      "scene": 1,
+      "first_painted_at": 30250.092457625,
+      "transition_id": 5,
+      "motion_sequence": 1504,
+      "motion_completed_at": 30250.102320375,
+      "motion_reason": "appearance",
+      "cleared_at": 30250.11414775,
+      "cleared_epoch": 6,
+      "clear_painted_at": 30250.126509
+    },
+    {
+      "input_at": 30260.0751835,
+      "input_sequence": 1804,
+      "scene": 0,
+      "first_painted_at": 30260.089956583,
+      "transition_id": 6,
+      "motion_sequence": 1805,
+      "motion_completed_at": 30260.136185541,
+      "motion_reason": "appearance",
+      "cleared_at": 30260.136686666,
+      "cleared_epoch": 7,
+      "clear_painted_at": 30260.143311708
+    },
+    {
+      "input_at": 30270.076081,
+      "input_sequence": 2104,
+      "scene": 1,
+      "first_painted_at": 30270.084399875,
+      "transition_id": 7,
+      "motion_sequence": 2105,
+      "motion_completed_at": 30270.139928875,
+      "motion_reason": "appearance",
+      "cleared_at": 30270.140373791,
+      "cleared_epoch": 8,
+      "clear_painted_at": 30270.145919708
+    },
+    {
+      "input_at": 30280.080268083,
+      "input_sequence": 2404,
+      "scene": 0,
+      "first_painted_at": 30280.097412833,
+      "transition_id": 8,
+      "motion_sequence": 2404,
+      "motion_completed_at": 30280.117119916,
+      "motion_reason": "appearance",
+      "cleared_at": 30280.119426791,
+      "cleared_epoch": 9,
+      "clear_painted_at": 30280.123297333
+    },
+    {
+      "input_at": 30290.0806395,
+      "input_sequence": 2704,
+      "scene": 1,
+      "first_painted_at": 30290.09240975,
+      "transition_id": 9,
+      "motion_sequence": 2705,
+      "motion_completed_at": 30290.137717541,
+      "motion_reason": "appearance",
+      "cleared_at": 30290.138554166,
+      "cleared_epoch": 10,
+      "clear_painted_at": 30290.146641458
+    },
+    {
+      "input_at": 30300.079895291,
+      "input_sequence": 3004,
+      "scene": 0,
+      "first_painted_at": 30300.092962666,
+      "transition_id": 10,
+      "motion_sequence": 3004,
+      "motion_completed_at": 30300.13081075,
+      "motion_reason": "appearance",
+      "cleared_at": 30300.138707875,
+      "cleared_epoch": 11,
+      "clear_painted_at": 30300.144038375
+    },
+    {
+      "input_at": 30310.080252583,
+      "input_sequence": 3304,
+      "scene": 1,
+      "first_painted_at": 30310.098034791,
+      "transition_id": 11,
+      "motion_sequence": 3305,
+      "motion_completed_at": 30310.12787125,
+      "motion_reason": "appearance",
+      "cleared_at": 30310.130386541,
+      "cleared_epoch": 12,
+      "clear_painted_at": 30310.135425208
+    },
+    {
+      "input_at": 30320.080214208,
+      "input_sequence": 3604,
+      "scene": 0,
+      "first_painted_at": 30320.095272291,
+      "transition_id": 12,
+      "motion_sequence": 3604,
+      "motion_completed_at": 30320.106126291,
+      "motion_reason": "appearance",
+      "cleared_at": 30320.106598375,
+      "cleared_epoch": 13,
+      "clear_painted_at": 30320.117040625
+    },
+    {
+      "input_at": 30330.075741208,
+      "input_sequence": 3904,
+      "scene": 1,
+      "first_painted_at": 30330.084562708,
+      "transition_id": 13,
+      "motion_sequence": 3904,
+      "motion_completed_at": 30330.117613208,
+      "motion_reason": "appearance",
+      "cleared_at": 30330.119246541,
+      "cleared_epoch": 14,
+      "clear_painted_at": 30330.12249675
+    },
+    {
+      "input_at": 30340.080094,
+      "input_sequence": 4204,
+      "scene": 0,
+      "first_painted_at": 30340.092947291,
+      "transition_id": 14,
+      "motion_sequence": 4204,
+      "motion_completed_at": 30340.110834708,
+      "motion_reason": "appearance",
+      "cleared_at": 30340.1122935,
+      "cleared_epoch": 15,
+      "clear_painted_at": 30340.118317458
+    },
+    {
+      "input_at": 30350.079994666,
+      "input_sequence": 4504,
+      "scene": 1,
+      "first_painted_at": 30350.089263458,
+      "transition_id": 15,
+      "motion_sequence": 4504,
+      "motion_completed_at": 30350.1308895,
+      "motion_reason": "appearance",
+      "cleared_at": 30350.134894458,
+      "cleared_epoch": 16,
+      "clear_painted_at": 30350.138353958
+    },
+    {
+      "input_at": 30360.075957166,
+      "input_sequence": 4804,
+      "scene": 0,
+      "first_painted_at": 30360.086589041,
+      "transition_id": 16,
+      "motion_sequence": 4804,
+      "motion_completed_at": 30360.097335458,
+      "motion_reason": "appearance",
+      "cleared_at": 30360.098220208,
+      "cleared_epoch": 17,
+      "clear_painted_at": 30360.106554375
+    },
+    {
+      "input_at": 30370.075199333,
+      "input_sequence": 5104,
+      "scene": 1,
+      "first_painted_at": 30370.085209916,
+      "transition_id": 17,
+      "motion_sequence": 5104,
+      "motion_completed_at": 30370.113841958,
+      "motion_reason": "appearance",
+      "cleared_at": 30370.114445375,
+      "cleared_epoch": 18,
+      "clear_painted_at": 30370.117765833
+    },
+    {
+      "input_at": 30380.076886166,
+      "input_sequence": 5404,
+      "scene": 0,
+      "first_painted_at": 30380.092718416,
+      "transition_id": 18,
+      "motion_sequence": 5404,
+      "motion_completed_at": 30380.133428875,
+      "motion_reason": "appearance",
+      "cleared_at": 30380.13478625,
+      "cleared_epoch": 19,
+      "clear_painted_at": 30380.145321541
+    },
+    {
+      "input_at": 30390.0780295,
+      "input_sequence": 5704,
+      "scene": 1,
+      "first_painted_at": 30390.092877666,
+      "transition_id": 19,
+      "motion_sequence": 5704,
+      "motion_completed_at": 30390.123525833,
+      "motion_reason": "appearance",
+      "cleared_at": 30390.12400375,
+      "cleared_epoch": 20,
+      "clear_painted_at": 30390.133740583
+    },
+    {
+      "input_at": 30400.075409875,
+      "input_sequence": 6004,
+      "scene": 0,
+      "first_painted_at": 30400.083564958,
+      "transition_id": 20,
+      "motion_sequence": 6004,
+      "motion_completed_at": 30400.121570208,
+      "motion_reason": "appearance",
+      "cleared_at": 30400.127684583,
+      "cleared_epoch": 21,
+      "clear_painted_at": 30400.141896
+    }
+  ],
+  "unresolved_motion_transitions": [],
+  "errors": {},
+  "unexpected_rejections": {},
+  "expected_motion_rejections": {},
+  "skipped_attempts": {
+    "field_not_ready": 96
+  },
+  "status_counts": {
+    "视场稳定，可以测量": 360,
+    "视场已变化，请重新测量": 359,
+    "试验工作区已关闭": 1
+  },
+  "violation_examples": [],
+  "exception_examples": [],
+  "background_automatic_results": {
+    "ok": 360
+  },
+  "background_automatic_latency": {
+    "count": 360,
+    "p50_ms": 461.89268749913026,
+    "p95_ms": 485.7466910001677,
+    "p99_ms": 538.5466947191169,
+    "max_ms": 705.0283749995288,
+    "observations": 360,
+    "exact_max_ms": 705.0283749995288,
+    "sampling": "deterministic reservoir; percentiles use at most 100000 events"
+  },
+  "automatic_candidates_entered_ledger": 0,
+  "checks": {
+    "requested_duration_completed": true,
+    "minimum_accepted_reached": true,
+    "all_records_have_valid_field": true,
+    "old_epoch_accepted_zero": true,
+    "old_scene_accepted_zero": true,
+    "accepted_event_count_matches_ledger": true,
+    "all_accepted_mapped_to_click_intent": true,
+    "submitted_intents_accounted_for": true,
+    "accepted_paint_outcomes_accounted_for": true,
+    "undo_history_preserves_each_measurement": true,
+    "ledger_snapshot_roundtrip_exact": true,
+    "background_automatic_executed": true,
+    "no_automatic_candidates_entered_ledger": true,
+    "known_width_unchanged": true,
+    "evidence_complete": true,
+    "evidence_files_exist_and_match_pixels": true,
+    "queues_drained_before_deadline": true,
+    "frame_budget_within_512_mib": true,
+    "all_frame_leases_released": true,
+    "producer_stopped": true,
+    "unexpected_errors_zero": true,
+    "scheduled_motion_detected": true,
+    "unexpected_field_changes_zero": true,
+    "unexpected_rejections_zero": true
+  },
+  "passed": true,
+  "frame_budget_after_close": 0
+}

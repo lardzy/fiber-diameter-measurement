@@ -2681,6 +2681,9 @@ class MainWindow(QMainWindow):
         self.switch_capture_device_action.triggered.connect(self.show_capture_device_menu)
 
         self.live_preview_action = QAction("实时预览", self)
+        self.live_experiment_action = QAction("实时试验", self)
+        self.live_experiment_action.setToolTip("实时贴边测径、全图候选和含量试验")
+        self.live_experiment_action.triggered.connect(self._open_live_experiment)
         self.live_preview_action.setCheckable(True)
         self.live_preview_action.setIcon(themed_icon("live_preview", color="#7BD389"))
         self.live_preview_action.triggered.connect(self.toggle_live_preview)
@@ -3496,8 +3499,24 @@ class MainWindow(QMainWindow):
         self._screen_label_menu.addActions(list(self._screen_label_actions.values()))
 
         help_menu = self.menuBar().addMenu("帮助")
+        experiment_menu = self.menuBar().addMenu("试验")
+        experiment_menu.addAction(self.live_experiment_action)
         help_menu.addAction(self.command_search_action)
         help_menu.addAction(self.shortcuts_help_action)
+
+    def _open_live_experiment(self) -> None:
+        from fdm.ui.live_experiment_workspace import open_live_experiment
+        open_live_experiment(self)
+
+    def _close_live_experiment(self) -> bool:
+        window = getattr(self, "_live_experiment_workspace", None)
+        if window is not None and not window.close():
+            message = ("实时试验图像来源仍在释放资源，请完成后重试。"
+                       if getattr(window, "_source_retiring", False)
+                       else "实时试验原图正在保存，请完成后重试。")
+            self.statusBar().showMessage(message, 6000)
+            return False
+        return True
 
     def _build_toolbar(self) -> None:
         file_toolbar = QToolBar("主命令栏")
@@ -20695,6 +20714,11 @@ class MainWindow(QMainWindow):
         return self.project_save_coordinator.defer_transition(callback, label)
 
     def _confirm_close_documents_for_transition(self, documents, callback) -> bool:
+        # Stop producers before taking a save snapshot or confirming discard.
+        # Otherwise a live result could arrive after confirmation and be lost.
+        if {document.id for document in documents} == {document.id for document in self.project.documents}:
+            if not self._close_live_experiment():
+                return False
         # Preserve the existing one-argument confirmation hook for integrations.
         previous = getattr(self, "_save_transition_continuation", None)
         self._save_transition_continuation = callback
@@ -23781,7 +23805,7 @@ class MainWindow(QMainWindow):
             else:
                 message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的项目改动。")
         if has_project_dirty:
-            message_parts.append("当前项目的统一比例尺、项目内图片、全局类别或继承关系有未保存改动。")
+            message_parts.append("当前项目的比例尺、图片、类别、实时试验或继承关系有未保存改动。")
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("未保存的改动")
@@ -23807,6 +23831,8 @@ class MainWindow(QMainWindow):
     def _reset_workspace(self) -> None:
         if self.project_save_coordinator.busy:
             raise RuntimeError("项目正在后台保存，暂不能释放工作区资源。")
+        if not self._close_live_experiment():
+            raise RuntimeError("实时试验正在保存原图，工作区暂不能释放。")
         self.project_save_coordinator.reset()
         queue = getattr(self, "_measurement_commit_queue", None)
         if queue is not None:
@@ -24106,7 +24132,8 @@ class MainWindow(QMainWindow):
         the old ``_project_path`` and a later Save would overwrite that project.
         """
 
-        if self.project.documents or self.project_session_controller.unresolved_documents():
+        if (self.project.documents or self.project.live_experiments
+                or self.project_session_controller.unresolved_documents()):
             return False
         self._close_image_batch_dialog(wait=True)
         self._close_analysis_batch_dialog(wait=True)
@@ -28863,6 +28890,9 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self._defer_for_project_save(self.close, "关闭软件"):
+            event.ignore()
+            return
+        if not self._close_live_experiment():
             event.ignore()
             return
         if self._device_import_dialog is not None:

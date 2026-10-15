@@ -1,0 +1,9 @@
+{
+  "started_unix": 1792016148.0212789,
+  "elapsed_seconds": 8.311048030853271,
+  "stdout": "FDM_EXIT=0\n",
+  "stderr": "",
+  "old_native": "C:\\tmp\\fdm-cu-live-final-r3-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+  "new_native": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+  "source": "same process, fixed arrays, alternating R3/R4"
+}

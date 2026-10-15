@@ -1,0 +1,46 @@
+{
+  "purpose": "OpenCV 1.0 AA clipping and closed-contour traversal regression. Source images supplied with CU audit; no executable/library is included.",
+  "cases": [
+    {
+      "image": "help_qualitative.png",
+      "contour": "help_qualitative_contour.png",
+      "source_run": "work/diameter_demo/validation_legacy_shipped/runs/20261011_143140_6f8fc8/run.json",
+      "source_sha256": "9799737d822778da6e96411251c1097a108a88e340c40d2a42dba401ad8aa36f",
+      "reference_contour_sha256": "a1638572e0b36fed2df44ea5a1810101e68bdbeed3733332a355c2a3c7b1a2b0"
+    },
+    {
+      "image": "help_semiauto.png",
+      "contour": "help_semiauto_contour.png",
+      "source_run": "work/diameter_demo/validation_legacy_shipped/runs/20261011_143141_e5fede/run.json",
+      "source_sha256": "38f151bfbcfac525ca2f4f27c56b87404e7f5e49b97042c5ff3b64a058fd2e1d",
+      "reference_contour_sha256": "9ed054ea72174b2ec2e373c26b842304983a1645059730ac2d8f2796b096d883"
+    },
+    {
+      "image": "stress_connected_01.png",
+      "source_run": "work/diameter_demo/validation_algtdl_release/runs/20261011_145638_c7e6db/run.json",
+      "source_sha256": "b12c20b79b0d0241be11c1ab39f27629898c580c3a5eeb9b1ecd3428d2c6c5cc",
+      "pass_candidates": [
+        {
+          "pass": 1,
+          "count": 2,
+          "valid": 1
+        },
+        {
+          "pass": 2,
+          "count": 5,
+          "valid": 2
+        },
+        {
+          "pass": 3,
+          "count": 20,
+          "valid": 8
+        }
+      ],
+      "stage_sha256": {
+        "mask": "a1279a1f0f2e88e9300f6f48fd2edf832ae608c21a84f40e94f7cb386b95a77a",
+        "edges": "0482ae6659e1d78944d1893aaa470fcc6d1465ddfadae50b3b091dc92bf85880",
+        "selection": "1dcf5771e5ab4570cae01162f155ac12802d5018e098086d62e95b7f38703972"
+      }
+    }
+  ]
+}

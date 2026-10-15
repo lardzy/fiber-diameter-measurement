@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "opencv": "4.13.0",
+  "numpy": "2.4.3",
+  "opencv_threads": 18,
+  "motion_source_sha256": "f3dc7b29edb893d493ffbf362469ad96e7628c8c98e613f3c29d796af3daf1e2",
+  "limits": [
+    "Includes reduction and motion; excludes GUI, capture, allocation and PNG.",
+    "Baseline disables the geometry cache but uses the same exact normalization lookup.",
+    "Dynamic independent sensor noise intentionally misses the equality cache.",
+    "Synthetic performance is not physical microscopy acceptance."
+  ],
+  "records": [
+    {
+      "size": [
+        2048,
+        1365
+      ],
+      "scenario": "identical",
+      "samples": 10,
+      "warmup": 2,
+      "result_disagreements": 0,
+      "reference_sha256": "059ebb9210d8cb1bd9bc3ff7614794dce5d0c5284902ac9ec8fbca6bc4698911",
+      "current_sha256": "427e284b8f301cca5b21f1a49fcc3d3ed00e301dd7dc389ff90332c2df552065",
+      "baseline_no_cache_ms": {
+        "p50": 9.325874500000001,
+        "p95": 9.7855731,
+        "samples": [
+          9.219459,
+          9.177833,
+          9.345541,
+          9.238917,
+          9.895167,
+          9.306208,
+          9.265125,
+          9.534625,
+          9.651625,
+          9.357041
+        ]
+      },
+      "production_ms": {
+        "p50": 0.7112080000000001,
+        "p95": 0.8135336999999999,
+        "samples": [
+          0.6165,
+          0.591792,
+          0.804542,
+          0.647041,
+          0.706166,
+          0.597792,
+          0.805375,
+          0.720167,
+          0.820209,
+          0.71625
+        ]
+      }
+    },
+    {
+      "size": [
+        2048,
+        1365
+      ],
+      "scenario": "dynamic_one_bit_noise",
+      "samples": 10,
+      "warmup": 2,
+      "result_disagreements": 0,
+      "reference_sha256": "059ebb9210d8cb1bd9bc3ff7614794dce5d0c5284902ac9ec8fbca6bc4698911",
+      "current_sha256": "427e284b8f301cca5b21f1a49fcc3d3ed00e301dd7dc389ff90332c2df552065",
+      "baseline_no_cache_ms": {
+        "p50": 9.254875,
+        "p95": 9.53453545,
+        "samples": [
+          9.526583,
+          9.541042,
+          9.230291,
+          9.159125,
+          9.371084,
+          9.3165,
+          9.250708,
+          9.259042,
+          9.115958,
+          9.211625
+        ]
+      },
+      "production_ms": {
+        "p50": 9.236667,
+        "p95": 9.3171045,
+        "samples": [
+          9.224417,
+          9.13725,
+          9.332292,
+          9.237542,
+          9.298542,
+          9.1595,
+          9.214625,
+          9.283708,
+          9.267917,
+          9.235792
+        ]
+      }
+    },
+    {
+      "size": [
+        4096,
+        2730
+      ],
+      "scenario": "identical",
+      "samples": 10,
+      "warmup": 2,
+      "result_disagreements": 0,
+      "reference_sha256": "9f9b9360d9643c52b984b9b54ba0c3e65962d8c9ecd99b48381e2e11431eb370",
+      "current_sha256": "a3fcf49c29d58a7f560c42bcae4ae5507fd09984a357ce70c7c00953541d39b0",
+      "baseline_no_cache_ms": {
+        "p50": 36.0868125,
+        "p95": 37.188512349999996,
+        "samples": [
+          35.765542,
+          35.957167,
+          35.9335,
+          36.216458,
+          35.340292,
+          35.875792,
+          36.939958,
+          37.391875,
+          36.435875,
+          36.61825
+        ]
+      },
+      "production_ms": {
+        "p50": 2.4422085,
+        "p95": 2.5894898,
+        "samples": [
+          2.442958,
+          2.525125,
+          2.407083,
+          2.412959,
+          2.527375,
+          2.331208,
+          2.592584,
+          2.585708,
+          2.396917,
+          2.441459
+        ]
+      }
+    },
+    {
+      "size": [
+        4096,
+        2730
+      ],
+      "scenario": "dynamic_one_bit_noise",
+      "samples": 10,
+      "warmup": 2,
+      "result_disagreements": 0,
+      "reference_sha256": "9f9b9360d9643c52b984b9b54ba0c3e65962d8c9ecd99b48381e2e11431eb370",
+      "current_sha256": "a3fcf49c29d58a7f560c42bcae4ae5507fd09984a357ce70c7c00953541d39b0",
+      "baseline_no_cache_ms": {
+        "p50": 36.3295205,
+        "p95": 37.37917935,
+        "samples": [
+          35.881417,
+          36.326625,
+          37.130333,
+          36.675583,
+          37.553292,
+          36.332416,
+          35.894125,
+          35.938708,
+          35.849958,
+          37.166375
+        ]
+      },
+      "production_ms": {
+        "p50": 36.2814165,
+        "p95": 37.177535299999995,
+        "samples": [
+          36.196541,
+          36.007584,
+          37.176916,
+          37.178042,
+          36.283666,
+          36.031959,
+          36.149125,
+          36.279167,
+          36.91425,
+          36.758708
+        ]
+      }
+    },
+    {
+      "size": [
+        6144,
+        4096
+      ],
+      "scenario": "identical",
+      "samples": 10,
+      "warmup": 2,
+      "result_disagreements": 0,
+      "reference_sha256": "9ec2c656334f6c8af016b41b0f07c19b0d73e885df2e228dbcef296dfab1d7f4",
+      "current_sha256": "3e59124e0d575dc7b9f0dbb01e2251521416f3cce37d8cf7349058c4f69459f8",
+      "baseline_no_cache_ms": {
+        "p50": 76.334813,
+        "p95": 78.6784606,
+        "samples": [
+          74.994708,
+          74.8155,
+          76.104833,
+          78.767917,
+          76.360667,
+          78.068875,
+          78.569125,
+          75.672375,
+          76.308959,
+          76.41775
+        ]
+      },
+      "production_ms": {
+        "p50": 7.264896,
+        "p95": 7.46725405,
+        "samples": [
+          6.733042,
+          7.223,
+          7.293583,
+          7.309792,
+          7.538917,
+          7.236209,
+          7.20125,
+          6.750875,
+          7.325167,
+          7.379666
+        ]
+      }
+    },
+    {
+      "size": [
+        6144,
+        4096
+      ],
+      "scenario": "dynamic_one_bit_noise",
+      "samples": 10,
+      "warmup": 2,
+      "result_disagreements": 0,
+      "reference_sha256": "9ec2c656334f6c8af016b41b0f07c19b0d73e885df2e228dbcef296dfab1d7f4",
+      "current_sha256": "3e59124e0d575dc7b9f0dbb01e2251521416f3cce37d8cf7349058c4f69459f8",
+      "baseline_no_cache_ms": {
+        "p50": 76.0128125,
+        "p95": 87.42807704999998,
+        "samples": [
+          77.226417,
+          75.285625,
+          75.454667,
+          75.968417,
+          74.731917,
+          73.920375,
+          76.057208,
+          93.513333,
+          79.990542,
+          76.137583
+        ]
+      },
+      "production_ms": {
+        "p50": 75.61041700000001,
+        "p95": 76.71096265,
+        "samples": [
+          76.7155,
+          75.385125,
+          76.258292,
+          76.705417,
+          74.011416,
+          74.255459,
+          76.4905,
+          75.508125,
+          74.38025,
+          75.712709
+        ]
+      }
+    }
+  ]
+}

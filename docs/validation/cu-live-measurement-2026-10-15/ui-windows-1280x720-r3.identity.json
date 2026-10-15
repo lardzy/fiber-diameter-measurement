@@ -1,0 +1,32 @@
+{
+  "kind": "synthetic_source_qt_probe_not_installed_program_screenshot",
+  "revision": "final-r3",
+  "real_device_stream": false,
+  "installed_program_screenshot": false,
+  "source_guest": "C:\\tmp\\fdm-cu-live-final-r3-20261015",
+  "source_manifest_sha256": "dbe309b7dfcfd4f731581c583acb5b1d4718be018c3b4e850ccf242947135ef5",
+  "probe": {
+    "path": "scripts/validation/probe_cu_workspace_ui.py",
+    "size": 7058,
+    "sha256": "61a107e542c110f878988506726ca5d2ebf2d2f52489a452ff05d73a40979649"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "qt_platform": "windows",
+  "requested_logical_size": [
+    1280,
+    720
+  ],
+  "actual_logical_size": [
+    1280,
+    720
+  ],
+  "device_pixel_ratio": 2.0,
+  "image": "ui-windows-1280x720-r3.png",
+  "image_sha256": "8cc471f4f85005931cd0117948cf3e0fa507e5649fbaf5d2b5e67d033005e230",
+  "image_size_bytes": 139191,
+  "source_image": "build/cu-live-windows-final-r3/ui-probe-final-r3/cu-workspace-1280x720.png",
+  "source_probe_result": "build/cu-live-windows-final-r3/ui-probe-final-r3/ui-probe.json",
+  "source_probe_result_sha256": "4b137612d4573bb9f8b14c734b673c4b0e06c6d34d5dc691c1736819949cf5c5",
+  "visual_review": "Nine category rows, extra counts, mean diameter, content and measured counts, plus lower controls are visible without evident clipping; source screenshot only.",
+  "frozen_installer_gui_verified_separately": "build/cu-live-windows-final-r3/gui/result.json"
+}

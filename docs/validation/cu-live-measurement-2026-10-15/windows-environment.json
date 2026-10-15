@@ -1,0 +1,42 @@
+{
+  "os": {
+    "Caption": "Microsoft Windows 11 专业版",
+    "Version": "10.0.26200",
+    "BuildNumber": "26200",
+    "OSArchitecture": "ARM 64 位处理器"
+  },
+  "timestamp": "2026-10-15T02:21:20.4252595+08:00",
+  "processor_architew6432": null,
+  "processor_architecture": "ARM64",
+  "machine": {
+    "Manufacturer": "Parallels International GmbH.",
+    "Model": "Parallels ARM Virtual Machine",
+    "TotalPhysicalMemory": 17173250048
+  },
+  "cpu": [
+    {
+      "Name": "Apple Silicon",
+      "Architecture": 12,
+      "NumberOfCores": 1,
+      "NumberOfLogicalProcessors": 1
+    },
+    {
+      "Name": "Apple Silicon",
+      "Architecture": 12,
+      "NumberOfCores": 1,
+      "NumberOfLogicalProcessors": 1
+    },
+    {
+      "Name": "Apple Silicon",
+      "Architecture": 12,
+      "NumberOfCores": 1,
+      "NumberOfLogicalProcessors": 1
+    },
+    {
+      "Name": "Apple Silicon",
+      "Architecture": 12,
+      "NumberOfCores": 1,
+      "NumberOfLogicalProcessors": 1
+    }
+  ]
+}

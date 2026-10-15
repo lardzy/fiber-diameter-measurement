@@ -1,0 +1,74 @@
+[
+  {
+    "label": "manual-statistics",
+    "exit_code": 0,
+    "started_unix": 1792006899.924747,
+    "elapsed_seconds": 5.047045946121216,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-manual-statistics.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-manual-statistics.log"
+  },
+  {
+    "label": "motion",
+    "exit_code": 0,
+    "started_unix": 1792006904.9724889,
+    "elapsed_seconds": 31.75309109687805,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-motion.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-motion.log"
+  },
+  {
+    "label": "ui-stable",
+    "exit_code": 0,
+    "started_unix": 1792006936.726123,
+    "elapsed_seconds": 38.801435708999634,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-stable.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-stable.log"
+  },
+  {
+    "label": "ui-dynamic",
+    "exit_code": 0,
+    "started_unix": 1792006975.5281549,
+    "elapsed_seconds": 322.3450722694397,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-dynamic.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-dynamic.log"
+  },
+  {
+    "label": "ui-joint-stable",
+    "exit_code": 0,
+    "started_unix": 1792007297.8738298,
+    "elapsed_seconds": 45.93755912780762,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-joint-stable.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-joint-stable.log"
+  },
+  {
+    "label": "ui-joint-dynamic",
+    "exit_code": 0,
+    "started_unix": 1792007343.812124,
+    "elapsed_seconds": 181.9975130558014,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-joint-dynamic.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-ui-joint-dynamic.log"
+  },
+  {
+    "label": "automatic-2048",
+    "exit_code": 0,
+    "started_unix": 1792007525.8100412,
+    "elapsed_seconds": 88.53322792053223,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-automatic-2048.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-automatic-2048.log"
+  },
+  {
+    "label": "automatic-4096",
+    "exit_code": 0,
+    "started_unix": 1792007614.3438458,
+    "elapsed_seconds": 395.7513310909271,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-automatic-4096.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-automatic-4096.log"
+  },
+  {
+    "label": "automatic-6144",
+    "exit_code": 0,
+    "started_unix": 1792008010.0958238,
+    "elapsed_seconds": 1095.5008761882782,
+    "output": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-automatic-6144.json",
+    "log": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-formal\\final-windows-automatic-6144.log"
+  }
+]

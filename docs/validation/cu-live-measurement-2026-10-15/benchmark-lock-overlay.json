@@ -1,0 +1,27 @@
+{
+  "change": "benchmark metadata-only overlay",
+  "before_sha256": "633a98757e5eb8bc50c292d6f6b209da6167167b9f8d5db10972f27c301f0642",
+  "after_sha256": "40ba31b624bbfaa6373d8104f79cfeed57214e6a66606fb3dae7387aa919608e",
+  "added_lines": 33,
+  "removed_lines": 1,
+  "added_packages": [
+    [
+      "psutil",
+      "7.2.2",
+      "{'registry': 'https://pypi.org/simple'}"
+    ]
+  ],
+  "removed_packages": [],
+  "changed_existing_package_blocks": [
+    "fiber-diameter-measurement"
+  ],
+  "validation": {
+    "uv lock --offline": "passed, 89 packages, psutil 7.2.2 added",
+    "uv lock --check --offline": "passed",
+    "uv lock --check": "passed",
+    "git diff --check -- uv.lock": "passed"
+  },
+  "environment_changed": false,
+  "pyproject_changed": false,
+  "boundary": "Metadata-only benchmark extra lock overlay; no production/runtime/dependency environment changes; not part of frozen 905-file build snapshot."
+}

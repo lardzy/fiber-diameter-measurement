@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "archived_at_utc": "2026-10-14T21:26:00.492851+00:00",
+  "purpose": "Preserve PNG prototypes and existing diagnostic reports, without rerunning any workload.",
+  "formal_performance_acceptance": false,
+  "entries": [
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-probe-macos-smoke.json",
+      "archive_path": "png-probe-macos-smoke.json",
+      "bytes": 30394,
+      "original_sha256": "7710f3cc54f587e286acbceebedd19b04d588fae82465563df66fcd4a584c681",
+      "archived_sha256": "7710f3cc54f587e286acbceebedd19b04d588fae82465563df66fcd4a584c681",
+      "embedded_probe_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30",
+      "scope": "prototype_diagnostic"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-probe-macos-6k-diagnostic.json",
+      "archive_path": "png-probe-macos-6k-diagnostic.json",
+      "bytes": 33630,
+      "original_sha256": "e80ceeb62f1f4cf973514e5bc3f7874f1937c9ea269694faf03634b8c207d0c1",
+      "archived_sha256": "e80ceeb62f1f4cf973514e5bc3f7874f1937c9ea269694faf03634b8c207d0c1",
+      "embedded_probe_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30",
+      "scope": "prototype_diagnostic"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-probe-windows-smoke-result.json",
+      "archive_path": "png-probe-windows-smoke-result.json",
+      "bytes": 31477,
+      "original_sha256": "22cd7a396f0baefa36f08ff79ab958792b964ae23fc38590544deb89c9567fa5",
+      "archived_sha256": "22cd7a396f0baefa36f08ff79ab958792b964ae23fc38590544deb89c9567fa5",
+      "embedded_probe_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30",
+      "scope": "prototype_diagnostic"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-probe-windows-6k-diagnostic-result.json",
+      "archive_path": "png-probe-windows-6k-diagnostic-result.json",
+      "bytes": 34871,
+      "original_sha256": "feb69d8ffbc7d6d56020dfc4c299958112bf487935aafd95c8267b14287a4836",
+      "archived_sha256": "feb69d8ffbc7d6d56020dfc4c299958112bf487935aafd95c8267b14287a4836",
+      "embedded_probe_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30",
+      "scope": "prototype_diagnostic"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-probe-windows-isolated-memory-result.json",
+      "archive_path": "png-probe-windows-isolated-memory-result.json",
+      "bytes": 34432,
+      "original_sha256": "5f990b447b2f4d113e972f141b4629fa0d8c73d6a8e256d4161bf7e604f620e8",
+      "archived_sha256": "5f990b447b2f4d113e972f141b4629fa0d8c73d6a8e256d4161bf7e604f620e8",
+      "embedded_probe_sha256": "8aa8f98269b4c1262f630a99c344995883ba280f43fb13e667f6f07552e13d8c",
+      "scope": "prototype_diagnostic"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-gradient_noise-opencv_imencode.json",
+      "archive_path": "png-memory-macos-gradient_noise-opencv_imencode.json",
+      "bytes": 349,
+      "original_sha256": "9eaa40efd384b4d8eb76831262daeb729263faf6e4a6cce5483d5d1feea3b806",
+      "archived_sha256": "9eaa40efd384b4d8eb76831262daeb729263faf6e4a6cce5483d5d1feea3b806",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-gradient_noise-pillow_stream.json",
+      "archive_path": "png-memory-macos-gradient_noise-pillow_stream.json",
+      "bytes": 349,
+      "original_sha256": "bcd7c0d8e414137e7738c9f6f913f397852616313888b96e3ab6cde2fb53e67c",
+      "archived_sha256": "bcd7c0d8e414137e7738c9f6f913f397852616313888b96e3ab6cde2fb53e67c",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-gradient_noise-row_stream.json",
+      "archive_path": "png-memory-macos-gradient_noise-row_stream.json",
+      "bytes": 349,
+      "original_sha256": "a3531eb1076244babff74fd9e2a406c9d1127cfd373bef6fafffb46ebee5cbc0",
+      "archived_sha256": "a3531eb1076244babff74fd9e2a406c9d1127cfd373bef6fafffb46ebee5cbc0",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-incompressible_uint8-opencv_imencode.json",
+      "archive_path": "png-memory-macos-incompressible_uint8-opencv_imencode.json",
+      "bytes": 349,
+      "original_sha256": "f444b342bb93e7131bc824ed422fb6a555fe58e10bdf6f44f6033955a54a2367",
+      "archived_sha256": "f444b342bb93e7131bc824ed422fb6a555fe58e10bdf6f44f6033955a54a2367",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-incompressible_uint8-pillow_stream.json",
+      "archive_path": "png-memory-macos-incompressible_uint8-pillow_stream.json",
+      "bytes": 349,
+      "original_sha256": "cc4ddfd1701b044daa01fe363c937e279885ba0a265d29c85a52f25170253545",
+      "archived_sha256": "cc4ddfd1701b044daa01fe363c937e279885ba0a265d29c85a52f25170253545",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-incompressible_uint8-row_stream.json",
+      "archive_path": "png-memory-macos-incompressible_uint8-row_stream.json",
+      "bytes": 349,
+      "original_sha256": "7d77d1a3371765d703a8ba9476e78f6351cf396fdea31bfe05dace6d5d4f4454",
+      "archived_sha256": "7d77d1a3371765d703a8ba9476e78f6351cf396fdea31bfe05dace6d5d4f4454",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-one_bit_noise-opencv_imencode.json",
+      "archive_path": "png-memory-macos-one_bit_noise-opencv_imencode.json",
+      "bytes": 349,
+      "original_sha256": "967a688d90cf1b857b79a9003b7d10e3ebb57441fb460dd9718568547828aa9d",
+      "archived_sha256": "967a688d90cf1b857b79a9003b7d10e3ebb57441fb460dd9718568547828aa9d",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-one_bit_noise-pillow_stream.json",
+      "archive_path": "png-memory-macos-one_bit_noise-pillow_stream.json",
+      "bytes": 349,
+      "original_sha256": "e98bf9e8ba3c1992920b5d6dc2d8773f3fb51a73abf3f90c5be6c0f106b6a09e",
+      "archived_sha256": "e98bf9e8ba3c1992920b5d6dc2d8773f3fb51a73abf3f90c5be6c0f106b6a09e",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-one_bit_noise-row_stream.json",
+      "archive_path": "png-memory-macos-one_bit_noise-row_stream.json",
+      "bytes": 349,
+      "original_sha256": "e3ec86014354d24230e71c01e329b3dce1daa344899b2b3ed1da78e1fb5215aa",
+      "archived_sha256": "e3ec86014354d24230e71c01e329b3dce1daa344899b2b3ed1da78e1fb5215aa",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-stripes-opencv_imencode.json",
+      "archive_path": "png-memory-macos-stripes-opencv_imencode.json",
+      "bytes": 349,
+      "original_sha256": "c8cd8e73e3f55bad9f4e6a7940c5337054c0f064ddc6ae2034e57bf20259ff78",
+      "archived_sha256": "c8cd8e73e3f55bad9f4e6a7940c5337054c0f064ddc6ae2034e57bf20259ff78",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-stripes-pillow_stream.json",
+      "archive_path": "png-memory-macos-stripes-pillow_stream.json",
+      "bytes": 349,
+      "original_sha256": "68e80fe8615777dd4d46d794daac01f64fe274b0765f1448f14d2f3cfe171f6f",
+      "archived_sha256": "68e80fe8615777dd4d46d794daac01f64fe274b0765f1448f14d2f3cfe171f6f",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "raw_diagnostic_json",
+      "original_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/png-memory-macos-stripes-row_stream.json",
+      "archive_path": "png-memory-macos-stripes-row_stream.json",
+      "bytes": 349,
+      "original_sha256": "9eb41190ce576de054af91166ee701843823a5951c9460d31fe087416d5829e7",
+      "archived_sha256": "9eb41190ce576de054af91166ee701843823a5951c9460d31fe087416d5829e7",
+      "embedded_probe_sha256": null,
+      "scope": "isolated_process_rss"
+    },
+    {
+      "kind": "complete_private_probe_source",
+      "original_path": "/private/tmp/fdm_png_pillow_probe_9b529eb5.py",
+      "archive_path": "fdm_png_pillow_probe_9b529eb5.py",
+      "bytes": 24265,
+      "original_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30",
+      "archived_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30"
+    },
+    {
+      "kind": "complete_private_probe_source",
+      "original_path": "/private/tmp/fdm_png_pillow_probe.py",
+      "archive_path": "fdm_png_pillow_probe_8aa8f982.py",
+      "bytes": 26023,
+      "original_sha256": "8aa8f98269b4c1262f630a99c344995883ba280f43fb13e667f6f07552e13d8c",
+      "archived_sha256": "8aa8f98269b4c1262f630a99c344995883ba280f43fb13e667f6f07552e13d8c"
+    }
+  ],
+  "production_source_reference": {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/src/fdm/live_experiment/png_stream.py",
+    "sha256": "9d48f29b0ede9ca28f7752a4d6e17ae2663586b331c8d54afcb959e79d20470c",
+    "bytes": 5514,
+    "same_source_as_private_probes": false,
+    "scope": "Point-in-time source reference; final R3 source manifest and R3 UI measurements determine production integration/acceptance."
+  },
+  "attribution_limits": [
+    "The five aggregate reports embed exact probe SHA256; macOS standalone cold-RSS JSON does not embed a source SHA and is preserved without adding one.",
+    "The current 8aa8f982 probe contains the child-memory interface matching the macOS standalone result schema; this association does not create an original embedded runtime source attestation.",
+    "All archived source/report copies are byte-for-byte; original files are unchanged."
+  ],
+  "readme_sha256": "81199d3c047313766aaab8f4c629a51180f1e7bc4393c24b03fbabf41eaedbd8"
+}

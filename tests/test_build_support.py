@@ -203,7 +203,8 @@ class BuildSupportTests(unittest.TestCase):
         full_profile = resolve_runtime_profile(PROJECT_ROOT, "full")
         self.assertEqual(
             core_profile.required_python_modules,
-            ("numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy", "fdm._native._kernels"),
+            ("numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy", "fdm._native._kernels")
+            + (("fdm._native._windows_capture",) if sys.platform == "win32" else ()) ,
         )
         self.assertEqual(
             full_profile.required_python_modules,
@@ -216,6 +217,7 @@ class BuildSupportTests(unittest.TestCase):
                 "skimage",
                 "scipy",
                 "fdm._native._kernels",
+                *(("fdm._native._windows_capture",) if sys.platform == "win32" else ()),
                 "onnxruntime",
                 "torch",
                 "torchvision",

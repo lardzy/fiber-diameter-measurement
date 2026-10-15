@@ -1,0 +1,24 @@
+{
+  "snapshot": {
+    "manifest_sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+    "verified_files": 1008,
+    "exact_matches": 1007,
+    "byte_mismatches": [
+      "packaging/inno-setup/version.auto.iss"
+    ],
+    "explained_differences": [
+      {
+        "path": "packaging/inno-setup/version.auto.iss",
+        "reason": "Existing Windows build script rewrote generated version include using CRLF; content and version unchanged.",
+        "matches_after_crlf_normalization": true,
+        "windows_size": 102,
+        "windows_sha256": "56a6a1df9abf1dca824c60826a56ec08ecc7d4262cd9069b937100f9f82a3e45",
+        "snapshot_sha256": "d3a5730bfb3786e1b9c1260728ec1056e3e81c8364307ae04af49c041ea1aac7"
+      }
+    ],
+    "unexplained_mismatches": [],
+    "native_binary_sha256": "d03b20c350999676300a3aa74dd2e22c36d03f27cb87cb0c08ce493157918e69"
+  },
+  "remaining_processes": [],
+  "process_scope": "Soak script, R4 path Python processes, and observed automatic worker PID 7444; all exited."
+}

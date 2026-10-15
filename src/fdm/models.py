@@ -60,6 +60,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "project-rois/v1",
         "image-watermark/v1",
         "image-watermark-datetime/v1",
+        "live-experiments/v1",
     }
 )
 
@@ -2388,6 +2389,7 @@ class ProjectState:
     project_group_templates: list[ProjectGroupTemplate] = field(default_factory=list)
     project_rois: list[ProjectRoi] = field(default_factory=list)
     analysis_artifacts: list[AnalysisArtifact] = field(default_factory=list)
+    live_experiments: list[Any] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     load_issues: list[dict[str, Any]] = field(default_factory=list, repr=False, compare=False)
     project_schema_version: int = PROJECT_SCHEMA_VERSION
@@ -2441,6 +2443,8 @@ class ProjectState:
             features.append("project-rois/v1")
         if self.analysis_artifacts:
             features.append("analysis-artifacts/v2")
+        if self.live_experiments:
+            features.append("live-experiments/v1")
         if any(document.construction_entities for document in self.documents):
             features.append("construction-geometry/v1")
         if any(document.watermark is not None for document in self.documents):
@@ -2642,6 +2646,8 @@ class ProjectState:
         )
         if serialized_artifacts:
             payload["analysis_artifacts"] = serialized_artifacts
+        if self.live_experiments:
+            payload["live_experiments"] = [session.to_dict() for session in self.live_experiments]
         return payload
 
     @classmethod
@@ -2685,6 +2691,12 @@ class ProjectState:
             analysis_artifacts,
             field_name="analysis_artifacts",
         )
+        from fdm.live_experiment.models import ExperimentSession
+        experiments_payload = payload.get("live_experiments", [])
+        if not isinstance(experiments_payload, list) or any(not isinstance(item, dict) for item in experiments_payload):
+            raise TypeError("live_experiments 必须是对象列表")
+        live_experiments = [ExperimentSession.from_dict(item) for item in experiments_payload]
+        _ensure_unique_ids(live_experiments, field_name="live_experiments")
         return cls(
             version=str(payload.get("version", __version__)),
             documents=[ImageDocument.from_dict(item) for item in payload.get("documents", [])],
@@ -2696,6 +2708,7 @@ class ProjectState:
             project_group_templates=project_group_templates,
             project_rois=project_rois,
             analysis_artifacts=analysis_artifacts,
+            live_experiments=live_experiments,
             metadata=dict(payload.get("metadata", {})),
             project_schema_version=compatibility.source_schema_version,
             min_reader_version=compatibility.min_reader_version,

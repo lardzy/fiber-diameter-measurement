@@ -1,0 +1,45 @@
+{
+  "scope": "Exact-operation motion remediation; before-source snapshot, not a tested build",
+  "before": {
+    "src/fdm/live_experiment/controller.py": "b6bf421a4c252fa1e1d5b48f21bf6993e06393dc8d06f999ca31864318e28bbf",
+    "src/fdm/live_experiment/motion.py": "c399325b164146f166b5a24c01fe9b5b6204f9f21245ffae85e28b1c4caf1fe6",
+    "native/kernels.cpp": "7b0022e701ccca9ff02b5405d036684fc8acbc85fcb7f8075b449a3a0eabd601",
+    "scripts/validation/benchmark_cu_motion.py": "36f1162693a5aed73d1a892e53c8bf844c6a8399619063db9bdf35488ddbad7b",
+    "scripts/validation/profile_cu_motion_stages.py": "7b957936d40f3e0fa61a591d0c69a9513b62133456b40387767805d49b8cbf5a"
+  },
+  "after": {
+    "src/fdm/live_experiment/controller.py": "301041b65197a86c23de2f4d0febccd371ac588d1489fd7d043fc0b10bbc2441",
+    "src/fdm/live_experiment/motion.py": "bb66cdc0171312b4740aeb2ae4b2025a98fe55a89b726716173cfba91daa3e2a",
+    "native/kernels.cpp": "abd3d9b6029788419c9ca50cad4e6246985c0334bd32a551bf8af8c6107253ed",
+    "scripts/validation/benchmark_cu_motion.py": "4ed954b0904327e600e24a5333558155250160fc59fc319743ff575a6c184186",
+    "scripts/validation/profile_cu_motion_stages.py": "72adbeeecf2c4279ca1be0a67d00ecf337d8231d6502d84f23b397159cefdabc",
+    "tests/test_live_experiment_motion_remediation.py": "1e6b59928bef86dc004faf9c462552c5f6835a4e1431f1dc25e8f5e4b8f47afe",
+    "tests/test_live_experiment_motion_peak.py": "0e9c163fb32919822522445475b606d28218881c981503aca49266cb5c7df786",
+    "tests/test_live_experiment_content_workspace.py": "ec2cd13ed92f7f5f00c7f3c811f1e10b879f809cd843f238f13aed51ef2872f1"
+  },
+  "validation": "Root rebuilt native; initial unified regression: 807 passed, 57 subtests passed, 5 failures. After confirmation scheduling fix and deterministic budget-owner test: content_workspace/motion_remediation/motion_peak/motion_reference/runtime, 251 passed in 1.50s. No post-remediation performance claim.",
+  "revision": "r2-motion-local-remediation",
+  "source_snapshot": "build/cu-live-measurement/pre-motion-remediation-sources/",
+  "changes": [
+    "Coalesced Qt queued completion wake and earlier motion submission; unchanged presented-frame gate and idle spacing",
+    "Remove unstable-result reference rebuild that is immediately discarded by field reset",
+    "Proven uint8 absdiff maximum <=8 shortcut for exactly zero Sobel changed fraction",
+    "One contiguous native correlation scan with independent parity maxima and unchanged tie/rounding rules"
+  ],
+  "benchmark_boundary": {
+    "old_formal_json_unchanged": true,
+    "baseline_sobel": "Frozen independent pre-shortcut CV2 absdiff/Sobel/convertScaleAbs/add/count path",
+    "new_stage_profiler": "Post-remediation decomposition includes exact Sobel shortcut; never an original-version stage profile",
+    "frozen_ui_soak_harness_unchanged": true
+  },
+  "evidence_store_unchanged": true,
+  "frame_budget_limit": "512 MiB ledger counts frame pixel owners plus acquisition reservations, not imencode compressed output, all Qt/driver allocations or total RSS.",
+  "first_r2_controller_sha256": "204369e5dfb0873e8f1ac6f349c41ab826d6b74400264dfe2a922ae720e745bc",
+  "targeted_validation": {
+    "log": "build/cu-live-measurement/r2-fix-targeted-macos.log",
+    "junit": "build/cu-live-measurement/r2-fix-targeted-macos.xml",
+    "passed": 251,
+    "production_followup": "Active manual/automatic confirmation bypasses idle 40ms spacing and requests motion immediately; current-presented gate and 2s timeout unchanged.",
+    "test_followup": "Checks actual submitted frame-12 Future; old evidence and old motion owners must both release before a new draft can fit the unchanged budget."
+  }
+}

@@ -1,0 +1,1917 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+    "executable": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+    "cpu_count": 18,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": "3.0.4",
+      "psutil": "7.2.2"
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 18,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+    "source_sha256": {
+      "native/cu_automatic.cpp": "19d3f1535b208baa05cf59dc7019ff394f138ab3ed7eba9cd5cb6c6965ec58fa",
+      "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native/kernels.cpp": "7b0022e701ccca9ff02b5405d036684fc8acbc85fcb7f8075b449a3a0eabd601",
+      "native/windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src/fdm/live_experiment/capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src/fdm/live_experiment/controller.py": "b6bf421a4c252fa1e1d5b48f21bf6993e06393dc8d06f999ca31864318e28bbf",
+      "src/fdm/live_experiment/evidence.py": "7b6ac3917c7e2876aeaabe0f77a092b013caecdf15fba6eba788e54bb581d887",
+      "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src/fdm/live_experiment/frames.py": "146a38d47201c4071a1c101604bfa879865551fa05edbc2f601907e71e41d716",
+      "src/fdm/live_experiment/models.py": "366daf4533d26531a239fd53c0e74dab1c4707cb99a0c34d2b62265eb2b34af5",
+      "src/fdm/live_experiment/motion.py": "c399325b164146f166b5a24c01fe9b5b6204f9f21245ffae85e28b1c4caf1fe6",
+      "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src/fdm/live_experiment/project_assets.py": "700781023abc965f0bfc59788bc9d9e41343db024e75abb72b1801ea51808f2a",
+      "src/fdm/live_experiment/sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src/fdm/live_experiment/window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "d3499aa56f20c64c4415adedd10e8d73b8653240806201cb1f3dac4967367086",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    }
+  },
+  "parameters": {
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-6144.json",
+    "modes": [
+      "automatic"
+    ],
+    "samples": 30,
+    "warmup": 5,
+    "sizes": [
+      2048,
+      4096,
+      6144
+    ],
+    "automatic_size": 6144,
+    "automatic_budget_mib": 2048,
+    "duration_seconds": 3600,
+    "soak_size": 2048,
+    "frame_hz": 30,
+    "measurement_hz": 2,
+    "soak_automatic": false,
+    "evidence_dir": null
+  },
+  "validation_boundary": "Synthetic performance only; correctness, real-camera and installed-Windows acceptance are separate.",
+  "automatic": [
+    {
+      "case": "single8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "input_sha256": "e09d20f6057b7f1698424d85f6c60396e67d3f5523f59caf27047fdd17de8cfd",
+      "algorithm": "traditional",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 3.115145504125394,
+        "p95_ms": 3.1769089902809355,
+        "p99_ms": 3.1823764943692368,
+        "max_ms": 3.1843339966144413,
+        "samples_ms": [
+          3.1775839888723567,
+          3.133707999950275,
+          3.1571250001434237,
+          3.1339999986812472,
+          3.0883330036886036,
+          3.1465829961234704,
+          3.1365409959107637,
+          3.090875005000271,
+          3.1843339966144413,
+          3.11316701117903,
+          3.1149580026976764,
+          3.138708008918911,
+          3.089707999606617,
+          3.090500002144836,
+          3.1172500021057203,
+          3.176083992002532,
+          3.118874999927357,
+          3.170500000123866,
+          3.1416249985340983,
+          3.133000005618669,
+          3.0938340059947222,
+          3.092499988269992,
+          3.1051249970914796,
+          3.095457999734208,
+          3.1153330055531114,
+          3.105624986346811,
+          3.082707989960909,
+          3.092874991125427,
+          3.0914589879103005,
+          3.105041992967017
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 1.9364164909347892,
+        "p95_ms": 2.1213787964370567,
+        "p99_ms": 2.1658842072065454,
+        "max_ms": 2.176541995140724,
+        "samples_ms": [
+          2.0325830118963495,
+          1.9573330064304173,
+          2.176541995140724,
+          1.9454579887678847,
+          1.9892499985871837,
+          1.9045000080950558,
+          1.829500004532747,
+          1.866833001258783,
+          1.8509999936213717,
+          1.8631249986356124,
+          2.0856660121353343,
+          1.9584580004448071,
+          1.8833329959306866,
+          2.1397910022642463,
+          1.9231670012231916,
+          2.0265409984858707,
+          2.098874989314936,
+          1.986832998227328,
+          1.9273749931016937,
+          1.8809169996529818,
+          1.9010420073755085,
+          1.9084160012425855,
+          1.9222920091124251,
+          1.963458998943679,
+          2.0712089899461716,
+          1.9168750004610047,
+          1.999582993448712,
+          1.887249993160367,
+          1.9612500036600977,
+          1.9191250030416995
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.1161950829991838,
+        "process_cpu_seconds": 0.017755999999999994,
+        "before": {
+          "process_cpu_seconds": 0.130995,
+          "python_threads": 3,
+          "rss_bytes": 73269248,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.020726083,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 79806464,
+              "cpu_seconds": 0.117094292,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 95928320,
+          "total_rss_bytes": 169197568,
+          "children_cpu_seconds": 0.137820375,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.148751,
+          "python_threads": 3,
+          "rss_bytes": 74792960,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.021247624,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 87834624,
+              "cpu_seconds": 0.177504036,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 103956480,
+          "total_rss_bytes": 178749440,
+          "children_cpu_seconds": 0.19875166,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.021247624,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 87834624,
+            "maximum_observed_cpu_seconds": 0.177504036,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 74792960,
+        "sampled_max_children_rss_bytes": 103956480,
+        "sampled_max_total_rss_bytes": 178749440,
+        "sampled_max_native_threads": 3,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "candidate_counts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "last_diagnostics": {
+        "algorithm": "traditional",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "circle_count": 40,
+        "relation_entries": 1600,
+        "native_peak_reserved_bytes": 3313440,
+        "native_loop_checkpoints": 125,
+        "revision": 1,
+        "input_shape": [
+          240,
+          320,
+          3
+        ],
+        "preparation_ms": 0.023790998966433108,
+        "total_ms": 1.9191250030416995,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "single8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "input_sha256": "e09d20f6057b7f1698424d85f6c60396e67d3f5523f59caf27047fdd17de8cfd",
+      "algorithm": "multiscale",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 9.175645995128434,
+        "p95_ms": 13.793154493760063,
+        "p99_ms": 17.438494851085125,
+        "max_ms": 17.612832991289906,
+        "samples_ms": [
+          9.153791004791856,
+          9.156040992820635,
+          9.1543750022538,
+          9.14412499696482,
+          9.226833004504442,
+          9.262208011932671,
+          9.22616699244827,
+          8.703665997018106,
+          9.207750001223758,
+          9.145749994786456,
+          17.612832991289906,
+          9.142916998825967,
+          9.859416997642256,
+          9.182124995277263,
+          9.155500010820106,
+          9.183791989926249,
+          9.146124997641891,
+          9.239749997504987,
+          9.222332999343053,
+          8.892916011973284,
+          9.128124991548248,
+          9.193708014208823,
+          17.011666990583763,
+          9.168500007945113,
+          9.161583991954103,
+          9.20208300522063,
+          9.186249997583218,
+          9.169166994979605,
+          9.240250001312234,
+          9.167333002551459
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 7.964603995787911,
+        "p95_ms": 8.173589247599011,
+        "p99_ms": 8.326112632203149,
+        "max_ms": 8.3752919890685,
+        "samples_ms": [
+          8.3752919890685,
+          7.976458000484854,
+          8.044290996622294,
+          8.032458004890941,
+          7.969457990839146,
+          7.951166000566445,
+          8.014167004148476,
+          7.921791999251582,
+          7.97920799232088,
+          7.924875011667609,
+          7.999209003173746,
+          7.852417009416968,
+          8.205707999877632,
+          7.978666995768435,
+          8.023792004678398,
+          7.959750000736676,
+          7.990625003003515,
+          7.9297919874079525,
+          7.987417004187591,
+          7.914667003205977,
+          7.859999997890554,
+          7.873000009567477,
+          8.00724999862723,
+          7.781500011333264,
+          7.897957999375649,
+          7.843334009521641,
+          7.874625007389113,
+          8.13433299481403,
+          7.880499993916601,
+          7.866208004998043
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.30939999999827705,
+        "process_cpu_seconds": 0.03659899999999999,
+        "before": {
+          "process_cpu_seconds": 0.163053,
+          "python_threads": 3,
+          "rss_bytes": 77398016,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.021375208,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 89358336,
+              "cpu_seconds": 0.219559834,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 105480192,
+          "total_rss_bytes": 182878208,
+          "children_cpu_seconds": 0.24093504200000002,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.199652,
+          "python_threads": 3,
+          "rss_bytes": 86786048,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.021994082999999998,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 89653248,
+              "cpu_seconds": 0.46402941200000003,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 105775104,
+          "total_rss_bytes": 192561152,
+          "children_cpu_seconds": 0.486023495,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 4,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.021994082999999998,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 89653248,
+            "maximum_observed_cpu_seconds": 0.46402941200000003,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 86786048,
+        "sampled_max_children_rss_bytes": 105775104,
+        "sampled_max_total_rss_bytes": 192561152,
+        "sampled_max_native_threads": 4,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "candidate_counts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "last_diagnostics": {
+        "algorithm": "multiscale",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "passes": [
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 1,
+            "valid": 1
+          }
+        ],
+        "native_peak_reserved_bytes": 2664096,
+        "native_loop_checkpoints": 274,
+        "revision": 1,
+        "input_shape": [
+          240,
+          320,
+          3
+        ],
+        "preparation_ms": 0.020332998246885836,
+        "total_ms": 7.866208004998043,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "single20",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "input_sha256": "9d60f6518f1d7d5fc5310f3e60fa10f6fbc0b152c327867915d8a3036117e51d",
+      "algorithm": "traditional",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 3.1141250001383014,
+        "p95_ms": 3.1791815454198513,
+        "p99_ms": 3.185052675107727,
+        "max_ms": 3.186707996064797,
+        "samples_ms": [
+          3.1279999966500327,
+          3.127832998870872,
+          3.1769589986652136,
+          3.0956249975133687,
+          3.1007090001367033,
+          3.092166007263586,
+          3.0869580077705905,
+          3.0875000084051862,
+          3.095708991168067,
+          3.1114169978536665,
+          3.1258330127457157,
+          3.1042909977259114,
+          3.0988749931566417,
+          3.061125011299737,
+          3.080541006056592,
+          3.09295799524989,
+          3.080666996538639,
+          3.105750001850538,
+          3.1270000035874546,
+          3.1279590039048344,
+          3.186707996064797,
+          3.1168330024229363,
+          3.094833009527065,
+          3.137833991786465,
+          3.1353749945992604,
+          3.1725419976282865,
+          3.145999988191761,
+          3.180999992764555,
+          3.1645419949200004,
+          3.126083000097424
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 1.896520501759369,
+        "p95_ms": 1.9855396974890027,
+        "p99_ms": 2.1093730052234605,
+        "max_ms": 2.1562080073636025,
+        "samples_ms": [
+          1.8300000083399937,
+          1.8603329954203218,
+          1.9275000086054206,
+          1.9650419999379665,
+          1.8985829956363887,
+          2.1562080073636025,
+          1.9154580077156425,
+          1.8380000110482797,
+          1.9611669995356351,
+          1.974333994439803,
+          1.9184170087100938,
+          1.9947079999838024,
+          1.925125005072914,
+          1.9130419968860224,
+          1.8604590004542843,
+          1.8636659951880574,
+          1.9218329980503768,
+          1.9321250001667067,
+          1.8709160067373887,
+          1.8944580078823492,
+          1.9200410024495795,
+          1.8265830003656447,
+          1.9125410035485402,
+          1.8330000020796433,
+          1.7993750079767779,
+          1.812207992770709,
+          1.7740420007612556,
+          1.7799159977585077,
+          1.8195000011473894,
+          1.853916997788474
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.1111195410048822,
+        "process_cpu_seconds": 0.012489,
+        "before": {
+          "process_cpu_seconds": 0.209844,
+          "python_threads": 3,
+          "rss_bytes": 86818816,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.022120583,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 91422720,
+              "cpu_seconds": 0.473821844,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 107544576,
+          "total_rss_bytes": 194363392,
+          "children_cpu_seconds": 0.495942427,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.222333,
+          "python_threads": 3,
+          "rss_bytes": 87441408,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.022672499,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 91455488,
+              "cpu_seconds": 0.531837208,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 107577344,
+          "total_rss_bytes": 195018752,
+          "children_cpu_seconds": 0.554509707,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.022672499,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 91455488,
+            "maximum_observed_cpu_seconds": 0.531837208,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 87441408,
+        "sampled_max_children_rss_bytes": 107577344,
+        "sampled_max_total_rss_bytes": 195018752,
+        "sampled_max_native_threads": 3,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "candidate_counts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "last_diagnostics": {
+        "algorithm": "traditional",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "circle_count": 13,
+        "relation_entries": 169,
+        "native_peak_reserved_bytes": 3290961,
+        "native_loop_checkpoints": 123,
+        "revision": 1,
+        "input_shape": [
+          240,
+          320,
+          3
+        ],
+        "preparation_ms": 0.01983399852178991,
+        "total_ms": 1.853916997788474,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "single20",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "input_sha256": "9d60f6518f1d7d5fc5310f3e60fa10f6fbc0b152c327867915d8a3036117e51d",
+      "algorithm": "multiscale",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 10.663438006304204,
+        "p95_ms": 14.693727196572576,
+        "p99_ms": 18.979700312920617,
+        "max_ms": 20.334374989033677,
+        "samples_ms": [
+          9.202667002682574,
+          10.498083996935748,
+          9.137916989857331,
+          9.135791013250127,
+          9.142334005446173,
+          9.142957991571166,
+          10.29854100488592,
+          10.67816698923707,
+          9.158041997579858,
+          12.55687499360647,
+          20.334374989033677,
+          12.342542002443224,
+          12.359416999970563,
+          13.508958989405073,
+          13.158500005374663,
+          11.925582992262207,
+          10.705042004701681,
+          10.55645800079219,
+          12.237624992849305,
+          15.663083002436906,
+          11.77983300294727,
+          10.716750010033138,
+          9.191917008138262,
+          10.636625011102296,
+          10.335207989555784,
+          10.668041999451816,
+          10.678040998755023,
+          10.478249998413958,
+          10.658834013156593,
+          10.569250007392839
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 9.105896002438385,
+        "p95_ms": 12.12563329609111,
+        "p99_ms": 12.172152466227999,
+        "max_ms": 12.175959011074156,
+        "samples_ms": [
+          8.974666998255998,
+          8.984250001958571,
+          8.959915998275392,
+          8.956750010838732,
+          8.905750000849366,
+          8.935457997722551,
+          9.11008300317917,
+          9.1017090016976,
+          8.959042010246776,
+          12.16283299436327,
+          11.926667008083314,
+          11.736166998161934,
+          11.76208299875725,
+          12.175959011074156,
+          12.080166998202913,
+          11.414708002121188,
+          9.134916006587446,
+          9.217333004926331,
+          11.512291006511077,
+          10.899790999246761,
+          11.421959003200755,
+          10.076791993924417,
+          8.90054200135637,
+          9.029125008964911,
+          8.992290997412056,
+          9.016916999826208,
+          9.09924998995848,
+          9.021167003083974,
+          9.110583996516652,
+          9.098208000068553
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.3553572499949951,
+        "process_cpu_seconds": 0.03480699999999998,
+        "before": {
+          "process_cpu_seconds": 0.233082,
+          "python_threads": 3,
+          "rss_bytes": 88064000,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.022754874,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 91455488,
+              "cpu_seconds": 0.577278136,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 107577344,
+          "total_rss_bytes": 195641344,
+          "children_cpu_seconds": 0.60003301,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.267889,
+          "python_threads": 3,
+          "rss_bytes": 89817088,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.023477416,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 108134400,
+              "cpu_seconds": 0.876124056,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 124256256,
+          "total_rss_bytes": 214073344,
+          "children_cpu_seconds": 0.899601472,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 4,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.023477416,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 108134400,
+            "maximum_observed_cpu_seconds": 0.876124056,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 89817088,
+        "sampled_max_children_rss_bytes": 124256256,
+        "sampled_max_total_rss_bytes": 214073344,
+        "sampled_max_native_threads": 4,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "empty": 30
+      },
+      "candidate_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "last_diagnostics": {
+        "algorithm": "multiscale",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "passes": [
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 1,
+            "valid": 0
+          }
+        ],
+        "native_peak_reserved_bytes": 2649472,
+        "native_loop_checkpoints": 335,
+        "revision": 1,
+        "input_shape": [
+          240,
+          320,
+          3
+        ],
+        "preparation_ms": 0.026000008801929653,
+        "total_ms": 9.098208000068553,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "cross",
+      "shape": [
+        426,
+        640,
+        3
+      ],
+      "input_sha256": "c2e840cfd3c22b564985a0c88e2c7a8bcfab7f789517496a207a7206488e9690",
+      "algorithm": "traditional",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 7.703437499003485,
+        "p95_ms": 9.804145946691268,
+        "p99_ms": 13.700917824171487,
+        "max_ms": 14.609500009100884,
+        "samples_ms": [
+          7.760209002299234,
+          7.6966249907854944,
+          7.73062500229571,
+          7.7061250049155205,
+          7.735958002740517,
+          7.747541996650398,
+          7.677749992581084,
+          7.679166999878362,
+          7.675958011532202,
+          7.683000003453344,
+          7.661958006792702,
+          7.659499999135733,
+          7.659417009563185,
+          14.609500009100884,
+          7.708291988819838,
+          7.6917910046176985,
+          7.700749993091449,
+          7.681625007535331,
+          7.659499999135733,
+          7.743292007944547,
+          7.0947500062175095,
+          7.722540991380811,
+          7.731959005468525,
+          7.706874996074475,
+          7.646957994438708,
+          7.731166988378391,
+          7.71437500952743,
+          7.717457992839627,
+          11.47645799210295,
+          7.66033299441915
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 6.766187500033993,
+        "p95_ms": 7.185231245966861,
+        "p99_ms": 7.225568571302574,
+        "max_ms": 7.23866700718645,
+        "samples_ms": [
+          7.23866700718645,
+          7.120166992535815,
+          6.763249999494292,
+          7.193499986897223,
+          6.9670410011895,
+          6.770332998712547,
+          6.641250001848675,
+          6.921417007106356,
+          6.769125000573695,
+          6.622625005547889,
+          6.905917005497031,
+          6.555875006597489,
+          6.570375000592321,
+          6.750333006493747,
+          7.1751250070519745,
+          6.8242499983171,
+          6.724208011291921,
+          6.780041003366932,
+          6.60983299894724,
+          6.800791990826838,
+          6.625792011618614,
+          6.561792004504241,
+          6.551750004291534,
+          6.872582991491072,
+          6.8544170062523335,
+          6.579249995411374,
+          6.647125002928078,
+          6.522208001115359,
+          6.919624996953644,
+          6.562959009897895
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.259353250003187,
+        "process_cpu_seconds": 0.03615600000000002,
+        "before": {
+          "process_cpu_seconds": 0.278564,
+          "python_threads": 3,
+          "rss_bytes": 89817088,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.023588124,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 120373248,
+              "cpu_seconds": 0.9122,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 136495104,
+          "total_rss_bytes": 226312192,
+          "children_cpu_seconds": 0.935788124,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.31472,
+          "python_threads": 3,
+          "rss_bytes": 90439680,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.024186999,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 139362304,
+              "cpu_seconds": 1.118144432,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 155484160,
+          "total_rss_bytes": 245923840,
+          "children_cpu_seconds": 1.1423314310000001,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 4,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.024186999,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 139362304,
+            "maximum_observed_cpu_seconds": 1.118144432,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 91291648,
+        "sampled_max_children_rss_bytes": 155484160,
+        "sampled_max_total_rss_bytes": 246775808,
+        "sampled_max_native_threads": 4,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "candidate_counts": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "last_diagnostics": {
+        "algorithm": "traditional",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "circle_count": 76,
+        "relation_entries": 5776,
+        "native_peak_reserved_bytes": 10031664,
+        "native_loop_checkpoints": 446,
+        "revision": 1,
+        "input_shape": [
+          426,
+          640,
+          3
+        ],
+        "preparation_ms": 0.05400000372901559,
+        "total_ms": 6.562959009897895,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "cross",
+      "shape": [
+        426,
+        640,
+        3
+      ],
+      "input_sha256": "c2e840cfd3c22b564985a0c88e2c7a8bcfab7f789517496a207a7206488e9690",
+      "algorithm": "multiscale",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 25.78358350729104,
+        "p95_ms": 26.81620785369887,
+        "p99_ms": 28.08663140051067,
+        "max_ms": 28.580417012562975,
+        "samples_ms": [
+          25.840834001428448,
+          26.877708005486056,
+          25.79787500144448,
+          25.381040992215276,
+          25.785583988181315,
+          25.50975000485778,
+          25.74579100473784,
+          25.766791994101368,
+          28.580417012562975,
+          25.83374999812804,
+          25.81041699158959,
+          25.404375002835877,
+          25.636334001319483,
+          26.74104100151453,
+          25.3209579968825,
+          25.846459000604227,
+          25.790207990212366,
+          25.81066600396298,
+          25.4352499905508,
+          25.79475000675302,
+          25.72541699919384,
+          25.79679100017529,
+          24.972207989776507,
+          25.755915994523093,
+          25.79845800937619,
+          25.716417003422976,
+          25.783917008084245,
+          25.783250006497838,
+          25.756000002729706,
+          25.720207995618694
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 24.807166497339495,
+        "p95_ms": 25.241524996818043,
+        "p99_ms": 25.417088934482308,
+        "max_ms": 25.473083005636,
+        "samples_ms": [
+          25.473083005636,
+          25.280000001657754,
+          25.164582999423146,
+          25.04150000459049,
+          25.043875008122995,
+          24.980333997518755,
+          24.806083005387336,
+          25.19449999090284,
+          24.82525000232272,
+          24.74837499903515,
+          25.04849999968428,
+          25.076249992707744,
+          24.96112498920411,
+          24.95458399062045,
+          24.808249989291653,
+          24.811041002976708,
+          24.735750004765578,
+          24.785084009636194,
+          24.81216700107325,
+          24.668708007084206,
+          24.677624998730607,
+          24.64624999265652,
+          24.745916001847945,
+          24.64016599697061,
+          24.74370900017675,
+          24.5961670007091,
+          24.673833991982974,
+          24.72766699793283,
+          24.66112498950679,
+          24.610125008621253
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.7937991670041811,
+        "process_cpu_seconds": 0.07145799999999997,
+        "before": {
+          "process_cpu_seconds": 0.325149,
+          "python_threads": 3,
+          "rss_bytes": 90439680,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.024300999,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 139362304,
+              "cpu_seconds": 1.245310072,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 155484160,
+          "total_rss_bytes": 245923840,
+          "children_cpu_seconds": 1.2696110710000001,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.396607,
+          "python_threads": 3,
+          "rss_bytes": 90456064,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.025072083000000002,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 143507456,
+              "cpu_seconds": 1.993086736,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 159629312,
+          "total_rss_bytes": 250085376,
+          "children_cpu_seconds": 2.018158819,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 8,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.025072083000000002,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 144326656,
+            "maximum_observed_cpu_seconds": 1.993086736,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 91308032,
+        "sampled_max_children_rss_bytes": 160448512,
+        "sampled_max_total_rss_bytes": 251740160,
+        "sampled_max_native_threads": 4,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "empty": 30
+      },
+      "candidate_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "last_diagnostics": {
+        "algorithm": "multiscale",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "passes": [
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 0,
+            "valid": 0
+          }
+        ],
+        "native_peak_reserved_bytes": 8903104,
+        "native_loop_checkpoints": 939,
+        "revision": 1,
+        "input_shape": [
+          426,
+          640,
+          3
+        ],
+        "preparation_ms": 0.0619160127826035,
+        "total_ms": 24.610125008621253,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "large_sparse8",
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "95f87d77f97e75e308eef28b2ae5b2c3698067e35cd08db2189d6c0a22284d67",
+      "algorithm": "traditional",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 4071.7471040043165,
+        "p95_ms": 4119.199546197342,
+        "p99_ms": 4137.24992722171,
+        "max_ms": 4143.342416005908,
+        "samples_ms": [
+          4071.8643750005867,
+          4020.850957997027,
+          4055.6172090000473,
+          4109.204790991498,
+          4052.007958001923,
+          4062.705457996344,
+          4082.334082995658,
+          4032.465708005475,
+          4026.7587500129594,
+          4080.0690000032773,
+          4115.3687500045635,
+          4071.6298330080463,
+          4091.4321250020294,
+          4079.5131249906262,
+          4034.3728750012815,
+          4105.945750008686,
+          4076.422292011557,
+          4103.0215000064345,
+          4058.074166008737,
+          4041.900958996848,
+          4062.0487080013845,
+          4143.342416005908,
+          4122.3338339914335,
+          4075.3934170061257,
+          4030.590915994253,
+          4060.785207999288,
+          4086.0599580046255,
+          4071.38291701267,
+          4085.151416991721,
+          4069.256624992704
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 4064.5459169973037,
+        "p95_ms": 4111.234489946219,
+        "p99_ms": 4129.218411855109,
+        "max_ms": 4135.355874997913,
+        "samples_ms": [
+          4065.2785419952124,
+          4012.9077500023413,
+          4047.9196670057718,
+          4101.996999990661,
+          4040.330500007258,
+          4055.847707990324,
+          4074.749666993739,
+          4025.297291998868,
+          4018.5972089966526,
+          4073.025375008001,
+          4107.619500005967,
+          4063.813291999395,
+          4083.7947499967413,
+          4072.890750001534,
+          4026.901666991762,
+          4098.921124998014,
+          4068.950582994148,
+          4095.0867500068853,
+          4034.2379169887863,
+          4027.4683329917025,
+          4055.2639160014223,
+          4135.355874997913,
+          4114.192208988243,
+          4068.0876250116853,
+          4022.340625000652,
+          4053.2492909987923,
+          4077.9168750013923,
+          4063.6619589931797,
+          4077.3493749875342,
+          4061.8767499981914
+        ]
+      },
+      "resources": {
+        "wall_seconds": 122.19471054100723,
+        "process_cpu_seconds": 9.736988,
+        "before": {
+          "process_cpu_seconds": 0.50183,
+          "python_threads": 3,
+          "rss_bytes": 166068224,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.025255999,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 747896832,
+              "cpu_seconds": 22.31029216,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 764018688,
+          "total_rss_bytes": 930086912,
+          "children_cpu_seconds": 22.335548159,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 10.238818,
+          "python_threads": 3,
+          "rss_bytes": 183975936,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.026433665000000002,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 886095872,
+              "cpu_seconds": 144.17853747200002,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 902217728,
+          "total_rss_bytes": 1086193664,
+          "children_cpu_seconds": 144.20497113700003,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 1060,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.026433665000000002,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 1077116928,
+            "maximum_observed_cpu_seconds": 144.17853747200002,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 258785280,
+        "sampled_max_children_rss_bytes": 1093238784,
+        "sampled_max_total_rss_bytes": 1350811648,
+        "sampled_max_native_threads": 4,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "candidate_counts": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "last_diagnostics": {
+        "algorithm": "traditional",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "circle_count": 6144,
+        "relation_entries": 37748736,
+        "native_peak_reserved_bytes": 895373568,
+        "native_loop_checkpoints": 277830,
+        "revision": 1,
+        "input_shape": [
+          4096,
+          6144,
+          3
+        ],
+        "preparation_ms": 6.831291990238242,
+        "total_ms": 4061.8767499981914,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    },
+    {
+      "case": "large_sparse8",
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "95f87d77f97e75e308eef28b2ae5b2c3698067e35cd08db2189d6c0a22284d67",
+      "algorithm": "multiscale",
+      "worker_roundtrip": {
+        "count": 30,
+        "p50_ms": 1958.850375500333,
+        "p95_ms": 2094.9314686047724,
+        "p99_ms": 2244.039620004478,
+        "max_ms": 2281.5067500050645,
+        "samples_ms": [
+          1957.46533399506,
+          1955.923540997901,
+          1954.8486249987036,
+          1968.0208330100868,
+          1957.9714169958606,
+          1946.052334009437,
+          1953.9316660084296,
+          2152.3097500030417,
+          1963.6597500066273,
+          1964.612791009131,
+          1995.6355830072425,
+          1951.1689999926602,
+          1958.7991669977782,
+          1957.5100829970324,
+          1949.2055419977987,
+          1952.4768750125077,
+          1952.2526250075316,
+          1956.783458008431,
+          1958.9015840028878,
+          2281.5067500050645,
+          1998.3858750056243,
+          1951.5532499935944,
+          1961.442125000758,
+          1964.6985410072375,
+          1988.0408340104623,
+          1967.6764580071904,
+          1963.3948330010753,
+          1964.5250830071745,
+          1956.7978749983013,
+          2024.8024580068886
+        ]
+      },
+      "service_inside_worker": {
+        "count": 30,
+        "p50_ms": 1880.4848954969202,
+        "p95_ms": 1916.3421729579568,
+        "p99_ms": 1933.7998646804772,
+        "max_ms": 1939.9094999971567,
+        "samples_ms": [
+          1876.67962499836,
+          1875.2212500112364,
+          1880.2607499965234,
+          1894.0814170055091,
+          1883.5202079935698,
+          1870.7011249935022,
+          1874.865999998292,
+          1892.6268750074087,
+          1880.8044170000358,
+          1880.667874997016,
+          1913.2870830071624,
+          1875.4581249959301,
+          1884.3377500015777,
+          1883.8081249996321,
+          1875.1248750049854,
+          1878.5814590082737,
+          1879.892666998785,
+          1873.8728329917649,
+          1878.5712500102818,
+          1904.4665840046946,
+          1918.8417920086067,
+          1869.1620000026887,
+          1881.281708003371,
+          1880.9717080002883,
+          1895.2544999920065,
+          1885.1463749888353,
+          1880.3019159968244,
+          1879.6383750013774,
+          1875.297499995213,
+          1939.9094999971567
+        ]
+      },
+      "resources": {
+        "wall_seconds": 59.44739783401019,
+        "process_cpu_seconds": 6.476137,
+        "before": {
+          "process_cpu_seconds": 10.537026,
+          "python_threads": 3,
+          "rss_bytes": 300859392,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.026642248,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 1654571008,
+              "cpu_seconds": 153.7516032,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 1670692864,
+          "total_rss_bytes": 1971552256,
+          "children_cpu_seconds": 153.778245448,
+          "resource_provider": "psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 17.013163,
+          "python_threads": 3,
+          "rss_bytes": 1900806144,
+          "native_threads": 3,
+          "children": [
+            {
+              "pid": 38681,
+              "name": "python3.13",
+              "rss_bytes": 16121856,
+              "cpu_seconds": 0.027766332999999997,
+              "native_threads": 1
+            },
+            {
+              "pid": 38682,
+              "name": "python3.13",
+              "rss_bytes": 1720958976,
+              "cpu_seconds": 211.26978764799998,
+              "native_threads": 1
+            }
+          ],
+          "children_rss_bytes": 1737080832,
+          "total_rss_bytes": 3637886976,
+          "children_cpu_seconds": 211.29755398099996,
+          "resource_provider": "psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 511,
+        "children_sampled_peaks": [
+          {
+            "pid": 38681,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 16121856,
+            "maximum_observed_cpu_seconds": 0.027766332999999997,
+            "sampled_peak_native_threads": 1
+          },
+          {
+            "pid": 38682,
+            "name": "python3.13",
+            "sampled_peak_rss_bytes": 1807319040,
+            "maximum_observed_cpu_seconds": 211.26978764799998,
+            "sampled_peak_native_threads": 1
+          }
+        ],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 1922826240,
+        "sampled_max_children_rss_bytes": 1823440896,
+        "sampled_max_total_rss_bytes": 3746267136,
+        "sampled_max_native_threads": 4,
+        "sampled_max_process_lifetime_peak_rss_bytes": null
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "candidate_counts": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "last_diagnostics": {
+        "algorithm": "multiscale",
+        "preset": "fiber1",
+        "cv2_version": "4.13.0",
+        "passes": [
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 0,
+            "valid": 0
+          },
+          {
+            "count": 8,
+            "valid": 8
+          }
+        ],
+        "native_peak_reserved_bytes": 837261200,
+        "native_loop_checkpoints": 69376,
+        "revision": 1,
+        "input_shape": [
+          4096,
+          6144,
+          3
+        ],
+        "preparation_ms": 7.090082988725044,
+        "total_ms": 1939.9094999971567,
+        "memory_budget": 2147483648,
+        "backend": "native_cu_source"
+      },
+      "errors": []
+    }
+  ]
+}

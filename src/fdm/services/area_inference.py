@@ -14,6 +14,7 @@ import uuid
 
 from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.cancellation import CancellationToken
+from fdm.services.compute_budget import heavy_compute
 from fdm.geometry import Point
 from fdm.runtime_logging import (
     RUNTIME_LOG_BACKUP_COUNT,
@@ -451,6 +452,8 @@ class AreaInferenceService:
             )
         return token or "面积识别失败"
 
+    @heavy_compute("area_inference", checkpoint_factory=lambda kwargs:
+                   lambda: _raise_if_area_cancelled(kwargs.get("cancellation_token")))
     def infer_image(
         self,
         *,

@@ -1,0 +1,376 @@
+{
+  "source_sha256": "19d3f1535b208baa05cf59dc7019ff394f138ab3ed7eba9cd5cb6c6965ec58fa",
+  "reference": "Audited source port linked to original OpenCV 3.3; no CU algorithm DLL loaded. Original final fixtures independently verify all exported stages and counts.",
+  "reference_opencv_sha256": "af2be9ae1b50b8d0a9acbf54a00bb560f71c26cf2aaaa57263d61846d34334ea",
+  "fixture": "stress_connected_01.bmp",
+  "passes": [
+    {
+      "count": 2,
+      "valid": 1
+    },
+    {
+      "count": 5,
+      "valid": 2
+    },
+    {
+      "count": 20,
+      "valid": 8
+    }
+  ],
+  "stages": [
+    {
+      "stage": "coarse_00_input.pgm",
+      "shape": [
+        116,
+        139
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "7e5c95375426a3684d20c9e1bd83933433de1dc5442b2eed0a735450eeac4918",
+      "actual_sha256": "7e5c95375426a3684d20c9e1bd83933433de1dc5442b2eed0a735450eeac4918"
+    },
+    {
+      "stage": "coarse_01_preprocess_1.pgm",
+      "shape": [
+        116,
+        139
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "f964a770d08a9e0ef9209853a583a7c4331c72152be49481c8581982a917da89",
+      "actual_sha256": "f964a770d08a9e0ef9209853a583a7c4331c72152be49481c8581982a917da89"
+    },
+    {
+      "stage": "coarse_02_preprocess_2.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "fb2471c9d0cc432e4fcfee2097cbc06e9c2ae67cc61bffcb69c20bfb4f003c38",
+      "actual_sha256": "fb2471c9d0cc432e4fcfee2097cbc06e9c2ae67cc61bffcb69c20bfb4f003c38"
+    },
+    {
+      "stage": "coarse_03_fill_edge_mizi.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "c70abd221b6d8147a52483c5d8e5e157136fde531cb17ea273a6db3aef96d94a",
+      "actual_sha256": "c70abd221b6d8147a52483c5d8e5e157136fde531cb17ea273a6db3aef96d94a"
+    },
+    {
+      "stage": "coarse_04_link_gap.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "c70abd221b6d8147a52483c5d8e5e157136fde531cb17ea273a6db3aef96d94a",
+      "actual_sha256": "c70abd221b6d8147a52483c5d8e5e157136fde531cb17ea273a6db3aef96d94a"
+    },
+    {
+      "stage": "coarse_05_get_holes.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "4810fb237760f39a93d505df4d54b3d0e9041b3ea58991943eab7ffa5ab93dfd",
+      "actual_sha256": "4810fb237760f39a93d505df4d54b3d0e9041b3ea58991943eab7ffa5ab93dfd"
+    },
+    {
+      "stage": "coarse_06_sift_holes.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "e30bc4e2248a24eb598ed34a968a8ce9f54a971159fc8e0cba16c803437c0565",
+      "actual_sha256": "e30bc4e2248a24eb598ed34a968a8ce9f54a971159fc8e0cba16c803437c0565"
+    },
+    {
+      "stage": "coarse_07_thin_remove_thin.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "7bc06d11a39b706f78825347e1e75b629a35688fbaa30c28d22c1ad5784286e8",
+      "actual_sha256": "7bc06d11a39b706f78825347e1e75b629a35688fbaa30c28d22c1ad5784286e8"
+    },
+    {
+      "stage": "coarse_08_sift_short.pgm",
+      "shape": [
+        128,
+        151
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "7bc06d11a39b706f78825347e1e75b629a35688fbaa30c28d22c1ad5784286e8",
+      "actual_sha256": "7bc06d11a39b706f78825347e1e75b629a35688fbaa30c28d22c1ad5784286e8"
+    },
+    {
+      "stage": "coarse_enhanced.pgm",
+      "shape": [
+        350,
+        420
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "ebab55bfb0fa13fa0b16c1d82ac696b82a256a6a8eecc958a86eb041dd9fab21",
+      "actual_sha256": "ebab55bfb0fa13fa0b16c1d82ac696b82a256a6a8eecc958a86eb041dd9fab21"
+    },
+    {
+      "stage": "coarse_links.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 14,
+        "fibers": 5
+      },
+      "actual_counts": {
+        "segments": 14,
+        "fibers": 5
+      }
+    },
+    {
+      "stage": "coarse_segments.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 14,
+        "fibers": 0
+      },
+      "actual_counts": {
+        "segments": 14,
+        "fibers": 0
+      }
+    },
+    {
+      "stage": "mid_00_input.pgm",
+      "shape": [
+        231,
+        277
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "22a27017ecff80cd8a52b039782fefec2d8e8eb1a94e8397d4eab8337edb3436",
+      "actual_sha256": "22a27017ecff80cd8a52b039782fefec2d8e8eb1a94e8397d4eab8337edb3436"
+    },
+    {
+      "stage": "mid_01_preprocess_1.pgm",
+      "shape": [
+        231,
+        277
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "2c2028073eedadd0d22fb8ba8d5c3b8501106597484a5067e486c3bb36474161",
+      "actual_sha256": "2c2028073eedadd0d22fb8ba8d5c3b8501106597484a5067e486c3bb36474161"
+    },
+    {
+      "stage": "mid_02_preprocess_2.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "1bb149709d457104c2754f3faba2ce9027a360126f660db16d05135abb917a0f",
+      "actual_sha256": "1bb149709d457104c2754f3faba2ce9027a360126f660db16d05135abb917a0f"
+    },
+    {
+      "stage": "mid_03_fill_edge_mizi.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "8e72a277f990dafcc4e9ba9874dfdac4270557d26d90bb08f9b63a9fc4afa547",
+      "actual_sha256": "8e72a277f990dafcc4e9ba9874dfdac4270557d26d90bb08f9b63a9fc4afa547"
+    },
+    {
+      "stage": "mid_04_link_gap.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "fb32d736a307962f62fd12ce3fd66291a1409107cfe254f8fd443af50c70f7d7",
+      "actual_sha256": "fb32d736a307962f62fd12ce3fd66291a1409107cfe254f8fd443af50c70f7d7"
+    },
+    {
+      "stage": "mid_05_get_holes.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "e8fbfa193b852f68b5c7fc453d0fe0062844010e89c44ab0e5698616e49932e2",
+      "actual_sha256": "e8fbfa193b852f68b5c7fc453d0fe0062844010e89c44ab0e5698616e49932e2"
+    },
+    {
+      "stage": "mid_06_sift_holes.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "db14cfd7ac70def828b0288e5da1df5f31b2c3a74fabf2612abc61231a6c9830",
+      "actual_sha256": "db14cfd7ac70def828b0288e5da1df5f31b2c3a74fabf2612abc61231a6c9830"
+    },
+    {
+      "stage": "mid_07_thin_remove_thin.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "24b322672217f94e50f3d4065db248e2888890ddbbee8d77c13575310aa2f87d",
+      "actual_sha256": "24b322672217f94e50f3d4065db248e2888890ddbbee8d77c13575310aa2f87d"
+    },
+    {
+      "stage": "mid_08_sift_short.pgm",
+      "shape": [
+        243,
+        289
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "24b322672217f94e50f3d4065db248e2888890ddbbee8d77c13575310aa2f87d",
+      "actual_sha256": "24b322672217f94e50f3d4065db248e2888890ddbbee8d77c13575310aa2f87d"
+    },
+    {
+      "stage": "mid_enhanced.pgm",
+      "shape": [
+        350,
+        420
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "be6ea7862b8dc9279ca294b293a19aa4e9998082521a5f9dcf8192c4c30aee94",
+      "actual_sha256": "be6ea7862b8dc9279ca294b293a19aa4e9998082521a5f9dcf8192c4c30aee94"
+    },
+    {
+      "stage": "mid_links.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 4,
+        "fibers": 2
+      },
+      "actual_counts": {
+        "segments": 4,
+        "fibers": 2
+      }
+    },
+    {
+      "stage": "mid_segments.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 4,
+        "fibers": 0
+      },
+      "actual_counts": {
+        "segments": 4,
+        "fibers": 0
+      }
+    },
+    {
+      "stage": "thin_05_get_holes.pgm",
+      "shape": [
+        366,
+        436
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "0b94cdb18ce1fa00885182159dfa9556bc75f3bb063c30a5e4270b0a2341cf41",
+      "actual_sha256": "0b94cdb18ce1fa00885182159dfa9556bc75f3bb063c30a5e4270b0a2341cf41"
+    },
+    {
+      "stage": "thin_canny.pgm",
+      "shape": [
+        350,
+        420
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "7e4aebcfb54066a40145ffb0f46de9b0d2358ecee1a8ae9c3822225b8198e902",
+      "actual_sha256": "7e4aebcfb54066a40145ffb0f46de9b0d2358ecee1a8ae9c3822225b8198e902"
+    },
+    {
+      "stage": "thin_enhanced.pgm",
+      "shape": [
+        350,
+        420
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "0dff7fac5782bd42f07beeb98579436a7ed4bd844c7cd12467bf67dae0522fba",
+      "actual_sha256": "0dff7fac5782bd42f07beeb98579436a7ed4bd844c7cd12467bf67dae0522fba"
+    },
+    {
+      "stage": "thin_filtered_segments.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 28,
+        "fibers": 0
+      },
+      "actual_counts": {
+        "segments": 28,
+        "fibers": 0
+      }
+    },
+    {
+      "stage": "thin_links.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 28,
+        "fibers": 20
+      },
+      "actual_counts": {
+        "segments": 28,
+        "fibers": 20
+      }
+    },
+    {
+      "stage": "thin_pruned.pgm",
+      "shape": [
+        366,
+        436
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "f475478dc935698cbc0390cd67fb570218fcf05f0e2ffd4462372536f096514f",
+      "actual_sha256": "f475478dc935698cbc0390cd67fb570218fcf05f0e2ffd4462372536f096514f"
+    },
+    {
+      "stage": "thin_segments.json",
+      "segments_equal": true,
+      "fibers_equal": true,
+      "reference_counts": {
+        "segments": 60,
+        "fibers": 0
+      },
+      "actual_counts": {
+        "segments": 60,
+        "fibers": 0
+      }
+    },
+    {
+      "stage": "thin_shadows.pgm",
+      "shape": [
+        366,
+        436
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "5dc00ed71774115d1fcd9a789d0d636c40f4fd952211c40637984672322b0f52",
+      "actual_sha256": "5dc00ed71774115d1fcd9a789d0d636c40f4fd952211c40637984672322b0f52"
+    },
+    {
+      "stage": "thin_thin.pgm",
+      "shape": [
+        366,
+        436
+      ],
+      "different_pixels": 0,
+      "reference_sha256": "f16bb2e049df03d9628cc0b0ff81b8189ed22bbc480321aae2645b1d95d411dc",
+      "actual_sha256": "f16bb2e049df03d9628cc0b0ff81b8189ed22bbc480321aae2645b1d95d411dc"
+    }
+  ],
+  "implementation": "Production source: actual-allocation budget + sliding enhancement + scanline fill + OpenCV 1.0 AA + OpenCV 3.3 calipers and L1 fitLine stopping rule.",
+  "all_33_stages_equal": true,
+  "instrumented_source_sha256": "70ea41c7a70adb404a6de3cf78e6905272dc55273e5f1a3758b0bd26f18ec473"
+}

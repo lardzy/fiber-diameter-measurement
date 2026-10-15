@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-15",
+  "scope": "Read-only diagnosis; no product or test changes, no new baseline full-suite run, no test suppression.",
+  "baseline_verification": {
+    "snapshot_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+    "baseline_path": "/private/tmp/fdm-cu-prechange-baseline",
+    "verified_index_files": 402,
+    "mismatches": [],
+    "diagnostic_sha256": {
+      "tests/conftest.py": "e06d29f2c0f136d7bc5b83fc40d789e5a64685e3258fe90a28d2790376b4ec00",
+      "tests/test_workbench_workflows.py": "d1fe393c98664b00a97fc753435c0e0dbe8401f54a708959047523e9b39f2327",
+      "src/fdm/ui/theme.py": "d831f960c0fb02e73a4f905631037aa751fab58dd87f22d930f31d6934e5f9f6",
+      "src/fdm/ui/main_window.py": "c0631e3088f2e81b230df34e50fcee0d242eb7b3952ad1e22acd02992beeacc8",
+      "native/kernels.cpp": "e9a72b76af5c07e3a6deb3c1fc976ae000a0f1ad3903201ab48acd8f2e93f223"
+    },
+    "index_snapshot_sha256": "419f08d75ceacba169e77de88a221a4bfbdc3eed7641b6cea9bb65f5d57eefce",
+    "staged_patch_sha256": "4714a75cdf221724b2a9b2addbfdf5087d1490dfe50c9dc9b2ef403ebdaee2b3",
+    "meaning": "402 tracked source/test/build files match the saved pre-CU index exactly; this includes the original staged work. No native extension was rebuilt or substituted during this audit."
+  },
+  "third_full_run": {
+    "outcome": "Terminated after persistent native Qt mutex wait; not counted as a completed full regression.",
+    "sample": {
+      "path": "/private/tmp/fdm-cu-pytest-sample.txt",
+      "sha256": "02ede0836caaf56c8edff446232d0dff8ce5b64068c1d2cf4be6a070abf492f8",
+      "pid": 24537,
+      "captured_at": "2026-10-15T02:00:44+08:00",
+      "same_main_thread_stack_samples": 745,
+      "sampled_main_thread_stack": [
+        "QCoreApplication.processEvents",
+        "QWidget.ensurePolished",
+        "QWidgetPrivate.propagatePaletteChange",
+        "MainWindow.changeEvent",
+        "QAction.setIcon",
+        "QToolButton.setDefaultAction",
+        "QObjectPrivate.connectImpl",
+        "QBasicMutex.lockInternal",
+        "__ulock_wait2"
+      ]
+    },
+    "boundary": "Sampling confirms the blocked location, not the mutex owner or root cause. The baseline was not shown to reproduce this wait; do not label it a verified baseline deadlock."
+  },
+  "fourth_full_run": {
+    "command": "QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -vv -o faulthandler_timeout=60",
+    "source_log": "build/cu-live-measurement/full-regression-macos-final-diagnostic.log",
+    "source_log_sha256": "b9c125c96b28eeab31b8f9876682ecad5bc6f7483e87d216a787b0e6cf41ecd7",
+    "outcome": "Completed",
+    "passed": 4427,
+    "baseline_failed": 5,
+    "new_failed": 0,
+    "subtests_passed": 1650,
+    "warnings": 1,
+    "elapsed_seconds": 448.51,
+    "theme_diagnostic": "The 60-second faulthandler dump occurred during test_system_theme_uses_stable_controls_and_tracks_appearance (theme.apply_application_theme -> QApplication.setStyleSheet -> MainWindow.eventFilter). That test later PASSED and the full suite finished. faulthandler_timeout emits a stack dump; it does not abort a test. This run was slow theme processing, not a demonstrated deadlock.",
+    "failed_cases": [
+      "tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]",
+      "tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]",
+      "tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down",
+      "tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults",
+      "tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable [subtest size=(1536, 864)]"
+    ],
+    "baseline_failure_evidence": {
+      "path": "docs/validation/cu-live-measurement-2026-10-15/prechange-ui-baseline.log",
+      "sha256": "565d6f6c5a7966dbd40a388beafbc9e5bdb9181bd4c2d5e35dc80eb0bcfb5d53",
+      "description": "Previously completed pre-change UI comparison reproduced these same five failures."
+    }
+  },
+  "unchanged_trigger_path": {
+    "byte_identical_files": [
+      "src/fdm/ui/theme.py",
+      "tests/conftest.py"
+    ],
+    "ast_identical_mainwindow_methods": [
+      "changeEvent",
+      "_refresh_theme_sensitive_icons",
+      "eventFilter"
+    ],
+    "interpretation": "The observed theme/icon callback chain predates CU changes; that alone does not prove the rare mutex wait is a baseline failure."
+  },
+  "recommendation": "Retain the completed fourth full-run result as coverage. If the native wait recurs, collect its lock owner and per-file surviving QWidget/MainWindow counts, then compare the verified pre-change tree. Large surviving widget/theme callback accumulation is a hypothesis, not a measured cause. Per-file process isolation may be used for additional coverage without altering or skipping tests; it was not required after the fourth run completed."
+}

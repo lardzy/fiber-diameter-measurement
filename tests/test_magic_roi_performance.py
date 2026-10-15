@@ -458,6 +458,7 @@ def test_packaging_enforces_real_magic_probe(state, monkeypatch):
     from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
     from fdm.ui.project_save_self_check import run_project_save_self_check
     from fdm.services.native_kernels_self_check import run_native_kernels_self_check
+    from fdm.services.cu_live_self_check import run_cu_live_self_check
 
     scale = run_scale_overlay_self_check()
     save = run_project_save_self_check()
@@ -468,6 +469,7 @@ def test_packaging_enforces_real_magic_probe(state, monkeypatch):
         'fiber_quick_geometry': {'ok': True, 'backend': 'skimage_zhang', 'backend_version': 'test', 'geometry_revision': 3, 'compiled_extension': True},
         'project_save': save,
         'native_kernels': native,
+        'cu_live_measurement': run_cu_live_self_check(),
         'magic_segmentation': magic,
         'watermark_renderer': run_watermark_self_check(),
     }}

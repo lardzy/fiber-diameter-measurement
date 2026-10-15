@@ -1,0 +1,1090 @@
+{
+  "format": 1,
+  "date": "2026-10-15",
+  "version": "0.4.7",
+  "scope": "internal-full-without-area-models",
+  "source": {
+    "base_zip_sha256": "df162f272e76f3ec3895c4f86f035441c1a879d9cb721e408d3fb0680f2ab058",
+    "delta_zip_sha256": "d3457d41a0907848c9f76a876db3e923a87cd44398c3c538cac3c3dac4e5c79e",
+    "manifest_sha256": "33d042eb149cc37c2608c459f84ec5c4739f5ea2d649c0cb19ad4dc9448a9564",
+    "files": 905,
+    "changed": [
+      {
+        "path": "scripts/benchmark_cu_live_ui.py",
+        "size": 20012,
+        "sha256": "619c9f868b6e2c7d507192c53c9c7b01a75177be7f611ae214304489bb6f44cd"
+      },
+      {
+        "path": "scripts/benchmark_cu_live_measurement.py",
+        "size": 26849,
+        "sha256": "ee3f3f8837b82ff2ac1712361c35cb1a83d46c7f16181c0f7703f7e44cbfa3fb"
+      },
+      {
+        "path": "scripts/validation/benchmark_cu_png.py",
+        "size": 4630,
+        "sha256": "d5fccd4fb11a2c512e3d1c5b741df82fc7f13d5cfc6cabe5c233fe095b2adda5"
+      },
+      {
+        "path": "scripts/validation/benchmark_cu_motion.py",
+        "size": 5639,
+        "sha256": "36f1162693a5aed73d1a892e53c8bf844c6a8399619063db9bdf35488ddbad7b"
+      },
+      {
+        "path": "scripts/validation/soak_cu_workspace.py",
+        "size": 40838,
+        "sha256": "57fae39f4df3314e53b637197a026bc438fd0d28bf0757157837cd98705ea25d"
+      },
+      {
+        "path": "src/fdm/ui/live_experiment_workspace.py",
+        "size": 81269,
+        "sha256": "2c0a807d1b56151625e423b1cf71d58a005daa5bc01badd944a63b5284040f04"
+      },
+      {
+        "path": "packaging/inno-setup/version.auto.iss",
+        "size": 100,
+        "sha256": "d3a5730bfb3786e1b9c1260728ec1056e3e81c8364307ae04af49c041ea1aac7"
+      },
+      {
+        "path": "docs/cu-live-measurement.md",
+        "size": 9487,
+        "sha256": "f7d3c202a5909d7c13b294c94b682431534d7ae0d636d1e2337314bb225f1036"
+      },
+      {
+        "path": "docs/cu-live-transition.md",
+        "size": 8711,
+        "sha256": "632e5af61d20e49e4ff9e3f002288c25fe1a6464aefbad0a60331dcf0190f96d"
+      }
+    ],
+    "http_server_stopped": true
+  },
+  "repository_lock_metadata_overlay": {
+    "change": "benchmark metadata-only overlay",
+    "before_sha256": "633a98757e5eb8bc50c292d6f6b209da6167167b9f8d5db10972f27c301f0642",
+    "after_sha256": "40ba31b624bbfaa6373d8104f79cfeed57214e6a66606fb3dae7387aa919608e",
+    "added_lines": 33,
+    "removed_lines": 1,
+    "added_packages": [
+      [
+        "psutil",
+        "7.2.2",
+        "{'registry': 'https://pypi.org/simple'}"
+      ]
+    ],
+    "removed_packages": [],
+    "changed_existing_package_blocks": [
+      "fiber-diameter-measurement"
+    ],
+    "validation": {
+      "uv lock --offline": "passed, 89 packages, psutil 7.2.2 added",
+      "uv lock --check --offline": "passed",
+      "uv lock --check": "passed",
+      "git diff --check -- uv.lock": "passed"
+    },
+    "environment_changed": false,
+    "pyproject_changed": false
+  },
+  "source_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+  "source_branch": "lard/cu-live-measurement",
+  "source_has_uncommitted_changes": true,
+  "validation_environment": "Parallels Windows 11 ARM64, CPython 3.12.13 x64, MSVC 1944",
+  "profiles": [
+    {
+      "profile": "core",
+      "ok": true,
+      "clean_build": false,
+      "files": 4729,
+      "manifest": "build/cu-live-windows/core-release-manifest-final.json",
+      "manifest_sha256": "de185eab4784aeeb38674f82bff1786243f236667e8a9adfbb02c51cbe251001",
+      "selfcheck": "build/cu-live-windows/core-selfcheck-final.json",
+      "selfcheck_sha256": "ce5b85f274eca1e666d87d454ab759f47dde53b920011162eaa738c701adb475",
+      "log": "build/cu-live-windows/core-onedir-final.log",
+      "log_sha256": "c25f4a686dc7a2dc799f4dbe4e4bef1b603eefcaf61fe8c551477dd0d7116585",
+      "live_checks": {
+        "cases": {
+          "content_formula": true,
+          "field_motion": true,
+          "manual_native": true,
+          "multiscale_native": true,
+          "project_roundtrip": true,
+          "traditional_native": true,
+          "windows_capture_build": true,
+          "windows_capture_import": true
+        },
+        "hardware_capture_tested": false,
+        "native_build_info": {
+          "api_version": 1,
+          "build_type": "release",
+          "compiler": "MSVC 1944",
+          "cpp_standard": 201703,
+          "pybind11_version": "3.0.4",
+          "python_abi": "cpython-312",
+          "python_version": "3.12.13",
+          "source_sha256": "d3499aa56f20c64c4415adedd10e8d73b8653240806201cb1f3dac4967367086"
+        },
+        "ok": true,
+        "revision": 1
+      },
+      "excluded_components": [
+        "area-models"
+      ],
+      "included_components": [
+        "content-templates"
+      ],
+      "native_binaries": [
+        {
+          "path": "fdm/_native/_kernels.cp312-win_amd64.pyd",
+          "size": 419840,
+          "sha256": "cdb0611a90ee233819f78233640f2a32dfd76fe105e1130d27e29a60af290319"
+        },
+        {
+          "path": "fdm/_native/_windows_capture.cp312-win_amd64.pyd",
+          "size": 214016,
+          "sha256": "2a8115357a5e3e3f5c4473bc523dd92c17f752a54bd2044c669efc59764d423b"
+        }
+      ]
+    },
+    {
+      "profile": "full",
+      "ok": true,
+      "clean_build": true,
+      "files": 4766,
+      "manifest": "build/cu-live-windows/full-release-manifest-final.json",
+      "manifest_sha256": "41dce53fe8270b2b235a1e62950323028d1ef6da7e9721494cd115859db8af96",
+      "selfcheck": "build/cu-live-windows/full-selfcheck-final.json",
+      "selfcheck_sha256": "ca6af5d61262e2d2be1b8111fed62e434caef8217f5316b7f6fabe783d2de4ef",
+      "log": "build/cu-live-windows/full-onedir-final.log",
+      "log_sha256": "a39403937810e942f559cf1bf208330fb8f27ff20c0b6c21d620a1171bdd097d",
+      "live_checks": {
+        "cases": {
+          "content_formula": true,
+          "field_motion": true,
+          "manual_native": true,
+          "multiscale_native": true,
+          "project_roundtrip": true,
+          "traditional_native": true,
+          "windows_capture_build": true,
+          "windows_capture_import": true
+        },
+        "hardware_capture_tested": false,
+        "native_build_info": {
+          "api_version": 1,
+          "build_type": "release",
+          "compiler": "MSVC 1944",
+          "cpp_standard": 201703,
+          "pybind11_version": "3.0.4",
+          "python_abi": "cpython-312",
+          "python_version": "3.12.13",
+          "source_sha256": "d3499aa56f20c64c4415adedd10e8d73b8653240806201cb1f3dac4967367086"
+        },
+        "ok": true,
+        "revision": 1
+      },
+      "excluded_components": [
+        "area-models"
+      ],
+      "included_components": [
+        "content-templates"
+      ],
+      "native_binaries": [
+        {
+          "path": "fdm/_native/_kernels.cp312-win_amd64.pyd",
+          "size": 419840,
+          "sha256": "cdb0611a90ee233819f78233640f2a32dfd76fe105e1130d27e29a60af290319"
+        },
+        {
+          "path": "fdm/_native/_windows_capture.cp312-win_amd64.pyd",
+          "size": 214016,
+          "sha256": "2a8115357a5e3e3f5c4473bc523dd92c17f752a54bd2044c669efc59764d423b"
+        }
+      ]
+    }
+  ],
+  "installer": {
+    "size": 398393836,
+    "sha256": "8a37a58a382db75729ce8d33085df83445a3cfae299fbb622e79ddab2aa037be",
+    "name": "fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "guest_path": "C:\\tmp\\fdm-cu-live-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "host_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/windows-release/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe"
+  },
+  "extracted_payload": {
+    "ok": true,
+    "validation_kind": "same-installer-extracted-payload-not-registered-install",
+    "installer": "C:\\tmp\\fdm-cu-live-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+    "installer_sha256": "8a37a58a382db75729ce8d33085df83445a3cfae299fbb622e79ddab2aa037be",
+    "extracted_app": "C:\\tmp\\fdm-cu-live-unpacked-20261015\\{app}",
+    "manifest_sha256": "41dce53fe8270b2b235a1e62950323028d1ef6da7e9721494cd115859db8af96",
+    "files_verified": 4766,
+    "frozen_final_wording_checks": {
+      "latest_measurement_label": true,
+      "pending_and_failed_operation_tooltip": true,
+      "obsolete_last_valid_record_absent": true
+    },
+    "private_content_templates": [
+      "runtime\\content-templates\\-26-中空度原始记录（原号902）-集团-2023.6.13.xlsm",
+      "runtime\\content-templates\\-纤维平均直径试验记录(GBT 36422).xlsm",
+      "runtime\\content-templates\\-面积法-定量试验原始记录-新系统.xlsm",
+      "runtime\\content-templates\\sheet1.xlsm"
+    ],
+    "excluded_components": [
+      "area-models"
+    ],
+    "selfcheck_report": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-installer-selfcheck-final.json",
+    "selfcheck_sha256": "90836f77ce802a926ca88a9e2fb6d955c22a1b6f9a371b4f6a0921622ac4feb1",
+    "existing_install_record_before": [
+      {
+        "hive": "HKLM",
+        "view": "64",
+        "values": {
+          "DisplayVersion": "0.4.7",
+          "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+          "UninstallString": "\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe\""
+        }
+      }
+    ],
+    "existing_install_record_after": [
+      {
+        "hive": "HKLM",
+        "view": "64",
+        "values": {
+          "DisplayVersion": "0.4.7",
+          "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+          "UninstallString": "\"C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe\""
+        }
+      }
+    ],
+    "existing_installation_unchanged": true
+  },
+  "actual_extracted_gui": {
+    "schema": 2,
+    "started_at": "2026-10-15T03:41:05.5780932+08:00",
+    "exe": "C:\\tmp\\fdm-cu-live-unpacked-20261015\\{app}\\FiberDiameterMeasurement.exe",
+    "run_directory": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab",
+    "config": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab\\isolated-config",
+    "pid": 1372,
+    "isolated_empty_project_verified": true,
+    "main_window": true,
+    "experiment_menu": true,
+    "live_experiment_entry": true,
+    "live_window": true,
+    "key_controls": [
+      {
+        "name": "当前图片",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "当前图片",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QToolButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              260,
+              70,
+              154,
+              78
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483069
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "本机相机",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "本机相机",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QToolButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              422,
+              70,
+              154,
+              78
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483068
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "CU 实时画面",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "CU 实时画面",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QToolButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              584,
+              70,
+              196,
+              78
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483067
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "分析当前视场",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "分析当前视场",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QToolButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QToolBar.QToolButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              1598,
+              70,
+              202,
+              78
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483033
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "当前视场",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "当前视场",
+            "process_id": 1372,
+            "type": "ControlType.Tab",
+            "class": "QTabBar",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              14,
+              1206,
+              576,
+              70
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483019
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "SelectionPatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          },
+          {
+            "name": "当前视场",
+            "process_id": 1372,
+            "type": "ControlType.TabItem",
+            "class": "",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              14,
+              1206,
+              136,
+              70
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483018
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern",
+              "SelectionItemPatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "试验历史（全部操作者）",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "试验历史（全部操作者）",
+            "process_id": 1372,
+            "type": "ControlType.TabItem",
+            "class": "",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              150,
+              1206,
+              304,
+              70
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147482910
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern",
+              "SelectionItemPatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "全图候选",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "全图候选",
+            "process_id": 1372,
+            "type": "ControlType.TabItem",
+            "class": "",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QSplitter.QTabWidget.qt_tabwidget_tabbar",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              454,
+              1206,
+              136,
+              70
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147482909
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern",
+              "SelectionItemPatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "改名",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "改名",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QPushButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              2382,
+              332,
+              92,
+              72
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147483009
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "撤销",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "撤销",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QPushButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              1734,
+              1046,
+              238,
+              72
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147482990
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "重做",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "重做",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QPushButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              1984,
+              1046,
+              240,
+              72
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147482989
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "保存项目",
+        "present": true,
+        "visible": true,
+        "elements": [
+          {
+            "name": "保存项目",
+            "process_id": 1372,
+            "type": "ControlType.Button",
+            "class": "QPushButton",
+            "automation_id": "QApplication.LiveExperimentWorkspace.QSplitter.QScrollArea.qt_scrollarea_viewport.QWidget.QPushButton",
+            "native_handle": 0,
+            "enabled": true,
+            "offscreen": false,
+            "bounds": [
+              1734,
+              1214,
+              740,
+              72
+            ],
+            "help_text": "",
+            "runtime_id": [
+              42,
+              2884930,
+              4,
+              -2147482985
+            ],
+            "patterns": [
+              "InvokePatternIdentifiers.Pattern",
+              "ValuePatternIdentifiers.Pattern"
+            ]
+          }
+        ]
+      }
+    ],
+    "key_controls_verified": true,
+    "workspace_closed": true,
+    "unsaved_dialog": {
+      "title": "未保存的改动",
+      "buttons": [
+        {
+          "name": "保存",
+          "process_id": 1372,
+          "type": "ControlType.Button",
+          "class": "QPushButton",
+          "automation_id": "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            1424,
+            828,
+            92,
+            72
+          ],
+          "help_text": "",
+          "runtime_id": [
+            42,
+            2950466,
+            4,
+            -2147482899
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern"
+          ]
+        },
+        {
+          "name": "放弃",
+          "process_id": 1372,
+          "type": "ControlType.Button",
+          "class": "QPushButton",
+          "automation_id": "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            1528,
+            828,
+            92,
+            72
+          ],
+          "help_text": "",
+          "runtime_id": [
+            42,
+            2950466,
+            4,
+            -2147482898
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern"
+          ]
+        },
+        {
+          "name": "取消",
+          "process_id": 1372,
+          "type": "ControlType.Button",
+          "class": "QPushButton",
+          "automation_id": "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            1632,
+            828,
+            92,
+            72
+          ],
+          "help_text": "",
+          "runtime_id": [
+            42,
+            2950466,
+            4,
+            -2147482897
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern"
+          ]
+        }
+      ],
+      "choice": "放弃",
+      "action": "InvokePattern"
+    },
+    "graceful_exit": true,
+    "forced_cleanup": false,
+    "snapshots": [
+      "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab\\01-main-before-menu-uia.json",
+      "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab\\02-after-entry-invocation-uia.json",
+      "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab\\03-live-workspace-ready-uia.json",
+      "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab\\04-after-workspace-close-uia.json",
+      "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\extracted-gui-corrected\\20261015-034105-d301e3de23b14dba8fc9635e58a1e4ab\\05-unsaved-dialog-before-decision-uia.json"
+    ],
+    "errors": [],
+    "ok": true,
+    "main_title": "显微测量工作台",
+    "entry_element": {
+      "name": "实时试验",
+      "process_id": 1372,
+      "type": "ControlType.MenuItem",
+      "class": "QAction",
+      "automation_id": "QApplication.MainWindow.QMenuBar.QAction.QMenu.QAction",
+      "native_handle": 0,
+      "enabled": true,
+      "offscreen": false,
+      "bounds": [
+        646,
+        112,
+        164,
+        68
+      ],
+      "help_text": "",
+      "runtime_id": [
+        42,
+        1115434,
+        4,
+        -2147483071
+      ],
+      "patterns": [
+        "InvokePatternIdentifiers.Pattern",
+        "ValuePatternIdentifiers.Pattern"
+      ]
+    },
+    "entry_action": "InvokePattern",
+    "live_element": {
+      "name": "实时试验 · 纤维直径与含量",
+      "process_id": 1372,
+      "type": "ControlType.Window",
+      "class": "LiveExperimentWorkspace",
+      "automation_id": "QApplication.LiveExperimentWorkspace",
+      "native_handle": 2884930,
+      "enabled": true,
+      "offscreen": false,
+      "bounds": [
+        14,
+        58,
+        2480,
+        1604
+      ],
+      "help_text": "",
+      "runtime_id": [
+        42,
+        2884930
+      ],
+      "patterns": [
+        "InvokePatternIdentifiers.Pattern",
+        "ValuePatternIdentifiers.Pattern",
+        "WindowPatternIdentifiers.Pattern",
+        "TransformPatternIdentifiers.Pattern"
+      ]
+    },
+    "exit_code": 0,
+    "process_exited_after_cleanup": true,
+    "finished_at": "2026-10-15T03:41:14.4474117+08:00"
+  },
+  "actual_extracted_gui_initial": {
+    "main_window": true,
+    "experiment_menu": true,
+    "live_experiment_entry": false,
+    "live_window": false,
+    "graceful_exit": true,
+    "forced_cleanup": false,
+    "pid": 5444,
+    "config": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\isolated-installed-gui-config",
+    "exe": "C:\\tmp\\fdm-cu-live-unpacked-20261015\\{app}\\FiberDiameterMeasurement.exe",
+    "errors": [],
+    "controls": [
+      "当前发布 profile 未包含：面积推理。相关入口已隐藏。",
+      "比例尺，点击编辑，展开菜单显示或隐藏",
+      "对象捕捉，可展开选择捕捉类型",
+      "视图缩放 —",
+      "v0.4.7",
+      "文件",
+      "编辑",
+      "图像",
+      "处理",
+      "分析",
+      "工具",
+      "视图",
+      "帮助",
+      "试验",
+      "主命令栏",
+      "测量分析",
+      "实时采集",
+      "数字切片",
+      "打开",
+      "保存",
+      "尚未保存",
+      "导出模板",
+      "叠加图",
+      "导出",
+      "撤回",
+      "重做",
+      "采集一张",
+      "更多",
+      "项目",
+      "属性",
+      "结果",
+      "设备",
+      "设置",
+      "查找",
+      "测量工具栏",
+      "浏览",
+      "手动线段工具，可展开选择其他工具",
+      "多边形面积工具，可展开选择其他工具",
+      "计数",
+      "标准魔棒工具，可展开选择其他工具",
+      "标定",
+      "自由点工具，可展开选择其他工具",
+      "文字工具，可展开选择其他工具",
+      "图片与测量状态",
+      "上一张",
+      "切换图片",
+      "下一张",
+      "新测量归类",
+      "新测量归类",
+      "标定 · 请先打开图片",
+      "开始测量",
+      "可一次打开多张图片，逐张测量并统一导出",
+      "打开",
+      "打开项目",
+      "实时采集",
+      "打开图片  →  确认标定  →  选择类别  →  开始测量",
+      "像素尺寸: -",
+      "项目与类别",
+      "0 张图片 · 无缺失 · 尚未保存",
+      "纤维类别",
+      "颜色",
+      "类别",
+      "本图 / 全部",
+      "纤维类别",
+      "新增类别",
+      "编辑",
+      "删除",
+      "已打开图片",
+      "图片与类别",
+      "图片与类别",
+      "ROI / 辅助",
+      "Close",
+      "当前对象与测量",
+      "当前对象",
+      "属性",
+      "未选中对象",
+      "点击画布中的测量对象\n或在测量记录中选择",
+      "当前对象类别",
+      "实时统计",
+      "N / 均值 / SD / CV"
+    ],
+    "main_title": "显微测量工作台",
+    "exit_code": 0,
+    "ok": false
+  },
+  "heavy_validation_finished_at": "2026-10-15T03:26:52+08:00",
+  "extraction_tool": {
+    "tool": "innounp",
+    "version": "2.67.11",
+    "supported_inno": "through 6.7.3",
+    "installed_compiler": "6.7.1",
+    "release_url": "https://github.com/jrathlev/InnoUnpacker-Windows-GUI/releases/tag/oi_2_2_11",
+    "asset_url": "https://github.com/jrathlev/InnoUnpacker-Windows-GUI/releases/download/oi_2_2_11/innounp-2.zip",
+    "published_at": "2026-07-12T10:14:25Z",
+    "zip_sha256": "851772538a041229102ad9964542d49dc00c74002e3091a70469c079ae368f52",
+    "exe_sha256": "1c8453c198dd3fe7947f3705e59d2294ddce3dfa9f96a737e94449b119f44181",
+    "guest_path": "C:\\tmp\\fdm-cu-live-20261015\\build\\validation-tools\\innounp-2.67.11\\innounp.exe",
+    "help": "innounp - the Inno Setup Unpacker, version 2.67.11 (2026-07-13)\n\nUsage: innounp [command] [options] <setup.exe or setup.0> [@filelist] [filemask ...]\nCommands:\n  (no)   display general information about the installation archive\n  -v     verbose list if files (with sizes and timestamps)\n  -s     short list of files (without sizes and timestamps)\n  -x     extract the files from the installation (to the current directory, also see -d)\n  -e     extract files without paths\n  -t     test files for integrity\n  -l     show list of languages supported by the installation\n  -i     show list of all supported Inno Setup versions\nOptions:",
+    "system_installation": false
+  },
+  "known_limits": [
+    "No registered installation/uninstallation performed; the identical installer payload was extracted and executed to preserve the existing fixed AppId installation.",
+    "No real Microview hardware or valid live CU device window available; controlled WGC/PrintWindow probes are separate evidence.",
+    "Formal serial performance and one-hour joint Qt soak are outside this release record.",
+    "Frozen GUI smoke test verified an isolated empty-project menu-to-workspace and natural close sequence; it did not acquire real hardware frames or perform device measurement."
+  ],
+  "build_policy": {
+    "core": "Task-local cached driver retained all production gates; final actual PYZ wording independently verified.",
+    "full": "Original build_windows_onedir.py default clean build, no validation-driver cache override.",
+    "rejected_cached_full": "A cached trial passed ordinary self-check but retained older wording in PYZ; rejected and archived, then full was rebuilt clean. Original production script already uses --clean.",
+    "core_pyz_check": {
+      "new_label": true,
+      "new_tooltip": true,
+      "obsolete": false,
+      "method": "actual CArchiveReader/PYZ code constants",
+      "exe_sha256": "231b070e4af7678a898cc2f261a35d75549d7b103bbe697785c92f259ace8b17"
+    },
+    "full_pyz_check": {
+      "new_label": true,
+      "new_tooltip": true,
+      "obsolete": false,
+      "clean_build": true,
+      "exe": {
+        "path": "FiberDiameterMeasurement.exe",
+        "size": 58379668,
+        "sha256": "2c414d30dc4aafeedfbd85b47d7a35fd686f84f3642506a0820617592adcdd06"
+      }
+    },
+    "rejected_full_pyz_check": {
+      "new_label": false,
+      "new_tooltip": false,
+      "obsolete": true,
+      "exe_path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\full-onedir-rejected-stale-pyz\\FiberDiameterMeasurement.exe"
+    }
+  },
+  "actual_extracted_gui_previous_probe": {
+    "main_window": true,
+    "experiment_menu": true,
+    "live_experiment_entry": true,
+    "live_window": false,
+    "graceful_exit": false,
+    "forced_cleanup": true,
+    "pid": 4760,
+    "config": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-validation\\isolated-installed-gui-config",
+    "exe": "C:\\tmp\\fdm-cu-live-unpacked-20261015\\{app}\\FiberDiameterMeasurement.exe",
+    "errors": [],
+    "controls": [
+      "当前发布 profile 未包含：面积推理。相关入口已隐藏。",
+      "比例尺，点击编辑，展开菜单显示或隐藏",
+      "对象捕捉，可展开选择捕捉类型",
+      "视图缩放 —",
+      "v0.4.7",
+      "文件",
+      "编辑",
+      "图像",
+      "处理",
+      "分析",
+      "工具",
+      "视图",
+      "帮助",
+      "试验",
+      "主命令栏",
+      "测量分析",
+      "实时采集",
+      "数字切片",
+      "打开",
+      "保存",
+      "尚未保存",
+      "导出模板",
+      "叠加图",
+      "导出",
+      "撤回",
+      "重做",
+      "采集一张",
+      "更多",
+      "项目",
+      "属性",
+      "结果",
+      "设备",
+      "设置",
+      "查找",
+      "测量工具栏",
+      "浏览",
+      "手动线段工具，可展开选择其他工具",
+      "多边形面积工具，可展开选择其他工具",
+      "计数",
+      "标准魔棒工具，可展开选择其他工具",
+      "标定",
+      "自由点工具，可展开选择其他工具",
+      "文字工具，可展开选择其他工具",
+      "图片与测量状态",
+      "上一张",
+      "切换图片",
+      "下一张",
+      "新测量归类",
+      "新测量归类",
+      "标定 · 请先打开图片",
+      "开始测量",
+      "可一次打开多张图片，逐张测量并统一导出",
+      "打开",
+      "打开项目",
+      "实时采集",
+      "打开图片  →  确认标定  →  选择类别  →  开始测量",
+      "像素尺寸: -",
+      "项目与类别",
+      "0 张图片 · 无缺失 · 尚未保存",
+      "纤维类别",
+      "颜色",
+      "类别",
+      "本图 / 全部",
+      "纤维类别",
+      "新增类别",
+      "编辑",
+      "删除",
+      "已打开图片",
+      "图片与类别",
+      "图片与类别",
+      "ROI / 辅助",
+      "Close",
+      "当前对象与测量",
+      "当前对象",
+      "属性",
+      "未选中对象",
+      "点击画布中的测量对象\n或在测量记录中选择",
+      "当前对象类别",
+      "实时统计",
+      "N / 均值 / SD / CV"
+    ],
+    "main_title": "显微测量工作台",
+    "menu_patterns": [
+      "InvokePatternIdentifiers.Pattern",
+      "ValuePatternIdentifiers.Pattern",
+      "ExpandCollapsePatternIdentifiers.Pattern"
+    ],
+    "menu_invoked": true,
+    "ok": false
+  },
+  "frozen_gui_validation_overlay": {
+    "path": "docs/validation/cu_windows_frozen_gui_overlay_20261015.json",
+    "sha256": "7e5290531162b06a0f28e91c66a5c231c6b241e4997b8759507f89b8fad5f7cc"
+  }
+}

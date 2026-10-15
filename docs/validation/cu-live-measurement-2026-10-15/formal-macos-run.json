@@ -1,0 +1,159 @@
+[
+  {
+    "label": "manual-statistics",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_measurement.py",
+      "--modes",
+      "manual",
+      "statistics",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-manual-statistics.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006031.6670709,
+    "elapsed_seconds": 1.0537612438201904,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-manual-statistics.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-manual-statistics.log"
+  },
+  {
+    "label": "motion",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/validation/benchmark_cu_motion.py",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-motion.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006032.72113,
+    "elapsed_seconds": 13.574913024902344,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-motion.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-motion.log"
+  },
+  {
+    "label": "ui-stable",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_ui.py",
+      "--motion-input",
+      "stable",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-stable.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006046.296339,
+    "elapsed_seconds": 27.002429962158203,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-stable.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-ui-stable.log"
+  },
+  {
+    "label": "ui-dynamic",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_ui.py",
+      "--motion-input",
+      "lsb-noise",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-dynamic.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006073.299104,
+    "elapsed_seconds": 232.37446808815002,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-dynamic.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-ui-dynamic.log"
+  },
+  {
+    "label": "ui-joint-stable",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_ui.py",
+      "--motion-input",
+      "stable",
+      "--evidence",
+      "on",
+      "--background-automatic",
+      "multiscale",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-joint-stable.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006305.6739168,
+    "elapsed_seconds": 17.398674964904785,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-joint-stable.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-ui-joint-stable.log"
+  },
+  {
+    "label": "ui-joint-dynamic",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_ui.py",
+      "--motion-input",
+      "lsb-noise",
+      "--evidence",
+      "on",
+      "--background-automatic",
+      "multiscale",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-joint-dynamic.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006323.072968,
+    "elapsed_seconds": 138.637619972229,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-ui-joint-dynamic.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-ui-joint-dynamic.log"
+  },
+  {
+    "label": "automatic-2048",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_measurement.py",
+      "--modes",
+      "automatic",
+      "--automatic-size",
+      "2048",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-2048.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006461.71095,
+    "elapsed_seconds": 21.71612787246704,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-2048.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-automatic-2048.log"
+  },
+  {
+    "label": "automatic-4096",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_measurement.py",
+      "--modes",
+      "automatic",
+      "--automatic-size",
+      "4096",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-4096.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006483.4274209,
+    "elapsed_seconds": 86.8629822731018,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-4096.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-automatic-4096.log"
+  },
+  {
+    "label": "automatic-6144",
+    "command": [
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+      "scripts/benchmark_cu_live_measurement.py",
+      "--modes",
+      "automatic",
+      "--automatic-size",
+      "6144",
+      "--output",
+      "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-6144.json"
+    ],
+    "exit_code": 0,
+    "started_unix": 1792006570.290768,
+    "elapsed_seconds": 214.5887532234192,
+    "output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/final-macos-automatic-6144.json",
+    "log": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/cu-live-measurement/formal-macos-automatic-6144.log"
+  }
+]

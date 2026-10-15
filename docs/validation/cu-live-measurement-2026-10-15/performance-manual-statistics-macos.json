@@ -1,0 +1,1685 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+    "executable": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/bin/python",
+    "cpu_count": 18,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": "3.0.4",
+      "psutil": null
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 18,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+    "source_sha256": {
+      "native/cu_automatic.cpp": "27e7932f0ff8550016ce04bd7a5aafbbedee0198fcdcc8e36fdfd2b48aeb9024",
+      "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native/kernels.cpp": "ee7698b8cbbcbc0aa93a666575af8d6b218364e005f1f0599e0777f8fd85b354",
+      "native/windows_capture.cpp": "46b0f6af2fc3e8648770fc81e97f43535f9bc62e80a3abba6e04b19c17396da4",
+      "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src/fdm/live_experiment/capture_helper.py": "c4addc2211786397214d77ebbf94037c50a6e9457f2c68dd300dda8caadf48cb",
+      "src/fdm/live_experiment/controller.py": "03ebde150c2b8e1295996a19140fe9a810aa028099e5c20d65023798445f4e23",
+      "src/fdm/live_experiment/evidence.py": "ed07efc551ee5a40aba0ef1009b7b207300ea6f5bfeadd0e0d7f7cd0d022ed7a",
+      "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src/fdm/live_experiment/frames.py": "68d30f0e34ca30fa77f973013b1443fcac2f7b5e68d74fa1e38e003904c2a582",
+      "src/fdm/live_experiment/models.py": "2a0a5579c333c2e465133802882f4910db0000c3fb1d8ee28efc8c194a62cbf9",
+      "src/fdm/live_experiment/motion.py": "6a3c340f2e97034c93e96d422eba0483d16bea1ca0cff0429f97bee4e94b440c",
+      "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src/fdm/live_experiment/project_assets.py": "d6990122a6753a758df3b06de9ca3c231db5e86d174196c786ce9822acc841e8",
+      "src/fdm/live_experiment/sources.py": "e0b749a0233b28065f505598b66e7f1c48475aca5f923a70e380503c5cced434",
+      "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src/fdm/services/cu_automatic_measurement.py": "a59d0d6f3330582ff2a5a6deec700e1f597c8b89334adb8038fb704f9e8a86dd"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "63952b99da931452d1bdd1f21f91d2d419617ba31601279340e8a9160b6e25eb",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    }
+  },
+  "parameters": {
+    "output": "docs/validation/cu-live-measurement-2026-10-15/performance-manual-statistics-macos.json",
+    "modes": [
+      "manual",
+      "statistics"
+    ],
+    "samples": 30,
+    "warmup": 5,
+    "sizes": [
+      2048,
+      4096,
+      6144
+    ],
+    "automatic_size": 2048,
+    "automatic_budget_mib": 2048,
+    "duration_seconds": 3600,
+    "soak_size": 2048,
+    "frame_hz": 30,
+    "measurement_hz": 2,
+    "soak_automatic": false,
+    "evidence_dir": null
+  },
+  "validation_boundary": "Synthetic performance only; correctness, real-camera and installed-Windows acceptance are separate.",
+  "manual": [
+    {
+      "size": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "7f6f78520d5d67f002b367a2ece3424d1ccbb1f5afefc69dc7798c2b3b116585",
+      "stage": "snapshot_copy",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.38718749419786036,
+        "p95_ms": 0.5581357421760912,
+        "p99_ms": 0.57310092728585,
+        "max_ms": 0.5731249984819442,
+        "samples_ms": [
+          0.5730419943574816,
+          0.3807500033872202,
+          0.3836670075543225,
+          0.3661660011857748,
+          0.3708750009536743,
+          0.39125001057982445,
+          0.4381670005386695,
+          0.3914580011041835,
+          0.35479200596455485,
+          0.38500000664498657,
+          0.35716699494514614,
+          0.34649998997338116,
+          0.337499994202517,
+          0.34837500425055623,
+          0.3978329914389178,
+          0.35279098665341735,
+          0.36412499321158975,
+          0.3519580059219152,
+          0.38699999277014285,
+          0.415540998801589,
+          0.3799580008490011,
+          0.38737499562557787,
+          0.40995799645315856,
+          0.43687499419320375,
+          0.40833299863152206,
+          0.42962501174770296,
+          0.5731249984819442,
+          0.45866600703448057,
+          0.5399169895099476,
+          0.47449998965021223
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.014478875003987923,
+        "process_cpu_seconds": 0.01391400000000001,
+        "before": {
+          "process_cpu_seconds": 0.153918,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 89817088,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.167832,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 105103360,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 105103360
+      },
+      "statuses": {},
+      "widths_px": [],
+      "diagnostics": null
+    },
+    {
+      "size": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "7f6f78520d5d67f002b367a2ece3424d1ccbb1f5afefc69dc7798c2b3b116585",
+      "stage": "native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.02091650094371289,
+        "p95_ms": 0.06437514675781111,
+        "p99_ms": 0.11621875237324278,
+        "max_ms": 0.12437500117812306,
+        "samples_ms": [
+          0.09625000529922545,
+          0.022500011255033314,
+          0.025416986318305135,
+          0.020749997929669917,
+          0.021374988136813045,
+          0.12437500117812306,
+          0.020958003005944192,
+          0.020457999198697507,
+          0.021500003640539944,
+          0.02170899824704975,
+          0.020292005501687527,
+          0.02012500772252679,
+          0.020000006770715117,
+          0.021832995116710663,
+          0.020207997295074165,
+          0.020000006770715117,
+          0.020167004549875855,
+          0.021042011212557554,
+          0.0219999928958714,
+          0.0212500017369166,
+          0.020040999515913427,
+          0.020208011846989393,
+          0.020874998881481588,
+          0.021083003957755864,
+          0.020457999198697507,
+          0.020292005501687527,
+          0.0212500017369166,
+          0.02025000867433846,
+          0.021083003957755864,
+          0.02029100141953677
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.0010182499972870573,
+        "process_cpu_seconds": 0.0009690000000000254,
+        "before": {
+          "process_cpu_seconds": 0.173471,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 106823680,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.17444,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 107085824,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 107085824
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          986,
+          594,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          1024,
+          632
+        ],
+        "input_end": [
+          1024,
+          732
+        ]
+      }
+    },
+    {
+      "size": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "7f6f78520d5d67f002b367a2ece3424d1ccbb1f5afefc69dc7798c2b3b116585",
+      "stage": "snapshot_plus_native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.35018750349991024,
+        "p95_ms": 0.457707996974932,
+        "p99_ms": 0.5344238906400279,
+        "max_ms": 0.5625420017167926,
+        "samples_ms": [
+          0.5625420017167926,
+          0.46558299800381064,
+          0.40049999370239675,
+          0.44720800360664725,
+          0.38499999209307134,
+          0.3838340053334832,
+          0.3613330045482144,
+          0.3739159874385223,
+          0.3393749939277768,
+          0.3477080026641488,
+          0.3355000080773607,
+          0.33366600109729916,
+          0.33541698940098286,
+          0.36708299012389034,
+          0.37387499469332397,
+          0.3442919987719506,
+          0.3715000057127327,
+          0.3743339912034571,
+          0.3333750064484775,
+          0.33487500331830233,
+          0.3334170032758266,
+          0.34266599686816335,
+          0.3340419934829697,
+          0.33024999720510095,
+          0.3348339960211888,
+          0.3452500095590949,
+          0.33245899248868227,
+          0.4480829957174137,
+          0.35604200093075633,
+          0.35266700433567166
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.011221208987990394,
+        "process_cpu_seconds": 0.011169000000000012,
+        "before": {
+          "process_cpu_seconds": 0.178947,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 107085824,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.190116,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 115785728,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 115785728
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          986,
+          594,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          1024,
+          632
+        ],
+        "input_end": [
+          1024,
+          732
+        ]
+      }
+    },
+    {
+      "size": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "0ff67760252dc83deda0cff9d777462bdd78ae9301f204d0b5dce3c60d4d0e82",
+      "stage": "snapshot_copy",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.4915420067845844,
+        "p95_ms": 0.5106727949168999,
+        "p99_ms": 0.517476819222793,
+        "max_ms": 0.5190840020077303,
+        "samples_ms": [
+          0.5135419924044982,
+          0.5071659979876131,
+          0.5030829925090075,
+          0.5036670045228675,
+          0.5036670045228675,
+          0.49812499491963536,
+          0.4973330069333315,
+          0.4975420015398413,
+          0.4947079869452864,
+          0.4914590099360794,
+          0.4907080001430586,
+          0.490624996018596,
+          0.4904160014120862,
+          0.49162500363308936,
+          0.4994159971829504,
+          0.49325000145472586,
+          0.5022920086048543,
+          0.48741699720267206,
+          0.4870830016443506,
+          0.48683299974072725,
+          0.5190840020077303,
+          0.5024590063840151,
+          0.48800000513438135,
+          0.48387498827651143,
+          0.4792079998878762,
+          0.4808329977095127,
+          0.47975000052247196,
+          0.479041991638951,
+          0.4799160087713972,
+          0.4861659981543198
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.015055416006362066,
+        "process_cpu_seconds": 0.015004000000000017,
+        "before": {
+          "process_cpu_seconds": 0.198623,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 182878208,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.213627,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 182910976,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 182910976
+      },
+      "statuses": {},
+      "widths_px": [],
+      "diagnostics": null
+    },
+    {
+      "size": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "0ff67760252dc83deda0cff9d777462bdd78ae9301f204d0b5dce3c60d4d0e82",
+      "stage": "native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.02083300205413252,
+        "p95_ms": 0.02282689965795725,
+        "p99_ms": 0.09358406750834555,
+        "max_ms": 0.1221249985974282,
+        "samples_ms": [
+          0.1221249985974282,
+          0.023707994841970503,
+          0.021750005544163287,
+          0.021083003957755864,
+          0.020916006178595126,
+          0.02083300205413252,
+          0.020874998881481588,
+          0.020749997929669917,
+          0.020540988771244884,
+          0.020625011529773474,
+          0.02070800110232085,
+          0.020791994757018983,
+          0.020916995708830655,
+          0.021625004592351615,
+          0.021124986233189702,
+          0.021375002688728273,
+          0.02083300205413252,
+          0.020749997929669917,
+          0.021042011212557554,
+          0.020791005226783454,
+          0.02058300015050918,
+          0.020499996026046574,
+          0.020874998881481588,
+          0.020500010577961802,
+          0.02070800110232085,
+          0.020624996977858245,
+          0.02112500078510493,
+          0.020666004274971783,
+          0.02154200046788901,
+          0.02058300015050918
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.0009085409983526915,
+        "process_cpu_seconds": 0.0008629999999999749,
+        "before": {
+          "process_cpu_seconds": 0.223591,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 182910976,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.224454,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 182927360,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 182927360
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          2010,
+          1277,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          2048,
+          1315
+        ],
+        "input_end": [
+          2048,
+          1415
+        ]
+      }
+    },
+    {
+      "size": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "0ff67760252dc83deda0cff9d777462bdd78ae9301f204d0b5dce3c60d4d0e82",
+      "stage": "snapshot_plus_native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.5050204927101731,
+        "p95_ms": 0.5278106029436458,
+        "p99_ms": 0.592633244523313,
+        "max_ms": 0.6166669918457046,
+        "samples_ms": [
+          0.520500005222857,
+          0.5102920113131404,
+          0.5106659955345094,
+          0.504707990330644,
+          0.5040830001235008,
+          0.5099579866509885,
+          0.5109589983476326,
+          0.50149999151472,
+          0.4996659990865737,
+          0.5028750019846484,
+          0.5019160016672686,
+          0.5115000094519928,
+          0.5081670096842572,
+          0.5053329950897023,
+          0.5041250115027651,
+          0.5044169956818223,
+          0.5039159877924249,
+          0.5075829976703972,
+          0.5034159985370934,
+          0.6166669918457046,
+          0.5057079979451373,
+          0.50058399210684,
+          0.5337920010788366,
+          0.5112499929964542,
+          0.49762499111238867,
+          0.4959170037182048,
+          0.4987919965060428,
+          0.5079589900560677,
+          0.494624997372739,
+          0.5132910009706393
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.015603958003339358,
+        "process_cpu_seconds": 0.015492000000000006,
+        "before": {
+          "process_cpu_seconds": 0.236975,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 182927360,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.252467,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 182943744,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 182943744
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          2010,
+          1277,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          2048,
+          1315
+        ],
+        "input_end": [
+          2048,
+          1415
+        ]
+      }
+    },
+    {
+      "size": 6144,
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "a9e91924e491e2ee3e8814549c516c147f7c85b2641fc6eb0d83f03c9892c951",
+      "stage": "snapshot_copy",
+      "timing": {
+        "count": 30,
+        "p50_ms": 3.064270509639755,
+        "p95_ms": 3.407254652120173,
+        "p99_ms": 3.773403254745063,
+        "max_ms": 3.913292006473057,
+        "samples_ms": [
+          2.9525409918278456,
+          2.9372919962042943,
+          3.131874997052364,
+          3.3327079872833565,
+          2.9811249987687916,
+          2.9692500102100894,
+          2.9090830066706985,
+          2.926500004832633,
+          2.987667001434602,
+          3.071875005844049,
+          2.9353749996516854,
+          2.9003750096308067,
+          2.9209170024842024,
+          3.0566660134354606,
+          3.173375007463619,
+          3.054917004192248,
+          2.9395829915301874,
+          2.9271670064190403,
+          3.1362909940071404,
+          3.913292006473057,
+          2.9756250005448237,
+          3.378334004082717,
+          3.3216659940080717,
+          3.3070000063162297,
+          3.259250006522052,
+          3.430917000514455,
+          3.293792004114948,
+          3.2454999891342595,
+          3.2780420006019995,
+          3.210082999430597
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.09416087499994319,
+        "process_cpu_seconds": 0.093976,
+        "before": {
+          "process_cpu_seconds": 0.282936,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333905920,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.376912,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333938688,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 333938688
+      },
+      "statuses": {},
+      "widths_px": [],
+      "diagnostics": null
+    },
+    {
+      "size": 6144,
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "a9e91924e491e2ee3e8814549c516c147f7c85b2641fc6eb0d83f03c9892c951",
+      "stage": "native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.020459003280848265,
+        "p95_ms": 0.02090220441459678,
+        "p99_ms": 0.026224069297313697,
+        "max_ms": 0.02837499778252095,
+        "samples_ms": [
+          0.02837499778252095,
+          0.020624996977858245,
+          0.020333987777121365,
+          0.020167004549875855,
+          0.020459003280848265,
+          0.020749997929669917,
+          0.020499996026046574,
+          0.020292005501687527,
+          0.020584004232659936,
+          0.020958003005944192,
+          0.020624996977858245,
+          0.02024999412242323,
+          0.02037500962615013,
+          0.020584004232659936,
+          0.020749997929669917,
+          0.020292005501687527,
+          0.020417006453499198,
+          0.02029100141953677,
+          0.020666993805207312,
+          0.020499996026046574,
+          0.020459003280848265,
+          0.020417006453499198,
+          0.019959014025516808,
+          0.02024999412242323,
+          0.020417006453499198,
+          0.02024999412242323,
+          0.02083400613628328,
+          0.020584004232659936,
+          0.020624996977858245,
+          0.020374995074234903
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.000843208996229805,
+        "process_cpu_seconds": 0.0007920000000000149,
+        "before": {
+          "process_cpu_seconds": 0.399263,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333938688,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.400055,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333938688,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 333938688
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          3034,
+          1960,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          3072,
+          1998
+        ],
+        "input_end": [
+          3072,
+          2098
+        ]
+      }
+    },
+    {
+      "size": 6144,
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "a9e91924e491e2ee3e8814549c516c147f7c85b2641fc6eb0d83f03c9892c951",
+      "stage": "snapshot_plus_native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 3.3410210016882047,
+        "p95_ms": 3.7089517485583197,
+        "p99_ms": 3.7701603211462498,
+        "max_ms": 3.7802500010002404,
+        "samples_ms": [
+          3.413750004256144,
+          3.3071250072680414,
+          3.3252499997615814,
+          3.289375003078021,
+          3.745458001503721,
+          3.4892919939011335,
+          3.4006670030066743,
+          3.3153750118799508,
+          3.4988340048585087,
+          3.475999998045154,
+          3.1359579879790545,
+          3.3445000008214265,
+          3.3277920010732487,
+          3.4090000117430463,
+          3.0159580055624247,
+          3.25091699778568,
+          3.3970829972531646,
+          3.443082998273894,
+          3.3678330073598772,
+          3.0811660108156502,
+          3.7802500010002404,
+          3.664332994958386,
+          3.302958997664973,
+          3.498124991892837,
+          3.337542002554983,
+          3.1075839942786843,
+          3.5170409973943606,
+          2.9814580047968775,
+          3.115665997029282,
+          2.951874994323589
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.10059895798622165,
+        "process_cpu_seconds": 0.10042899999999999,
+        "before": {
+          "process_cpu_seconds": 0.439808,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333938688,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.540237,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333938688,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 333938688
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          3034,
+          1960,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          3072,
+          1998
+        ],
+        "input_end": [
+          3072,
+          2098
+        ]
+      }
+    }
+  ],
+  "statistics": [
+    {
+      "history_count": 1,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.0221250083995983,
+        "p95_ms": 0.025273101346101612,
+        "p99_ms": 0.03523129038512708,
+        "max_ms": 0.03929100057575852,
+        "samples_ms": [
+          0.03929100057575852,
+          0.025250003091059625,
+          0.023540997062809765,
+          0.02345799293834716,
+          0.022666004952043295,
+          0.02229200617875904,
+          0.022207997972145677,
+          0.021875006495974958,
+          0.021458006813190877,
+          0.02229199162684381,
+          0.021665997337549925,
+          0.022042004275135696,
+          0.021499989088624716,
+          0.0219999928958714,
+          0.021332991309463978,
+          0.022042004275135696,
+          0.0221250083995983,
+          0.022540989448316395,
+          0.022333013475872576,
+          0.022499996703118086,
+          0.021790998289361596,
+          0.022042004275135696,
+          0.025291999918408692,
+          0.0221250083995983,
+          0.022374995751306415,
+          0.02195900015067309,
+          0.021666986867785454,
+          0.022374995751306415,
+          0.02183399919886142,
+          0.02170899824704975
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0008687500085216016,
+        "process_cpu_seconds": 0.0008249999999999647,
+        "before": {
+          "process_cpu_seconds": 0.563619,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 333971456,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.564444,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334036992,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334036992
+      }
+    },
+    {
+      "history_count": 1,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.041854000301100314,
+        "p95_ms": 0.054687797819497064,
+        "p99_ms": 0.055939993617357686,
+        "max_ms": 0.056374992709606886,
+        "samples_ms": [
+          0.056374992709606886,
+          0.05487499583978206,
+          0.054459000239148736,
+          0.04395800351630896,
+          0.043082996853627264,
+          0.04370800161268562,
+          0.0430410000262782,
+          0.04366699431557208,
+          0.04358300066087395,
+          0.041624996811151505,
+          0.04308301140554249,
+          0.04208300379104912,
+          0.04187499871477485,
+          0.04141699173487723,
+          0.043333988287486136,
+          0.04470899875741452,
+          0.040624989196658134,
+          0.03945801290683448,
+          0.04091700247954577,
+          0.042917003156617284,
+          0.04129100125283003,
+          0.03983300121035427,
+          0.04008300311397761,
+          0.041709005017764866,
+          0.04058299236930907,
+          0.0396659888792783,
+          0.0391670037060976,
+          0.04150001041125506,
+          0.04183300188742578,
+          0.03983300121035427
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.001438083010725677,
+        "process_cpu_seconds": 0.0013879999999999448,
+        "before": {
+          "process_cpu_seconds": 0.564868,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334036992,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.566256,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334151680,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334151680
+      }
+    },
+    {
+      "history_count": 1,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.040312501369044185,
+        "p95_ms": 0.04438490068423561,
+        "p99_ms": 0.0504845786781516,
+        "max_ms": 0.05270801193546504,
+        "samples_ms": [
+          0.05270801193546504,
+          0.04504100070334971,
+          0.04358300066087395,
+          0.04183399141766131,
+          0.043374995584599674,
+          0.04137500945944339,
+          0.04158299998380244,
+          0.04108299617655575,
+          0.03995798761025071,
+          0.04054199962411076,
+          0.04020800406578928,
+          0.04025000089313835,
+          0.03979199391324073,
+          0.039709004340693355,
+          0.04141700628679246,
+          0.04037500184495002,
+          0.04199999966658652,
+          0.03975001163780689,
+          0.039749997085891664,
+          0.04087499110028148,
+          0.03954098792746663,
+          0.04108299617655575,
+          0.04012499994132668,
+          0.04020800406578928,
+          0.03941600152757019,
+          0.03954200656153262,
+          0.0421659933635965,
+          0.040000013541430235,
+          0.03908299549948424,
+          0.0397080002585426
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.001383458002237603,
+        "process_cpu_seconds": 0.0013260000000000494,
+        "before": {
+          "process_cpu_seconds": 0.566664,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334151680,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.56799,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334151680,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334151680
+      }
+    },
+    {
+      "history_count": 100,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.022770502255298197,
+        "p95_ms": 0.024504650355083868,
+        "p99_ms": 0.05909557075938214,
+        "max_ms": 0.07320899749174714,
+        "samples_ms": [
+          0.02429200685583055,
+          0.022791005903854966,
+          0.021750005544163287,
+          0.022207997972145677,
+          0.021957996068522334,
+          0.022459003957919776,
+          0.021917003323324025,
+          0.02183300966862589,
+          0.021917003323324025,
+          0.02245799987576902,
+          0.022207997972145677,
+          0.02229100209660828,
+          0.021957996068522334,
+          0.022332998923957348,
+          0.021667001419700682,
+          0.021791987819597125,
+          0.02274999860674143,
+          0.022916006855666637,
+          0.023083004634827375,
+          0.024542008759453893,
+          0.023333006538450718,
+          0.02316699828952551,
+          0.02445899008307606,
+          0.023375003365799785,
+          0.02320799103472382,
+          0.023375003365799785,
+          0.022917010937817395,
+          0.07320899749174714,
+          0.023375003365799785,
+          0.02300000051036477
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0008729169931029901,
+        "process_cpu_seconds": 0.0008289999999999687,
+        "before": {
+          "process_cpu_seconds": 0.569111,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334151680,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.56994,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334184448,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334184448
+      }
+    },
+    {
+      "history_count": 100,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.03993749851360917,
+        "p95_ms": 0.043244054540991776,
+        "p99_ms": 0.04988393629901112,
+        "max_ms": 0.05208300717640668,
+        "samples_ms": [
+          0.05208300717640668,
+          0.044500004150904715,
+          0.041709005017764866,
+          0.040417013224214315,
+          0.040291997720487416,
+          0.04004199581686407,
+          0.04037500184495002,
+          0.03954199200961739,
+          0.040750004700385034,
+          0.041166989831253886,
+          0.04049998824484646,
+          0.04095799522474408,
+          0.04004199581686407,
+          0.03979199391324073,
+          0.03933398693334311,
+          0.04033399454783648,
+          0.039582999306730926,
+          0.039457998354919255,
+          0.03895799454767257,
+          0.039125006878748536,
+          0.03837500116787851,
+          0.03941699105780572,
+          0.03895899862982333,
+          0.039083999581635,
+          0.03875000402331352,
+          0.039583988836966455,
+          0.03941699105780572,
+          0.040207989513874054,
+          0.03983300121035427,
+          0.04024998634122312
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0013515829923562706,
+        "process_cpu_seconds": 0.0012969999999999926,
+        "before": {
+          "process_cpu_seconds": 0.570313,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334184448,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.57161,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334184448,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334184448
+      }
+    },
+    {
+      "history_count": 100,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.04070850263815373,
+        "p95_ms": 0.048028497985796975,
+        "p99_ms": 0.053481709328480065,
+        "max_ms": 0.053916999604552984,
+        "samples_ms": [
+          0.053916999604552984,
+          0.042665997170843184,
+          0.04199999966658652,
+          0.0524159986525774,
+          0.04108299617655575,
+          0.041167004383169115,
+          0.04062500374857336,
+          0.041041988879442215,
+          0.04112499300390482,
+          0.04020900814794004,
+          0.039417005609720945,
+          0.039874998037703335,
+          0.0407920015277341,
+          0.03933400148525834,
+          0.04012499994132668,
+          0.03941600152757019,
+          0.03945900243707001,
+          0.03979098983108997,
+          0.042624989873729646,
+          0.03929098602384329,
+          0.038457990740425885,
+          0.03945900243707001,
+          0.04062500374857336,
+          0.04099999205209315,
+          0.04083399835508317,
+          0.04050000279676169,
+          0.039125006878748536,
+          0.04104200343135744,
+          0.041457999031990767,
+          0.04137499490752816
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0013712090003537014,
+        "process_cpu_seconds": 0.0013330000000000286,
+        "before": {
+          "process_cpu_seconds": 0.572017,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334184448,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.57335,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334200832,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334200832
+      }
+    },
+    {
+      "history_count": 1000,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.02364600368309766,
+        "p95_ms": 0.02511074853828177,
+        "p99_ms": 0.026261824823450297,
+        "max_ms": 0.026709007215686142,
+        "samples_ms": [
+          0.026709007215686142,
+          0.023625005269423127,
+          0.023500004317611456,
+          0.02300000051036477,
+          0.023250002413988113,
+          0.02345800749026239,
+          0.02504199801478535,
+          0.0228749995585531,
+          0.023707994841970503,
+          0.023208995116874576,
+          0.023333996068686247,
+          0.022791995434090495,
+          0.023083004634827375,
+          0.023125001462176442,
+          0.02341700019314885,
+          0.024667009711265564,
+          0.024499997380189598,
+          0.02429200685583055,
+          0.02345800749026239,
+          0.023375003365799785,
+          0.023125001462176442,
+          0.023667002096772194,
+          0.023999993572942913,
+          0.02387500717304647,
+          0.02516699896659702,
+          0.023832995793782175,
+          0.023957996745593846,
+          0.02416600182186812,
+          0.023957996745593846,
+          0.024249995476566255
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0008479579992126673,
+        "process_cpu_seconds": 0.0008020000000000804,
+        "before": {
+          "process_cpu_seconds": 0.580212,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334626816,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.581014,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334708736,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334708736
+      }
+    },
+    {
+      "history_count": 1000,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.04018750041723251,
+        "p95_ms": 0.04825640062335878,
+        "p99_ms": 0.05469286174047739,
+        "max_ms": 0.05691600381396711,
+        "samples_ms": [
+          0.05691600381396711,
+          0.04504200478550047,
+          0.04225000157020986,
+          0.04095899930689484,
+          0.04054199962411076,
+          0.0425000034738332,
+          0.04704200546257198,
+          0.04924999666400254,
+          0.0457499991171062,
+          0.041166989831253886,
+          0.04041599459014833,
+          0.03983300121035427,
+          0.040583006921224296,
+          0.041332998080179095,
+          0.03945801290683448,
+          0.04025000089313835,
+          0.04008300311397761,
+          0.039166989154182374,
+          0.039332997403107584,
+          0.038874990423209965,
+          0.03941600152757019,
+          0.03937499423045665,
+          0.04012499994132668,
+          0.03937499423045665,
+          0.038291997043415904,
+          0.04095899930689484,
+          0.039749997085891664,
+          0.03941699105780572,
+          0.039457998354919255,
+          0.039749997085891664
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0013725000026170164,
+        "process_cpu_seconds": 0.0013219999999999343,
+        "before": {
+          "process_cpu_seconds": 0.581396,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334708736,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.582718,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334708736,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334708736
+      }
+    },
+    {
+      "history_count": 1000,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.04093749885214493,
+        "p95_ms": 0.04383299456094391,
+        "p99_ms": 0.050312813546042896,
+        "max_ms": 0.052499992307275534,
+        "samples_ms": [
+          0.052499992307275534,
+          0.044957996578887105,
+          0.04245799209456891,
+          0.04229099431540817,
+          0.04183300188742578,
+          0.041459003114141524,
+          0.04183300188742578,
+          0.04179199459031224,
+          0.0415419926866889,
+          0.042333995224907994,
+          0.041332998080179095,
+          0.041292005334980786,
+          0.042082989239133894,
+          0.04087499110028148,
+          0.04120801168028265,
+          0.04099999205209315,
+          0.040583996451459825,
+          0.040875005652196705,
+          0.04025000089313835,
+          0.039417005609720945,
+          0.03966600343119353,
+          0.03962499613407999,
+          0.039709004340693355,
+          0.03920900053344667,
+          0.03924999327864498,
+          0.0397080002585426,
+          0.04054199962411076,
+          0.04066700057592243,
+          0.039457998354919255,
+          0.040583006921224296
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.001363499992294237,
+        "process_cpu_seconds": 0.0013220000000000454,
+        "before": {
+          "process_cpu_seconds": 0.583097,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334708736,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.584419,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 334708736,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 334708736
+      }
+    },
+    {
+      "history_count": 10000,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.02320850035175681,
+        "p95_ms": 0.025579190696589645,
+        "p99_ms": 0.026380753988632932,
+        "max_ms": 0.026417008484713733,
+        "samples_ms": [
+          0.026291992980986834,
+          0.024124994524754584,
+          0.022084001102484763,
+          0.021917003323324025,
+          0.021916988771408796,
+          0.024707987904548645,
+          0.022916996385902166,
+          0.02391599991824478,
+          0.023041997337713838,
+          0.02274999860674143,
+          0.023790998966433108,
+          0.023833010345697403,
+          0.02329199924133718,
+          0.022667009034194052,
+          0.022791005903854966,
+          0.022833002731204033,
+          0.022499996703118086,
+          0.023542001144960523,
+          0.022624997654929757,
+          0.026417008484713733,
+          0.023041997337713838,
+          0.023083004634827375,
+          0.02270800177939236,
+          0.023125001462176442,
+          0.023957996745593846,
+          0.023792003048583865,
+          0.024125009076669812,
+          0.024249995476566255,
+          0.024209002731367946,
+          0.023333006538450718
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.000879332990734838,
+        "process_cpu_seconds": 0.0008340000000000014,
+        "before": {
+          "process_cpu_seconds": 0.649518,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 339476480,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.650352,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 339591168,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 339591168
+      }
+    },
+    {
+      "history_count": 10000,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.04004199581686407,
+        "p95_ms": 0.04571089375531301,
+        "p99_ms": 0.05488074282766321,
+        "max_ms": 0.058541991165839136,
+        "samples_ms": [
+          0.058541991165839136,
+          0.04545898991636932,
+          0.04591699689626694,
+          0.04095899930689484,
+          0.041709005017764866,
+          0.04025000089313835,
+          0.041624996811151505,
+          0.039582999306730926,
+          0.041040999349206686,
+          0.04095899930689484,
+          0.040333005017600954,
+          0.04004199581686407,
+          0.04004199581686407,
+          0.039457998354919255,
+          0.04025000089313835,
+          0.03995800216216594,
+          0.04066700057592243,
+          0.03999999898951501,
+          0.039874998037703335,
+          0.04004199581686407,
+          0.038749989471398294,
+          0.03924999327864498,
+          0.039457998354919255,
+          0.039292004657909274,
+          0.03983300121035427,
+          0.03925000783056021,
+          0.039834005292505026,
+          0.03937500878237188,
+          0.04187499871477485,
+          0.04258300759829581
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.001369584002532065,
+        "process_cpu_seconds": 0.0013199999999999878,
+        "before": {
+          "process_cpu_seconds": 0.650767,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 339591168,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.652087,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 339591168,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 339591168
+      }
+    },
+    {
+      "history_count": 10000,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.04152099427301437,
+        "p95_ms": 0.048158844583667794,
+        "p99_ms": 0.05428917531389743,
+        "max_ms": 0.05529199552256614,
+        "samples_ms": [
+          0.05183399480301887,
+          0.04358300066087395,
+          0.04195899236947298,
+          0.041624996811151505,
+          0.04099999205209315,
+          0.040291997720487416,
+          0.03995798761025071,
+          0.039457998354919255,
+          0.03966600343119353,
+          0.040624989196658134,
+          0.039291990105994046,
+          0.0398339907405898,
+          0.0391670037060976,
+          0.03999999898951501,
+          0.05529199552256614,
+          0.03995899169240147,
+          0.039874998037703335,
+          0.04183300188742578,
+          0.04208300379104912,
+          0.04366699431557208,
+          0.04329199146013707,
+          0.04137499490752816,
+          0.04183300188742578,
+          0.04266700125299394,
+          0.04300000728107989,
+          0.042499988921917975,
+          0.04141699173487723,
+          0.042041996493935585,
+          0.04124999395571649,
+          0.04225000157020986
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0013920829951530322,
+        "process_cpu_seconds": 0.0013539999999999663,
+        "before": {
+          "process_cpu_seconds": 0.652478,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 339591168,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.653832,
+          "python_threads": 1,
+          "process_lifetime_peak_rss_bytes": 339607552,
+          "resource_provider": "getrusage; current/child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sampled_max_rss_bytes": null,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 339607552
+      }
+    }
+  ]
+}

@@ -1,0 +1,1813 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "ARM64",
+    "processor": "ARMv8 (64-bit) Family 8 Model 0 Revision   0,  ",
+    "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+    "cpu_count": 4,
+    "dependencies": {
+      "numpy": "2.4.3",
+      "opencv-python": "4.13.0.92",
+      "PySide6": "6.10.2",
+      "pybind11": null,
+      "psutil": null
+    },
+    "opencv_runtime": "4.13.0",
+    "opencv_threads": 1,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "git_head": null,
+    "source_sha256": {
+      "native\\cu_automatic.cpp": "19d3f1535b208baa05cf59dc7019ff394f138ab3ed7eba9cd5cb6c6965ec58fa",
+      "native\\cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+      "native\\cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+      "native\\cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+      "native\\kernels.cpp": "7b0022e701ccca9ff02b5405d036684fc8acbc85fcb7f8075b449a3a0eabd601",
+      "native\\windows_capture.cpp": "b52f722a627b76a2280d8b91a6a2cc464569d48922fe4f102c01c29514f3c27d",
+      "src\\fdm\\live_experiment\\__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+      "src\\fdm\\live_experiment\\capture_helper.py": "87ba9b9d83d75a5cf93c9cdc05f66d25201be39ae117235979f7b751de33931e",
+      "src\\fdm\\live_experiment\\controller.py": "b6bf421a4c252fa1e1d5b48f21bf6993e06393dc8d06f999ca31864318e28bbf",
+      "src\\fdm\\live_experiment\\evidence.py": "7b6ac3917c7e2876aeaabe0f77a092b013caecdf15fba6eba788e54bb581d887",
+      "src\\fdm\\live_experiment\\exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+      "src\\fdm\\live_experiment\\frames.py": "146a38d47201c4071a1c101604bfa879865551fa05edbc2f601907e71e41d716",
+      "src\\fdm\\live_experiment\\models.py": "366daf4533d26531a239fd53c0e74dab1c4707cb99a0c34d2b62265eb2b34af5",
+      "src\\fdm\\live_experiment\\motion.py": "c399325b164146f166b5a24c01fe9b5b6204f9f21245ffae85e28b1c4caf1fe6",
+      "src\\fdm\\live_experiment\\persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+      "src\\fdm\\live_experiment\\presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+      "src\\fdm\\live_experiment\\project_assets.py": "700781023abc965f0bfc59788bc9d9e41343db024e75abb72b1801ea51808f2a",
+      "src\\fdm\\live_experiment\\sources.py": "abecfd2d1bc8359dc50cce4486bec1a3da3863f3f3bb2386b67ffea7d5f08099",
+      "src\\fdm\\live_experiment\\statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+      "src\\fdm\\live_experiment\\window_capture_helper.py": "75601f38abb54e01741e0d1f9c6d206c1760bcdc9ee52c374f89f524f90cf802",
+      "src\\fdm\\services\\cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+      "src\\fdm\\services\\cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269"
+    },
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "d3499aa56f20c64c4415adedd10e8d73b8653240806201cb1f3dac4967367086",
+      "python_abi": "cpython-312",
+      "python_version": "3.12.13",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "MSVC 1944"
+    }
+  },
+  "parameters": {
+    "output": "build\\cu-live-formal\\final-windows-manual-statistics.json",
+    "modes": [
+      "manual",
+      "statistics"
+    ],
+    "samples": 30,
+    "warmup": 5,
+    "sizes": [
+      2048,
+      4096,
+      6144
+    ],
+    "automatic_size": 2048,
+    "automatic_budget_mib": 2048,
+    "duration_seconds": 3600,
+    "soak_size": 2048,
+    "frame_hz": 30,
+    "measurement_hz": 2,
+    "soak_automatic": false,
+    "evidence_dir": null
+  },
+  "validation_boundary": "Synthetic performance only; correctness, real-camera and installed-Windows acceptance are separate.",
+  "manual": [
+    {
+      "size": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "7f6f78520d5d67f002b367a2ece3424d1ccbb1f5afefc69dc7798c2b3b116585",
+      "stage": "snapshot_copy",
+      "timing": {
+        "count": 30,
+        "p50_ms": 2.8424584997992497,
+        "p95_ms": 3.0431687488089665,
+        "p99_ms": 3.0666739300068,
+        "max_ms": 3.0722080009581987,
+        "samples_ms": [
+          2.7822909978567623,
+          2.861000000848435,
+          2.6607090003381018,
+          2.8728750003210735,
+          3.0531249976775143,
+          2.8593339993676636,
+          2.8490830009104684,
+          3.0310000001918525,
+          2.8306249987508636,
+          2.827167001669295,
+          2.943666997452965,
+          2.754916000412777,
+          2.8208329968038015,
+          3.0722080009581987,
+          2.816415999404853,
+          2.8422499999578577,
+          2.796249998937128,
+          2.7784170015365817,
+          2.9630419994646218,
+          2.8997910012549255,
+          2.833665999787627,
+          3.012791999935871,
+          2.714082998863887,
+          2.8521659987745807,
+          2.982125002745306,
+          2.6557919991319068,
+          2.7560839989746455,
+          2.9577499990409706,
+          2.8426669996406417,
+          2.8055830007360782
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.0892992500012042,
+        "process_cpu_seconds": 0.078125,
+        "before": {
+          "process_cpu_seconds": 0.265625,
+          "python_threads": 1,
+          "rss_bytes": 73089024,
+          "process_lifetime_peak_rss_bytes": 81260544,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.34375,
+          "python_threads": 1,
+          "rss_bytes": 73187328,
+          "process_lifetime_peak_rss_bytes": 81891328,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 73187328,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 81891328
+      },
+      "statuses": {},
+      "widths_px": [],
+      "diagnostics": null
+    },
+    {
+      "size": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "7f6f78520d5d67f002b367a2ece3424d1ccbb1f5afefc69dc7798c2b3b116585",
+      "stage": "native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.16956249965005554,
+        "p95_ms": 0.2534892510084319,
+        "p99_ms": 0.2838001408235869,
+        "max_ms": 0.2949170011561364,
+        "samples_ms": [
+          0.22741599968867376,
+          0.17212500097230077,
+          0.16974999743979424,
+          0.1674170016485732,
+          0.17750000188243575,
+          0.16541600052732974,
+          0.17070800095098093,
+          0.16700000196578912,
+          0.249708002229454,
+          0.2565830000094138,
+          0.1842499987105839,
+          0.2949170011561364,
+          0.17350000052829273,
+          0.16479199985042214,
+          0.17825000031734817,
+          0.1669589983066544,
+          0.16658299864502624,
+          0.1664160008658655,
+          0.1646249984332826,
+          0.1752499993017409,
+          0.16904100266401656,
+          0.21562500114669092,
+          0.17375000243191607,
+          0.19008299932465889,
+          0.16937500186031684,
+          0.16754199896240607,
+          0.16699999832781032,
+          0.16741600120440125,
+          0.1683330010564532,
+          0.1655830019444693
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.006869584001833573,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 0.375,
+          "python_threads": 1,
+          "rss_bytes": 75235328,
+          "process_lifetime_peak_rss_bytes": 81891328,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.375,
+          "python_threads": 1,
+          "rss_bytes": 75554816,
+          "process_lifetime_peak_rss_bytes": 81891328,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 75554816,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 81891328
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          986,
+          594,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          1024,
+          632
+        ],
+        "input_end": [
+          1024,
+          732
+        ]
+      }
+    },
+    {
+      "size": 2048,
+      "shape": [
+        1365,
+        2048,
+        3
+      ],
+      "input_sha256": "7f6f78520d5d67f002b367a2ece3424d1ccbb1f5afefc69dc7798c2b3b116585",
+      "stage": "snapshot_plus_native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 3.12716649932554,
+        "p95_ms": 3.708510448814195,
+        "p99_ms": 3.8128330685867695,
+        "max_ms": 3.851958997984184,
+        "samples_ms": [
+          2.9223329984233715,
+          3.004292000696296,
+          3.2069999979285058,
+          3.3135409976239316,
+          3.462000000581611,
+          3.1711669980722945,
+          3.129958000499755,
+          3.500542003166629,
+          3.212166000594152,
+          3.2798749998619314,
+          2.9447090018948074,
+          3.090875001362292,
+          3.851958997984184,
+          3.717042000062065,
+          3.6930839996784925,
+          3.077499997743871,
+          3.4360829995421227,
+          3.173166998749366,
+          2.8857920005975757,
+          3.179458999511553,
+          3.1074159996933304,
+          3.0035829986445606,
+          3.6980829972890206,
+          2.9860840004403144,
+          3.0189159988367464,
+          3.1243749981513247,
+          2.7884160008397885,
+          2.9453329989337362,
+          3.0935409995436203,
+          3.036541002074955
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.09790466699996614,
+        "process_cpu_seconds": 0.09375,
+        "before": {
+          "process_cpu_seconds": 0.390625,
+          "python_threads": 1,
+          "rss_bytes": 75583488,
+          "process_lifetime_peak_rss_bytes": 83972096,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.484375,
+          "python_threads": 1,
+          "rss_bytes": 75841536,
+          "process_lifetime_peak_rss_bytes": 84545536,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 75841536,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 84545536
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          986,
+          594,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          1024,
+          632
+        ],
+        "input_end": [
+          1024,
+          732
+        ]
+      }
+    },
+    {
+      "size": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "0ff67760252dc83deda0cff9d777462bdd78ae9301f204d0b5dce3c60d4d0e82",
+      "stage": "snapshot_copy",
+      "timing": {
+        "count": 30,
+        "p50_ms": 11.345437500494882,
+        "p95_ms": 11.710712800231704,
+        "p99_ms": 11.746544820307463,
+        "max_ms": 11.756416999560315,
+        "samples_ms": [
+          11.756416999560315,
+          11.66512499912642,
+          11.696458997903392,
+          11.4488330000313,
+          11.625166996964253,
+          11.517165999975987,
+          11.687416001223028,
+          11.483209000289207,
+          11.455166000814643,
+          11.450832997070393,
+          11.420749997341773,
+          11.173375001817476,
+          11.045499999454478,
+          11.042707999877166,
+          10.964000000967644,
+          10.95549999809009,
+          11.598334000154864,
+          11.722375002136687,
+          11.600374997215113,
+          11.408833001041785,
+          11.282041999947978,
+          11.099333001766354,
+          11.039000000891974,
+          10.946667000098387,
+          11.016417000064394,
+          10.785374997794861,
+          10.711124999943422,
+          10.726666998380097,
+          10.720540998590877,
+          10.714499996538507
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.3398507919991971,
+        "process_cpu_seconds": 0.34375,
+        "before": {
+          "process_cpu_seconds": 0.578125,
+          "python_threads": 1,
+          "rss_bytes": 101011456,
+          "process_lifetime_peak_rss_bytes": 134557696,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.921875,
+          "python_threads": 1,
+          "rss_bytes": 101023744,
+          "process_lifetime_peak_rss_bytes": 134897664,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 4,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 120332288,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 134897664
+      },
+      "statuses": {},
+      "widths_px": [],
+      "diagnostics": null
+    },
+    {
+      "size": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "0ff67760252dc83deda0cff9d777462bdd78ae9301f204d0b5dce3c60d4d0e82",
+      "stage": "native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.16395800048485398,
+        "p95_ms": 0.17495260253781453,
+        "p99_ms": 0.18230185989523306,
+        "max_ms": 0.18524999904911965,
+        "samples_ms": [
+          0.18524999904911965,
+          0.17458300135331228,
+          0.1650000012887176,
+          0.16395800048485398,
+          0.16412499826401472,
+          0.16395899729104713,
+          0.16358400171156973,
+          0.16429199968115427,
+          0.1682090005488135,
+          0.16333399980794638,
+          0.1750840019667521,
+          0.16350000078091398,
+          0.16316700202878565,
+          0.1629170001251623,
+          0.16395800048485398,
+          0.17241699970327318,
+          0.1644590010982938,
+          0.16466699889861047,
+          0.16366700219805352,
+          0.16358300126739778,
+          0.16312499792547897,
+          0.16387499999837019,
+          0.1747920032357797,
+          0.17016700076055713,
+          0.16404200141550973,
+          0.1635410008020699,
+          0.16366700219805352,
+          0.16287499965983443,
+          0.16312500156345777,
+          0.16350000078091398
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.006487457998446189,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 0.96875,
+          "python_threads": 1,
+          "rss_bytes": 101027840,
+          "process_lifetime_peak_rss_bytes": 134897664,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 0.96875,
+          "python_threads": 1,
+          "rss_bytes": 101027840,
+          "process_lifetime_peak_rss_bytes": 134897664,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 101027840,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 134897664
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          2010,
+          1277,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          2048,
+          1315
+        ],
+        "input_end": [
+          2048,
+          1415
+        ]
+      }
+    },
+    {
+      "size": 4096,
+      "shape": [
+        2730,
+        4096,
+        3
+      ],
+      "input_sha256": "0ff67760252dc83deda0cff9d777462bdd78ae9301f204d0b5dce3c60d4d0e82",
+      "stage": "snapshot_plus_native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 11.672124501274084,
+        "p95_ms": 12.114052299511968,
+        "p99_ms": 12.365713470280753,
+        "max_ms": 12.429791000613477,
+        "samples_ms": [
+          11.911499997950159,
+          11.70379199902527,
+          11.706541001331061,
+          11.90445799875306,
+          11.660666001262143,
+          11.865917000250192,
+          12.208833999466151,
+          11.961250002059387,
+          11.816458001703722,
+          11.725084001227515,
+          11.533165998116601,
+          11.462333997769747,
+          11.54116700126906,
+          11.683583001286024,
+          11.588833996938774,
+          11.627083000348648,
+          11.405290999391582,
+          11.413665997679345,
+          12.429791000613477,
+          11.998207999567967,
+          11.92441599778249,
+          11.732124999980442,
+          11.533457996847574,
+          11.322333997668466,
+          11.219415999221383,
+          11.798874998930842,
+          11.400166997191263,
+          11.423500000091735,
+          11.220290998608107,
+          11.214250000193715
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.35210512499907054,
+        "process_cpu_seconds": 0.34375,
+        "before": {
+          "process_cpu_seconds": 1.09375,
+          "python_threads": 1,
+          "rss_bytes": 101031936,
+          "process_lifetime_peak_rss_bytes": 134897664,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 1.4375,
+          "python_threads": 1,
+          "rss_bytes": 101130240,
+          "process_lifetime_peak_rss_bytes": 135004160,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 4,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 126783488,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 135004160
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          2010,
+          1277,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          2048,
+          1315
+        ],
+        "input_end": [
+          2048,
+          1415
+        ]
+      }
+    },
+    {
+      "size": 6144,
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "a9e91924e491e2ee3e8814549c516c147f7c85b2641fc6eb0d83f03c9892c951",
+      "stage": "snapshot_copy",
+      "timing": {
+        "count": 30,
+        "p50_ms": 26.316437497371226,
+        "p95_ms": 78.5111377999783,
+        "p99_ms": 81.72006731951114,
+        "max_ms": 81.94229199943948,
+        "samples_ms": [
+          24.639082999783568,
+          26.396624998596963,
+          26.376457997685065,
+          24.948334001237527,
+          25.39187499860418,
+          26.256416997057386,
+          25.005999999848427,
+          25.91970799767296,
+          26.52041600231314,
+          24.73012500195182,
+          24.560541998653207,
+          26.230167000903748,
+          26.047625000501284,
+          25.079916002141545,
+          24.41779099899577,
+          25.37020800082246,
+          26.162292000663,
+          26.214875000732718,
+          26.93183399969712,
+          29.995959001098527,
+          27.89291700173635,
+          29.774250000627944,
+          30.993458000011742,
+          59.86375000065891,
+          73.53512500048964,
+          73.63837500088266,
+          75.25408400033484,
+          81.17599999968661,
+          81.94229199943948,
+          34.89550000085728
+        ]
+      },
+      "resources": {
+        "wall_seconds": 1.0883704169973498,
+        "process_cpu_seconds": 0.921875,
+        "before": {
+          "process_cpu_seconds": 1.640625,
+          "python_threads": 1,
+          "rss_bytes": 143089664,
+          "process_lifetime_peak_rss_bytes": 218591232,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 2.5625,
+          "python_threads": 1,
+          "rss_bytes": 143093760,
+          "process_lifetime_peak_rss_bytes": 218918912,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 11,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 218443776,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 218918912
+      },
+      "statuses": {},
+      "widths_px": [],
+      "diagnostics": null
+    },
+    {
+      "size": 6144,
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "a9e91924e491e2ee3e8814549c516c147f7c85b2641fc6eb0d83f03c9892c951",
+      "stage": "native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.16377099927922245,
+        "p95_ms": 0.1908417012600693,
+        "p99_ms": 0.22149593147332783,
+        "max_ms": 0.22862500190967694,
+        "samples_ms": [
+          0.22862500190967694,
+          0.17187499906867743,
+          0.16537500050617382,
+          0.1635409971640911,
+          0.16354200124624185,
+          0.16412500190199353,
+          0.16341700029443018,
+          0.16374999904655851,
+          0.16387499999837019,
+          0.17470800230512396,
+          0.16274999870802276,
+          0.16233299902523868,
+          0.16341700029443018,
+          0.16291599968099035,
+          0.16325000251526944,
+          0.1637919995118864,
+          0.16362500173272565,
+          0.16362499809474684,
+          0.1640839982428588,
+          0.16374999904655851,
+          0.16304199743899517,
+          0.1744170003803447,
+          0.20404200040502474,
+          0.1739170002110768,
+          0.16583400065428577,
+          0.16387499999837019,
+          0.16383399997721426,
+          0.16387499999837019,
+          0.16362499809474684,
+          0.1630829974601511
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.006641792002483271,
+        "process_cpu_seconds": 0.015625,
+        "before": {
+          "process_cpu_seconds": 2.671875,
+          "python_threads": 1,
+          "rss_bytes": 143097856,
+          "process_lifetime_peak_rss_bytes": 218918912,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 2.6875,
+          "python_threads": 1,
+          "rss_bytes": 143114240,
+          "process_lifetime_peak_rss_bytes": 218918912,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 143114240,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 218918912
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          3034,
+          1960,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          3072,
+          1998
+        ],
+        "input_end": [
+          3072,
+          2098
+        ]
+      }
+    },
+    {
+      "size": 6144,
+      "shape": [
+        4096,
+        6144,
+        3
+      ],
+      "input_sha256": "a9e91924e491e2ee3e8814549c516c147f7c85b2641fc6eb0d83f03c9892c951",
+      "stage": "snapshot_plus_native_service",
+      "timing": {
+        "count": 30,
+        "p50_ms": 26.232312002321123,
+        "p95_ms": 28.488797952741148,
+        "p99_ms": 28.836427180212922,
+        "max_ms": 28.843374999269145,
+        "samples_ms": [
+          26.238624999677995,
+          26.039290998596698,
+          25.910832999215927,
+          25.866208001389168,
+          25.68720799899893,
+          26.708875000622356,
+          26.209750001726206,
+          26.054292000480928,
+          25.399750000360655,
+          25.136541000392754,
+          24.932792002800852,
+          26.51191699987976,
+          26.439749999553896,
+          26.228083002934,
+          26.85366700097802,
+          26.305542000045534,
+          25.96941599767888,
+          26.168708001932828,
+          26.348082999902545,
+          26.808208000147715,
+          27.659625000524102,
+          28.08470800300711,
+          27.497040999151068,
+          26.236541001708247,
+          26.149917001021095,
+          25.97983300074702,
+          26.139957997656893,
+          26.919750001979992,
+          28.81941700252355,
+          28.843374999269145
+        ]
+      },
+      "resources": {
+        "wall_seconds": 0.7961765830004879,
+        "process_cpu_seconds": 0.78125,
+        "before": {
+          "process_cpu_seconds": 2.9375,
+          "python_threads": 1,
+          "rss_bytes": 143122432,
+          "process_lifetime_peak_rss_bytes": 218918912,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.71875,
+          "python_threads": 1,
+          "rss_bytes": 143204352,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 8,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 211353600,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      },
+      "statuses": {
+        "ok": 30
+      },
+      "widths_px": [
+        19.0
+      ],
+      "diagnostics": {
+        "algorithm_revision": "cu-manual-portable-v1",
+        "threshold": 0,
+        "endpoint_mean": 180,
+        "edge_angle_degrees": 0.0,
+        "crossing_angle_degrees": 90.0,
+        "boundary_adjusted": false,
+        "roi": [
+          3034,
+          1960,
+          77,
+          177
+        ],
+        "processed_pixels": 13629,
+        "removed_small_component_pixels": 0,
+        "input_start": [
+          3072,
+          1998
+        ],
+        "input_end": [
+          3072,
+          2098
+        ]
+      }
+    }
+  ],
+  "statistics": [
+    {
+      "history_count": 1,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.07008300053712446,
+        "p95_ms": 0.12990625000384157,
+        "p99_ms": 0.3159862485699707,
+        "max_ms": 0.38337499790941365,
+        "samples_ms": [
+          0.08412500028498471,
+          0.0699580014043022,
+          0.06874999962747097,
+          0.06729099914082326,
+          0.06729199958499521,
+          0.06716599818901159,
+          0.06654099706793204,
+          0.06758300150977448,
+          0.15100000018719584,
+          0.07770799857098609,
+          0.07129200093913823,
+          0.07037499744910747,
+          0.10412499977974221,
+          0.07200000254670158,
+          0.07087500125635415,
+          0.07045799793559127,
+          0.06958299854886718,
+          0.07041699791443534,
+          0.07020799966994673,
+          0.07299999924725853,
+          0.07191699842223898,
+          0.066459000663599,
+          0.38337499790941365,
+          0.06983299681451172,
+          0.0670830013405066,
+          0.06570899859070778,
+          0.06641700019827113,
+          0.07408300007227808,
+          0.06608400144614279,
+          0.06795799708925188
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.004066749999765307,
+        "process_cpu_seconds": 0.015625,
+        "before": {
+          "process_cpu_seconds": 3.84375,
+          "python_threads": 1,
+          "rss_bytes": 67964928,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.859375,
+          "python_threads": 1,
+          "rss_bytes": 68001792,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68001792,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 1,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.12849949962401297,
+        "p95_ms": 0.15806859919393895,
+        "p99_ms": 0.180744107819919,
+        "max_ms": 0.1855409973359201,
+        "samples_ms": [
+          0.1855409973359201,
+          0.14158300109556876,
+          0.13416699948720634,
+          0.13174999912735075,
+          0.12720900122076273,
+          0.13216600200394168,
+          0.1277920018765144,
+          0.1339170012215618,
+          0.1279579992115032,
+          0.1270829998247791,
+          0.12558299931697547,
+          0.1254170019819867,
+          0.13366600251174532,
+          0.12445799802662805,
+          0.16899999900488183,
+          0.1310419975197874,
+          0.12504199912655167,
+          0.14029199883225374,
+          0.13050000052317046,
+          0.12854099986725487,
+          0.12554200293379836,
+          0.12283300020499155,
+          0.1295830006711185,
+          0.1232089998666197,
+          0.12108400187571533,
+          0.12845799938077107,
+          0.12554199929581955,
+          0.11937499948544428,
+          0.133834000735078,
+          0.1447079994250089
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.005093540999951074,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 3.859375,
+          "python_threads": 1,
+          "rss_bytes": 68009984,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.859375,
+          "python_threads": 1,
+          "rss_bytes": 68120576,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68120576,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 1,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.12133349991927389,
+        "p95_ms": 0.14077689975238167,
+        "p99_ms": 0.17127014078141659,
+        "max_ms": 0.18079200162901543,
+        "samples_ms": [
+          0.1479579987062607,
+          0.12650000280700624,
+          0.12312499893596396,
+          0.12437499754014425,
+          0.12249999781488441,
+          0.12162500206613913,
+          0.12141700062784366,
+          0.1204169966513291,
+          0.12124999921070412,
+          0.12075000267941505,
+          0.11962500138906762,
+          0.1205000007757917,
+          0.11958300092373975,
+          0.13054199735051952,
+          0.12145800064899959,
+          0.12054200124111958,
+          0.12320800306042656,
+          0.1205830012622755,
+          0.122207999083912,
+          0.12083399997209199,
+          0.11974999870290048,
+          0.12112499825889245,
+          0.11866600107168779,
+          0.11995800014119595,
+          0.11979199916822836,
+          0.18079200162901543,
+          0.12687499838648364,
+          0.122207999083912,
+          0.12120800238335505,
+          0.1320000010309741
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.004829000001336681,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 3.859375,
+          "python_threads": 1,
+          "rss_bytes": 68124672,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.859375,
+          "python_threads": 1,
+          "rss_bytes": 68124672,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68124672,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 100,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.06558349923579954,
+        "p95_ms": 0.07581875233881873,
+        "p99_ms": 0.10649518084392187,
+        "max_ms": 0.11808300041593611,
+        "samples_ms": [
+          0.07812500189174898,
+          0.06724999911966734,
+          0.06504100019810721,
+          0.06516700159409083,
+          0.06474999827332795,
+          0.06516599751194008,
+          0.06454200047301129,
+          0.06508400110760704,
+          0.06445799954235554,
+          0.06495900015579537,
+          0.06458400093833916,
+          0.06541699985973537,
+          0.06487499922513962,
+          0.06824999945820309,
+          0.11808300041593611,
+          0.06595800005015917,
+          0.06737500007147901,
+          0.0657499986118637,
+          0.06474999827332795,
+          0.0652089984214399,
+          0.07029100015643053,
+          0.06920800296938978,
+          0.06525000208057463,
+          0.06691599992336705,
+          0.06795800072723068,
+          0.07300000288523734,
+          0.06437499905587174,
+          0.06687499990221113,
+          0.06624999878113158,
+          0.06724999911966734
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0031249589992512483,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 3.875,
+          "python_threads": 1,
+          "rss_bytes": 68128768,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.875,
+          "python_threads": 1,
+          "rss_bytes": 68173824,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68173824,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 100,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.12139600039517973,
+        "p95_ms": 0.16731264895497583,
+        "p99_ms": 0.1751175014578621,
+        "max_ms": 0.1756250021571759,
+        "samples_ms": [
+          0.1756250021571759,
+          0.13458399916999042,
+          0.127958002849482,
+          0.12358299863990396,
+          0.12387499737087637,
+          0.12283300020499155,
+          0.12045900075463578,
+          0.12029199933749624,
+          0.12145800064899959,
+          0.1202080020448193,
+          0.12254200191819109,
+          0.11762500071199611,
+          0.12070900265825912,
+          0.1302920027228538,
+          0.12045900075463578,
+          0.11979100236203521,
+          0.12020899885101244,
+          0.11858299694722518,
+          0.12133400014135987,
+          0.1168750022770837,
+          0.11983400327153504,
+          0.11879099838552065,
+          0.11774999802582897,
+          0.12900000001536682,
+          0.11899999663000926,
+          0.17387499974574894,
+          0.12862500079791062,
+          0.1347090001218021,
+          0.1592919979884755,
+          0.12487499770941213
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.004921833002299536,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 3.875,
+          "python_threads": 1,
+          "rss_bytes": 68173824,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.875,
+          "python_threads": 1,
+          "rss_bytes": 68182016,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68182016,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 100,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.1218960005644476,
+        "p95_ms": 0.1413142494129715,
+        "p99_ms": 0.16487782049807723,
+        "max_ms": 0.171125000633765,
+        "samples_ms": [
+          0.149583000165876,
+          0.1274999995075632,
+          0.12316699940129183,
+          0.12366699957055971,
+          0.12208300177007914,
+          0.12258400238351896,
+          0.12316599895711988,
+          0.12245899779372849,
+          0.12329099990893155,
+          0.12200000128359534,
+          0.12179199984529987,
+          0.12170799891464412,
+          0.12091600001440383,
+          0.131207998492755,
+          0.121749999379972,
+          0.12087499999324791,
+          0.12074999904143624,
+          0.12137500016251579,
+          0.12137500016251579,
+          0.12033299935865216,
+          0.12079199950676411,
+          0.12124999921070412,
+          0.12083299952792004,
+          0.12033299935865216,
+          0.1205000007757917,
+          0.171125000633765,
+          0.1274999995075632,
+          0.12295800115680322,
+          0.12112500189687125,
+          0.12954200064996257
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.004886582999461098,
+        "process_cpu_seconds": 0.015625,
+        "before": {
+          "process_cpu_seconds": 3.875,
+          "python_threads": 1,
+          "rss_bytes": 68182016,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.890625,
+          "python_threads": 1,
+          "rss_bytes": 68190208,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68190208,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 1000,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.06658299935224932,
+        "p95_ms": 0.07333329940593103,
+        "p99_ms": 0.0902063890680438,
+        "max_ms": 0.09679199865786359,
+        "samples_ms": [
+          0.07408300007227808,
+          0.0648340028419625,
+          0.06500000017695129,
+          0.06695800038869493,
+          0.06558300083270296,
+          0.06462500095949508,
+          0.06670799848507158,
+          0.06479100193246268,
+          0.06679199941572733,
+          0.06450000000768341,
+          0.06679199941572733,
+          0.06445799954235554,
+          0.06658300117123872,
+          0.06708299770252779,
+          0.06524999844259582,
+          0.06687499990221113,
+          0.0670000008540228,
+          0.09679199865786359,
+          0.06558300083270296,
+          0.06483300239779055,
+          0.06837500041001476,
+          0.06441599907702766,
+          0.06695900083286688,
+          0.06458400093833916,
+          0.06804099757573567,
+          0.07241699859150685,
+          0.06658299753325991,
+          0.06466700142482296,
+          0.06816600216552615,
+          0.06462500095949508
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.003066707999096252,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 3.90625,
+          "python_threads": 1,
+          "rss_bytes": 68575232,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.90625,
+          "python_threads": 1,
+          "rss_bytes": 68653056,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68653056,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 1000,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.12127050104027148,
+        "p95_ms": 0.1440475502022309,
+        "p99_ms": 0.16663081973092633,
+        "max_ms": 0.17345800006296486,
+        "samples_ms": [
+          0.14991599891800433,
+          0.12649999916902743,
+          0.1233749972016085,
+          0.12354199861874804,
+          0.12170899935881607,
+          0.12070900265825912,
+          0.11966600141022354,
+          0.12087499999324791,
+          0.12283300020499155,
+          0.1218329998664558,
+          0.12033299935865216,
+          0.12191700079711154,
+          0.11820800136774778,
+          0.13058300100965425,
+          0.12229200001456775,
+          0.11937499948544428,
+          0.1199590005853679,
+          0.12066699855495244,
+          0.1205830012622755,
+          0.11891699978150427,
+          0.1201250015583355,
+          0.12058400170644745,
+          0.12025000251014717,
+          0.1193329990201164,
+          0.12095800047973171,
+          0.17345800006296486,
+          0.12729199806926772,
+          0.12362499910523184,
+          0.12158300160081126,
+          0.1368750017718412
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.0048430829992867075,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 3.90625,
+          "python_threads": 1,
+          "rss_bytes": 68661248,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.90625,
+          "python_threads": 1,
+          "rss_bytes": 68665344,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68665344,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 1000,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.12497899842855986,
+        "p95_ms": 0.15660190092603443,
+        "p99_ms": 0.2836744288651973,
+        "max_ms": 0.3346659977978561,
+        "samples_ms": [
+          0.15387500025099143,
+          0.12983299893676303,
+          0.12725000124191865,
+          0.1251659996341914,
+          0.12520900054369122,
+          0.12525000056484714,
+          0.12579100075527094,
+          0.12437500117812306,
+          0.12479199722292833,
+          0.12379199688439257,
+          0.12354099817457609,
+          0.12349999815342017,
+          0.12412499927449971,
+          0.13299999773153104,
+          0.12525000056484714,
+          0.12466699990909547,
+          0.12454099851311184,
+          0.1239160010300111,
+          0.12425000022631139,
+          0.12429100024746731,
+          0.12762500045937486,
+          0.12354099817457609,
+          0.12437499754014425,
+          0.1228340006491635,
+          0.12283300020499155,
+          0.3346659977978561,
+          0.13258299804874696,
+          0.13537499762605876,
+          0.1269169988518115,
+          0.15883300147834234
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.005099417001474649,
+        "process_cpu_seconds": 0.015625,
+        "before": {
+          "process_cpu_seconds": 3.90625,
+          "python_threads": 1,
+          "rss_bytes": 68665344,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 3.921875,
+          "python_threads": 1,
+          "rss_bytes": 68673536,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 68673536,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 10000,
+      "stage": "cached_summary",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.0670415010972647,
+        "p95_ms": 0.07496875132346759,
+        "p99_ms": 0.09320732177002358,
+        "max_ms": 0.10054200174636208,
+        "samples_ms": [
+          0.07462500070687383,
+          0.06716700227116235,
+          0.06895800106576644,
+          0.06645800021942705,
+          0.06787500024074689,
+          0.06541699985973537,
+          0.06987499727983959,
+          0.06512500112876296,
+          0.06508300066343509,
+          0.06733400005032308,
+          0.06487499922513962,
+          0.06691599992336705,
+          0.06629199924645945,
+          0.06662499799858779,
+          0.06445799954235554,
+          0.06883399692014791,
+          0.06766699880245142,
+          0.06724999911966734,
+          0.06616599785047583,
+          0.06650000068475492,
+          0.06904199835844338,
+          0.06595900049433112,
+          0.10054200174636208,
+          0.06658300117123872,
+          0.06733400005032308,
+          0.07525000182795338,
+          0.06675000258837827,
+          0.06533300256705843,
+          0.0680840021232143,
+          0.06729199958499521
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.00344583399783005,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 4.0625,
+          "python_threads": 1,
+          "rss_bytes": 74309632,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 4.0625,
+          "python_threads": 1,
+          "rss_bytes": 74395648,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 74395648,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 10000,
+      "stage": "append_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.12218749907333404,
+        "p95_ms": 0.14307310029835205,
+        "p99_ms": 0.16165093031304426,
+        "max_ms": 0.16675000006216578,
+        "samples_ms": [
+          0.14916700092726387,
+          0.12616599997272715,
+          0.12270799925317988,
+          0.12283300020499155,
+          0.12287500067031942,
+          0.1216669988934882,
+          0.12079199950676411,
+          0.1200420010718517,
+          0.12308299847063608,
+          0.12054200124111958,
+          0.12141600018367171,
+          0.12041700028930791,
+          0.11937499948544428,
+          0.1356249995296821,
+          0.12487500134739093,
+          0.12033399980282411,
+          0.12312500257394277,
+          0.12124999921070412,
+          0.11987499965471216,
+          0.12404199878801592,
+          0.12024999887216836,
+          0.11895900024683215,
+          0.12120800238335505,
+          0.11850000009872019,
+          0.11979199916822836,
+          0.16675000006216578,
+          0.12633399819605984,
+          0.13070799832348712,
+          0.1249999986612238,
+          0.12520800009951927
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.004867666997597553,
+        "process_cpu_seconds": 0.0,
+        "before": {
+          "process_cpu_seconds": 4.0625,
+          "python_threads": 1,
+          "rss_bytes": 74399744,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 4.0625,
+          "python_threads": 1,
+          "rss_bytes": 74407936,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 74407936,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    },
+    {
+      "history_count": 10000,
+      "stage": "edit_summary_undo",
+      "timing": {
+        "count": 30,
+        "p50_ms": 0.1233335005963454,
+        "p95_ms": 0.1414834003298892,
+        "p99_ms": 0.17006417947413868,
+        "max_ms": 0.17904199921758845,
+        "samples_ms": [
+          0.14808400010224432,
+          0.1269999993382953,
+          0.12375000005704351,
+          0.12345900177024305,
+          0.122665998787852,
+          0.12387499737087637,
+          0.12333400081843138,
+          0.12362499910523184,
+          0.12279200018383563,
+          0.1218329998664558,
+          0.12170799891464412,
+          0.12187500033178367,
+          0.12033399980282411,
+          0.1330839986621868,
+          0.12179199984529987,
+          0.12179199984529987,
+          0.12054200124111958,
+          0.12112500189687125,
+          0.12333300037425943,
+          0.13341600060812198,
+          0.12483300088206306,
+          0.12316699940129183,
+          0.12379200052237138,
+          0.12258300193934701,
+          0.12141700062784366,
+          0.17904199921758845,
+          0.12845799938077107,
+          0.1263329977518879,
+          0.12200000128359534,
+          0.13195800056564622
+        ]
+      },
+      "status": "ready",
+      "resources": {
+        "wall_seconds": 0.004891667002084432,
+        "process_cpu_seconds": 0.015625,
+        "before": {
+          "process_cpu_seconds": 4.0625,
+          "python_threads": 1,
+          "rss_bytes": 74412032,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "after": {
+          "process_cpu_seconds": 4.078125,
+          "python_threads": 1,
+          "rss_bytes": 74440704,
+          "process_lifetime_peak_rss_bytes": 219033600,
+          "resource_provider": "Win32; child RSS unavailable without psutil"
+        },
+        "sampling_interval_ms": 100,
+        "sample_count": 2,
+        "children_sampled_peaks": [],
+        "peak_scope": "Sampled current RSS within this case; sub-100 ms peaks may be missed. Lifetime peaks are separately named.",
+        "sampled_max_rss_bytes": 74440704,
+        "sampled_max_children_rss_bytes": null,
+        "sampled_max_total_rss_bytes": null,
+        "sampled_max_native_threads": null,
+        "sampled_max_process_lifetime_peak_rss_bytes": 219033600
+      }
+    }
+  ]
+}

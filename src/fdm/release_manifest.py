@@ -406,6 +406,16 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
             errors.append("native kernels self-check returned a failure")
 
     try:
+        from fdm.services.cu_live_self_check import run_cu_live_self_check, cu_live_probe_passed
+        live_probe = run_cu_live_self_check()
+        functional_checks["cu_live_measurement"] = live_probe
+        if not cu_live_probe_passed(live_probe):
+            errors.append("live measurement self-check returned a failure")
+    except Exception as exc:
+        functional_checks["cu_live_measurement"] = {"ok": False}
+        errors.append(f"live measurement self-check failed: {exc}")
+
+    try:
         from fdm.application_launch import SingleInstanceCoordinator
         from PySide6.QtNetwork import QLocalServer, QLocalSocket
 

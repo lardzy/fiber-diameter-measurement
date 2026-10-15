@@ -1,0 +1,11 @@
+{
+  "snapshot": "R4",
+  "manifest_sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+  "checked_files": 491,
+  "mismatches": [],
+  "branch": "lard/cu-live-measurement",
+  "head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+  "staged_diff_sha256": "4714a75cdf221724b2a9b2addbfdf5087d1490dfe50c9dc9b2ef403ebdaee2b3",
+  "staged_paths_count": 15,
+  "scope": "Production/native/scripts/tests/packaging/build inputs; report-only edits excluded."
+}

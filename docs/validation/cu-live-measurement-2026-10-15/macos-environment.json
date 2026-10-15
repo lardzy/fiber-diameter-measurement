@@ -1,0 +1,7 @@
+{
+  "machdep.cpu.brand_string": "Apple M5 Pro",
+  "hw.memsize": "68719476736",
+  "hw.ncpu": "18",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+}

@@ -381,6 +381,7 @@ def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
     from build_windows_onedir import run_packaged_self_check
     from fdm.ui.project_save_self_check import run_project_save_self_check
     from fdm.services.native_kernels_self_check import run_native_kernels_self_check
+    from fdm.services.cu_live_self_check import run_cu_live_self_check
 
     from fdm.ui.scale_overlay_self_check import run_scale_overlay_self_check
 
@@ -388,6 +389,7 @@ def test_watermark_release_probe_and_build_gate(tmp_path, failed_case):
     assert watermark["ok"]
     payload = {"ok": True, "errors": [], "functional_checks": {
         "native_kernels": run_native_kernels_self_check(),
+        "cu_live_measurement": run_cu_live_self_check(),
         "project_save": run_project_save_self_check(),
         "overlay_renderer": {"ok": True, "worker_stdio_none": True, "scale_overlay": run_scale_overlay_self_check()},
         "fiber_quick_geometry": {"ok": True, "backend": "skimage_zhang", "geometry_revision": 3, "backend_version": "test", "compiled_extension": True},

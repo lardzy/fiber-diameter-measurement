@@ -331,7 +331,10 @@ def _resolve_runtime_profile_from_config(
             token = str(group_name)
             if token not in groups:
                 groups.append(token)
-        for module_name in payload.get("required_python_modules", []):
+        module_names = list(payload.get("required_python_modules", []))
+        if sys.platform == "win32":
+            module_names.extend(payload.get("windows_required_python_modules", []))
+        for module_name in module_names:
             token = str(module_name)
             if token not in modules:
                 modules.append(token)

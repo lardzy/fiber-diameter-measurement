@@ -241,7 +241,8 @@ def _looks_like_cu5_root(
         return False
     if matches_cu_family_identity(process_name, record.title):
         return True
-    return bool(selector is not None and selector.process_name == process_name)
+    return bool(selector is not None and selector.process_name
+                and selector.process_name == process_name)
 
 
 def _is_sdk_class(record: WindowRecord) -> bool:

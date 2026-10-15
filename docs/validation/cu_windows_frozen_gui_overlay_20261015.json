@@ -1,0 +1,135 @@
+{
+  "kind": "validation-tools-and-evidence-only",
+  "production_and_frozen_package_unchanged": true,
+  "frozen_source_manifest_sha256": "33d042eb149cc37c2608c459f84ec5c4739f5ea2d649c0cb19ad4dc9448a9564",
+  "installer_sha256": "8a37a58a382db75729ce8d33085df83445a3cfae299fbb622e79ddab2aa037be",
+  "files": [
+    {
+      "path": "scripts/validation/probe_cu_frozen_gui.ps1",
+      "size": 19951,
+      "sha256": "ff1d53ce888b781c9e722ae1fe54f56676307446e8ce15cc79d339dfa232a4ea"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/01-main-before-menu-uia.json",
+      "size": 269983,
+      "sha256": "33077a28a3ed21e535b4854dd3d9a7dc9082feb64b54522ed36823175d4e8755"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/02-after-entry-invocation-uia.json",
+      "size": 521717,
+      "sha256": "94beb9977b3d6b0ebc92b2274266318d8ee1f96af638d0df023856c843d67f88"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/03-live-workspace-ready-uia.json",
+      "size": 521715,
+      "sha256": "e0db47c8268e9df038574cbccd3f7a78e1027fa107f5c6489ba3840274e05df5"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/04-after-workspace-close-uia.json",
+      "size": 269916,
+      "sha256": "86879aacb0865ab9962c02170ffacedf8a0c43033d1b6cb1f8645f99c955dfbe"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/05-unsaved-dialog-before-decision-uia.json",
+      "size": 291389,
+      "sha256": "d7068f4408f4dab4ba9decb6bec7fb4bd75c546af4540fa670b72d305cac5617"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/execution.json",
+      "size": 271,
+      "sha256": "6888791851957393b9655531c3ccb7d1ddcecf5b6ef66f3c720ec50dfe79c3d0"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/parse.json",
+      "size": 160,
+      "sha256": "0d680a2a7cd5dcaff28803ae15426d82176ff02de441e6271976bc58764174fd"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/remaining-processes.json",
+      "size": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "path": "build/cu-live-windows/gui-corrected/result.json",
+      "size": 39107,
+      "sha256": "9359252ab6fed292f3ad7c601dd38f7e4784318f572665075da0f12361963731"
+    }
+  ],
+  "result": {
+    "started_at": "2026-10-15T03:41:05.5780932+08:00",
+    "finished_at": "2026-10-15T03:41:14.4474117+08:00",
+    "pid": 1372,
+    "isolated_empty_project_verified": true,
+    "main_window": true,
+    "experiment_menu": true,
+    "live_experiment_entry": true,
+    "live_window": true,
+    "key_controls_verified": true,
+    "workspace_closed": true,
+    "graceful_exit": true,
+    "forced_cleanup": false,
+    "exit_code": 0,
+    "process_exited_after_cleanup": true,
+    "errors": [],
+    "ok": true
+  },
+  "required_controls": [
+    {
+      "name": "当前图片",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "本机相机",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "CU 实时画面",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "分析当前视场",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "当前视场",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "试验历史（全部操作者）",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "全图候选",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "改名",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "撤销",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "重做",
+      "present": true,
+      "visible": true
+    },
+    {
+      "name": "保存项目",
+      "present": true,
+      "visible": true
+    }
+  ],
+  "unsaved_choice": "放弃",
+  "remaining_processes": []
+}

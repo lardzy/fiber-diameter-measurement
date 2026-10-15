@@ -1,0 +1,398 @@
+{
+  "schema_version": 1,
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "opencv": "4.13.0",
+  "numpy": "2.4.3",
+  "opencv_threads": 18,
+  "limits": [
+    "Synthetic inputs, not real microscopy image storage ratios.",
+    "Times measure imencode only; readback verifies every output outside timing.",
+    "No production evidence strategy changes are made by this experiment."
+  ],
+  "records": [
+    {
+      "scenario": "uniform_stripes",
+      "strategy": "compression1_default",
+      "compression": 1,
+      "strategy_code": 0,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "d95b77d04d19f85d5c0a0e0018bc2083aede4bf0d6b5b2f2b752eb74740fc937",
+      "encoded_bytes": 344263,
+      "encoded_sha256": "aeede3fcf42ffa9d2d7522e3462ddc658b0acdd0d0bc7e4b5ae6f176380b6ef2",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 201.61568749999998,
+      "p95_ms": 210.9478102,
+      "samples_ms": [
+        202.661375,
+        202.05975,
+        200.969959,
+        200.830791,
+        217.376791,
+        202.00625,
+        200.721458,
+        201.010167,
+        203.090167,
+        201.225125
+      ]
+    },
+    {
+      "scenario": "uniform_stripes",
+      "strategy": "compression1_rle",
+      "compression": 1,
+      "strategy_code": 3,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "d95b77d04d19f85d5c0a0e0018bc2083aede4bf0d6b5b2f2b752eb74740fc937",
+      "encoded_bytes": 80497,
+      "encoded_sha256": "0e1615883cdfc1fdf3fb1cdfdae19248960d86a4ad24974a956849e25a8325d5",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 196.237583,
+      "p95_ms": 197.45588765,
+      "samples_ms": [
+        197.365917,
+        195.462167,
+        197.5295,
+        195.661209,
+        195.879208,
+        196.725291,
+        196.904459,
+        196.477375,
+        195.997791,
+        195.743917
+      ]
+    },
+    {
+      "scenario": "uniform_stripes",
+      "strategy": "compression1_huffman_only",
+      "compression": 1,
+      "strategy_code": 2,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "d95b77d04d19f85d5c0a0e0018bc2083aede4bf0d6b5b2f2b752eb74740fc937",
+      "encoded_bytes": 9510870,
+      "encoded_sha256": "d2e770f8264717aa427a1bbbc76120f4fadd0f6acb4c2fb2612054acf1bb6af7",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 421.09670800000004,
+      "p95_ms": 422.9254962,
+      "samples_ms": [
+        423.717084,
+        421.52775,
+        421.922459,
+        420.899333,
+        420.461083,
+        421.194833,
+        420.998583,
+        419.393292,
+        421.958,
+        419.512709
+      ]
+    },
+    {
+      "scenario": "uniform_stripes",
+      "strategy": "compression0_default",
+      "compression": 0,
+      "strategy_code": 0,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "d95b77d04d19f85d5c0a0e0018bc2083aede4bf0d6b5b2f2b752eb74740fc937",
+      "encoded_bytes": 75622480,
+      "encoded_sha256": "284ae08b7fa3a081d30b56ac9b56bc9b569bc77c2a897e034654b42b380e1fef",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 212.793521,
+      "p95_ms": 214.48778735,
+      "samples_ms": [
+        214.430083,
+        212.014375,
+        212.86725,
+        213.698083,
+        214.535,
+        212.719792,
+        213.857166,
+        210.753166,
+        210.023709,
+        212.4365
+      ]
+    },
+    {
+      "scenario": "stripes_one_bit_noise",
+      "strategy": "compression1_default",
+      "compression": 1,
+      "strategy_code": 0,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "53f4c89ef100fd8cfc73bafd4988088e5ce6c8d66249eb80a653060036a30615",
+      "encoded_bytes": 21261250,
+      "encoded_sha256": "21833daa4c389ce960f248a1149dfef050530277362e2a53c342cc67a2972355",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 751.5848335000001,
+      "p95_ms": 765.88763925,
+      "samples_ms": [
+        750.241,
+        754.131458,
+        753.015792,
+        752.928667,
+        775.506333,
+        752.966167,
+        750.067125,
+        747.701625,
+        748.780208,
+        749.007541
+      ]
+    },
+    {
+      "scenario": "stripes_one_bit_noise",
+      "strategy": "compression1_rle",
+      "compression": 1,
+      "strategy_code": 3,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "53f4c89ef100fd8cfc73bafd4988088e5ce6c8d66249eb80a653060036a30615",
+      "encoded_bytes": 17098625,
+      "encoded_sha256": "7b03d474ea184ea554ea05f645d3cfe236150f406554a374b4391024a916c714",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 653.1103330000001,
+      "p95_ms": 655.1690625,
+      "samples_ms": [
+        654.8425,
+        653.909542,
+        651.931084,
+        655.43625,
+        653.166333,
+        652.082,
+        654.021333,
+        651.152625,
+        653.054333,
+        652.187834
+      ]
+    },
+    {
+      "scenario": "stripes_one_bit_noise",
+      "strategy": "compression1_huffman_only",
+      "compression": 1,
+      "strategy_code": 2,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "53f4c89ef100fd8cfc73bafd4988088e5ce6c8d66249eb80a653060036a30615",
+      "encoded_bytes": 16560913,
+      "encoded_sha256": "7cc8a311927a73098f9af1b5ebc367a0652efa7e9f201e569a44875afb4dd985",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 538.5937705,
+      "p95_ms": 555.2211061,
+      "samples_ms": [
+        542.173708,
+        565.89625,
+        540.502958,
+        538.23625,
+        538.068041,
+        539.4975,
+        537.46425,
+        537.017416,
+        538.951291,
+        536.710833
+      ]
+    },
+    {
+      "scenario": "stripes_one_bit_noise",
+      "strategy": "compression0_default",
+      "compression": 0,
+      "strategy_code": 0,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "53f4c89ef100fd8cfc73bafd4988088e5ce6c8d66249eb80a653060036a30615",
+      "encoded_bytes": 75622480,
+      "encoded_sha256": "256b59e484012c495cd875a9a9b2b669cdc29cbcd9ce2d7a0a7d3829e4f49d03",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 274.5779165,
+      "p95_ms": 277.63077705,
+      "samples_ms": [
+        277.211792,
+        273.978416,
+        274.082917,
+        273.6905,
+        277.973583,
+        274.757625,
+        273.343875,
+        275.395583,
+        274.398208,
+        275.718959
+      ]
+    },
+    {
+      "scenario": "gradient_with_noise",
+      "strategy": "compression1_default",
+      "compression": 1,
+      "strategy_code": 0,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "b007f5fd90ac6cb58702fef7cf9b33afec494541037585d4271bf1cc0cc3710d",
+      "encoded_bytes": 53232888,
+      "encoded_sha256": "dc23cc362c5a0e5eacfb75a6ee12ef0d7b00e8286423acffadde79fa29327804",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 947.640229,
+      "p95_ms": 949.5854122,
+      "samples_ms": [
+        945.987292,
+        947.001083,
+        946.729958,
+        947.795,
+        949.392041,
+        949.743625,
+        947.485458,
+        945.513,
+        949.250125,
+        948.142958
+      ]
+    },
+    {
+      "scenario": "gradient_with_noise",
+      "strategy": "compression1_rle",
+      "compression": 1,
+      "strategy_code": 3,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "b007f5fd90ac6cb58702fef7cf9b33afec494541037585d4271bf1cc0cc3710d",
+      "encoded_bytes": 49296960,
+      "encoded_sha256": "68357519051e2ce262db9475905ac4bd7c1f4102c04216337434f2ed0ce0c519",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 647.577646,
+      "p95_ms": 653.0491439,
+      "samples_ms": [
+        646.558417,
+        645.139417,
+        648.537458,
+        652.970792,
+        650.327125,
+        651.683834,
+        645.909708,
+        646.617834,
+        645.936458,
+        653.11325
+      ]
+    },
+    {
+      "scenario": "gradient_with_noise",
+      "strategy": "compression1_huffman_only",
+      "compression": 1,
+      "strategy_code": 2,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "b007f5fd90ac6cb58702fef7cf9b33afec494541037585d4271bf1cc0cc3710d",
+      "encoded_bytes": 49295785,
+      "encoded_sha256": "4e168ebf67985adbe7c6405b57a207202ff6f9357405237f46a7e701db62d8fe",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 548.4323755,
+      "p95_ms": 566.8418626499999,
+      "samples_ms": [
+        548.636375,
+        545.686,
+        577.529625,
+        553.779042,
+        548.348667,
+        551.023041,
+        545.671833,
+        545.702792,
+        547.020667,
+        548.516084
+      ]
+    },
+    {
+      "scenario": "gradient_with_noise",
+      "strategy": "compression0_default",
+      "compression": 0,
+      "strategy_code": 0,
+      "size": [
+        4096,
+        6144,
+        3
+      ],
+      "raw_bytes": 75497472,
+      "input_sha256": "b007f5fd90ac6cb58702fef7cf9b33afec494541037585d4271bf1cc0cc3710d",
+      "encoded_bytes": 75622480,
+      "encoded_sha256": "5165c030ce3d0dab893a1c7f1afda9e9d2a602958cd6a8581d5ea54acc9670f9",
+      "roundtrip_pixel_exact": 15,
+      "warmup": 5,
+      "samples": 10,
+      "p50_ms": 266.94933349999997,
+      "p95_ms": 269.55878355,
+      "samples_ms": [
+        265.881583,
+        265.4725,
+        266.231542,
+        267.463042,
+        269.523583,
+        267.717875,
+        266.435625,
+        264.522458,
+        268.8225,
+        269.587584
+      ]
+    }
+  ]
+}

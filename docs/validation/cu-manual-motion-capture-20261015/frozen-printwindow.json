@@ -1,0 +1,6893 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "checks": {
+    "worker_stopped": true,
+    "no_unexpected_exception": true,
+    "phases_correct": true,
+    "timestamps_increase": true,
+    "sequence_increases": true,
+    "minimize_unavailable": true,
+    "close_unavailable": true,
+    "resize_changes_generation": true
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+  "backend": "compat",
+  "native_build_info": {
+    "api_version": 1,
+    "backend": "WGC/D3D11",
+    "minimum_windows_build": 18362,
+    "source_sha256": "e71b31ec260e341bc9900caa18cac42c21878d4f66913ee2211b1cd4aea4728c",
+    "python_abi": "cpython-312"
+  },
+  "native_sha256": "99566498a95f335d40a4f7ea7088fd764e3646fce19412bb2a18836663948a3e",
+  "phases": {
+    "initial": {
+      "settled_frames": 32,
+      "correct": 32,
+      "shapes": [
+        [
+          480,
+          640,
+          4
+        ]
+      ],
+      "generations": [
+        0
+      ]
+    },
+    "occluded": {
+      "settled_frames": 31,
+      "correct": 31,
+      "shapes": [
+        [
+          480,
+          640,
+          4
+        ]
+      ],
+      "generations": [
+        0
+      ]
+    },
+    "resized": {
+      "settled_frames": 36,
+      "correct": 36,
+      "shapes": [
+        [
+          540,
+          720,
+          4
+        ]
+      ],
+      "generations": [
+        1
+      ]
+    },
+    "moved": {
+      "settled_frames": 30,
+      "correct": 30,
+      "shapes": [
+        [
+          540,
+          720,
+          4
+        ]
+      ],
+      "generations": [
+        1
+      ]
+    },
+    "restored": {
+      "settled_frames": 29,
+      "correct": 29,
+      "shapes": [
+        [
+          540,
+          720,
+          4
+        ]
+      ],
+      "generations": [
+        0
+      ]
+    }
+  },
+  "failures": [],
+  "records": [
+    {
+      "event": "identity",
+      "value": {
+        "pid": 7344,
+        "process_created": 134364728862124481,
+        "root_hwnd": 2229306,
+        "child_hwnd": 2687214,
+        "child_class": "Qt6102QWindowIcon",
+        "child_control_id": 0
+      }
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 1,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108713181265,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 10.671207999621402
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 2,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108713578153,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 38.56604100110417
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 3,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108713912719,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.58795900021505
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 4,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108714257940,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 34.69079099886585
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 5,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108714586996,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.10350000174367
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 6,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108714918872,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.28120799960743
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 7,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108715263112,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 34.734832999674836
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 8,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108715591853,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.87149999960093
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 9,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108715923304,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.64329100056784
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 10,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108716258759,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.43733300062013
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 11,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108716611142,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 37.54762500102515
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 12,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108716955117,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 34.40608299933956
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 13,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108717295217,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 35.348875000636326
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 14,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108717617954,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 31.425832999957493
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 15,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108717970657,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 38.34025000105612
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 16,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108718299275,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 30.09737499996845
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 17,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108718786519,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 48.55358399981924
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 18,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108719140457,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 35.65612499915005
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 19,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108719463802,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.40029100015818
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 20,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108719785332,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.02620900083275
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 21,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108720310057,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.241415998651064
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 22,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108720636072,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.60141699865926
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 23,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108720968410,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.53337500084308
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 24,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108721455176,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 49.035124999136315
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 25,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108721977654,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 51.63695800001733
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 26,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108722297671,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.29216600084328
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 27,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108722627485,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.02983299909101
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 28,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108722945213,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 30.504416001349455
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 29,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108723288887,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 34.36787499958882
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 30,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108723623622,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.79441700053576
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 31,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108723956650,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.18462499919406
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 32,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108724281239,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.74450000026263
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": false,
+      "sequence": 33,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108724616975,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 46.466666000924306
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 34,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108725016702,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 24.895915999877616
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 35,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108725437716,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 42.14750000028289
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 36,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108725765949,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.11320899956627
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 37,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108726102470,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.454875001552864
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 38,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108726440252,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.52166600052442
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 39,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108726923592,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 47.993084001063835
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 40,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108727269432,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 35.01979199972993
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 41,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108727605255,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 34.18245800094155
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 42,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108728120185,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.82779099979962
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 43,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108728607366,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 49.317042001348455
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 44,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108728950282,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.37983299934422
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 45,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108729293550,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 36.21437500078173
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 46,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108729812535,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.9120419996616
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 47,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108730140164,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 30.706957999427686
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 48,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108730651830,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 51.298541999130975
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 49,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108730952073,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 30.004417001691763
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 50,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108731481613,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.76008299915702
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 51,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108731975149,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 50.086374998500105
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 52,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108732297897,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 31.85762499924749
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 53,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108732806614,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 51.74841700136312
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 54,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108733122672,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 29.70212499894842
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 55,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108733456848,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.57387500000186
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 56,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108733973777,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.57999999957974
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 57,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108734281985,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 29.61591700113786
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 58,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108734630806,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 35.26979200069036
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 59,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108735133005,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 51.88191700108291
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 60,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108735454174,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 31.519625001237728
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 61,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108735788675,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.2243749997142
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 62,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108736127692,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 34.045958000206156
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 63,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108736462452,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.62866700081213
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 64,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108736976238,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.62100000072678
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 65,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108737306540,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 31.597291001162375
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 66,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108737627190,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 32.55699999863282
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 67,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108738146639,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 52.857167000183836
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 68,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108738452492,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 29.889333000028273
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 69,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108738800766,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 35.027832998821395
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 70,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108739297991,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 50.725041999612586
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 71,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108739803635,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 49.939915999857476
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 72,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108740139821,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 33.31345799961127
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 73,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108740637921,
+      "shape": [
+        480,
+        640,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 2457600
+      },
+      "poll_ms": 55.98312499932945
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 74,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108741122422,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 17.422958999304683
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 75,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108741444195,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.37958399950003
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 76,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108741802074,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.38329100047122
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 77,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108742132916,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.659875000215834
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 78,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108742477857,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.123125000609434
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 79,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108742790677,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.185542000253918
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 80,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108743103347,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.527958000879153
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 81,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108743464241,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 36.22062500107859
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 82,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108743798412,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.260207999977865
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 83,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108744110200,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.041041998832952
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 84,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108744459845,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.487958000885556
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 85,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108744798361,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.04462500111549
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 86,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108745135435,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.41720900061773
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 87,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108745456758,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.755250000060187
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 88,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108745799007,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.935708999910275
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 89,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108746117343,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.552583001030143
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 90,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108746458459,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.23237499919196
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 91,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108746781811,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.04470799937553
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 92,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108747133284,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.08654200049932
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 93,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108747458032,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.31212500031688
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 94,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108747802217,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.046584000156145
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 95,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108748138585,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.13199999865901
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 96,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108748469125,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.80016700045962
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 97,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108748801167,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.63295800045307
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 98,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108749111182,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.379082998479134
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 99,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108749447671,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.01845799999137
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 100,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108749793192,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.26495799997065
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 101,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108750122089,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.3269580003398
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 102,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108750470837,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.93216700007906
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 103,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108750805797,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.63816700039024
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 104,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108751139611,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.89699999913864
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 105,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108751455581,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.57979199932015
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 106,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108751958267,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 51.198291999753565
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 107,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108752472499,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 52.083416001551086
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 108,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108752805325,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.11395799917227
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 109,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108753127050,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.36187500099186
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 110,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108753464206,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.06070799953886
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 111,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108753794551,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.781624999595806
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 112,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108754132024,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.240709000485367
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 113,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108754457800,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.67454100023315
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 114,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108754792678,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.673916999963694
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 115,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108755132428,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.98383300029673
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 116,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108755651330,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 49.88108399993507
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 117,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108755959339,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.309540999951423
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 118,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108756310095,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.331917000803514
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 119,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108756631131,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.93966700039164
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 120,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108756954904,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.873665999024524
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 121,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108757300176,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.7107910001796
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 122,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108757644188,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.979957999894395
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 123,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108758144079,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 49.84383299961337
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 124,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108758468386,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.50112499902025
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 125,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108758798235,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.64012500039826
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 126,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108759123500,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.899958001304185
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 127,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108759468305,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.98712500004331
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 128,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108759793822,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.047916000010446
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 129,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108760130257,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.41000000000349
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 130,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108760461371,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.74795800098218
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 131,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108760801133,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.13754200119001
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 132,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108761140345,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.9393750000454
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 133,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108761471755,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.93887499967241
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 134,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108761777176,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 29.823374999978114
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 135,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108762122865,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.06208299950231
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 136,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108762453424,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.319709000352304
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 137,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108762788235,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.69629100052407
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 138,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108763309607,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 53.625250000550295
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 139,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108763631617,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.533458000718383
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 140,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108763974006,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.349417001067195
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 141,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108764280312,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 29.894166000303812
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 142,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108764625096,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.47691600033431
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 143,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108764972226,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.26762500021141
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 144,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108765296601,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.289499999023974
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 145,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108765802409,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 51.479707999533275
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 146,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108766125669,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.03175000110059
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 147,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108766474730,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.5260419997212
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 148,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108766784385,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.676624999614432
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 149,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108767316958,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 54.18662499869242
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 150,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108767627564,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.49549999923329
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 151,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108767961241,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.54962500088732
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 152,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108768288912,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.989916999009438
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 153,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108768620399,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.20566699949268
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 154,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108768965326,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.86016600072617
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 155,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108769467167,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 51.96579199946427
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 156,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108769786542,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 29.903791000833735
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 157,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108770134397,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.04883399909886
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 158,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108770463158,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.43883299930894
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 1,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108781943248,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 15.30345799983479
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 2,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108782406907,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 46.12124999948719
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 3,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108782748981,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.266125001522596
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 4,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108783085428,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.10666600029799
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 5,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108783430307,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.53329199874133
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 6,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108783773156,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.754791000523255
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 7,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108784095830,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.0998339993821
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 8,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108784424322,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.255000000077416
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 9,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108784752013,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.65616700082319
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 10,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108785090767,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.065874999418156
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 11,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108785454387,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 37.5985419996141
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 12,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108785968098,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 52.427415999773075
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 13,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108786310929,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.75762499833945
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 14,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108786635985,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.70120800152654
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 15,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108786945618,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.130792000112706
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 16,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108787301250,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.6792080001469
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 17,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108787798849,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 50.776957999914885
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 18,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108788142409,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.96716700081015
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 19,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108788443957,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 30.34033400035696
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 20,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108788793767,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 34.487584000089555
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 21,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108789124760,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.143791999464156
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 22,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108789630448,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 50.80699999962235
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 23,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108789978011,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 35.07016700132226
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 24,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108790307522,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.73687500040978
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 25,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108790809306,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 50.86054100138426
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 26,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108791132165,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 31.5077499999461
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 27,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108791460577,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 33.1555840002693
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 28,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108791793791,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 32.51425000053132
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 29,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108792299396,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 51.62079200090375
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 30,
+      "generation": 0,
+      "capture_session": 1,
+      "timestamp_100ns": 108792624115,
+      "shape": [
+        540,
+        720,
+        4
+      ],
+      "crop": [
+        0,
+        0,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "acquisition_reserved_bytes": 3110400
+      },
+      "poll_ms": 46.72029199900862
+    },
+    {
+      "event": "unavailable",
+      "phase": "closed",
+      "message": "capture_window_closed"
+    }
+  ],
+  "limits": [
+    "Controlled HWND render capture, not a physical CU camera or Microview board acceptance.",
+    "DPI change across physical monitors is not covered by this single VM desktop probe."
+  ]
+}

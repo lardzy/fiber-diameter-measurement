@@ -1,0 +1,263 @@
+{
+  "date": "2026-10-15",
+  "aborted_run": {
+    "pid": 43329,
+    "started_local": "2026-10-15T04:28:40+08:00",
+    "sampled_local": "2026-10-15T04:38:33+08:00",
+    "sample_count": 664,
+    "termination": "SIGTERM after persistent Qt native mutex wait; not a completed or passed full regression",
+    "artifacts": [
+      {
+        "path": "build/cu-live-measurement/full-regression-macos-final-r2.log",
+        "sha256": "0e0e07393188bd9a563b9c8580592fdb9647737bfd00f8a3c88715ea9d50f7ad"
+      },
+      {
+        "path": "build/cu-live-measurement/full-regression-macos-final-r2-hang-sample.txt",
+        "sha256": "9e018a740e9bba487b001b1c5359e795d21aa4e9063f145539dff6ab59d54ecd"
+      }
+    ]
+  },
+  "observed_stack": [
+    "QCoreApplication.processEvents",
+    "QWidget.ensurePolished",
+    "QWidgetPrivate.propagatePaletteChange",
+    "MainWindow.changeEvent",
+    "QAction.setIcon",
+    "QToolButton.setDefaultAction",
+    "QObjectPrivate.connectImpl",
+    "QBasicMutex.lockInternal",
+    "__ulock_wait2"
+  ],
+  "boundary": "Same sampled signature as earlier PID24537; neither lock owner nor root cause is established. Pre-CU baseline was not shown to reproduce this wait; do not label it a verified baseline deadlock.",
+  "next_run": "Completed; final-source full regression recorded below. No blanket test suppression or production Qt/theme workaround was introduced.",
+  "widget_observations": {
+    "scope": "Read-only counts from the ongoing verbose r2 diagnostic run; this section does not classify the eventual run result.",
+    "captured_at_utc": "2026-10-14T20:48:12.967484+00:00",
+    "source": {
+      "path": "build/cu-live-measurement/full-regression-macos-final-r2-diagnostic-widgets.jsonl",
+      "complete_prefix_bytes": 1633556,
+      "complete_prefix_sha256": "a47d3cf85914f0c1ea020f36ee4594552ffc8fbcb75eb9068c34f145d2346b25",
+      "prefix_boundary": "File may continue growing. Hash covers exactly the first complete_prefix_bytes bytes, not the future complete log."
+    },
+    "plugin": {
+      "path": "/private/tmp/fdm_cu_qt_diagnostic.py",
+      "sha256": "850c14c7f2127f41042a2e473199c1372a400e504dfa96cb25dc4ebbe7a5d86e",
+      "behavior": "At file end after pytest_runtest_protocol yield: counts QApplication.allWidgets/topLevelWidgets and valid exact-type MainWindow flags. Does not process events, force garbage collection, close or delete widgets."
+    },
+    "complete_file_end_snapshots": 201,
+    "test_start_events": 4522,
+    "test_end_events": 4521,
+    "last_observed_event": {
+      "time": 1792010835.218883,
+      "event": "start",
+      "nodeid": "tests/test_workbench_workflows.py::test_system_theme_uses_stable_controls_and_tracks_appearance"
+    },
+    "first_snapshot": {
+      "file": "tests/test_advanced_analysis_dialog.py",
+      "time_epoch_seconds": 1792010564.074833,
+      "time_local": "2026-10-15T04:42:44.074833+08:00",
+      "all_widgets": 677,
+      "top_level_widgets": 41,
+      "valid_main_windows": 0,
+      "hidden_filter_installed_main_windows": 0
+    },
+    "last_snapshot": {
+      "file": "tests/test_windows_window_locator.py",
+      "time_epoch_seconds": 1792010828.820679,
+      "time_local": "2026-10-15T04:47:08.820679+08:00",
+      "all_widgets": 49670,
+      "top_level_widgets": 2630,
+      "valid_main_windows": 11,
+      "hidden_filter_installed_main_windows": 11
+    },
+    "max_observed_all_widgets": 49670,
+    "max_observed_top_level_widgets": 2630,
+    "zero_main_window_snapshots_before_first_retained": 190,
+    "first_retained_main_window_snapshot": {
+      "file": "tests/test_ui_canvas_and_export.py",
+      "time_epoch_seconds": 1792010816.587349,
+      "time_local": "2026-10-15T04:46:56.587349+08:00",
+      "all_widgets": 49147,
+      "top_level_widgets": 2593,
+      "valid_main_windows": 11,
+      "hidden_filter_installed_main_windows": 11
+    },
+    "previous_snapshot": {
+      "file": "tests/test_tubeness_chain.py",
+      "time_epoch_seconds": 1792010728.167365,
+      "time_local": "2026-10-15T04:45:28.167365+08:00",
+      "all_widgets": 24543,
+      "top_level_widgets": 1193,
+      "valid_main_windows": 0,
+      "hidden_filter_installed_main_windows": 0
+    },
+    "milestones": [
+      {
+        "file": "tests/test_construction_widgets.py",
+        "time_epoch_seconds": 1792010585.000718,
+        "time_local": "2026-10-15T04:43:05.000718+08:00",
+        "all_widgets": 1995,
+        "top_level_widgets": 116,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "file": "tests/test_digital_slide_configuration.py",
+        "time_epoch_seconds": 1792010647.890789,
+        "time_local": "2026-10-15T04:44:07.890789+08:00",
+        "all_widgets": 5715,
+        "top_level_widgets": 274,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "file": "tests/test_image_processing_workbench.py",
+        "time_epoch_seconds": 1792010659.686568,
+        "time_local": "2026-10-15T04:44:19.686568+08:00",
+        "all_widgets": 12146,
+        "top_level_widgets": 564,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "file": "tests/test_settings_dialog_navigation.py",
+        "time_epoch_seconds": 1792010727.434625,
+        "time_local": "2026-10-15T04:45:27.434625+08:00",
+        "all_widgets": 24543,
+        "top_level_widgets": 1193,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "file": "tests/test_tubeness_chain.py",
+        "time_epoch_seconds": 1792010728.167365,
+        "time_local": "2026-10-15T04:45:28.167365+08:00",
+        "all_widgets": 24543,
+        "top_level_widgets": 1193,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "file": "tests/test_ui_canvas_and_export.py",
+        "time_epoch_seconds": 1792010816.587349,
+        "time_local": "2026-10-15T04:46:56.587349+08:00",
+        "all_widgets": 49147,
+        "top_level_widgets": 2593,
+        "valid_main_windows": 11,
+        "hidden_filter_installed_main_windows": 11
+      },
+      {
+        "file": "tests/test_watermark.py",
+        "time_epoch_seconds": 1792010824.3385532,
+        "time_local": "2026-10-15T04:47:04.338553+08:00",
+        "all_widgets": 49670,
+        "top_level_widgets": 2630,
+        "valid_main_windows": 11,
+        "hidden_filter_installed_main_windows": 11
+      },
+      {
+        "file": "tests/test_windows_window_locator.py",
+        "time_epoch_seconds": 1792010828.820679,
+        "time_local": "2026-10-15T04:47:08.820679+08:00",
+        "all_widgets": 49670,
+        "top_level_widgets": 2630,
+        "valid_main_windows": 11,
+        "hidden_filter_installed_main_windows": 11
+      }
+    ],
+    "largest_net_increases": [
+      {
+        "delta_all_widgets_since_previous_file_end": 24604,
+        "previous_file": "tests/test_tubeness_chain.py",
+        "file": "tests/test_ui_canvas_and_export.py",
+        "time_epoch_seconds": 1792010816.587349,
+        "time_local": "2026-10-15T04:46:56.587349+08:00",
+        "all_widgets": 49147,
+        "top_level_widgets": 2593,
+        "valid_main_windows": 11,
+        "hidden_filter_installed_main_windows": 11
+      },
+      {
+        "delta_all_widgets_since_previous_file_end": 9310,
+        "previous_file": "tests/test_segmentation_source.py",
+        "file": "tests/test_settings_dialog_navigation.py",
+        "time_epoch_seconds": 1792010727.434625,
+        "time_local": "2026-10-15T04:45:27.434625+08:00",
+        "all_widgets": 24543,
+        "top_level_widgets": 1193,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "delta_all_widgets_since_previous_file_end": 2996,
+        "previous_file": "tests/test_digital_slide_compression_dialog.py",
+        "file": "tests/test_digital_slide_configuration.py",
+        "time_epoch_seconds": 1792010647.890789,
+        "time_local": "2026-10-15T04:44:07.890789+08:00",
+        "all_widgets": 5715,
+        "top_level_widgets": 274,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "delta_all_widgets_since_previous_file_end": 2529,
+        "previous_file": "tests/test_image_processing_tiled.py",
+        "file": "tests/test_image_processing_workbench.py",
+        "time_epoch_seconds": 1792010659.686568,
+        "time_local": "2026-10-15T04:44:19.686568+08:00",
+        "all_widgets": 12146,
+        "top_level_widgets": 564,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      },
+      {
+        "delta_all_widgets_since_previous_file_end": 1819,
+        "previous_file": "tests/test_image_parameter_widgets.py",
+        "file": "tests/test_image_parameter_workbench_integration.py",
+        "time_epoch_seconds": 1792010658.138315,
+        "time_local": "2026-10-15T04:44:18.138315+08:00",
+        "all_widgets": 9617,
+        "top_level_widgets": 460,
+        "valid_main_windows": 0,
+        "hidden_filter_installed_main_windows": 0
+      }
+    ],
+    "interpretation": [
+      "Widget objects accumulate across files in this observed prefix, including thousands of top-level widgets while exact-type MainWindow count remains zero. These counts are not equivalent to visible windows or retained pixel bytes.",
+      "test_ui_canvas_and_export.py ends with 49147 widgets, 2593 top-level widgets and 11 valid hidden MainWindows whose application key filter remains installed; the preceding file-end snapshot has 24543/1193/0. 2630 top-level widgets is the later test_watermark.py count, not the canvas/export file-end count.",
+      "The conftest cleanup only deleteLater()s hidden MainWindows whose application filter has already been removed after accepted close. These 11 flagged windows do not satisfy that cleanup predicate. Flags alone do not distinguish never-closed windows from ignored close requests.",
+      "Per-file snapshots are net changes, not allocations attributed to individual tests; object identities and owners are not logged, so repeated counts do not prove the same instances survived.",
+      "This is evidence of retained widget accumulation, not proof of a Qt leak, the mutex owner, a deadlock root cause, or a pre-CU baseline failure. No forced lifecycle changes or additional workload were performed."
+    ]
+  },
+  "completed_run": {
+    "command": "QT_QPA_PLATFORM=offscreen PYTHONPATH=/private/tmp:src FDM_QT_DIAGNOSTIC_LOG=build/cu-live-measurement/full-regression-macos-final-r2-diagnostic-widgets.jsonl .venv/bin/python -m pytest -vv -o faulthandler_timeout=90 -p fdm_cu_qt_diagnostic",
+    "passed": 4534,
+    "subtests_passed": 1650,
+    "baseline_failed": 5,
+    "new_failed": 0,
+    "warnings": 1,
+    "elapsed_seconds": 435.16,
+    "exit_code": 1,
+    "source_frozen_after": "gesture guard and explicit performance-harness phase instrumentation",
+    "artifacts": [
+      {
+        "path": "build/cu-live-measurement/full-regression-macos-final-r2-diagnostic.log",
+        "sha256": "3a33e8e22b73ee2eb60c54d04c59073602b8893f05804ae65c277cbf1e87f6bd",
+        "bytes": 622710
+      },
+      {
+        "path": "build/cu-live-measurement/full-regression-macos-final-r2-diagnostic-widgets.jsonl",
+        "sha256": "53306cfdf4dd79693ddfc41bad716a61df9881a0ea56ff14949a13e8251b805d",
+        "bytes": 1639620
+      },
+      {
+        "path": "/private/tmp/fdm_cu_qt_diagnostic.py",
+        "sha256": "850c14c7f2127f41042a2e473199c1372a400e504dfa96cb25dc4ebbe7a5d86e",
+        "bytes": 1292
+      }
+    ],
+    "theme_diagnostic": "The 90-second faulthandler stack was emitted during test_system_theme_uses_stable_controls_and_tracks_appearance. That test later PASSED; the whole suite completed. The diagnostic timeout only dumps stacks, it does not abort or mark the case failed.",
+    "boundary": "Completed run supplies final-source coverage; it does not explain or fix the prior native mutex wait."
+  }
+}

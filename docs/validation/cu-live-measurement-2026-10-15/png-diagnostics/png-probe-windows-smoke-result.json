@@ -1,0 +1,1024 @@
+{
+  "schema_version": 3,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.13",
+  "opencv": "4.13.0",
+  "opencv_threads": 4,
+  "numpy": "2.4.3",
+  "pillow": "12.1.1",
+  "pillow_zlib": "1.3.1.zlib-ng",
+  "python_zlib": "1.3.1",
+  "pillow_environment": {
+    "PILLOW_ALIGNMENT": null,
+    "PILLOW_BLOCK_SIZE": null,
+    "PILLOW_BLOCKS_MAX": null
+  },
+  "probe_sha256": "9b529eb5f8743b258e5d51f910be2d38736a19708350fd19c21c8566be717d30",
+  "samples": 1,
+  "warmup": 0,
+  "records": [
+    {
+      "size": [
+        512,
+        341
+      ],
+      "scenario": "stripes",
+      "raw_bytes": 523776,
+      "pil_rgb_payload_bytes": 698368,
+      "source_sha256": "8ece04bf82284a760b398e710d0d6c8f9de70cd291d49dbb63703e7f21ef4580",
+      "backends": {
+        "opencv_imencode": {
+          "bytes": 1238,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 3.895083,
+              "p95": 3.895083,
+              "p99": 3.895083,
+              "max": 3.895083,
+              "samples": [
+                3.895083
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.046083,
+              "p95": 0.046083,
+              "p99": 0.046083,
+              "max": 0.046083,
+              "samples": [
+                0.046083
+              ]
+            },
+            "encode_ms": {
+              "p50": 2.760042,
+              "p95": 2.760042,
+              "p99": 2.760042,
+              "max": 2.760042,
+              "samples": [
+                2.760042
+              ]
+            },
+            "commit_ms": {
+              "p50": 1.088958,
+              "p95": 1.088958,
+              "p99": 1.088958,
+              "max": 1.088958,
+              "samples": [
+                1.088958
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 65785856,
+            "sampled_peak_rss": 66486272,
+            "final_rss": 66486272,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "pillow_stream": {
+          "bytes": 1238,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 19.148458,
+              "p95": 19.148458,
+              "p99": 19.148458,
+              "max": 19.148458,
+              "samples": [
+                19.148458
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.971791,
+              "p95": 0.971791,
+              "p99": 0.971791,
+              "max": 0.971791,
+              "samples": [
+                0.971791
+              ]
+            },
+            "encode_ms": {
+              "p50": 17.592542,
+              "p95": 17.592542,
+              "p99": 17.592542,
+              "max": 17.592542,
+              "samples": [
+                17.592542
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.584125,
+              "p95": 0.584125,
+              "p99": 0.584125,
+              "max": 0.584125,
+              "samples": [
+                0.584125
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67543040,
+            "sampled_peak_rss": 67862528,
+            "final_rss": 67862528,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "row_stream": {
+          "bytes": 17636,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 4.366167,
+              "p95": 4.366167,
+              "p99": 4.366167,
+              "max": 4.366167,
+              "samples": [
+                4.366167
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.033709,
+              "p95": 0.033709,
+              "p99": 0.033709,
+              "max": 0.033709,
+              "samples": [
+                0.033709
+              ]
+            },
+            "encode_ms": {
+              "p50": 3.782166,
+              "p95": 3.782166,
+              "p99": 3.782166,
+              "max": 3.782166,
+              "samples": [
+                3.782166
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.550292,
+              "p95": 0.550292,
+              "p99": 0.550292,
+              "max": 0.550292,
+              "samples": [
+                0.550292
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67543040,
+            "sampled_peak_rss": 68005888,
+            "final_rss": 68001792,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      }
+    },
+    {
+      "size": [
+        512,
+        341
+      ],
+      "scenario": "one_bit_noise",
+      "raw_bytes": 523776,
+      "pil_rgb_payload_bytes": 698368,
+      "source_sha256": "3bea4402bb2191c9834256c5e291ce9bf59c9d09cd403702f927ba8387bd2d47",
+      "backends": {
+        "opencv_imencode": {
+          "bytes": 118894,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 10.210583,
+              "p95": 10.210583,
+              "p99": 10.210583,
+              "max": 10.210583,
+              "samples": [
+                10.210583
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.023666,
+              "p95": 0.023666,
+              "p99": 0.023666,
+              "max": 0.023666,
+              "samples": [
+                0.023666
+              ]
+            },
+            "encode_ms": {
+              "p50": 9.265959,
+              "p95": 9.265959,
+              "p99": 9.265959,
+              "max": 9.265959,
+              "samples": [
+                9.265959
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.920958,
+              "p95": 0.920958,
+              "p99": 0.920958,
+              "max": 0.920958,
+              "samples": [
+                0.920958
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67538944,
+            "sampled_peak_rss": 68530176,
+            "final_rss": 68530176,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "pillow_stream": {
+          "bytes": 118474,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 13.005458,
+              "p95": 13.005458,
+              "p99": 13.005458,
+              "max": 13.005458,
+              "samples": [
+                13.005458
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.458416,
+              "p95": 0.458416,
+              "p99": 0.458416,
+              "max": 0.458416,
+              "samples": [
+                0.458416
+              ]
+            },
+            "encode_ms": {
+              "p50": 11.882417,
+              "p95": 11.882417,
+              "p99": 11.882417,
+              "max": 11.882417,
+              "samples": [
+                11.882417
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.664625,
+              "p95": 0.664625,
+              "p99": 0.664625,
+              "max": 0.664625,
+              "samples": [
+                0.664625
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 68214784,
+            "sampled_peak_rss": 69238784,
+            "final_rss": 67903488,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "row_stream": {
+          "bytes": 137683,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 10.951625,
+              "p95": 10.951625,
+              "p99": 10.951625,
+              "max": 10.951625,
+              "samples": [
+                10.951625
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.049,
+              "p95": 0.049,
+              "p99": 0.049,
+              "max": 0.049,
+              "samples": [
+                0.049
+              ]
+            },
+            "encode_ms": {
+              "p50": 10.267042,
+              "p95": 10.267042,
+              "p99": 10.267042,
+              "max": 10.267042,
+              "samples": [
+                10.267042
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.635583,
+              "p95": 0.635583,
+              "p99": 0.635583,
+              "max": 0.635583,
+              "samples": [
+                0.635583
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67895296,
+            "sampled_peak_rss": 68227072,
+            "final_rss": 68227072,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      }
+    },
+    {
+      "size": [
+        512,
+        341
+      ],
+      "scenario": "gradient_noise",
+      "raw_bytes": 523776,
+      "pil_rgb_payload_bytes": 698368,
+      "source_sha256": "cbdfcfc3d021ffde41628b97efbe73bb97f143c5e0ba38bb0d3d8ea7eb4ced30",
+      "backends": {
+        "opencv_imencode": {
+          "bytes": 300391,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 11.827666,
+              "p95": 11.827666,
+              "p99": 11.827666,
+              "max": 11.827666,
+              "samples": [
+                11.827666
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.037916,
+              "p95": 0.037916,
+              "p99": 0.037916,
+              "max": 0.037916,
+              "samples": [
+                0.037916
+              ]
+            },
+            "encode_ms": {
+              "p50": 10.290667,
+              "p95": 10.290667,
+              "p99": 10.290667,
+              "max": 10.290667,
+              "samples": [
+                10.290667
+              ]
+            },
+            "commit_ms": {
+              "p50": 1.499083,
+              "p95": 1.499083,
+              "p99": 1.499083,
+              "max": 1.499083,
+              "samples": [
+                1.499083
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67588096,
+            "sampled_peak_rss": 68882432,
+            "final_rss": 68882432,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "pillow_stream": {
+          "bytes": 311515,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 11.425375,
+              "p95": 11.425375,
+              "p99": 11.425375,
+              "max": 11.425375,
+              "samples": [
+                11.425375
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.450541,
+              "p95": 0.450541,
+              "p99": 0.450541,
+              "max": 0.450541,
+              "samples": [
+                0.450541
+              ]
+            },
+            "encode_ms": {
+              "p50": 10.188959,
+              "p95": 10.188959,
+              "p99": 10.188959,
+              "max": 10.188959,
+              "samples": [
+                10.188959
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.785875,
+              "p95": 0.785875,
+              "p99": 0.785875,
+              "max": 0.785875,
+              "samples": [
+                0.785875
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67592192,
+            "sampled_peak_rss": 68091904,
+            "final_rss": 68091904,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "row_stream": {
+          "bytes": 313837,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 10.910667,
+              "p95": 10.910667,
+              "p99": 10.910667,
+              "max": 10.910667,
+              "samples": [
+                10.910667
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.034417,
+              "p95": 0.034417,
+              "p99": 0.034417,
+              "max": 0.034417,
+              "samples": [
+                0.034417
+              ]
+            },
+            "encode_ms": {
+              "p50": 10.25975,
+              "p95": 10.25975,
+              "p99": 10.25975,
+              "max": 10.25975,
+              "samples": [
+                10.25975
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.6165,
+              "p95": 0.6165,
+              "p99": 0.6165,
+              "max": 0.6165,
+              "samples": [
+                0.6165
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 67600384,
+            "sampled_peak_rss": 68255744,
+            "final_rss": 68255744,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      }
+    },
+    {
+      "size": [
+        512,
+        341
+      ],
+      "scenario": "incompressible_uint8",
+      "raw_bytes": 523776,
+      "pil_rgb_payload_bytes": 698368,
+      "source_sha256": "ae4d3d71ae42e583966035d83c1c540820e55a4118ba28b8ce3df54e7d00c78d",
+      "backends": {
+        "opencv_imencode": {
+          "bytes": 525096,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 11.108584,
+              "p95": 11.108584,
+              "p99": 11.108584,
+              "max": 11.108584,
+              "samples": [
+                11.108584
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.023667,
+              "p95": 0.023667,
+              "p99": 0.023667,
+              "max": 0.023667,
+              "samples": [
+                0.023667
+              ]
+            },
+            "encode_ms": {
+              "p50": 9.173958,
+              "p95": 9.173958,
+              "p99": 9.173958,
+              "max": 9.173958,
+              "samples": [
+                9.173958
+              ]
+            },
+            "commit_ms": {
+              "p50": 1.910959,
+              "p95": 1.910959,
+              "p99": 1.910959,
+              "max": 1.910959,
+              "samples": [
+                1.910959
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 68141056,
+            "sampled_peak_rss": 68894720,
+            "final_rss": 67981312,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "pillow_stream": {
+          "bytes": 524883,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 11.896875,
+              "p95": 11.896875,
+              "p99": 11.896875,
+              "max": 11.896875,
+              "samples": [
+                11.896875
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.494334,
+              "p95": 0.494334,
+              "p99": 0.494334,
+              "max": 0.494334,
+              "samples": [
+                0.494334
+              ]
+            },
+            "encode_ms": {
+              "p50": 10.607791,
+              "p95": 10.607791,
+              "p99": 10.607791,
+              "max": 10.607791,
+              "samples": [
+                10.607791
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.79475,
+              "p95": 0.79475,
+              "p99": 0.79475,
+              "max": 0.79475,
+              "samples": [
+                0.79475
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 68153344,
+            "sampled_peak_rss": 69283840,
+            "final_rss": 67993600,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        "row_stream": {
+          "bytes": 524724,
+          "lossless_verified_samples": 2,
+          "timings": {
+            "total_ms": {
+              "p50": 9.664,
+              "p95": 9.664,
+              "p99": 9.664,
+              "max": 9.664,
+              "samples": [
+                9.664
+              ]
+            },
+            "prepare_ms": {
+              "p50": 0.035709,
+              "p95": 0.035709,
+              "p99": 0.035709,
+              "max": 0.035709,
+              "samples": [
+                0.035709
+              ]
+            },
+            "encode_ms": {
+              "p50": 8.881666,
+              "p95": 8.881666,
+              "p99": 8.881666,
+              "max": 8.881666,
+              "samples": [
+                8.881666
+              ]
+            },
+            "commit_ms": {
+              "p50": 0.746625,
+              "p95": 0.746625,
+              "p99": 0.746625,
+              "max": 0.746625,
+              "samples": [
+                0.746625
+              ]
+            }
+          },
+          "memory": {
+            "baseline_rss": 68153344,
+            "sampled_peak_rss": 68673536,
+            "final_rss": 68673536,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      }
+    }
+  ],
+  "failures": [
+    {
+      "backend": "opencv_imencode",
+      "error_policy": "direct",
+      "results": [
+        {
+          "failure": "write",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "InjectedWriteFailure",
+              "raised_message": "injected post-imencode write failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 67629056,
+            "sampled_peak_rss": 67997696,
+            "final_rss": 67997696,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "fsync",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected fsync failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 67686400,
+            "sampled_peak_rss": 68853760,
+            "final_rss": 68001792,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "replace",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected replace failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 67702784,
+            "sampled_peak_rss": 68857856,
+            "final_rss": 68005888,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      ]
+    },
+    {
+      "backend": "pillow_stream",
+      "error_policy": "direct",
+      "results": [
+        {
+          "failure": "write",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": false,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "InjectedWriteFailure",
+              "raised_message": "injected late IDAT write failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 67907584,
+            "sampled_peak_rss": 69443584,
+            "final_rss": 69443584,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "fsync",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected fsync failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 69443584,
+            "sampled_peak_rss": 69922816,
+            "final_rss": 68694016,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "replace",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected replace failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 68694016,
+            "sampled_peak_rss": 69922816,
+            "final_rss": 68694016,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      ]
+    },
+    {
+      "backend": "pillow_stream",
+      "error_policy": "deferred",
+      "results": [
+        {
+          "failure": "write",
+          "error_policy": "deferred",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "deferred",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 524842,
+              "first_deferred_error_type": "InjectedWriteFailure",
+              "first_deferred_error_message": "injected late IDAT write failure",
+              "raised_type": "InjectedWriteFailure",
+              "raised_message": "injected late IDAT write failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 69025792,
+            "sampled_peak_rss": 69935104,
+            "final_rss": 68706304,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "fsync",
+          "error_policy": "deferred",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "deferred",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected fsync failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 68407296,
+            "sampled_peak_rss": 68710400,
+            "final_rss": 68710400,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "replace",
+          "error_policy": "deferred",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "deferred",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected replace failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 68390912,
+            "sampled_peak_rss": 69873664,
+            "final_rss": 68710400,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      ]
+    },
+    {
+      "backend": "row_stream",
+      "error_policy": "direct",
+      "results": [
+        {
+          "failure": "write",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": false,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "InjectedWriteFailure",
+              "raised_message": "injected late IDAT write failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 69038080,
+            "sampled_peak_rss": 69038080,
+            "final_rss": 68837376,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "fsync",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected fsync failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 68517888,
+            "sampled_peak_rss": 69001216,
+            "final_rss": 69001216,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        },
+        {
+          "failure": "replace",
+          "error_policy": "direct",
+          "caught": 1,
+          "attempts": 1,
+          "diagnostics": [
+            {
+              "error_policy": "direct",
+              "encoding_completed_before_raise": true,
+              "discarded_bytes": 0,
+              "first_deferred_error_type": null,
+              "first_deferred_error_message": null,
+              "raised_type": "OSError",
+              "raised_message": "injected replace failure"
+            }
+          ],
+          "memory": {
+            "baseline_rss": 68685824,
+            "sampled_peak_rss": 69009408,
+            "final_rss": 68685824,
+            "interval_ms": 2,
+            "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU."
+          }
+        }
+      ]
+    }
+  ],
+  "row_format_checks": [
+    {
+      "format": "GRAY",
+      "shape": [
+        171,
+        256
+      ],
+      "pixels_exact": true,
+      "bytes": 44061
+    },
+    {
+      "format": "BGR",
+      "shape": [
+        171,
+        256,
+        3
+      ],
+      "pixels_exact": true,
+      "bytes": 131715
+    },
+    {
+      "format": "BGRA",
+      "shape": [
+        171,
+        256,
+        4
+      ],
+      "pixels_exact": true,
+      "bytes": 175525
+    }
+  ],
+  "row_backend_definition": {
+    "filter": "SUB",
+    "level": 1,
+    "strategy": "Z_RLE",
+    "wbits": 15,
+    "memLevel": 8,
+    "idat_chunk_limit": 65536,
+    "whole_image_conversion": false,
+    "whole_png_buffer": false
+  },
+  "limits": [
+    "Synthetic PNG/file-I/O comparison, not UI or camera acceptance.",
+    "Fixture stays alive throughout paired sampling; holder transfer is verified separately by weak reference.",
+    "Pillow RGB is 4 bytes/pixel; no zero-copy claim for BGR input.",
+    "Pillow hashes streaming writes; OpenCV hashes encoded output after fsync, matching its current lifetime.",
+    "row_stream is an experimental standard PNG writer, retaining raw through row encoding; throughput/compression differ from adaptive Pillow and require measured evidence.",
+    "Compressor bytes, two scanlines and hash/CRC/file state still need explicit workspace accounting; this probe does not claim an absolute allocator/RSS bound.",
+    "Write fault injection checks reported failure and file cleanup; sampled RSS cannot prove absence of a small native leak.",
+    "Deferred-error sink is an experimental I/O-failure candidate: it finishes encoding to a discard sink then rethrows the first error; no claim covers native encoder failure or MemoryError.",
+    "Full-range deterministic random uint8 is an additional incompressible boundary input, not a replacement for the three image-like scenarios.",
+    "WGC 264MiB plus three raw72MiB plus Pillow96MiB exceeds512MiB; this probe does not waive source admission."
+  ]
+}

@@ -74,6 +74,15 @@ def _base_records() -> list[WindowRecord]:
     ]
 
 
+@pytest.mark.parametrize("selector", [None, {}, {"process_name": ""}])
+def test_unknown_process_is_not_a_cu_match_for_an_empty_selector(selector) -> None:
+    records = [_record(1, parent=None, class_name="UnknownWindow", process_path="",
+                       rect=PhysicalRect(0, 0, 640, 480), visible=False, minimized=True)]
+    with pytest.raises(Cu5PreviewNotFoundError, match="未找到"):
+        locate_cu5_preview(records, selector=selector)
+    assert rank_cu5_preview_candidates(records, selector=selector) == ()
+
+
 def test_exact_sdk_host_wins_over_other_four_by_three_children() -> None:
     records = _base_records()
     records.extend(

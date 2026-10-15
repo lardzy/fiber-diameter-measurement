@@ -1,0 +1,113 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+  "opencv": "4.13.0",
+  "numpy": "2.4.3",
+  "opencv_reported_threads": 18,
+  "script_sha256": "c4fe1b4f3e6dd37fadf1df90a2a3e005381180515b207f6311134b142a94847c",
+  "fixture_sha256": "034d7676747fcc6376e4b7feb3298bcae7184682dae916ff85cf83e8bfda21f6",
+  "corpus_note": "The earlier inline 125-case experiment was not retained; this deterministic documented 125-case corpus recreates periodic/half-period/sparse/random/constant categories, not its exact original bytes.",
+  "initial_exact": true,
+  "benchmark": {
+    "shape": [
+      4096,
+      6144,
+      3
+    ],
+    "warmup": 2,
+    "samples": 5,
+    "allocations_included": false,
+    "limits": "Exploratory only; concurrent builds/tests permitted. Includes full BGR gray/resize, centroid, forward, product, inverse, native peak, Sobel.",
+    "unique_reduced_frames": true,
+    "disagreements": [],
+    "records": [
+      {
+        "mode": "baseline",
+        "ms": [
+          72.945,
+          75.394667,
+          73.220875,
+          74.702417,
+          74.432667
+        ],
+        "p50_ms": 74.432667,
+        "p95_ms": 75.25621699999999
+      },
+      {
+        "mode": "rows-1",
+        "ms": [
+          96.887375,
+          97.271167,
+          96.174958,
+          97.869916,
+          97.755083
+        ],
+        "p50_ms": 97.271167,
+        "p95_ms": 97.8469494
+      },
+      {
+        "mode": "rows-2",
+        "ms": [
+          75.28,
+          75.558333,
+          75.155458,
+          77.51025,
+          74.616292
+        ],
+        "p50_ms": 75.28,
+        "p95_ms": 77.1198666
+      },
+      {
+        "mode": "rows-4",
+        "ms": [
+          64.30175,
+          65.485,
+          64.171875,
+          63.574875,
+          65.052167
+        ],
+        "p50_ms": 64.30175,
+        "p95_ms": 65.3984334
+      }
+    ]
+  },
+  "variants": [
+    {
+      "workers": 1,
+      "golden_cases": 111,
+      "golden_passed": 111,
+      "summary": {
+        "cases": 236,
+        "all_bits_equal": 236,
+        "peak_equal": 236,
+        "motion_equal": 236,
+        "first_difference": null
+      }
+    },
+    {
+      "workers": 2,
+      "golden_cases": 111,
+      "golden_passed": 111,
+      "summary": {
+        "cases": 236,
+        "all_bits_equal": 236,
+        "peak_equal": 236,
+        "motion_equal": 236,
+        "first_difference": null
+      }
+    },
+    {
+      "workers": 4,
+      "golden_cases": 111,
+      "golden_passed": 111,
+      "summary": {
+        "cases": 236,
+        "all_bits_equal": 236,
+        "peak_equal": 236,
+        "motion_equal": 236,
+        "first_difference": null
+      }
+    }
+  ],
+  "validation_scope": "Independent non-production experiment; 236 fixed matrices per variant, no Windows acceptance; timing under regression load, not formal."
+}

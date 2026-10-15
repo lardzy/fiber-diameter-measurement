@@ -1,6 +1,8 @@
 // Exact numerical kernels. Python owns policy, task scheduling and diagnostics.
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include "cu_manual.hpp"
+#include "cu_automatic.hpp"
 
 #include <algorithm>
 #include <array>
@@ -445,6 +447,56 @@ py::array_t<bool> prune_short_spurs(const py::array& skeleton, const py::array& 
     return output;
 }
 
+py::tuple cu_motion_peak(const py::array& correlation) {
+    require_c_array(correlation, 3, "correlation");
+    require_dtype<float>(correlation, "correlation");
+    const auto pixels = checked_pixels(correlation);
+    if (!pixels || correlation.shape(2) != 2 ||
+        pixels > static_cast<std::size_t>(std::numeric_limits<py::ssize_t>::max()) / 2) {
+        throw py::value_error("correlation must have nonempty shape [height, width, 2]");
+    }
+    const auto height = correlation.shape(0), width = correlation.shape(1);
+    const auto* data = static_cast<const float*>(correlation.data());
+    py::ssize_t best_x = 0, best_y = 0;
+    double best = 0;
+    {
+        py::gil_scoped_release release;
+        // Match the recovered double-promoted magnitude and two parity scans.
+        // Strict floating-point build flags prohibit fused multiply-add.
+        // Avoid four full-size float64 temporaries in the Python reference.
+        double local_best[2] = {0, 0};
+        py::ssize_t local_x[2] = {0, 0}, local_y[2] = {0, 0};
+        // One contiguous pass maintains the same first maximum independently
+        // within each column parity. Final odd-parity tie handling is unchanged.
+        for (py::ssize_t y = 0; y < height; ++y) {
+            for (py::ssize_t x = 0; x < width; ++x) {
+                const auto index = (y * width + x) * 2;
+                const double real = data[index], imaginary = data[index + 1];
+                if (!finite_distance(real) || !finite_distance(imaginary)) {
+                    throw py::value_error("correlation must contain finite values");
+                }
+                const double magnitude = real * real + imaginary * imaginary;
+                const auto parity = x & 1;
+                if (magnitude > local_best[parity]) {
+                    local_best[parity] = magnitude;
+                    local_x[parity] = x;
+                    local_y[parity] = y;
+                }
+            }
+        }
+        for (py::ssize_t parity = 0; parity < 2; ++parity) {
+            if (local_best[parity] > 0 && local_best[parity] >= best) {
+                best = local_best[parity];
+                best_x = local_x[parity];
+                best_y = local_y[parity];
+            }
+        }
+    }
+    if (best_x > width / 2) best_x -= width;
+    if (best_y > height / 2) best_y -= height;
+    return py::make_tuple(best_x, best_y);
+}
+
 py::dict build_info() {
     py::dict info;
     info["api_version"] = FDM_NATIVE_API_VERSION;
@@ -481,4 +533,7 @@ PYBIND11_MODULE(_kernels, module) {
     module.def("prune_short_spurs", &prune_short_spurs, py::arg("skeleton").noconvert(),
                py::arg("distance_map").noconvert(), py::arg("checkpoint") = py::none());
     module.def("build_info", &build_info);
+    module.def("cu_motion_peak", &cu_motion_peak, py::arg("correlation").noconvert());
+    register_cu_manual(module);
+    register_cu_automatic(module);
 }

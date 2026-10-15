@@ -1,0 +1,26 @@
+{
+  "revision": "r3",
+  "completed": true,
+  "passed": 4606,
+  "subtests_passed": 1650,
+  "failed": 5,
+  "warnings": 1,
+  "seconds": 457.25,
+  "failed_cases": [
+    "FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]",
+    "FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]",
+    "FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_inspector_sections_remain_contiguous_and_expansion_pushes_down",
+    "FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_measurement_inspector_uses_locked_section_order_and_defaults",
+    "SUBFAILED(size=(1536, 864)) tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_responsive_geometry_matrix_keeps_explicit_commands_reachable"
+  ],
+  "same_failed_cases_as_r2": true,
+  "baseline_prechange_verification": "prechange-ui-baseline.log and baseline-snapshot-verification.json in this directory",
+  "log_sha256": "115c237c0c7ec1f22a7cb56aab377ffb7d7eb601e9ebe19c53c4dc3dbfe253d6",
+  "qt_diagnostic_plugin": "read-only per-file/widget counter and per-test lifecycle tracing; no event processing or cleanup added",
+  "faulthandler_dump_only": true,
+  "theme_test_finished_passed_after_diagnostic_dump": true,
+  "limits": [
+    "Earlier Qt native mutex hang root cause remains unproven; this completed R3 run does not establish that prior hang was fixed.",
+    "Five pre-existing failures remain; not an all-green full suite."
+  ]
+}

@@ -219,6 +219,7 @@ class ProjectIO:
             project_group_templates=list(getattr(project, "project_group_templates", [])),
             project_rois=list(getattr(project, "project_rois", [])),
             analysis_artifacts=list(getattr(project, "analysis_artifacts", [])),
+            live_experiments=list(getattr(project, "live_experiments", [])),
             metadata=getattr(project, "metadata", {}),
             load_issues=list(getattr(project, "load_issues", [])),
             project_schema_version=getattr(
@@ -290,6 +291,8 @@ class ProjectIO:
             stage_watermark_assets(
                 output_documents, sources, project_assets_root(output_path), created_assets
             )
+            from fdm.live_experiment.project_assets import stage_experiment_assets
+            output_payload = stage_experiment_assets(output_payload, project_assets_root(output_path), created_assets)
             atomic_write_json(output_path, output_payload, ensure_ascii=False, indent=2)
         except Exception:
             for asset in created_assets:
@@ -356,6 +359,8 @@ class ProjectIO:
                 else None
             )
         hydrate_watermark_assets(project.documents, project_assets_root(input_path))
+        from fdm.live_experiment.project_assets import hydrate_experiment_assets
+        hydrate_experiment_assets(project.live_experiments, project_assets_root(input_path))
         return project
 
     @staticmethod

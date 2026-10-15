@@ -1,0 +1,34 @@
+{
+  "revision": "r2-ui-background-phase-instrumentation",
+  "scope": "Receipt phase/timestamp/task identity metadata and read-only audit; no production or workload scheduling changes.",
+  "before": {
+    "scripts/benchmark_cu_live_ui.py": "dc45983e334186d15d9e9f8ecc1e6063246e27d38f30ea943177a880ab2a3f5e",
+    "scripts/validation/audit_cu_live_performance.py": "40638f1cc7b7b7208bc0ccf210515554f2c3628546282049857fb2d8cd23b20e"
+  },
+  "after": {
+    "scripts/benchmark_cu_live_ui.py": "9f24fb8a41bffd5f8073572a5c3e4c3d761b487635656e3fab1dd42eb56b5513",
+    "scripts/validation/audit_cu_live_performance.py": "f7a74a70fabf223734a04c042868a579de6840a3932e575c4282ac832bc522aa",
+    "tests/test_cu_live_performance_audit.py": "6897deb44d5a0c697993d74527b60da7bf4a0e9e8f430ffbda9f5fbac480f60b"
+  },
+  "preserved": [
+    "All original automatic.submit/poll/close calls and scheduling order",
+    "5 warmups and 30 formal measurements",
+    "Original initial background warmup completion and list clear",
+    "Original returned background_results list including finally-appended responses",
+    "Strict legacy r1 SHA-constrained teardown inference",
+    "All measurement failure and rejection denominators"
+  ],
+  "new_fields": [
+    "background_timeline",
+    "background_warmup_results",
+    "background_results[].phase",
+    "background_results[].received_monotonic",
+    "background_results[].task_id",
+    "background_completion.teardown_cancel_explicit",
+    "background_completion.phase_trace_valid",
+    "background_completion.phase_trace_errors"
+  ],
+  "validation": "Root serial validation: 96 passed in 1.37s (audit and complete workspace test file). No benchmark workload executed for this instrumentation yet.",
+  "validation_log": "build/cu-live-measurement/r2-instrumentation-and-gesture.log",
+  "validation_log_sha256": "7ca269eca4bc2547d6e54e7103cda76179e4b9d135da323877d49705b2606ed6"
+}

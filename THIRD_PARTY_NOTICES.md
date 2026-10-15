@@ -9,6 +9,7 @@ files included by those components.
 | pybind11 (compiled into the internal kernels) | BSD-3-Clause; license included in `fdm/_native/licenses/pybind11.txt`; <https://github.com/pybind/pybind11/blob/v3.0.4/LICENSE> |
 | PySide6 / Qt for Python | LGPL-3.0-only, GPL-3.0-only, or commercial terms; <https://doc.qt.io/qtforpython-6/licenses.html> |
 | NumPy | BSD-3-Clause; <https://github.com/numpy/numpy/blob/main/LICENSE.txt> |
+| OpenCV 1.0 grayscale AA and 3.3 rotating-calipers / L1 line-fit compatibility (compiled into internal CU kernels) | Intel BSD license; Copyright (C) 2000 Intel Corporation; full terms and source digests in `fdm/_native/licenses/opencv-legacy.txt`; <https://github.com/opencv/opencv_attic/blob/RELEASE_1_0_0/opencv/src/cxcore/cxdrawing.cpp> |
 | OpenCV | Apache-2.0; <https://github.com/opencv/opencv/blob/4.x/LICENSE> |
 | scikit-image | BSD-3-Clause and component notices; <https://github.com/scikit-image/scikit-image/blob/v0.26.0/LICENSE.txt> |
 | SciPy | BSD-3-Clause and bundled library notices; <https://github.com/scipy/scipy/blob/main/LICENSE.txt> |

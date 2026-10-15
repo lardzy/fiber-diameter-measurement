@@ -44,7 +44,7 @@ def check_windows_build_dependencies(
     resolved = resolve_runtime_profile(project_root, str(profile or "").strip().lower())
     missing: list[str] = []
     for module_name in resolved.required_python_modules:
-        if module_name == "fdm._native._kernels":
+        if module_name in {"fdm._native._kernels", "fdm._native._windows_capture"}:
             # The dedicated preflight below builds this dependency when needed.
             continue
         try:
@@ -237,6 +237,9 @@ def run_packaged_self_check(app_dir: Path, *, report_path: Path | None = None) -
 
     if not native_probe_passed(checks.get("native_kernels")):
         return ["packaged self-check did not pass the native kernels probe"]
+    from fdm.services.cu_live_self_check import cu_live_probe_passed
+    if not cu_live_probe_passed(checks.get("cu_live_measurement")):
+        return ["packaged self-check did not pass the live measurement probe"]
     return []
 
 

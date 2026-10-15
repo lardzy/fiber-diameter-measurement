@@ -1,0 +1,95 @@
+{
+  "source_root": "/Volumes/LARD/cu_reverse",
+  "files": {
+    "demo/diameter/native/manual_build.cmd": {
+      "bytes": 898,
+      "sha256": "78e062466ea0e86b9ec0ecc9731b6353f2a076ff73335dd4fb7627fee6d6a602"
+    },
+    "demo/diameter/native/manual_common.cpp": {
+      "bytes": 1688,
+      "sha256": "2eb14ec3886936f6efd0c1aa3602e90c66d22ff7b6a4e1afecbec0c3b7dcac37"
+    },
+    "demo/diameter/native/manual_common.hpp": {
+      "bytes": 1723,
+      "sha256": "e226ef017f6977286fd44eec5312ded83d6ac5c12c2ed54ed25e8db6ef2c115b"
+    },
+    "demo/diameter/native/manual_free.cpp": {
+      "bytes": 6339,
+      "sha256": "f6247bbb90270e8c2894ab1b8921ef99290ee26ad62ea7d450e6fda74adf59fb"
+    },
+    "demo/diameter/native/manual_free.hpp": {
+      "bytes": 315,
+      "sha256": "b377ea7902d9aab6df76a37822e8306ab13208c67bdbc2f38fca9f086c7a142b"
+    },
+    "demo/diameter/native/manual_geometry.cpp": {
+      "bytes": 6809,
+      "sha256": "5fff4b8fe62fcc923d00b5a5a8fb02faeb6f26569f0fb8b50c2223d4564016d3"
+    },
+    "demo/diameter/native/manual_geometry.hpp": {
+      "bytes": 635,
+      "sha256": "5f32fa56c1e7c6328218dfa395e969f3d2da1f94c6c1fc9900c160d13b49c99d"
+    },
+    "demo/diameter/native/manual_oracle.cpp": {
+      "bytes": 13372,
+      "sha256": "bd52d1b523c39f40460ee38a3a7a34faf838b132386af38122ace80533fc2dbd"
+    },
+    "demo/diameter/native/manual_oracle.hpp": {
+      "bytes": 874,
+      "sha256": "81e3d1c3f91d682e1786f7d533bc7d1794257d9b07b1f8139bf4df2da5ca77d3"
+    },
+    "demo/diameter/native/manual_port.cpp": {
+      "bytes": 4099,
+      "sha256": "4f1b90bed7213c9581a0917ce8f0965fc6ec96574fe91723c5ff113f48bd19de"
+    },
+    "demo/diameter/native/manual_port.hpp": {
+      "bytes": 323,
+      "sha256": "a305907b0a96403acca5fc1d06587d098b07c689ff097894e01fc2a25b89703b"
+    },
+    "demo/diameter/native/manual_preprocess.cpp": {
+      "bytes": 12264,
+      "sha256": "70b8dbeb1debaf9afabf767a15a782e8bb091d99f66fba93246574b3f9e51775"
+    },
+    "demo/diameter/native/manual_preprocess.hpp": {
+      "bytes": 643,
+      "sha256": "4d4b54d13f15b218f56a979d67465e66736fde6a8a67c92e9f0083feb388c4bd"
+    },
+    "demo/diameter/native/manual_runner.cpp": {
+      "bytes": 9162,
+      "sha256": "d3bf5f6405db2906f1c58aa1c122455783a0b2246d381184fc34b84d94237086"
+    },
+    "demo/diameter/native/legacy_port.cpp": {
+      "bytes": 27912,
+      "sha256": "ee558a20e834e2ab76e4c91ac8210849ca00f67fcbd795d1fa49c9958f39d51c"
+    },
+    "demo/diameter/native/legacy_port.h": {
+      "bytes": 966,
+      "sha256": "e8037f1958eabe2af73885f7527958cf52542faa1ea64e8e7971b3358181169d"
+    },
+    "demo/diameter/native/algtdl_port.cpp": {
+      "bytes": 8580,
+      "sha256": "6230f6af16332c8d5178129cd1e7b26313ffb9a2d67756f5360e58c976c11607"
+    },
+    "demo/diameter/native/algtdl_port.hpp": {
+      "bytes": 476,
+      "sha256": "8c1ed4b5ae085fd22bd8706a5b4d5ddecd03f1be7043b69b29f0a51b41d3f503"
+    },
+    "docs/REPORT.md": {
+      "bytes": 66057,
+      "sha256": "6739a4241c111ec09c38c00ad879c623801454e4c51562b11639f6a260c5aed4"
+    },
+    "docs/CONTENT_NONFREEZE_MODULE.md": {
+      "bytes": 26086,
+      "sha256": "edea7948d78e844f5f9a724421cae56c547b5976f3f46270555e0d10f3b4b1b3"
+    },
+    "docs/NONFREEZE_MODULE.md": {
+      "bytes": 23317,
+      "sha256": "1f2e5c78dd705a7704cf630fd3560d6f85759c37755a9c0480f944348caa2d78"
+    },
+    "work/content_nonfreeze_20261013/persistence_resources/type_library_inventory.json": {
+      "bytes": 542136,
+      "sha256": "5e9ec311c62e18dd94fc970487dd7d920134d3adf6337530645e42c31b49201c"
+    }
+  },
+  "base_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+  "original_staged_patch_sha256": "4714a75cdf221724b2a9b2addbfdf5087d1490dfe50c9dc9b2ef403ebdaee2b3"
+}

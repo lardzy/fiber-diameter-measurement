@@ -544,9 +544,9 @@ class ProjectSessionController:
 
     def prepare_save(self, path: str | None = None) -> PreparedProjectSave | ProjectSaveResult:
         host = self._host
-        if not self._ordered_persisted_document_sources():
-            host._show_project_information("保存项目", "请先打开图片。")
-            return ProjectSaveResult(False, message="当前项目没有文档。")
+        if not self._ordered_persisted_document_sources() and not host.project.live_experiments:
+            host._show_project_information("保存项目", "请先打开图片或建立实时试验。")
+            return ProjectSaveResult(False, message="当前项目没有文档或试验。")
         target_path = Path(path) if path else host._project_path
         if target_path is None:
             default_dir = host._preferred_dialog_directory(
@@ -759,6 +759,10 @@ class ProjectSessionController:
                     changed = True
             if changed:
                 host.project.analysis_artifacts[index] = AnalysisArtifact.from_dict(payload)
+        from fdm.live_experiment.project_assets import rebase_experiment_assets
+        rebase_experiment_assets(
+            host.project.live_experiments, prepared.plan.payload, project_assets_root(target_path)
+        )
         host.project.version = __version__
         host.project.project_schema_version = int(committed_payload["project_schema_version"])
         host.project.min_reader_version = max(host.project.min_reader_version, int(committed_payload["min_reader_version"]))
@@ -909,6 +913,7 @@ class ProjectSessionController:
             project_group_templates=list(project.project_group_templates),
             project_rois=list(project.project_rois),
             analysis_artifacts=list(project.analysis_artifacts),
+            live_experiments=list(project.live_experiments),
             project_schema_version=project.project_schema_version,
             min_reader_version=project.min_reader_version,
             required_features=project.required_features,

@@ -14,6 +14,7 @@ from fdm.geometry import Point, clean_ring, distance, point_in_polygon, ring_sig
 from fdm.runtime_logging import append_runtime_log
 from fdm.services.mask_region import MaskRegion, mask_region, subtract_regions
 from fdm.services.segmentation_performance import SegmentationPerformance
+from fdm.services.compute_budget import heavy_compute
 from fdm.settings import (
     ComplexMagicSegmentModelVariant,
     MagicSegmentToolMode,
@@ -1286,12 +1287,14 @@ class PromptSegmentationService:
         encoder_path, decoder_path = edge_sam_model_paths(model_variant)
         return encoder_path.exists() and decoder_path.exists()
 
+    @heavy_compute("prompt_segmentation_warmup")
     def warmup(self) -> None:
         self._ensure_sessions()
 
     def clear_cache(self) -> None:
         self._embedding_cache.clear()
 
+    @heavy_compute("prompt_segmentation")
     @_profile_prediction
     def predict_polygon(
         self,
@@ -2008,6 +2011,7 @@ class LightHQSamPromptSegmentationService:
     def clear_cache(self) -> None:
         self._embedding_cache.clear()
 
+    @heavy_compute("prompt_segmentation")
     def predict_polygon(
         self,
         *,
@@ -2193,6 +2197,7 @@ class EfficientSamSPromptSegmentationService:
     def clear_cache(self) -> None:
         self._embedding_cache.clear()
 
+    @heavy_compute("prompt_segmentation")
     def predict_polygon(
         self,
         *,

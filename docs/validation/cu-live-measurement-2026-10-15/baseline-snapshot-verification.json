@@ -1,0 +1,13 @@
+{
+  "snapshot_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+  "baseline_path": "/private/tmp/fdm-cu-prechange-baseline",
+  "verified_index_files": 402,
+  "mismatches": [],
+  "diagnostic_sha256": {
+    "tests/conftest.py": "e06d29f2c0f136d7bc5b83fc40d789e5a64685e3258fe90a28d2790376b4ec00",
+    "tests/test_workbench_workflows.py": "d1fe393c98664b00a97fc753435c0e0dbe8401f54a708959047523e9b39f2327",
+    "src/fdm/ui/theme.py": "d831f960c0fb02e73a4f905631037aa751fab58dd87f22d930f31d6934e5f9f6",
+    "src/fdm/ui/main_window.py": "c0631e3088f2e81b230df34e50fcee0d242eb7b3952ad1e22acd02992beeacc8",
+    "native/kernels.cpp": "e9a72b76af5c07e3a6deb3c1fc976ae000a0f1ad3903201ab48acd8f2e93f223"
+  }
+}

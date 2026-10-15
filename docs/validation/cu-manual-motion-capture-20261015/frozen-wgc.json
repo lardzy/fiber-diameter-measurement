@@ -1,0 +1,7369 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "checks": {
+    "worker_stopped": true,
+    "no_unexpected_exception": true,
+    "phases_correct": true,
+    "timestamps_increase": true,
+    "sequence_increases": true,
+    "minimize_unavailable": true,
+    "close_unavailable": true,
+    "resize_changes_generation": true,
+    "bgr_full_resolution_and_accounted_buffers": true
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+  "backend": "wgc",
+  "native_build_info": {
+    "api_version": 1,
+    "backend": "WGC/D3D11",
+    "minimum_windows_build": 18362,
+    "source_sha256": "e71b31ec260e341bc9900caa18cac42c21878d4f66913ee2211b1cd4aea4728c",
+    "python_abi": "cpython-312"
+  },
+  "native_sha256": "99566498a95f335d40a4f7ea7088fd764e3646fce19412bb2a18836663948a3e",
+  "phases": {
+    "initial": {
+      "settled_frames": 29,
+      "correct": 29,
+      "shapes": [
+        [
+          480,
+          640,
+          3
+        ]
+      ],
+      "generations": [
+        0
+      ]
+    },
+    "occluded": {
+      "settled_frames": 25,
+      "correct": 25,
+      "shapes": [
+        [
+          480,
+          640,
+          3
+        ]
+      ],
+      "generations": [
+        0
+      ]
+    },
+    "resized": {
+      "settled_frames": 26,
+      "correct": 26,
+      "shapes": [
+        [
+          540,
+          720,
+          3
+        ]
+      ],
+      "generations": [
+        1
+      ]
+    },
+    "moved": {
+      "settled_frames": 21,
+      "correct": 21,
+      "shapes": [
+        [
+          540,
+          720,
+          3
+        ]
+      ],
+      "generations": [
+        1
+      ]
+    },
+    "restored": {
+      "settled_frames": 21,
+      "correct": 21,
+      "shapes": [
+        [
+          540,
+          720,
+          3
+        ]
+      ],
+      "generations": [
+        1
+      ]
+    }
+  },
+  "failures": [],
+  "records": [
+    {
+      "event": "identity",
+      "value": {
+        "pid": 9804,
+        "process_created": 134364728756180698,
+        "root_hwnd": 2884602,
+        "child_hwnd": 2622528
+      }
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 1,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108610872792,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 24.370708000788
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 2,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108611297007,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 43.76241600039066
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 3,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108611879882,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 51.01220799951989
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 4,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108612380810,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 53.08579099983035
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 5,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108612879936,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 51.385832999585546
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 6,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108613380213,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.35924999881536
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 7,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108613879893,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.77450000135286
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 8,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108614380175,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.33333400024276
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 9,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108614964351,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 68.45495800007484
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 10,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108615380537,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 31.389582998599508
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 11,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108615880275,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 48.54341699865472
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 12,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108616464365,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 68.14712500090536
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 13,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108616880346,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 31.2409159996605
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 14,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108617297022,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 51.46312500073691
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 15,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108617713182,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 32.7434999999241
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 16,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108618213554,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.76150000038615
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 17,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108618713634,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 61.029041000438156
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 18,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108619296632,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 47.29095800030336
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 19,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108619630291,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 32.97762500005774
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 20,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108620129916,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.78199999843491
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 21,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108620629880,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.43249999996624
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 22,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108621130188,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.81020800025726
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 23,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108621629727,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.55570900165185
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 24,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108622129817,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.373291998766945
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 25,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108622630596,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 48.083042000143905
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 26,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108623121391,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 47.032540998770855
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 27,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108623630240,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 54.63258300005691
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 28,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108624129891,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.567542000862886
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": true,
+      "sequence": 29,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108624631074,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.52283400052693
+    },
+    {
+      "event": "frame",
+      "phase": "initial",
+      "settled": false,
+      "sequence": 30,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108625130466,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 85.88908399906359
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 31,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108625629078,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 26.080541998453555
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 32,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108625879748,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 2.9822909982613055
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 33,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108626046269,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 29.942625000330736
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 34,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108626213193,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 3.0198750009731157
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 35,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108626462965,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 29.49737499875482
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 36,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108626629835,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 16.670875000272645
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 37,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108626796600,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 18.16766699994332
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 38,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108626960631,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 17.258707999644685
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 39,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108627130150,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 16.41333299994585
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 40,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108627296582,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 15.570165998724406
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 41,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108627547542,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 34.80574999957753
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 42,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108627713920,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 4.942250001477078
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 43,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108627873481,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 28.22349999951257
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 44,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108628046407,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 3.6165000001346925
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 45,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108628630386,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 63.752041998668574
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 46,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108629213803,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 69.03270799921302
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 47,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108629629691,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 32.122458000230836
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 48,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108629963418,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 34.21637499923236
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 49,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108630463275,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 48.76150000018242
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 50,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108630962283,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.73175000122865
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 51,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108631459651,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.85662500075705
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 52,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108631963408,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.245250000443775
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 53,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108632462925,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 52.6263329993526
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 54,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108632963120,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 47.785708999072085
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 55,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108633462924,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.2354580003157
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 56,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108633964208,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.29858399939258
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 57,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108634462948,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.6313330004341
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 58,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108634963042,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.642084001083276
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 59,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108635462975,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.56825000044773
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 60,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108635964080,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 48.9152499994816
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 61,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108636463212,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.35162500098522
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 62,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108636963472,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.95937499916181
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 63,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108637462890,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.7894580005086
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 64,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108637963442,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.21375000049011
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 65,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108638462837,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.57220799951756
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 66,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108638963007,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.72008299976005
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 67,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108639463820,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.14658300024166
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 68,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108639963361,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.395750000257976
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 69,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108640462866,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 50.606040998900426
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": true,
+      "sequence": 70,
+      "generation": 0,
+      "capture_session": 0,
+      "timestamp_100ns": 108640963254,
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "crop": [
+        76,
+        164,
+        640,
+        480
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 2956800,
+        "cpu_staging_row_pitch": 2560,
+        "cpu_staging_bytes": 1228800,
+        "next_delivery_bytes": 921600,
+        "acquisition_reserved_bytes": 5107200
+      },
+      "poll_ms": 49.565749999601394
+    },
+    {
+      "event": "frame",
+      "phase": "occluded",
+      "settled": false,
+      "sequence": 71,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108641629690,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 68.81033300123818
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 72,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108641796170,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 12.76174999838986
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 73,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108642047108,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 35.08579200024542
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 74,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108642213576,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 6.727959000272676
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 75,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108642380197,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 26.598999998896034
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 76,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108642547300,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 5.8461250009713694
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 77,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108642713215,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 28.677500000412692
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 78,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108642880730,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 5.418582999482169
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 79,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108643129796,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 25.761375000001863
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 80,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108643296741,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 17.38554099938483
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 81,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108643545942,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 33.18441600094957
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 82,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108643796337,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.79541699922993
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 83,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108643962912,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.780207999545382
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 84,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108644213205,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 34.25987499940675
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 85,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108644463572,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 17.836875000284635
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 86,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108644954250,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 51.594624999779626
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 87,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108645463064,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.67520799982594
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 88,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108645963007,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.53583300084574
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 89,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108646463852,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.65058299967495
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 90,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108646963102,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.0705000013113
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 91,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108647460350,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.21208300058788
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 92,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108647963357,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.523167001098045
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 93,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108648462940,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.59745799917437
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 94,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108648961655,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 57.8048339993984
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 95,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108649543611,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.62275000070804
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 96,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108650044996,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.554292000015266
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 97,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108650545008,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 48.80929200044193
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 98,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108650879955,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 35.24795900011668
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 99,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108651374830,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.40837499998452
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 100,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108651880040,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 47.22541699993599
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 101,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108652379266,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.40841600000567
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 102,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108652875622,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 48.955124999338295
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 103,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108653378732,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.63437500029977
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 104,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108653879419,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.95316699933028
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 105,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108654379215,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 47.682792001069174
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 106,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108654879344,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.1734170011332
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 107,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108655379409,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 52.27745800038974
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 108,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108655880011,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 52.492290998998214
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 109,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108656379473,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.416000000041095
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": true,
+      "sequence": 110,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108656879845,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.271000000066124
+    },
+    {
+      "event": "frame",
+      "phase": "resized",
+      "settled": false,
+      "sequence": 111,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108657296415,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.11887500020384
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 112,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108657545792,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 15.953332998833503
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 113,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108657879827,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 34.83383300044807
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 114,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108658379708,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.688707999142935
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 115,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108658879627,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.772499998653075
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 116,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108659295970,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 44.44891599996481
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 117,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108659879464,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 52.59900000055495
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": false,
+      "sequence": 118,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108660380060,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 53.562417000648566
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 119,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108660879742,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.45133299952431
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 120,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108661379472,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 43.87170800146123
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 121,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108661879606,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.01641699891479
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 122,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108662379385,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 52.43516699920292
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 123,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108662879592,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 54.113000000143074
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 124,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108663379900,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 48.91954199956672
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 125,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108663879856,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.619207999057835
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 126,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108664379365,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.87841699949058
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 127,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108664879491,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.88008300117508
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 128,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108665374802,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.55333399993833
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 129,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108665879953,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.60224999922502
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 130,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108666379428,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.460124999517575
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 131,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108666879560,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.89495900008478
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 132,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108667379785,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.85066600056598
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 133,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108667870732,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.71358300099382
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 134,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108668379533,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.63458400015952
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 135,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108668879747,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.55312500007858
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 136,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108669379422,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.56700000022829
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 137,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108669879667,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.02887499904318
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 138,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108670379875,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.59033399973123
+    },
+    {
+      "event": "frame",
+      "phase": "moved",
+      "settled": true,
+      "sequence": 139,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108670879740,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.49291600153083
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "unavailable",
+      "phase": "minimized",
+      "message": "capture_window_unavailable"
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 140,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108679212488,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 4.923291000523022
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 141,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108679795632,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 3.8284170004772022
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 142,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108679963194,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 30.467458000202896
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 143,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108680209508,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.222083000684506
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 144,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108680380082,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 17.68537499992817
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 145,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108680544637,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.357209000489092
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 146,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108680712429,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.561374999582767
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 147,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108680876958,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.910665999603225
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 148,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108681043658,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 17.112833998908172
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 149,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108681212553,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 15.90366699929291
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 150,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108681378988,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 15.973708999808878
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 151,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108681545982,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 17.210541000167723
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 152,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108681712792,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 16.525707998880534
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 153,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108681879335,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 18.0129999989731
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": false,
+      "sequence": 154,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108682379524,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 52.2648330006632
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 155,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108682877715,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 51.564207999035716
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 156,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108683379830,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 48.86091700063844
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 157,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108683963917,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 66.53983400065044
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 158,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108684379867,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 33.91224999904807
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 159,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108684879570,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 51.15970900078537
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 160,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108685463341,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 69.2222910001874
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 161,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108685879663,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 31.163833999016788
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 162,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108686463225,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 65.97133399918675
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 163,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108686879471,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 32.70562499892549
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 164,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108687379492,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.19808399993053
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 165,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108687713182,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 32.6239580008405
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 166,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108688207534,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 51.3756669988652
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 167,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108688712602,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.04691699994146
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 168,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108689213298,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.477124999815715
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 169,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108689712563,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.565291999897454
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 170,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108690212757,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.08229200029746
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 171,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108690712545,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.19245800031058
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 172,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108691211711,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 50.91104199891561
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 173,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108691712652,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.50112500046089
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 174,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108692212855,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 49.32112500137009
+    },
+    {
+      "event": "frame",
+      "phase": "restored",
+      "settled": true,
+      "sequence": 175,
+      "generation": 1,
+      "capture_session": 0,
+      "timestamp_100ns": 108692712637,
+      "shape": [
+        540,
+        720,
+        3
+      ],
+      "crop": [
+        124,
+        224,
+        720,
+        540
+      ],
+      "dpi": 192,
+      "left_bgr": [
+        80,
+        40,
+        210
+      ],
+      "right_bgr": [
+        70,
+        190,
+        30
+      ],
+      "correct_pattern": true,
+      "buffer_budget": {
+        "gpu_pool_buffers": 1,
+        "gpu_pool_bytes": 4151040,
+        "cpu_staging_row_pitch": 2880,
+        "cpu_staging_bytes": 1555200,
+        "next_delivery_bytes": 1166400,
+        "acquisition_reserved_bytes": 6872640
+      },
+      "poll_ms": 48.070875000121305
+    },
+    {
+      "event": "unavailable",
+      "phase": "closed",
+      "message": "capture_window_unavailable"
+    }
+  ],
+  "limits": [
+    "Controlled HWND render capture, not a physical CU camera or Microview board acceptance.",
+    "DPI change across physical monitors is not covered by this single VM desktop probe."
+  ]
+}

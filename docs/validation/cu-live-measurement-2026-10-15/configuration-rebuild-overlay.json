@@ -1,0 +1,129 @@
+{
+  "overlay": "cu-content-configuration-background-rebuild-1",
+  "date": "2026-10-15",
+  "base_manifest": "build/cu-live-windows/final-source-manifest.json",
+  "base_manifest_sha256": "33d042eb149cc37c2608c459f84ec5c4739f5ea2d649c0cb19ad4dc9448a9564",
+  "files": [
+    {
+      "path": "src/fdm/live_experiment/models.py",
+      "formal_snapshot_sha256": "366daf4533d26531a239fd53c0e74dab1c4707cb99a0c34d2b62265eb2b34af5",
+      "overlay_sha256": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc",
+      "bytes": 41967
+    },
+    {
+      "path": "src/fdm/ui/live_experiment_workspace.py",
+      "formal_snapshot_sha256": "2c0a807d1b56151625e423b1cf71d58a005daa5bc01badd944a63b5284040f04",
+      "overlay_sha256": "b698053c618af23569b0ed241cc04feed665bc683e19532aec247f620957460b",
+      "bytes": 86169
+    },
+    {
+      "path": "tests/test_live_experiment_content_models.py",
+      "formal_snapshot_sha256": "3f8b40440739c23a0191f0bf14178952e20fe4b3684c9fa6b5a3a0a7640331d6",
+      "overlay_sha256": "068f342260155f12982718920a47a71f414d7874521466d460af3a02970de7c8",
+      "bytes": 20378
+    },
+    {
+      "path": "tests/test_live_experiment_content_workspace.py",
+      "formal_snapshot_sha256": "ae766d8dc83ba21113b0c5031fe07f2f4dc5c660b2746f38c609561e065a0973",
+      "overlay_sha256": "92f4d398d36f6668087eb550c67ceeb9574da4d9d83260855beded7340cad15e",
+      "bytes": 58672
+    }
+  ],
+  "scope": [
+    "unchanged group_width filtered before record traversal",
+    "loaded custom positive group width retained in settings",
+    "GUI configuration/width undo/redo use cancellable background aggregate rebuild",
+    "revision and history-top checks reject stale results without altering accepted records",
+    "committed controls remain authoritative; closing waits for cancellation retirement",
+    "pending rebuild blocks opening a second settings dialog before it can capture stale settings"
+  ],
+  "unchanged": [
+    "native source and binaries",
+    "controller measurement identity and latest-presented submission barrier",
+    "motion detector",
+    "per-record single-width incremental hot path",
+    "original final-*.json reports"
+  ],
+  "static_validation": {
+    "python_ast": "passed",
+    "runtime_imports": false,
+    "tests_executed_for_overlay": true
+  },
+  "validation_status": "Final source full suite completed: 4534 passed, 1650 subtests passed, five independently reproduced pre-change UI failures; no new failures.",
+  "release_status": "existing formal Windows snapshot and installer predate this overlay; re-freeze required",
+  "performance_boundary": "old formal samples remain identified with their original sources; snapshot tuple collection is O(N), scalar aggregation is background; new configuration-path latency not measured",
+  "targeted_tests": [
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_live_experiment_content_models.py tests/test_live_experiment_content_statistics.py",
+      "result": "250 passed in 1.16s",
+      "exit_code": 0,
+      "scope_note": "domain model/statistics source unchanged since this run; subsequent GUI guard and its test are not covered by this result"
+    }
+  ],
+  "r2_integrated_validation": {
+    "log": "build/cu-live-measurement/r2-targeted-macos-final.log",
+    "log_sha256": "c8b886a31087cc04d94c31618299ba6c3cb68d39cdf700af6d504200cfc74084",
+    "result": "812 passed, 57 subtests passed in 6.82s",
+    "files_at_validation": [
+      {
+        "path": "src/fdm/live_experiment/models.py",
+        "sha256": "b77ce023fe2035864a124f9e1b91eb6001f3525424ced2f4708944216fcc9bfc"
+      },
+      {
+        "path": "src/fdm/ui/live_experiment_workspace.py",
+        "sha256": "b698053c618af23569b0ed241cc04feed665bc683e19532aec247f620957460b"
+      },
+      {
+        "path": "tests/test_live_experiment_content_models.py",
+        "sha256": "068f342260155f12982718920a47a71f414d7874521466d460af3a02970de7c8"
+      },
+      {
+        "path": "tests/test_live_experiment_content_workspace.py",
+        "sha256": "ec2cd13ed92f7f5f00c7f3c811f1e10b879f809cd843f238f13aed51ef2872f1"
+      }
+    ],
+    "test_adjustment_provenance": "Motion agent tightened latest-frame Future/sequence assertions and made existing frame-budget lease scheduling deterministic in test_live_experiment_content_workspace.py after queued wake changes. The original configuration-only overlay file hashes above remain preserved; latest combined identity will be bound to the R2 source manifest.",
+    "pending_scope": "The later gesture guard is covered separately below; original 812-test run remains associated with its earlier file identities."
+  },
+  "gesture_guard_patch": {
+    "scope": "reject pending-statistics gesture changes before cancelling a draft; accepted gesture changes retain cancellation behavior; classification/mode busy paths also have regression coverage",
+    "files": [
+      {
+        "path": "src/fdm/ui/live_experiment_workspace.py",
+        "sha256": "ef6903bcc9c23e7628c1cb6b590639ad982150afbc460a44761a9aa84799d4fc",
+        "bytes": 86720
+      },
+      {
+        "path": "tests/test_live_experiment_content_workspace.py",
+        "sha256": "f3228b19ebb7cff09c1f857ef873d760b10eeb0fd92f98e8a0af6cec6ad636db",
+        "bytes": 61299
+      }
+    ],
+    "static_validation": "AST parsed",
+    "tests_status": "passed: 4 targeted cases; subsequent whole-workspace plus instrumentation selection 96 passed",
+    "selection": "tests/test_live_experiment_content_workspace.py -k \"busy_configuration_rejects_mode_switch or accepted_gesture_switch\"",
+    "previous_812_test_result_covers_this_patch": false,
+    "validation": [
+      {
+        "log": "build/cu-live-measurement/r2-gesture-targeted.log",
+        "sha256": "298e876b8131d06e2203eb43cebcdc5fa65d07d89862ad1c0abed6a291d31e2c",
+        "result": "4 passed, 72 deselected in 0.84s"
+      },
+      {
+        "log": "build/cu-live-measurement/r2-instrumentation-and-gesture.log",
+        "sha256": "7ca269eca4bc2547d6e54e7103cda76179e4b9d135da323877d49705b2606ed6",
+        "result": "96 passed in 1.37s"
+      }
+    ]
+  },
+  "final_full_regression": {
+    "log": "build/cu-live-measurement/full-regression-macos-final-r2-diagnostic.log",
+    "sha256": "3a33e8e22b73ee2eb60c54d04c59073602b8893f05804ae65c277cbf1e87f6bd",
+    "passed": 4534,
+    "subtests_passed": 1650,
+    "baseline_failed": 5,
+    "new_failed": 0,
+    "elapsed_seconds": 435.16,
+    "coverage": "Includes final gesture guard and explicit phase instrumentation tests."
+  }
+}

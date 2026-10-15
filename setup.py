@@ -34,7 +34,9 @@ if native_mode == "1":
     for path in native_files:
         digest.update(path.relative_to(ROOT).as_posix().encode("utf-8") + b"\0")
         digest.update(path.read_bytes() + b"\0")
-    sources = [path.relative_to(ROOT).as_posix() for path in native_files if path.suffix == ".cpp"]
+    # Targets are explicit: the Windows capture module has a separate module
+    # initializer and OS libraries, and must never enter portable _kernels.
+    sources = ["native/kernels.cpp", "native/cu_manual.cpp", "native/cu_automatic.cpp"]
     if not sources:
         raise RuntimeError("The native source files are missing; rebuild from a complete source distribution")
     abi = sysconfig.get_config_var("SOABI") or sys.implementation.cache_tag
@@ -52,6 +54,15 @@ if native_mode == "1":
         ],
         extra_compile_args=["/fp:strict", "/utf-8"] if sys.platform == "win32" else ["-fno-fast-math", "-ffp-contract=off"],
     )]
+    if sys.platform == "win32":
+        extensions.append(Pybind11Extension(
+            "fdm._native._windows_capture", ["native/windows_capture.cpp"],
+            cxx_std=17,
+            define_macros=[("FDM_NATIVE_SOURCE_SHA256", f'"{digest.hexdigest()}"'),
+                           ("FDM_NATIVE_PYTHON_ABI", f'"{abi}"')],
+            libraries=["d3d11", "dxgi", "windowsapp", "dwmapi", "user32", "runtimeobject"],
+            extra_compile_args=["/EHsc", "/utf-8", "/fp:strict"],
+        ))
     commands = {"build_ext": build_ext}
 
 setup(ext_modules=extensions, cmdclass=commands)

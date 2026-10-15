@@ -1,0 +1,37 @@
+{
+  "source_root": "/Volumes/LARD/cu_reverse",
+  "evidence": [
+    {
+      "path": "docs/CONTENT_NONFREEZE_MODULE.md",
+      "sha256": "edea7948d78e844f5f9a724421cae56c547b5976f3f46270555e0d10f3b4b1b3",
+      "size": 26086
+    },
+    {
+      "path": "work/content_nonfreeze_20261013/persistence_resources/resource_evidence.json",
+      "sha256": "b35b7823a33fcb8817f02d0f67156928849bb46bbf3124761481d43f2a0b5104",
+      "size": 371569
+    },
+    {
+      "path": "work/content_nonfreeze_20261013/ui_state/state_machine.json",
+      "sha256": "3bc40a834cd1a0b697b24ab0571a15d9fa160e1e07d40d405c6a91b870c20d11",
+      "size": 13340
+    },
+    {
+      "path": "work/content_nonfreeze_20261013/runtime/cu6_main/settled_entry.json",
+      "sha256": "8c061bdcbe3b4f83234814cb7d2c660e74fb34d76c67904037291da80251ac1e",
+      "size": 62308
+    },
+    {
+      "path": "work/content_nonfreeze_20261013/runtime_validation.json",
+      "sha256": "039aeba42e2d4bface08a8c9f1f24f44d5477518b30b4ab164db68b8251b0626",
+      "size": 6858
+    },
+    {
+      "path": "work/content_nonfreeze_20261013/ui_state/decompiled/CU-6.exe_00542610.asm",
+      "sha256": "5b79a5d8dbcee40411f9e27532c43a75f8c64c133319ac184c576d64a0d015a9",
+      "size": 11338,
+      "use": "Nine category COLORREF values at 0x5429de..0x542a16"
+    }
+  ],
+  "boundary": "Original dialog resources and saved Win32 window tree; no new execution of the original CU UI in this implementation turn."
+}

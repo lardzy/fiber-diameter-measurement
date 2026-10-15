@@ -1,0 +1,7 @@
+{
+  "snapshot": "R4",
+  "manifest_sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+  "checked_files": 490,
+  "mismatches": [],
+  "scope": "Production/native/scripts/tests/build inputs; subsequent report-only edits excluded."
+}

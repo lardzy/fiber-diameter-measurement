@@ -1,0 +1,50 @@
+[
+  {
+    "label": "manual-statistics",
+    "exit_code": 0,
+    "started_unix": 1792017981.037704,
+    "elapsed_seconds": 5.36116099357605,
+    "output": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-manual-statistics.json",
+    "log": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-manual-statistics.log"
+  },
+  {
+    "label": "motion",
+    "exit_code": 0,
+    "started_unix": 1792017986.399612,
+    "elapsed_seconds": 26.52526092529297,
+    "output": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-motion.json",
+    "log": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-motion.log"
+  },
+  {
+    "label": "ui-stable",
+    "exit_code": 0,
+    "started_unix": 1792018012.925257,
+    "elapsed_seconds": 34.12563896179199,
+    "output": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-stable.json",
+    "log": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-stable.log"
+  },
+  {
+    "label": "ui-dynamic",
+    "exit_code": 0,
+    "started_unix": 1792018047.051486,
+    "elapsed_seconds": 277.3389689922333,
+    "output": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-dynamic.json",
+    "log": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-dynamic.log"
+  },
+  {
+    "label": "ui-joint-stable",
+    "exit_code": 0,
+    "started_unix": 1792018324.391055,
+    "elapsed_seconds": 39.626428842544556,
+    "output": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-joint-stable.json",
+    "log": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-joint-stable.log"
+  },
+  {
+    "label": "ui-joint-dynamic",
+    "exit_code": 0,
+    "started_unix": 1792018364.018122,
+    "elapsed_seconds": 173.71795201301575,
+    "output": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-joint-dynamic.json",
+    "log": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-formal\\final-r4-windows-ui-joint-dynamic.log"
+  }
+]

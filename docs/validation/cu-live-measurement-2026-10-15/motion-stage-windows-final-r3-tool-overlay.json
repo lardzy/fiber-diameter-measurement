@@ -1,0 +1,7 @@
+{
+  "script_sha256": "72adbeeecf2c4279ca1be0a67d00ecf337d8231d6502d84f23b397159cefdabc",
+  "snapshot": "Windows final-r3",
+  "production_changed": false,
+  "elapsed_seconds": 34.03950309753418,
+  "stdout": "FDM_EXIT=0\n"
+}

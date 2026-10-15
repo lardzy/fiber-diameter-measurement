@@ -1,0 +1,9 @@
+{
+  "revision": "R4 candidate",
+  "production_file": "native/kernels.cpp",
+  "r3_file_sha256": "abd3d9b6029788419c9ca50cad4e6246985c0334bd32a551bf8af8c6107253ed",
+  "r4_file_sha256": "544be97bf4b53f6f1d5e58b99bc137cca8ea9f26d639693c2aceda0e0e39d37e",
+  "reversing_only_finite_classification_line_reproduces_r3_file_sha256": true,
+  "staged_diff_sha256": "4714a75cdf221724b2a9b2addbfdf5087d1490dfe50c9dc9b2ef403ebdaee2b3",
+  "change": "Two std::isfinite(double) calls replaced by existing finite_distance(double), retaining conversion order, loop, error and arithmetic."
+}

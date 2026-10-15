@@ -1,0 +1,1 @@
+{"baseline_rss": 147308544, "sampled_peak_rss": 147390464, "final_rss": 147374080, "interval_ms": 2, "note": "Diagnostic sampled process RSS, not a proven allocation bound; excludes capture GPU.", "isolated_process": true, "pixel_sha256": "d836fb56336391b166dd839a6732ca8d0793f52a9808b20633153cc8c1377c02", "process_id": 50613, "opencv_threads": 18}

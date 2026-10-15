@@ -1,0 +1,35 @@
+{
+  "revision": "final-r4",
+  "scope": "synthetic_source_qt_not_installed_program",
+  "image": {
+    "path": "docs/validation/cu-live-measurement-2026-10-15/ui-windows-1280x720-r4.png",
+    "sha256": "8cc471f4f85005931cd0117948cf3e0fa507e5649fbaf5d2b5e67d033005e230",
+    "size": 139191
+  },
+  "source_manifest_sha256": "f53b73e983dc723f84be2795f36c86d2dd4c40d9c1cc3d4fedb61e814d009347",
+  "probe_source": {
+    "path": "scripts/validation/probe_cu_workspace_ui.py",
+    "size": 7058,
+    "sha256": "61a107e542c110f878988506726ca5d2ebf2d2f52489a452ff05d73a40979649"
+  },
+  "probe_result": {
+    "path": "build/cu-live-windows-final-r4/ui-probe-final-r4/ui-probe.json",
+    "sha256": "4b137612d4573bb9f8b14c734b673c4b0e06c6d34d5dc691c1736819949cf5c5",
+    "size": 1561
+  },
+  "requested": [
+    1280,
+    720
+  ],
+  "actual": [
+    1280,
+    720
+  ],
+  "device_pixel_ratio": 2.0,
+  "actual_installed_payload_entry_evidence_separate": {
+    "path": "build/cu-live-windows-final-r4/gui/result.json",
+    "sha256": "49ec6da18510e03f7f500aaa41ba523b5b8abd92bddb62b34f802c87d0368e13",
+    "size": 39198
+  },
+  "real_device_capture_tested": false
+}

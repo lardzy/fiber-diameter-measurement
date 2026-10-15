@@ -54,6 +54,15 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             "cases": {name: True for name in ("boundary_segments", "contour_sections", "prune_short_spurs", "inputs_unchanged")},
         }
 
+    @staticmethod
+    def _cu_live_report():
+        return {"ok": True, "revision": 3, "cases": {name: True for name in (
+            "manual_native", "traditional_native", "multiscale_native", "content_formula",
+            "field_motion", "project_roundtrip", "windows_capture_import", "windows_capture_build",
+            "content_deferred_rebuild", "content_width_undo", "content_width_redo",
+            "evidence_png_gray", "evidence_png_bgr", "evidence_png_bgra",
+            "evidence_leases_released", "project_asset_rebase")}}
+
     def test_failed_native_rebuild_preserves_existing_package(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -106,6 +115,8 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         self.assertIn('includes=["**/*.pyi"]', hook_payload)
         self.assertIn("copy_metadata(distribution_name)", spec_payload)
         self.assertIn('collection_packages.add("et_xmlfile")', spec_payload)
+        self.assertIn('hiddenimports.append("fdm._native._windows_capture")', spec_payload)
+        self.assertIn('"fdm._native._kernels", "fdm._native._windows_capture"}', spec_payload)
 
     def test_dependency_probe_is_derived_from_inherited_runtime_profile(self) -> None:
         def find_spec(module_name: str):
@@ -241,6 +252,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             from fdm.ui.project_save_self_check import run_project_save_self_check
             payload["functional_checks"]["project_save"] = run_project_save_self_check()
             payload["functional_checks"]["native_kernels"] = self._native_report()
+            payload["functional_checks"]["cu_live_measurement"] = self._cu_live_report()
             completed = subprocess.CompletedProcess(
                 [], 0, stdout=json.dumps(payload), stderr=""
             )

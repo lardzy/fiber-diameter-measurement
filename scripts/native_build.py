@@ -32,8 +32,20 @@ try:
     module = native.require_native(validate_source=True)
     if Path(module.__file__).resolve().parent != directory:
         raise RuntimeError("native binary was imported from another checkout")
-    print(json.dumps(report))
-    sys.exit(0 if native_probe_passed(report) else 1)
+    from fdm.services.cu_live_self_check import run_cu_live_self_check, cu_live_probe_passed
+    live = run_cu_live_self_check()
+    if sys.platform == "win32":
+        from fdm._native import _windows_capture
+        if Path(_windows_capture.__file__).resolve().parent != directory:
+            raise RuntimeError("capture binary was imported from another checkout")
+        capture_info = dict(_windows_capture.build_info())
+        kernel_info = dict(module.build_info())
+        for key in ("api_version", "python_abi", "source_sha256"):
+            if capture_info.get(key) != kernel_info.get(key):
+                raise RuntimeError(f"capture build mismatch: {key}")
+    passed = native_probe_passed(report) and cu_live_probe_passed(live)
+    print(json.dumps({"ok": passed, "native_kernels": report, "cu_live_measurement": live}))
+    sys.exit(0 if passed else 1)
 except Exception as exc:
     print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}))
     sys.exit(1)
@@ -115,6 +127,54 @@ def _replace_extension(source: Path, destination: Path) -> None:
         Path(temporary).unlink(missing_ok=True)
 
 
+def _publish_extensions(candidates: dict[Path, Path], *, root: Path, backup_dir: Path) -> None:
+    """Publish the verified set, rolling every changed file back on any failure.
+
+    Each replacement is atomic. Both extension hashes are checked as one set
+    before and after publication; the build never accepts a mixed generation.
+    """
+    backup_dir.mkdir()
+    previous: dict[Path, Path | None] = {}
+    for destination in candidates:
+        previous[destination] = None
+        if destination.is_file():
+            backup = backup_dir / destination.name
+            shutil.copy2(destination, backup)
+            previous[destination] = backup
+    published: list[Path] = []
+    try:
+        for destination, candidate in candidates.items():
+            _replace_extension(candidate, destination)
+            published.append(destination)
+        errors = check_native_build_dependencies(root=root)
+        if errors:
+            raise RuntimeError("installed extensions failed validation: " + "; ".join(errors))
+    except BaseException as failure:
+        rollback_errors = []
+        for destination in reversed(published):
+            try:
+                backup = previous[destination]
+                if backup is None:
+                    destination.unlink(missing_ok=True)
+                else:
+                    _replace_extension(backup, destination)
+            except OSError as exc:
+                rollback_errors.append(f"{destination}: {exc}")
+        if rollback_errors:
+            # A concurrently loaded Windows DLL can also prevent rollback.
+            # Keep the known previous files beyond TemporaryDirectory cleanup.
+            recovery = Path(tempfile.mkdtemp(prefix="recovery-", dir=root / "build/native-kernels"))
+            for backup in previous.values():
+                if backup is not None:
+                    shutil.copy2(backup, recovery / backup.name)
+            raise RuntimeError(f"{failure}; extension rollback failed: {'; '.join(rollback_errors)}; previous binaries retained at {recovery}") from failure
+        raise
+
+
+def _extension_names() -> tuple[str, ...]:
+    return ("_kernels", "_windows_capture") if sys.platform == "win32" else ("_kernels",)
+
+
 def ensure_native_kernels(root: Path) -> list[str]:
     """Reuse a valid extension, otherwise rebuild once and require a fresh probe."""
     root = root.resolve()
@@ -144,26 +204,19 @@ def ensure_native_kernels(root: Path) -> list[str]:
                      "--build-lib", str(library), "--build-temp", str(staging / "objects")],
                     cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600, check=True,
                 )
-                filename = "_kernels" + sysconfig.get_config_var("EXT_SUFFIX")
-                candidate = library / "fdm/_native" / filename
-                if not candidate.is_file():
-                    raise RuntimeError(f"compiler did not produce the current Python extension: {filename}")
-                errors = check_native_build_dependencies(root=root, extension_dir=candidate.parent)
+                suffix = sysconfig.get_config_var("EXT_SUFFIX")
+                names = _extension_names()
+                candidates = {}
+                for name in names:
+                    filename = name + suffix
+                    candidate = library / "fdm/_native" / filename
+                    if not candidate.is_file():
+                        raise RuntimeError(f"compiler did not produce the current Python extension: {filename}")
+                    candidates[root / "src/fdm/_native" / filename] = candidate
+                errors = check_native_build_dependencies(root=root, extension_dir=library / "fdm/_native")
                 if errors:
-                    raise RuntimeError("rebuilt extension failed validation: " + "; ".join(errors))
-                destination = root / "src/fdm/_native" / filename
-                previous = staging / filename
-                had_previous = destination.is_file()
-                if had_previous:
-                    shutil.copy2(destination, previous)
-                _replace_extension(candidate, destination)
-                errors = check_native_build_dependencies(root=root)
-                if errors:
-                    if had_previous:
-                        _replace_extension(previous, destination)
-                    else:
-                        destination.unlink()
-                    raise RuntimeError("installed extension failed validation: " + "; ".join(errors))
+                    raise RuntimeError("rebuilt extensions failed validation: " + "; ".join(errors))
+                _publish_extensions(candidates, root=root, backup_dir=staging / "previous")
         print("Native kernels rebuilt and verified; continuing packaging.")
         return []
     except (OSError, subprocess.SubprocessError, ValueError, KeyError, RuntimeError) as exc:
