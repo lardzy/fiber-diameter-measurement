@@ -2522,6 +2522,78 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_digital_slide_boundary_status_preserves_camera_layout_and_other_notices(self) -> None:
+        window = MainWindow()
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "window-boundary.fdmslide"
+                store = DigitalSlideStore.create(
+                    slide_path,
+                    DigitalSlideManifest(
+                        version=1, width=1200, height=900,
+                        viewport_width=200, viewport_height=150,
+                        focus_levels=[0, 1],
+                    ),
+                )
+                store.close()
+                window._add_digital_slide_document_from_path(slide_path, document=None)
+                canvas = window.current_canvas()
+                self.assertIsInstance(canvas, DigitalSlideCanvas)
+                canvas.fit_native_viewport()
+                window.statusBar().showMessage("读取状态需要保留")
+                for _ in range(5):
+                    self.app.processEvents()
+                # Keep the coordinate text identical while the boundary notice
+                # changes, so this specifically checks feedback layout stability.
+                canvas.center_on_image_point(Point(1200, 450))
+                self.app.processEvents()
+                label = window._digital_slide_boundary_label
+                self.assertTrue(label.isVisible())
+                self.assertEqual(label.text(), "")
+                size_before = canvas.size()
+                content_before = canvas._content_rect()
+                focus_before = self.app.focusWidget()
+                label_width = label.width()
+                canvas.move_viewport_by(10, 0)
+                self.app.processEvents()
+
+                self.assertEqual(label.text(), "已到切片右边界 →")
+                self.assertEqual(canvas.size(), size_before)
+                self.assertEqual(canvas._content_rect(), content_before)
+                self.assertIs(self.app.focusWidget(), focus_before)
+                self.assertEqual(label.width(), label_width)
+                self.assertEqual(window.statusBar().currentMessage(), "读取状态需要保留")
+                canvas._boundary_notice_timer.stop()
+                canvas._settle_boundary_feedback()
+                self.assertEqual(label.text(), "右边界 →")
+                canvas.move_viewport_by(-10, 0)
+                self.assertEqual(label.text(), "")
+
+                # A hidden slide must not write into the live-preview info row.
+                window._preview_active = True
+                window._update_digital_slide_boundary_label()
+                canvas.move_viewport_by(10, 0)
+                self.assertTrue(label.isHidden())
+                self.assertEqual(label.text(), "")
+                window._preview_active = False
+                window._update_digital_slide_boundary_label()
+                window._fullscreen_controller.enter()
+                self.app.processEvents()
+                canvas.move_viewport_by(1200, 0)
+                self.assertTrue(label.isHidden())
+                self.assertTrue(canvas.boundary_feedback_text())
+                window._fullscreen_controller.exit()
+                self.app.processEvents()
+                self.assertTrue(label.isVisible())
+                canvas.shutdown()
+                window._slide_stores[canvas.document_id].close()
+        finally:
+            window._preview_active = False
+            window.close()
+
     def test_digital_slide_navigator_receives_whole_slide_thumbnail(self) -> None:
         window = MainWindow()
         window.show()

@@ -472,7 +472,7 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             canvas.clear_document()
             canvas.close()
 
-    def test_navigation_at_boundary_does_not_enqueue_or_repaint(self) -> None:
+    def test_navigation_at_boundary_only_repaints_feedback_margin_once(self) -> None:
         canvas = self._canvas()
         canvas._browse_center = Point(160.0, 120.0)  # noqa: SLF001
         canvas._zoom = canvas._native_field_fit_zoom()  # noqa: SLF001
@@ -483,6 +483,17 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
                 patch.object(canvas, "_publish_viewport_state") as publish,
                 patch.object(canvas, "update") as update,
             ):
+                canvas.move_viewport_by(-40.0, -30.0, throttled=True)
+                self.assertEqual(canvas.boundary_feedback_text(), "已到切片左上边界 ↖")
+                self.assertTrue(update.called)
+                for call in update.call_args_list:
+                    self.assertEqual(len(call.args), 1)
+                    self.assertTrue(
+                        call.args[0].intersected(
+                            canvas._content_rect().toAlignedRect()
+                        ).isEmpty()
+                    )
+                update.reset_mock()
                 canvas.move_viewport_by(-40.0, -30.0, throttled=True)
 
             display_request.assert_not_called()

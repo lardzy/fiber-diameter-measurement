@@ -363,7 +363,7 @@ from fdm.ui.construction_widgets import (
     construction_kind_label,
 )
 from fdm.ui.construction_rendering import draw_construction_entities
-from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
+from fdm.ui.digital_slide_canvas import DigitalSlideCanvas, digital_slide_boundary_color
 from fdm.ui.dataset_export_dialog import (
     DatasetDocumentOption,
     DatasetExportDialog,
@@ -2092,6 +2092,7 @@ class MainWindow(QMainWindow):
         self._microview_preview_scroll: QScrollArea | None = None
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
+        self._digital_slide_boundary_label: QLabel | None = None
         self._calibration_label_scroll: QScrollArea | None = None
         self._calibration_status_card: QFrame | None = None
         self._calibration_status_title_label: QLabel | None = None
@@ -2565,7 +2566,11 @@ class MainWindow(QMainWindow):
         self._fullscreen_controller = FullscreenMeasurementController(
             self,
             adaptive_layout=self._adaptive_layout,
-            extra_chrome=(self._image_resolution_label, self._version_label),
+            extra_chrome=(
+                self._image_resolution_label,
+                self._digital_slide_boundary_label,
+                self._version_label,
+            ),
             preserved_widgets=(self._measure_toolbar, self._context_toolbar, self.statusBar()),
             state_version=2,
             parent=self,
@@ -5125,9 +5130,21 @@ class MainWindow(QMainWindow):
         self._image_resolution_label = QLabel("像素尺寸: -")
         self._image_resolution_label.setWordWrap(True)
         self._image_resolution_label.setStyleSheet("padding: 6px 2px 0 2px;")
+        self._digital_slide_boundary_label = QLabel()
+        self._digital_slide_boundary_label.setObjectName("digitalSlideBoundaryFeedback")
+        self._digital_slide_boundary_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self._digital_slide_boundary_label.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents, True
+        )
+        self._digital_slide_boundary_label.hide()
+        image_info_row = QHBoxLayout()
+        image_info_row.addWidget(self._image_resolution_label, 1)
+        image_info_row.addWidget(self._digital_slide_boundary_label)
         self._center_stack.addWidget(self._preview_page)
         layout.addWidget(self._center_stack)
-        layout.addWidget(self._image_resolution_label)
+        layout.addLayout(image_info_row)
         return container
 
     def _show_document_tab_context_menu(self, position: QPoint) -> None:
@@ -13926,6 +13943,7 @@ class MainWindow(QMainWindow):
         self.preset_combo.setToolTip(text)
 
     def _update_image_resolution_label(self, document: ImageDocument | None = None) -> None:
+        self._update_digital_slide_boundary_label(document)
         if self._image_resolution_label is None:
             return
         self._image_resolution_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 6px 2px 0 2px;")
@@ -13960,6 +13978,24 @@ class MainWindow(QMainWindow):
             height_unit = self._format_dimension_value(calibration.px_to_unit(height_px, axis="y"))
             parts.append(f"实际尺寸: {width_unit} x {height_unit} {calibration.unit}")
         self._image_resolution_label.setText("    |    ".join(parts))
+
+    def _update_digital_slide_boundary_label(self, document: ImageDocument | None = None) -> None:
+        label = self._digital_slide_boundary_label
+        if label is None:
+            return
+        target = document or self.current_document()
+        canvas = self._canvases.get(target.id) if target is not None else None
+        fullscreen = self._fullscreen_controller is not None and self._fullscreen_controller.is_active
+        visible = not self._preview_active and not fullscreen and isinstance(canvas, DigitalSlideCanvas)
+        # Reserve the same space while browsing, even when no notice is active.
+        # A boundary must not rewrap the info row and resize the slide camera.
+        label.setFixedWidth(label.fontMetrics().horizontalAdvance("已到切片左右下边界 ↘") + 12)
+        label.setFixedHeight(label.fontMetrics().height() + 8)
+        label.setStyleSheet(
+            f"color: {digital_slide_boundary_color(self.palette()).name()}; padding: 6px 2px 0 2px;"
+        )
+        label.setText(canvas.boundary_feedback_text() if visible else "")
+        label.setVisible(visible)
 
     def _apply_native_preview_resolution(self) -> None:
         if self._microview_preview_host is None:
@@ -20634,6 +20670,11 @@ class MainWindow(QMainWindow):
         self._connect_canvas_roi_signals(canvas)
         self._connect_canvas_construction_signals(canvas)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
+        canvas.boundaryFeedbackChanged.connect(
+            lambda _message, document_id=target_document.id: (
+                self._on_digital_slide_boundary_feedback_changed(document_id)
+            )
+        )
         canvas.focusChanged.connect(
             lambda focus_index, document_id=target_document.id: (
                 self._on_digital_slide_focus_changed(document_id, focus_index)
@@ -20752,6 +20793,11 @@ class MainWindow(QMainWindow):
         if document is None or not document.is_digital_slide():
             return
         self._update_image_resolution_label(document)
+
+    def _on_digital_slide_boundary_feedback_changed(self, document_id: str) -> None:
+        document = self.current_document()
+        if document is not None and document.id == document_id:
+            self._update_digital_slide_boundary_label(document)
 
     def _on_digital_slide_focus_changed(
         self,

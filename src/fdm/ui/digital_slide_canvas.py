@@ -6,13 +6,14 @@ import math
 from time import perf_counter
 from weakref import ref
 
-from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QTimer, QVariantAnimation, Signal
 from PySide6.QtGui import (
     QColor,
     QImage,
     QKeyEvent,
     QMouseEvent,
     QPainter,
+    QPalette,
     QPen,
     QRegion,
     QWheelEvent,
@@ -53,6 +54,8 @@ _BROWSE_VIEW_VERSION = 1
 _VIEW_MARGIN = 20.0
 _PIXEL_WORK_EPSILON = 1.0e-9
 _NATIVE_VIEWPORT_INDICATOR_MS = 1200
+_BOUNDARY_PULSE_MS = 800
+_BOUNDARY_NOTICE_MS = 1500
 _NAVIGATION_SETTLE_MS = 75
 _FOCUS_SETTLE_COLD_MS = 50
 _FOCUS_SETTLE_PREVIEW_HIT_MS = 30
@@ -68,6 +71,12 @@ _NATIVE_NAVIGATION_HANDOFF_OVERLAP = 0.5
 _DISPLAY_FRAME_CACHE_LIMIT = 8
 _DISPLAY_FRAME_CACHE_BYTES = 96 * 1024 * 1024
 _VECTOR_MEASUREMENT_TOOLS = {"manual", "snap", "continuous_manual"}
+
+
+def digital_slide_boundary_color(palette: QPalette) -> QColor:
+    if palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5:
+        return QColor("#EFBC62")
+    return QColor("#A56812")
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +104,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     overviewImageChanged = Signal(QImage)
     pixelWorkAvailabilityChanged = Signal(bool, str)
     browseNoticeRequested = Signal(str)
+    boundaryFeedbackChanged = Signal(str)
     _renderFrameReady = Signal(object)
     _renderFrameFailed = Signal(object)
 
@@ -185,6 +195,20 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._native_viewport_indicator_timer.timeout.connect(
             self._hide_native_viewport_indicator
         )
+        self._boundary_edges: frozenset[str] = frozenset()
+        self._boundary_message = ""
+        self._boundary_expanded = False
+        self._boundary_opacity = 0.45
+        self._boundary_animation = QVariantAnimation(self)
+        self._boundary_animation.setDuration(_BOUNDARY_PULSE_MS)
+        self._boundary_animation.setStartValue(0.45)
+        self._boundary_animation.setKeyValueAt(0.25, 1.0)
+        self._boundary_animation.setEndValue(0.45)
+        self._boundary_animation.valueChanged.connect(self._set_boundary_opacity)
+        self._boundary_notice_timer = QTimer(self)
+        self._boundary_notice_timer.setSingleShot(True)
+        self._boundary_notice_timer.setInterval(_BOUNDARY_NOTICE_MS)
+        self._boundary_notice_timer.timeout.connect(self._settle_boundary_feedback)
         # Pointer drags are constrained to the raster that is currently
         # mounted in the canvas.  Keep this separate from the whole-slide
         # coordinate system used by navigation and programmatic locating.
@@ -198,6 +222,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         source_stat: tuple[int, int] | None = None,
         source_identity: str | Path | None = None,
     ) -> None:
+        self._clear_boundary_feedback()
         self._render_source_stat = source_stat
         self._render_source_identity_override = str(source_identity) if source_identity is not None else None
         defer_rendering = bool(defer_rendering and not self.isVisible())
@@ -344,6 +369,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
+        self._clear_boundary_feedback()
         self._deferred_slide_document = None
         self._smooth_nav_keys.clear()
         self._smooth_nav_keyboard_shift = False
@@ -382,6 +408,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def hideEvent(self, event) -> None:
         """Cancel navigation/buffer work when another document tab takes over."""
 
+        self._clear_boundary_feedback()
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
         self._final_render_timer.stop()
@@ -423,6 +450,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._image = image
         self._publish_view_transform()
         self.update()
+
+    def clear_document(self) -> None:
+        self._clear_boundary_feedback()
+        super().clear_document()
 
     def set_settings(self, settings: AppSettings) -> None:
         previous_cache_gib = int(
@@ -713,6 +744,120 @@ class DigitalSlideCanvas(DocumentCanvas):
         )
         self._browse_center = Point(center_x, center_y)
 
+    def boundary_feedback_text(self) -> str:
+        return self._boundary_message
+
+    def _browse_boundary_edges(self) -> frozenset[str]:
+        if self._slide_manifest is None:
+            return frozenset()
+        source = self._source_view_rect()
+        width = float(self._slide_manifest.width)
+        height = float(self._slide_manifest.height)
+        epsilon = 1.0e-6
+        if source.width() >= width - epsilon and source.height() >= height - epsilon:
+            return frozenset({"all"})
+        return frozenset(
+            edge for edge, reached in (
+                ("left", source.left() <= epsilon),
+                ("right", source.right() >= width - epsilon),
+                ("top", source.top() <= epsilon),
+                ("bottom", source.bottom() >= height - epsilon),
+            ) if reached
+        )
+
+    def _update_boundary_feedback(self, dx: float, dy: float) -> None:
+        # Only requested XY navigation can raise a notice. Zoom, fit and
+        # programmatic locating clear it without treating their clamp as input.
+        contacts = self._browse_boundary_edges()
+        attempted = frozenset(
+            edge for edge, moving in (
+                ("left", dx < 0), ("right", dx > 0),
+                ("top", dy < 0), ("bottom", dy > 0),
+            ) if moving
+        )
+        hit = contacts if "all" in contacts else contacts & attempted
+        edges = (self._boundary_edges & contacts) | hit
+        if edges == self._boundary_edges:
+            return
+        if not edges:
+            self._clear_boundary_feedback()
+            return
+        newly_reached = edges - self._boundary_edges
+        self._boundary_edges = edges
+        if newly_reached:
+            self._boundary_expanded = True
+            self._boundary_notice_timer.start()
+            self._boundary_animation.stop()
+            if "all" not in edges:
+                self._boundary_animation.start()
+        self._publish_boundary_feedback()
+        self.update(self._boundary_paint_region())
+
+    def _publish_boundary_feedback(self) -> None:
+        if not self._boundary_edges:
+            message = ""
+        elif "all" in self._boundary_edges:
+            message = "已显示整张切片"
+        else:
+            direction = "".join(
+                label for edge, label in (
+                    ("left", "左"), ("right", "右"),
+                    ("top", "上"), ("bottom", "下"),
+                ) if edge in self._boundary_edges
+            )
+            arrow = {
+                "左": "←", "右": "→", "上": "↑", "下": "↓",
+                "左上": "↖", "右上": "↗", "左下": "↙", "右下": "↘",
+                "左右": "↔", "上下": "↕",
+            }.get(direction, "")
+            prefix = "已到切片" if self._boundary_expanded else ""
+            message = f"{prefix}{direction}边界 {arrow}".rstrip()
+        if message != self._boundary_message:
+            self._boundary_message = message
+            self.boundaryFeedbackChanged.emit(message)
+
+    def _settle_boundary_feedback(self) -> None:
+        self._boundary_expanded = False
+        self._publish_boundary_feedback()
+
+    def _clear_boundary_feedback(self) -> None:
+        self._boundary_animation.stop()
+        self._boundary_notice_timer.stop()
+        self._boundary_expanded = False
+        self._boundary_opacity = 0.45
+        if not self._boundary_edges:
+            return
+        self._boundary_edges = frozenset()
+        self._publish_boundary_feedback()
+        self.update(self._boundary_paint_region())
+
+    def _boundary_edge_rects(self) -> dict[str, QRectF]:
+        content = self._content_rect()
+        # Use the existing canvas margin; never cover pixels or resize the view.
+        return {
+            "left": QRectF(content.left() - 5, content.top() - 5, 3, content.height() + 10),
+            "right": QRectF(content.right() + 2, content.top() - 5, 3, content.height() + 10),
+            "top": QRectF(content.left() - 5, content.top() - 5, content.width() + 10, 3),
+            "bottom": QRectF(content.left() - 5, content.bottom() + 2, content.width() + 10, 3),
+        }
+
+    def _boundary_paint_region(self) -> QRegion:
+        region = QRegion()
+        for rect in self._boundary_edge_rects().values():
+            region |= QRegion(rect.adjusted(-1, -1, 1, 1).toAlignedRect())
+        return region
+
+    def _set_boundary_opacity(self, value: float) -> None:
+        self._boundary_opacity = float(value)
+        self.update(self._boundary_paint_region())
+
+    def _paint_boundary_feedback(self, painter: QPainter) -> None:
+        color = digital_slide_boundary_color(self.palette())
+        color.setAlphaF(self._boundary_opacity)
+        for edge, rect in self._boundary_edge_rects().items():
+            if edge in self._boundary_edges:
+                painter.fillRect(rect, color)
+
     def _sync_pan_from_browse_center(self) -> None:
         content = self._content_rect()
         self._pan = Point(
@@ -782,6 +927,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 "当前正在绘制或编辑，请先完成或取消操作后再缩小到大范围浏览。"
             )
             return False
+        self._clear_boundary_feedback()
         self._hovered_line_endpoint = None
         self._hovered_construction_id = None
         self._hovered_construction_handle = None
@@ -2097,6 +2243,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         old_center = Point(self._browse_center.x, self._browse_center.y)
         self._browse_center = Point(old_center.x + float(dx), old_center.y + float(dy))
         self._clamp_browse_center()
+        self._update_boundary_feedback(dx, dy)
         if (
             math.isclose(old_center.x, self._browse_center.x, abs_tol=1.0e-9)
             and math.isclose(old_center.y, self._browse_center.y, abs_tol=1.0e-9)
@@ -2586,6 +2733,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        self._paint_boundary_feedback(painter)
         if self._native_viewport_indicator_visible:
             native = self.native_viewport_rect()
             top_left = self.image_to_widget(Point(native.x(), native.y()))
@@ -2617,6 +2765,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, message)
 
     def resizeEvent(self, event) -> None:
+        self._clear_boundary_feedback()
         QWidget.resizeEvent(self, event)
         if self._slide_manifest is None:
             return
