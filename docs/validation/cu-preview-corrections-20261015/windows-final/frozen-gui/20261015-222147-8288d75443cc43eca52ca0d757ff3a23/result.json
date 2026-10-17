@@ -1,0 +1,32 @@
+{
+    "schema":  2,
+    "started_at":  "2026-10-15T22:21:48.0255727+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222147-8288d75443cc43eca52ca0d757ff3a23",
+    "config":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222147-8288d75443cc43eca52ca0d757ff3a23\\isolated-config",
+    "pid":  14108,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  false,
+    "live_window":  false,
+    "key_controls":  [
+
+                     ],
+    "key_controls_verified":  false,
+    "workspace_closed":  false,
+    "unsaved_dialog":  null,
+    "graceful_exit":  false,
+    "forced_cleanup":  true,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222147-8288d75443cc43eca52ca0d757ff3a23\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222147-8288d75443cc43eca52ca0d757ff3a23\\99-failure-observed-tree-uia.json"
+                  ],
+    "errors":  [
+                   "Acquisition toolbar entry expected one visible match, found 0."
+               ],
+    "ok":  false,
+    "main_title":  "显微测量工作台",
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-15T22:21:52.2931715+08:00"
+}

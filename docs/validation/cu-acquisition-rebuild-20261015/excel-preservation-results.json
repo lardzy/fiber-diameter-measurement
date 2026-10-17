@@ -1,0 +1,167 @@
+[
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-normal",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 0,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-normal",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 1,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-normal",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 1488,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-normal",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 1500,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-normal",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 2000,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-multiscale",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 0,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-multiscale",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 1,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-multiscale",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 1488,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-multiscale",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 1500,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "cu-multiscale",
+    "original_sheet_count": 8,
+    "raw_records_exact": true,
+    "sheet_count": 8,
+    "count": 2000,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "user-custom",
+    "original_sheet_count": 12,
+    "raw_records_exact": true,
+    "sheet_count": 12,
+    "count": 0,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "user-custom",
+    "original_sheet_count": 12,
+    "raw_records_exact": true,
+    "sheet_count": 12,
+    "count": 1,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "user-custom",
+    "original_sheet_count": 12,
+    "raw_records_exact": true,
+    "sheet_count": 12,
+    "count": 1488,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "user-custom",
+    "original_sheet_count": 12,
+    "raw_records_exact": true,
+    "sheet_count": 12,
+    "count": 1500,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  },
+  {
+    "vba": true,
+    "shape_changes": 0,
+    "template": "user-custom",
+    "original_sheet_count": 12,
+    "raw_records_exact": true,
+    "sheet_count": 12,
+    "count": 2000,
+    "print_area_changes": 0,
+    "formula_changes": 0
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "boundary": "Qt component gallery, no device or complete application workflow",
+  "palettes": [
+    {
+      "mode": "light",
+      "logical_size": [
+        900,
+        390
+      ],
+      "dpr": 1.0,
+      "screenshot": "components-light@1x.png"
+    },
+    {
+      "mode": "dark",
+      "logical_size": [
+        900,
+        390
+      ],
+      "dpr": 1.0,
+      "screenshot": "components-dark@1x.png"
+    },
+    {
+      "mode": "navy",
+      "logical_size": [
+        900,
+        390
+      ],
+      "dpr": 1.0,
+      "screenshot": "components-navy@1x.png"
+    },
+    {
+      "mode": "warm",
+      "logical_size": [
+        900,
+        390
+      ],
+      "dpr": 1.0,
+      "screenshot": "components-warm@1x.png"
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "theme": "dark",
+  "requested_raster": [
+    1920,
+    1080
+  ],
+  "requested_logical": [
+    1536,
+    864
+  ],
+  "requested_scale": 1.25,
+  "frame_size": [
+    768,
+    576
+  ],
+  "profile": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/isolated-profile-xx8xwr21",
+  "platform": "offscreen",
+  "real_hardware": false,
+  "limitations": [
+    "Synthetic backend does not validate SDK HWND clipping, throughput or camera recovery.",
+    "Mixed physical monitors require the documented native Windows acceptance pass."
+  ],
+  "passed": true,
+  "actual_logical": [
+    1536,
+    864
+  ],
+  "actual_dpr": 1.25,
+  "transitions": {
+    "page_switches": 203,
+    "workspace_roundtrips": 20,
+    "backend_starts": 21,
+    "backend_stops": 21,
+    "dock_state_restored": {
+      "_project_dock": true,
+      "_inspector_dock": true,
+      "_results_dock": false
+    },
+    "unexpected_windows": [],
+    "modal_messages": [],
+    "project_dirty": false
+  },
+  "display_modes": [
+    {
+      "mode": "pixel",
+      "value": null,
+      "reloaded": true
+    },
+    {
+      "mode": "fit",
+      "value": null,
+      "reloaded": true
+    },
+    {
+      "mode": "percent",
+      "value": 137,
+      "reloaded": true
+    },
+    {
+      "mode": "magnification",
+      "value": 300,
+      "reloaded": true
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "measurement",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/measurement.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "realtime",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/realtime.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "content-operation",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/content-operation.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "content-records",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/content-records.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "content-report",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/content-report.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "content-advanced-0",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/content-advanced-0.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        700,
+        525
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "content-advanced-1",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/content-advanced-1.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        700,
+        525
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "diameter-operation",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/diameter-operation.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "diameter-records",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/diameter-records.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "diameter-report",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/diameter-report.png",
+      "logical_size": [
+        1536,
+        864
+      ],
+      "raster_size": [
+        1920,
+        1080
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "diameter-advanced-0",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/diameter-advanced-0.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        700,
+        525
+      ],
+      "dpr": 1.25
+    },
+    {
+      "name": "diameter-advanced-1",
+      "path": "/private/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/diameter-advanced-1.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        700,
+        525
+      ],
+      "dpr": 1.25
+    }
+  ],
+  "duration_seconds": 6.046,
+  "evidence_phase": "intermediate-before-strict-page-size-check",
+  "acceptance_status": "superseded-window-growth-found-on-measurement-return"
+}

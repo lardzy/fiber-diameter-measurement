@@ -1,0 +1,46 @@
+[
+  {
+    "requested": [
+      1280,
+      720
+    ],
+    "actual": [
+      1280,
+      720
+    ],
+    "dpr": 1.0,
+    "rows": 9,
+    "last_row_bottom": 638,
+    "canvas": [
+      782,
+      576
+    ],
+    "screenshot": "build\\preview-validation\\layout-100\\trial-1280x720.png",
+    "physical_pixel_scale": 1.0,
+    "main_status_bar_visible": false,
+    "canvas_tooltip": "",
+    "native_window_capture": true
+  },
+  {
+    "requested": [
+      1366,
+      768
+    ],
+    "actual": [
+      1366,
+      768
+    ],
+    "dpr": 1.0,
+    "rows": 9,
+    "last_row_bottom": 638,
+    "canvas": [
+      868,
+      576
+    ],
+    "screenshot": "build\\preview-validation\\layout-100\\trial-1366x768.png",
+    "physical_pixel_scale": 1.0,
+    "main_status_bar_visible": false,
+    "canvas_tooltip": "",
+    "native_window_capture": true
+  }
+]

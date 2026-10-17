@@ -1,0 +1,1 @@
+此目录保留 Windows 原生验收发现导出窗口 900×544 多出 1 像素滚动条之前的最终验收记录。随后 ExportOptionsDialog page_layout spacing 从 5 调整为 4。上轮 40 项与 17 矩阵结果有效，但其源码指纹对应微调前版本；当前最终依据应读取上级 workflows/README.md 与 matrix.json。为避免重复大文件，本历史目录只保留报告，不复制截图和视频。

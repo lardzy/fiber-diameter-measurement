@@ -1,0 +1,322 @@
+[
+  {
+    "template": "cu-normal",
+    "count": 0,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 13.525906082999427,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-normal",
+    "count": 1,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 13.499124333000509,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-normal",
+    "count": 1488,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 14.571737999998732,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-normal",
+    "count": 1500,
+    "ok": true,
+    "status": "review_required",
+    "elapsed_seconds": 13.812625250000565,
+    "warnings": [
+      "C／warp／绵羊毛 共 1500 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"
+    ],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-normal",
+    "count": 2000,
+    "ok": true,
+    "status": "review_required",
+    "elapsed_seconds": 23.33571458300139,
+    "warnings": [
+      "C／warp／绵羊毛 共 2000 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。",
+      "Measured count mismatch at 原始数据!AN9: expected 2000, template 1500"
+    ],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 0,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 13.675425624998752,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 1,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 13.883219833005569,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 1488,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 16.060679292000714,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 1500,
+    "ok": true,
+    "status": "review_required",
+    "elapsed_seconds": 15.87094412499573,
+    "warnings": [
+      "C／warp／绵羊毛 共 1500 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"
+    ],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 2000,
+    "ok": true,
+    "status": "review_required",
+    "elapsed_seconds": 20.92265845899965,
+    "warnings": [
+      "C／warp／绵羊毛 共 2000 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。",
+      "Measured count mismatch at 原始数据!AN9: expected 2000, template 1500"
+    ],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "user-custom",
+    "count": 0,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 14.567172041999584,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "特种毛(报出)",
+      "麻棉(报出)",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "分组加权统计",
+      "织物纤维含量报告",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "user-custom",
+    "count": 1,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 15.189229957999487,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "特种毛(报出)",
+      "麻棉(报出)",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "分组加权统计",
+      "织物纤维含量报告",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "user-custom",
+    "count": 1488,
+    "ok": true,
+    "status": "ready",
+    "elapsed_seconds": 15.24032166699908,
+    "warnings": [],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "特种毛(报出)",
+      "麻棉(报出)",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "分组加权统计",
+      "织物纤维含量报告",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "user-custom",
+    "count": 1500,
+    "ok": true,
+    "status": "review_required",
+    "elapsed_seconds": 15.944029875005072,
+    "warnings": [
+      "C／warp／绵羊毛 共 1500 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"
+    ],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "特种毛(报出)",
+      "麻棉(报出)",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "分组加权统计",
+      "织物纤维含量报告",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  },
+  {
+    "template": "user-custom",
+    "count": 2000,
+    "ok": true,
+    "status": "review_required",
+    "elapsed_seconds": 14.99645341699943,
+    "warnings": [
+      "C／warp／绵羊毛 共 2000 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。",
+      "Measured count mismatch at 原始数据!AN9: expected 2000, template 1500"
+    ],
+    "method": "GB/T 16988-2013",
+    "sheets": [
+      "标准选择",
+      "原始数据",
+      "特种毛(报出)",
+      "麻棉(报出)",
+      "分组统计",
+      "非棉麻织物",
+      "非棉麻纤维",
+      "分组加权统计",
+      "织物纤维含量报告",
+      "棉麻织物",
+      "棉麻纤维",
+      "比重"
+    ]
+  }
+]

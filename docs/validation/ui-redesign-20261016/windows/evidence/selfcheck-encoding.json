@@ -1,0 +1,13 @@
+{
+  "raw_file": "extracted-selfcheck.raw.stdout",
+  "raw_bytes": 14861,
+  "raw_sha256": "dcc1a7db4f11740b8ec80dfb2623adbc4f7f5c7965cf2b1386b915e1b85d41d7",
+  "detected_encoding": "cp936",
+  "strict_decode": true,
+  "roundtrip_exact": true,
+  "normalized_file": "extracted-selfcheck.json",
+  "normalized_encoding": "utf-8",
+  "first_non_utf8_byte_offset": 1334,
+  "localized_field": "functional_checks.analysis_pipeline.batch.summary",
+  "mixed_log_output": false
+}

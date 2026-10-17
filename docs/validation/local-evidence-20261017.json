@@ -1,0 +1,2581 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "source_head_before_cleanup": "7410fc957826ed33e6fae20e79e5a16d190995b5",
+  "untracked_files_before": 690,
+  "new_validation_files_to_track": 264,
+  "local_only_file_count": 426,
+  "local_only_bytes": 90227312,
+  "categories": {
+    "captured_media": 265,
+    "accessibility_dump": 83,
+    "raw_installer_transcript": 6,
+    "isolated_runtime_configuration": 66,
+    "generated_test_project": 4,
+    "raw_evidence_archive": 2
+  },
+  "retention": "Files remain at the original repository-relative paths and are ignored by each validation directory. No original file was deleted. Local backup and media are not part of a fresh clone.",
+  "recovery_backup": {
+    "path": ".tmp/workspace-cleanup-20261017/files-before.zip",
+    "bytes": 68924277,
+    "sha256": "8be884a1041365a8d7af415331f6981eae338172d60b4fada74639df83f8813c"
+  },
+  "files": [
+    {
+      "path": "docs/validation/cu-acquisition-rebuild-20261015/windows-100-1280x720.png",
+      "category": "captured_media",
+      "bytes": 118118,
+      "sha256": "4a70203d71c87f7e7ff5329e3bf31e6e9ad76da332af337e9d7cdf8f338fe461"
+    },
+    {
+      "path": "docs/validation/cu-acquisition-rebuild-20261015/windows-100-1366x768.png",
+      "category": "captured_media",
+      "bytes": 126513,
+      "sha256": "2a813728ae4ce68ff1d3a49e18f3f5d03a27301ff6337e825e4de3ca6192ad13"
+    },
+    {
+      "path": "docs/validation/cu-acquisition-rebuild-20261015/windows-150-1280x720.png",
+      "category": "captured_media",
+      "bytes": 188049,
+      "sha256": "d7333eca6e50a4e7021da481d0386a6a77183491d888fee867ce58361b3feba6"
+    },
+    {
+      "path": "docs/validation/cu-acquisition-rebuild-20261015/windows-150-1366x768.png",
+      "category": "captured_media",
+      "bytes": 193524,
+      "sha256": "9f9f749a8568b85063b59138deccf53e15c77d9dea8f6023ef2967ca5ae6b65e"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222147-8288d75443cc43eca52ca0d757ff3a23/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 228095,
+      "sha256": "964d92f8964e766fb41a5aba0ac908f3199c20bd47d1a0cb33d93363d7e6cf71"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222147-8288d75443cc43eca52ca0d757ff3a23/99-failure-observed-tree-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 228100,
+      "sha256": "b27b5437d3dea2495f359dd72bcbb8bd3cf1f8923f02bb5c1830f83b8fcc5bcf"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 228099,
+      "sha256": "0234129224ed81783d3cd456ea2b2d95b1f1b3cf0e8f3ae362e15b5218563206"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 128333,
+      "sha256": "6df1db8d2bf4700012ea5b84ee27bd078f820a7bf8272702daf9d8808768c60e"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 169742,
+      "sha256": "7777acfb18cebd50df34d6d1ee411ecd328113a05104fd7c8aa6927aff9c9399"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130/99-failure-observed-tree-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 169748,
+      "sha256": "affec5048fd4e1be7492a0d088b8b6a0b940150c98122b1d0fa1a701c54018b3"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222535-87f11f523f044d428a7aa6a412adb718/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 228244,
+      "sha256": "4afba9329f9feb3a456cd53492af2844b3c796b849f9a67b712cd73f5f708362"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222535-87f11f523f044d428a7aa6a412adb718/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 128412,
+      "sha256": "8e92f99f4295c1fb49af4d1d464f6a592663538e7070166c6224acff51881eaf"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222535-87f11f523f044d428a7aa6a412adb718/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 169848,
+      "sha256": "dd307eff2dbd7fbbbaac7078a95a2eb83c023f65f377c3c9acf240eae92eac56"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222535-87f11f523f044d428a7aa6a412adb718/04-settings-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 249601,
+      "sha256": "b15c152ccec076e82d021b1a352348f27d23e384e259422361971507a3df96e7"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/frozen-gui/20261015-222535-87f11f523f044d428a7aa6a412adb718/05-unsaved-dialog-before-decision-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 97700,
+      "sha256": "e18019017df09f7c7c59b7af6998c351cb75d3bc86eebf12b8afb1cb0230cd97"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/installer-build.log",
+      "category": "raw_installer_transcript",
+      "bytes": 2306228,
+      "sha256": "492b7163302f3cd2f43c49fdeacb9478b1145135c30dd239511984434f70d652"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/native-workbench/isolated-profile/capture-rulers.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 186,
+      "sha256": "7d549fd187c7357a4a94a6c90e182179cad973f662f3e80e68ff9551cd782f4b"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/native-workbench/isolated-profile/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8722,
+      "sha256": "121bad776a766f75face4bafd6b1c51791e107ac5d528c7ced1aecf7649bfebf"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/native-workbench/nonfreeze-after-page-switches.png",
+      "category": "captured_media",
+      "bytes": 55277,
+      "sha256": "42cb86712c3273bc35c08cb1d8f4f9bd79c8040bb0b3b594d3084f18b207c540"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/native-workbench/nonfreeze-measured-reentry.png",
+      "category": "captured_media",
+      "bytes": 57016,
+      "sha256": "7c846ac4e85ae6771336fce721d0f7b75bd65a506349b59ecc7ba05831bf547b"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-final/native-workbench/realtime-native-host.png",
+      "category": "captured_media",
+      "bytes": 59410,
+      "sha256": "4e9613b987e547954675020c3a2c97a11de1004d6535bd4bc69d292d78536087"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/isolated-profile/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8506,
+      "sha256": "b68b8c958bd370d0b1fc06ad9eca727c18a2bb9edc27dc7f14c04a7c988bdecf"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-0-1280.png",
+      "category": "captured_media",
+      "bytes": 24891,
+      "sha256": "aea94194b47328e54ed61317adebc9b3ec56b47c59136bcf793f27aba04b4256"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-0-1366.png",
+      "category": "captured_media",
+      "bytes": 24891,
+      "sha256": "aea94194b47328e54ed61317adebc9b3ec56b47c59136bcf793f27aba04b4256"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-1-1280.png",
+      "category": "captured_media",
+      "bytes": 30083,
+      "sha256": "eff9589038b1c4e8527d8801c6f04ecdc4cb2206b8f3b85707b7765b7b0c6d69"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-1-1366.png",
+      "category": "captured_media",
+      "bytes": 30083,
+      "sha256": "eff9589038b1c4e8527d8801c6f04ecdc4cb2206b8f3b85707b7765b7b0c6d69"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-2-1280.png",
+      "category": "captured_media",
+      "bytes": 30911,
+      "sha256": "c7122e21bd7dbaed4b086ad9a076308de9b2030523cbc54ef80d5a709d1d26f7"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-2-1366.png",
+      "category": "captured_media",
+      "bytes": 30911,
+      "sha256": "c7122e21bd7dbaed4b086ad9a076308de9b2030523cbc54ef80d5a709d1d26f7"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-3-1280.png",
+      "category": "captured_media",
+      "bytes": 20969,
+      "sha256": "d2df27aeef36e34337f4522c25c8218587d44b5be641dcd1437d8422c5faa264"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/settings-3-1366.png",
+      "category": "captured_media",
+      "bytes": 20969,
+      "sha256": "d2df27aeef36e34337f4522c25c8218587d44b5be641dcd1437d8422c5faa264"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/trial-1280x720.png",
+      "category": "captured_media",
+      "bytes": 120193,
+      "sha256": "b26ddcdc9843e5d27cf74514d8e3885d6282499c15cc35106cc853b88bc717db"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/trial-1366x768.png",
+      "category": "captured_media",
+      "bytes": 126414,
+      "sha256": "51fea7b8c60b487a71dc21c8e77ee2c4fe7c33a797c44bb4499b1783408d1d02"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/window-capture-1280x720.png",
+      "category": "captured_media",
+      "bytes": 120193,
+      "sha256": "b26ddcdc9843e5d27cf74514d8e3885d6282499c15cc35106cc853b88bc717db"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-100/window-capture-1366x768.png",
+      "category": "captured_media",
+      "bytes": 126414,
+      "sha256": "51fea7b8c60b487a71dc21c8e77ee2c4fe7c33a797c44bb4499b1783408d1d02"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/isolated-profile/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8506,
+      "sha256": "d983e1d3e4cf37c6ac0d051dbdddcc73a30f0bfc01a7659c13209fd8d98284f1"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-0-1280.png",
+      "category": "captured_media",
+      "bytes": 37644,
+      "sha256": "1ac689f7cc3b10c0d9ef9cdcd15fb8fd71e22d491c27d00191ef2f58662b642d"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-0-1366.png",
+      "category": "captured_media",
+      "bytes": 37644,
+      "sha256": "1ac689f7cc3b10c0d9ef9cdcd15fb8fd71e22d491c27d00191ef2f58662b642d"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-1-1280.png",
+      "category": "captured_media",
+      "bytes": 47286,
+      "sha256": "46e0eb3d2516a266068f430f6422b9d42dd12335abd516efe3cc1a0547d3a59b"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-1-1366.png",
+      "category": "captured_media",
+      "bytes": 47286,
+      "sha256": "46e0eb3d2516a266068f430f6422b9d42dd12335abd516efe3cc1a0547d3a59b"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-2-1280.png",
+      "category": "captured_media",
+      "bytes": 48978,
+      "sha256": "9a188f677e8f5b6581dca61535ef5fafe016ae4046e5bd078d8481d6ac4fce63"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-2-1366.png",
+      "category": "captured_media",
+      "bytes": 48978,
+      "sha256": "9a188f677e8f5b6581dca61535ef5fafe016ae4046e5bd078d8481d6ac4fce63"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-3-1280.png",
+      "category": "captured_media",
+      "bytes": 32333,
+      "sha256": "ffae581194432b5b6c1a08ca24e5154e74f1fec834e47e17120866c6812723bf"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/settings-3-1366.png",
+      "category": "captured_media",
+      "bytes": 32333,
+      "sha256": "ffae581194432b5b6c1a08ca24e5154e74f1fec834e47e17120866c6812723bf"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/trial-1280x720.png",
+      "category": "captured_media",
+      "bytes": 174881,
+      "sha256": "9fba7e1ebd2b7662af70f0a6273f253bc5adeda05621e858d66060a5b6714671"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/trial-1366x768.png",
+      "category": "captured_media",
+      "bytes": 176306,
+      "sha256": "465e96607215d1ce3f909ec65b6e839e710bff96ff293a95d29d920214f0de1f"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/window-capture-1280x720.png",
+      "category": "captured_media",
+      "bytes": 174881,
+      "sha256": "9fba7e1ebd2b7662af70f0a6273f253bc5adeda05621e858d66060a5b6714671"
+    },
+    {
+      "path": "docs/validation/cu-preview-corrections-20261015/windows-ui/layout-150/window-capture-1366x768.png",
+      "category": "captured_media",
+      "bytes": 176306,
+      "sha256": "465e96607215d1ce3f909ec65b6e839e710bff96ff293a95d29d920214f0de1f"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-final/external-records-expanded.png",
+      "category": "captured_media",
+      "bytes": 311713,
+      "sha256": "5128a5deb435958e3ab06e2d7820b1ba61d71c20802d672257a42e5b49067a51"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-final/microview-workbench/nonfreeze-after-page-switches.png",
+      "category": "captured_media",
+      "bytes": 55277,
+      "sha256": "42cb86712c3273bc35c08cb1d8f4f9bd79c8040bb0b3b594d3084f18b207c540"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-final/microview-workbench/nonfreeze-measured-reentry.png",
+      "category": "captured_media",
+      "bytes": 57016,
+      "sha256": "7c846ac4e85ae6771336fce721d0f7b75bd65a506349b59ecc7ba05831bf547b"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-final/microview-workbench/realtime-native-host.png",
+      "category": "captured_media",
+      "bytes": 55722,
+      "sha256": "5a9b934f84a7677f30a27715ffd2ba1fe932eb886abd1f9e3722b333d30698dc"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-final/records-expanded.png",
+      "category": "captured_media",
+      "bytes": 52557,
+      "sha256": "90469367de28835dffee2add46ddc327f62b189b50ef46563b9065ea09a49ac3"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 228366,
+      "sha256": "67e0cfaa464444f22d4315fb0b15e49af8a3a92e33773d3392575df01521aceb"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 128534,
+      "sha256": "c74227881bb6c116ec24dc4cb34277bcd6972436f7be2b90205983606b6e5972"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 169879,
+      "sha256": "ff4a4fe461160ca55d81e12d3b020c00181ea90f69e1df793e9015073c0b4cf3"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194/04-settings-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 249632,
+      "sha256": "8d497c6551a8a85cb653375606e94741144c560f3c14170bc4de323133f86c90"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194/99-failure-observed-tree-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 169881,
+      "sha256": "8f8455f868f5db67751ae335c93a080391bf877d7462e8a575bcf43ffac432cb"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194/save-lifecycle-probe.fdmproj",
+      "category": "generated_test_project",
+      "bytes": 3041,
+      "sha256": "aeda27f2e259ad1f722091a4ab896649fa6c0e49afa5d1977003bdd50d489676"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013257-2d491e5edc1649fb961d01adea859e46/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 228530,
+      "sha256": "eb5930ee63a5a9b81e404b1f06ab88ca16d7145110db34e14cc96e357b2fc452"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013257-2d491e5edc1649fb961d01adea859e46/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 128632,
+      "sha256": "b5daf6436557481fbd08fc90d7d23bb1d707911e029d795930d0e8fc09de709c"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013257-2d491e5edc1649fb961d01adea859e46/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 170004,
+      "sha256": "542b40a9993b34f263a101a13ca4c23b5b5c9b76f56986241bae31a0cf9368af"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013257-2d491e5edc1649fb961d01adea859e46/04-settings-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 249816,
+      "sha256": "13ce9d61a5bbb3364c35173262cb7ad0dbf01f8389f7e67c73f1f16d1b4156ad"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013257-2d491e5edc1649fb961d01adea859e46/05-save-rounds-complete-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 170006,
+      "sha256": "3a10502518f658b3375936d3de2d2d8b56d65e8e7d1f3146351afd9fe9016d65"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-frozen-gui/20261016-013257-2d491e5edc1649fb961d01adea859e46/save-lifecycle-probe.fdmproj",
+      "category": "generated_test_project",
+      "bytes": 10228,
+      "sha256": "f563ea125adac9bfaa2f8a338b5ce80840b54f8cbe4bc98869a9fd9596ef4f69"
+    },
+    {
+      "path": "docs/validation/cu-save-publish-20261016/windows-release/installer-build.log",
+      "category": "raw_installer_transcript",
+      "bytes": 2296632,
+      "sha256": "4edfb05ed5f1204457b08bbc43610cf0f15647b35d7d7257f5ce0a204fbcb450"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/inspector-baseline.png",
+      "category": "captured_media",
+      "bytes": 23076,
+      "sha256": "e887ada65f8f5aaf5fe9dac51b86b571c6b1aaac6aa0f82f0d9f628e04769719"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/isolated-profile/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 554,
+      "sha256": "23450d9e29dd0efa9bceb760e336cdd4cfd2b6db55d613cd92ac61f7b4e8efee"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-dark-1280@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18235,
+      "sha256": "91b0bc95b50541fd3c022205f6564f53725a2bbf994b9414c5ff09a62620daeb"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-dark-1280@1x.png",
+      "category": "captured_media",
+      "bytes": 124904,
+      "sha256": "a6eee8837eeca0139449bd16fca0b3d6d25d80dbc1b00fd3f88165aa760084ba"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-dark-1366@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18288,
+      "sha256": "ea1d935da6c2b7d4987c9f81966ee21ca84b52fea39ac065260ae6b0f3e89a8c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-dark-1366@1x.png",
+      "category": "captured_media",
+      "bytes": 125639,
+      "sha256": "d704624c0afe770d531f00f501084fa22d4735b23167d566deffc0f0cb6a6e8b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-light-1280@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18230,
+      "sha256": "d37eab1df1f14f00478be5985b2c7d47172c383b1eb69c411317f092e64db0b8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-light-1280@1x.png",
+      "category": "captured_media",
+      "bytes": 124763,
+      "sha256": "8809b4fbc624b1a48b5b7f749f1ed83c72ce4e5d5f93faa63535e552fcd7bf6c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-light-1366@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18297,
+      "sha256": "12b85444ec82ac79acf37245802d5ce9ccd5257e1483405a8c442a56597d69bc"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-light-1366@1x.png",
+      "category": "captured_media",
+      "bytes": 125530,
+      "sha256": "011f45e26cf177fdf5da1255c7f9268152b8ac1b3928286cbe9108573be349f0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-navy-1280@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18327,
+      "sha256": "6e51b277daf01492b8a0a70ebf052845f5874741f71b50b3523f2875fd0fed41"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-navy-1280@1x.png",
+      "category": "captured_media",
+      "bytes": 125751,
+      "sha256": "ccc69011adfc5e5c85e1a331f274f272fe7352137eba56dc370cfe92e64475e9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-navy-1366@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18392,
+      "sha256": "7a24f1f069be87aae28e16331ac113c5296ad60d519a8b12ca837b9b39ba23ce"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-navy-1366@1x.png",
+      "category": "captured_media",
+      "bytes": 126546,
+      "sha256": "efe1dcbfbb53e22b3f2dd5eaea64010017cc3d1279b26ccd2888f532f9bad5a5"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-warm-1280@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18342,
+      "sha256": "631a4017267ab8c93d641febd212961fa9d281250048be2ee94dd77e283e8d65"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-warm-1280@1x.png",
+      "category": "captured_media",
+      "bytes": 125609,
+      "sha256": "9e281417e320f12b92a5539ea0d93b68e5d4ad589eb2bbff4a8aa796b64a515e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-warm-1366@1x-toolbar.png",
+      "category": "captured_media",
+      "bytes": 18402,
+      "sha256": "afc248ed66b369b82febb903f8a152ff18386b2dd760ed9f3933127cebc3cd72"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/command-bar/main-warm-1366@1x.png",
+      "category": "captured_media",
+      "bytes": 126436,
+      "sha256": "84ab7e6c063e127cf24863daf7d3cd82e17db900eb154e82966174de2cbf7eb0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/components-dark@1x.png",
+      "category": "captured_media",
+      "bytes": 44393,
+      "sha256": "1ca5e48ec9c65b11cd505d087600c5ba081ee664366e78e81d18ffedec61af5e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/components-light@1x.png",
+      "category": "captured_media",
+      "bytes": 45531,
+      "sha256": "1c11ec5b184847b90f50269dcc9eda7ffd0e5f8f23a7ab0d4401eb03048eb658"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/components-navy@1x.png",
+      "category": "captured_media",
+      "bytes": 43727,
+      "sha256": "8f51b150f6d8dc7462140e453d4b5099bedf04fc109dbccfba7715fb90c512bc"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/components-warm@1x.png",
+      "category": "captured_media",
+      "bytes": 43612,
+      "sha256": "c3532e0505b67a8e1930b3edee7635e844743c8ba7e2002605543a9d5d4c4a2f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/dpi-150/components-dark@1.5x.png",
+      "category": "captured_media",
+      "bytes": 73507,
+      "sha256": "5a511ea40af0681573280267ac4fd683b1f6c7244cb328679f968882fff0e5df"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/dpi-150/components-light@1.5x.png",
+      "category": "captured_media",
+      "bytes": 75284,
+      "sha256": "0c73a93abee5ed1a524ebc5756a080d756a66c8fd1ac9379ec4a8fee0176d242"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/dpi-150/components-navy@1.5x.png",
+      "category": "captured_media",
+      "bytes": 72263,
+      "sha256": "a1468b9db98540de33534f08246733b8549402b75cdb74c3437e8d47ca047c9f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/theme-components/dpi-150/components-warm@1.5x.png",
+      "category": "captured_media",
+      "bytes": 72103,
+      "sha256": "5bae5b004b67446ae8082f4738d3123208d1b720d9118e0925d2a05a4a0192ce"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/extract-installer.log",
+      "category": "raw_installer_transcript",
+      "bytes": 293528,
+      "sha256": "642a9eb90a99f39943dbb68e16142625db814f173833873a8db8a81c663b0eb2"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224112,
+      "sha256": "3aa08bd58a28cdf1eaad06a8161b72f641f2ca18a396eb6ff8cdb71ae8966ef9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 60987,
+      "sha256": "106f5b5adefe9a931a994e7db71b53a220028694c75a0f1b7705d3ef0afb89a3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122818,
+      "sha256": "c690eeeb4a269f4a82a0b246286091fd5d1e0abaca6bfbbda400254cd2df8517"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 343877,
+      "sha256": "c8187c6b0b85846ed0cb06c9fc317ea8d5795eb7ace62864ae50935c8ec38360"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214141,
+      "sha256": "20b16bd5b87d322a78c3bd2ebd9400fa6b110600b70f9d765db74f78ae07d824"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 386148,
+      "sha256": "2f46ae23009fbefc9672b7984a134800af14375c7a8015976a5f1e8a0e7cf7b8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 159498,
+      "sha256": "53bd6b8fe0b74e9a9446750ef9c91b0747d8a72a147dde65317902845a0a01f8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 377688,
+      "sha256": "2c76f7fbd14472963e790dea94c7bddb21b91506928d51b9c2c09a845e76034c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214140,
+      "sha256": "5a24f70aaf84c8e6f6d3ecd0e49c9e46e2830cf80a14bfc8dd3f2d2d84337081"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 379585,
+      "sha256": "75aa38518d973edabc15713bb0500a03dd5345e9c500b39013d8bf2ef085c5fe"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 152510,
+      "sha256": "be5136090cf6458a0b8ac736ab74130d7ba2b50de1f55d98f206cb06ed2aa7d4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 381673,
+      "sha256": "cad7f8a03aab76048649112ee18aa0509e9f8333eee903ede2074dcea74d3388"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 209,
+      "sha256": "c4f3f4f35f720a45fa7162cb307f59b050136958cb9a3b5e69c5bf71da2b562c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8682,
+      "sha256": "945890f7c745245a2ee65ed299be9837c2a39c4c5c3e5c9c6c95a04a4385249d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-dark/20261016-181948-16bf39893f1549128d89fdb552d1d10d/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224080,
+      "sha256": "ef2c39c2179f8e50b1bdf699e281c0a4f96a5093020c8fa2e5b8596894973250"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 59391,
+      "sha256": "1f19d15fe8dc9f14bc8f7e33850b50fa415dae1c463bde6a824c074618fd6b68"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122794,
+      "sha256": "c81a86e3d3bc1298f8dc0971a72e3424ce6ddef522de36a33bd4416828f7e78e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 381576,
+      "sha256": "6cbe183d795f8306cf4a357bcad9ecbd346a75c83851cca215c579ab21f8530a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214126,
+      "sha256": "48259532882aab474dadf1c96e116b107777d6740873bf79e50bbdc867db7ac9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 440770,
+      "sha256": "f2fc36fd8dd46e2e66c1f63c473d9088b4080e36faf547797fee68156e66296a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 159486,
+      "sha256": "9fae4189118133bc60f5b61e14935bd99f81811d89fb01c4b475097ef93481d0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 427646,
+      "sha256": "08699c11f05f96c44b35c79e7784335009662e02e01dcc6ab27181adab7a4e21"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214125,
+      "sha256": "482a58e0c525b23a7ad864599aa6b31d8ce90811cd8e499023ce8e9cc76d4528"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 429330,
+      "sha256": "be7420f3c971c8b593ea7ec47ced7ddb2785777bb4f395b80eaee57941d47ec7"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 160917,
+      "sha256": "22af9a23810102ab7e401be9a377cd21c04f97f6e19406e95e8045f08bc64b73"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 433932,
+      "sha256": "a29ba22032de8107815d5cc27d32cf572b62c765b10dd7c2e7d5a76a87c1a0ec"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 209,
+      "sha256": "c4f3f4f35f720a45fa7162cb307f59b050136958cb9a3b5e69c5bf71da2b562c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8684,
+      "sha256": "040ac5968e7e406cadd212701c9060035347ee19bf72418659e977fbaf5b2fbc"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-light/20261016-182328-885570c5b6cd49aa9120030e420ac67a/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224408,
+      "sha256": "b5449c1385c188a2e6c9b55dfaf8930bcd040afe655fe6513e21b2a0356ce553"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 61352,
+      "sha256": "0f5eaf10e7f77bd13aa1ac925be60680a232360bffe95614ae7ebba65520726b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122977,
+      "sha256": "77fe42f842cd604b658e543843c374b82113bb91f7a5ad8a60e8335b953f463b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 389273,
+      "sha256": "226020a9a6cd49414bd0dada176436c75582305b447f035fdf98290b366c9cef"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214423,
+      "sha256": "99e4a54349002a7221982da7fd12fb889992211239612a132d4e3dac19663994"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 446073,
+      "sha256": "1113026d66b33ee20f69b013f0e5c8680923bbba0059c6b86bab21c26de76fc6"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 159701,
+      "sha256": "db8b0af4fa0983d141d6a6992ed38b75499b2f3e9bc257647707f04fdf677d50"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 446873,
+      "sha256": "55dc1c11c522cecb92df482c1c6c1d65ce6d118c36fefa139e58f21eb63e13dd"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214422,
+      "sha256": "e5ea33dafedd7368e9524100a471133bdfe003d343fe9eecf440e0ecfc6e0103"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 430337,
+      "sha256": "4964c5f24fb6bb14013fb1db45fcf91518cd4b577a0e0ea0bb3bf4a64d7260d7"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 148538,
+      "sha256": "22ec249f05bd9ab6f13b237c8368e5ee6300b51f78eeafedb067d92bcc7d83a7"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 444460,
+      "sha256": "83a857eb2271249e7ede97aa2663e2d1eacb19bbdcfe79330a4d3d932be0d440"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 209,
+      "sha256": "c4f3f4f35f720a45fa7162cb307f59b050136958cb9a3b5e69c5bf71da2b562c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8682,
+      "sha256": "f03d628565de2c71c133bbc5079816c36e05f23ed04bd1d9bb79babdf75af2ec"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-navy/20261016-182342-d2074470d49f494c973af0b105c83616/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224384,
+      "sha256": "a8838af916e5fda369554ad8f4ce3ed02c1d4f8808147d67377042d2d5c0d030"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 59875,
+      "sha256": "c595c0bd8ba716ad26603b54e6a59446cc63bb152e4e79b421cd321e5ff287b3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122958,
+      "sha256": "3e347c98619de1727e047109839aae38bf0878cb2c35a7728e783380123c4d3c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 373444,
+      "sha256": "1a8ba19551fb2927990bd6d978bf12060079f1b8b90d746d79d05ccb7a35ba47"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214413,
+      "sha256": "f23d475becba3fb358d4c51cb5fa5dd9e046961a0bee0bbd19d1b64bf715cae7"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 418203,
+      "sha256": "e53c64bc07d8ee4fd6bca571e4893825828a8d9b19947ece44e78a761a55e27b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 159696,
+      "sha256": "84745a077e78938f1b7d780aff93388d575e42b68a0f700edcd371f9e022883b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 420737,
+      "sha256": "806d65da8085c3bcaa4ea9e0980c35355711163de780ff3caafbc6ef6e5ae32a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214403,
+      "sha256": "7706c0e65da11f2e6685e4d654686ec1e9ca25fb8f67b61b2d987332dbe9496d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 428607,
+      "sha256": "013f50b4817363bdc226f6205545e417e902c469a5dac062488e6cff2545f46c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 161136,
+      "sha256": "f30a0e0e2dfbfbcbb26760c5a3770f78309bc1b1356d7def4f1fc55062f7fc72"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 414585,
+      "sha256": "c9338c065f0d182a4e80daec7aa97368ca08dbf7ac40dd6245c586e9f17cee53"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 209,
+      "sha256": "c4f3f4f35f720a45fa7162cb307f59b050136958cb9a3b5e69c5bf71da2b562c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8682,
+      "sha256": "737a9bfb373789be2d9ed4c3ed426abd247d3d11af5928ef931cfc93da0a8d66"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-clean-warm/20261016-182355-d03bb542cdb64fdaaa7a12c8fc50e228/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 107354,
+      "sha256": "4b27ebe2735972e4835baeb5f4de4aee758d06e975d02aef38b172b584f2bd20"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 38247,
+      "sha256": "e3071204e7bdbce4d8aa57921e6ef5131241be8a10e7a09125ef2c00fdbd8795"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122817,
+      "sha256": "0d740930203a3c8ff03f4457f90ff41ce2e358fee1003e6348671226187cfb99"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 384053,
+      "sha256": "4c45e5ea0df3c7a5cae44ff28f5093f8762e8109b90daa5fa45dbd74a62fba06"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214147,
+      "sha256": "e3a97410b08c896b536f6dcb8e56312b773d40b3547e01dddc1d1c65ffa08555"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 417436,
+      "sha256": "9ed5699ed19d52699ac5bbdb8a9f4a6355b8227d07290e0b450cd8ce41546aeb"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 159530,
+      "sha256": "4b521c7056d31fe3e8f60c416e7c5b764b095c46ddd974d5ea43799737eff2eb"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 403816,
+      "sha256": "6390aae4faba3e5ddf4d911ea5ec53371ee1f6ade3f89bf680216a275b52bd49"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214155,
+      "sha256": "2005a7a8f87d78331573002219ad03a3e10f02c7d087ec84f01ae306b8a63ba2"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 377811,
+      "sha256": "ae3af7d2598a0d07d6b1218cc2c16caa2350513f0e6a4eb4156530ac4e4780d6"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 160938,
+      "sha256": "729b7e6d1a2f95242ac286a9d063ebe8f77a5c7e905bbf24522c44fc6ce757ef"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 408408,
+      "sha256": "41965717a878d026de6ed0f29194e2f3a647aeb1713b1531a40d81c87fe85be1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/05-save-rounds-complete-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 214152,
+      "sha256": "a74b8308fe587ca6f9d72019b3cb3aeaefb58870d3f5e34b6c0c25ce0854f73f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/05-save-rounds-complete.png",
+      "category": "captured_media",
+      "bytes": 405408,
+      "sha256": "686d2b268d995e1c4034425eef4ec2cbad9259f69189a39048a884d1f0eb0c50"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 209,
+      "sha256": "c4f3f4f35f720a45fa7162cb307f59b050136958cb9a3b5e69c5bf71da2b562c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8826,
+      "sha256": "841c2610accac0cfaacc7eb02e85a5041b4a841cb291ce33e743a8dee51f927b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1071,
+      "sha256": "88cc0977cba490d23792bd73d19de756c1c80c149dcaf7d7cbdb707518415d35"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/save-lifecycle-probe.fdmproj",
+      "category": "generated_test_project",
+      "bytes": 17408,
+      "sha256": "08a8eb9375ba0fa56f44bdedcd6c81f6f1c678890bc8b9e3981a376b52839be9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence-final/installer-build.log",
+      "category": "raw_installer_transcript",
+      "bytes": 2319110,
+      "sha256": "d792cb074459d7b6c95f1af1f7967b7508a34e5c25b79527f311086608f60edd"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/extract-installer.log",
+      "category": "raw_installer_transcript",
+      "bytes": 293528,
+      "sha256": "642a9eb90a99f39943dbb68e16142625db814f173833873a8db8a81c663b0eb2"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224112,
+      "sha256": "4557368c6cd14c8d3fcaf4b014208a1dd5878a630bf5920efe59d40345f2929b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 60984,
+      "sha256": "9d1d6461207c84dec0555e2a86daaabb12f037fe5b660df35eea56833d5b0b56"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122817,
+      "sha256": "91496f0e6c396421a79fabe70d672a7de0d53ce2e2a58f197362b666f94e4af0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 211566,
+      "sha256": "423f057e8771cfbf1ce04c2ca1e57df2346eee5d6ef2ea286c8391ba24ea88b4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211032,
+      "sha256": "49f70752a743e74129180cfc808036837ace6a6cc9000589011041e73dcd17fe"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 954692,
+      "sha256": "f59a003baa4981eb1e5180a183a21721c66abf240cb80c4301fe68b5489a2589"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 156404,
+      "sha256": "fcd5deaa28b6c30ba0b4893386bc93343fd48b486500edee69973e45f1ec03ad"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 947214,
+      "sha256": "356de6f15138ed97a8c706c866e1fafe972dd68a6b5b3561dcc54711ba36d33e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211031,
+      "sha256": "df4b452fee09ec017d63e04a09faae38cb6a5581226c8b85e7b795f5f3271737"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 954460,
+      "sha256": "a2eff66bf82e60f7a35adf2ba4264963382dbe49b4f5c7f332e1376aae8dcac4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 157844,
+      "sha256": "2b85e66ee956a9c7c0542a6c6403707257e185bcf6f81ad4d0116d537cc9135a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 514128,
+      "sha256": "2e32e2ee4d55cda6911e211f37d12111aca646235d70fc75d943a87f65bb4b31"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 194,
+      "sha256": "e89a589c8cb9d5c47687f64a454d900a0bb84b1f863565373ef50d536455195a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8676,
+      "sha256": "2f33718c56fc6dbcf4371a318e143fd328dda567e272d6b27fdb2e639e0ddfde"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224081,
+      "sha256": "12e8afc2e9405c65e5054234e471819f3a785241501d5466af306513ec67199c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 59375,
+      "sha256": "86c599e2d944a403ccb4d48fb0e8d33b644af236959aa68e3baeb56d53c8d06b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122793,
+      "sha256": "46e07de7706d1bed4390e9a4bdd3cb215bdaa76c75701c1a77263007c8ce7cc8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 47097,
+      "sha256": "a4c79bc6ee0b24dfbe7cfd73676d639c0e806a145695c76981cd590fff36cb2c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211008,
+      "sha256": "741433d80c8727f0dc9a62a035869eeb4c7544b21a591651353c01defd1d821b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 58767,
+      "sha256": "306396fdc0972ef84054012552b63c5b61d465cee0647bd8ab789b5b3fc21c48"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 156383,
+      "sha256": "3531aec3dfc6b8f3e04f65bcba8ecc210b0bcb55a3a12fcfca8aee2593bf1f2d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 57283,
+      "sha256": "1f6ad0a7fc19091ea013d933f723c6e2eb1d6815ddfbfc6c1a218abaa88076fe"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211016,
+      "sha256": "84c370cc9deb47a6f93f644853818966a7b834bcd2b2683450563e0c0bdfa554"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 338039,
+      "sha256": "d3f9ab3285bb5d490d785ce4766ec46aac9fc26e6ce74c6cf4b8150ddbefebe8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 157820,
+      "sha256": "5398de8d1ae726ef6f2b1558cdcb47090d48afa7ab1c4d368bc144060f9dc4e2"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 54448,
+      "sha256": "b78e9488e651de81418d893b962308828f7f7c52f8f997b20ac24f0b2bc2704e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 194,
+      "sha256": "e89a589c8cb9d5c47687f64a454d900a0bb84b1f863565373ef50d536455195a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8678,
+      "sha256": "768a5549c2b6f14e80ea4b90fc2e6ca4ce73bfa595859c0e8d4518bf4db2e91c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224108,
+      "sha256": "5a93a839264d9dd5b1670d10d2228e09aaef7a86dc54eb449201cfff24de65df"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 61340,
+      "sha256": "7841d28bb49516d20dd2471dde75aa7c137b377eec2b5900983422e979b6f298"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122810,
+      "sha256": "5bf12c8a6a19ba632e8495103ad52d6cc9c36591c4b86484e45f5b20f259cff3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 47861,
+      "sha256": "6cf8bb5f31b4a7229b58a88b6cb7c77d3e7d05ef5063b6074862206132f00604"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211025,
+      "sha256": "e53264927a9f892286209c2cfbe74b9cb89e27e0389f05bd6781711a5228e725"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 73067,
+      "sha256": "96357e211ca79f76159738ea39da6f1262f45580800fec3386d18791fbe21a95"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 156397,
+      "sha256": "b42306dd0dfdd32cf879bb6a4b8a5c7379bc8c9b96bd90f9f52e567553424dc3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 937765,
+      "sha256": "3b0f26088a6c7b9fd922df98abb82975343f7c739c7d1be396babcb88a16c66c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211024,
+      "sha256": "bc18d31270cea7b592c291c5050efd25503b89c5d9d829f627633da4b532b633"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 932247,
+      "sha256": "a4b83d23d8762ceaea16224f3687d489b0ddde96cda62d2eeec5a5cdb7838523"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 157837,
+      "sha256": "9ca800beaed762d100a1b04aa08e4a7db9853e2b76ec74a00241ed397fb180b8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 933862,
+      "sha256": "933328574484f17f80a3b0a57ce2175266899576db4785756d1c03b5d01d2f64"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 194,
+      "sha256": "e89a589c8cb9d5c47687f64a454d900a0bb84b1f863565373ef50d536455195a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8676,
+      "sha256": "6bc1588a79113cc1475d3fb1669473d723dcab787eb4fca8dc034e8cc8a07cba"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 224380,
+      "sha256": "a82a835914fbd7370eb5bbaf9d127a93d72728dd8e6c5522dc942770c8ea3757"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 59865,
+      "sha256": "950b1fc0c4da1d7f8efb199468451d50a891c6bf910ee46644322be988b6925e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 122954,
+      "sha256": "e09f1e55af66a92072dfb2e5610f4f2a0d841f16aac0af66340efe8288e66fda"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 47290,
+      "sha256": "95207ffae2d119c99ea8e55e009a8b8506f7870cef8c0d7da60e944ada0d6c8f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211279,
+      "sha256": "d6612e9e2e7c5106d5fe96f75c71c21aaa3dc245dd51057b2adab2a41365e09b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 59026,
+      "sha256": "f3030515e4b555a08d1368f7bcfc435a9314b8082fea414b5bed1249dc44521c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 156592,
+      "sha256": "88b126f29d9852dbf5d6ec28115e434a4ebfc490fea2252f2d6a3a6b43225527"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 62300,
+      "sha256": "a25eddeb2651e401dfdde98408ebb9d0b35c09d15e5e98598c3df09ae8934431"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211287,
+      "sha256": "736ca266dcd575f7f698a407cf843752133c1bfbf33339b590cbd6d15b4bc415"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 66575,
+      "sha256": "51c79c71dd60b07a9e95696872fd3887b40ccb0852dc924187144d7d9212cb5b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 158023,
+      "sha256": "2fe5a9da02667db049449bac4e2fcac2efcfe1a96a1f589ad8fc0d11ece9544b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 62635,
+      "sha256": "aaa02054f1a91f2946edd0e7f38cea40e537808e95818962d21974c1d690f613"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 194,
+      "sha256": "e89a589c8cb9d5c47687f64a454d900a0bb84b1f863565373ef50d536455195a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8676,
+      "sha256": "04f96bcf35b07908acfcce43720c55517c24db354e289c3f0553d3e04b1679be"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/01-main-before-menu-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 107555,
+      "sha256": "cc36ff1183937229a6a522fb33695b472b2a08011476f335a5e5dde55f637bc4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/01-main-before-menu.png",
+      "category": "captured_media",
+      "bytes": 38267,
+      "sha256": "0081f73d37f868a5f32f633878fb26d15a8faa7f32f9f7681136de60f82e9d05"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/02-acquisition-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 123057,
+      "sha256": "5bec4709a712ec0ec973a75be1f5b1fecbefcce73a0a153b2ca56265683978b8"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/02-acquisition.png",
+      "category": "captured_media",
+      "bytes": 47460,
+      "sha256": "23f0deb9be13ffd9d4f414e9d3f90125e59b0a16361a2ecd687d347d83531edf"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/03-content-reentry-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211435,
+      "sha256": "a44ff6320a97d9380c3d1b3d2373b82fad1d3cd5ebaf9ac0bcfedc30d6379297"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/03-content-reentry.png",
+      "category": "captured_media",
+      "bytes": 58365,
+      "sha256": "7e4a3c0cda1dd38fd6f9f956ae65c28fd5b6ead64416808582e62d799d34b01a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/04-sidebar-报告-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 156737,
+      "sha256": "f8e51fefef4f943bdc2d76793e47830a2454113b29d4ffa13fca8242de68ad94"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/04-sidebar-报告.png",
+      "category": "captured_media",
+      "bytes": 57807,
+      "sha256": "a83a2128aeb4e507dfeb36fb1ece3a20e9a8b1e3c2e8629c2743d9bc9cb98b17"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/04-sidebar-操作-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211443,
+      "sha256": "0a6e1c0966eec43ab1afb603ffef285df98034c4c07561eebd83179d8ed59662"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/04-sidebar-操作.png",
+      "category": "captured_media",
+      "bytes": 58635,
+      "sha256": "e62af36a87fb8abeec1a4118d1eb7208193c45d8357bc8d4fd868b3e7cee6f03"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/04-sidebar-记录-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 158154,
+      "sha256": "60cd2c0847d563e2d6e72e80f2926dfb968ca6c8dee3e8bc122f8b7e7e4cfcbf"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/04-sidebar-记录.png",
+      "category": "captured_media",
+      "bytes": 56111,
+      "sha256": "1d775b7ae1e9041d83e680e8b2ee62a561050191e539f1364943c256115da38a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/05-save-rounds-complete-uia.json",
+      "category": "accessibility_dump",
+      "bytes": 211449,
+      "sha256": "6ddf45566c105fcc9c892b940675867af5a013da3db141bbd3dcacaa894a6d42"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/05-save-rounds-complete.png",
+      "category": "captured_media",
+      "bytes": 316064,
+      "sha256": "30b5917d4f04ec0e7b2f26ee70fb1c5cd91f1b7c1ab2a937d1c4a84b2bdaf83f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/isolated-config/FiberDiameterMeasurement/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 194,
+      "sha256": "e89a589c8cb9d5c47687f64a454d900a0bb84b1f863565373ef50d536455195a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/isolated-config/FiberDiameterMeasurement/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/isolated-config/FiberDiameterMeasurement/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8814,
+      "sha256": "44523c6aed0bf7914e26ed8dad77620e35eceee2b208531fb864c8c2ed9e1861"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/isolated-config/FiberDiameterMeasurement/trial-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 61,
+      "sha256": "12f34b4cd30c8957e3373df3202c3dee02e5d46afb6d8f34e7da9dcda7f16924"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/isolated-config/FiberDiameterMeasurement/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1071,
+      "sha256": "88cc0977cba490d23792bd73d19de756c1c80c149dcaf7d7cbdb707518415d35"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/save-lifecycle-probe.fdmproj",
+      "category": "generated_test_project",
+      "bytes": 17408,
+      "sha256": "e6f51ba66aca8f7d1408b154d77bf12521397eeaa94125908f1e4ac774e8c34c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/installer-build.log",
+      "category": "raw_installer_transcript",
+      "bytes": 2319260,
+      "sha256": "00da3e17807e53e2bb7d40c587707a3ad218c363d3c2845a0ae43a839727ccbc"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/isolated-profile/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 212,
+      "sha256": "198817daf66b14aac79c9676a302a7cc7436cfe5a95eaae1694a956640ed391f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/isolated-profile/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/isolated-profile/capture-rulers.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 186,
+      "sha256": "7d549fd187c7357a4a94a6c90e182179cad973f662f3e80e68ff9551cd782f4b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/isolated-profile/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8754,
+      "sha256": "9fdd4f9155fb9bc0a4379cbaf6bdfb66f4d4910b4beb3f9ef9daf2c0d6c1f67e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/isolated-profile/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/nonfreeze-after-page-switches.png",
+      "category": "captured_media",
+      "bytes": 75661,
+      "sha256": "4faacd37435f53c6b61a1d81f0ff6fc368d2436c65a5f56a672dcf3118790800"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/nonfreeze-measured-reentry.png",
+      "category": "captured_media",
+      "bytes": 76926,
+      "sha256": "6771227e6eb5adf57ae4060bc1bee2ef5a4c318db1862aec94f16bee630d8637"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-final/realtime-qt-pixels-hidden-sdk-host.png",
+      "category": "captured_media",
+      "bytes": 68222,
+      "sha256": "6787e6f639a0fff2f77ee842ad71f23af9a0b8b105a8ea0430870a99414a71e4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/isolated-profile/acquisition-display.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 212,
+      "sha256": "3fa447cb171a87968d8f943e1c78f5abae53d355e9cd40e298ffea67562cb6a2"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/isolated-profile/acquisition-workbench.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 25,
+      "sha256": "c3b4dc2e0bc9adad7a352172a28ba980370c5e1f5975edd38c8718457307d7f1"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/isolated-profile/capture-rulers.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 186,
+      "sha256": "7d549fd187c7357a4a94a6c90e182179cad973f662f3e80e68ff9551cd782f4b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/isolated-profile/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 8754,
+      "sha256": "f9a5410f1e4632f192a9e2dd90b8f77d99049d84f66c0578861ca28518890e69"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/isolated-profile/workspace-layouts.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 1069,
+      "sha256": "005471c96326095d9c52501205100b6a269fbeefc5146697450cbcc0f6d45a84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/nonfreeze-after-page-switches.png",
+      "category": "captured_media",
+      "bytes": 75597,
+      "sha256": "727275d0a2031093e99605f4d501e55d9ec5fefaf1fa614bbe9fbd6c5151a842"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/nonfreeze-measured-reentry.png",
+      "category": "captured_media",
+      "bytes": 76926,
+      "sha256": "6771227e6eb5adf57ae4060bc1bee2ef5a4c318db1862aec94f16bee630d8637"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench-retry/realtime-qt-pixels-hidden-sdk-host.png",
+      "category": "captured_media",
+      "bytes": 68222,
+      "sha256": "6787e6f639a0fff2f77ee842ad71f23af9a0b8b105a8ea0430870a99414a71e4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/evidence/native-workbench/isolated-profile/settings.json",
+      "category": "isolated_runtime_configuration",
+      "bytes": 6976,
+      "sha256": "263a9b15b653fb1c7db60264cb5fbd5d2b8c0cbdf0e1fc3010091690d25c91ac"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/frozen-dark-1366x690.png",
+      "category": "captured_media",
+      "bytes": 954692,
+      "sha256": "f59a003baa4981eb1e5180a183a21721c66abf240cb80c4301fe68b5489a2589"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/windows-evidence.zip",
+      "category": "raw_evidence_archive",
+      "bytes": 9152642,
+      "sha256": "c3903adc757eda5d946500710160912a2cc6f2436aa65729a387dcf5753e7666"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/windows/windows-final-evidence.zip",
+      "category": "raw_evidence_archive",
+      "bytes": 11357628,
+      "sha256": "533693841363eeff19215e10bb3590b2ab3a6f166e4ebe961cf90c7080ae51c7"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1280x670-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 156742,
+      "sha256": "d0921d3aa595649a241b72dd44323bb6b53ea76e1767703d0f241f67d15ef442"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1280x670-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 159431,
+      "sha256": "aa2404e3f1c8117d514569a4410ab9e01c6324ee7fb0c2279e4eecd1c903bd4b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1280x670-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 129846,
+      "sha256": "c8e50fee71d21d3f2100aa96f126d124e93bf412c459a639ab44e43459907a5e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x690-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 163596,
+      "sha256": "852a5937a2a416c7d29501314daa888b1650b64819929db4e5af229ae0a888c9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x690-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 166109,
+      "sha256": "de0880432024ca3c0120659cf2c992949b1179742aab7e6307edb31e6cd2c278"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x690-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 134332,
+      "sha256": "d5a3ee4b524f0847efa2d99237cfcbd1a396b2187fd554dbe3ec33db11d6ff66"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/capture-error.png",
+      "category": "captured_media",
+      "bytes": 105440,
+      "sha256": "ae497b6491074384d4b99e42a2dc6d857897b8157ced9d0aa66809fa1bb66fa9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/capture-no-device.png",
+      "category": "captured_media",
+      "bytes": 96358,
+      "sha256": "ae0c1aceb76dcc8de636b3bdd5eb69b6d64388eceb661fa3f0f89f474a195a19"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/content-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29130,
+      "sha256": "0c561cb4849187917db20e55ad20df608acf3435b01e0d0c90af9b8b24a8883d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/content-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21449,
+      "sha256": "5d42aa3edf2ed0250f326b15c374fbd840d9a3d425ee98770e0274a928075670"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 179629,
+      "sha256": "ca15762800e9daedb4dae036ceb48cb0054db577258d7088f29c69f87dd5d9be"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/content-records.png",
+      "category": "captured_media",
+      "bytes": 166732,
+      "sha256": "d6ba95d674056addeba0709f9d5684c270cd9efdb0e48bb8470df8b6221a3979"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/content-report.png",
+      "category": "captured_media",
+      "bytes": 191125,
+      "sha256": "581f699ed1c72c544bf4e441d2c52cadbe230a9e23991909ba92f7e811482567"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/diameter-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29130,
+      "sha256": "0c561cb4849187917db20e55ad20df608acf3435b01e0d0c90af9b8b24a8883d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/diameter-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21449,
+      "sha256": "5d42aa3edf2ed0250f326b15c374fbd840d9a3d425ee98770e0274a928075670"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 175854,
+      "sha256": "c6250b60b1baac5607963529a4242182b9bb7bd716fa137bd9811abd5d9f358d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/diameter-records.png",
+      "category": "captured_media",
+      "bytes": 166402,
+      "sha256": "942390bb83006a5bfa59fc5b78cdcd9926077455b5744628e2c105e654366bf3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/diameter-report.png",
+      "category": "captured_media",
+      "bytes": 201657,
+      "sha256": "5754f8abcbe8c18ee425fb23dceeeeff419f08adcb3cf884552546a449a8d36d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/digital-slide.png",
+      "category": "captured_media",
+      "bytes": 202077,
+      "sha256": "b4440199152c22f4d19315bd235a153c274a27def0b53e35aa3ffed07739e7e3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/measurement.png",
+      "category": "captured_media",
+      "bytes": 126374,
+      "sha256": "9448a42ee040a84cb2e09a963d72907cdb8df18a17174e2d67a38cbb97db42ec"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 144026,
+      "sha256": "4ba1e35cfb8b1958ec23ad51303939b52c78884651c3a1c772c899a6bbc0a826"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-0.png",
+      "category": "captured_media",
+      "bytes": 51197,
+      "sha256": "875f02493bd8918bd9f459bf82ab1cc2abd7f0c27dea3c93db1a1c042f1ab290"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-1.png",
+      "category": "captured_media",
+      "bytes": 89539,
+      "sha256": "c84758727bf408c2b81a73380901d10131e67a0a841fc0f743764d8c8f279094"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-2.png",
+      "category": "captured_media",
+      "bytes": 95241,
+      "sha256": "e81a9c754f17ef7951baa035e8aefeff26eab4acc3942d6d5132056792600c41"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-3.png",
+      "category": "captured_media",
+      "bytes": 94469,
+      "sha256": "1eb7a8287ea34b223e0fc944490e5a2a33f08a7c2d5150697f6cd8eb64af5247"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-4.png",
+      "category": "captured_media",
+      "bytes": 105939,
+      "sha256": "b9e7b4f037751eab2efa1e1b5862c5471f410f7d519cc70a7144654273b7adbb"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-5.png",
+      "category": "captured_media",
+      "bytes": 72470,
+      "sha256": "61fcec69f6a6f0ff9dd9e0d1f6e41d9b5de307927331dbb4dcc8ee856a6b2a89"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-6.png",
+      "category": "captured_media",
+      "bytes": 91049,
+      "sha256": "bd47c1930e1636bfbaef255c71acb3b7581720978d2305d9503e79a583c09514"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/settings-7.png",
+      "category": "captured_media",
+      "bytes": 59687,
+      "sha256": "80886a38f6806f70b5733233d21cde204a2e0411ed2f7e682aaaa18ebc4df2f7"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/trial-capture-error.png",
+      "category": "captured_media",
+      "bytes": 126832,
+      "sha256": "d330a94f385f852b104e8a77eec80c72e4a8b1b96805a35775591e2d5b4d7ede"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/trial-frame-restored.png",
+      "category": "captured_media",
+      "bytes": 186874,
+      "sha256": "8ae0d74c63c2efcccbbc130932ae8e5cab978a6b5bdd593d1690e8cbd1930f91"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1366x768-1/trial-no-frame.png",
+      "category": "captured_media",
+      "bytes": 127473,
+      "sha256": "49d78f657f4b8337d3ed5ea98bbca7099285a6bcdd835347150922184a0d6312"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1920x1080-1p5/capture-error.png",
+      "category": "captured_media",
+      "bytes": 178817,
+      "sha256": "2bc90aa468dc28e48323eec53b3d8ad966c1ac9542395ee4692c12445f3c0d53"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1920x1080-1p5/content-operation.png",
+      "category": "captured_media",
+      "bytes": 271945,
+      "sha256": "8a83bc1526244ec38fcee179464dceb4e3ba9e03c3c048695c5da39721d67f2d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-1920x1080-1p5/digital-slide.png",
+      "category": "captured_media",
+      "bytes": 318232,
+      "sha256": "48a684b671ea9de742f737680c58abff3d253d3a6f2b8ed233d58a03314d823d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-3840x2160-2/content-operation.png",
+      "category": "captured_media",
+      "bytes": 451115,
+      "sha256": "9eb4ef5d8dce6d3e5f16e2df40fe59db55dcea37c88882f5a90df4593f8ad34c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-3840x2160-2/digital-slide.png",
+      "category": "captured_media",
+      "bytes": 545479,
+      "sha256": "7ddfbdec7246b4cf9222ae6a7c17c094f288a711f4c30b0196c9831125346dc9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/dark-3840x2160-2/realtime.png",
+      "category": "captured_media",
+      "bytes": 379308,
+      "sha256": "d152760b0cab940797603079c0dbe958aa8f03b2855d7e0331ff77a320f0711d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1280x670-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 157651,
+      "sha256": "3de1e201644958c251d2a5ad8982839d497e72586f5c614af5045b998a4a0dd4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1280x670-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 160105,
+      "sha256": "5fe577142a893cd68c955778d43051ccd12b1c92c60078c5b373dfc502e860df"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1280x670-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 130975,
+      "sha256": "aa6609d81aefe4d95feb2b9638664dbb8c13e5ef1536ee8d723c2f3379e8b86f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x690-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 164417,
+      "sha256": "99eff656c72f942fc15d50510602a93ce60a8bb2c6985293885ca738b5309f30"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x690-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 167058,
+      "sha256": "e2a8142b203d24dc198165d40ec95856a80a0119d7620ac71947be708559511c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x690-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 135814,
+      "sha256": "26019462685daf4fa5a0bfa11c416365f6c92dc7337351b0ab32ff93b003dc8f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/capture-error.png",
+      "category": "captured_media",
+      "bytes": 105612,
+      "sha256": "29bf3b4f0a882f9c3d609f39238297c80bb47071c6ae6bbc43f105d52266fb5d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/capture-no-device.png",
+      "category": "captured_media",
+      "bytes": 96681,
+      "sha256": "ad00f11bcc6c2da591a21be9f38674bf6bbcf7c2ad74d43325acdc7996ce09b2"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/content-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29065,
+      "sha256": "85aaf4cf927b9fcf4eaba1de3212f3813258a528747e53ef56a077c22d5b9e45"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/content-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21367,
+      "sha256": "9e8d7f6994648d29aeb55ebe92c1ce445dd5730dcb22f85a0324cd0062c4b9b4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 180721,
+      "sha256": "86db013a0adf7a77d0c1efe2a8eacb3ff9dce11a2fced6064865c4ec48720e85"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/content-records.png",
+      "category": "captured_media",
+      "bytes": 167585,
+      "sha256": "5d43137003c1077045a01fbc1b8523fc8f32abda99423d1f63a5d65494c94c93"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/content-report.png",
+      "category": "captured_media",
+      "bytes": 192244,
+      "sha256": "5cc07228ba2142a191e5f21603ed87a00b3d810a3c8946a2d781f625c4af2832"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/diameter-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29065,
+      "sha256": "85aaf4cf927b9fcf4eaba1de3212f3813258a528747e53ef56a077c22d5b9e45"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/diameter-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21367,
+      "sha256": "9e8d7f6994648d29aeb55ebe92c1ce445dd5730dcb22f85a0324cd0062c4b9b4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 176787,
+      "sha256": "00cb8f91bb3d25e2170cee7b262fd88b2e191c0d723caceb7fb9eb352039a2c3"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/diameter-records.png",
+      "category": "captured_media",
+      "bytes": 167262,
+      "sha256": "c9f7d7c712a493a8c7102be0a0079edad8903cce4ad0ceabe6df5a179e727c9f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/diameter-report.png",
+      "category": "captured_media",
+      "bytes": 202926,
+      "sha256": "bfa8a54369fe99fc097b32eb3e494539a509e323a740577f30e6ff4042fa5126"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/digital-slide.png",
+      "category": "captured_media",
+      "bytes": 202524,
+      "sha256": "bcdc59f3ccc4a3865847d0abf02fcdc699c37ec7f987b2c759c46c55a55fd0e5"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/measurement.png",
+      "category": "captured_media",
+      "bytes": 125961,
+      "sha256": "bd25faa0b638d324de2010c383a983a1d0c2b9ad27d731bf8abb22a15e45ea4d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 145566,
+      "sha256": "424600e178cdc9e3f415791b029031e391042d6c3ca55b3b8818210af512ee50"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-0.png",
+      "category": "captured_media",
+      "bytes": 51855,
+      "sha256": "e37c9881f675cec9fbeb9f0d7dfeafc938d082b0099552e75d4f662a9b53983d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-1.png",
+      "category": "captured_media",
+      "bytes": 89554,
+      "sha256": "ac6f4d2c322f537cb28941aff9959394c5661211ea89d903e5e734abf0729a83"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-2.png",
+      "category": "captured_media",
+      "bytes": 95524,
+      "sha256": "a2ebf9900884528131d2008917628a4cf88dd522e0e6ce6dc585cc380417c34d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-3.png",
+      "category": "captured_media",
+      "bytes": 94956,
+      "sha256": "fc510b166b9c97fb1ce22094cba9ef26023e05d3fdc39f7f890d2e7f804eb3aa"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-4.png",
+      "category": "captured_media",
+      "bytes": 105886,
+      "sha256": "fbe271c16cc24485814e0b9f6f6eb33aaddcae370f0e70ce3489e007efbf0498"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-5.png",
+      "category": "captured_media",
+      "bytes": 72204,
+      "sha256": "fe5e48adfed9dec4e6d85e3d3e466df1754eb5bc1f3eb47fcdea41461835df4f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-6.png",
+      "category": "captured_media",
+      "bytes": 91307,
+      "sha256": "d4c95e5ed43fb3489529b3be65c790efea770cfd9e7499329c664f2ee8ceea37"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/settings-7.png",
+      "category": "captured_media",
+      "bytes": 59362,
+      "sha256": "37948d64b80b18d2c52631d94d2d9dc150beb0733751e2e95ba7aae8a431a87c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/trial-capture-error.png",
+      "category": "captured_media",
+      "bytes": 127166,
+      "sha256": "da81a2bc84997830a49ca7f60bcc49bf1e7d4c64cba2e7fba961c8f5d681e452"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/trial-frame-restored.png",
+      "category": "captured_media",
+      "bytes": 187911,
+      "sha256": "645f051e4ca409949e873e8ed9814e5ee21e0ee431d3259a1543ef192bd22a89"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/light-1366x768-1/trial-no-frame.png",
+      "category": "captured_media",
+      "bytes": 127948,
+      "sha256": "f61d0d16376514544a9e99098977f077dccbd25d22567f5ac8cffc589ade381c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1280x670-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 157056,
+      "sha256": "97c492b1c1bf80f5f5a00f0d91016c3d0bc4ecd181654e8f0100b8962efcef83"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1280x670-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 159989,
+      "sha256": "839da54e95a7042129c7a1ab47cbf590fa834ec14e71978d28d88e4d6e360f77"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1280x670-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 130248,
+      "sha256": "29ba16443fab70f6e3c2db12f59be39ab15aba6792241b38ec615cf9474a4531"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x690-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 163764,
+      "sha256": "0adab9c6a6a2bc568a91d63bc18f79c4ac3ad0ab0bea3e336626bbd747f4c687"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x690-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 166630,
+      "sha256": "ba96e193c5ee312eb83c9c27b82972b4b8e527df5e5aa2c55bc1a59b9e4fa01d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x690-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 134989,
+      "sha256": "0047917c4dca77b6b230939151390398bcf23ef4ecb91b7f11285ab93f96a94b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/capture-error.png",
+      "category": "captured_media",
+      "bytes": 105836,
+      "sha256": "b1333d40ddfc3cf8c099e18b39cd0ef58e081a2f543c1a02f93d9fb04d6b605f"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/capture-no-device.png",
+      "category": "captured_media",
+      "bytes": 96612,
+      "sha256": "6775d33fa8d218cbfee7cf6f770ccdcc0e34f483902f9f2c85ee46f3b58dd9fc"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/content-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29180,
+      "sha256": "17f1687b8ea236cae6e480434d3900cc27b9d7db2aacdf3d129e858fd23f1365"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/content-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21600,
+      "sha256": "a91fbba169c8a22d4ea16060e108e3235d118607d285f723fd58df9a06bc08bd"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 180026,
+      "sha256": "ddc0b83e2d0add459dd3ac7634a962614bf8af9e5cb1f802e429ec227973170e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/content-records.png",
+      "category": "captured_media",
+      "bytes": 166969,
+      "sha256": "1b246784549e1f8e7bd32368d85d11aa7ed22403a37c0ffdd565a0caadc442ab"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/content-report.png",
+      "category": "captured_media",
+      "bytes": 191354,
+      "sha256": "86b4d9bd2c3aacd064a21be2b769a106e0d5300e168e4271cce5bf1a8ae8e5b9"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/diameter-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29180,
+      "sha256": "17f1687b8ea236cae6e480434d3900cc27b9d7db2aacdf3d129e858fd23f1365"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/diameter-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21600,
+      "sha256": "a91fbba169c8a22d4ea16060e108e3235d118607d285f723fd58df9a06bc08bd"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 176039,
+      "sha256": "6b0e67b4751b013cb68b9cb9c819131b507bf1bb5f8030a0398e3600d9e31abe"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/diameter-records.png",
+      "category": "captured_media",
+      "bytes": 166616,
+      "sha256": "b09a2555c9974398b4c9f0c8d201aa1a280092e1aeab36df845d08826637a350"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/diameter-report.png",
+      "category": "captured_media",
+      "bytes": 201790,
+      "sha256": "cc3235836b284cd6de882c20f79dea59abdf1ca8aa319c194aca1f5855d2265b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/digital-slide.png",
+      "category": "captured_media",
+      "bytes": 203363,
+      "sha256": "259ed8dd744b10ca9bc3c34f9b20a306139a3b024e741d328bda001791ab3875"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/measurement.png",
+      "category": "captured_media",
+      "bytes": 127303,
+      "sha256": "e2fef5e1da75c951ff490496e2c588dbfc425c096c0fed612af1f8fd45a4d08a"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 144570,
+      "sha256": "30d25a6a7d33d7353aedd38aec5621c4d895c0ba5051095ad55dafb56468d599"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-0.png",
+      "category": "captured_media",
+      "bytes": 50829,
+      "sha256": "862986f61403c2358fd0b5cc430f8b4e2f8011d77786b9af966900c12ff0f039"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-1.png",
+      "category": "captured_media",
+      "bytes": 89694,
+      "sha256": "01a64823cd4f4771e9826f8b8d2f7be8c98bfc0fd5fdb228336a61550853f637"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-2.png",
+      "category": "captured_media",
+      "bytes": 95830,
+      "sha256": "a2c38b2249ac6d1534f98b38e357d4dabb78014dad47985a0d47c16ad9497150"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-3.png",
+      "category": "captured_media",
+      "bytes": 94827,
+      "sha256": "e937be6956d2bd8c61383620ad94af9e0b0c3956bf32013ed7aae428a28bd054"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-4.png",
+      "category": "captured_media",
+      "bytes": 106527,
+      "sha256": "45ab26442b17363ad4a9533555062ca0822b7f206f223f6f23337a383ec5b977"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-5.png",
+      "category": "captured_media",
+      "bytes": 72836,
+      "sha256": "ad373b41d5ec4e5b0bd1a4de9e0d8c9933f2f4ab96f0c6acd37d81770d81ed6d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-6.png",
+      "category": "captured_media",
+      "bytes": 91699,
+      "sha256": "948e50e07a32480c2fbacf93e841a88f7ecce9b14e265c2d7c972cbc4b08dbb0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/settings-7.png",
+      "category": "captured_media",
+      "bytes": 59822,
+      "sha256": "ee65e118cb8ac8d6ab934f14a024da2eeec091e49b7378a21c3175497000d78d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/trial-capture-error.png",
+      "category": "captured_media",
+      "bytes": 128023,
+      "sha256": "b1afff4fdb4dc5ead39bd6865378de6d8bd5d9f7c6c49c715e9f965ad9035412"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/trial-frame-restored.png",
+      "category": "captured_media",
+      "bytes": 187220,
+      "sha256": "220ec39d82734ef9af5698e4286a7884e76ffc16d6283a031a8fbc6fe2e2fea4"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/navy-1366x768-1/trial-no-frame.png",
+      "category": "captured_media",
+      "bytes": 128710,
+      "sha256": "0850ba0b608b487dcb955a1a8b442b88af7c62ad6e2e1825234fa3fb66e7a647"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/recording/workflow-offscreen.mp4",
+      "category": "captured_media",
+      "bytes": 1817580,
+      "sha256": "8969634a96b6b11648701aada9c62e5814002438543159c44ea452ab4f2ee257"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1280x670-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 157129,
+      "sha256": "0bde8bd7da61f230e2260b1e1e9551c790de106010b595e3bec7d9083d7e9f28"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1280x670-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 159623,
+      "sha256": "58713dac0b0fec76275651ef74f72ae7f20b56287d935a109ec9f8168cb53e42"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1280x670-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 130542,
+      "sha256": "36ea7decab5c6e3289099e7f9efaa38a40495af6421b1669a3baf2e5b7608b84"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x690-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 163848,
+      "sha256": "1f9cc9874e690a41d01266ef48145f7025e2572a74a4c8119ea52425c5ae1e91"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x690-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 166233,
+      "sha256": "ed3215070a3adf52e361bb8a01ae73373be50b0d9851d2efff7c046d19f5581b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x690-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 135120,
+      "sha256": "e222ba971cc50a88fe807881bbf6960940c5887e521e721ecad7c6b81b5f52ae"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/capture-error.png",
+      "category": "captured_media",
+      "bytes": 105698,
+      "sha256": "9ebdfe84cc8a7b72886e480f868a9738e86c664615e6267024965cb1b6e477b5"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/capture-no-device.png",
+      "category": "captured_media",
+      "bytes": 96625,
+      "sha256": "81d4e626c284c0835e1a309fc88c96851425708db37f272a76222022fe00d95d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/content-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29064,
+      "sha256": "896bacaba5e0c5f3d0b2c92feae05d9a640a0467db5c411221143444d2ebb4da"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/content-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21522,
+      "sha256": "942573f560867d0940fbc076e8e92b16e81c1e3f782293c12ea3a20fa52f494d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/content-operation.png",
+      "category": "captured_media",
+      "bytes": 180175,
+      "sha256": "a7023a9f7ac898da66454caf78acf0b0bafcaddd17c63b05bd8858af72324adf"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/content-records.png",
+      "category": "captured_media",
+      "bytes": 167230,
+      "sha256": "261700adb5486b056654714f501f34014cac5dffb94a8a280f295a2dc5413888"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/content-report.png",
+      "category": "captured_media",
+      "bytes": 190953,
+      "sha256": "29744bd864fd6fa9ecec979ac62adcd31b60959035f08a6f9e03b8b5995d991e"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/diameter-advanced-0.png",
+      "category": "captured_media",
+      "bytes": 29064,
+      "sha256": "896bacaba5e0c5f3d0b2c92feae05d9a640a0467db5c411221143444d2ebb4da"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/diameter-advanced-1.png",
+      "category": "captured_media",
+      "bytes": 21522,
+      "sha256": "942573f560867d0940fbc076e8e92b16e81c1e3f782293c12ea3a20fa52f494d"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/diameter-operation.png",
+      "category": "captured_media",
+      "bytes": 175926,
+      "sha256": "cf3cb2feb42451f18f6d08f75f578e8cba0d6d84a491875a77e50e93dc10f3bd"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/diameter-records.png",
+      "category": "captured_media",
+      "bytes": 166911,
+      "sha256": "2e88fb0e0c7d2fe0e3ece953824d7c8d21fd7447a6f59581e044c968dc7c46f0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/diameter-report.png",
+      "category": "captured_media",
+      "bytes": 201735,
+      "sha256": "d6cbf2fb72bda6ba38c4e19b67156fc77be339ebf407c7d066a17057875143be"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/digital-slide.png",
+      "category": "captured_media",
+      "bytes": 203123,
+      "sha256": "0b6bcd70f61cf9b735c7a761feb611ab8169cab77e5539e8bd3f4c46870102e6"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/measurement.png",
+      "category": "captured_media",
+      "bytes": 127102,
+      "sha256": "f41c671b7de284fde1c238aca87902a890322e1a12502c3d8f73def8858d9931"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/realtime.png",
+      "category": "captured_media",
+      "bytes": 144701,
+      "sha256": "d229c20f817f5d6803b2c3fe8a2d90a3c16cf7d9833f4a7179de0b52762a39ba"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-0.png",
+      "category": "captured_media",
+      "bytes": 50683,
+      "sha256": "707cc88190ba30a57e62f8aefdde736eaf2ba668ab49aea5a710e3ad0c60840b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-1.png",
+      "category": "captured_media",
+      "bytes": 89728,
+      "sha256": "6b4a61188722195bcfde5bdb9debaaf408713857856804367c6084ef4741dea5"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-2.png",
+      "category": "captured_media",
+      "bytes": 95992,
+      "sha256": "aa11c26309f63458a2e9d0164023edaf1a7f56af4dfb11576af4a3e5ec2c4608"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-3.png",
+      "category": "captured_media",
+      "bytes": 95402,
+      "sha256": "898c1d9db636872ee2285d8a4c169713b55d6bb1e843080374e430c6722c3a8b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-4.png",
+      "category": "captured_media",
+      "bytes": 106535,
+      "sha256": "12c48484a87902caf6a1d2d142bbb9c07a0db456382edfeeb24c00f53c64c066"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-5.png",
+      "category": "captured_media",
+      "bytes": 72707,
+      "sha256": "bb23fa1e84ef2cae441e381c1b3d38d99ffa00d28b254007a72a3ef8dc00897c"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-6.png",
+      "category": "captured_media",
+      "bytes": 92097,
+      "sha256": "68dd356b7deaa441629556ef482c4560cecef4ab7f7d742302e96576ffaadefe"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/settings-7.png",
+      "category": "captured_media",
+      "bytes": 59967,
+      "sha256": "a266aafc0f9e9bbd0698d134ab964a54f95006809dcc1abe848afe5bde94934b"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/trial-capture-error.png",
+      "category": "captured_media",
+      "bytes": 127968,
+      "sha256": "83568f32f81f5cfd4f8a189a67511c40a6cce9814451a7d2da3bbf09d309a5cc"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/trial-frame-restored.png",
+      "category": "captured_media",
+      "bytes": 187336,
+      "sha256": "41ca26d75bf08a51af43300921329e04edddb78836b30edea5c814189be5f8d0"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/workflows/warm-1366x768-1/trial-no-frame.png",
+      "category": "captured_media",
+      "bytes": 128545,
+      "sha256": "95e1d781c4e8188cc0123c3abe5076bfc8b311d0e5f92770e9470182fec54f62"
+    }
+  ]
+}

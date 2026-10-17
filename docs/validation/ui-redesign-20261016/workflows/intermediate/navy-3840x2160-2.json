@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "theme": "navy",
+  "requested_raster": [
+    3840,
+    2160
+  ],
+  "requested_logical": [
+    1920,
+    1080
+  ],
+  "requested_scale": 2.0,
+  "frame_size": [
+    768,
+    576
+  ],
+  "profile": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/isolated-profile-_ugi1z21",
+  "platform": "offscreen",
+  "real_hardware": false,
+  "limitations": [
+    "Synthetic backend does not validate SDK HWND clipping, throughput or camera recovery.",
+    "Mixed physical monitors require the documented native Windows acceptance pass."
+  ],
+  "passed": true,
+  "actual_logical": [
+    1920,
+    1080
+  ],
+  "actual_dpr": 2.0,
+  "transitions": {
+    "page_switches": 203,
+    "workspace_roundtrips": 20,
+    "backend_starts": 21,
+    "backend_stops": 21,
+    "dock_state_restored": {
+      "_project_dock": true,
+      "_inspector_dock": true,
+      "_results_dock": false
+    },
+    "unexpected_windows": [],
+    "modal_messages": [],
+    "project_dirty": false
+  },
+  "display_modes": [
+    {
+      "mode": "pixel",
+      "value": null,
+      "reloaded": true
+    },
+    {
+      "mode": "fit",
+      "value": null,
+      "reloaded": true
+    },
+    {
+      "mode": "percent",
+      "value": 137,
+      "reloaded": true
+    },
+    {
+      "mode": "magnification",
+      "value": 300,
+      "reloaded": true
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "measurement",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/measurement.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "realtime",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/realtime.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-operation",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/content-operation.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-records",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/content-records.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-report",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/content-report.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-advanced-0",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/content-advanced-0.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-advanced-1",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/content-advanced-1.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-operation",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/diameter-operation.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-records",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/diameter-records.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-report",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/diameter-report.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-advanced-0",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/diameter-advanced-0.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-advanced-1",
+      "path": "/private/tmp/fdm-workflow-redesign/navy-3840x2160-2/diameter-advanced-1.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    }
+  ],
+  "duration_seconds": 7.677,
+  "evidence_phase": "intermediate-before-strict-page-size-check",
+  "acceptance_status": "superseded-window-growth-found-on-measurement-return"
+}

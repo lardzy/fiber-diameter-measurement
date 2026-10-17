@@ -1,0 +1,21 @@
+..................................................................... [ 92%]
+.....F                                                                   [100%]
+================================== FAILURES ===================================
+____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[end] _____
+
+offset = 24
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+        memory = shared_memory.SharedMemory(create=True, size=24)
+        receiver = FrameReceiver()
+        try:
+            if offset == "end": offset = memory.size
+>           with pytest.raises(ValueError, match="协议"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests\test_live_experiment_sources.py:195: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[end]
+1 failed, 74 passed, 3 subtests passed in 19.94s

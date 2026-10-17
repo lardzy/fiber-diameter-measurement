@@ -1,0 +1,507 @@
+{
+  "evidence_phase": "final",
+  "passed": true,
+  "matrix_count": 17,
+  "source_fingerprint_sets": 1,
+  "current_source_mismatches": [],
+  "tests": {
+    "passed": 40,
+    "duration_seconds": 17.99,
+    "log": "tests.log"
+  },
+  "image_count": 110,
+  "real_hardware": false,
+  "full_temporary_directory": "/tmp/fdm-workflow-redesign-final",
+  "matrix": [
+    {
+      "theme": "dark",
+      "physical_client": [
+        1366,
+        768
+      ],
+      "logical_client": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 7.999,
+      "report": "reports/dark-1366x768-1.json",
+      "retained_screenshots": [
+        "dark-1366x768-1/measurement.png",
+        "dark-1366x768-1/realtime.png",
+        "dark-1366x768-1/content-operation.png",
+        "dark-1366x768-1/content-records.png",
+        "dark-1366x768-1/content-report.png",
+        "dark-1366x768-1/content-advanced-0.png",
+        "dark-1366x768-1/content-advanced-1.png",
+        "dark-1366x768-1/diameter-operation.png",
+        "dark-1366x768-1/diameter-records.png",
+        "dark-1366x768-1/diameter-report.png",
+        "dark-1366x768-1/diameter-advanced-0.png",
+        "dark-1366x768-1/diameter-advanced-1.png",
+        "dark-1366x768-1/digital-slide.png",
+        "dark-1366x768-1/settings-0.png",
+        "dark-1366x768-1/settings-1.png",
+        "dark-1366x768-1/settings-2.png",
+        "dark-1366x768-1/settings-3.png",
+        "dark-1366x768-1/settings-4.png",
+        "dark-1366x768-1/settings-5.png",
+        "dark-1366x768-1/settings-6.png",
+        "dark-1366x768-1/settings-7.png",
+        "dark-1366x768-1/capture-no-device.png",
+        "dark-1366x768-1/trial-no-frame.png",
+        "dark-1366x768-1/trial-frame-restored.png",
+        "dark-1366x768-1/trial-capture-error.png",
+        "dark-1366x768-1/capture-error.png"
+      ]
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        1920,
+        1080
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 8.134,
+      "report": "reports/dark-1920x1080-1.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        1920,
+        1080
+      ],
+      "logical_client": [
+        1536,
+        864
+      ],
+      "dpr": 1.25,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.4999999999999716,
+      "duration_seconds": 7.952,
+      "report": "reports/dark-1920x1080-1p25.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        1920,
+        1080
+      ],
+      "logical_client": [
+        1280,
+        720
+      ],
+      "dpr": 1.5,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.2500000000000071,
+      "duration_seconds": 8.015,
+      "report": "reports/dark-1920x1080-1p5.json",
+      "retained_screenshots": [
+        "dark-1920x1080-1p5/content-operation.png",
+        "dark-1920x1080-1p5/digital-slide.png",
+        "dark-1920x1080-1p5/capture-error.png"
+      ]
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        3840,
+        2160
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 9.982,
+      "report": "reports/dark-3840x2160-1.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        3072,
+        1728
+      ],
+      "dpr": 1.25,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000568,
+      "duration_seconds": 10.317,
+      "report": "reports/dark-3840x2160-1p25.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        2560,
+        1440
+      ],
+      "dpr": 1.5,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.250000000000135,
+      "duration_seconds": 10.666,
+      "report": "reports/dark-3840x2160-1p5.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "dark",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 2.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.0,
+      "duration_seconds": 10.693,
+      "report": "reports/dark-3840x2160-2.json",
+      "retained_screenshots": [
+        "dark-3840x2160-2/realtime.png",
+        "dark-3840x2160-2/content-operation.png",
+        "dark-3840x2160-2/digital-slide.png"
+      ]
+    },
+    {
+      "theme": "light",
+      "physical_client": [
+        1366,
+        768
+      ],
+      "logical_client": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 8.165,
+      "report": "reports/light-1366x768-1.json",
+      "retained_screenshots": [
+        "light-1366x768-1/measurement.png",
+        "light-1366x768-1/realtime.png",
+        "light-1366x768-1/content-operation.png",
+        "light-1366x768-1/content-records.png",
+        "light-1366x768-1/content-report.png",
+        "light-1366x768-1/content-advanced-0.png",
+        "light-1366x768-1/content-advanced-1.png",
+        "light-1366x768-1/diameter-operation.png",
+        "light-1366x768-1/diameter-records.png",
+        "light-1366x768-1/diameter-report.png",
+        "light-1366x768-1/diameter-advanced-0.png",
+        "light-1366x768-1/diameter-advanced-1.png",
+        "light-1366x768-1/digital-slide.png",
+        "light-1366x768-1/settings-0.png",
+        "light-1366x768-1/settings-1.png",
+        "light-1366x768-1/settings-2.png",
+        "light-1366x768-1/settings-3.png",
+        "light-1366x768-1/settings-4.png",
+        "light-1366x768-1/settings-5.png",
+        "light-1366x768-1/settings-6.png",
+        "light-1366x768-1/settings-7.png",
+        "light-1366x768-1/capture-no-device.png",
+        "light-1366x768-1/trial-no-frame.png",
+        "light-1366x768-1/trial-frame-restored.png",
+        "light-1366x768-1/trial-capture-error.png",
+        "light-1366x768-1/capture-error.png"
+      ]
+    },
+    {
+      "theme": "light",
+      "physical_client": [
+        1920,
+        1080
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 8.022,
+      "report": "reports/light-1920x1080-1.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "light",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 2.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.0,
+      "duration_seconds": 10.28,
+      "report": "reports/light-3840x2160-2.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "navy",
+      "physical_client": [
+        1366,
+        768
+      ],
+      "logical_client": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 7.647,
+      "report": "reports/navy-1366x768-1.json",
+      "retained_screenshots": [
+        "navy-1366x768-1/measurement.png",
+        "navy-1366x768-1/realtime.png",
+        "navy-1366x768-1/content-operation.png",
+        "navy-1366x768-1/content-records.png",
+        "navy-1366x768-1/content-report.png",
+        "navy-1366x768-1/content-advanced-0.png",
+        "navy-1366x768-1/content-advanced-1.png",
+        "navy-1366x768-1/diameter-operation.png",
+        "navy-1366x768-1/diameter-records.png",
+        "navy-1366x768-1/diameter-report.png",
+        "navy-1366x768-1/diameter-advanced-0.png",
+        "navy-1366x768-1/diameter-advanced-1.png",
+        "navy-1366x768-1/digital-slide.png",
+        "navy-1366x768-1/settings-0.png",
+        "navy-1366x768-1/settings-1.png",
+        "navy-1366x768-1/settings-2.png",
+        "navy-1366x768-1/settings-3.png",
+        "navy-1366x768-1/settings-4.png",
+        "navy-1366x768-1/settings-5.png",
+        "navy-1366x768-1/settings-6.png",
+        "navy-1366x768-1/settings-7.png",
+        "navy-1366x768-1/capture-no-device.png",
+        "navy-1366x768-1/trial-no-frame.png",
+        "navy-1366x768-1/trial-frame-restored.png",
+        "navy-1366x768-1/trial-capture-error.png",
+        "navy-1366x768-1/capture-error.png"
+      ]
+    },
+    {
+      "theme": "navy",
+      "physical_client": [
+        1920,
+        1080
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 7.786,
+      "report": "reports/navy-1920x1080-1.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "navy",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 2.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.0,
+      "duration_seconds": 10.204,
+      "report": "reports/navy-3840x2160-2.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "warm",
+      "physical_client": [
+        1366,
+        768
+      ],
+      "logical_client": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 7.614,
+      "report": "reports/warm-1366x768-1.json",
+      "retained_screenshots": [
+        "warm-1366x768-1/measurement.png",
+        "warm-1366x768-1/realtime.png",
+        "warm-1366x768-1/content-operation.png",
+        "warm-1366x768-1/content-records.png",
+        "warm-1366x768-1/content-report.png",
+        "warm-1366x768-1/content-advanced-0.png",
+        "warm-1366x768-1/content-advanced-1.png",
+        "warm-1366x768-1/diameter-operation.png",
+        "warm-1366x768-1/diameter-records.png",
+        "warm-1366x768-1/diameter-report.png",
+        "warm-1366x768-1/diameter-advanced-0.png",
+        "warm-1366x768-1/diameter-advanced-1.png",
+        "warm-1366x768-1/digital-slide.png",
+        "warm-1366x768-1/settings-0.png",
+        "warm-1366x768-1/settings-1.png",
+        "warm-1366x768-1/settings-2.png",
+        "warm-1366x768-1/settings-3.png",
+        "warm-1366x768-1/settings-4.png",
+        "warm-1366x768-1/settings-5.png",
+        "warm-1366x768-1/settings-6.png",
+        "warm-1366x768-1/settings-7.png",
+        "warm-1366x768-1/capture-no-device.png",
+        "warm-1366x768-1/trial-no-frame.png",
+        "warm-1366x768-1/trial-frame-restored.png",
+        "warm-1366x768-1/trial-capture-error.png",
+        "warm-1366x768-1/capture-error.png"
+      ]
+    },
+    {
+      "theme": "warm",
+      "physical_client": [
+        1920,
+        1080
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 1.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.5000000000000142,
+      "duration_seconds": 7.941,
+      "report": "reports/warm-1920x1080-1.json",
+      "retained_screenshots": []
+    },
+    {
+      "theme": "warm",
+      "physical_client": [
+        3840,
+        2160
+      ],
+      "logical_client": [
+        1920,
+        1080
+      ],
+      "dpr": 2.0,
+      "passed": true,
+      "source_changed_during_run": false,
+      "page_switches": 203,
+      "workspace_roundtrips": 20,
+      "unexpected_windows": [],
+      "project_dirty": false,
+      "max_center_drift_source_pixels": 0.0,
+      "duration_seconds": 10.222,
+      "report": "reports/warm-3840x2160-2.json",
+      "retained_screenshots": []
+    }
+  ]
+}

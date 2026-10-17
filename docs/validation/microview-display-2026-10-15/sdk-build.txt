@@ -1,0 +1,7 @@
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.14.41
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+microview_test_sdk.cpp
+  正在创建库 microview_test_sdk.lib 和对象 microview_test_sdk.exp

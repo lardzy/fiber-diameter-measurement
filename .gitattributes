@@ -10,3 +10,12 @@ docs/validation/ui-redesign-20261016/**/*.json -text -whitespace
 docs/validation/ui-redesign-20261016/**/*.log -text -whitespace
 docs/validation/ui-redesign-20261016/**/*.xml -text -whitespace
 docs/validation/ui-redesign-20261016/**/*.stdout -text -whitespace
+docs/validation/ui-redesign-20261016/**/*.txt -text -whitespace
+docs/validation/ui-redesign-20261016/**/*.ps1 -text -whitespace
+docs/validation/ui-redesign-20261016/**/*.cmd -text -whitespace
+docs/validation/ui-redesign-20261016/workflows/intermediate/** -text -whitespace
+# Historical validation outputs are evidence; do not rewrite line endings or encoding.
+docs/validation/cu-acquisition-rebuild-20261015/** -text -whitespace
+docs/validation/cu-preview-corrections-20261015/** -text -whitespace
+docs/validation/cu-save-publish-20261016/** -text -whitespace
+docs/validation/microview-display-2026-10-15/** -text -whitespace

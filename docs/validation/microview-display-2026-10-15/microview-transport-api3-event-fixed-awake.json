@@ -1,0 +1,233 @@
+{
+  "scope": "Native SDK test DLL AFTER_PROCESS to manager subscriber; no real camera or painting",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+  "native_build": {
+    "api_version": 3,
+    "image_info_size": 20,
+    "pointer_size": 8,
+    "source_sha256": "d743608532e85f90e11170b87b9ec4fc0661065c866980129eccd23cf62c7b28",
+    "python_abi": "cpython-312"
+  },
+  "resolution": [
+    768,
+    576
+  ],
+  "test_sdk_requested_fps": 25,
+  "source_mode": "fixed",
+  "source_callback_window_seconds": 11.124924874995486,
+  "source_callback_count_between_endpoints": 249,
+  "source_fixed_period": true,
+  "source_reuse_processed": true,
+  "source_missed_periods": 29.0,
+  "native_host_visible": false,
+  "warmup": 5,
+  "event_dispatch": "QEventLoop with visible separate presentation window",
+  "helper_wait_strategy": "native frame/control auto-reset event; queue get_nowait",
+  "helper_queue_get_timeout_requested_ms": 0,
+  "helper_queue_get_actual_ms": {
+    "count": 571,
+    "p50": 0.02662499900907278,
+    "p95": 0.09425000462215394,
+    "p99": 0.1179330894956363,
+    "max": 0.18950000230688602
+  },
+  "callback_to_subscriber_ms": {
+    "count": 250,
+    "p50": 7.63808316696668,
+    "p95": 8.859139089327073,
+    "p99": 9.410744245105887,
+    "max": 10.167374333832413
+  },
+  "stages_ms": {
+    "callback_to_decode_start_ms": {
+      "count": 250,
+      "p50": 1.3600831589428708,
+      "p95": 2.1650411828886718,
+      "p99": 2.598256745113758,
+      "max": 2.7947496564593166
+    },
+    "decode_ms": {
+      "count": 250,
+      "p50": 2.8480624896474183,
+      "p95": 3.1007335470349062,
+      "p99": 3.2292022538604215,
+      "max": 5.065624995040707
+    },
+    "callback_to_shared_ready_ms": {
+      "count": 250,
+      "p50": 0.3721248358488083,
+      "p95": 0.6464098965807352,
+      "p99": 0.789564575243275,
+      "max": 1.1119583359686658
+    },
+    "native_to_shared_copy_ms": {
+      "count": 250,
+      "p50": 0.17595849931240082,
+      "p95": 0.2782184586976653,
+      "p99": 0.46321040848851963,
+      "max": 0.6985420041019097
+    },
+    "pipe_and_gui_wakeup_ms": {
+      "count": 250,
+      "p50": 0.9012709997477941,
+      "p95": 1.3886416927562095,
+      "p99": 1.7358081736892916,
+      "max": 2.1825419971719384
+    },
+    "helper_poll_gap_ms": {
+      "count": 250,
+      "p50": 35.79691699997056,
+      "p95": 89.49616859463275,
+      "p99": 107.17355331886208,
+      "max": 110.96908399485983
+    },
+    "previous_ack_pending_ms": {
+      "count": 250,
+      "p50": 4.246291995514184,
+      "p95": 7.545452204794856,
+      "p99": 8.296159504243404,
+      "max": 8.75362500664778
+    },
+    "ack_gui_to_reader_ms": {
+      "count": 250,
+      "p50": 0.28725049924105406,
+      "p95": 0.5124101997353135,
+      "p99": 3.6666463367873785,
+      "max": 4.0229589940281585
+    },
+    "ack_reader_to_helper_ms": {
+      "count": 250,
+      "p50": 0.13302099978318438,
+      "p95": 3.2778104548924585,
+      "p99": 3.613987071294104,
+      "max": 4.203500007861294
+    },
+    "previous_emit_ms": {
+      "count": 250,
+      "p50": 0.2704165017348714,
+      "p95": 7.499839405500097,
+      "p99": 8.236063581280176,
+      "max": 8.68504200479947
+    },
+    "source_work_ms": {
+      "count": 250,
+      "p50": 0.19827050000000002,
+      "p95": 3.8150123499999493,
+      "p99": 8.41734517,
+      "max": 8.665791
+    },
+    "source_schedule_late_ms": {
+      "count": 250,
+      "p50": 16.362021,
+      "p95": 62.96934809999997,
+      "p99": 74.92840499999998,
+      "max": 78.9785
+    },
+    "manager_copy_ms": {
+      "count": 250,
+      "p50": 2.705229002458509,
+      "p95": 2.947327045694692,
+      "p99": 3.055990260036196,
+      "max": 3.2710419909562916
+    },
+    "manager_queue_ms": {
+      "count": 250,
+      "p50": 0.3987499949289486,
+      "p95": 0.5354899491067044,
+      "p99": 0.7061599988082888,
+      "max": 0.9140000038314611
+    }
+  },
+  "delivery_interval_ms": {
+    "count": 249,
+    "p50": 40.55570899799932,
+    "p95": 94.97180000180379,
+    "p99": 112.90604699170217,
+    "max": 118.3849169901805
+  },
+  "effective_callback_fps": 22.382173614462367,
+  "delivered_fps": 22.377306391734614,
+  "delivered_fraction": 1.0,
+  "first_half_age_ms": {
+    "count": 125,
+    "p50": 7.666124336537905,
+    "p95": 8.569774933857843,
+    "p99": 9.215043172589505,
+    "max": 9.544207670842297
+  },
+  "second_half_age_ms": {
+    "count": 125,
+    "p50": 7.618374336743727,
+    "p95": 8.868066256400198,
+    "p99": 9.507797911646778,
+    "max": 10.167374333832413
+  },
+  "forced_gui_pause_ms": 291.34791599062737,
+  "newest_sequence_at_resume": 258,
+  "first_recovery_sequence": 256,
+  "first_recovery_is_current_or_newer": false,
+  "recovery": [
+    {
+      "sdk_index": 258,
+      "age_ms": 8.560583330108784,
+      "after_resume_ms": 11.14508400496561
+    },
+    {
+      "sdk_index": 259,
+      "age_ms": 7.170625001890585,
+      "after_resume_ms": 32.71445899736136
+    },
+    {
+      "sdk_index": 260,
+      "age_ms": 7.376624998869374,
+      "after_resume_ms": 66.91470900841523
+    },
+    {
+      "sdk_index": 261,
+      "age_ms": 7.8044993279036134,
+      "after_resume_ms": 98.59862500161398
+    },
+    {
+      "sdk_index": 262,
+      "age_ms": 4.869041658821516,
+      "after_resume_ms": 196.7142089997651
+    },
+    {
+      "sdk_index": 263,
+      "age_ms": 7.792374992277473,
+      "after_resume_ms": 254.05245900037698
+    },
+    {
+      "sdk_index": 264,
+      "age_ms": 6.985166663071141,
+      "after_resume_ms": 282.5928340025712
+    },
+    {
+      "sdk_index": 265,
+      "age_ms": 7.673083004192449,
+      "after_resume_ms": 327.5005420000525
+    },
+    {
+      "sdk_index": 266,
+      "age_ms": 7.401958006084897,
+      "after_resume_ms": 366.5220420080004
+    },
+    {
+      "sdk_index": 267,
+      "age_ms": 7.157249332522042,
+      "after_resume_ms": 390.9140000032494
+    }
+  ],
+  "all_after_process": true,
+  "manager_stats": {
+    "received": 265,
+    "displayed": 265,
+    "coalesced": 0,
+    "pending_wakeups": 0,
+    "latest_frame_bytes": 1769472,
+    "latest_age_ms": 102.52062433573883
+  },
+  "errors": [],
+  "superseded_shared_slots": 1
+}

@@ -1,0 +1,88 @@
+{
+    "schema":  2,
+    "started_at":  "2026-10-16T01:30:24.0555252+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194",
+    "config":  "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194\\isolated-config",
+    "pid":  6208,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "导入 CU 标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新增标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "试验设置",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新视场",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "本场记录",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "先选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "后选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "NK · 选类",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "计数 1–9",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "保存项目",
+                             "present":  true,
+                             "visible":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  false,
+    "unsaved_dialog":  null,
+    "graceful_exit":  false,
+    "forced_cleanup":  true,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194\\04-settings-uia.json",
+                      "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\build\\save-peaks\\frozen-gui\\20261016-013023-2e0f9550bdb94c1c8bb6c007c08fd194\\99-failure-observed-tree-uia.json"
+                  ],
+    "errors":  [
+                   "Saved count mismatch at round 1 : 0"
+               ],
+    "ok":  false,
+    "main_title":  "显微测量工作台",
+    "entry_action":  "InvokePattern",
+    "saved_count_checkpoints":  [
+
+                                ],
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-16T01:30:43.0928120+08:00"
+}

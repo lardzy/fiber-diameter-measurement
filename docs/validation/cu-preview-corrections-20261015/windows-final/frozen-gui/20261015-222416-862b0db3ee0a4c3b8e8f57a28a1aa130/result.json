@@ -1,0 +1,84 @@
+{
+    "schema":  2,
+    "started_at":  "2026-10-15T22:24:16.5523177+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130",
+    "config":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130\\isolated-config",
+    "pid":  10428,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "导入 CU 标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新增标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "试验设置",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新视场",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "本场记录",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "先选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "后选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "NK · 选类",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "计数 1–9",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "保存项目",
+                             "present":  true,
+                             "visible":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  false,
+    "unsaved_dialog":  null,
+    "graceful_exit":  false,
+    "forced_cleanup":  true,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222416-862b0db3ee0a4c3b8e8f57a28a1aa130\\99-failure-observed-tree-uia.json"
+                  ],
+    "errors":  [
+                   "Trial settings expected one visible match, found 0."
+               ],
+    "ok":  false,
+    "main_title":  "显微测量工作台",
+    "entry_action":  "InvokePattern",
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-15T22:24:22.7974069+08:00"
+}

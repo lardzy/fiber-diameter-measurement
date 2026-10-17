@@ -1,0 +1,224 @@
+..FF..FF                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_two_hundred_page_switches_twenty_roundtrips_preserve_shell_and_clean_draft[size2] _
+
+harness = <workflow_redesign_validation.WorkflowHarness object at 0x137e81f90>
+size = (1366, 690)
+
+    @pytest.mark.parametrize("size", [(1366, 768), (1280, 720), (1366, 690), (1280, 670)])
+    def test_two_hundred_page_switches_twenty_roundtrips_preserve_shell_and_clean_draft(harness, size):
+        harness.size = size
+        harness.window.resize(*size)
+        workflow.settle()
+>       result = workflow.validate_transitions(harness)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_acquisition_workflow_redesign.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/validation/validate_workflow_redesign.py:320: in validate_transitions
+    harness.select(index)
+scripts/validation/validate_workflow_redesign.py:244: in select
+    self.assert_size()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <workflow_redesign_validation.WorkflowHarness object at 0x137e81f90>
+
+    def assert_size(self):
+        actual = (self.window.width(), self.window.height())
+>       assert actual == self.size, f"workspace grew beyond requested size: {actual}, requested {self.size}"
+               ^^^^^^^^^^^^^^^^^^^
+E       AssertionError: workspace grew beyond requested size: (1366, 714), requested (1366, 690)
+
+scripts/validation/validate_workflow_redesign.py:254: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+--------------------------- Captured stderr teardown ---------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_two_hundred_page_switches_twenty_roundtrips_preserve_shell_and_clean_draft[size3] _
+
+harness = <workflow_redesign_validation.WorkflowHarness object at 0x137c5a780>
+size = (1280, 670)
+
+    @pytest.mark.parametrize("size", [(1366, 768), (1280, 720), (1366, 690), (1280, 670)])
+    def test_two_hundred_page_switches_twenty_roundtrips_preserve_shell_and_clean_draft(harness, size):
+        harness.size = size
+        harness.window.resize(*size)
+        workflow.settle()
+>       result = workflow.validate_transitions(harness)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_acquisition_workflow_redesign.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/validation/validate_workflow_redesign.py:320: in validate_transitions
+    harness.select(index)
+scripts/validation/validate_workflow_redesign.py:244: in select
+    self.assert_size()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <workflow_redesign_validation.WorkflowHarness object at 0x137c5a780>
+
+    def assert_size(self):
+        actual = (self.window.width(), self.window.height())
+>       assert actual == self.size, f"workspace grew beyond requested size: {actual}, requested {self.size}"
+               ^^^^^^^^^^^^^^^^^^^
+E       AssertionError: workspace grew beyond requested size: (1280, 714), requested (1280, 670)
+
+scripts/validation/validate_workflow_redesign.py:254: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+--------------------------- Captured stderr teardown ---------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size[size2] _
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-718/test_nine_materials_remain_rea2')
+size = (1366, 690)
+
+    @pytest.mark.parametrize("size", [(1366, 768), (1280, 720), (1366, 690), (1280, 670)])
+    def test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size(tmp_path, size):
+        from fdm.live_experiment.models import MaterialSnapshot
+        with workflow.WorkflowHarness(tmp_path / "nine-categories", size=size) as harness:
+            harness.enter()
+>           page = harness.select(1)
+                   ^^^^^^^^^^^^^^^^^
+
+tests/test_acquisition_workflow_redesign.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/validation/validate_workflow_redesign.py:244: in select
+    self.assert_size()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <workflow_redesign_validation.WorkflowHarness object at 0x137c2f8a0>
+
+    def assert_size(self):
+        actual = (self.window.width(), self.window.height())
+>       assert actual == self.size, f"workspace grew beyond requested size: {actual}, requested {self.size}"
+               ^^^^^^^^^^^^^^^^^^^
+E       AssertionError: workspace grew beyond requested size: (1366, 714), requested (1366, 690)
+
+scripts/validation/validate_workflow_redesign.py:254: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size[size3] _
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-718/test_nine_materials_remain_rea3')
+size = (1280, 670)
+
+    @pytest.mark.parametrize("size", [(1366, 768), (1280, 720), (1366, 690), (1280, 670)])
+    def test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size(tmp_path, size):
+        from fdm.live_experiment.models import MaterialSnapshot
+        with workflow.WorkflowHarness(tmp_path / "nine-categories", size=size) as harness:
+            harness.enter()
+>           page = harness.select(1)
+                   ^^^^^^^^^^^^^^^^^
+
+tests/test_acquisition_workflow_redesign.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/validation/validate_workflow_redesign.py:244: in select
+    self.assert_size()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <workflow_redesign_validation.WorkflowHarness object at 0x166f0c160>
+
+    def assert_size(self):
+        actual = (self.window.width(), self.window.height())
+>       assert actual == self.size, f"workspace grew beyond requested size: {actual}, requested {self.size}"
+               ^^^^^^^^^^^^^^^^^^^
+E       AssertionError: workspace grew beyond requested size: (1280, 714), requested (1280, 670)
+
+scripts/validation/validate_workflow_redesign.py:254: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_acquisition_workflow_redesign.py::test_two_hundred_page_switches_twenty_roundtrips_preserve_shell_and_clean_draft[size2]
+FAILED tests/test_acquisition_workflow_redesign.py::test_two_hundred_page_switches_twenty_roundtrips_preserve_shell_and_clean_draft[size3]
+FAILED tests/test_acquisition_workflow_redesign.py::test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size[size2]
+FAILED tests/test_acquisition_workflow_redesign.py::test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size[size3]
+4 failed, 4 passed, 15 deselected in 8.90s

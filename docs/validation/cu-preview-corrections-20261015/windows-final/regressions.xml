@@ -1,0 +1,2567 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="66" skipped="0" tests="274" time="31.263" timestamp="2026-10-15T19:57:40.274605+08:00" hostname="B1EA"><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_actual_pixels_ignore_window_size_and_dpi[1]" time="0.086" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_actual_pixels_ignore_window_size_and_dpi[1.25]" time="0.036" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_actual_pixels_ignore_window_size_and_dpi[1.5]" time="0.034" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_actual_pixels_ignore_window_size_and_dpi[2]" time="0.039" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_wheel_and_middle_drag_do_not_change_display_or_draft" time="0.032" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_cu_modes_cancel_draft_and_preserve_measurement_geometry" time="0.035" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_nonfreeze_display_switch_requires_empty_field[pixel]" time="0.030" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_nonfreeze_display_switch_requires_empty_field[fit]" time="0.032" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_nonfreeze_display_switch_requires_empty_field[percent]" time="0.031" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_nonfreeze_display_switch_requires_empty_field[magnification]" time="0.030" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_oversize_pixels_have_extent_instead_of_silent_fit" time="0.034" /><testcase classname="tests.test_live_experiment_canvas_navigation" name="test_invalid_physical_magnification_does_not_change_display" time="0.031" /><testcase classname="tests.test_live_preview_corrections" name="test_ruler_survives_restart_but_not_different_device_or_geometry" time="0.365" /><testcase classname="tests.test_live_preview_corrections" name="test_high_precision_saved_ruler_reloads_from_application_profile" time="0.010" /><testcase classname="tests.test_live_preview_corrections" name="test_preview_paints_latest_frame_while_motion_is_waiting" time="0.369" /><testcase classname="tests.test_live_preview_corrections" name="test_direction_switch_requires_new_field_and_preserves_history" time="0.373" /><testcase classname="tests.test_live_preview_corrections" name="test_settings_tabs_fit_without_horizontal_scroll_or_hidden_fields" time="0.327" /><testcase classname="tests.test_acquisition_workbench" name="test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler" time="14.949" /><testcase classname="tests.test_acquisition_workbench" name="test_workspace_entry_and_trial_pages_keep_one_session" time="1.769" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_session_manager_does_not_cache_native_embed_still_frame" time="0.003" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_session_manager_ignores_backend_enumeration_failure" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_session_manager_ignores_stale_frames_after_stop" time="0.004" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_session_manager_recreates_microview_backend_after_stop" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_session_manager_routes_analysis_frames" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_session_manager_uses_backend_fresh_frame" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_capture_stop_failure_retains_active_backend_until_retry_succeeds" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_cu_scale_display_name_strips_date_suffix" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_default_capture_backends_prefer_opencv_for_do3think_target" time="0.001" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_format_cu_scale_record_summary_contains_scale_values" time="0.004" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_24bpp_alias_converts_to_qimage" time="0.003" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_32bpp_argb_buffer_converts_to_qimage" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_32bpp_zero_alpha_buffer_is_forced_opaque" time="0.001" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_buffer_rejects_short_payload_before_qimage_construction" time="0.001" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_capture_single_never_passes_pointer_in_dword" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_failed_capture_records_diagnostics" time="0.001" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_frame_mode_uses_work_field_for_non_levin_board" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_frame_mode_uses_work_skip_for_levin_board" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_isolated_backend_analysis_uses_owned_preview_frame" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_isolated_backend_update_preview_target_sends_helper_command" time="0.001" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_rgb24_buffer_converts_to_qimage" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_microview_stop_preview_releases_display_and_capture_state" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_opencv_capture_backend_lists_device_and_converts_bgr_frame" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_parse_cu_scale_file_accepts_legacy_trailing_bytes" time="0.003" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_parse_cu_scale_file_builds_um_preset" time="0.003" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_parse_cu_scale_file_rejects_invalid_payload" time="0.003" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_parse_cu_scale_file_rejects_non_finite_scale_values" time="0.006" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_refresh_stops_the_original_backend_when_active_device_disappears" time="0.002" /><testcase classname="tests.test_capture_and_cu_scale.CaptureAndCuScaleTests" name="test_selected_device_cannot_change_while_preview_is_active" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_field_preparation_probe_runs_native_moments_and_ordered_decisions" time="0.083" /><testcase classname="tests.test_cu_live_self_check" name="test_field_preparation_probe_rejects_wrong_moments_even_if_both_paths_share_them" time="0.005" /><testcase classname="tests.test_cu_live_self_check" name="test_configuration_probe_runs_real_deferred_custom_width_and_history" time="0.004" /><testcase classname="tests.test_cu_live_self_check" name="test_evidence_probe_runs_real_writer_save_and_history_rebase" time="0.045" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-field_preparation]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-content_deferred_rebuild]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-content_width_undo]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-content_width_redo]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-evidence_png_gray]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-evidence_png_bgr]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-evidence_png_bgra]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-evidence_leases_released]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[missing-project_asset_rebase]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-field_preparation]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-content_deferred_rebuild]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-content_width_undo]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-content_width_redo]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-evidence_png_gray]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-evidence_png_bgr]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-evidence_png_bgra]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-evidence_leases_released]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_release_gate_requires_each_actual_configuration_and_evidence_case[false-project_asset_rebase]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_previous_probe_revision_cannot_validate_new_evidence_release[1]" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_previous_probe_revision_cannot_validate_new_evidence_release[2]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_previous_probe_revision_cannot_validate_new_evidence_release[3]" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_current_report_is_accepted_without_weakening_microview_gate" time="0.001" /><testcase classname="tests.test_cu_live_self_check" name="test_probe_detects_missing_deferred_transaction" time="0.002" /><testcase classname="tests.test_cu_live_self_check" name="test_evidence_probe_rejects_changed_decoded_pixels" time="0.011" /><testcase classname="tests.test_cu_live_self_check" name="test_evidence_probe_requires_actual_stream_encoder_identity" time="0.010" /><testcase classname="tests.test_cu_live_self_check" name="test_evidence_probe_detects_missing_live_asset_rebase" time="0.022" /><testcase classname="tests.test_native_build" name="test_valid_binary_skips_compiler_and_dependency_install" time="0.003" /><testcase classname="tests.test_native_build" name="test_rebuild_validates_before_and_after_atomic_publish[extension missing]" time="0.022" /><testcase classname="tests.test_native_build" name="test_rebuild_validates_before_and_after_atomic_publish[stale source]" time="0.011" /><testcase classname="tests.test_native_build" name="test_rebuild_validates_before_and_after_atomic_publish[wrong ABI]" time="0.011" /><testcase classname="tests.test_native_build" name="test_rebuild_validates_before_and_after_atomic_publish[bad DLL]" time="0.010" /><testcase classname="tests.test_native_build" name="test_compile_failure_preserves_binary_and_log[failure0]" time="0.008" /><testcase classname="tests.test_native_build" name="test_compile_failure_preserves_binary_and_log[failure1]" time="0.005" /><testcase classname="tests.test_native_build" name="test_compile_failure_preserves_binary_and_log[failure2]" time="0.004" /><testcase classname="tests.test_native_build" name="test_failed_recheck_cannot_publish_unverified_binary[False]" time="0.006" /><testcase classname="tests.test_native_build" name="test_failed_recheck_cannot_publish_unverified_binary[True]" time="0.010" /><testcase classname="tests.test_native_build" name="test_locked_destination_stops_without_removing_old_binary" time="0.012" /><testcase classname="tests.test_native_build" name="test_build_tools_reuse_current_python_or_install_only_in_temporary_venv" time="0.007" /><testcase classname="tests.test_native_build" name="test_probe_always_uses_fresh_current_interpreter" time="0.003" /><testcase classname="tests.test_native_build" name="test_failed_probe_never_accepts_nonzero_false_or_invalid_output[result0]" time="0.003" /><testcase classname="tests.test_native_build" name="test_failed_probe_never_accepts_nonzero_false_or_invalid_output[result1]" time="0.003" /><testcase classname="tests.test_native_build" name="test_failed_probe_never_accepts_nonzero_false_or_invalid_output[result2]" time="0.003" /><testcase classname="tests.test_native_build" name="test_failed_probe_never_accepts_nonzero_false_or_invalid_output[result3]" time="0.003" /><testcase classname="tests.test_native_build" name="test_probe_does_not_accept_an_extension_from_another_checkout" time="0.093" /><testcase classname="tests.test_native_build" name="test_two_extension_transaction_rolls_back_when_capture_is_locked" time="0.017" /><testcase classname="tests.test_native_build" name="test_two_extensions_postcheck_failure_rolls_back_both" time="0.012" /><testcase classname="tests.test_native_build" name="test_missing_second_compiler_output_never_publishes_first" time="0.006" /><testcase classname="tests.test_native_build" name="test_first_install_postcheck_failure_removes_entire_unverified_pair" time="0.008" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_area_models_can_be_excluded_without_leaking_the_feature" time="0.017"><failure message="RuntimeError: Runtime profile 'full' failed asset preflight:&#10;  missing source asset: runtime/camera/microview/driver/MVBT.inf&#10;  missing source asset: runtime/camera/microview/driver/MVBT.sys&#10;  missing source asset: runtime/camera/microview/driver/saa7130.sys&#10;  missing source asset: runtime/camera/microview/x64/Function.dll&#10;  missing source asset: runtime/camera/microview/x64/MVAPI.dll&#10;  missing source asset: runtime/camera/microview/x64/MVBT.dll&#10;  missing source asset: runtime/camera/microview/x64/MVDEVICE.ocx&#10;  missing source asset: runtime/camera/microview/x64/MV_Twain.ds&#10;  missing source asset: runtime/camera/microview/x64/mvavi.dll&#10;  missing source asset: runtime/camera/microview/x64/saa7130.dll&#10;  missing source asset: runtime/camera/microview/x86/Function.dll&#10;  missing source asset: runtime/camera/microview/x86/MVAPI.dll&#10;  missing source asset: runtime/camera/microview/x86/MVBT.dll&#10;  missing source asset: runtime/camera/microview/x86/MVDEVICE.ocx&#10;  missing source asset: runtime/camera/microview/x86/MV_Twain.ds&#10;  missing source asset: runtime/camera/microview/x86/mvavi.dll&#10;  missing source asset: runtime/camera/microview/x86/saa7130.dll&#10;  missing source asset: runtime/area-infer/app/__init__.py&#10;  missing source asset: runtime/area-infer/app/engine.py&#10;  missing source asset: runtime/area-infer/app/main.py&#10;  missing source asset: runtime/area-infer/app/model_metadata.py&#10;  missing source asset: runtime/area-infer/app/request_limits.py&#10;  missing source asset: runtime/area-infer/app/security.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/LICENSE&#10;  missing source asset: runtime/area-infer/vendor/yolact/backbone.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/yolact.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/coco.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/config.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/grid.npy&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/box_utils.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/interpolate.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/output_utils.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/functions/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/functions/detection.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/modules/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/augmentations.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/cython_nms.pyx&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/functions.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/logger.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/nvinfo.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/timer.py&#10;  missing source asset: runtime/segment-anything/edge_sam/edge_sam_encoder.onnx&#10;  missing source asset: runtime/segment-anything/edge_sam/edge_sam_decoder.onnx&#10;  missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx&#10;  missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx">self = &lt;test_build_support.BuildSupportTests testMethod=test_area_models_can_be_excluded_without_leaking_the_feature&gt;
+
+    def test_area_models_can_be_excluded_without_leaking_the_feature(self) -&gt; None:
+&gt;       datas = collect_runtime_datas(
+            PROJECT_ROOT,
+            "full",
+            strict_asset_hashes=False,
+            excluded_groups=("area-models",),
+        )
+
+tests\test_build_support.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015')
+profile = 'full'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -&gt; list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+&gt;           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'full' failed asset preflight:
+E             missing source asset: runtime/camera/microview/driver/MVBT.inf
+E             missing source asset: runtime/camera/microview/driver/MVBT.sys
+E             missing source asset: runtime/camera/microview/driver/saa7130.sys
+E             missing source asset: runtime/camera/microview/x64/Function.dll
+E             missing source asset: runtime/camera/microview/x64/MVAPI.dll
+E             missing source asset: runtime/camera/microview/x64/MVBT.dll
+E             missing source asset: runtime/camera/microview/x64/MVDEVICE.ocx
+E             missing source asset: runtime/camera/microview/x64/MV_Twain.ds
+E             missing source asset: runtime/camera/microview/x64/mvavi.dll
+E             missing source asset: runtime/camera/microview/x64/saa7130.dll
+E             missing source asset: runtime/camera/microview/x86/Function.dll
+E             missing source asset: runtime/camera/microview/x86/MVAPI.dll
+E             missing source asset: runtime/camera/microview/x86/MVBT.dll
+E             missing source asset: runtime/camera/microview/x86/MVDEVICE.ocx
+E             missing source asset: runtime/camera/microview/x86/MV_Twain.ds
+E             missing source asset: runtime/camera/microview/x86/mvavi.dll
+E             missing source asset: runtime/camera/microview/x86/saa7130.dll
+E             missing source asset: runtime/area-infer/app/__init__.py
+E             missing source asset: runtime/area-infer/app/engine.py
+E             missing source asset: runtime/area-infer/app/main.py
+E             missing source asset: runtime/area-infer/app/model_metadata.py
+E             missing source asset: runtime/area-infer/app/request_limits.py
+E             missing source asset: runtime/area-infer/app/security.py
+E             missing source asset: runtime/area-infer/vendor/yolact/LICENSE
+E             missing source asset: runtime/area-infer/vendor/yolact/backbone.py
+E             missing source asset: runtime/area-infer/vendor/yolact/yolact.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/coco.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/config.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/grid.npy
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/box_utils.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/interpolate.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/output_utils.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/functions/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/functions/detection.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/modules/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/augmentations.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/cython_nms.pyx
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/functions.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/logger.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/nvinfo.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/timer.py
+E             missing source asset: runtime/segment-anything/edge_sam/edge_sam_encoder.onnx
+E             missing source asset: runtime/segment-anything/edge_sam/edge_sam_decoder.onnx
+E             missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx
+E             missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx
+
+scripts\build_support.py:698: RuntimeError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache" time="0.017"><failure message="RuntimeError: Runtime profile 'full' failed asset preflight:&#10;  missing source asset: runtime/camera/microview/driver/MVBT.inf&#10;  missing source asset: runtime/camera/microview/driver/MVBT.sys&#10;  missing source asset: runtime/camera/microview/driver/saa7130.sys&#10;  missing source asset: runtime/camera/microview/x64/Function.dll&#10;  missing source asset: runtime/camera/microview/x64/MVAPI.dll&#10;  missing source asset: runtime/camera/microview/x64/MVBT.dll&#10;  missing source asset: runtime/camera/microview/x64/MVDEVICE.ocx&#10;  missing source asset: runtime/camera/microview/x64/MV_Twain.ds&#10;  missing source asset: runtime/camera/microview/x64/mvavi.dll&#10;  missing source asset: runtime/camera/microview/x64/saa7130.dll&#10;  missing source asset: runtime/camera/microview/x86/Function.dll&#10;  missing source asset: runtime/camera/microview/x86/MVAPI.dll&#10;  missing source asset: runtime/camera/microview/x86/MVBT.dll&#10;  missing source asset: runtime/camera/microview/x86/MVDEVICE.ocx&#10;  missing source asset: runtime/camera/microview/x86/MV_Twain.ds&#10;  missing source asset: runtime/camera/microview/x86/mvavi.dll&#10;  missing source asset: runtime/camera/microview/x86/saa7130.dll&#10;  missing source asset: runtime/area-infer/app/__init__.py&#10;  missing source asset: runtime/area-infer/app/engine.py&#10;  missing source asset: runtime/area-infer/app/main.py&#10;  missing source asset: runtime/area-infer/app/model_metadata.py&#10;  missing source asset: runtime/area-infer/app/request_limits.py&#10;  missing source asset: runtime/area-infer/app/security.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/LICENSE&#10;  missing source asset: runtime/area-infer/vendor/yolact/backbone.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/yolact.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/coco.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/config.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/data/grid.npy&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/box_utils.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/interpolate.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/output_utils.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/functions/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/functions/detection.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/modules/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/__init__.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/augmentations.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/cython_nms.pyx&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/functions.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/logger.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/nvinfo.py&#10;  missing source asset: runtime/area-infer/vendor/yolact/utils/timer.py&#10;  missing source asset: runtime/area-models/b_v1_1.3.pth&#10;  missing source asset: runtime/area-models/b_cv_1.3.pth&#10;  missing source asset: runtime/area-models/b_c1_1.3.pth&#10;  missing source asset: runtime/area-models/b_cm_1.3.pth&#10;  missing source asset: runtime/area-models/b_cc_1.3.pth&#10;  missing source asset: runtime/area-models/b_cvlm_1.3.pth&#10;  missing source asset: runtime/segment-anything/edge_sam/edge_sam_encoder.onnx&#10;  missing source asset: runtime/segment-anything/edge_sam/edge_sam_decoder.onnx&#10;  missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx&#10;  missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx">self = &lt;test_build_support.BuildSupportTests testMethod=test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache&gt;
+
+    def test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache(self) -&gt; None:
+&gt;       datas = collect_runtime_datas(PROJECT_ROOT)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015')
+profile = 'full'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -&gt; list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+&gt;           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'full' failed asset preflight:
+E             missing source asset: runtime/camera/microview/driver/MVBT.inf
+E             missing source asset: runtime/camera/microview/driver/MVBT.sys
+E             missing source asset: runtime/camera/microview/driver/saa7130.sys
+E             missing source asset: runtime/camera/microview/x64/Function.dll
+E             missing source asset: runtime/camera/microview/x64/MVAPI.dll
+E             missing source asset: runtime/camera/microview/x64/MVBT.dll
+E             missing source asset: runtime/camera/microview/x64/MVDEVICE.ocx
+E             missing source asset: runtime/camera/microview/x64/MV_Twain.ds
+E             missing source asset: runtime/camera/microview/x64/mvavi.dll
+E             missing source asset: runtime/camera/microview/x64/saa7130.dll
+E             missing source asset: runtime/camera/microview/x86/Function.dll
+E             missing source asset: runtime/camera/microview/x86/MVAPI.dll
+E             missing source asset: runtime/camera/microview/x86/MVBT.dll
+E             missing source asset: runtime/camera/microview/x86/MVDEVICE.ocx
+E             missing source asset: runtime/camera/microview/x86/MV_Twain.ds
+E             missing source asset: runtime/camera/microview/x86/mvavi.dll
+E             missing source asset: runtime/camera/microview/x86/saa7130.dll
+E             missing source asset: runtime/area-infer/app/__init__.py
+E             missing source asset: runtime/area-infer/app/engine.py
+E             missing source asset: runtime/area-infer/app/main.py
+E             missing source asset: runtime/area-infer/app/model_metadata.py
+E             missing source asset: runtime/area-infer/app/request_limits.py
+E             missing source asset: runtime/area-infer/app/security.py
+E             missing source asset: runtime/area-infer/vendor/yolact/LICENSE
+E             missing source asset: runtime/area-infer/vendor/yolact/backbone.py
+E             missing source asset: runtime/area-infer/vendor/yolact/yolact.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/coco.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/config.py
+E             missing source asset: runtime/area-infer/vendor/yolact/data/grid.npy
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/box_utils.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/interpolate.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/output_utils.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/functions/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/functions/detection.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/modules/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/__init__.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/augmentations.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/cython_nms.pyx
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/functions.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/logger.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/nvinfo.py
+E             missing source asset: runtime/area-infer/vendor/yolact/utils/timer.py
+E             missing source asset: runtime/area-models/b_v1_1.3.pth
+E             missing source asset: runtime/area-models/b_cv_1.3.pth
+E             missing source asset: runtime/area-models/b_c1_1.3.pth
+E             missing source asset: runtime/area-models/b_cm_1.3.pth
+E             missing source asset: runtime/area-models/b_cc_1.3.pth
+E             missing source asset: runtime/area-models/b_cvlm_1.3.pth
+E             missing source asset: runtime/segment-anything/edge_sam/edge_sam_encoder.onnx
+E             missing source asset: runtime/segment-anything/edge_sam/edge_sam_decoder.onnx
+E             missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx
+E             missing source asset: runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx
+
+scripts\build_support.py:698: RuntimeError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_committed_installer_version_include_matches_app_version" time="0.002" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_dirty_gate_ignores_generated_outputs_and_untracked_content_templates_only" time="0.005" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_editable_templates_survive_content_changes_without_weakening_binary_checks" time="0.018"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_editable_templates_survive_content_changes_without_weakening_binary_checks&gt;
+
+    def test_editable_templates_survive_content_changes_without_weakening_binary_checks(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, _ = _create_release_fixture(root)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:480: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_full_profile_required_assets_have_complete_authoritative_metadata" time="1.237"><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.sys'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.sys')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.sys'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\saa7130.sys'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/saa7130.sys')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\saa7130.sys'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\Function.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/Function.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\Function.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MVAPI.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/MVAPI.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MVAPI.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MVBT.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/MVBT.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MVBT.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MVDEVICE.ocx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/MVDEVICE.ocx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MVDEVICE.ocx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MV_Twain.ds'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/MV_Twain.ds')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\MV_Twain.ds'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\mvavi.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/mvavi.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\mvavi.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\saa7130.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x64/saa7130.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x64\\saa7130.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\Function.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/Function.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\Function.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MVAPI.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/MVAPI.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MVAPI.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MVBT.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/MVBT.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MVBT.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MVDEVICE.ocx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/MVDEVICE.ocx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MVDEVICE.ocx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MV_Twain.ds'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/MV_Twain.ds')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\MV_Twain.ds'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\mvavi.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/mvavi.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\mvavi.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\saa7130.dll'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/x86/saa7130.dll')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\x86\\saa7130.dll'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\__init__.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/app/__init__.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\__init__.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\engine.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/app/engine.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\engine.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\main.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/app/main.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\main.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\model_metadata.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/app/model_metadata.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\model_metadata.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\request_limits.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/app/request_limits.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\request_limits.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\security.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/app/security.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\app\\security.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\LICENSE'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/LICENSE')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\LICENSE'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\backbone.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/backbone.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\backbone.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\yolact.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/yolact.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\yolact.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\__init__.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/data/__init__.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\__init__.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\coco.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/data/coco.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\coco.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\config.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/data/config.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\config.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\grid.npy'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/data/grid.npy')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\data\\grid.npy'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\__init__.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/__init__.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\__init__.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\box_utils.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/box_utils.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\box_utils.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\interpolate.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/interpolate.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\interpolate.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\output_utils.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/output_utils.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\output_utils.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\functions\\__init__.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/functions/__init__.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\functions\\__init__.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\functions\\detection.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/functions/detection.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\functions\\detection.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\modules\\__init__.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/modules/__init__.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\modules\\__init__.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\modules\\multibox_loss.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\layers\\modules\\multibox_loss.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\__init__.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/__init__.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\__init__.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\augmentations.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/augmentations.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\augmentations.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\cython_nms.pyx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/cython_nms.pyx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\cython_nms.pyx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\functions.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/functions.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\functions.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\logger.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/logger.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\logger.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\nvinfo.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/nvinfo.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\nvinfo.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\timer.py'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-infer/vendor/yolact/utils/timer.py')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-infer\\vendor\\yolact\\utils\\timer.py'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_v1_1.3.pth'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-models/b_v1_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_v1_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cv_1.3.pth'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-models/b_cv_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cv_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_c1_1.3.pth'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-models/b_c1_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_c1_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cm_1.3.pth'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-models/b_cm_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cm_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cc_1.3.pth'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-models/b_cc_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cc_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cvlm_1.3.pth'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/area-models/b_cvlm_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\area-models\\b_cvlm_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam\\edge_sam_encoder.onnx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/segment-anything/edge_sam/edge_sam_encoder.onnx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam\\edge_sam_encoder.onnx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam\\edge_sam_decoder.onnx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/segment-anything/edge_sam/edge_sam_decoder.onnx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam\\edge_sam_decoder.onnx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam_3x\\edge_sam_3x_encoder.onnx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam_3x\\edge_sam_3x_encoder.onnx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure><failure message="FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam_3x\\edge_sam_3x_decoder.onnx'">self = &lt;test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata&gt;
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -&gt; None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+&gt;               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+&gt;       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\segment-anything\\edge_sam_3x\\edge_sam_3x_decoder.onnx'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_installer_gate_blocks_dirty_tree_and_runtime_asset_changed_after_build" time="0.019"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_installer_gate_blocks_dirty_tree_and_runtime_asset_changed_after_build&gt;
+
+    def test_installer_gate_blocks_dirty_tree_and_runtime_asset_changed_after_build(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, required = _create_release_fixture(root)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:551: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_installer_gate_can_warn_instead_of_blocking_on_pinned_source_hashes" time="0.019"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_installer_gate_can_warn_instead_of_blocking_on_pinned_source_hashes&gt;
+
+    def test_installer_gate_can_warn_instead_of_blocking_on_pinned_source_hashes(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, required = _create_release_fixture(root)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:571: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_internal_installer_gate_warns_instead_of_blocking_on_dirty_source" time="0.018"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_internal_installer_gate_warns_instead_of_blocking_on_dirty_source&gt;
+
+    def test_internal_installer_gate_warns_instead_of_blocking_on_dirty_source(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, _required = _create_release_fixture(root)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:605: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_private_content_templates_are_collected_without_public_asset_metadata" time="0.009" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_read_app_version_matches_runtime_version" time="0.002" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_release_manifest_detects_hash_build_id_and_stale_commit_mismatches" time="0.018"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_release_manifest_detects_hash_build_id_and_stale_commit_mismatches&gt;
+
+    def test_release_manifest_detects_hash_build_id_and_stale_commit_mismatches(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, required = _create_release_fixture(root)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:432: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_release_manifest_json_is_strict_and_inventory_is_complete" time="0.020"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_release_manifest_json_is_strict_and_inventory_is_complete&gt;
+
+    def test_release_manifest_json_is_strict_and_inventory_is_complete(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, _required = _create_release_fixture(root)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:495: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_release_manifest_records_and_enforces_private_component_selection" time="0.019"><failure message="FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'">self = &lt;test_build_support.BuildSupportTests testMethod=test_release_manifest_records_and_enforces_private_component_selection&gt;
+
+    def test_release_manifest_records_and_enforces_private_component_selection(self) -&gt; None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+&gt;           app_dir, _required = _create_release_fixture(root)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:509: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_build_support.py:48: in _create_release_fixture
+    payload = (PROJECT_ROOT / token).read_bytes()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1019: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015/runtime/camera/microview/driver/MVBT.inf')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime\\camera\\microview\\driver\\MVBT.inf'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_runtime_asset_target_controls_packaged_destination" time="0.016" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_runtime_filter_excludes_packaging_noise_from_area_infer" time="0.092" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_runtime_profile_blocks_asset_with_unexpected_pinned_hash" time="0.015" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_runtime_profile_rejects_content_template_and_incomplete_license_metadata" time="0.011" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_runtime_profile_reports_missing_or_incomplete_required_file_metadata" time="0.007" /><testcase classname="tests.test_build_support.BuildSupportTests" name="test_runtime_profiles_keep_core_small_and_full_complete" time="0.014"><failure message="RuntimeError: Runtime profile 'core' failed asset preflight:&#10;  missing source asset: runtime/camera/microview/driver/MVBT.inf&#10;  missing source asset: runtime/camera/microview/driver/MVBT.sys&#10;  missing source asset: runtime/camera/microview/driver/saa7130.sys&#10;  missing source asset: runtime/camera/microview/x64/Function.dll&#10;  missing source asset: runtime/camera/microview/x64/MVAPI.dll&#10;  missing source asset: runtime/camera/microview/x64/MVBT.dll&#10;  missing source asset: runtime/camera/microview/x64/MVDEVICE.ocx&#10;  missing source asset: runtime/camera/microview/x64/MV_Twain.ds&#10;  missing source asset: runtime/camera/microview/x64/mvavi.dll&#10;  missing source asset: runtime/camera/microview/x64/saa7130.dll&#10;  missing source asset: runtime/camera/microview/x86/Function.dll&#10;  missing source asset: runtime/camera/microview/x86/MVAPI.dll&#10;  missing source asset: runtime/camera/microview/x86/MVBT.dll&#10;  missing source asset: runtime/camera/microview/x86/MVDEVICE.ocx&#10;  missing source asset: runtime/camera/microview/x86/MV_Twain.ds&#10;  missing source asset: runtime/camera/microview/x86/mvavi.dll&#10;  missing source asset: runtime/camera/microview/x86/saa7130.dll">self = &lt;test_build_support.BuildSupportTests testMethod=test_runtime_profiles_keep_core_small_and_full_complete&gt;
+
+    def test_runtime_profiles_keep_core_small_and_full_complete(self) -&gt; None:
+&gt;       core = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "core")}
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-cu-live-preview-fix-20261015')
+profile = 'core'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -&gt; list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+&gt;           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'core' failed asset preflight:
+E             missing source asset: runtime/camera/microview/driver/MVBT.inf
+E             missing source asset: runtime/camera/microview/driver/MVBT.sys
+E             missing source asset: runtime/camera/microview/driver/saa7130.sys
+E             missing source asset: runtime/camera/microview/x64/Function.dll
+E             missing source asset: runtime/camera/microview/x64/MVAPI.dll
+E             missing source asset: runtime/camera/microview/x64/MVBT.dll
+E             missing source asset: runtime/camera/microview/x64/MVDEVICE.ocx
+E             missing source asset: runtime/camera/microview/x64/MV_Twain.ds
+E             missing source asset: runtime/camera/microview/x64/mvavi.dll
+E             missing source asset: runtime/camera/microview/x64/saa7130.dll
+E             missing source asset: runtime/camera/microview/x86/Function.dll
+E             missing source asset: runtime/camera/microview/x86/MVAPI.dll
+E             missing source asset: runtime/camera/microview/x86/MVBT.dll
+E             missing source asset: runtime/camera/microview/x86/MVDEVICE.ocx
+E             missing source asset: runtime/camera/microview/x86/MV_Twain.ds
+E             missing source asset: runtime/camera/microview/x86/mvavi.dll
+E             missing source asset: runtime/camera/microview/x86/saa7130.dll
+
+scripts\build_support.py:698: RuntimeError</failure></testcase><testcase classname="tests.test_build_support.BuildSupportTests" name="test_write_installer_version_include_uses_app_version" time="0.012" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_background_save_probe_is_required_and_checked_per_case" time="0.193" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_blocks_before_pyinstaller_when_profile_dependency_is_missing" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_blocks_incomplete_asset_metadata_before_pyinstaller" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_blocks_incomplete_full_profile_before_pyinstaller" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_blocks_when_packaged_self_check_fails" time="0.012" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_can_exclude_both_private_components" time="0.009" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_passes_profile_to_pyinstaller_and_generates_release_manifest" time="0.027" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_returns_failure_when_pyinstaller_process_fails" time="0.007" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_strict_hash_mode_blocks_before_pyinstaller" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_build_warns_and_continues_on_hash_mismatch_by_default" time="0.008" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_clean_build_blocks_when_stale_dist_cannot_be_removed" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_cli_public_release_excludes_both_private_components" time="0.003" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_default_build_requires_private_content_templates" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_dependency_probe_is_derived_from_inherited_runtime_profile" time="0.009" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_dependency_probe_reports_the_scikit_image_distribution_name" time="0.005" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_failed_native_rebuild_preserves_existing_package" time="0.010" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_failed_watermark_report_is_saved_and_names_failed_cases" time="0.017" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_installer_displays_the_project_license_before_installation" time="0.003" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_malformed_self_check_output_is_preserved_for_diagnosis" time="0.008" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_missing_native_is_deferred_to_automatic_builder" time="0.006" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_packaged_self_check_rejects_contradictory_or_invalid_error_payloads" time="0.004" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_packaged_self_check_rejects_missing_or_incomplete_scale_probe" time="0.247" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_packaged_self_check_rejects_missing_or_noncompiled_diameter_probe" time="0.150" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_packaged_self_check_requires_completed_windowed_rendering" time="0.128"><failure message="AssertionError: Lists differ: ['packaged self-check did not pass the live measurement probe'] != []&#10;&#10;First list contains 1 additional elements.&#10;First extra element 0:&#10;'packaged self-check did not pass the live measurement probe'&#10;&#10;- ['packaged self-check did not pass the live measurement probe']&#10;+ []">self = &lt;test_build_windows_onedir.BuildWindowsOnedirTests testMethod=test_packaged_self_check_requires_completed_windowed_rendering&gt;
+
+    def test_packaged_self_check_requires_completed_windowed_rendering(self) -&gt; None:
+        for overlay in (
+            None,
+            "skipped_non_windows",
+            False,
+            {"ok": True},
+            {"ok": False, "worker_stdio_none": True},
+        ):
+            with self.subTest(overlay=overlay), TemporaryDirectory() as tmpdir:
+                payload = {
+                    "ok": True,
+                    "errors": [],
+                    "functional_checks": {"overlay_renderer": overlay},
+                }
+                completed = subprocess.CompletedProcess(
+                    [], 0, stdout=json.dumps(payload), stderr=""
+                )
+                with patch(
+                    "build_windows_onedir.subprocess.run", return_value=completed
+                ):
+                    errors = run_packaged_self_check(Path(tmpdir))
+                self.assertEqual(
+                    errors,
+                    [
+                        "packaged self-check did not pass the windowed overlay renderer probe"
+                    ],
+                )
+    
+        with TemporaryDirectory() as tmpdir:
+            payload["functional_checks"]["overlay_renderer"] = {
+                "ok": True,
+                "worker_stdio_none": True,
+                "scale_overlay": self._scale_report(),
+            }
+            payload["functional_checks"]["fiber_quick_geometry"] = {
+                "ok": True,
+                "backend": "skimage_zhang",
+                "geometry_revision": 3,
+                "backend_version": "0.26.0",
+                "compiled_extension": True,
+            }
+            from fdm.ui.watermark_self_check import run_watermark_self_check
+    
+            payload["functional_checks"]["watermark_renderer"] = run_watermark_self_check()
+            from fdm.ui.project_save_self_check import run_project_save_self_check
+            payload["functional_checks"]["project_save"] = run_project_save_self_check()
+            payload["functional_checks"]["native_kernels"] = self._native_report()
+            payload["functional_checks"]["cu_live_measurement"] = self._cu_live_report()
+            completed = subprocess.CompletedProcess(
+                [], 0, stdout=json.dumps(payload), stderr=""
+            )
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+&gt;               self.assertEqual(run_packaged_self_check(Path(tmpdir)), [])
+E               AssertionError: Lists differ: ['packaged self-check did not pass the live measurement probe'] != []
+E               
+E               First list contains 1 additional elements.
+E               First extra element 0:
+E               'packaged self-check did not pass the live measurement probe'
+E               
+E               - ['packaged self-check did not pass the live measurement probe']
+E               + []
+
+tests\test_build_windows_onedir.py:260: AssertionError</failure></testcase><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_spec_uses_flat_onedir_layout_for_all_executables" time="0.002" /><testcase classname="tests.test_build_windows_onedir.BuildWindowsOnedirTests" name="test_timed_out_self_check_preserves_partial_output" time="0.011" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_analysis_pipeline_probe_uses_safe_assets_registry_and_batch" time="0.117" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_app_self_check_json_includes_real_windowed_render_results" time="1.274" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_app_self_check_json_returns_machine_readable_result_without_starting_ui" time="0.455" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_background_save_failure_blocks_release_self_check" time="0.199" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_compiled_quick_diameter_probe_runs_real_geometry" time="0.058" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_core_profile_runs_declared_image_feature_gates" time="0.335" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_development_wheel_without_runtime_assets_reports_capability_hint" time="0.003" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_full_self_check_blocks_extended_raster_production_failure" time="0.244" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_full_self_check_blocks_processing_and_analysis_probe_errors" time="0.609" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_image_processing_pipeline_probe_covers_all_scientific_types" time="0.011" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_native_probe_executes_compiled_kernels_despite_python_preference" time="0.004" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_native_probe_false_cases_cannot_pass_with_aggregate_ok" time="0.343" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_native_probe_import_failure_blocks_release" time="0.347" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_overlay_probe_errors_and_bad_pixels_fail_release_self_check" time="0.512" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_packaged_area_worker_probe_uses_shared_protocol" time="0.018" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_pillow_raster_encoder_probe_exercises_all_export_formats" time="0.034" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_quick_diameter_failure_fails_the_release_self_check" time="0.276" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_release_gate_can_reject_unmanifested_files" time="0.044" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_self_check_blocks_a_missing_pillow_export_encoder" time="0.297" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_self_check_blocks_tifffile_precision_failure" time="0.320" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_self_check_fails_after_packaged_file_is_modified" time="0.032" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_self_check_passes_for_intact_release_and_ignores_installer_extras" time="0.329" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_self_check_rejects_hash_valid_non_pe_executables" time="0.366" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_tifffile_precision_probe_requires_bit_exact_uint16_and_float32" time="0.003" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_watermark_failure_lists_failed_cases" time="0.228" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_windows_overlay_probe_is_required_without_area_models" time="0.321" /><testcase classname="tests.test_release_self_check.ReleaseSelfCheckTests" name="test_wrong_nanometer_factor_fails_release_self_check" time="0.344" /></testsuite></testsuites>

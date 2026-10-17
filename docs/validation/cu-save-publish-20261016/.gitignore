@@ -1,0 +1,12 @@
+# Local capture media and disposable run state; keep scripts and result reports.
+# See ../README.md and ../local-evidence-20261017.json for retention details.
+*.png
+*.mp4
+*.zip
+*-uia.json
+isolated-config/
+isolated-profile/
+*.fdmproj
+*.assets/
+installer-build.log
+extract-installer.log

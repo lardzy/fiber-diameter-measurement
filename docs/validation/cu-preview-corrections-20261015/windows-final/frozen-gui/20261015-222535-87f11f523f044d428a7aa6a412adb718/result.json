@@ -1,0 +1,173 @@
+{
+    "schema":  2,
+    "started_at":  "2026-10-15T22:25:35.2986356+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\FiberDiameterMeasurement.exe",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718",
+    "config":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718\\isolated-config",
+    "pid":  6340,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "导入 CU 标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新增标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "试验设置",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新视场",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "本场记录",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "先选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "后选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "NK · 选类",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "计数 1–9",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "保存项目",
+                             "present":  true,
+                             "visible":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  true,
+    "unsaved_dialog":  {
+                           "title":  "未保存的改动",
+                           "buttons":  [
+                                           {
+                                               "name":  "保存",
+                                               "process_id":  6340,
+                                               "type":  "ControlType.Button",
+                                               "class":  "QPushButton",
+                                               "automation_id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                                               "native_handle":  0,
+                                               "enabled":  true,
+                                               "offscreen":  false,
+                                               "bounds":  [
+                                                              1351,
+                                                              801,
+                                                              46,
+                                                              36
+                                                          ],
+                                               "help_text":  "",
+                                               "runtime_id":  [
+                                                                  42,
+                                                                  1247342,
+                                                                  4,
+                                                                  -2147482857
+                                                              ],
+                                               "patterns":  [
+                                                                "InvokePatternIdentifiers.Pattern",
+                                                                "ValuePatternIdentifiers.Pattern"
+                                                            ]
+                                           },
+                                           {
+                                               "name":  "放弃",
+                                               "process_id":  6340,
+                                               "type":  "ControlType.Button",
+                                               "class":  "QPushButton",
+                                               "automation_id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                                               "native_handle":  0,
+                                               "enabled":  true,
+                                               "offscreen":  false,
+                                               "bounds":  [
+                                                              1403,
+                                                              801,
+                                                              46,
+                                                              36
+                                                          ],
+                                               "help_text":  "",
+                                               "runtime_id":  [
+                                                                  42,
+                                                                  1247342,
+                                                                  4,
+                                                                  -2147482856
+                                                              ],
+                                               "patterns":  [
+                                                                "InvokePatternIdentifiers.Pattern",
+                                                                "ValuePatternIdentifiers.Pattern"
+                                                            ]
+                                           },
+                                           {
+                                               "name":  "取消",
+                                               "process_id":  6340,
+                                               "type":  "ControlType.Button",
+                                               "class":  "QPushButton",
+                                               "automation_id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                                               "native_handle":  0,
+                                               "enabled":  true,
+                                               "offscreen":  false,
+                                               "bounds":  [
+                                                              1455,
+                                                              801,
+                                                              46,
+                                                              36
+                                                          ],
+                                               "help_text":  "",
+                                               "runtime_id":  [
+                                                                  42,
+                                                                  1247342,
+                                                                  4,
+                                                                  -2147482855
+                                                              ],
+                                               "patterns":  [
+                                                                "InvokePatternIdentifiers.Pattern",
+                                                                "ValuePatternIdentifiers.Pattern"
+                                                            ]
+                                           }
+                                       ],
+                           "choice":  "放弃",
+                           "action":  "InvokePattern"
+                       },
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718\\04-settings-uia.json",
+                      "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\build\\preview-final\\frozen-gui\\20261015-222535-87f11f523f044d428a7aa6a412adb718\\05-unsaved-dialog-before-decision-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "main_title":  "显微测量工作台",
+    "entry_action":  "InvokePattern",
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-15T22:25:43.9657172+08:00"
+}

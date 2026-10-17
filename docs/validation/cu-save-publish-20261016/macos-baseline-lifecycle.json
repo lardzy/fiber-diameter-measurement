@@ -1,0 +1,1 @@
+[{"phase": "destroy_enter", "thread": 6137507840}, {"phase": "gui_before_worker_destroyed", "busy": false, "worker_retained": false, "thread_retained": false, "gui_ms": 0.3040000156033784, "main": 8270823296}, {"phase": "destroy_exit", "thread": 6137507840}]

@@ -1,0 +1,39 @@
+{
+  "bridge": {
+    "api_version": 3,
+    "image_info_size": 20,
+    "pointer_size": 8,
+    "source_sha256": "d743608532e85f90e11170b87b9ec4fc0661065c866980129eccd23cf62c7b28",
+    "python_abi": "cpython-312"
+  },
+  "kernels": {
+    "api_version": 1,
+    "source_sha256": "d743608532e85f90e11170b87b9ec4fc0661065c866980129eccd23cf62c7b28",
+    "python_abi": "cpython-312",
+    "python_version": "3.12.13",
+    "pybind11_version": "3.0.4",
+    "build_type": "release",
+    "cpp_standard": 201703,
+    "compiler": "MSVC 1944"
+  },
+  "checks": {
+    "callback_copy": true,
+    "no_replay": true,
+    "field_rejected": true,
+    "metadata_size": true,
+    "display_owner_switch": true,
+    "latest_sequence_marker": true,
+    "frame_control_wakeup": true
+  },
+  "binaries": [
+    {
+      "Path": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+      "Hash": "F3C4F59A12AE03EE742C3AA25FAC3C73F7248A884898FA962532A04322EB0DDC"
+    },
+    {
+      "Path": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+      "Hash": "25118EF78A6F655ECBB7B3A57571E7E48F478272D0F565D4A4AEB041B259FE7D"
+    }
+  ],
+  "test_sdk_source_sha256": "f1d0e0b12d0fdc434dcbc3b5d7be50ddf1d3a24f1d6c4eaafae3513a7122bc7b"
+}

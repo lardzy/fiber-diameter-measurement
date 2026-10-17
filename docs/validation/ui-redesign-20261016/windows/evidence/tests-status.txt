@@ -1,0 +1,3 @@
+regressions_exit=1
+native_workbench_final_exit=0
+export_final_exit=0

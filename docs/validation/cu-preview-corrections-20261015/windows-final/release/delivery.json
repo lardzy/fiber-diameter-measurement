@@ -1,0 +1,47 @@
+﻿{
+    "version":  "0.4.8",
+    "installer":  "C:\\Users\\lishuyang\\Downloads\\FDM-0.4.8-preview-fix-20261015.exe",
+    "length":  398842387,
+    "sha256":  "408B6D4B0C200C9CCA3A6D566038AD56CDB661C795F78F82C81422D6F93DC5A3",
+    "self_check_ok":  true,
+    "build_id":  "14676d6a4f4840c49158c92f08e3b4ba",
+    "native_modules":  [
+                           {
+                               "Path":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+                               "Hash":  "F3C4F59A12AE03EE742C3AA25FAC3C73F7248A884898FA962532A04322EB0DDC"
+                           },
+                           {
+                               "Path":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+                               "Hash":  "25118EF78A6F655ECBB7B3A57571E7E48F478272D0F565D4A4AEB041B259FE7D"
+                           }
+                       ],
+    "sdk":  [
+                {
+                    "Path":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\runtime\\camera\\microview\\x64\\MVAPI.dll",
+                    "Hash":  "1D22CE270EA4AA37FB1073943A707C82F44F255164E480E1877D606B531933EA"
+                },
+                {
+                    "Path":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\runtime\\camera\\microview\\x64\\saa7130.dll",
+                    "Hash":  "CBB60864F7C2526CE32515132BC04B89EB2C5E177EC5AF62804E8B68E7CB6315"
+                }
+            ],
+    "area_models_present":  false,
+    "template_files":  [
+                           {
+                               "FullName":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\runtime\\content-templates\\-26-中空度原始记录（原号902）-集团-2023.6.13.xlsm",
+                               "Length":  124080
+                           },
+                           {
+                               "FullName":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\runtime\\content-templates\\-纤维平均直径试验记录(GBT 36422).xlsm",
+                               "Length":  107698
+                           },
+                           {
+                               "FullName":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\runtime\\content-templates\\-面积法-定量试验原始记录-新系统.xlsm",
+                               "Length":  116951
+                           },
+                           {
+                               "FullName":  "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\dist\\windows\\FiberDiameterMeasurement\\runtime\\content-templates\\sheet1.xlsm",
+                               "Length":  541641
+                           }
+                       ]
+}

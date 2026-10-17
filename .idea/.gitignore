@@ -8,3 +8,6 @@
 /dataSources.local.xml
 # 基于编辑器的 HTTP 客户端请求
 /httpRequests/
+# Local module discovery includes temporary source copies under build/.
+/*@*.iml
+/modules.xml

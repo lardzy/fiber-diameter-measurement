@@ -1,0 +1,12 @@
+{
+  "build_path": "C:\\tmp\\fdm-cu-live-rebuild-20261015\\dist\\installer\\fiber-diameter-measurement-setup-0.4.8-no-area-models.exe",
+  "bytes": 398804311,
+  "installer": "fiber-diameter-measurement-setup-0.4.8-no-area-models.exe",
+  "sha256": "6a0fc9cb22971be67715c0bdf2eb779a037bfa4e8978f4c58b0f505c7e8afb39",
+  "source_head": "006035ad81f7b188632ada1a12ad746849bcc019",
+  "uncommitted_changes": true,
+  "snapshot_application": "5405cc4ede2f46c6e26e4f75cfa8a1c8eb207c44f9bbedf75d6518b876cc2677",
+  "delivered_name": "FDM-0.4.8-acquisition-rebuild-20261015.exe",
+  "source_branch": "lard/cu-live-measurement",
+  "original_index_diff_sha256": "b242806f2d04ac018da29d7dbd78f8993172fa4598c3c0c71cfc64624ae60347"
+}

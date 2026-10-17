@@ -1,0 +1,474 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-16T08:55:34.052777+00:00",
+  "source_fingerprints": {
+    "src/fdm/ui/main_window.py": "c5343102f1f5dcd8869706e3b44a7554e6ddcf27194dd6ec9c32984822962229",
+    "src/fdm/ui/acquisition_workbench.py": "dc2a63c5a34dba7b706fbac6330929af8d23bfc8a94efd2156955217a84a3ef3",
+    "src/fdm/ui/live_experiment_workspace.py": "0029f301caddeefef079c324f5ab70d69cca3bdd7ab1908beeff82fbeac1bbb3",
+    "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+    "src/fdm/ui/display_preferences.py": "5cddc24e21761d56ad498d5c705f35801ef79e9edd975661a14e6af2a6c55fac",
+    "src/fdm/ui/live_display.py": "fd36bdb5b563f9d4aaf94122f1d10f108619ac78b4d7ed3504a4177652528104",
+    "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+    "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+    "src/fdm/ui/dialogs.py": "5ce6a8e3354dbe8d4414a451fb9f0e60ba973a2fff6190a5ec8583519104312d",
+    "src/fdm/ui/canvas.py": "86f552ff4f7ce9463d14ed0cc873b678d999cdc37eee722b0ccf2715277d8a10",
+    "src/fdm/ui/workspace.py": "5ac772ba5895802d3d0bfb19bd6c4b9ba0d3b1e69bdda876ec70f8240dd89c22",
+    "src/fdm/ui/workspace_stack.py": "e672a217ae4d6a250c994227192e61ec3c46fa24f10ae454b37fca4d404da4ae",
+    "src/fdm/ui/microview_preview_host.py": "12816a40d44c50a5acf4b4064a6d57c7efece987cef8a0af5bb345a5243e34d9",
+    "src/fdm/ui/project_save_coordinator.py": "6d15c6b036f82dcba1ef957100ba2c4d13f53a9ed729187eaba2ecc6b040e0cd",
+    "src/fdm/ui/project_session_controller.py": "e704ffb22ea2e1662f92f30a92b455ea44bbcf58185380daad7a296af8b11259",
+    "src/fdm/settings.py": "537db440adb4600b3eb2d2c86cb8c605f86b49a9572145c7dcad90e9e2963e83",
+    "src/fdm/services/capture.py": "5688721cb70200e86aa508378ad4ee7d1e7163dd31b4f92fbeb1e3aba098df77",
+    "src/fdm/ui/assets/fluent/add_20_regular.svg": "fdf9fefaf083ff2349ac94afd47aab8ecb554650781c5797176b9d6ad3caee05",
+    "src/fdm/ui/assets/fluent/arrow_expand_20_regular.svg": "c74ed4ee85539396aa2fb24e0df80794332a6b4e1b5ddbb1c2889604643c8211",
+    "src/fdm/ui/assets/fluent/arrow_export_20_regular.svg": "ee47d4a260546d0497ecb3d292ee1fb2a6781ef9d0549d3f94ba4ab8625c6bcc",
+    "src/fdm/ui/assets/fluent/arrow_next_20_regular.svg": "c99b9211739cbaa33c402a3c0f212d2b29331b04b5d4ef4df33a1d61aaca945f",
+    "src/fdm/ui/assets/fluent/arrow_redo_20_regular.svg": "374ec6ed97949ac3ae5ec6739c283f16a4a56fa7ad374b33e0b15d4d2154b991",
+    "src/fdm/ui/assets/fluent/arrow_sync_20_regular.svg": "1713352c66b798bd1bbf86467ab33e45ac615d8a18d3f79c50b195034a51ab9e",
+    "src/fdm/ui/assets/fluent/arrow_undo_20_regular.svg": "a6f6566eb86df531ce5332ab4153b056fb8ff8af37655058f30afaf127892a2f",
+    "src/fdm/ui/assets/fluent/beaker_20_regular.svg": "c274257915f44c0fcd3701d58aa887af098318d5061ccec783460ce6180c1ab2",
+    "src/fdm/ui/assets/fluent/camera_20_regular.svg": "950376e33dbf494c11adb3c13776ae620959c720a071ff6358ba4e7260a0a7ff",
+    "src/fdm/ui/assets/fluent/checkmark_20_regular.svg": "d4eb7c05fcfe45d7799925431902dc0079fa0a8cf4c647cfd4cb3db22c3fd2b7",
+    "src/fdm/ui/assets/fluent/clipboard_bullet_list_20_regular.svg": "ad10eb0de53c19b300b6a9de88c60c012f2e980aa05596bbeac63839a74efa25",
+    "src/fdm/ui/assets/fluent/cursor_20_regular.svg": "677c256bb99cd57a4189396fc836b669caae8084f5dfdd72c08969afe843a416",
+    "src/fdm/ui/assets/fluent/data_histogram_20_regular.svg": "a5efc68b301c7a7c3dbcff7c5c9b1fe9131c49903e4842443c0f2b03b04eb9eb",
+    "src/fdm/ui/assets/fluent/delete_20_regular.svg": "c3ce6fcb04fa1564fc50e00677d763ddf5cafa0ade58604df4c478268ef54452",
+    "src/fdm/ui/assets/fluent/dismiss_20_regular.svg": "e84ad771fa8afba8e3ef52c98d9ab2d8ef4fc8e23c5954766a1c4e88fc13b355",
+    "src/fdm/ui/assets/fluent/document_20_regular.svg": "9a4df1411feac56af539710455c0da05ed81c72b65f8c66c9775ca2f63552980",
+    "src/fdm/ui/assets/fluent/document_arrow_right_20_regular.svg": "0520222413b68241880578b1527d8a74911df0c6c8cc0a477432cfc6f03c4c3a",
+    "src/fdm/ui/assets/fluent/edit_20_regular.svg": "f14fdc76c0e3953d273e99394e724003bebd8779a55e30df6130455841f237c6",
+    "src/fdm/ui/assets/fluent/folder_open_20_regular.svg": "c5f8b2db9af20a454c1f05ce6eda4b21c99f1b8677b14b6d7d07d5817140a487",
+    "src/fdm/ui/assets/fluent/full_screen_maximize_20_regular.svg": "bcef45dfd2fc91dfef2e06079278330f774557a49451fe07b51834b1d65859ea",
+    "src/fdm/ui/assets/fluent/full_screen_minimize_20_regular.svg": "22d70445c47ba6d76e8629cf8cb9f95fbed283d0d9ea57459a590d549a3effab",
+    "src/fdm/ui/assets/fluent/image_multiple_20_regular.svg": "838dc52d7065084e12f61591872c99b09d1f901ad44482c7dd8ab55926cf81b1",
+    "src/fdm/ui/assets/fluent/info_20_regular.svg": "498bc2a24fb99480e7565b502467a4cc8e967b41b0c374c1283a68fc0da73b7a",
+    "src/fdm/ui/assets/fluent/map_20_regular.svg": "c6c2190a568fa941f09bc50ba63f9978a4d083574547fe083b0d3ab63b939657",
+    "src/fdm/ui/assets/fluent/microscope_20_regular.svg": "551a3b49bc63cd57b131facabcbd4a3265882563beed809fcd1cbfbd7e61ae21",
+    "src/fdm/ui/assets/fluent/number_symbol_20_regular.svg": "0d2575799ba5febfa729d916112ac2ed7ad55a1ec9fa7fdbcc4c8775df67f86f",
+    "src/fdm/ui/assets/fluent/play_20_regular.svg": "0666c1378f63d4d5c32f91b4107086bc14799dff306027976be591da8843ae45",
+    "src/fdm/ui/assets/fluent/question_circle_20_regular.svg": "2a74ef3c4c4fe762581ba7339c01be2129b7e646a8f399703f1426558275a639",
+    "src/fdm/ui/assets/fluent/ruler_20_regular.svg": "29ff61cf92ce98355c845c3be68c973bb1763e197574ca085cc862fec00cbb12",
+    "src/fdm/ui/assets/fluent/save_20_regular.svg": "fdfbcf9c469ff958782a3f8ab4659c7f1c48062752bb6324b07e5bbb70f52969",
+    "src/fdm/ui/assets/fluent/search_20_regular.svg": "5ac1eac82df532662cd1bad2c8e55763846e1b258740bcbb0612a48d22630d40",
+    "src/fdm/ui/assets/fluent/settings_20_regular.svg": "ac5bdb808bed91dc8c0b6f346e7a0a1ee1901fc4b50f5641987498a65e200685",
+    "src/fdm/ui/assets/fluent/stop_20_regular.svg": "8023e072d92bf65ac7647ae651d828d083834abc2eee1a2d24d64e10815d493a",
+    "src/fdm/ui/assets/fluent/table_20_regular.svg": "7acf041bc47eb694a3c3c74ba6d4d345cee8941c5f43dfe832494bfe4b8f0570",
+    "src/fdm/ui/assets/fluent/video_20_regular.svg": "1d74113628b7c836425ad0888b31ee3c543942fd8035d1970366deb717c7b26f",
+    "src/fdm/ui/assets/fluent/warning_20_regular.svg": "c3bdfef09229240562268d03a5036cdd8185b7d25c2f21f572add0f3aeb62eb2"
+  },
+  "theme": "navy",
+  "requested_raster": [
+    3840,
+    2160
+  ],
+  "runtime": {
+    "python": "3.13.12",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "requested_logical": [
+    1920,
+    1080
+  ],
+  "requested_scale": 2.0,
+  "frame_size": [
+    768,
+    576
+  ],
+  "profile": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/isolated-profile-iz0_dvaw",
+  "platform": "offscreen",
+  "real_hardware": false,
+  "limitations": [
+    "Synthetic backend does not validate SDK HWND clipping, throughput or camera recovery.",
+    "Mixed physical monitors require the documented native Windows acceptance pass."
+  ],
+  "passed": true,
+  "actual_logical": [
+    1920,
+    1080
+  ],
+  "actual_dpr": 2.0,
+  "transitions": {
+    "page_switches": 203,
+    "workspace_roundtrips": 20,
+    "backend_starts": 21,
+    "backend_stops": 21,
+    "stable_native_handle": true,
+    "native_display_requested": false,
+    "dock_state_restored": {
+      "_project_dock": true,
+      "_inspector_dock": true,
+      "_results_dock": false
+    },
+    "unexpected_windows": [],
+    "max_center_drift_source_pixels": 0.0,
+    "modal_messages": [],
+    "project_dirty": false
+  },
+  "display_modes": [
+    {
+      "mode": "pixel",
+      "value": null,
+      "reloaded": true
+    },
+    {
+      "mode": "fit",
+      "value": null,
+      "reloaded": true
+    },
+    {
+      "mode": "percent",
+      "value": 137,
+      "reloaded": true
+    },
+    {
+      "mode": "magnification",
+      "value": 300,
+      "reloaded": true
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "measurement",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/measurement.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "realtime",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/realtime.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-operation",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/content-operation.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-records",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/content-records.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-report",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/content-report.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-advanced-0",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/content-advanced-0.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "content-advanced-1",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/content-advanced-1.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-operation",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/diameter-operation.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-records",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/diameter-records.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-report",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/diameter-report.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-advanced-0",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/diameter-advanced-0.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "diameter-advanced-1",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/diameter-advanced-1.png",
+      "logical_size": [
+        560,
+        420
+      ],
+      "raster_size": [
+        1120,
+        840
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "digital-slide",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/digital-slide.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-0",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-0.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-1",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-1.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-2",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-2.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-3",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-3.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-4",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-4.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-5",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-5.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-6",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-6.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "settings-7",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/settings-7.png",
+      "logical_size": [
+        368,
+        368
+      ],
+      "raster_size": [
+        736,
+        736
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "capture-no-device",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/capture-no-device.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "trial-no-frame",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/trial-no-frame.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "trial-frame-restored",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/trial-frame-restored.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "trial-capture-error",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/trial-capture-error.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    },
+    {
+      "name": "capture-error",
+      "path": "/private/tmp/fdm-workflow-redesign-final/navy-3840x2160-2/capture-error.png",
+      "logical_size": [
+        1920,
+        1080
+      ],
+      "raster_size": [
+        3840,
+        2160
+      ],
+      "dpr": 2.0
+    }
+  ],
+  "source_changed_during_run": false,
+  "duration_seconds": 10.353,
+  "evidence_phase": "final",
+  "full_temporary_directory": "/tmp/fdm-workflow-redesign-final/navy-3840x2160-2",
+  "retained_screenshots": []
+}

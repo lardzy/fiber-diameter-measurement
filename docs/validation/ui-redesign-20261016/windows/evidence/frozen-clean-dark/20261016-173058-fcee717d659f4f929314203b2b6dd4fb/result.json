@@ -1,0 +1,114 @@
+{
+    "schema":  2,
+    "started_at":  "2026-10-16T17:30:58.5981413+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\dist\\windows\\installer-payload\\{app}\\FiberDiameterMeasurement.exe",
+    "theme":  "dark",
+    "real_hardware":  false,
+    "legacy_project":  "",
+    "legacy_settings":  "",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb",
+    "config":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\isolated-config",
+    "pid":  8116,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "样品编号",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "样品名称",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "操作者",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "测量标尺",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "新视场",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "操作",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "记录",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "报告",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "先选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "后选",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "保存项目",
+                             "present":  true,
+                             "visible":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  true,
+    "unsaved_dialog":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\04-sidebar-记录-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\04-sidebar-报告-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\04-sidebar-操作-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "main_title":  "显微测量工作台",
+    "client_size":  [
+                        1366,
+                        690
+                    ],
+    "os_dpi":  192,
+    "screen_bounds":  [
+                          0,
+                          0,
+                          2582,
+                          1644
+                      ],
+    "available_geometry":  [
+                               0,
+                               0,
+                               2582,
+                               1548
+                           ],
+    "entry_action":  "InvokePattern",
+    "stable_navigation_verified":  true,
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-16T17:31:19.1276322+08:00"
+}
