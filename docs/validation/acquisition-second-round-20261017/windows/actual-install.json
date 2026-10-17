@@ -1,0 +1,8 @@
+﻿{
+    "process_user":  "NT AUTHORITY\\SYSTEM",
+    "exit_code":  0,
+    "installed_path":  "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate",
+    "installer":  "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\installer\\fiber-diameter-measurement-setup-0.4.10-no-area-models.exe",
+    "finished_at":  "2026-10-17T10:51:02.2528604+08:00",
+    "installer_sha256":  "81EFE93E5BA9FAD47DD189CF6269D9C2C28242A4972BFB5782C743442C1F7840"
+}

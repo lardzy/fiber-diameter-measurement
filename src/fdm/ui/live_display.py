@@ -35,7 +35,7 @@ def _settings():
 
 
 def _screen_key(screen):
-    return json.dumps([screen.name(), screen.manufacturer(), screen.model(), screen.serialNumber()])
+    return json.dumps([screen.name(), screen.manufacturer(), screen.model(), screen.serialNumber()], allow_nan=False)
 
 
 def _screen_geometry(screen):

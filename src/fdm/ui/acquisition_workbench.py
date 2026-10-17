@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import weakref
 
 from PySide6.QtCore import QTimer, QSize, QEvent
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabBar, QPushButton, QLabel
@@ -30,6 +31,15 @@ class AcquisitionWorkbench(QWidget):
         self._want_capture = False
         self._restart_pending = False
         self._error_message = ""
+        self._splitters = []
+        try:
+            preferences = json.loads(self._preferences_path().read_text(encoding="utf-8"))
+            if "sidebar_width" not in preferences:
+                legacy = json.loads(self._preferences_path().with_name("trial-workbench.json").read_text(encoding="utf-8"))
+                preferences["sidebar_width"] = legacy.get("content", {}).get("sidebar_width", 432)
+            self._sidebar_width = max(390, min(520, int(preferences.get("sidebar_width", 432))))
+        except (OSError, ValueError, TypeError, AttributeError):
+            self._sidebar_width = 432
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -64,6 +74,8 @@ class AcquisitionWorkbench(QWidget):
         self.pages = WorkspaceStack(self)
         self.capture_page = capture_page
         self.pages.addWidget(capture_page)
+        if hasattr(host, "_preview_body_splitter"):
+            self.register_splitter(host._preview_body_splitter)
         layout.addWidget(self.pages, 1)
         self.navigation.currentChanged.connect(self.select_page)
         manager = host._capture_manager
@@ -104,9 +116,32 @@ class AcquisitionWorkbench(QWidget):
         try:
             path = self._preferences_path()
             path.parent.mkdir(parents=True, exist_ok=True)
-            atomic_write_text(path, json.dumps({"version": 1, "page": self._selected}), encoding="utf-8")
+            atomic_write_text(path, json.dumps({"version": 2, "page": self._selected,
+                                               "sidebar_width": self._sidebar_width}, allow_nan=False), encoding="utf-8")
         except OSError:
             pass
+
+    def register_splitter(self, splitter):
+        self._splitters.append(weakref.ref(splitter))
+        splitter.splitterMoved.connect(lambda *_: self._sidebar_moved(splitter))
+        self.apply_sidebar_width()
+
+    def _sidebar_moved(self, splitter):
+        self._sidebar_width = max(390, min(520, splitter.sizes()[1]))
+        self.apply_sidebar_width()
+        self._save_page()
+
+    def apply_sidebar_width(self):
+        from shiboken6 import isValid
+        live = []
+        for ref in self._splitters:
+            splitter = ref()
+            if splitter is None or not isValid(splitter):
+                continue
+            live.append(ref)
+            splitter.setSizes([max(320, splitter.width() - splitter.handleWidth() - self._sidebar_width),
+                               self._sidebar_width])
+        self._splitters = live
 
     def enter(self, *, auto_start=True):
         first_entry = not self._entered
@@ -196,6 +231,8 @@ class AcquisitionWorkbench(QWidget):
             self.navigation.setCurrentIndex(index)
             self.host._capture_manager.set_native_preview_visible(False)
             self.host._sync_workspace_mode()
+            self.apply_sidebar_width()
+            QTimer.singleShot(0, self, self.apply_sidebar_width)
             self._save_page()
         finally:
             self._switching = False

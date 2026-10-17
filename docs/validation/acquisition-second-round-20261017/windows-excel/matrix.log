@@ -1,0 +1,15 @@
+{"template": "cu-normal", "count": 0, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "cu-normal", "count": 1, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "cu-normal", "count": 1488, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "cu-normal", "count": 1500, "ok": true, "status": "review_required", "warning_count": 1, "error": null}
+{"template": "cu-normal", "count": 2000, "ok": true, "status": "review_required", "warning_count": 2, "error": null}
+{"template": "cu-multiscale", "count": 0, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "cu-multiscale", "count": 1, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "cu-multiscale", "count": 1488, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "cu-multiscale", "count": 1500, "ok": true, "status": "review_required", "warning_count": 1, "error": null}
+{"template": "cu-multiscale", "count": 2000, "ok": true, "status": "review_required", "warning_count": 2, "error": null}
+{"template": "user-custom", "count": 0, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "user-custom", "count": 1, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "user-custom", "count": 1488, "ok": true, "status": "ready", "warning_count": 0, "error": null}
+{"template": "user-custom", "count": 1500, "ok": true, "status": "review_required", "warning_count": 1, "error": null}
+{"template": "user-custom", "count": 2000, "ok": true, "status": "review_required", "warning_count": 2, "error": null}

@@ -11,7 +11,7 @@ from fdm.live_experiment.controller import CalibrationSnapshot
 
 
 def source_key(frame):
-    return json.dumps([frame.source_id, *frame.size], ensure_ascii=False, separators=(",", ":"))
+    return json.dumps([frame.source_id, *frame.size], ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
 def _path():
@@ -36,4 +36,4 @@ def save_ruler(key, calibration):
     path = _path()
     path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(path, json.dumps({"version": 1, "rulers": {
-        name: asdict(value) for name, value in rulers.items()}}, ensure_ascii=False, indent=2), encoding="utf-8")
+        name: asdict(value) for name, value in rulers.items()}}, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")

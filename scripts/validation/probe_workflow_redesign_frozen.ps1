@@ -10,6 +10,7 @@ param(
     [int]$ClientHeight = 690,
     [string]$LegacyProject = '',
     [string]$LegacySettings = '',
+    [string]$UnavailableDeviceId = 'microview:0',
     [switch]$AcknowledgeIsolatedEmptyProject = $true,
     [switch]$ExerciseBackgroundSaving = $true
 )
@@ -19,7 +20,8 @@ if (-not $AcknowledgeIsolatedEmptyProject) {
     throw 'This probe may discard only its own new isolated empty project; pass -AcknowledgeIsolatedEmptyProject.'
 }
 $exe = Get-Item -LiteralPath $Executable
-$allowedRoot = [IO.Path]::GetFullPath('C:\tmp\fdm-cu-live-ui-redesign-20261016\dist\windows\')
+$validationRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$allowedRoot = [IO.Path]::GetFullPath((Join-Path $validationRoot 'dist\windows\'))
 if (-not $exe.FullName.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase) -or
     $exe.Name -ne 'FiberDiameterMeasurement.exe') {
     throw 'Only the task-specific extracted application is permitted.'
@@ -100,13 +102,19 @@ $config = Join-Path $runDirectory 'isolated-config'
 $utf8 = [Text.UTF8Encoding]::new($false)
 $appConfig = Join-Path $config 'FiberDiameterMeasurement'
 [void](New-Item -ItemType Directory -Path $appConfig)
-[IO.File]::WriteAllText((Join-Path $appConfig 'settings.json'), ('{"theme_mode":"' + $Theme + '"}'), $utf8)
-if($LegacySettings) {Copy-Item -LiteralPath $LegacySettings -Destination (Join-Path $appConfig 'settings.json')}
+$isolatedSettings = [pscustomobject]@{theme_mode=$Theme; selected_capture_device_id=$UnavailableDeviceId}
+if($LegacySettings) {
+    $isolatedSettings = Get-Content -LiteralPath $LegacySettings -Raw -Encoding UTF8 | ConvertFrom-Json
+    $isolatedSettings | Add-Member -NotePropertyName theme_mode -NotePropertyValue $Theme -Force
+    $isolatedSettings | Add-Member -NotePropertyName selected_capture_device_id -NotePropertyValue $UnavailableDeviceId -Force
+}
+[IO.File]::WriteAllText((Join-Path $appConfig 'settings.json'),($isolatedSettings|ConvertTo-Json -Depth 20),$utf8)
 $p = [Diagnostics.Process]::new()
 $p.StartInfo = [Diagnostics.ProcessStartInfo]::new()
 $p.StartInfo.FileName = $exe.FullName
 $p.StartInfo.WorkingDirectory = $exe.DirectoryName
 $p.StartInfo.UseShellExecute = $false
+$p.StartInfo.EnvironmentVariables.Remove('PSExecutionPolicyPreference')
 $p.StartInfo.EnvironmentVariables['LOCALAPPDATA'] = $config
 $p.StartInfo.EnvironmentVariables['APPDATA'] = $config
 $p.StartInfo.EnvironmentVariables['QT_ACCESSIBILITY'] = '1'
@@ -115,7 +123,7 @@ $p.StartInfo.EnvironmentVariables['QT_SCALE_FACTOR'] = '0.5'
 $probeProject = Join-Path $runDirectory 'save-lifecycle-probe.fdmproj'
 if($ExerciseBackgroundSaving) {
     $python = 'C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Scripts\python.exe'
-    $env:PYTHONPATH = 'C:\tmp\fdm-cu-live-ui-redesign-20261016\src'
+    $env:PYTHONPATH = Join-Path $validationRoot 'src'
     $env:FDM_SAVE_PROBE_PROJECT = $probeProject
     $createProject = @'
 import os
@@ -139,7 +147,9 @@ ProjectIO.save(p, os.environ["FDM_SAVE_PROBE_PROJECT"])
 
 $result = [ordered]@{
     schema = 2; started_at = (Get-Date).ToString('o'); exe = $exe.FullName
-    theme = $Theme; real_hardware = $false
+    theme = $Theme; real_hardware = $null; hardware_acceptance_tested = $false
+    capture_note = 'GUI navigation may auto-start a VM-mapped camera; this probe does not certify camera hardware.'
+    requested_capture_device_id = $UnavailableDeviceId
     legacy_project = $LegacyProject; legacy_settings = $LegacySettings
     run_directory = $runDirectory; config = $config; pid = $null
     isolated_empty_project_verified = $false; main_window = $false
@@ -148,6 +158,7 @@ $result = [ordered]@{
     unsaved_dialog = $null; graceful_exit = $false; forced_cleanup = $false
     requested_client_size = @($ClientWidth, $ClientHeight)
     observed_client_sizes = @()
+    scroll_actions = @()
     snapshots = @(); errors = @(); ok = $false
 }
 
@@ -162,6 +173,11 @@ function Get-ElementRecord($Element) {
     if (@($bounds | Where-Object { [double]::IsNaN($_) -or [double]::IsInfinity($_) }).Count -gt 0) {
         $bounds = $null
     }
+    $valuePattern = $null
+    $value = $null
+    if($Element.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern,[ref]$valuePattern)) {
+        $value = $valuePattern.Current.Value
+    }
     return [ordered]@{
         name = $current.Name; process_id = $current.ProcessId
         type = $current.ControlType.ProgrammaticName; class = $current.ClassName
@@ -169,6 +185,7 @@ function Get-ElementRecord($Element) {
         enabled = $current.IsEnabled; offscreen = $current.IsOffscreen
         bounds = $bounds
         help_text = $current.HelpText
+        value = $value
         runtime_id = @($Element.GetRuntimeId())
         patterns = @($Element.GetSupportedPatterns() | ForEach-Object { $_.ProgrammaticName })
     }
@@ -281,7 +298,91 @@ function Save-Snapshot($Phase) {
     if(-not $Phase.StartsWith('99-')) { Confirm-ClientSize $Phase }
 }
 
+function Get-LocalScrollContext($Element) {
+    # Only walk ancestors of the exact PID-owned control. A hidden trial's
+    # scroll pane is not an alternative target, and the desktop is never scrolled.
+    $walker = [System.Windows.Automation.TreeWalker]::RawViewWalker
+    $ancestor = $walker.GetParent($Element)
+    for($depth=0; $null -ne $ancestor -and $depth -lt 24; $depth++) {
+        if($ancestor.Current.ProcessId -ne $p.Id) { break }
+        $pattern = $null
+        if(-not $ancestor.Current.IsOffscreen -and
+            $ancestor.TryGetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern,[ref]$pattern) -and
+            $pattern.Current.VerticallyScrollable) {
+            return [pscustomobject]@{element=$ancestor; pattern=$pattern; kind='ScrollPattern'}
+        }
+        # Qt 6's Windows UIA bridge exposes QScrollArea without ScrollPattern,
+        # but its own vertical QScrollBar provides RangeValuePattern. Captured
+        # UIA trees also report clipped children as IsOffscreen=false, so the
+        # local viewport bounds remain authoritative before invoking a control.
+        if(-not $ancestor.Current.IsOffscreen -and $ancestor.Current.ClassName -eq 'QScrollArea') {
+            $barCondition = [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                [System.Windows.Automation.ControlType]::ScrollBar)
+            $bars = @($ancestor.FindAll([System.Windows.Automation.TreeScope]::Descendants,$barCondition) | Where-Object {
+                $_.Current.ProcessId -eq $p.Id -and -not $_.Current.IsOffscreen -and
+                $_.Current.BoundingRectangle.Height -gt $_.Current.BoundingRectangle.Width
+            })
+            if($bars.Count -eq 1) {
+                $range = $null
+                if($bars[0].TryGetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern,[ref]$range) -and
+                    -not $range.Current.IsReadOnly -and $range.Current.Maximum -gt $range.Current.Minimum) {
+                    return [pscustomobject]@{element=$ancestor; pattern=$range; kind='RangeValuePattern'}
+                }
+            }
+        }
+        $ancestor = $walker.GetParent($ancestor)
+    }
+    return $null
+}
+
+function Test-OwnedReachable($Element) {
+    if($null -eq $Element -or $Element.Current.ProcessId -ne $p.Id) { return $false }
+    return (-not $Element.Current.IsOffscreen -or $null -ne (Get-LocalScrollContext $Element))
+}
+
+function Ensure-OwnedVisible($Element) {
+    if($null -eq $Element -or $Element.Current.ProcessId -ne $p.Id) { throw 'Cannot scroll a foreign or missing control' }
+    $context = Get-LocalScrollContext $Element
+    if($null -eq $context) {
+        if($Element.Current.IsOffscreen) { throw 'Offscreen control has no visible local ScrollPattern ancestor' }
+        return
+    }
+    for($step=0; $step -lt 80; $step++) {
+        $bounds = $Element.Current.BoundingRectangle
+        $viewport = $context.element.Current.BoundingRectangle
+        if(-not $Element.Current.IsOffscreen -and $bounds.Height -gt 0 -and
+            $bounds.Top -ge $viewport.Top -and $bounds.Bottom -le $viewport.Bottom -and
+            $bounds.Left -ge $viewport.Left -and $bounds.Right -le $viewport.Right) { return }
+        if($context.kind -eq 'ScrollPattern') {
+            $before = $context.pattern.Current.VerticalScrollPercent
+            $amount = [System.Windows.Automation.ScrollAmount]::SmallIncrement
+            if($bounds.Height -gt 0 -and $bounds.Top -lt $viewport.Top) {
+                $amount = [System.Windows.Automation.ScrollAmount]::SmallDecrement
+            }
+            $context.pattern.Scroll([System.Windows.Automation.ScrollAmount]::NoAmount,$amount)
+            Start-Sleep -Milliseconds 50
+            $after = $context.pattern.Current.VerticalScrollPercent
+        } else {
+            $before = $context.pattern.Current.Value
+            $delta = [Math]::Max(16,$bounds.Bottom-$viewport.Bottom+4)
+            if($bounds.Height -gt 0 -and $bounds.Top -lt $viewport.Top) { $delta=$bounds.Top-$viewport.Top-4 }
+            $amount = [Math]::Min($context.pattern.Current.Maximum,[Math]::Max($context.pattern.Current.Minimum,$before+$delta))
+            $context.pattern.SetValue($amount)
+            Start-Sleep -Milliseconds 50
+            $after = $context.pattern.Current.Value
+        }
+        $result.scroll_actions += [ordered]@{
+            target=$Element.Current.Name; container=$context.element.Current.Name
+            pattern=$context.kind; before=$before; after=$after; amount=[string]$amount
+        }
+        if([Math]::Abs($before-$after) -lt 0.001) { throw 'Local viewport cannot scroll the requested control into view' }
+    }
+    throw 'Local viewport scroll limit exceeded'
+}
+
 function Invoke-Exact($Element) {
+    Ensure-OwnedVisible $Element
     if ($null -eq $Element -or $Element.Current.ProcessId -ne $p.Id -or
         -not $Element.Current.IsEnabled -or $Element.Current.IsOffscreen) {
         throw 'Refusing to invoke absent, foreign, disabled, or offscreen UIA element.'
@@ -353,7 +454,9 @@ try {
     $requiredNames = @('样品编号','样品名称','操作者','测量标尺','新视场','操作','记录','报告','先选','后选','保存项目')
     foreach ($name in $requiredNames) {
         $matches = @(Find-Within $main $name)
-        $result.key_controls += [ordered]@{ name=$name; present=($matches.Count -gt 0); visible=(@($matches | Where-Object {-not $_.Current.IsOffscreen}).Count -gt 0) }
+        $reachable = @($matches | Where-Object { Test-OwnedReachable $_ })
+        if($reachable.Count -gt 0) { Ensure-OwnedVisible $reachable[0] }
+        $result.key_controls += [ordered]@{ name=$name; present=($matches.Count -gt 0); visible=(@($matches | Where-Object {-not $_.Current.IsOffscreen}).Count -gt 0); reached_with_local_scroll=($reachable.Count -gt 0) }
     }
     $result.key_controls_verified = (@($result.key_controls | Where-Object {-not $_.present -or -not $_.visible}).Count -eq 0)
     Save-Snapshot '03-content-reentry'
@@ -378,11 +481,15 @@ try {
     $result['stable_navigation_verified'] = $true
 
     if($ExerciseBackgroundSaving) {
-        $loadedFixture = @(Find-Within $main 'save-lifecycle-probe')
-        if($loadedFixture.Count -eq 0){throw 'Owned project sample name was not displayed; refusing save'}
+        $sampleName = Visible-Unique @(Find-Within $main '样品名称' ([System.Windows.Automation.ControlType]::Edit)) 'Owned project sample name'
+        $sampleValue = $null
+        if(-not $sampleName.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern,[ref]$sampleValue) -or
+            $sampleValue.Current.Value -ne 'save-lifecycle-probe') { throw 'Owned project sample name value does not match; refusing save' }
+        $result['loaded_fixture_name'] = $sampleValue.Current.Value
         $save = Visible-Unique @(Find-Within $main '保存项目' ([System.Windows.Automation.ControlType]::Button)) 'Trial save button'
-        $adds = @(Find-Within $main '+' ([System.Windows.Automation.ControlType]::Button) | Where-Object {-not $_.Current.IsOffscreen})
+        $adds = @(Find-Within $main '+' ([System.Windows.Automation.ControlType]::Button) | Where-Object { Test-OwnedReachable $_ })
         if($adds.Count -ne 2){throw 'Expected the two default material count buttons'}
+        Ensure-OwnedVisible $adds[0]
         $result['saved_count_checkpoints'] = @()
         $baseline = 0
         $initialProject = Get-Content -Raw -Encoding UTF8 $probeProject | ConvertFrom-Json

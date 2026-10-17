@@ -7229,7 +7229,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIn("Shift", operation_text)
         self.assertIn("Ctrl", operation_text)
 
-    def test_preview_analysis_controls_live_in_context_row(self) -> None:
+    def test_preview_analysis_controls_live_in_acquisition_sidebar(self) -> None:
         window = MainWindow()
         try:
             self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
@@ -7243,14 +7243,20 @@ class CanvasAndExportTests(unittest.TestCase):
             window._update_preview_analysis_controls()
             self.app.processEvents()
 
-            self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
+            self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
             self.assertFalse(window._measurement_tool_strip.primaryToolsVisible())
-            self.assertTrue(window._measurement_tool_strip.isContextInline())
+            self.assertFalse(window._measurement_tool_strip.isVisible())
+            self.assertTrue(window._acquisition_right_panel.isVisible())
+            for button in (window._acquisition_focus_stack_button, window._acquisition_map_button):
+                self.assertTrue(window._acquisition_right_panel.isAncestorOf(button))
+                self.assertTrue(button.isVisible())
 
             window.measure_workspace_action.trigger()
             window._update_preview_analysis_controls()
 
             self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
+            self.assertFalse(window._acquisition_right_panel.isVisible())
+            self.assertTrue(window._measurement_tool_strip.primaryToolsVisible())
         finally:
             window.close()
 
@@ -7284,21 +7290,22 @@ class CanvasAndExportTests(unittest.TestCase):
             window._update_magic_segment_controls()
             window._update_preview_analysis_controls()
             self.app.processEvents()
-            self.assertTrue(strip.isPreviewContextVisible())
+            self.assertFalse(strip.isPreviewContextVisible())
+            self.assertTrue(window._acquisition_right_panel.isVisible())
             self.assertFalse(strip.primaryToolsVisible())
-            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isContextInline())
             self.assertFalse(strip.isCompactMode())
 
             window.resize(1000, 900)
             self.app.processEvents()
-            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isContextInline())
             self.assertFalse(strip.isContextStacked())
             self.assertFalse(strip.isCompactMode())
 
             window.resize(692, 900)
             self.app.processEvents()
-            self.assertTrue(strip.isPreviewContextVisible())
-            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isPreviewContextVisible())
+            self.assertFalse(strip.isContextInline())
             self.assertFalse(strip.isContextStacked())
         finally:
             window.close()

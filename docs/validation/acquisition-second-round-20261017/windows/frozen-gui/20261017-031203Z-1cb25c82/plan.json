@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "run_id": "20261017-031203Z-1cb25c82",
+  "vm": "Windows 11",
+  "identity": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\package\\installer-identity.json",
+  "executable_override": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "legacy_project": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\fixtures\\legacy-049-08a8eb9375ba.fdmproj",
+  "legacy_source": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/save-lifecycle-probe.fdmproj",
+  "legacy_source_sha256": "08a8eb9375ba0fa56f44bdedcd6c81f6f1c678890bc8b9e3981a376b52839be9",
+  "windows_output": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-031203Z-1cb25c82",
+  "probe_sha256": "83b6555ebaea5cfcaae577f5b0246bacdf6ec8e615e5114da7ffddf0afc461c1",
+  "cases": [
+    {
+      "name": "clean-dark-1366x690",
+      "theme": "dark",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-light-1366x690",
+      "theme": "light",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-navy-1366x690",
+      "theme": "navy",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-warm-1366x690",
+      "theme": "warm",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-light-1280x670",
+      "theme": "light",
+      "width": 1280,
+      "height": 670,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "legacy-049-dark-1366x690",
+      "theme": "dark",
+      "width": 1366,
+      "height": 690,
+      "legacy": true,
+      "save_rounds": 20
+    }
+  ],
+  "real_hardware_tested": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false
+}

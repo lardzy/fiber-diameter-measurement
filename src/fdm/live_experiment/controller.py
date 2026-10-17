@@ -20,6 +20,7 @@ from PySide6.QtCore import QObject, QTimer, Signal, Slot, Qt
 from .frames import FrameHandle, FrameBudget, FrameBudgetExceeded, PresentedFrameToken, acquisition_reservation
 from .motion import FieldMotionDetector, MotionPreparer, MOTION_REVISION, reduced_gray
 from .evidence import EvidenceStore
+from .feedback import feedback_for_reason
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +87,8 @@ class LiveExperimentController(QObject):
     recordAccepted = Signal(object)
     recordsAccepted = Signal(object)
     resultRejected = Signal(str)
+    measurementFeedback = Signal(object)
+    feedbackInvalidated = Signal(str)
     candidatesChanged = Signal(object)
     frameReady = Signal(object)
     _completionAvailable = Signal()
@@ -218,8 +221,48 @@ class LiveExperimentController(QObject):
             return self.budget.acquire(frame, reserve_bytes=self._acquisition_reservation(frame),
                 keep_preview_slots=2 if frame.live else 0)
         except FrameBudgetExceeded as exc:
-            self.resultRejected.emit(str(exc))
+            self._reject(str(exc), code="resource_limit")
             raise
+
+    def feedback_context(self, intent_id=None, *, token=None):
+        """Scalar UI context; safe to retain without keeping a frame alive."""
+        token = token or self.presented
+        frame = token.frame if token is not None else self.latest_frame
+        identity = self._source_identity
+        return {"intent_id": intent_id, "field_id": self.field_id, "field_epoch": self.field_epoch,
+                "source_id": frame.source_id if frame is not None else identity[0] if identity else None,
+                "source_generation": frame.generation if frame is not None else identity[1] if identity else None,
+                "frame_id": frame.frame_id if frame is not None else None}
+
+    def _context_current(self, token, calibration, operator_id, direction):
+        frame = token.frame
+        return (not self._closed and token.field_epoch == self.field_epoch
+                and calibration == self.calibration
+                and operator_id == self.session.active_operator_id
+                and direction == self.session.active_direction
+                and (self._source_identity is None or
+                     self._source_identity == (frame.source_id, frame.generation, frame.size)))
+
+    def _automatic_current(self, context):
+        return (self._automatic_context is context and self._context_current(
+            context["token"], context["calibration"], context["operator_id"], context["direction"]))
+
+    def _reject(self, reason, *, intent=None, context=None, code=None, severity=None):
+        """Publish only a current GUI-owned result; keep the old text signal."""
+        def current():
+            return (not self._closed and (intent is None or self._valid(intent))
+                    and (context is None or self._automatic_current(context)))
+        if not current():
+            return
+        token = intent.token if intent is not None else context["token"] if context else None
+        identity = intent.id if intent is not None else str(context["task_id"]) if context else None
+        event = feedback_for_reason(reason, code=code, severity=severity,
+                                    **self.feedback_context(identity, token=token))
+        self.resultRejected.emit(event.message)
+        # A compatibility subscriber may synchronously navigate away or start
+        # another field. Its old result must not cover the new viewport.
+        if current() and event.field_epoch == self.field_epoch:
+            self.measurementFeedback.emit(event)
 
     def mark_presented(self, token: PresentedFrameToken):
         if token.field_epoch == self.field_epoch and self.latest_frame is not None:
@@ -232,6 +275,8 @@ class LiveExperimentController(QObject):
     def unavailable(self, reason: str):
         if self.state != "unavailable":
             self.end_field(reason)
+        else:
+            self.feedbackInvalidated.emit("source_unavailable")
         self.latest_frame = self.presented = None
         self._release_frame_reference("_latest_frame_lease")
         self._release_frame_reference("_presented_frame_lease")
@@ -260,6 +305,7 @@ class LiveExperimentController(QObject):
     def cancel_pending_measurements(self, reason="未完成的测量已取消"):
         """Quiesce publication while retaining the accepted current field."""
         self._cancel_unfinished_measurements()
+        self.feedbackInvalidated.emit("measurement_cancelled")
         self.candidatesChanged.emit([])
         self.statusChanged.emit(reason)
         self.changed.emit()
@@ -278,6 +324,7 @@ class LiveExperimentController(QObject):
         self._last_prepare_sequence = -1
         self._stable_count = 0
         self.state = "unavailable" if self.latest_frame is None else "stabilizing" if self.latest_frame.live else "ready"
+        self.feedbackInvalidated.emit("field_changed")
         self.fieldChanged.emit(self.field_epoch, reason)
         self.candidatesChanged.emit([])
         self.statusChanged.emit(reason)
@@ -371,10 +418,8 @@ class LiveExperimentController(QObject):
         return result
 
     def _valid(self, intent):
-        return (not intent.cancel.is_set() and intent.token.field_epoch == self.field_epoch
-                and intent.calibration == self.calibration
-                and intent.operator_id == self.session.active_operator_id
-                and intent.direction == self.session.active_direction)
+        return (not intent.cancel.is_set() and self._context_current(intent.token,
+                intent.calibration, intent.operator_id, intent.direction))
 
     def _set_classification_state(self, intent, state, record_id=None):
         target = self._classification_target
@@ -639,8 +684,8 @@ class LiveExperimentController(QObject):
                 self._advance_submission_barrier(intent, self.presented.frame.sequence)
                 elapsed = time.perf_counter() - intent.submission_barrier_at
                 if elapsed > 2:
+                    self._reject("verification_timeout", intent=intent)
                     intent.cancel.set()
-                    self.resultRejected.emit("视场核验超过两秒，本次结果未入账；请等待视场稳定后重试。")
                 elif self._motion_sequence < intent.submission_barrier_sequence:
                     if elapsed > .5 and self.state == "ready":
                         self.state = "stabilizing"
@@ -649,12 +694,17 @@ class LiveExperimentController(QObject):
             self._jobs.popleft()
             keep_lease = False
             try:
+                if future.cancelled():
+                    self._set_classification_state(intent, "cancelled")
+                    continue
                 if not self._valid(intent):
                     continue
                 result = future.result()
-                if result.get("status") not in {"ok", "success", "valid"} or not (
-                        math.isfinite(float(result.get("diameter_um", 0))) and result["diameter_um"] > 0):
-                    self.resultRejected.emit(str(result.get("reason") or "未找到有效的两侧边缘"))
+                if result.get("status") not in {"ok", "success", "valid"}:
+                    self._reject(result.get("reason") or "edge_not_found", intent=intent)
+                    continue
+                if not (math.isfinite(float(result.get("diameter_um", 0))) and result["diameter_um"] > 0):
+                    self._reject("invalid_width", intent=intent)
                     continue
                 if self._out_of_range(intent, result):
                     self.pending_classification.append((intent, result))
@@ -664,7 +714,7 @@ class LiveExperimentController(QObject):
                 else:
                     self._accept(intent, result)
             except Exception as exc:
-                self.resultRejected.emit(str(exc))
+                self._reject(str(exc), intent=intent, severity="error")
             finally:
                 if not keep_lease:
                     target = self._classification_target
@@ -810,7 +860,8 @@ class LiveExperimentController(QObject):
             valid = valid and self._automatic_context is request["context"]
         if not valid or self.presented is None:
             self._cancel_confirmation()
-            self.resultRejected.emit("视场已变化，本次确认未入账。")
+            # Invalidated work is silent: field/source transitions already
+            # dismiss feedback, and old confirmations cannot describe a new field.
             self.changed.emit()
             return
         sequence = self.presented.frame.sequence if self.presented.frame.live else None
@@ -819,8 +870,8 @@ class LiveExperimentController(QObject):
             self._advance_submission_barrier(intent, sequence)
         elapsed = time.perf_counter() - request["started"]
         if sequence is not None and elapsed > 2:
+            self._reject("confirmation_timeout", intent=request["intents"][0][0])
             self._cancel_confirmation()
-            self.resultRejected.emit("视场核验超过两秒，本次确认未入账；请等待视场稳定后重试。")
             self.changed.emit()
             return
         if sequence is not None and self._motion_sequence < sequence:
@@ -839,7 +890,7 @@ class LiveExperimentController(QObject):
         except Exception as exc:
             if request["kind"] == "manual":
                 self._set_classification_state(request["intents"][0][0], "failed")
-            self.resultRejected.emit(str(exc))
+            self._reject(str(exc), intent=request["intents"][0][0], severity="error")
         finally:
             if request["kind"] == "manual":
                 for intent, _ in request["intents"]:
@@ -878,7 +929,9 @@ class LiveExperimentController(QObject):
             if not context or response.get("task_id") != context["task_id"]:
                 continue
             result = response.get("result") or {}
-            if context["token"].field_epoch != self.field_epoch:
+            if not self._automatic_current(context):
+                self.discard_candidates()
+            elif result.get("status") == "cancelled":
                 self.discard_candidates()
             elif result.get("status") in {"ok", "success", "empty"}:
                 context["diagnostics"] = result.get("diagnostics", {})
@@ -886,9 +939,11 @@ class LiveExperimentController(QObject):
                 self.candidatesChanged.emit(self.candidates)
                 self.statusChanged.emit(f"检测到 {len(self.candidates)} 条候选，请赋类后确认。" if self.candidates else "未检测到符合当前算法规则的纤维。")
                 if not self.candidates:
+                    self._reject("no_valid_fibers", context=context, severity="info")
                     self.discard_candidates()
             else:
-                self.resultRejected.emit(str(response.get("error") or result.get("reason") or "全图分析失败"))
+                self._reject(result.get("reason") or response.get("error") or "algorithm_error",
+                             context=context, severity="error")
                 self.discard_candidates()
 
     def discard_candidates(self):

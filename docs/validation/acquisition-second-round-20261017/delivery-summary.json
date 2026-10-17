@@ -1,0 +1,45 @@
+{
+  "version": "0.4.10",
+  "installer": "FDM-0.4.10-acquisition-second-round-20261017.exe",
+  "sha256": "81efe93e5ba9fad47dd189cf6269d9c2c28242a4972bfb5782c743442c1f7840",
+  "bytes": 398611410,
+  "build_id": "d10251c2976d4018a92123a211cfe13f",
+  "profile": "internal; excludes area-models; includes CU templates",
+  "macos_full": {
+    "passed": 5070,
+    "skipped": 13,
+    "subtests_passed": 1653
+  },
+  "windows_source": {
+    "main_passed": 253,
+    "history_feedback_passed": 8
+  },
+  "visual": {
+    "groups_passed": 25,
+    "screenshots": 600,
+    "videos": 2
+  },
+  "excel": {
+    "exports_passed": 15,
+    "preservation_checks_passed": 15
+  },
+  "installed_gui": {
+    "groups_passed": 6,
+    "geometry_checks": 195,
+    "legacy_save_rounds": 20
+  },
+  "explorer_launch": {
+    "passed": true,
+    "elevated": false,
+    "parent": "explorer.exe",
+    "exit_code": 0
+  },
+  "installer_files_verified": 4818,
+  "production_files_verified": 424,
+  "microview_hardware_tested": false,
+  "gpo_test": "simulated",
+  "vm_restored": true,
+  "temporary_snapshot_removed": true,
+  "source_commit": "unknown",
+  "git_baseline": "7b0706d21da2fb385fa8439a353779965fa63c0c"
+}

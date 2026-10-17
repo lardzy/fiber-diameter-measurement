@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "version": "0.4.10",
+  "command": "QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q -o faulthandler_timeout=180",
+  "exit_code": 0,
+  "passed": 5070,
+  "skipped": 13,
+  "subtests_passed": 1653,
+  "warnings": 1,
+  "seconds": 578.01,
+  "warning": "openpyxl legacy workbook fixture has no default style",
+  "log": "macos-full.log",
+  "log_sha256": "8b9969e81eee8df6f656fc762e9bc0ed2e03915a88a0441754f7ade87ae75cde",
+  "hardware_capture_tested": false
+}

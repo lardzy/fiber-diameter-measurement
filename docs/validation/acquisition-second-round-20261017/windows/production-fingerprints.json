@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "files_checked": 424,
+  "source_manifest_sha256": "bb52b7a5acbeaf44dde1afb135039e561e45d0ff685f0ed0e5247f93f5a8ac82",
+  "scope": [
+    "src/",
+    "native/",
+    "runtime/"
+  ],
+  "source_commit": "unknown",
+  "git_baseline": "7b0706d21da2fb385fa8439a353779965fa63c0c"
+}

@@ -14,7 +14,7 @@ from fdm.geometry import Point
 from fdm.history import DocumentHistoryState
 from fdm.models import ImageDocument, ProjectState, project_assets_root
 from fdm.project_io import ProjectIO
-from fdm.services.export_service import ExportImageRenderMode, ExportSelection, ExportService
+from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.watermark_dialog import DATETIME_DISPLAY_FORMAT, WatermarkDialog
 from fdm.ui.watermark_rendering import draw_watermark, import_logo, watermark_geometry, watermark_raster_cache
@@ -283,7 +283,8 @@ def test_result_and_raw_export_watermark_controls():
     slide = CurrentImageExportDialog("test.png", watermark_available=True, digital_slide_viewport=True)
     slide.display_radio.setChecked(True)
     assert not slide.include_watermark()
-    mixed = ExportOptionsDialog(ExportSelection(include_combined_overlay=True), allow_all_scope=True, watermark_count_current=0, watermark_count_all=1)
+    mixed = ExportOptionsDialog(ExportSelection(include_combined_overlay=True, scope=ExportScope.CURRENT), allow_all_scope=True, watermark_count_current=0, watermark_count_all=1)
+    assert mixed._scope_current.isChecked()
     assert not mixed.selection().include_watermark
     mixed._scope_all.setChecked(True)
     assert mixed.selection().include_watermark

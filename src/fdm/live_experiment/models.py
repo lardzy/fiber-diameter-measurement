@@ -10,6 +10,8 @@ import math
 from typing import Any, Callable
 from uuid import uuid4
 
+from .reminders import ReminderPolicy, normalize_policy
+
 
 def _id() -> str:
     return uuid4().hex
@@ -335,7 +337,8 @@ class ExperimentSession:
     def __init__(self, *, id: str | None = None, name: str = "含量试验", sample_number: str = "",
                  sample_name: str = "", method: str = "GB/T 16988-2013", group_width: float = 2.5,
                  grouped: bool = True, profile: str = "normal", save_images: bool = False,
-                 workspace_options: dict[str, str] | None = None) -> None:
+                 workspace_options: dict[str, str] | None = None,
+                 reminder_policy: ReminderPolicy | dict[str, Any] | None = ReminderPolicy()) -> None:
         from .statistics import resolve_method, resolve_profile
         self.id = id or _id()
         self.name, self.sample_number, self.sample_name = name, sample_number, sample_name
@@ -353,6 +356,9 @@ class ExperimentSession:
         self.active_direction = "warp"
         self.measured_reminder = 300
         self.total_reminder = 1500
+        self.reminder_policy = normalize_policy(reminder_policy)
+        # Runtime history origin is not project content or notification history.
+        self._reminder_mutation_origin = "load"
         self.revision = 0
         self._aggregates: dict[tuple[str, str, str], _Aggregate] = {}
         self._undo: list[_Change] = []
@@ -458,7 +464,7 @@ class ExperimentSession:
         """
         from .statistics import resolve_method, resolve_profile
         allowed = {"method", "group_width", "grouped", "profile", "save_images", "measured_reminder", "total_reminder",
-                   "name", "sample_name", "sample_number", "workspace_options"}
+                   "name", "sample_name", "sample_number", "workspace_options", "reminder_policy"}
         if changes.keys() - allowed:
             raise ValueError("未知试验配置")
         new = dict(changes)
@@ -476,6 +482,16 @@ class ExperimentSession:
         for key in ("measured_reminder", "total_reminder"):
             if key in new and (isinstance(new[key], bool) or not isinstance(new[key], int) or new[key] < 1):
                 raise ValueError("提醒数量必须是正整数")
+        if "reminder_policy" in new:
+            new["reminder_policy"] = normalize_policy(new["reminder_policy"])
+        elif self.reminder_policy is not None:
+            # Keep callers of the earlier configuration API meaningful for new
+            # content sessions, without migrating legacy projects implicitly.
+            targets = {target: new[old] for old, target in (
+                ("measured_reminder", "content_measured_target"),
+                ("total_reminder", "content_total_target")) if old in new}
+            if targets:
+                new["reminder_policy"] = replace(self.reminder_policy, **targets)
         for key in ("grouped", "save_images"):
             if key in new and not isinstance(new[key], bool):
                 raise ValueError("开关必须为布尔值")
@@ -529,6 +545,7 @@ class ExperimentSession:
             target.append(change)
         else:
             raise ValueError("无效的组距重算操作")
+        self._reminder_mutation_origin = action
 
     @staticmethod
     def _validate_diameter(value: float, width: float) -> float:
@@ -730,6 +747,7 @@ class ExperimentSession:
         self._apply(change, True)
         self._undo.append(change)
         self._redo.clear()
+        self._reminder_mutation_origin = "commit"
 
     def undo(self) -> bool:
         if not self._undo:
@@ -737,6 +755,7 @@ class ExperimentSession:
         change = self._undo.pop()
         self._apply(change, False)
         self._redo.append(change)
+        self._reminder_mutation_origin = "undo"
         return True
 
     def establish_history_baseline(self) -> None:
@@ -754,6 +773,7 @@ class ExperimentSession:
         change = self._redo.pop()
         self._apply(change, True)
         self._undo.append(change)
+        self._reminder_mutation_origin = "redo"
         return True
 
     def _rebuild_aggregates(self) -> None:
@@ -764,18 +784,11 @@ class ExperimentSession:
             self._record_delta(event, 1)
 
     def reminder_state(self, *, operator_id: str | None = None, direction: str | None = None) -> dict[str, Any]:
-        op, direct = self._owner(operator_id, direction)
-        measured = {m.id: self._aggregates.get((op, direct, m.id), _Aggregate()).raw.count
-                    for m in self.operators[op].materials[direct]}
-        total = sum(a.raw.count + a.extra_count for (owner, d, _), a in self._aggregates.items()
-                    if owner == op and d == direct)
-        return {"measured": measured, "total": total,
-                "measured_target": self.measured_reminder, "total_target": self.total_reminder,
-                "measured_reached": [key for key, n in measured.items() if n >= self.measured_reminder],
-                "total_reached": total >= self.total_reminder}
+        from .reminders import reminder_state
+        return reminder_state(self, operator_id=operator_id, direction=direction)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"schema_version": self.SCHEMA_VERSION, "id": self.id, "name": self.name,
+        payload = {"schema_version": self.SCHEMA_VERSION, "id": self.id, "name": self.name,
                 "sample_number": self.sample_number, "sample_name": self.sample_name,
                 "method": self.method, "group_width": self.group_width, "grouped": self.grouped,
                 "profile": self.profile, "save_images": self.save_images, "created_at": self.created_at,
@@ -786,12 +799,16 @@ class ExperimentSession:
                 "measurements": [r.to_dict() for r in self.measurements.values()],
                 "count_adjustments": [r.to_dict() for r in self.count_adjustments.values()],
                 "fields": deepcopy(self.fields), "batches": deepcopy(self.batches)}
+        if self.reminder_policy is not None:
+            payload["reminder_policy"] = self.reminder_policy.to_dict()
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ExperimentSession":
         if payload.get("schema_version") != cls.SCHEMA_VERSION:
             raise ValueError("不支持的实时试验格式版本")
-        session = cls(**{key: payload[key] for key in ("id", "name", "sample_number", "sample_name", "method",
+        session = cls(reminder_policy=payload.get("reminder_policy"),
+                      **{key: payload[key] for key in ("id", "name", "sample_number", "sample_name", "method",
                         "group_width", "grouped", "profile", "save_images", "workspace_options") if key in payload})
         for item in payload.get("operators", []):
             if item["id"] in session.operators or any(op.name == item["name"] for op in session.operators.values()):
@@ -827,9 +844,11 @@ class ExperimentSession:
         session.fields = deepcopy(payload.get("fields", {}))
         session.batches = deepcopy(payload.get("batches", {}))
         session.configure(measured_reminder=payload.get("measured_reminder", 300),
-                          total_reminder=payload.get("total_reminder", 1500))
+                          total_reminder=payload.get("total_reminder", 1500),
+                          reminder_policy=session.reminder_policy)
         session.revision = max(0, int(payload.get("revision", 0)))
         session._undo.clear()
         session._redo.clear()
         session._summary_cache = None
+        session._reminder_mutation_origin = "load"
         return session

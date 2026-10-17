@@ -511,7 +511,10 @@ class LiveExperimentWorkspace(QWidget):
         self._last_summary_revision = -1
         self._record_model_revision = -1
         self._static_generation = 0
-        self._reminders_seen = set()
+        from fdm.live_experiment.reminders import ReminderTracker
+        if not hasattr(session, "_quantity_notifications"):
+            session._quantity_notifications = ReminderTracker(session)
+        self._reminder_tracker = session._quantity_notifications
         self._last_dirty_state = (session.revision, session.active_operator_id, session.active_direction)
         # Opening a workbench creates a usable draft, not project data.
         self._draft_revision = session.revision
@@ -529,6 +532,8 @@ class LiveExperimentWorkspace(QWidget):
                 self._feedback.showMessage(str(exc))
             host._capture_rulers = self._rulers
         self._build()
+        from fdm.ui.measurement_feedback_overlay import MeasurementFeedbackOverlay
+        self.measurement_feedback = MeasurementFeedbackOverlay(self.image_scroll.viewport(), canvas=self.canvas)
         self._restore_view_preferences()
         from fdm.ui.display_preferences import acquisition_display_store, AcquisitionDisplayBinding
         self.display_binding = AcquisitionDisplayBinding(self.canvas,
@@ -560,9 +565,12 @@ class LiveExperimentWorkspace(QWidget):
         self.controller.recordAccepted.connect(self._record_accepted)
         self.controller.recordsAccepted.connect(self._records_accepted)
         self.controller.fieldChanged.connect(lambda *_: self.current_model.reset_ids([]))
-        self.controller.fieldChanged.connect(lambda *_: self.latest_value.setText("— μm"))
+        self.controller.fieldChanged.connect(self._clear_latest_value)
         self.controller.statusChanged.connect(self._status_changed)
         self.controller.resultRejected.connect(lambda text: self.statusBar().showMessage(text, 8000))
+        self.controller.measurementFeedback.connect(self._measurement_feedback_received)
+        self.controller.feedbackInvalidated.connect(self.measurement_feedback.dismiss)
+        self.measurement_feedback.dismissed.connect(self._measurement_feedback_dismissed)
         self.controller.candidatesChanged.connect(self._candidates_changed)
         self.controller.changed.connect(self._changed)
         self._refresh_timer = QTimer(self)
@@ -616,6 +624,9 @@ class LiveExperimentWorkspace(QWidget):
         self.body_splitter.setSizes([max(320, self.width() - width), width])
         self.workflow_tabs.currentChanged.connect(lambda _: self._view_preferences_timer.start())
         self.body_splitter.splitterMoved.connect(lambda *_: self._view_preferences_timer.start())
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        if self.embedded and hub is not None:
+            hub.register_splitter(self.body_splitter)
 
     def _persist_view_preferences(self):
         import json
@@ -633,7 +644,7 @@ class LiveExperimentWorkspace(QWidget):
                 "sidebar_width": max(390, min(520, self.trial_sidebar.width())),
             }
             self._view_preferences_path.parent.mkdir(parents=True, exist_ok=True)
-            atomic_write_text(self._view_preferences_path, json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8")
+            atomic_write_text(self._view_preferences_path, json.dumps(preferences, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
         except OSError as exc:
             self.statusBar().showMessage(f"本次布局已应用，偏好未能保存：{exc}", 8000)
 
@@ -962,8 +973,6 @@ class LiveExperimentWorkspace(QWidget):
             text = '试验准备 · <a href="operator">填写实际操作者姓名</a>'
         elif self.mode.currentIndex() == 0 and self.material.count() == 0:
             text = '下一步 · <a href="materials">选择本方向的纤维类别</a>'
-        elif self.controller.state != "ready":
-            text = "画面持续采集中；视场稳定后继续测量。"
         else:
             text = ""
         self.readiness_label.setText(text)
@@ -992,14 +1001,27 @@ class LiveExperimentWorkspace(QWidget):
             self.ruler_choice.setFocus()
             return
         if self.gesture.currentIndex() == 0 and self.controller.draft:
-            self._guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
+            self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
         else:
-            self._guard(lambda: self.controller.start(point))
+            self._measurement_guard(lambda: self.controller.start(point))
 
     def _release(self, point):
         if self.gesture.currentIndex() == 1 and self.controller.draft:
-            self._guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
+            self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
         self.canvas.update()
+
+    def _measurement_guard(self, callback):
+        try:
+            return callback()
+        except FrameBudgetExceeded:
+            # The controller already published a structured resource_limit
+            # event. Keep its reason code and avoid replacing the same card.
+            return None
+        except Exception as exc:
+            from fdm.live_experiment.feedback import feedback_for_reason
+            feedback = feedback_for_reason(exc, **self.controller.feedback_context())
+            self._measurement_feedback_received(feedback)
+            self.statusBar().showMessage(feedback.message, 8000)
 
     def _refresh_operators(self):
         self.operator.blockSignals(True)
@@ -1313,7 +1335,7 @@ class LiveExperimentWorkspace(QWidget):
             raise ValueError("组距重算尚未结束，当前设置仍生效；请等待或取消后再打开计算设置。")
         from fdm.live_experiment.statistics import METHODS
         dialog = QDialog(self)
-        dialog.setWindowTitle("计算与数量提醒 · 恢复的 CU 计算版本")
+        dialog.setWindowTitle("含量计算设置 · 恢复的 CU 计算版本")
         form = QFormLayout(dialog)
         method = QComboBox()
         method.addItems([m.label for m in METHODS])
@@ -1328,12 +1350,7 @@ class LiveExperimentWorkspace(QWidget):
         profile = QComboBox()
         profile.addItems(["普通", "免脱色"])
         profile.setCurrentIndex(0 if self.session.profile == "normal" else 1)
-        measured, total = QSpinBox(), QSpinBox()
-        for spin, value in ((measured, self.session.measured_reminder), (total, self.session.total_reminder)):
-            spin.setRange(1, 100000000)
-            spin.setValue(value)
-        for label, widget in (("方法", method), ("组距 μm", grouping), ("汇总舍入", profile),
-                              ("每类实测数量提醒", measured), ("本方向总根数提醒", total)):
+        for label, widget in (("方法", method), ("组距 μm", grouping), ("汇总舍入", profile)):
             form.addRow(label, widget)
         note = QLabel("方法名表示恢复的 CU 版本，不表示现行标准认证。原始均径与分组计算均径可能不同。")
         note.setWordWrap(True)
@@ -1346,8 +1363,7 @@ class LiveExperimentWorkspace(QWidget):
             selected_width = grouping.currentData()
             self._configure(method=method.currentText(), grouped=selected_width is not None,
                 group_width=selected_width if selected_width is not None else self.session.group_width,
-                profile="normal" if profile.currentIndex() == 0 else "mt",
-                measured_reminder=measured.value(), total_reminder=total.value())
+                profile="normal" if profile.currentIndex() == 0 else "mt")
 
     def _configure(self, **kwargs):
         def configure():
@@ -1439,13 +1455,23 @@ class LiveExperimentWorkspace(QWidget):
                                               "mode": "content" if content else "diameter"})
 
     def _record_accepted(self, record):
+        self.measurement_feedback.dismiss()
+        self._latest_value_is_previous = False
+        self.measurement_outcome.setText("已计入")
         self.latest_value.setText(f"{record.diameter_um:.3f} μm")
+        self.statusBar().showMessage(f"本次有效测量 {record.diameter_um:.3f} μm 已计入记录。", 8000)
         self.current_model.append(record.id)
         self.history_model.append(record.id)
         self.current_table.follow_latest()
         self._record_model_revision = self.session.revision
 
     def _records_accepted(self, records):
+        self.measurement_feedback.dismiss()
+        self._latest_value_is_previous = False
+        self.measurement_outcome.setText("已计入")
+        if records:
+            self.latest_value.setText(f"{records[-1].diameter_um:.3f} μm")
+            self.statusBar().showMessage(f"已接受 {len(records)} 条有效测量并计入记录。", 8000)
         ids = [record.id for record in records]
         self.current_model.append_many(ids)
         self.history_model.append_many(ids)
@@ -1501,6 +1527,7 @@ class LiveExperimentWorkspace(QWidget):
                 self.host.project.mark_extension_changed()
             self._last_dirty_state = state
         self._refresh_persistence_state()
+        self._check_reminders()
         if hasattr(self, "display_binding"):
             self.display_binding.apply()
         self.canvas.update()
@@ -1591,7 +1618,7 @@ class LiveExperimentWorkspace(QWidget):
         lines.extend(reason.get("message", str(reason)) if isinstance(reason, dict) else str(reason) for reason in reasons[:3])
         self.summary.setText("\n\n".join(lines))
         self._last_summary_revision = self.session.revision
-        self._check_reminders()
+        self.quantity_targets.refresh()
         if self.history_model.rowCount():
             self.history_model.dataChanged.emit(self.history_model.index(0, 6), self.history_model.index(self.history_model.rowCount() - 1, 6))
 
@@ -1641,10 +1668,23 @@ class LiveExperimentWorkspace(QWidget):
         self._sync_weight_controls()
 
     def _rebuild_records(self):
+        # History and record edits can invalidate both a rejected attempt's
+        # reference value and a target notice. Keep notification history, but
+        # rebuild this presentation from the records that are still effective.
+        self.measurement_feedback.dismiss()
         self.controller.current_records[:] = [key for key, record in self.session.measurements.items()
                                                if record.field_id == self.controller.field_id]
         self.current_model.reset_ids(self.controller.current_records)
         self.history_model.reset_ids(self.session.measurements)
+        if self.controller.current_records:
+            latest = self.session.measurements[self.controller.current_records[-1]]
+            self._latest_value_is_previous = False
+            self.latest_value.setText(f"{latest.diameter_um:.3f} μm")
+            self.measurement_outcome.setText("最近有效测量")
+            self.statusBar().showMessage(f"记录已更新；本视场最近有效测量为 {latest.diameter_um:.3f} μm。", 8000)
+        else:
+            self._clear_latest_value()
+            self.statusBar().showMessage("本视场暂无有效测量记录。", 8000)
         self._changed()
 
     def _selected_record(self):
@@ -1703,23 +1743,45 @@ class LiveExperimentWorkspace(QWidget):
         self._changed()
 
     def _check_reminders(self, announce=True):
-        messages = []
-        for operator_id, operator in self.session.operators.items():
-            for direction in ("warp", "weft"):
-                state = self.session.reminder_state(operator_id=operator_id, direction=direction)
-                prefix = f"{operator.name}／{'经向' if direction == 'warp' else '纬向'}"
-                for material_id in state["measured_reached"]:
-                    key = (operator_id, direction, material_id, state["measured_target"])
-                    if key not in self._reminders_seen:
-                        name = next(m.name for m in operator.materials[direction] if m.id == material_id)
-                        messages.append(f"{prefix} {name}实测已达到 {state['measured_target']} 根")
-                        self._reminders_seen.add(key)
-                key = (operator_id, direction, "total", state["total_target"])
-                if state["total_reached"] and key not in self._reminders_seen:
-                    messages.append(f"{prefix} 总根数已达到 {state['total_target']} 根")
-                    self._reminders_seen.add(key)
-        if messages and announce:
-            self.statusBar().showMessage("；".join(messages), 15000)
+        notice = self._reminder_tracker.update(self.session)
+        displayed = getattr(self, "_reminder_feedback_crossings", ())
+        feedback = self.measurement_feedback.feedback
+        if feedback is not None and feedback.code == "target_reached" and displayed:
+            from fdm.live_experiment.reminders import all_reminder_progress
+            current = {item.key: item for item in all_reminder_progress(self.session)}
+            if any(current.get(item.key) != item for item in displayed):
+                # A count, target, name or scope changed after this notice.
+                # Dismiss obsolete text without clearing the tracker's seen
+                # set, so undo/redo cannot replay an acknowledged target.
+                self.measurement_feedback.dismiss()
+        if hasattr(self, "quantity_targets"):
+            self.quantity_targets.refresh()
+        if notice and announce and self.isVisible():
+            from fdm.live_experiment.feedback import MeasurementFeedback
+            self._reminder_feedback_crossings = notice.crossings
+            self.measurement_feedback.show_feedback(MeasurementFeedback(
+                code="target_reached", severity="success", message=notice.text + "。可以继续测量，或进入报告页复核。",
+                **self.controller.feedback_context()))
+
+    def _measurement_feedback_received(self, feedback):
+        if self._closed or not self.isVisible():
+            return
+        if feedback.field_epoch is not None and feedback.field_epoch != self.controller.field_epoch:
+            return
+        self._latest_value_is_previous = self.latest_value.text() != "— μm"
+        self.measurement_outcome.setText("本次未通过" + (" · 上方为上一条有效测量" if self._latest_value_is_previous else ""))
+        self.measurement_feedback.show_feedback(feedback)
+
+    def _measurement_feedback_dismissed(self, feedback):
+        if feedback is not None and feedback.code == "target_reached":
+            self._reminder_feedback_crossings = ()
+        if feedback is not None and feedback.severity != "success":
+            self.measurement_outcome.setText("上一条有效测量" if getattr(self, "_latest_value_is_previous", False) else "")
+
+    def _clear_latest_value(self, *_):
+        self.latest_value.setText("— μm")
+        self.measurement_outcome.setText("")
+        self._latest_value_is_previous = False
 
     def _choose_experiment(self):
         mode = self.session.workspace_options["mode"]

@@ -877,9 +877,9 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertEqual(window._workspace_mode, WorkspaceMode.ACQUIRE)
         self.assertIs(window._center_stack.currentWidget(), window._acquisition_workbench)
         self.assertFalse(window._capture_manager.is_preview_active())
-        self.assertFalse(window._measure_toolbar.isHidden())
+        self.assertTrue(window._measure_toolbar.isHidden())
         self.assertFalse(window._measurement_tool_strip.primaryToolsVisible())
-        self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
+        self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
         self.assertFalse(window._acquisition_right_panel.isHidden())
         self.assertTrue(window._right_standard_panel.isHidden())
         # A no-device/stop callback updates capture state, not the user's route.

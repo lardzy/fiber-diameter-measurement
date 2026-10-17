@@ -1,0 +1,2831 @@
+{
+  "schema": 1,
+  "run_id": "20261017-025842Z-36027492",
+  "vm": "Windows 11",
+  "identity": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\package\\installer-identity.json",
+  "executable_override": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "legacy_project": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\fixtures\\legacy-049-08a8eb9375ba.fdmproj",
+  "legacy_source": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/ui-redesign-20261016/windows/evidence-final/frozen-legacy-upgrade/20261016-182409-9cf7eca8528d48e586723ec65c87c70c/save-lifecycle-probe.fdmproj",
+  "legacy_source_sha256": "08a8eb9375ba0fa56f44bdedcd6c81f6f1c678890bc8b9e3981a376b52839be9",
+  "windows_output": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492",
+  "probe_sha256": "899992b98a87f78c51d46554b17ee87450492a317cc76ee868fb1164e93d5c87",
+  "cases": [
+    {
+      "name": "clean-dark-1366x690",
+      "theme": "dark",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-light-1366x690",
+      "theme": "light",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-navy-1366x690",
+      "theme": "navy",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-warm-1366x690",
+      "theme": "warm",
+      "width": 1366,
+      "height": 690,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "clean-light-1280x670",
+      "theme": "light",
+      "width": 1280,
+      "height": 670,
+      "legacy": false,
+      "save_rounds": 0
+    },
+    {
+      "name": "legacy-049-dark-1366x690",
+      "theme": "dark",
+      "width": 1366,
+      "height": 690,
+      "legacy": true,
+      "save_rounds": 20
+    }
+  ],
+  "real_hardware_tested": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false,
+  "preflight": {
+    "legacy_sha256": "08a8eb9375ba0fa56f44bdedcd6c81f6f1c678890bc8b9e3981a376b52839be9",
+    "executable_sha256": "5bcc504cea8ec243c21c2c1aa371d9891821a8f319306204c90d49d9e02694c3",
+    "probe_sha256": "899992b98a87f78c51d46554b17ee87450492a317cc76ee868fb1164e93d5c87",
+    "executable": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "identity": {
+      "passed": true,
+      "version": "0.4.10",
+      "build_id": "d10251c2976d4018a92123a211cfe13f",
+      "source_commit": "unknown",
+      "installer": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\installer\\fiber-diameter-measurement-setup-0.4.10-no-area-models.exe",
+      "sha256": "81efe93e5ba9fad47dd189cf6269d9c2c28242a4972bfb5782c743442c1f7840",
+      "bytes": 398611410,
+      "payload": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installer-payload-81efe93e5ba9\\{app}",
+      "files_verified": 4818,
+      "source_snapshot_sha256": "bb52b7a5acbeaf44dde1afb135039e561e45d0ff685f0ed0e5247f93f5a8ac82",
+      "selfcheck_encoding": "cp936",
+      "excluded_components": [
+        "area-models"
+      ],
+      "actual_installation_tested": false,
+      "hardware_capture_tested": false
+    }
+  },
+  "groups": [
+    {
+      "stdout_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\probe.stdout.log",
+      "result_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\result.json",
+      "name": "clean-dark-1366x690",
+      "result": {
+        "schema": 2,
+        "started_at": "2026-10-17T10:59:44.3843331+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "dark",
+        "real_hardware": false,
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705",
+        "config": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\isolated-config",
+        "pid": 6248,
+        "isolated_empty_project_verified": true,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": true,
+        "live_window": true,
+        "key_controls": [
+          {
+            "name": "样品编号",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "样品名称",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作者",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "测量标尺",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "新视场",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "记录",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "报告",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "先选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "后选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "保存项目",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          }
+        ],
+        "key_controls_verified": true,
+        "workspace_closed": true,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1366,
+          690
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main-before-menu",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "02-acquisition",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-0",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-1",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-2",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-3",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-4",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-5",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-6",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-7",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-8",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-9",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-10",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-11",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-12",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-13",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-14",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-15",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-16",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-17",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-18",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-19",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "03-content-reentry",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-记录",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-报告",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-操作",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-直径试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-实时采集",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-含量试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\01-main-before-menu-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\02-acquisition-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\03-content-reentry-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\04-sidebar-记录-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\04-sidebar-报告-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-dark-1366x690\\20261017-105944-4e7d0ec4280e452398b3d030e5d34705\\04-sidebar-操作-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "main_title": "显微测量工作台",
+        "client_size": [
+          1366,
+          690
+        ],
+        "os_dpi": 192,
+        "screen_bounds": [
+          0,
+          0,
+          2582,
+          1644
+        ],
+        "available_geometry": [
+          0,
+          0,
+          2582,
+          1548
+        ],
+        "entry_action": "InvokePattern",
+        "stable_navigation_verified": true,
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-17T10:59:58.9109729+08:00"
+      },
+      "probe_exit": 0,
+      "passed": true
+    },
+    {
+      "stdout_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\probe.stdout.log",
+      "result_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\result.json",
+      "name": "clean-light-1366x690",
+      "result": {
+        "schema": 2,
+        "started_at": "2026-10-17T11:00:05.7347842+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "light",
+        "real_hardware": false,
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4",
+        "config": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\isolated-config",
+        "pid": 5344,
+        "isolated_empty_project_verified": true,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": true,
+        "live_window": true,
+        "key_controls": [
+          {
+            "name": "样品编号",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "样品名称",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作者",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "测量标尺",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "新视场",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "记录",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "报告",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "先选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "后选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "保存项目",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          }
+        ],
+        "key_controls_verified": true,
+        "workspace_closed": true,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1366,
+          690
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main-before-menu",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "02-acquisition",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-0",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-1",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-2",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-3",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-4",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-5",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-6",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-7",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-8",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-9",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-10",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-11",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-12",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-13",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-14",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-15",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-16",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-17",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-18",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-19",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "03-content-reentry",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-记录",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-报告",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-操作",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-直径试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-实时采集",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-含量试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\01-main-before-menu-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\02-acquisition-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\03-content-reentry-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\04-sidebar-记录-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\04-sidebar-报告-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1366x690\\20261017-110005-fdf432f094cc4da39e7b085e708918d4\\04-sidebar-操作-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "main_title": "显微测量工作台",
+        "client_size": [
+          1366,
+          690
+        ],
+        "os_dpi": 192,
+        "screen_bounds": [
+          0,
+          0,
+          2582,
+          1644
+        ],
+        "available_geometry": [
+          0,
+          0,
+          2582,
+          1548
+        ],
+        "entry_action": "InvokePattern",
+        "stable_navigation_verified": true,
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-17T11:00:18.7222230+08:00"
+      },
+      "probe_exit": 0,
+      "passed": true
+    },
+    {
+      "stdout_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\probe.stdout.log",
+      "result_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\result.json",
+      "name": "clean-navy-1366x690",
+      "result": {
+        "schema": 2,
+        "started_at": "2026-10-17T11:00:25.0934188+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "navy",
+        "real_hardware": false,
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323",
+        "config": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\isolated-config",
+        "pid": 10468,
+        "isolated_empty_project_verified": true,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": true,
+        "live_window": true,
+        "key_controls": [
+          {
+            "name": "样品编号",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "样品名称",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作者",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "测量标尺",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "新视场",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "记录",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "报告",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "先选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "后选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "保存项目",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          }
+        ],
+        "key_controls_verified": true,
+        "workspace_closed": true,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1366,
+          690
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main-before-menu",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "02-acquisition",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-0",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-1",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-2",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-3",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-4",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-5",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-6",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-7",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-8",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-9",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-10",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-11",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-12",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-13",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-14",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-15",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-16",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-17",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-18",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-19",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "03-content-reentry",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-记录",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-报告",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-操作",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-直径试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-实时采集",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-含量试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\01-main-before-menu-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\02-acquisition-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\03-content-reentry-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\04-sidebar-记录-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\04-sidebar-报告-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-navy-1366x690\\20261017-110025-a08945cf3cf945db97c92f827eec5323\\04-sidebar-操作-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "main_title": "显微测量工作台",
+        "client_size": [
+          1366,
+          690
+        ],
+        "os_dpi": 192,
+        "screen_bounds": [
+          0,
+          0,
+          2582,
+          1644
+        ],
+        "available_geometry": [
+          0,
+          0,
+          2582,
+          1548
+        ],
+        "entry_action": "InvokePattern",
+        "stable_navigation_verified": true,
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-17T11:00:38.0553950+08:00"
+      },
+      "probe_exit": 0,
+      "passed": true
+    },
+    {
+      "stdout_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\probe.stdout.log",
+      "result_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\result.json",
+      "name": "clean-warm-1366x690",
+      "result": {
+        "schema": 2,
+        "started_at": "2026-10-17T11:00:44.7449840+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "warm",
+        "real_hardware": false,
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7",
+        "config": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\isolated-config",
+        "pid": 7992,
+        "isolated_empty_project_verified": true,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": true,
+        "live_window": true,
+        "key_controls": [
+          {
+            "name": "样品编号",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "样品名称",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作者",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "测量标尺",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "新视场",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "记录",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "报告",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "先选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "后选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "保存项目",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          }
+        ],
+        "key_controls_verified": true,
+        "workspace_closed": true,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1366,
+          690
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main-before-menu",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "02-acquisition",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-0",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-1",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-2",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-3",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-4",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-5",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-6",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-7",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-8",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-9",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-10",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-11",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-12",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-13",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-14",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-15",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-16",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-17",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-18",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-19",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "03-content-reentry",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-记录",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-报告",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-操作",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-直径试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-实时采集",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-含量试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\01-main-before-menu-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\02-acquisition-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\03-content-reentry-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\04-sidebar-记录-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\04-sidebar-报告-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-warm-1366x690\\20261017-110044-3f9a0984384d47c09cab273967aef5f7\\04-sidebar-操作-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "main_title": "显微测量工作台",
+        "client_size": [
+          1366,
+          690
+        ],
+        "os_dpi": 192,
+        "screen_bounds": [
+          0,
+          0,
+          2582,
+          1644
+        ],
+        "available_geometry": [
+          0,
+          0,
+          2582,
+          1548
+        ],
+        "entry_action": "InvokePattern",
+        "stable_navigation_verified": true,
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-17T11:00:57.3509072+08:00"
+      },
+      "probe_exit": 0,
+      "passed": true
+    },
+    {
+      "stdout_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\probe.stdout.log",
+      "result_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\result.json",
+      "name": "clean-light-1280x670",
+      "result": {
+        "schema": 2,
+        "started_at": "2026-10-17T11:01:03.7513632+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "light",
+        "real_hardware": false,
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f",
+        "config": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\isolated-config",
+        "pid": 7584,
+        "isolated_empty_project_verified": true,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": true,
+        "live_window": true,
+        "key_controls": [
+          {
+            "name": "样品编号",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "样品名称",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作者",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "测量标尺",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "新视场",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "记录",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "报告",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "先选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "后选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "保存项目",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          }
+        ],
+        "key_controls_verified": true,
+        "workspace_closed": true,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1280,
+          670
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main-before-menu",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "02-acquisition",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-0",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-1",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-2",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-3",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-4",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-5",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-6",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-7",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-8",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-9",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-10",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-11",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-12",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-13",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-14",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-15",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-16",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-17",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-18",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "main-entry-19",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "03-content-reentry",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "04-sidebar-记录",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "04-sidebar-报告",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "04-sidebar-操作",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "acquisition-page-直径试验",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "acquisition-page-实时采集",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          },
+          {
+            "phase": "acquisition-page-含量试验",
+            "actual": [
+              1280,
+              670
+            ],
+            "requested": [
+              1280,
+              670
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\01-main-before-menu-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\02-acquisition-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\03-content-reentry-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-记录-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-报告-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-操作-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "main_title": "显微测量工作台",
+        "client_size": [
+          1280,
+          670
+        ],
+        "os_dpi": 192,
+        "screen_bounds": [
+          0,
+          0,
+          2582,
+          1644
+        ],
+        "available_geometry": [
+          0,
+          0,
+          2582,
+          1548
+        ],
+        "entry_action": "InvokePattern",
+        "stable_navigation_verified": true,
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-17T11:01:16.9301127+08:00"
+      },
+      "probe_exit": 0,
+      "passed": true
+    },
+    {
+      "stdout_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\probe.stdout.log",
+      "result_path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\result.json",
+      "name": "legacy-049-dark-1366x690",
+      "result": {
+        "schema": 2,
+        "started_at": "2026-10-17T11:01:23.7221667+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "dark",
+        "real_hardware": false,
+        "legacy_project": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\fixtures\\legacy-049-08a8eb9375ba.fdmproj",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974",
+        "config": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\isolated-config",
+        "pid": 9704,
+        "isolated_empty_project_verified": true,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": true,
+        "live_window": true,
+        "key_controls": [
+          {
+            "name": "样品编号",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "样品名称",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作者",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "测量标尺",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "新视场",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "操作",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "记录",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "报告",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "先选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "后选",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          },
+          {
+            "name": "保存项目",
+            "present": true,
+            "visible": true,
+            "reached_with_local_scroll": true
+          }
+        ],
+        "key_controls_verified": true,
+        "workspace_closed": false,
+        "unsaved_dialog": null,
+        "graceful_exit": false,
+        "forced_cleanup": true,
+        "requested_client_size": [
+          1366,
+          690
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main-before-menu",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "02-acquisition",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-0",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-1",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-2",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-3",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-4",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-5",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-6",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-7",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-8",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-9",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-10",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-11",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-12",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-13",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-14",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-15",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-16",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-17",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-18",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "main-entry-19",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "03-content-reentry",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-记录",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-报告",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "04-sidebar-操作",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-直径试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-实时采集",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          },
+          {
+            "phase": "acquisition-page-含量试验",
+            "actual": [
+              1366,
+              690
+            ],
+            "requested": [
+              1366,
+              690
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\01-main-before-menu-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\02-acquisition-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\03-content-reentry-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\04-sidebar-记录-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\04-sidebar-报告-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\04-sidebar-操作-uia.json",
+          "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\legacy-049-dark-1366x690\\20261017-110123-2413676537c6419e95f1c3e448ccc974\\99-failure-observed-tree-uia.json"
+        ],
+        "errors": [
+          "Owned project sample name was not displayed; refusing save"
+        ],
+        "ok": false,
+        "main_title": "显微测量工作台",
+        "client_size": [
+          1366,
+          690
+        ],
+        "os_dpi": 192,
+        "screen_bounds": [
+          0,
+          0,
+          2582,
+          1644
+        ],
+        "available_geometry": [
+          0,
+          0,
+          2582,
+          1548
+        ],
+        "entry_action": "InvokePattern",
+        "stable_navigation_verified": true,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-17T11:01:36.8964018+08:00"
+      },
+      "probe_exit": 0,
+      "passed": false
+    }
+  ],
+  "passed": false,
+  "local_output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/acquisition-second-round-20261017/windows/frozen-gui/20261017-025842Z-36027492"
+}

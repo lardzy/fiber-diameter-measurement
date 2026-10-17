@@ -4,7 +4,10 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+import base64
 import json
+import locale
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,7 +15,8 @@ import sys
 import tempfile
 import time
 
-from fdm.atomic_io import atomic_write_text
+from fdm.atomic_io import atomic_replace_file, atomic_write_text, staged_path_for
+from fdm.version import __version__
 
 
 @dataclass(frozen=True)
@@ -200,49 +204,272 @@ def working_template(*, create=False):
     return target
 
 
-def run_excel_request(request, *, timeout=90, cancel_event=None):
-    """A dedicated COM process; no Excel call or wait executes on the GUI."""
-    if sys.platform != "win32":
-        raise RuntimeError("CU 模板报告需要 Windows 和 Microsoft Excel；原始记录仍可导出 CSV。")
-    if not Path(request["template"]).is_file():
-        raise FileNotFoundError("未找到所选 Excel 模板，请在试验设置中选择 sheet.xlt。")
-    request = {**request, "template": str(Path(request["template"]).resolve())}
+class ExcelTemplateError(RuntimeError):
+    """A short user-facing message with separately inspectable diagnostics."""
+
+    def __init__(self, message, *, code="worker_failed", diagnostics=None):
+        super().__init__(message)
+        self.code = code
+        self.diagnostics = {**(diagnostics or {}), "error_code": code, "message": message}
+
+
+class ExcelTemplateCancelled(ExcelTemplateError):
+    pass
+
+
+class ExcelTemplateTimeout(ExcelTemplateError, TimeoutError):
+    pass
+
+
+def _powershell_command(script, request_path, result_path, *, cleanup=False):
+    # This bootstrap only CALLS the packaged script. It does not read/evaluate
+    # its contents: MachinePolicy/UserPolicy still govern script execution.
+    # Capture errors before .ps1 entry, where the script's own catch cannot run.
+    def literal(value):
+        return "'" + str(value).replace("'", "''") + "'"
+
+    output_path = str(result_path) + ".cleanup.json" if cleanup else str(result_path)
+    environment_path = str(result_path) + (".cleanup-environment.json" if cleanup else ".environment.json")
+    bootstrap = "\n".join((
+        "$ErrorActionPreference = 'Stop'",
+        "$ProgressPreference = 'SilentlyContinue'",
+        f"$worker = {literal(script)}",
+        f"$requestPath = {literal(request_path)}",
+        f"$resultPath = {literal(result_path)}",
+        f"$outputPath = {literal(output_path)}",
+        f"$environmentPath = {literal(environment_path)}",
+        "$environment = @{powershell_version=$PSVersionTable.PSVersion.ToString(); "
+        "culture=[Globalization.CultureInfo]::CurrentCulture.Name; "
+        "original_console_codepage=[Console]::OutputEncoding.CodePage; "
+        "ansi_codepage=[Text.Encoding]::Default.CodePage; requested_policy='Bypass'}",
+        "try { [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false) } catch {}",
+        "try { $environment.output_codepage=[Console]::OutputEncoding.CodePage; "
+        "$environment.effective_policy=[string](Get-ExecutionPolicy); "
+        "$environment.policies=@(Get-ExecutionPolicy -List | ForEach-Object { "
+        "@{scope=[string]$_.Scope; policy=[string]$_.ExecutionPolicy} }); "
+        "$environment | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $environmentPath -Encoding UTF8 } catch {}",
+        "try {",
+        "    & $worker -RequestPath $requestPath -ResultPath $resultPath" + (" -Cleanup" if cleanup else ""),
+        "    if (!$?) { exit 1 }",
+        "} catch {",
+        "    @{ok=$false; error=$_.Exception.Message; error_type=$_.Exception.GetType().FullName; "
+        "error_id=$_.FullyQualifiedErrorId; phase='script_start'} | ConvertTo-Json -Depth 5 | "
+        "Set-Content -LiteralPath $outputPath -Encoding UTF8",
+        "    exit 1",
+        "}",
+    ))
+    encoded = base64.b64encode(bootstrap.encode("utf-16le")).decode("ascii")
+    return ["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-STA",
+            "-ExecutionPolicy", "Bypass", "-OutputFormat", "Text", "-EncodedCommand", encoded]
+
+
+def _read_worker_json(path):
+    try:
+        value = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _decode_worker_output(value, environment):
+    if not value:
+        return "", "empty"
+    if isinstance(value, str):
+        return value, "text"
+    if value.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return value.decode("utf-16", errors="replace"), "utf-16"
+    encodings = ["utf-8-sig"]
+    for key in ("output_codepage", "original_console_codepage", "ansi_codepage"):
+        if environment.get(key):
+            encodings.append("cp" + str(environment[key]))
+    # A host failure before the bootstrap has no environment sidecar. Windows'
+    # ANSI/OEM defaults are explicit fallbacks, never assume a Chinese codepage.
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            encodings.extend("cp" + str(getattr(ctypes.windll.kernel32, name)())
+                             for name in ("GetOEMCP", "GetACP"))
+        except (AttributeError, OSError):
+            pass
+    encodings.append(locale.getpreferredencoding(False))
+    for encoding in dict.fromkeys(encodings):
+        try:
+            return value.decode(encoding), encoding
+        except (UnicodeError, LookupError):
+            continue
+    # Preserve undecodable bytes in diagnostics instead of destroying them.
+    return value.decode("utf-8", errors="backslashreplace"), "utf-8/backslashreplace"
+
+
+def _worker_diagnostics(request, script, result_path, process=None, stdout=b"", stderr=b""):
+    environment = _read_worker_json(str(result_path) + ".environment.json")
+    out, out_encoding = _decode_worker_output(stdout, environment)
+    err, err_encoding = _decode_worker_output(stderr, environment)
+    return {"app_version": __version__, "python_version": sys.version.split()[0], "platform": sys.platform,
+            "operation": request.get("operation"), "template": request.get("template"),
+            "script": str(script), "execution_policy_requested": "Bypass", "environment": environment,
+            "stage": _read_worker_json(str(result_path) + ".progress.json").get("stage", "启动模板组件"),
+            "exit_code": getattr(process, "returncode", None),
+            "stdout": out[-12000:], "stderr": err[-12000:],
+            "stdout_encoding": out_encoding, "stderr_encoding": err_encoding}
+
+
+def _worker_error(result, diagnostics):
+    detail = " ".join(str(result.get(key, "")) for key in ("error", "error_type", "error_id", "code"))
+    detail += " " + diagnostics.get("stderr", "")
+    normalized = detail.lower()
+    if any(token in normalized for token in ("pssecurityexception", "securityerror", "about_execution_policies")):
+        return ExcelTemplateError("系统执行策略阻止了模板组件运行，报告未生成。请展开诊断查看策略；"
+                                  "若由组织策略管理，请联系管理员处理脚本签名或授权。",
+                                  code="execution_policy", diagnostics=diagnostics)
+    if any(token in normalized for token in ("80040154", "regdb_e_classnotreg")):
+        return ExcelTemplateError("未找到可用的 Microsoft Excel 自动化组件，请确认已安装并可正常打开 Excel。",
+                                  code="excel_unavailable", diagnostics=diagnostics)
+    if result.get("code") == "invalid_request":
+        return ExcelTemplateError("模板请求无法读取或格式不正确；报告未生成，请导出诊断。",
+                                  code="invalid_request", diagnostics=diagnostics)
+    return ExcelTemplateError("Excel 模板任务未完成，已有报告与试验记录保持不变。请展开诊断查看原因。",
+                              code="worker_failed" if result else "missing_result", diagnostics=diagnostics)
+
+
+def _cleanup_excel_worker(script, request_path, result_path):
+    command = _powershell_command(script, request_path, result_path, cleanup=True)
+    try:
+        process = subprocess.run(command, timeout=15, capture_output=True,
+                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        environment = _read_worker_json(str(result_path) + ".cleanup-environment.json")
+        stderr, encoding = _decode_worker_output(process.stderr, environment)
+        result = _read_worker_json(str(result_path) + ".cleanup.json")
+        return {"ok": process.returncode == 0 and result.get("ok") is True, "exit_code": process.returncode,
+                "result": result,
+                "environment": environment, "stderr": stderr[-12000:], "stderr_encoding": encoding}
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {"ok": False, "error_type": type(exc).__name__, "error": str(exc)}
+
+
+def _run_excel_worker(request, *, timeout, cancel_event):
     script = Path(__file__).with_name("excel_template.ps1")
     with tempfile.TemporaryDirectory(prefix="fdm-template-") as temporary:
         root = Path(temporary)
         request_path, result_path = root / "request.json", root / "result.json"
-        request_path.write_text(json.dumps(request, ensure_ascii=False, allow_nan=False), encoding="utf-8-sig")
-        command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA", "-File", str(script),
-                   "-RequestPath", str(request_path), "-ResultPath", str(result_path)]
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         try:
-            deadline = time.monotonic() + timeout
-            while True:
-                if time.monotonic() >= deadline or (cancel_event is not None and cancel_event.is_set()):
-                    raise subprocess.TimeoutExpired(command, timeout)
-                try:
-                    stdout, stderr = process.communicate(timeout=.2)
-                    break
-                except subprocess.TimeoutExpired:
-                    continue
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.communicate()
-            # The worker records only its own newly created Excel instance.
-            # Cleanup validates the creation timestamp before terminating it.
-            subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-File", str(script),
-                            "-RequestPath", str(request_path), "-ResultPath", str(result_path), "-Cleanup"],
-                           timeout=15, capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            request_path.write_text(json.dumps(request, ensure_ascii=False, allow_nan=False), encoding="utf-8-sig")
+        except (TypeError, ValueError, OSError) as exc:
+            diagnostics = _worker_diagnostics(request, script, result_path)
+            diagnostics["request_error"] = str(exc)
+            raise ExcelTemplateError("无法准备模板请求；请检查输入数值和临时目录权限。",
+                                      code="invalid_request", diagnostics=diagnostics) from exc
+        command = _powershell_command(script, request_path, result_path)
+        try:
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        except OSError as exc:
+            diagnostics = _worker_diagnostics(request, script, result_path)
+            diagnostics["launch_error"] = str(exc)
+            raise ExcelTemplateError("无法启动 Windows PowerShell 模板组件，请展开诊断查看系统错误。",
+                                      code="launch_failed", diagnostics=diagnostics) from exc
+        deadline, reason, transport_error = time.monotonic() + timeout, None, None
+        stdout = stderr = b""
+        while True:
+            if cancel_event is not None and cancel_event.is_set():
+                reason = "cancelled"
+                break
+            if time.monotonic() >= deadline:
+                reason = "timeout"
+                break
             try:
-                stage = json.loads(Path(str(result_path) + ".progress.json").read_text(encoding="utf-8-sig")).get("stage", "")
-            except (OSError, ValueError):
-                stage = ""
-            raise TimeoutError(f"Excel 模板任务超时（{stage or '等待 Excel'}），采集与试验记录未受影响。") from None
+                stdout, stderr = process.communicate(timeout=min(.2, max(.001, deadline-time.monotonic())))
+                break
+            except subprocess.TimeoutExpired:
+                continue
+            except OSError as exc:
+                reason, transport_error = "communication_failed", str(exc)
+                break
+        if reason:
+            stop_error = None
+            try:
+                process.kill()
+                stdout, stderr = process.communicate(timeout=5)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                stop_error = str(exc)
+            diagnostics = _worker_diagnostics(request, script, result_path, process, stdout, stderr)
+            diagnostics["worker_stop_error"] = stop_error
+            diagnostics["communication_error"] = transport_error
+            diagnostics["cleanup"] = _cleanup_excel_worker(script, request_path, result_path)
+            stage = diagnostics["stage"]
+            cleanup_note = "" if diagnostics["cleanup"]["ok"] else " Excel 清理未确认完成，请查看诊断。"
+            if reason == "cancelled":
+                raise ExcelTemplateCancelled("模板任务已取消；已有报告与试验记录保持不变。" + cleanup_note,
+                                             code=reason, diagnostics=diagnostics)
+            if reason == "communication_failed":
+                raise ExcelTemplateError("模板组件连接中断；已有报告与试验记录保持不变。请展开诊断。" + cleanup_note,
+                                          code=reason, diagnostics=diagnostics)
+            raise ExcelTemplateTimeout(f"Excel 模板任务超时（{stage}）；已有报告与试验记录保持不变。" + cleanup_note,
+                                       code=reason, diagnostics=diagnostics)
+        result = _read_worker_json(result_path)
+        diagnostics = _worker_diagnostics(request, script, result_path, process, stdout, stderr)
+        closed = _read_worker_json(str(result_path) + ".close.json")
+        diagnostics["excel_close"] = closed
+        diagnostics["worker_result"] = {key: result[key] for key in ("error", "error_type", "error_id", "stack", "phase", "code", "excel_version")
+                                        if key in result}
+        if result.get("ok") is not True or process.returncode != 0:
+            # Also recover an owned instance after an unexpected process exit.
+            # The worker's PID + creation-time check excludes other workbooks.
+            if Path(str(result_path) + ".owner.json").is_file():
+                diagnostics["cleanup"] = _cleanup_excel_worker(script, request_path, result_path)
+            raise _worker_error(result, diagnostics)
+        if closed.get("ok") is False and not closed.get("handed_off"):
+            diagnostics["cleanup"] = _cleanup_excel_worker(script, request_path, result_path)
+            warning = ("Excel 关闭时发生异常，清理检查已完成；模板结果已保留。" if diagnostics["cleanup"]["ok"] else
+                       "模板结果已生成，但 Excel 清理未确认完成；请展开诊断。")
+            result["warnings"] = [*result.get("warnings", []), warning]
+        return {**result, "diagnostics": diagnostics}
+
+
+def run_excel_request(request, *, timeout=90, cancel_event=None):
+    """Run COM off the GUI, then atomically publish a complete report copy."""
+    base = {"app_version": __version__, "platform": sys.platform, "operation": request.get("operation")}
+    if sys.platform != "win32":
+        raise ExcelTemplateError("CU 模板报告需要 Windows 和 Microsoft Excel；原始记录仍可导出 CSV。",
+                                  code="unsupported_platform", diagnostics=base)
+    template = Path(request["template"]).resolve()
+    if not template.is_file():
+        raise ExcelTemplateError("未找到所选 Excel 模板，请重新选择模板。", code="template_missing", diagnostics=base)
+    request = {**request, "template": str(template)}
+    if cancel_event is not None and cancel_event.is_set():
+        raise ExcelTemplateCancelled("模板任务已取消。", code="cancelled", diagnostics=base)
+    if request.get("operation") != "export":
+        return _run_excel_worker(request, timeout=timeout, cancel_event=cancel_event)
+    destination = Path(request["destination"]).resolve()
+    if destination == template or (destination.exists() and os.path.samefile(destination, template)):
+        raise ExcelTemplateError("报告不能覆盖模板，请选择其他保存位置。", code="template_overwrite", diagnostics=base)
+    diagnostics = base
+    try:
+        # Excel never opens or overwrites the final destination during export.
+        # Publication occurs only after the worker has saved and closed COM.
+        with staged_path_for(destination, suffix=destination.suffix) as staged:
+            result = _run_excel_worker({**request, "destination": str(staged), "show": False},
+                                       timeout=timeout, cancel_event=cancel_event)
+            diagnostics = result["diagnostics"]
+            if cancel_event is not None and cancel_event.is_set():
+                raise ExcelTemplateCancelled("模板任务已取消；已有报告与试验记录保持不变。",
+                                             code="cancelled", diagnostics=diagnostics)
+            if not staged.is_file() or staged.stat().st_size == 0:
+                raise ExcelTemplateError("Excel 未生成完整报告文件；已有报告保持不变。",
+                                          code="report_missing", diagnostics=diagnostics)
+            atomic_replace_file(staged, destination)
+    except ExcelTemplateError as exc:
+        exc.diagnostics["destination"] = str(destination)
+        raise
+    except OSError as exc:
+        raise ExcelTemplateError("报告无法保存到所选位置；已有报告保持不变。请检查文件是否被占用及目录权限。",
+                                  code="publish_failed", diagnostics={**diagnostics, "publish_error": str(exc)}) from exc
+    result["destination"] = str(destination)
+    result["diagnostics"] = {**diagnostics, "destination": str(destination), "stage": "报告已保存", "published": True}
+    if request.get("show"):
         try:
-            result = json.loads(result_path.read_text(encoding="utf-8-sig"))
-        except (OSError, ValueError):
-            raise RuntimeError("Excel 模板任务未返回结果：" + stderr.decode("utf-8", errors="replace")[-800:]) from None
-        if not result.get("ok"):
-            raise RuntimeError(result.get("error", "Excel 模板任务失败。"))
-        return result
+            os.startfile(str(destination))
+        except OSError as exc:
+            result["warnings"] = [*result.get("warnings", []), "报告已保存，但无法自动打开；请从保存位置打开报告。"]
+            result["diagnostics"]["open_error"] = str(exc)
+    return result

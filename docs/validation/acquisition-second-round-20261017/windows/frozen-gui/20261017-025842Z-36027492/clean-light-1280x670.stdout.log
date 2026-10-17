@@ -1,0 +1,464 @@
+C:\tmp\fdm-cu-live-second-round-20261017\build\second-round\frozen-gui\20261017-025842Z-36027492\clean-light-1280x670\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\result.json
+{
+    "schema":  2,
+    "started_at":  "2026-10-17T11:01:03.7513632+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "theme":  "light",
+    "real_hardware":  false,
+    "legacy_project":  "",
+    "legacy_settings":  "",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f",
+    "config":  "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\isolated-config",
+    "pid":  7584,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "样品编号",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "样品名称",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "操作者",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "测量标尺",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "新视场",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "操作",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "记录",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "报告",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "先选",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "后选",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         },
+                         {
+                             "name":  "保存项目",
+                             "present":  true,
+                             "visible":  true,
+                             "reached_with_local_scroll":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  true,
+    "unsaved_dialog":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "requested_client_size":  [
+                                  1280,
+                                  670
+                              ],
+    "observed_client_sizes":  [
+                                  {
+                                      "phase":  "01-main-before-menu",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "02-acquisition",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-0",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-1",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-2",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-3",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-4",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-5",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-6",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-7",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-8",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-9",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-10",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-11",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-12",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-13",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-14",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-15",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-16",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-17",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-18",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-19",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "03-content-reentry",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "04-sidebar-记录",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "04-sidebar-报告",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "04-sidebar-操作",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "acquisition-page-直径试验",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "acquisition-page-实时采集",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "acquisition-page-含量试验",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  }
+                              ],
+    "scroll_actions":  [
+
+                       ],
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-记录-uia.json",
+                      "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-报告-uia.json",
+                      "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-操作-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "main_title":  "显微测量工作台",
+    "client_size":  [
+                        1280,
+                        670
+                    ],
+    "os_dpi":  192,
+    "screen_bounds":  [
+                          0,
+                          0,
+                          2582,
+                          1644
+                      ],
+    "available_geometry":  [
+                               0,
+                               0,
+                               2582,
+                               1548
+                           ],
+    "entry_action":  "InvokePattern",
+    "stable_navigation_verified":  true,
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-17T11:01:16.9301127+08:00"
+}
+FDM_SECOND_ROUND_JSON={"stdout_path":"C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\probe.stdout.log","result_path":"C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\result.json","name":"clean-light-1280x670","result":{"schema":2,"started_at":"2026-10-17T11:01:03.7513632+08:00","exe":"C:\\tmp\\fdm-cu-live-second-round-20261017\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe","theme":"light","real_hardware":false,"legacy_project":"","legacy_settings":"","run_directory":"C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f","config":"C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\isolated-config","pid":7584,"isolated_empty_project_verified":true,"main_window":true,"experiment_menu":false,"live_experiment_entry":true,"live_window":true,"key_controls":[{"name":"样品编号","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"样品名称","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"操作者","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"测量标尺","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"新视场","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"操作","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"记录","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"报告","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"先选","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"后选","present":true,"visible":true,"reached_with_local_scroll":true},{"name":"保存项目","present":true,"visible":true,"reached_with_local_scroll":true}],"key_controls_verified":true,"workspace_closed":true,"unsaved_dialog":null,"graceful_exit":true,"forced_cleanup":false,"requested_client_size":[1280,670],"observed_client_sizes":[{"phase":"01-main-before-menu","actual":[1280,670],"requested":[1280,670]},{"phase":"02-acquisition","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-0","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-1","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-2","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-3","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-4","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-5","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-6","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-7","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-8","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-9","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-10","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-11","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-12","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-13","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-14","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-15","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-16","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-17","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-18","actual":[1280,670],"requested":[1280,670]},{"phase":"main-entry-19","actual":[1280,670],"requested":[1280,670]},{"phase":"03-content-reentry","actual":[1280,670],"requested":[1280,670]},{"phase":"04-sidebar-记录","actual":[1280,670],"requested":[1280,670]},{"phase":"04-sidebar-报告","actual":[1280,670],"requested":[1280,670]},{"phase":"04-sidebar-操作","actual":[1280,670],"requested":[1280,670]},{"phase":"acquisition-page-直径试验","actual":[1280,670],"requested":[1280,670]},{"phase":"acquisition-page-实时采集","actual":[1280,670],"requested":[1280,670]},{"phase":"acquisition-page-含量试验","actual":[1280,670],"requested":[1280,670]}],"scroll_actions":[],"snapshots":["C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\01-main-before-menu-uia.json","C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\02-acquisition-uia.json","C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\03-content-reentry-uia.json","C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-记录-uia.json","C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-报告-uia.json","C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\second-round\\frozen-gui\\20261017-025842Z-36027492\\clean-light-1280x670\\20261017-110103-171c16d9a40b4f0f9f9a41fcad337b4f\\04-sidebar-操作-uia.json"],"errors":[],"ok":true,"main_title":"显微测量工作台","client_size":[1280,670],"os_dpi":192,"screen_bounds":[0,0,2582,1644],"available_geometry":[0,0,2582,1548],"entry_action":"InvokePattern","stable_navigation_verified":true,"exit_code":0,"process_exited_after_cleanup":true,"finished_at":"2026-10-17T11:01:16.9301127+08:00"},"probe_exit":0}
+[ WARN:0@4.349] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ WARN:0@0.000] global cap_ffmpeg_impl.hpp:1217 open VIDEOIO/FFMPEG: Failed list devices for backend dshow
+[ERROR:0@4.362] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.363] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.367] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.367] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.370] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.370] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.373] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range

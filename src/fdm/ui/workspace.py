@@ -222,7 +222,7 @@ class AdaptiveLayoutController(QObject):
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_text(path, json.dumps({"version": 1, "workspaces": self._profiles},
-                ensure_ascii=False, indent=2), encoding="utf-8")
+                ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
         except OSError:
             # Preferences must never make a measurement or application close fail.
             pass

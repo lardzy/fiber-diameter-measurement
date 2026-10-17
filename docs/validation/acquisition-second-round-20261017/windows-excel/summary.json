@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "runtime_tests": {
+    "passed": 43,
+    "skipped": 0
+  },
+  "export_reports": 15,
+  "preservation_reports": 15,
+  "close_errors": 0,
+  "parent_policy": "RemoteSigned",
+  "worker_policy": [
+    "Bypass"
+  ],
+  "worker_output_codepages": [
+    65001
+  ],
+  "excel_versions": [
+    "16.0"
+  ],
+  "failure_preserved": true,
+  "cancel_preserved": true,
+  "cancel_cleanup_status": "terminated_owned_instance",
+  "policy_unchanged": true,
+  "excel_processes_after": [],
+  "group_policy_test": "mock_only",
+  "reports_directory": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix",
+  "automatic_open": "unit-tested; COM matrix show=False"
+}

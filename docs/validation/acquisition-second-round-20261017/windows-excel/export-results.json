@@ -1,0 +1,6967 @@
+[
+  {
+    "template": "cu-normal",
+    "count": 0,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-0.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 10,
+      "status": "ready",
+      "snapshot_id": "f27e86c6b8a4472e8af53d25c0a58752",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-0.xls",
+        "published": true
+      },
+      "elapsed_seconds": 15.3638564580001
+    }
+  },
+  {
+    "template": "cu-normal",
+    "count": 1,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-1.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 11,
+      "status": "ready",
+      "snapshot_id": "d2588a355799414e8e7f2041092af5a5",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-1.xls",
+        "published": true
+      },
+      "elapsed_seconds": 15.786456292000366
+    }
+  },
+  {
+    "template": "cu-normal",
+    "count": 1488,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-1488.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 1498,
+      "status": "ready",
+      "snapshot_id": "fb65f60e852042f3bb064e675388c668",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-1488.xls",
+        "published": true
+      },
+      "elapsed_seconds": 17.979773542000203
+    }
+  },
+  {
+    "template": "cu-normal",
+    "count": 1500,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [
+        "C／warp／绵羊毛 共 1500 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"
+      ],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-1500.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 1510,
+      "status": "review_required",
+      "snapshot_id": "13ce6f267c7b415f9f265d1a98038e79",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-1500.xls",
+        "published": true
+      },
+      "elapsed_seconds": 14.989755833000345
+    }
+  },
+  {
+    "template": "cu-normal",
+    "count": 2000,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [
+        "C／warp／绵羊毛 共 2000 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。",
+        "Measured count mismatch at 原始数据!AN9: expected 2000, template 1500"
+      ],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-2000.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 2010,
+      "status": "review_required",
+      "snapshot_id": "8e4d7a71da004807a4a70cb1ad47b073",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-normal-2000.xls",
+        "published": true
+      },
+      "elapsed_seconds": 18.16549645899977
+    }
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 0,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-0.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 10,
+      "status": "ready",
+      "snapshot_id": "d9e64011f0f64c5cad92ef04103c7289",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-0.xls",
+        "published": true
+      },
+      "elapsed_seconds": 17.913864999999987
+    }
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 1,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-1.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 11,
+      "status": "ready",
+      "snapshot_id": "ed47313203364215bba7ffa43deb702e",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-1.xls",
+        "published": true
+      },
+      "elapsed_seconds": 15.578621832999943
+    }
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 1488,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-1488.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 1498,
+      "status": "ready",
+      "snapshot_id": "b233a439f93142ecbee28f4dbdc70628",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-1488.xls",
+        "published": true
+      },
+      "elapsed_seconds": 17.94323366699973
+    }
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 1500,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [
+        "C／warp／绵羊毛 共 1500 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"
+      ],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-1500.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 1510,
+      "status": "review_required",
+      "snapshot_id": "9732c3c6541e432ebabc372e62655ac2",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-1500.xls",
+        "published": true
+      },
+      "elapsed_seconds": 15.50947108299988
+    }
+  },
+  {
+    "template": "cu-multiscale",
+    "count": 2000,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [
+        "C／warp／绵羊毛 共 2000 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。",
+        "Measured count mismatch at 原始数据!AN9: expected 2000, template 1500"
+      ],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-2000.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 2010,
+      "status": "review_required",
+      "snapshot_id": "6ea708f8313a4f6d9caeb3a53764af19",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\cu-multiscale-2000.xls",
+        "published": true
+      },
+      "elapsed_seconds": 15.363026041000012
+    }
+  },
+  {
+    "template": "user-custom",
+    "count": 0,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-0.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 10,
+      "status": "ready",
+      "snapshot_id": "04940d784e3b412b97546a681dcfdc67",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "特种毛(报出)",
+        "麻棉(报出)",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "分组加权统计",
+        "织物纤维含量报告",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-0.xls",
+        "published": true
+      },
+      "elapsed_seconds": 19.36155595800028
+    }
+  },
+  {
+    "template": "user-custom",
+    "count": 1,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-1.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 11,
+      "status": "ready",
+      "snapshot_id": "ebf3c14268714047b81cacf3194259a7",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "特种毛(报出)",
+        "麻棉(报出)",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "分组加权统计",
+        "织物纤维含量报告",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-1.xls",
+        "published": true
+      },
+      "elapsed_seconds": 16.420529624999745
+    }
+  },
+  {
+    "template": "user-custom",
+    "count": 1488,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-1488.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 1498,
+      "status": "ready",
+      "snapshot_id": "a5dfdec4adeb443eb6a270039efb567e",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "特种毛(报出)",
+        "麻棉(报出)",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "分组加权统计",
+        "织物纤维含量报告",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-1488.xls",
+        "published": true
+      },
+      "elapsed_seconds": 15.790852874999928
+    }
+  },
+  {
+    "template": "user-custom",
+    "count": 1500,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [
+        "C／warp／绵羊毛 共 1500 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"
+      ],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-1500.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 1510,
+      "status": "review_required",
+      "snapshot_id": "12836cf2cfa04cd692c6a785ca53763b",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "特种毛(报出)",
+        "麻棉(报出)",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "分组加权统计",
+        "织物纤维含量报告",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-1500.xls",
+        "published": true
+      },
+      "elapsed_seconds": 16.499089542000092
+    }
+  },
+  {
+    "template": "user-custom",
+    "count": 2000,
+    "result": {
+      "method": "GB/T 16988-2013",
+      "warnings": [
+        "C／warp／绵羊毛 共 2000 条：超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。",
+        "Measured count mismatch at 原始数据!AN9: expected 2000, template 1500"
+      ],
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-2000.xls",
+      "excel_version": "16.0",
+      "ok": true,
+      "comparisons": [
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "A",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "B",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 100,
+          "direction": "warp",
+          "material": "绵羊毛",
+          "local_content": 100.0
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "warp",
+          "material": "驼绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "绵羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "山羊毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "羊驼毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "粗兔毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛绒",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "牦牛毛",
+          "local_content": null
+        },
+        {
+          "operator": "C",
+          "template_content": 0,
+          "direction": "weft",
+          "material": "驼绒",
+          "local_content": null
+        }
+      ],
+      "snapshot_revision": 2010,
+      "status": "review_required",
+      "snapshot_id": "65de570da2d74d529a031a9377cd96ee",
+      "sheets": [
+        "标准选择",
+        "原始数据",
+        "特种毛(报出)",
+        "麻棉(报出)",
+        "分组统计",
+        "非棉麻织物",
+        "非棉麻纤维",
+        "分组加权统计",
+        "织物纤维含量报告",
+        "棉麻织物",
+        "棉麻纤维",
+        "比重"
+      ],
+      "diagnostics": {
+        "app_version": "0.4.10",
+        "python_version": "3.12.13",
+        "platform": "win32",
+        "operation": "export",
+        "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+        "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+        "execution_policy_requested": "Bypass",
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stage": "报告已保存",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_encoding": "empty",
+        "stderr_encoding": "empty",
+        "excel_close": {
+          "ok": true,
+          "errors": [],
+          "owned": true,
+          "handed_off": false
+        },
+        "worker_result": {
+          "excel_version": "16.0"
+        },
+        "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom-2000.xls",
+        "published": true
+      },
+      "elapsed_seconds": 16.442723374999787
+    }
+  }
+]

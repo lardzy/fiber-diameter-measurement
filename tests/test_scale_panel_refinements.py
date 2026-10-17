@@ -183,7 +183,7 @@ def test_new_editor_session_resets_previous_export_scope_and_content(
     preview.export()
     assert len(recorded) == 1
     result = recorded[0]
-    assert result.scope == ExportScope.CURRENT
+    assert result.scope == ExportScope.ALL_OPEN
     assert result.include_scale_overlay
     assert not result.include_csv and not result.include_combined_overlay
 

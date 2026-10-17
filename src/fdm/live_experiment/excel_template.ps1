@@ -4,21 +4,34 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $ownerPath = $ResultPath + '.owner.json'
 if ($Cleanup) {
-    if (Test-Path -LiteralPath $ownerPath) {
-        $owner = Get-Content -LiteralPath $ownerPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $ownedProcess = Get-Process -Id $owner.id -ErrorAction SilentlyContinue
-        if ($ownedProcess -and $ownedProcess.ProcessName -eq 'EXCEL' -and
-            $ownedProcess.StartTime.ToUniversalTime().Ticks.ToString() -eq $owner.created) {
-            Stop-Process -Id $owner.id -Force
+    try {
+        $cleanupStatus = 'owner_absent'
+        if (Test-Path -LiteralPath $ownerPath) {
+            $owner = Get-Content -LiteralPath $ownerPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $ownedProcess = Get-Process -Id $owner.id -ErrorAction SilentlyContinue
+            $cleanupStatus = 'not_owned_or_already_closed'
+            if (!$owner.handed_off -and $ownedProcess -and $ownedProcess.ProcessName -eq 'EXCEL' -and
+                $ownedProcess.StartTime.ToUniversalTime().Ticks.ToString() -eq $owner.created) {
+                Stop-Process -Id $owner.id -Force
+                if (!$ownedProcess.WaitForExit(5000)) { throw 'Owned Excel instance did not exit after cleanup.' }
+                $cleanupStatus = 'terminated_owned_instance'
+            }
         }
+        @{ok=$true; status=$cleanupStatus} | ConvertTo-Json |
+            Set-Content -LiteralPath ($ResultPath + '.cleanup.json') -Encoding UTF8
+        exit 0
+    } catch {
+        @{ok=$false; error=$_.Exception.Message; error_type=$_.Exception.GetType().FullName} | ConvertTo-Json |
+            Set-Content -LiteralPath ($ResultPath + '.cleanup.json') -Encoding UTF8
+        exit 1
     }
-    exit 0
 }
-$request = Get-Content -LiteralPath $RequestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$excel = $null; $book = $null; $owned = $false; $handedOff = $false
+$excel = $null; $book = $null; $owned = $false; $handedOff = $false; $excelVersion = $null
+$phase = 'request'
 $warnings = [System.Collections.Generic.List[string]]::new()
 $comparisons = [System.Collections.Generic.List[object]]::new()
 function Stage([string]$name) {
+    $script:phase = $name
     @{stage=$name} | ConvertTo-Json | Set-Content -LiteralPath ($ResultPath + '.progress.json') -Encoding UTF8
 }
 function SetCell($sheet, [string]$address, $value) {
@@ -34,6 +47,11 @@ function LiteralValue($value) {
     return [double]$value
 }
 try {
+    $request = Get-Content -LiteralPath $RequestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($null -eq $request -or @('edit', 'inspect', 'export') -notcontains $request.operation -or
+        [string]::IsNullOrWhiteSpace([string]$request.template)) {
+        throw 'Invalid template request: operation and template are required.'
+    }
     Stage '启动独立 Excel'
     $existing = @(Get-Process EXCEL -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
     Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class FdmExcelWindow { [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint id); }'
@@ -43,13 +61,14 @@ try {
     if (!$excelId -or $existing -contains [int]$excelId) { throw 'Excel did not create an independent report instance.' }
     $owned = $true
     $ownedProcess = Get-Process -Id $excelId
-    @{id=$excelId; created=$ownedProcess.StartTime.ToUniversalTime().Ticks.ToString()} |
-        ConvertTo-Json | Set-Content -LiteralPath $ownerPath -Encoding UTF8
+    $owner = @{id=$excelId; created=$ownedProcess.StartTime.ToUniversalTime().Ticks.ToString(); handed_off=$false}
+    $owner | ConvertTo-Json | Set-Content -LiteralPath $ownerPath -Encoding UTF8
     $excel.Visible = $false
     $excel.DisplayAlerts = $false
     $excel.EnableEvents = $false
     # Respect the user's Office macro policy. Never change Trust Center settings.
     $excel.AutomationSecurity = 2
+    $excelVersion = [string]$excel.Version
     $missing = [Type]::Missing
     Stage '打开模板副本'
     $book = $excel.Workbooks.Open([string]$request.template, 0, $false, $missing, $missing,
@@ -57,7 +76,9 @@ try {
     if ($request.operation -eq 'edit') {
         $excel.EnableEvents=$true; $excel.DisplayAlerts=$true; $excel.Visible=$true
         $handedOff=$true
-        @{ok=$true; operation='edit'; template=[string]$request.template} |
+        $owner.handed_off=$true
+        $owner | ConvertTo-Json | Set-Content -LiteralPath $ownerPath -Encoding UTF8
+        @{ok=$true; operation='edit'; template=[string]$request.template; handed_off=$true; excel_version=$excelVersion} |
             ConvertTo-Json | Set-Content -LiteralPath $ResultPath -Encoding UTF8
         return
     }
@@ -136,19 +157,40 @@ try {
             destination=$destination; warnings=@($warnings.ToArray()); comparisons=@($comparisons.ToArray());
             method=[string]$selected[0].label; snapshot_id=$request.snapshot_id; snapshot_revision=$request.snapshot_revision;
             sheets=@($book.Worksheets | ForEach-Object {$_.Name})}
-        if ($request.show) { $excel.Visible=$true; $handedOff=$true }
+        if ($request.show) {
+            $excel.Visible=$true; $handedOff=$true
+            $owner.handed_off=$true
+            $owner | ConvertTo-Json | Set-Content -LiteralPath $ownerPath -Encoding UTF8
+        }
     }
+    $result.excel_version = $excelVersion
     $result | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $ResultPath -Encoding UTF8
 } catch {
-    @{ok=$false; error=($_.Exception.Message + " at " + $_.ScriptStackTrace)} | ConvertTo-Json -Depth 5 |
+    @{ok=$false; error=$_.Exception.Message; stack=$_.ScriptStackTrace;
+        error_type=$_.Exception.GetType().FullName; error_id=$_.FullyQualifiedErrorId; phase=$phase; excel_version=$excelVersion;
+        code=$(if ($phase -eq 'request') {'invalid_request'} else {'excel_failed'})} | ConvertTo-Json -Depth 5 |
         Set-Content -LiteralPath $ResultPath -Encoding UTF8
     exit 1
 } finally {
+    $closeErrors = [System.Collections.Generic.List[string]]::new()
     if ($owned -and !$handedOff) {
-        if ($book) { try { $book.Close($false) } catch {} }
-        if ($excel) { try { $excel.Quit() } catch {} }
+        if ($book) { try { $book.Close($false) } catch { $closeErrors.Add('Workbook.Close: ' + $_.Exception.Message) } }
+        if ($excel) { try { $excel.Quit() } catch { $closeErrors.Add('Excel.Quit: ' + $_.Exception.Message) } }
     }
-    if ($book) { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) | Out-Null }
-    if ($excel) { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) | Out-Null }
-    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    if ($book) {
+        try { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) | Out-Null }
+        catch { $closeErrors.Add('Workbook.Release: ' + $_.Exception.Message) }
+    }
+    if ($excel) {
+        try { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) | Out-Null }
+        catch { $closeErrors.Add('Excel.Release: ' + $_.Exception.Message) }
+    }
+    try { [GC]::Collect(); [GC]::WaitForPendingFinalizers() }
+    catch { $closeErrors.Add('COM finalization: ' + $_.Exception.Message) }
+    # Closing is independent of the report result: a saved report must not be
+    # rewritten as a failed calculation when COM shutdown needs recovery.
+    try {
+        @{ok=($closeErrors.Count -eq 0); owned=$owned; handed_off=$handedOff; errors=@($closeErrors.ToArray())} |
+            ConvertTo-Json -Depth 4 | Set-Content -LiteralPath ($ResultPath + '.close.json') -Encoding UTF8
+    } catch {}
 }

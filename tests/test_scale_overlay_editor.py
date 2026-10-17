@@ -473,6 +473,10 @@ def test_confirmed_settings_survive_export_outcomes_and_restart_is_hidden(
         "_select_export_save_path",
         lambda *_: "" if outcome == "cancel" else str(tmp_path / "export.png"),
     )
+    # The application now defaults to all opened images; this fixture owns two
+    # documents and therefore exercises the directory chooser as well.
+    monkeypatch.setattr(window, "_select_export_directory",
+                        lambda *_: "" if outcome == "cancel" else str(tmp_path))
     monkeypatch.setattr(window, "_show_export_information", lambda *_: None)
     monkeypatch.setattr(window, "_show_export_warning", lambda *_: None)
     if outcome == "fail":

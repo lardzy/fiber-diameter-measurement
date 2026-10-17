@@ -1,0 +1,33 @@
+﻿{
+    "excel_before":  [
+
+                     ],
+    "effective_policy":  "RemoteSigned",
+    "console_codepage":  936,
+    "identity":  "B1EA\\lishuyang",
+    "ansi_codepage":  936,
+    "policies":  [
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "MachinePolicy"
+                     },
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "UserPolicy"
+                     },
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "Process"
+                     },
+                     {
+                         "policy":  "RemoteSigned",
+                         "scope":  "CurrentUser"
+                     },
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "LocalMachine"
+                     }
+                 ],
+    "inherited_process_policy":  null,
+    "powershell_version":  "5.1.26100.9711"
+}

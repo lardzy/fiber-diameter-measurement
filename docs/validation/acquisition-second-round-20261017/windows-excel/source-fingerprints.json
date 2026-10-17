@@ -1,0 +1,8 @@
+{
+  "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+  "src/fdm/live_experiment/excel_template.ps1": "b17d64591b2eea83098972bab48b60149b79da55616189b79833d2d3de5d7d08",
+  "src/fdm/ui/trial_report_panel.py": "b8be81f02d0578b8fb01d24f2583ac8f7b79decf37a4b0e041b1b5d8475564cc",
+  "tests/test_excel_template_runtime.py": "e4ff3dab879d3e93abbdb991a1ba9a492ee4c53b242e2ab4e416403391dcbb83",
+  "scripts/validation/validate_cu_template_excel.py": "fc0c0225af9708db5f07d5319a1c1f7da8be160d2c14b6e12b7f56dab99b8eb0",
+  "scripts/validation/verify_cu_template_reports.ps1": "ab8832997bf874fd59bb6f8d1512f6df788d17a30fdbf620799799860e473b4b"
+}

@@ -1,0 +1,31 @@
+{
+  "installed": {
+    "DisplayVersion": "0.4.7",
+    "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\"
+  },
+  "policies": [
+    {
+      "policy": "Undefined",
+      "scope": "MachinePolicy"
+    },
+    {
+      "policy": "Undefined",
+      "scope": "UserPolicy"
+    },
+    {
+      "policy": "Undefined",
+      "scope": "Process"
+    },
+    {
+      "policy": "RemoteSigned",
+      "scope": "CurrentUser"
+    },
+    {
+      "policy": "Undefined",
+      "scope": "LocalMachine"
+    }
+  ],
+  "restored": true,
+  "camera_sharing": "on",
+  "snapshot_id": "ec1a84dd-01ff-4cfe-a54d-034eea9931f0"
+}

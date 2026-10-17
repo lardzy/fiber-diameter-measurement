@@ -67,7 +67,8 @@ def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(
         assert len(window.findChildren(LiveExperimentWorkspace)) == 2
         assert current.controller.current_records == []
         QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(0).center())
-        assert window.statusBar().isVisible()
+        assert not window.statusBar().isVisible()
+        assert window._preview_inline_status.isVisible()
     finally:
         monkeypatch.setattr(window, "_confirm_close_documents_for_transition", lambda *_: True)
         window.close()

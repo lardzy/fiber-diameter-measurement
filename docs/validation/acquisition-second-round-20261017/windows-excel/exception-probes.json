@@ -1,0 +1,250 @@
+{
+  "process_scope": {
+    "parent_effective": "Restricted",
+    "worker_environment": {
+      "policies": [
+        {
+          "policy": "Undefined",
+          "scope": "MachinePolicy"
+        },
+        {
+          "policy": "Undefined",
+          "scope": "UserPolicy"
+        },
+        {
+          "policy": "Bypass",
+          "scope": "Process"
+        },
+        {
+          "policy": "RemoteSigned",
+          "scope": "CurrentUser"
+        },
+        {
+          "policy": "Undefined",
+          "scope": "LocalMachine"
+        }
+      ],
+      "original_console_codepage": 936,
+      "powershell_version": "5.1.26100.9711",
+      "effective_policy": "Bypass",
+      "output_codepage": 65001,
+      "culture": "zh-CN",
+      "requested_policy": "Bypass",
+      "ansi_codepage": 936
+    },
+    "methods": 11,
+    "restored_parent_effective": "RemoteSigned"
+  },
+  "failed_export_preserves_report": {
+    "ok": true,
+    "before_sha256": "ad2c0be78507d1deb12cccb0a3787e3d1a1ea0a87324a4910442594dbec43877",
+    "after_sha256": "ad2c0be78507d1deb12cccb0a3787e3d1a1ea0a87324a4910442594dbec43877",
+    "diagnostics": {
+      "app_version": "0.4.10",
+      "python_version": "3.12.13",
+      "platform": "win32",
+      "operation": "export",
+      "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+      "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+      "execution_policy_requested": "Bypass",
+      "environment": {
+        "policies": [
+          {
+            "policy": "Undefined",
+            "scope": "MachinePolicy"
+          },
+          {
+            "policy": "Undefined",
+            "scope": "UserPolicy"
+          },
+          {
+            "policy": "Bypass",
+            "scope": "Process"
+          },
+          {
+            "policy": "RemoteSigned",
+            "scope": "CurrentUser"
+          },
+          {
+            "policy": "Undefined",
+            "scope": "LocalMachine"
+          }
+        ],
+        "original_console_codepage": 936,
+        "powershell_version": "5.1.26100.9711",
+        "effective_policy": "Bypass",
+        "output_codepage": 65001,
+        "culture": "zh-CN",
+        "requested_policy": "Bypass",
+        "ansi_codepage": 936
+      },
+      "stage": "打开模板副本",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "empty",
+      "stderr_encoding": "empty",
+      "excel_close": {
+        "ok": true,
+        "errors": [],
+        "owned": true,
+        "handed_off": false
+      },
+      "worker_result": {
+        "error": "Template standard is missing or ambiguous: NO_SUCH_STANDARD_FOR_FAILURE_PROBE",
+        "error_type": "System.Management.Automation.RuntimeException",
+        "error_id": "Template standard is missing or ambiguous: NO_SUCH_STANDARD_FOR_FAILURE_PROBE",
+        "stack": "在 <ScriptBlock>、C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1 中: 第 102 行\r\n在 <ScriptBlock>、<无文件> 中: 第 12 行",
+        "phase": "打开模板副本",
+        "code": "excel_failed",
+        "excel_version": "16.0"
+      },
+      "cleanup": {
+        "ok": true,
+        "exit_code": 0,
+        "result": {
+          "ok": true,
+          "status": "not_owned_or_already_closed"
+        },
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stderr": "",
+        "stderr_encoding": "empty"
+      },
+      "error_code": "worker_failed",
+      "message": "Excel 模板任务未完成，已有报告与试验记录保持不变。请展开诊断查看原因。",
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\failure-preserved.xls"
+    }
+  },
+  "cancel_owned_export": {
+    "ok": true,
+    "owner": {
+      "created": "639278001118781445",
+      "id": 8824,
+      "handed_off": false
+    },
+    "before_sha256": "ad2c0be78507d1deb12cccb0a3787e3d1a1ea0a87324a4910442594dbec43877",
+    "after_sha256": "ad2c0be78507d1deb12cccb0a3787e3d1a1ea0a87324a4910442594dbec43877",
+    "diagnostics": {
+      "app_version": "0.4.10",
+      "python_version": "3.12.13",
+      "platform": "win32",
+      "operation": "export",
+      "template": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\matrix\\user-custom.xlt",
+      "script": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\live_experiment\\excel_template.ps1",
+      "execution_policy_requested": "Bypass",
+      "environment": {
+        "policies": [
+          {
+            "policy": "Undefined",
+            "scope": "MachinePolicy"
+          },
+          {
+            "policy": "Undefined",
+            "scope": "UserPolicy"
+          },
+          {
+            "policy": "Bypass",
+            "scope": "Process"
+          },
+          {
+            "policy": "RemoteSigned",
+            "scope": "CurrentUser"
+          },
+          {
+            "policy": "Undefined",
+            "scope": "LocalMachine"
+          }
+        ],
+        "original_console_codepage": 936,
+        "powershell_version": "5.1.26100.9711",
+        "effective_policy": "Bypass",
+        "output_codepage": 65001,
+        "culture": "zh-CN",
+        "requested_policy": "Bypass",
+        "ansi_codepage": 936
+      },
+      "stage": "打开模板副本",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "empty",
+      "stderr_encoding": "empty",
+      "worker_stop_error": null,
+      "communication_error": null,
+      "cleanup": {
+        "ok": true,
+        "exit_code": 0,
+        "result": {
+          "ok": true,
+          "status": "terminated_owned_instance"
+        },
+        "environment": {
+          "policies": [
+            {
+              "policy": "Undefined",
+              "scope": "MachinePolicy"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "UserPolicy"
+            },
+            {
+              "policy": "Bypass",
+              "scope": "Process"
+            },
+            {
+              "policy": "RemoteSigned",
+              "scope": "CurrentUser"
+            },
+            {
+              "policy": "Undefined",
+              "scope": "LocalMachine"
+            }
+          ],
+          "original_console_codepage": 936,
+          "powershell_version": "5.1.26100.9711",
+          "effective_policy": "Bypass",
+          "output_codepage": 65001,
+          "culture": "zh-CN",
+          "requested_policy": "Bypass",
+          "ansi_codepage": 936
+        },
+        "stderr": "",
+        "stderr_encoding": "empty"
+      },
+      "error_code": "cancelled",
+      "message": "模板任务已取消；已有报告与试验记录保持不变。",
+      "destination": "C:\\tmp\\fdm-cu-live-second-round-20261017\\.tmp\\windows-excel-20261017\\cancel-preserved.xls"
+    }
+  }
+}

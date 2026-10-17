@@ -5090,19 +5090,25 @@ class MainWindow(QMainWindow):
         self._center_stack.addWidget(self._welcome_panel)
 
         self._preview_page = QWidget()
+        from fdm.ui.acquisition_layout import view_controls, configure_status
         preview_layout = QVBoxLayout(self._preview_page)
-        preview_layout.setContentsMargins(0, 0, 0, 0)
+        preview_layout.setContentsMargins(8, 8, 8, 4)
+        preview_layout.setSpacing(6)
+        self._preview_body_splitter = QSplitter(Qt.Orientation.Horizontal, self._preview_page)
+        preview_image_panel = QWidget(self._preview_body_splitter)
+        preview_image_layout = QVBoxLayout(preview_image_panel)
+        preview_image_layout.setContentsMargins(0, 0, 0, 0)
+        preview_image_layout.setSpacing(6)
         self._preview_status_label = QLabel("请选择采集设备并开始实时预览")
-        preview_header = QHBoxLayout()
-        preview_header.addWidget(self._preview_status_label, 1)
+        self._preview_status_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self._preview_display_choice = NoWheelComboBox(self._preview_page)
         self._preview_display_choice.setAccessibleName("实时采集显示方式")
         for text, value in (("实际像素 1:1", "pixel"), ("适应窗口", "fit"),
                             ("指定百分比…", "percent"), ("指定物理倍率…", "magnification")):
             self._preview_display_choice.addItem(text, value)
         self._preview_display_choice.activated.connect(self._select_preview_display_mode)
-        preview_header.addWidget(self._preview_display_choice)
-        preview_layout.addLayout(preview_header)
+        self._preview_view_controls = view_controls(preview_image_panel, self._preview_display_choice, "实时画面")
+        preview_image_layout.addWidget(self._preview_view_controls)
         self._preview_display_stack = WorkspaceStack()
         self._preview_canvas = DocumentCanvas()
         self._preview_canvas.set_empty_message("连接采集设备后自动显示实时画面")
@@ -5114,7 +5120,7 @@ class MainWindow(QMainWindow):
         from fdm.ui.display_preferences import acquisition_display_store, AcquisitionDisplayBinding
         self._preview_display_binding = AcquisitionDisplayBinding(self._preview_canvas,
             store=acquisition_display_store(self), calibration_provider=self._preview_calibration_snapshot,
-            status_callback=lambda text: self.statusBar().showMessage(text, 8000), parent=self)
+            status_callback=lambda text: getattr(self, "_preview_inline_status", self.statusBar()).showMessage(text, 8000), parent=self)
         self._preview_display_binding.applied.connect(self._sync_preview_display_choice)
         self._microview_preview_host = MicroviewPreviewHost()
         self._microview_preview_host.installEventFilter(self)
@@ -5126,7 +5132,16 @@ class MainWindow(QMainWindow):
         self._microview_preview_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._microview_preview_scroll.viewport().installEventFilter(self)
         self._preview_display_stack.addWidget(self._microview_preview_scroll)
-        preview_layout.addWidget(self._preview_display_stack, 1)
+        preview_image_layout.addWidget(self._preview_display_stack, 1)
+        self._preview_body_splitter.addWidget(preview_image_panel)
+        preview_layout.addWidget(self._preview_body_splitter, 1)
+        self._preview_inline_status = QStatusBar(self._preview_page)
+        configure_status(self._preview_inline_status)
+        self._preview_inline_status.addWidget(self._preview_status_label, 1)
+        self._preview_resolution_label = QLabel(self._preview_inline_status)
+        self._preview_inline_status.addPermanentWidget(self._preview_resolution_label)
+        preview_layout.addWidget(self._preview_inline_status)
+        self.statusBar().messageChanged.connect(self._route_acquisition_status)
         self._image_resolution_label = QLabel("像素尺寸: -")
         self._image_resolution_label.setWordWrap(True)
         self._image_resolution_label.setStyleSheet("padding: 6px 2px 0 2px;")
@@ -5448,7 +5463,9 @@ class MainWindow(QMainWindow):
 
         self._acquisition_right_panel = self._build_acquisition_right_panel(container)
         self._acquisition_right_panel.hide()
-        layout.addWidget(self._acquisition_right_panel, 1)
+        self._preview_body_splitter.addWidget(self._acquisition_right_panel)
+        from fdm.ui.acquisition_layout import configure_splitter
+        configure_splitter(self._preview_body_splitter, self._acquisition_right_panel)
         self._digital_slide_right_panel = self._build_digital_slide_right_panel(container)
         self._digital_slide_right_panel.hide()
         layout.addWidget(self._digital_slide_right_panel)
@@ -5552,7 +5569,7 @@ class MainWindow(QMainWindow):
         panel.setMinimumWidth(0)
         panel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
 
         device_box = QGroupBox("采集设备", panel)
@@ -5595,11 +5612,13 @@ class MainWindow(QMainWindow):
 
         analysis_box = QGroupBox("预览分析", panel)
         analysis_layout = QVBoxLayout(analysis_box)
-        analysis_hint = QLabel("分析最多保持一帧在途；完成或取消动作始终显示在画布上方。", analysis_box)
+        analysis_hint = QLabel("连续调整焦距生成清晰合成图，或采集相邻视场构建地图。进入后可随时完成或取消。", analysis_box)
         analysis_hint.setWordWrap(True)
         analysis_layout.addWidget(analysis_hint)
         self._acquisition_focus_stack_button = QToolButton(analysis_box)
         self._acquisition_focus_stack_button.setText("景深合成")
+        self._acquisition_focus_stack_button.setIcon(themed_icon("open_images"))
+        self._acquisition_focus_stack_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self._acquisition_focus_stack_button.setCheckable(True)
         self._acquisition_focus_stack_button.clicked.connect(
             lambda checked=False: self._toggle_preview_analysis_mode("focus_stack", checked)
@@ -5607,6 +5626,8 @@ class MainWindow(QMainWindow):
         analysis_layout.addWidget(self._acquisition_focus_stack_button)
         self._acquisition_map_button = QToolButton(analysis_box)
         self._acquisition_map_button.setText("地图构建")
+        self._acquisition_map_button.setIcon(themed_icon("digital_slide"))
+        self._acquisition_map_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self._acquisition_map_button.setCheckable(True)
         self._acquisition_map_button.clicked.connect(
             lambda checked=False: self._toggle_preview_analysis_mode("map_build", checked)
@@ -13640,7 +13661,7 @@ class MainWindow(QMainWindow):
         document = self._preview_document
         if selected is None or document is None:
             return None
-        key = json.dumps(["camera:" + selected.id, *document.image_size], ensure_ascii=False, separators=(",", ":"))
+        key = json.dumps(["camera:" + selected.id, *document.image_size], ensure_ascii=False, separators=(",", ":"), allow_nan=False)
         if getattr(self, "_preview_ruler_key", None) != key:
             from fdm.live_experiment.calibration_store import load_rulers
             try:
@@ -13649,6 +13670,15 @@ class MainWindow(QMainWindow):
                 self._preview_ruler_snapshot = None
             self._preview_ruler_key = key
         return getattr(self, "_preview_ruler_snapshot", None)
+
+    def _route_acquisition_status(self, message):
+        """Keep existing action errors visible while the global bar is hidden."""
+        if not message or not self._acquisition_workspace_selected:
+            return
+        hub = self._acquisition_workbench
+        page = hub.pages.currentWidget() if hub is not None else None
+        target = page.statusBar() if page is not None and hasattr(page, "statusBar") else self._preview_inline_status
+        target.showMessage(message, 8000)
 
     def _sync_preview_display_choice(self, _resolved=None):
         preferences = self._preview_display_binding.store.preferences
@@ -14255,25 +14285,25 @@ class MainWindow(QMainWindow):
             self._adaptive_layout.set_workspace(workspace)
         if self._measurement_tool_strip is not None:
             self._measurement_tool_strip.setPrimaryToolsVisible(workspace is WorkspaceMode.MEASURE)
-            self._measurement_tool_strip.setPreviewContextVisible(workspace is WorkspaceMode.ACQUIRE)
-            self._measurement_tool_strip.setVisible(workspace is not WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
+            self._measurement_tool_strip.setPreviewContextVisible(False)
+            self._measurement_tool_strip.setVisible(workspace is WorkspaceMode.MEASURE)
         if self._measure_toolbar is not None:
             # Apply the final state directly. Showing then hiding this bar on
             # every device callback transiently raises the trial minimum size.
-            self._measure_toolbar.setVisible(workspace is not WorkspaceMode.DIGITAL_SLIDE_ACQUIRE and not in_trial)
+            self._measure_toolbar.setVisible(workspace is WorkspaceMode.MEASURE)
         if self._right_standard_panel is not None:
             self._right_standard_panel.setVisible(workspace is WorkspaceMode.MEASURE)
         if self._acquisition_right_panel is not None:
-            self._acquisition_right_panel.setVisible(workspace is WorkspaceMode.ACQUIRE)
+            self._acquisition_right_panel.setVisible(workspace is WorkspaceMode.ACQUIRE and not in_trial)
         if self._digital_slide_right_panel is not None:
             self._digital_slide_right_panel.setVisible(workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
         if self._adaptive_layout is not None:
-            self._adaptive_layout.set_embedded_controls(in_trial)
+            self._adaptive_layout.set_embedded_controls(workspace is WorkspaceMode.ACQUIRE)
         if not (self._fullscreen_controller is not None and self._fullscreen_controller.is_active):
             # Full-screen measurement owns its status controls; workspace
             # refresh must not hide the bar underneath its presentation.
-            self.statusBar().setVisible(not in_trial)
-        self._image_resolution_label.setVisible(not in_trial and not (
+            self.statusBar().setVisible(workspace is not WorkspaceMode.ACQUIRE)
+        self._image_resolution_label.setVisible(workspace is not WorkspaceMode.ACQUIRE and not (
             self._fullscreen_controller is not None and self._fullscreen_controller.is_active))
         self._update_acquisition_panel()
 
@@ -15706,6 +15736,7 @@ class MainWindow(QMainWindow):
                 )
             else:
                 self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
+            self._preview_resolution_label.setText(f"{image.width()} × {image.height()} px")
         self._sync_digital_slide_camera_label(frame_size=(image.width(), image.height()))
         self._update_action_states()
         self._sync_digital_slide_task_state()
@@ -27844,7 +27875,9 @@ class MainWindow(QMainWindow):
         if self._preview_analysis_widget is None or self._measurement_tool_strip is None:
             return
         is_visible = self._preview_active and not self._digital_slide_mode
-        self._measurement_tool_strip.setPreviewContextVisible(is_visible)
+        # Device callbacks update actions only; acquisition chrome is routed
+        # by the workbench and must never grow a toolbar during frame delivery.
+        self._measurement_tool_strip.setPreviewContextVisible(False)
         selected = self._selected_capture_device()
         focus_supported = self._preview_analysis_supported("focus_stack")
         map_supported = self._preview_analysis_supported("map_build")

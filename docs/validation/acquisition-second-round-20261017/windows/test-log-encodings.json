@@ -1,0 +1,14 @@
+[
+  {
+    "file": "windows-tests.log",
+    "original_encoding": "utf-16",
+    "original_sha256": "8bc52358653f6017417b8efaf36f83e76f377d967543f07ee295df8beb6a8481",
+    "utf8_sha256": "10aa1fcd9c24bfc8acbdab1a9d7efeaaa3a9ce52e54b6778fcd55056d9c7ac35"
+  },
+  {
+    "file": "history-feedback-tests.log",
+    "original_encoding": "utf-16",
+    "original_sha256": "ccc4e059f268be65ba62eed9aaf2d17e165f775386370f7a1e208c1d482d3d43",
+    "utf8_sha256": "1041ea92f2fdf88b4d2d190c6b6e333bf126960ed299d82ae46020df509df592"
+  }
+]

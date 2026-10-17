@@ -42,7 +42,7 @@ def viewport_key(source_id, frame_size):
     width, height = map(int, frame_size)
     if not source_id or min(width, height) <= 0:
         raise ValueError("保存视图需要设备标识和有效帧尺寸")
-    return json.dumps([str(source_id), width, height], ensure_ascii=False, separators=(",", ":"))
+    return json.dumps([str(source_id), width, height], ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
 def preferences_path():
