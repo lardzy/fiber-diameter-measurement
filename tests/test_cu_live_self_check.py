@@ -12,7 +12,7 @@ EVIDENCE_CASES = ("evidence_png_gray", "evidence_png_bgr", "evidence_png_bgra",
 
 def complete_report():
     names = ("manual_native", "traditional_native", "multiscale_native", "content_formula",
-             "field_motion", "field_preparation", "project_roundtrip", "windows_capture_import", "windows_capture_build",
+             "field_motion", "field_preparation", "project_roundtrip", "microview_bridge_import", "microview_bridge_build", "microview_bridge_transport",
              *CONFIGURATION_CASES, *EVIDENCE_CASES)
     return {"ok": True, "revision": 4, "cases": {name: True for name in names}}
 
@@ -53,12 +53,12 @@ def test_previous_probe_revision_cannot_validate_new_evidence_release(revision):
     assert not probe.cu_live_probe_passed(report)
 
 
-def test_current_report_is_accepted_without_weakening_windows_capture_gate(monkeypatch):
+def test_current_report_is_accepted_without_weakening_microview_gate(monkeypatch):
     monkeypatch.setattr(probe.sys, "platform", "win32")
     report = complete_report()
     assert probe.cu_live_probe_passed(report)
     missing_capture = deepcopy(report)
-    del missing_capture["cases"]["windows_capture_build"]
+    del missing_capture["cases"]["microview_bridge_build"]
     assert not probe.cu_live_probe_passed(missing_capture)
 
 

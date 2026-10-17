@@ -1,0 +1,18 @@
+qt.qpa.fonts: Populating font family aliases took 19 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost. 
+Qt 2048, PNG=off
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+Qt 2048, PNG=on
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+Qt 4096, PNG=off
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+Qt 4096, PNG=on
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/ui-redesign-20261016/performance/cu-ui-stable.json

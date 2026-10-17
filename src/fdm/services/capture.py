@@ -67,6 +67,10 @@ class CaptureBackend:
     def update_preview_target(self, preview_target: object | None) -> None:
         return None
 
+    def set_native_preview_visible(self, visible: bool) -> None:
+        """Select the display owner without changing capture or processing."""
+        del visible
+
     def can_capture_still(self, device: CaptureDevice) -> bool:
         return False
 
@@ -135,6 +139,7 @@ class PreviewFrameSnapshot:
     sequence: int
     received_at: float
     image: QImage
+    handle: object | None = None
 
 
 def available_capture_backends() -> list[CaptureBackend]:
@@ -148,6 +153,7 @@ def available_capture_backends() -> list[CaptureBackend]:
 class CaptureSessionManager(QObject):
     devicesChanged = Signal(object)
     previewStateChanged = Signal(bool)
+    captureStateChanged = Signal(object)
     frameReady = Signal(object)
     analysisFrameReady = Signal(int, object)
     analysisFrameFailed = Signal(int, str)
@@ -184,12 +190,83 @@ class CaptureSessionManager(QObject):
         self._preview_frames_coalesced = 0
         self._preview_frames_displayed = 0
         self._device_refresh_warnings: list[str] = []
+        self._subscriptions = {}
+        self._subscription_owns_preview = False
+        self._session_state = "stopped"
+        self._session_shape = None
+        self._frame_identity_generation = 0
+        self._stopping = False
+        self._native_preview_visible = True
         self._deliverFrame.connect(self._drain_preview_frame, Qt.ConnectionType.QueuedConnection)
         self._deliverError.connect(self._on_backend_error, Qt.ConnectionType.QueuedConnection)
         self._deliverAnalysisFrame.connect(self._on_analysis_frame_ready, Qt.ConnectionType.QueuedConnection)
         self._deliverAnalysisError.connect(self._on_analysis_error, Qt.ConnectionType.QueuedConnection)
         if refresh_on_init:
             self.refresh_devices()
+
+    def acquire_session(self, owner_id, on_frame, on_state):
+        from fdm.services.capture_subscription import CaptureSubscription
+        key = str(owner_id)
+        if key in self._subscriptions:
+            raise ValueError("采集订阅标识已存在。")
+        subscription = CaptureSubscription(self, key, on_frame, on_state)
+        self._subscriptions[key] = subscription
+        if not self.is_preview_active():
+            self._subscription_owns_preview = True
+            QTimer.singleShot(0, self, self._start_for_subscribers)
+        self._notify_capture_state(self._session_state)
+        frame = self.latest_preview_frame()
+        if frame is not None and frame.handle is not None:
+            on_frame(frame.handle)
+        return subscription
+
+    def _start_for_subscribers(self):
+        if self._subscriptions and not self.is_preview_active() and not self._stopping:
+            self.start_preview()
+
+    def _release_subscription(self, subscription):
+        if self._subscriptions.get(subscription.owner_id) is subscription:
+            del self._subscriptions[subscription.owner_id]
+        if not self._subscriptions and self._subscription_owns_preview:
+            self._subscription_owns_preview = False
+            self.request_stop_preview()
+
+    def _notify_capture_state(self, state, message="", stage=""):
+        from fdm.services.capture_subscription import CaptureState
+        self._session_state = state
+        value = CaptureState(state, self._preview_generation, stage, message)
+        self.captureStateChanged.emit(value)
+        for subscriber in tuple(self._subscriptions.values()):
+            if not subscriber.closed:
+                subscriber.on_state(value)
+
+    def current_capture_state(self):
+        return self._session_state
+
+    def is_stopping(self):
+        return self._stopping
+
+    def request_stop_preview(self):
+        """Nonblocking GUI stop; keep the backend owner until process exit."""
+        if self._stopping:
+            return
+        if not self.is_preview_active():
+            self.stop_preview()
+            return
+        self._stopping = True
+        self._notify_capture_state("stopping")
+        self._reset_preview_frames(None)
+        backend = self._active_backend
+        stop_async = getattr(backend, "stop_preview_async", None)
+        if stop_async is None:
+            # Qt/OpenCV backends retain their existing bounded stop contract.
+            self._stopping = False
+            self.stop_preview()
+            return
+        def complete():
+            self._stopping = False
+            self.stop_preview()
+        stop_async(complete)
 
     def devices(self) -> list[CaptureDevice]:
         return list(self._devices)
@@ -224,7 +301,7 @@ class CaptureSessionManager(QObject):
             if frame is None:
                 return None
             return PreviewFrameSnapshot(
-                frame.generation, frame.sequence, frame.received_at, QImage(frame.image)
+                frame.generation, frame.sequence, frame.received_at, QImage(frame.image), frame.handle
             )
 
     def preview_frame_stats(self) -> dict[str, int | float]:
@@ -396,6 +473,9 @@ class CaptureSessionManager(QObject):
         return True
 
     def start_preview(self, *, preview_target: object | None = None) -> bool:
+        if self._stopping:
+            self.errorOccurred.emit("采集设备仍在停止，请稍候。")
+            return False
         if not self._devices:
             self.refresh_devices()
         device = self.selected_device()
@@ -403,10 +483,11 @@ class CaptureSessionManager(QObject):
             self.errorOccurred.emit("当前没有可用的采集设备。")
             return False
         if self.is_preview_active():
-            stop_result = self.stop_preview()
-            if not stop_result:
-                self.errorOccurred.emit(stop_result.message or "旧相机会话未能安全停止。")
-                return False
+            # Re-entering a workspace must never reopen the same device.
+            if device.id == self._active_device_id:
+                return True
+            self.errorOccurred.emit("请先停止当前采集，再切换设备。")
+            return False
         backend = self._backend_for_device(device)
         if backend is None:
             self.errorOccurred.emit("未找到对应的采集后端。")
@@ -426,7 +507,13 @@ class CaptureSessionManager(QObject):
             preview_target=preview_target,
         )
         self._reset_preview_frames(generation)
+        self._session_shape = None
+        self._frame_identity_generation += 1
+        self._notify_capture_state("starting", stage="open_device")
         try:
+            # Pass the requested owner before opening the device. The GUI must
+            # also hide the native HWND: some SDKs ignore AFTER's return value.
+            backend.set_native_preview_visible(self._native_preview_visible)
             backend.start_preview(
                 device,
                 preview_target=preview_target,
@@ -440,16 +527,31 @@ class CaptureSessionManager(QObject):
             self._active_preview_kind = "frame_stream"
             self._active_preview_target = None
             self._active_capture = None
+            self._notify_capture_state("faulted", str(exc), "open_device")
             self.errorOccurred.emit(str(exc))
             return False
         self.previewStateChanged.emit(True)
         return True
+
+    def set_native_preview_visible(self, visible: bool) -> None:
+        """Route native drawing; this is not a synchronous HWND-retirement fence.
+
+        The native preview target must stay alive until the session has stopped,
+        and the GUI must hide it for trials. The shipped SAA7130 ignores the
+        AFTER callback's return value; this flag alone cannot hide that target.
+        """
+        self._native_preview_visible = bool(visible)
+        backend = self._active_backend
+        if backend is not None:
+            backend.set_native_preview_visible(self._native_preview_visible)
 
     def stop_preview(self) -> CaptureStopResult:
         was_active = self.is_preview_active()
         self._reset_preview_frames(None)
         if not self.is_preview_active():
             self._last_frame = None
+            if self._session_state != "stopped":
+                self._notify_capture_state("stopped")
             return CaptureStopResult(True, False, self._preview_generation)
         self._preview_generation += 1
         active = self._active_capture
@@ -469,6 +571,7 @@ class CaptureSessionManager(QObject):
         self._active_capture = None
         self._last_frame = None
         self.previewStateChanged.emit(False)
+        self._notify_capture_state("stopped")
         return CaptureStopResult(True, was_active, self._preview_generation)
 
     def update_preview_target(self, preview_target: object | None) -> None:
@@ -523,32 +626,56 @@ class CaptureSessionManager(QObject):
                 return
             self._preview_frames_displayed += 1
         self._on_frame_ready(generation, frame.image)
+        if self._session_state != "streaming":
+            self._notify_capture_state("streaming")
+        if self._subscriptions:
+            handle = frame.handle
+            if handle is None:
+                from fdm.live_experiment.frames import frame_from_qimage
+                handle = frame_from_qimage(frame.image, source_id="camera:" + self._active_device_id,
+                    generation=self._frame_identity_generation, sequence=frame.sequence,
+                    received_at=frame.received_at, metadata={"backend": "capture_manager", "raw_camera": True})
+            for subscriber in tuple(self._subscriptions.values()):
+                if not subscriber.closed:
+                    subscriber.on_frame(handle)
 
     @Slot(int, str)
     def _on_backend_error(self, generation: int, message: str) -> None:
         if generation != self._preview_generation:
             return
         if self.is_preview_active():
-            self.stop_preview()
+            self.request_stop_preview()
+        self._notify_capture_state("faulted", message, "stream")
         self.errorOccurred.emit(message)
 
-    def _deliver_frame_threadsafe(self, generation: int, image: QImage) -> None:
+    def _deliver_frame_threadsafe(self, generation: int, image) -> None:
+        from fdm.live_experiment.frames import FrameHandle
+        handle = image if isinstance(image, FrameHandle) else None
+        if handle is not None:
+            pixels = handle.pixels
+            fmt = {"GRAY": QImage.Format.Format_Grayscale8, "BGR": QImage.Format.Format_BGR888,
+                   "BGRA": QImage.Format.Format_ARGB32}[handle.pixel_format]
+            image = QImage(pixels.data, pixels.shape[1], pixels.shape[0], pixels.strides[0], fmt).copy()
         if image.isNull():
             return
         with self._frame_lock:
             if generation != self._frame_generation:
                 return
-            received_at = perf_counter()
+            shape = image.width(), image.height()
+            if shape != self._session_shape:
+                self._session_shape = shape
+                self._frame_identity_generation += 1
+            received_at = handle.received_at if handle is not None else perf_counter()
             self._source_frame_sequence += 1
+            if handle is not None:
+                handle = FrameHandle("camera:" + self._active_device_id, self._frame_identity_generation,
+                    self._source_frame_sequence, received_at, handle.pixels, handle.pixel_format, True, handle.metadata)
             self._source_frame = PreviewFrameSnapshot(
-                generation, self._source_frame_sequence, received_at, QImage(image)
-            )
+                generation, self._source_frame_sequence, received_at, QImage(image), handle)
             if self._frame_delivery_pending:
                 self._preview_frames_coalesced += 1
                 return
             self._frame_delivery_pending = True
-        # The queued event carries no image. A blocked GUI retains only the
-        # latest source frame, and an old session wakeup cannot drain a new one.
         self._deliverFrame.emit(generation)
 
     def _deliver_error_threadsafe(self, generation: int, message: str) -> None:
@@ -1042,14 +1169,18 @@ class MicroviewCaptureBackend(CaptureBackend):
 
     class _MVImageInfo(ctypes.Structure):
         _fields_ = [
-            ("Length", ctypes.c_ulong),
-            ("nColor", ctypes.c_ulong),
-            ("Heigth", ctypes.c_ulong),
-            ("Width", ctypes.c_ulong),
-            ("SkipPixel", ctypes.c_ulong),
+            ("Length", ctypes.c_uint32),
+            ("nColor", ctypes.c_uint32),
+            ("Heigth", ctypes.c_uint32),
+            ("Width", ctypes.c_uint32),
+            ("SkipPixel", ctypes.c_uint32),
         ]
 
-    def __init__(self) -> None:
+    def __init__(self, *, frame_tap: bool = False) -> None:
+        self._frame_tap_enabled = frame_tap
+        self._native_preview_visible = True
+        self._frame_tap = None
+        self._frame_tap_capacity = 0
         self._dll: ctypes.WinDLL | None = None
         self._dll_root: Path | None = None
         self._support_libraries: dict[str, ctypes.WinDLL] = {}
@@ -1127,6 +1258,14 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._preview_resolution = self._get_capture_dimensions(raw_device_handle)
         self._configure_capture_defaults(dll, raw_device_handle, self._board_type)
         self._bind_preview_target(dll, raw_device_handle, preview_target)
+        if self._frame_tap_enabled:
+            from fdm.services.microview_transport import load_bridge
+            width, height = self._preview_resolution or (768, 576)
+            self._frame_tap_capacity = min(128 * 1024 * 1024, max(2 * 1024 * 1024, width * height * 4))
+            self._frame_tap = load_bridge().FrameTap(
+                int(dll._handle), int(raw_device_handle), self._frame_tap_capacity, height,
+                self._native_preview_visible)
+            self._frame_tap.start()
         if not self._start_with_display_mode(dll, raw_device_handle, self._BUFFER_SYSTEM_MEMORY_DX):
             if self._start_with_display_mode(dll, raw_device_handle, self._BUFFER_SYSTEM_MEMORY_GDI):
                 self._active_warning = "DirectX 预览初始化失败，已自动回退到 GDI 预览。"
@@ -1145,8 +1284,20 @@ class MicroviewCaptureBackend(CaptureBackend):
     def stop_preview(self) -> None:
         started_at = perf_counter()
         had_device_handle = self._device_handle is not None
+        tap = self._frame_tap
+        if tap is not None:
+            tap.stop()
         if self._dll is not None and self._device_handle:
-            self._release_runtime_state(self._dll, self._device_handle)
+            if tap is None:
+                self._release_runtime_state(self._dll, self._device_handle)
+            else:
+                # Do not swallow callback shutdown failures. The supervising
+                # parent terminates the helper without freeing a live context.
+                if int(self._dll.MV_OperateDevice(self._device_handle, self._MV_STOP)) == self._MV_ERROR:
+                    raise RuntimeError("Microview stop stage: MV_STOP failed")
+                tap.wait_idle(2000)
+                self._dll.MV_CloseDevice(self._device_handle)
+                self._frame_tap = None
         if self._dll is not None:
             self._dispose_loaded_libraries()
         self._device_handle = None
@@ -1166,6 +1317,11 @@ class MicroviewCaptureBackend(CaptureBackend):
             return
         self._preview_target = preview_target
         self._bind_preview_target(self._dll, self._device_handle, preview_target)
+
+    def set_native_preview_visible(self, visible: bool) -> None:
+        self._native_preview_visible = bool(visible)
+        if self._frame_tap is not None:
+            self._frame_tap.set_native_preview_visible(self._native_preview_visible)
 
     def can_capture_still(self, device: CaptureDevice) -> bool:
         return True
@@ -1300,37 +1456,38 @@ class MicroviewCaptureBackend(CaptureBackend):
             dll = loader(str(dll_path))
         else:
             dll = ctypes.WinDLL(str(dll_path))
-        dll.MV_GetDeviceNumber.restype = ctypes.c_ulong
-        dll.MV_GetLastError.argtypes = [ctypes.c_bool]
-        dll.MV_GetLastError.restype = ctypes.c_ulong
-        dll.MV_OpenDevice.argtypes = [ctypes.c_ulong, ctypes.c_bool]
+        dll.MV_GetDeviceNumber.restype = ctypes.c_uint32
+        dll.MV_GetLastError.argtypes = [ctypes.c_int32]
+        dll.MV_GetLastError.restype = ctypes.c_uint32
+        dll.MV_OpenDevice.argtypes = [ctypes.c_uint32, ctypes.c_int32]
         dll.MV_OpenDevice.restype = ctypes.c_void_p
         dll.MV_CloseDevice.argtypes = [ctypes.c_void_p]
+        dll.MV_CloseDevice.restype = None
         dll.MV_OperateDevice.argtypes = [ctypes.c_void_p, ctypes.c_int]
         dll.MV_OperateDevice.restype = ctypes.c_int
-        dll.MV_SetDeviceParameter.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_size_t]
-        dll.MV_SetDeviceParameter.restype = ctypes.c_bool
+        dll.MV_SetDeviceParameter.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_uint32]
+        dll.MV_SetDeviceParameter.restype = ctypes.c_int32
         dll.MV_GetDeviceParameter.argtypes = [ctypes.c_void_p, ctypes.c_int]
-        dll.MV_GetDeviceParameter.restype = ctypes.c_long
+        dll.MV_GetDeviceParameter.restype = ctypes.c_int32
         dll.MV_CaptureSingle.argtypes = [
             ctypes.c_void_p,
-            ctypes.c_bool,
+            ctypes.c_int32,
             ctypes.c_void_p,
-            ctypes.c_ulong,
+            ctypes.c_uint32,
             ctypes.POINTER(self._MVImageInfo),
         ]
         dll.MV_CaptureSingle.restype = ctypes.c_void_p
-        dll.MV_TestSignal.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong]
-        dll.MV_TestSignal.restype = ctypes.c_bool
+        dll.MV_TestSignal.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+        dll.MV_TestSignal.restype = ctypes.c_int32
         dll.MV_GetSignalParam.argtypes = [
             ctypes.c_void_p,
             ctypes.c_int,
             ctypes.POINTER(ctypes.c_float),
-            ctypes.POINTER(ctypes.c_ulong),
+            ctypes.POINTER(ctypes.c_uint32),
         ]
-        dll.MV_GetSignalParam.restype = ctypes.c_ulong
+        dll.MV_GetSignalParam.restype = ctypes.c_uint32
         dll.MV_SaveSignalParamToIni.argtypes = [ctypes.c_void_p]
-        dll.MV_SaveSignalParamToIni.restype = ctypes.c_bool
+        dll.MV_SaveSignalParamToIni.restype = ctypes.c_int32
         self._dll = dll
         return self._dll
 
@@ -1580,19 +1737,11 @@ class MicroviewCaptureBackend(CaptureBackend):
             capture_buffer = None
             capture_ptr: int | None = None
             capture_length = 0
+            # MV_CaptureSingle accepts its ImageInfo pointer directly (pointer
+            # width preserved). A null input buffer requests SDK-owned pixels;
+            # copy them before any subsequent capture/stop. Never pass a pointer
+            # through MV_SetDeviceParameter's DWORD parameter.
             set_info_ok = False
-            try:
-                set_info_ok = bool(self._dll.MV_SetDeviceParameter(
-                    handle,
-                    self._PARAM_SET_GARBIMAGEINFO,
-                    ctypes.addressof(info),
-                ))
-            except Exception:
-                set_info_ok = False
-            if int(info.Length) > 0:
-                capture_length = int(info.Length)
-                capture_buffer = ctypes.create_string_buffer(capture_length)
-                capture_ptr = ctypes.addressof(capture_buffer)
             sdk_error_before = self._microview_last_error_code()
             try:
                 buffer_ptr = self._dll.MV_CaptureSingle(
@@ -1650,6 +1799,11 @@ class MicroviewIsolatedBackend(CaptureBackend):
     backend_key = "microview"
 
     def __init__(self) -> None:
+        self._native_preview_visible = True
+        self._frame_receiver = None
+        self._frame_callback = None
+        self._last_frame = None
+        self._stop_requested = False
         self._device_info: dict[str, dict[str, object]] = {}
         self._preview_process: QProcess | None = None
         self._preview_stdout_buffer = ""
@@ -1715,16 +1869,20 @@ class MicroviewIsolatedBackend(CaptureBackend):
         frame_callback: Callable[[QImage], None],
         error_callback: Callable[[str], None],
     ) -> None:
-        del frame_callback
+        self._frame_callback = frame_callback
         if sys.platform != "win32":
             raise RuntimeError("Microview 实时预览仅支持 Windows。")
         if preview_target is None:
-            raise RuntimeError("Microview 原生预览缺少目标窗口，无法启动预览。")
-        self.stop_preview()
+            raise RuntimeError("请通过实时采集入口启动 Microview，以初始化采集窗口。")
+        if self._preview_process is not None:
+            raise RuntimeError("Microview 会话尚未退出，不能重复打开设备。")
+        self._stop_requested = False
+        self._last_frame = None
         program, arguments = _microview_helper_command(
             "preview",
             device_index=int(device.native_id),
             preview_target=preview_target,
+            native_preview_visible=self._native_preview_visible,
         )
         process = QProcess()
         environment = QProcessEnvironment.systemEnvironment()
@@ -1743,23 +1901,27 @@ class MicroviewIsolatedBackend(CaptureBackend):
         process.readyReadStandardOutput.connect(lambda: self._drain_preview_stdout(error_callback))
         process.readyReadStandardError.connect(self._drain_preview_stderr)
         process.finished.connect(lambda exit_code, exit_status: self._on_preview_finished(exit_code, exit_status, error_callback))
+        process.started.connect(lambda: self.set_native_preview_visible(self._native_preview_visible))
         process.start()
-        if not process.waitForStarted(5000):
-            self._preview_process = None
-            raise RuntimeError("Microview 预览 helper 进程启动失败。")
-        deadline = perf_counter() + 5.0
-        while not self._preview_started and process.state() == QProcess.ProcessState.Running and perf_counter() < deadline:
-            process.waitForReadyRead(250)
-            self._drain_preview_stdout(error_callback)
-            self._drain_preview_stderr()
-            if self._pending_preview_error:
-                break
-        if not self._preview_started:
-            message = self._pending_preview_error or self._preview_stderr_buffer.strip() or "Microview 预览 helper 初始化失败。"
-            self.stop_preview()
-            raise RuntimeError(message)
+        def startup_timeout():
+            if self._preview_process is process and not self._preview_started and not self._stop_requested:
+                error_callback(self._pending_preview_error or "Microview 启动超时：未收到有效完整帧。")
+        QTimer.singleShot(8000, process, startup_timeout)
+
+    def stop_preview_async(self, on_done):
+        process = self._preview_process
+        if process is None or process.state() == QProcess.ProcessState.NotRunning:
+            on_done()
+            return
+        self._stop_requested = True
+        self._send_preview_command({"command": "stop"})
+        process.closeWriteChannel()
+        process.finished.connect(lambda *_: on_done())
+        QTimer.singleShot(2500, process, lambda: process.terminate() if process.state() != QProcess.ProcessState.NotRunning else None)
+        QTimer.singleShot(3500, process, lambda: process.kill() if process.state() != QProcess.ProcessState.NotRunning else None)
 
     def stop_preview(self) -> None:
+        self._stop_requested = True
         process = self._preview_process
         if process is not None:
             if process.state() == QProcess.ProcessState.Running:
@@ -1784,6 +1946,9 @@ class MicroviewIsolatedBackend(CaptureBackend):
             if process.state() == QProcess.ProcessState.Running:
                 raise RuntimeError("Microview helper 在 terminate/kill 后仍未退出")
             process.deleteLater()
+        if self._frame_receiver is not None:
+            self._frame_receiver.close()
+            self._frame_receiver = None
         self._preview_process = None
         self._preview_stdout_buffer = ""
         self._preview_stderr_buffer = ""
@@ -1817,6 +1982,12 @@ class MicroviewIsolatedBackend(CaptureBackend):
         )
         return None
 
+    def set_native_preview_visible(self, visible: bool) -> None:
+        self._native_preview_visible = bool(visible)
+        process = self._preview_process
+        if process is not None and process.state() == QProcess.ProcessState.Running:
+            self._send_preview_command({"command": "native_preview_visible", "visible": self._native_preview_visible})
+
     def can_capture_still(self, device: CaptureDevice) -> bool:
         del device
         return True
@@ -1838,15 +2009,24 @@ class MicroviewIsolatedBackend(CaptureBackend):
         if process is None or process.state() != QProcess.ProcessState.Running or not self._preview_started:
             error_callback(request_id, "Microview 预览 helper 尚未准备好分析帧。")
             return
-        self._pending_snapshot_callbacks[request_id] = (frame_callback, error_callback)
-        self._send_preview_command(
-            {
-                "command": "snapshot",
-                "request_id": int(request_id),
-            }
-        )
+        image = self._owned_latest_qimage()
+        if image is None:
+            error_callback(request_id, "尚未收到有效的 Microview 完整帧。")
+        else:
+            frame_callback(request_id, image)
+
+    def _owned_latest_qimage(self):
+        if self._last_frame is None:
+            return None
+        frame = self._last_frame
+        pixels = frame.pixels
+        fmt = {"GRAY": QImage.Format.Format_Grayscale8, "BGR": QImage.Format.Format_BGR888,
+               "BGRA": QImage.Format.Format_ARGB32}[frame.pixel_format]
+        return QImage(pixels.data, pixels.shape[1], pixels.shape[0], pixels.strides[0], fmt).copy()
 
     def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
+        if self._preview_process is not None:
+            return self._owned_latest_qimage()
         response = self._run_helper_command("capture", device_index=int(device.native_id), timeout_ms=15000)
         diagnostics = str(response.get("diagnostics", "")).strip()
         self._last_capture_diagnostics = diagnostics
@@ -1939,6 +2119,39 @@ class MicroviewIsolatedBackend(CaptureBackend):
             if not isinstance(payload, dict):
                 continue
             message_type = str(payload.get("type", "")).strip()
+            if message_type == "buffer":
+                try:
+                    from fdm.services.microview_transport import FrameReceiver
+                    if self._frame_receiver is None:
+                        self._frame_receiver = FrameReceiver()
+                    self._frame_receiver.attach(payload)
+                except Exception as exc:
+                    error_callback(f"Microview [attach_buffer]: {exc}")
+                continue
+            if message_type == "frame":
+                try:
+                    from fdm.live_experiment.frames import FrameHandle
+                    if self._frame_receiver is None:
+                        raise RuntimeError("Microview 在共享缓冲建立前发送了帧。")
+                    pixels = self._frame_receiver.receive(payload)
+                    self._send_preview_command({"command": "ack", "sequence": payload["sequence"]})
+                    if pixels is None:
+                        # A newer complete callback frame already exists.
+                        # Release this pending slot without flashing stale pixels.
+                        continue
+                    frame = FrameHandle.snapshot(pixels, source_id="camera:" + self._active_device_id,
+                        sequence=int(payload["sequence"]), received_at=float(payload["received_at"]),
+                        transfer_ownership=True, metadata={"backend": "microview_callback", "raw_camera": True,
+                        "sdk_callback_stage": payload.get("callback_stage", "unknown"),
+                        "acquisition_reserved_bytes": self._frame_receiver.capacity * 2 + self._frame_receiver.memory.size,
+                        "callback_index": payload["index"], "sdk_color": payload["color"],
+                        "sdk_skip": payload["skip"], "diagnostics": payload.get("diagnostics", {})})
+                    self._last_frame = frame
+                    if not self._stop_requested and self._frame_callback is not None:
+                        self._frame_callback(frame)
+                except Exception as exc:
+                    error_callback(f"Microview [receive_frame]: {exc}")
+                continue
             if message_type == "started":
                 resolution_payload = payload.get("resolution", [])
                 if isinstance(resolution_payload, list) and len(resolution_payload) == 2:
@@ -1971,7 +2184,7 @@ class MicroviewIsolatedBackend(CaptureBackend):
                 continue
             if message_type == "error":
                 self._pending_preview_error = str(payload.get("message", "")).strip() or "Microview 预览 helper 出错。"
-                if self._preview_started and self._pending_preview_error:
+                if self._pending_preview_error and not self._stop_requested:
                     error_callback(self._pending_preview_error)
 
     def _drain_preview_stderr(self) -> None:
@@ -1989,7 +2202,10 @@ class MicroviewIsolatedBackend(CaptureBackend):
             return
         self._drain_preview_stdout(error_callback)
         self._drain_preview_stderr()
-        unexpected = self._preview_started and self._active_device_id and exit_code != 0
+        unexpected = bool(self._active_device_id and not self._stop_requested)
+        if self._frame_receiver is not None:
+            self._frame_receiver.close()
+            self._frame_receiver = None
         self._preview_process = None
         self._preview_stdout_buffer = ""
         self._preview_started = False
@@ -2013,7 +2229,8 @@ class MicroviewIsolatedBackend(CaptureBackend):
         try:
             message = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8") + b"\n"
             process.write(message)
-            process.waitForBytesWritten(500)
+            # QProcess flushes its bounded command buffer through the event loop;
+            # per-frame acknowledgement must never wait on the GUI thread.
         except Exception:
             return
 
@@ -2023,6 +2240,7 @@ def _microview_helper_command(
     *,
     device_index: int | None = None,
     preview_target: object | None = None,
+    native_preview_visible: bool = True,
 ) -> tuple[str, list[str]]:
     arguments: list[str]
     if getattr(sys, "frozen", False):
@@ -2044,6 +2262,8 @@ def _microview_helper_command(
                 str(int(width)),
                 "--preview-height",
                 str(int(height)),
+                "--native-preview-visible",
+                "1" if native_preview_visible else "0",
             ]
         )
     return program, arguments
@@ -2370,65 +2590,15 @@ def _microview_force_opaque_alpha(data: bytes) -> bytes:
 
 
 def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._MVImageInfo) -> QImage:
-    width = int(info.Width)
-    height = int(info.Heigth)
-    total_length = int(info.Length)
-    raw_pixel_format = int(info.nColor)
-    pixel_format = _microview_normalize_pixel_format(raw_pixel_format)
-    skip_pixels = max(0, int(info.SkipPixel))
-    if width <= 0 or height <= 0 or total_length <= 0:
-        return QImage()
-    bytes_per_pixel = _microview_bytes_per_pixel(pixel_format)
-    if bytes_per_pixel is None:
-        raise ValueError(
-            "不支持的 Microview 像素格式: "
-            f"{_microview_pixel_format_name(raw_pixel_format)} ({raw_pixel_format})"
-        )
-    image_format = _microview_qimage_format(pixel_format)
-    if image_format is None:
-        raise ValueError(
-            "当前 Qt 运行环境不支持 Microview 像素格式: "
-            f"{_microview_pixel_format_name(raw_pixel_format)}"
-        )
-    data = ctypes.string_at(buffer_ptr, total_length)
-    active_stride = width * bytes_per_pixel
-    minimum_total = active_stride * height
-    if len(data) < minimum_total:
-        raise ValueError(
-            "Microview 图像缓冲区长度不足: "
-            f"{len(data)} < {minimum_total} ({width}x{height}, format={_microview_pixel_format_name(raw_pixel_format)})"
-        )
-
-    row_stride_candidates: list[int] = []
-    expected_stride = (width + skip_pixels) * bytes_per_pixel
-    if expected_stride >= active_stride and expected_stride * height <= len(data):
-        row_stride_candidates.append(expected_stride)
-    if len(data) % height == 0:
-        derived_stride = len(data) // height
-        if derived_stride >= active_stride and derived_stride not in row_stride_candidates:
-            row_stride_candidates.append(derived_stride)
-    if active_stride not in row_stride_candidates and minimum_total <= len(data):
-        row_stride_candidates.append(active_stride)
-    if not row_stride_candidates:
-        raise ValueError(
-            "无法确定 Microview 图像步长: "
-            f"length={len(data)}, width={width}, height={height}, "
-            f"skip_pixels={skip_pixels}, format={_microview_pixel_format_name(raw_pixel_format)}"
-        )
-
-    row_stride = row_stride_candidates[0]
-    if row_stride * height > len(data):
-        raise ValueError(
-            "Microview 图像步长超过缓冲区长度: "
-            f"stride={row_stride}, height={height}, length={len(data)}"
-        )
-    compact_data = data if row_stride == active_stride else _microview_compact_rows(data, row_stride, active_stride, height)
-    if pixel_format == MicroviewCaptureBackend._FORMAT_ARGB8888:
-        compact_data = _microview_force_opaque_alpha(compact_data)
-    image = QImage(compact_data, width, height, active_stride, image_format)
-    if image.isNull():
-        raise ValueError(
-            "Qt 无法构建 Microview 图像: "
-            f"{width}x{height}, stride={active_stride}, format={_microview_pixel_format_name(raw_pixel_format)}"
-        )
-    return image.copy()
+    from fdm.live_experiment.capture_helper import decode_microview_buffer, MAX_FRAME_BYTES
+    length = int(info.Length)
+    if not buffer_ptr or not 0 < length <= MAX_FRAME_BYTES:
+        raise ValueError("Microview 图像缓冲区长度无效。")
+    pixels = decode_microview_buffer(ctypes.string_at(buffer_ptr, length), info)
+    if pixels.ndim == 2:
+        fmt = QImage.Format.Format_Grayscale8
+    elif pixels.shape[2] == 3:
+        fmt = QImage.Format.Format_BGR888
+    else:
+        fmt = QImage.Format.Format_ARGB32
+    return QImage(pixels.data, pixels.shape[1], pixels.shape[0], pixels.strides[0], fmt).copy()

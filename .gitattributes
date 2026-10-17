@@ -5,3 +5,8 @@ docs/validation/cu-live-performance-4k-2026-10-15/**/*.json -text
 docs/validation/cu-live-performance-4k-2026-10-15/**/*.log -text
 docs/validation/cu-live-performance-4k-2026-10-15/**/*.xml -text
 docs/validation/cu-live-performance-4k-2026-10-15/**/*.progress -text
+# These are captured results, including CP936 stdout; preserve their exact bytes.
+docs/validation/ui-redesign-20261016/**/*.json -text -whitespace
+docs/validation/ui-redesign-20261016/**/*.log -text -whitespace
+docs/validation/ui-redesign-20261016/**/*.xml -text -whitespace
+docs/validation/ui-redesign-20261016/**/*.stdout -text -whitespace

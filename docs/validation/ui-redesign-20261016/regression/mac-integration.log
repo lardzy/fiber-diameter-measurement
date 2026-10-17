@@ -1,0 +1,321 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+........................................................................ [ 41%]
+........................................................................ [ 48%]
+........................................................................ [ 55%]
+........................................................................ [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+............FFFFF.................................................... [ 90%]
+............................F......................F [ 95%]
+.................................................                        [100%]
+=================================== FAILURES ===================================
+__________ test_receiver_owns_pixels_before_reuse_and_rejects_replay ___________
+
+    def test_receiver_owns_pixels_before_reuse_and_rejects_replay():
+>       memory = shared_memory.SharedMemory(create=True, size=12)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x16ec10ec0>
+name = '/psm_20638455', create = True, size = 12
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+    
+        self._track = track
+        if _USE_POSIX:
+    
+            # POSIX Shared Memory
+    
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_20638455'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+______ test_receiver_drops_only_proven_superseded_slot_once_before_decode ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x177f4cad0>
+
+    def test_receiver_drops_only_proven_superseded_slot_once_before_decode(monkeypatch):
+        """Parser test; atomic marker writes are separately tested with the real DLL."""
+        import struct
+        from fdm.services import microview_transport
+        reads = []
+        def read_marker(buffer):
+            reads.append(True)
+            return struct.unpack_from("<Q", buffer)[0]
+        monkeypatch.setattr(microview_transport, "load_bridge", lambda: SimpleNamespace(read_latest_marker=read_marker))
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x16891fc50>
+name = '/psm_c15028f3', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+    
+        self._track = track
+        if _USE_POSIX:
+    
+            # POSIX Shared Memory
+    
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_c15028f3'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+______ test_receiver_rejects_marker_overlap_misalignment_or_truncation[8] ______
+
+offset = 8
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x16ec816d0>
+name = '/psm_751ad05c', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+    
+        self._track = track
+        if _USE_POSIX:
+    
+            # POSIX Shared Memory
+    
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_751ad05c'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+_____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[13] ______
+
+offset = 13
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x143d5f820>
+name = '/psm_b9a74e4a', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+    
+        self._track = track
+        if _USE_POSIX:
+    
+            # POSIX Shared Memory
+    
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_b9a74e4a'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+_____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[end] _____
+
+offset = 'end'
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x1654a6b10>
+name = '/psm_82b6dc91', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+    
+        self._track = track
+        if _USE_POSIX:
+    
+            # POSIX Shared Memory
+    
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_82b6dc91'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+_ ProfessionalWorkspaceTests.test_compact_results_drawer_does_not_resize_window_beyond_screen _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_compact_results_drawer_does_not_resize_window_beyond_screen>
+
+    def test_compact_results_drawer_does_not_resize_window_beyond_screen(self) -> None:
+        window = self._window()
+        window.resize(1093, 576)
+        window.show()
+        self.app.processEvents()
+    
+        window._toggle_project_panel()
+        self.app.processEvents()
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
+        window._toggle_results_panel()
+        self.app.processEvents()
+        self.app.processEvents()
+    
+>       self.assertEqual(window.size().toTuple(), (1093, 576))
+E       AssertionError: Tuples differ: (1093, 650) != (1093, 576)
+E       
+E       First differing element 1:
+E       650
+E       576
+E       
+E       - (1093, 650)
+E       ?         --
+E       
+E       + (1093, 576)
+E       ?        ++
+
+tests/test_professional_workspace.py:364: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ ProfessionalWorkspaceTests.test_workspace_mode_replaces_measurement_tools_with_acquisition_context _
+
+self = <test_professional_workspace.ProfessionalWorkspaceTests testMethod=test_workspace_mode_replaces_measurement_tools_with_acquisition_context>
+
+    def test_workspace_mode_replaces_measurement_tools_with_acquisition_context(self) -> None:
+        with patch("fdm.services.capture.available_capture_backends", return_value=[]):
+            window = self._window()
+        window.show()
+        window.acquisition_workspace_action.trigger()
+        self.app.processEvents()
+        self.assertEqual(window._workspace_mode, WorkspaceMode.ACQUIRE)
+        self.assertIs(window._center_stack.currentWidget(), window._acquisition_workbench)
+        self.assertFalse(window._capture_manager.is_preview_active())
+        self.assertFalse(window._measure_toolbar.isHidden())
+        self.assertFalse(window._measurement_tool_strip.primaryToolsVisible())
+        self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
+        self.assertFalse(window._acquisition_right_panel.isHidden())
+        self.assertTrue(window._right_standard_panel.isHidden())
+        # A no-device/stop callback updates capture state, not the user's route.
+        window._on_live_preview_state_changed(False)
+        self.app.processEvents()
+        self.assertEqual(window._workspace_mode, WorkspaceMode.ACQUIRE)
+        self.assertIs(window._center_stack.currentWidget(), window._acquisition_workbench)
+        window.measure_workspace_action.trigger()
+        self.app.processEvents()
+        self.assertEqual(window._workspace_mode, WorkspaceMode.MEASURE)
+>       self.assertIs(window._center_stack.currentWidget(), window.tab_widget)
+E       AssertionError: <fdm.ui.workbench_controls.WelcomePanel(0x16ea53910, name="workspaceWelcome") at 0x16dbe2b40> is not <PySide6.QtWidgets.QTabWidget(0x16eac4930) at 0x703201ae00>
+
+tests/test_professional_workspace.py:893: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_live_experiment_sources.py::test_receiver_owns_pixels_before_reuse_and_rejects_replay
+FAILED tests/test_live_experiment_sources.py::test_receiver_drops_only_proven_superseded_slot_once_before_decode
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[8]
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[13]
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[end]
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_compact_results_drawer_does_not_resize_window_beyond_screen
+FAILED tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_workspace_mode_replaces_measurement_tools_with_acquisition_context
+7 failed, 1027 passed, 23 subtests passed in 69.74s (0:01:09)

@@ -5,13 +5,17 @@
 Runs 2K/4K by default, five warmups and thirty QTest two-click measurements, with PNG
 saving off and on. Frames enter the actual latest-only workspace mailbox from
 a producer thread; real QWidget paintEvent and controller kernels run. This is
-an offscreen rendering benchmark, not screen-presentation or camera acceptance.
+an offscreen rendering benchmark unless QT_QPA_PLATFORM=windows is set; neither
+mode measures monitor scan-out or camera acceptance. Resource sampling runs in
+a separate process (requires the benchmark extra), avoiding psutil/GIL stalls
+inside the measured GUI process. Thread mode remains for diagnostic comparison.
 Run serially after correctness tests; do not overlap with other benchmarks.
 """
 from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import nullcontext
 import hashlib
 import json
 import os
@@ -20,6 +24,7 @@ import sys
 import tempfile
 import threading
 import time
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -66,13 +71,22 @@ def wait_until(condition, seconds, *, check=None):
 
 
 def run_case(args, size, save_images):
-    session = ExperimentSession(save_images=save_images, sample_name=f"UI synthetic {size}")
+    session = ExperimentSession(save_images=save_images, sample_name=f"UI synthetic {size}",
+                                workspace_options={"mode": "content"})
     session.add_operator("benchmark")
     session.set_materials(default_materials())
+    for _ in range(args.history_count):
+        session.add_measurement(19, "wool", field_id="history")
     host = BenchmarkHost(session)
     state = {"paints": 0, "paint_ms": [], "current_trial": None, "painted_frame_ids": set(),
              "sample_start": None, "sample_end": None, "sample_frame_ids": set(), "frame_age_ms": []}
     original_canvas = workspace_module.LiveMeasurementCanvas
+    publish_profile = None
+    if args.profile_publish:
+        from scripts.validation.gui_publish_profile import PublishProfile
+        publish_profile = PublishProfile()
+        for method in ("_record_accepted", "_changed"):
+            publish_profile.wrap(workspace_module.LiveExperimentWorkspace, method)
 
     class MeasuredCanvas(original_canvas):
         def paintEvent(self, event):
@@ -92,6 +106,7 @@ def run_case(args, size, save_images):
                 return
             if self.controller.draft and "draft_painted_at" not in trial:
                 trial["draft_painted_at"] = done
+                trial["first_click_to_draft_gui_cpu_ms"] = (time.thread_time() - trial["first_click_cpu_at"]) * 1000
             if trial.get("record_id") in self.controller.current_records and "record_painted_at" not in trial:
                 trial["record_painted_at"] = done
 
@@ -100,16 +115,29 @@ def run_case(args, size, save_images):
         workspace = workspace_module.open_live_experiment(host)
     finally:
         workspace_module.LiveMeasurementCanvas = original_canvas
+    assert workspace.session is session, "Benchmark history and PNG options must belong to the displayed trial"
     controller = workspace.controller
+    if publish_profile:
+        for method in ("_require_current_presented_verified", "_validate_range_confirmation",
+                       "_entry", "_ensure_field", "_set_classification_state"):
+            publish_profile.wrap(controller, method)
+        publish_profile.wrap(session, "add_measurement")
+        publish_profile.wrap(workspace.current_model, "append", "current_model.append")
+        publish_profile.wrap(workspace.history_model, "append", "history_model.append")
+        publish_profile.wrap(workspace.current_table, "scrollToBottom")
+        publish_profile.wrap(workspace.latest_value, "setText", "latest_value.setText")
     # Use the actual EvidenceStore; redirect its already-created empty directory.
     evidence_directory = tempfile.TemporaryDirectory(prefix="fdm-cu-ui-evidence-")
     original_evidence_directory = controller.evidence.directory
     controller.evidence.directory = Path(evidence_directory.name)
     original_evidence_directory.rmdir()
     controller.set_calibration(CalibrationSnapshot(1, 1, 1, "synthetic UI benchmark"))
+    workspace.canvas.set_display_mode(args.display_mode)
     workspace.resize(args.window_width, args.window_height)
+    if args.show_records:
+        workspace.records_toggle.setChecked(True)
     workspace.activateWindow()
-    pixels, start, end = fixture(size)
+    pixels, start, end = fixture(size, height=args.frame_height)
     # Alternate two precomputed sensor states so the 30 Hz input generator
     # measures capture/memory throughput, not random-number generation. Every
     # delivered frame also carries a tiny sequence marker so skipped frames
@@ -122,10 +150,12 @@ def run_case(args, size, save_images):
     source_epoch = workspace._source_epoch
     stop = threading.Event()
     generated = [0]
+    generated_frames = []
     producer_error = []
     completed = {}
     queue_wait_ms = {}
     gui_publish_ms = {}
+    gui_publish_cpu_ms = {}
     completion_lock = threading.Lock()
     original_compute = controller._compute
 
@@ -143,10 +173,13 @@ def run_case(args, size, save_images):
 
     def tracked_accept(intent, result):
         started = time.perf_counter()
+        cpu_started = time.thread_time()
         try:
-            return original_accept(intent, result)
+            with publish_profile.operation(intent.id) if publish_profile else nullcontext():
+                return original_accept(intent, result)
         finally:
             gui_publish_ms[intent.id] = (time.perf_counter() - started) * 1000
+            gui_publish_cpu_ms[intent.id] = (time.thread_time() - cpu_started) * 1000
 
     controller._accept = tracked_accept
 
@@ -167,6 +200,7 @@ def run_case(args, size, save_images):
                     metadata={"synthetic": True,
                               "acquisition_reserved_bytes": pixels.nbytes * (len(source_pool) + 1)})
                 generated[0] += 1
+                generated_frames.append((frame.frame_id, frame.received_at))
                 workspace._queue_frame(source_epoch, frame)
                 due = max(due + 1 / args.frame_hz, time.perf_counter())
                 stop.wait(max(0, due - time.perf_counter()))
@@ -237,7 +271,12 @@ def run_case(args, size, save_images):
                 raise RuntimeError("Background worker warmup did not finish")
             automatic_warmup_results.extend(automatic_results)
             automatic_results.clear()
-        with ResourceSampler() as resources:
+        if args.resource_sampling == "process":
+            from scripts.validation.gui_resource_sampler import ProcessResourceSampler
+            sampler = ProcessResourceSampler(parent_only=args.resource_parent_only)
+        else:
+            sampler = ResourceSampler(trace=args.profile_publish)
+        with sampler as resources:
             for index in range(args.warmup + args.samples):
                 if index == args.warmup:
                     automatic_phase = "formal"
@@ -248,7 +287,8 @@ def run_case(args, size, save_images):
                     state["generated_at_sample_start"] = generated[0]
                 if not wait_for(lambda: controller.state == "ready", 5):
                     raise RuntimeError("Live field did not return to ready")
-                trial = {"warmup": index < args.warmup, "first_click_at": time.perf_counter()}
+                trial = {"warmup": index < args.warmup, "first_click_at": time.perf_counter(),
+                         "first_click_cpu_at": time.thread_time()}
                 rejected_before = len(rejected)
                 state["current_trial"] = trial
                 token = controller.presented
@@ -277,6 +317,9 @@ def run_case(args, size, save_images):
                         trial["queue_wait_ms"] = queued
                     if trial.get("intent_id") in gui_publish_ms:
                         trial["gui_publish_ms"] = gui_publish_ms[trial["intent_id"]]
+                        trial["gui_publish_cpu_ms"] = gui_publish_cpu_ms[trial["intent_id"]]
+                        if publish_profile:
+                            trial["publish_profile"] = publish_profile.operations[trial["intent_id"]]
                 if "draft_painted_at" in trial:
                     trial["first_click_to_draft_paint_ms"] = (trial["draft_painted_at"] - trial["first_click_at"]) * 1000
                 if "accepted_at" in trial:
@@ -310,19 +353,26 @@ def run_case(args, size, save_images):
                 raise OSError("Could not save rendered workspace screenshot")
         metrics = {name: distribution([trial[name] for trial in trials if name in trial]) for name in (
             "first_click_to_draft_paint_ms", "second_click_to_accept_ms", "second_click_to_record_paint_ms",
-            "accept_to_record_paint_ms", "compute_done_to_gui_accept_ms", "controller_latency_ms", "queue_wait_ms", "gui_publish_ms")}
+            "accept_to_record_paint_ms", "compute_done_to_gui_accept_ms", "controller_latency_ms", "queue_wait_ms", "gui_publish_ms",
+            "gui_publish_cpu_ms", "first_click_to_draft_gui_cpu_ms")}
         screen = workspace.screen()
         display = {"window_size": [workspace.width(), workspace.height()],
             "canvas_size": [workspace.canvas.width(), workspace.canvas.height()],
             "device_pixel_ratio": workspace.devicePixelRatioF(),
             "logical_dpi": screen.logicalDotsPerInch() if screen else None,
             "screen_size": [screen.size().width(), screen.size().height()] if screen else None}
+        input_ids = {identity for identity, received in generated_frames
+                     if state["sample_start"] <= received < state["sample_end"]}
+        painted_input_ids = input_ids.intersection(state["sample_frame_ids"])
         return {"width": size, "shape": pixels.shape, "input_sha256": input_digest(pixels), "display": display,
             "save_images": save_images, "metrics": metrics, "trials": trials,
             "failures": dict(Counter(trial["failure"] for trial in trials if "failure" in trial)),
             "rejections": dict(Counter(rejected)), "producer_errors": producer_error,
             "frames_generated": generated[0], "distinct_frames_painted": len(state["painted_frame_ids"]),
             "motion_input": args.motion_input,
+            "matched_input_frames": len(input_ids),
+            "matched_displayed_frames": len(painted_input_ids),
+            "displayed_input_fraction": len(painted_input_ids) / len(input_ids) if input_ids else None,
             "unique_sequence_marker": args.motion_input == "lsb-noise",
             "background_automatic": args.background_automatic,
             "background_results": automatic_results,
@@ -351,6 +401,8 @@ def run_case(args, size, save_images):
         automatic_enabled = False
         if automatic is not None:
             automatic.close()
+        if publish_profile:
+            publish_profile.restore()
         stop.set()
         producer.join(5)
         wait_for(lambda: not controller.evidence.pending, 30)
@@ -366,6 +418,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--sizes", type=int, nargs="+", default=[2048, 4096])
+    parser.add_argument("--history-count", type=int, default=0)
+    parser.add_argument("--frame-height", type=int)
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--samples", type=int, default=30)
     parser.add_argument("--frame-hz", type=float, default=30)
@@ -378,11 +432,24 @@ def main(argv=None):
         help="Optional requested thread setting; omitted preserves the application's OpenCV default. GCD may not honor positive counts.")
     parser.add_argument("--window-width", type=int, default=1240)
     parser.add_argument("--window-height", type=int, default=840)
+    parser.add_argument("--theme", choices=("light", "dark", "navy", "warm"), default="dark")
     parser.add_argument("--screenshot", type=Path)
+    parser.add_argument("--profile-publish", action="store_true",
+        help="Diagnose inclusive publication phases and GC; not an acceptance timing run.")
+    parser.add_argument("--show-records", action="store_true",
+        help="Also exercise publication with the current-field records panel expanded.")
+    parser.add_argument("--display-mode", choices=("pixel", "fit"), default="pixel",
+        help="Explicit CU display mode; fit keeps 2K/4K test click positions on screen.")
+    parser.add_argument("--resource-sampling", choices=("thread", "process"), default="process",
+        help="Process mode isolates psutil enumeration from the measured Python interpreter.")
+    parser.add_argument("--resource-parent-only", action="store_true",
+        help="Report target-process resources only; skip process-tree enumeration in restricted environments.")
     args = parser.parse_args(argv)
     if min(args.sizes) < 320 or args.warmup < 0 or args.samples < 1 or args.frame_hz <= 0 or args.interval_ms < 0:
         parser.error("invalid size, sampling count or timing")
     application = QApplication.instance() or QApplication([])
+    from fdm.ui.theme import apply_application_theme
+    apply_application_theme(application, args.theme)
     if args.opencv_threads is not None:
         cv2.setNumThreads(args.opencv_threads)
     build_environment = environment()
@@ -390,20 +457,26 @@ def main(argv=None):
     build_environment["opencv_reported_threads"] = cv2.getNumThreads()
     build_environment["opencv_parallel_framework"] = next((line.strip() for line in cv2.getBuildInformation().splitlines()
         if "Parallel framework:" in line), "unknown")
-    for relative in ("src/fdm/ui/live_experiment_workspace.py", "scripts/benchmark_cu_live_ui.py",
-                     "scripts/benchmark_cu_live_measurement.py"):
+    for relative in ("src/fdm/ui/live_experiment_workspace.py", "src/fdm/ui/live_experiment_view.py",
+                     "src/fdm/ui/icons.py", "src/fdm/ui/theme.py", "scripts/benchmark_cu_live_ui.py",
+                     "scripts/benchmark_cu_live_measurement.py", "scripts/validation/gui_publish_profile.py",
+                     "scripts/validation/gui_resource_sampler.py"):
         build_environment["source_sha256"][relative] = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
     report = {"schema_version": 1, "environment": build_environment, "qt_platform": application.platformName(),
               "parameters": {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items()}, "cases": []}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     saving = (False, True) if args.evidence == "both" else (args.evidence == "on",)
-    for size in args.sizes:
-        for save_images in saving:
-            print(f"Qt {size}, PNG={'on' if save_images else 'off'}", flush=True)
-            report["cases"].append(run_case(args, size, save_images))
-            temporary = args.output.with_suffix(args.output.suffix + ".pending")
-            temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False, default=str), encoding="utf-8")
-            os.replace(temporary, args.output)
+    # The view persists display centers when closed. Keep those writes and
+    # ruler reads out of the operator's application profile during a benchmark.
+    with tempfile.TemporaryDirectory(prefix="fdm-cu-ui-profile-") as profile, \
+            patch("fdm.settings.settings_file_path", return_value=Path(profile) / "settings.json"):
+        for size in args.sizes:
+            for save_images in saving:
+                print(f"Qt {size}, PNG={'on' if save_images else 'off'}", flush=True)
+                report["cases"].append(run_case(args, size, save_images))
+                temporary = args.output.with_suffix(args.output.suffix + ".pending")
+                temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False, default=str), encoding="utf-8")
+                os.replace(temporary, args.output)
     print(str(args.output.resolve()), flush=True)
 
 

@@ -400,8 +400,10 @@ class MainWindowViewExperienceTests(unittest.TestCase):
                 window._app_settings.digital_slide_smooth_navigation_enabled
             )
             self.assertFalse(window.digital_slide_smooth_navigation_action.isChecked())
-
-        self.assertEqual(self.save_mock.call_count, 3)
+            self.assertEqual(self.save_mock.call_count, 3)
+            # Windows cannot remove an open slide store. Retire its readers
+            # before TemporaryDirectory exits, not in the later test cleanup.
+            window._reset_workspace()
 
     def test_digital_slide_overview_gates_pixel_tools_and_restores_previous_tool(
         self,
@@ -460,6 +462,7 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             self.assertTrue(canvas.pixel_work_enabled())
             self.assertEqual(window._tool_mode, "manual")
             self.assertTrue(window.export_current_image_action.isEnabled())
+            window._reset_workspace()
 
     def test_native_move_and_focus_do_not_suspend_or_restore_the_current_tool(
         self,
@@ -538,6 +541,7 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             self.assertFalse(
                 any("已恢复此前工具" in message for message in messages)
             )
+            window._reset_workspace()
 
     def test_low_zoom_text_and_viewport_export_use_exact_scale(self) -> None:
         window = self._window()

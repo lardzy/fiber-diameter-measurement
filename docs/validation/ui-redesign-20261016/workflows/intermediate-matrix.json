@@ -1,0 +1,178 @@
+[
+  {
+    "theme": "dark",
+    "size": "1366x768",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-1366x768-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "dark",
+    "size": "1920x1080",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-1920x1080-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "light",
+    "size": "1366x768",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/light-1366x768-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "dark",
+    "size": "3840x2160",
+    "scale": "2",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-3840x2160-2/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "light",
+    "size": "1920x1080",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/light-1920x1080-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "light",
+    "size": "3840x2160",
+    "scale": "2",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/light-3840x2160-2/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "navy",
+    "size": "1366x768",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/navy-1366x768-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "navy",
+    "size": "1920x1080",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/navy-1920x1080-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "navy",
+    "size": "3840x2160",
+    "scale": "2",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/navy-3840x2160-2/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "warm",
+    "size": "1366x768",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/warm-1366x768-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "warm",
+    "size": "1920x1080",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/warm-1920x1080-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "warm",
+    "size": "3840x2160",
+    "scale": "2",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/warm-3840x2160-2/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "dark",
+    "size": "1920x1080",
+    "scale": "1.25",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-1920x1080-1p25/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "dark",
+    "size": "3840x2160",
+    "scale": "1",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-3840x2160-1/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "dark",
+    "size": "3840x2160",
+    "scale": "1.25",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-3840x2160-1p25/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  },
+  {
+    "theme": "dark",
+    "size": "3840x2160",
+    "scale": "1.5",
+    "returncode": 0,
+    "passed": true,
+    "report": "/tmp/fdm-workflow-redesign/dark-3840x2160-1p5/workflow.json",
+    "error": null,
+    "evidence_phase": "intermediate",
+    "acceptance_status": "superseded"
+  }
+]

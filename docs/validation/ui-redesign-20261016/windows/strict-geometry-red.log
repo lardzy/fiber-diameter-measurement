@@ -1,0 +1,108 @@
+Windows command failed (1):
+C:\tmp\fdm-cu-live-ui-redesign-20261016\build\ui-redesign\frozen-small-height-red\20261016-175250-c55c425e9332447e9cbc59da534f5917\result.json
+{
+    "schema":  2,
+    "started_at":  "2026-10-16T17:52:50.4520640+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\dist\\windows\\installer-payload\\{app}\\FiberDiameterMeasurement.exe",
+    "theme":  "light",
+    "real_hardware":  false,
+    "legacy_project":  "",
+    "legacy_settings":  "",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-small-height-red\\20261016-175250-c55c425e9332447e9cbc59da534f5917",
+    "config":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-small-height-red\\20261016-175250-c55c425e9332447e9cbc59da534f5917\\isolated-config",
+    "pid":  12972,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  false,
+    "key_controls":  [
+
+                     ],
+    "key_controls_verified":  false,
+    "workspace_closed":  false,
+    "unsaved_dialog":  null,
+    "graceful_exit":  false,
+    "forced_cleanup":  true,
+    "requested_client_size":  [
+                                  1280,
+                                  670
+                              ],
+    "observed_client_sizes":  [
+                                  {
+                                      "phase":  "01-main-before-menu",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "02-acquisition",
+                                      "actual":  [
+                                                     1280,
+                                                     670
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-0",
+                                      "actual":  [
+                                                     1280,
+                                                     715
+                                                 ],
+                                      "requested":  [
+                                                        1280,
+                                                        670
+                                                    ]
+                                  }
+                              ],
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-small-height-red\\20261016-175250-c55c425e9332447e9cbc59da534f5917\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-small-height-red\\20261016-175250-c55c425e9332447e9cbc59da534f5917\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-small-height-red\\20261016-175250-c55c425e9332447e9cbc59da534f5917\\99-failure-observed-tree-uia.json"
+                  ],
+    "errors":  [
+                   "Client size changed after main-entry-0 : 1280 x 715; requested 1280 x 670"
+               ],
+    "ok":  false,
+    "main_title":  "��΢��������̨",
+    "client_size":  [
+                        1280,
+                        670
+                    ],
+    "os_dpi":  192,
+    "screen_bounds":  [
+                          0,
+                          0,
+                          2582,
+                          1644
+                      ],
+    "available_geometry":  [
+                               0,
+                               0,
+                               2582,
+                               1548
+                           ],
+    "entry_action":  "InvokePattern",
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-16T17:52:59.7032480+08:00"
+}
+
+[ WARN:0@4.395] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ WARN:0@0.000] global cap_ffmpeg_impl.hpp:1217 open VIDEOIO/FFMPEG: Failed list devices for backend dshow
+[ERROR:0@4.444] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.444] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.448] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.449] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.452] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.453] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.456] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+
+EXPECTED_RED

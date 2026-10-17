@@ -1,0 +1,193 @@
+.................................................................................. [ 15%]
+...................F.................................................... [ 28%]
+............................................................ [ 39%]
+......................................F.....F.........................F. [ 53%]
+.................................................................. [ 65%]
+........FF............................................... [ 75%]
+............................................................................................... [ 93%]
+...................................                                    [100%]
+=================================== FAILURES ===================================
+_ CanvasAndExportTests.test_compact_main_command_bar_keeps_commands_explicitly_reachable _
+
+self = <test_ui_canvas_and_export.CanvasAndExportTests testMethod=test_compact_main_command_bar_keeps_commands_explicitly_reachable>
+
+    def test_compact_main_command_bar_keeps_commands_explicitly_reachable(self) -> None:
+        window = MainWindow()
+        try:
+            window.resize(1093, 576)
+            window.show()
+            self.app.processEvents()
+    
+>           self.assertEqual(window._file_toolbar.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+E           AssertionError: <ToolButtonStyle.ToolButtonTextBesideIcon: 2> != <ToolButtonStyle.ToolButtonIconOnly: 0>
+
+tests/test_ui_canvas_and_export.py:5128: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ CanvasAndExportTests.test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient _
+
+self = <test_ui_canvas_and_export.CanvasAndExportTests testMethod=test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient>
+
+    def test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(1600, 900)
+            window.show()
+            self.app.processEvents()
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+            self.assertTrue(strip.isMagicContextVisible())
+            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+    
+            window.resize(1000, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+    
+            window.resize(1600, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isContextInline())
+    
+            window.set_tool_mode("select")
+            window._preview_active = True
+            window._sync_workspace_mode()
+            window._update_magic_segment_controls()
+            window._update_preview_analysis_controls()
+            self.app.processEvents()
+>           self.assertTrue(strip.isPreviewContextVisible())
+E           AssertionError: False is not true
+
+tests/test_ui_canvas_and_export.py:7281: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ CanvasAndExportTests.test_native_preview_switches_to_microview_host_surface __
+
+self = <test_ui_canvas_and_export.CanvasAndExportTests testMethod=test_native_preview_switches_to_microview_host_surface>
+
+    def test_native_preview_switches_to_microview_host_surface(self) -> None:
+        window = MainWindow()
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.preview_resolution = lambda: (1760, 1328)  # type: ignore[method-assign]
+    
+        window._on_live_preview_state_changed(True)
+    
+        self.assertIsNone(window.current_canvas())
+        self.assertIsNotNone(window._preview_display_stack)
+        self.assertIsNotNone(window._microview_preview_host)
+>       self.assertIs(window._preview_display_stack.currentWidget(), window._microview_preview_scroll)
+E       AssertionError: <fdm.ui.canvas.DocumentCanvas(0x702c2dd290) at 0x70495861c0> is not <PySide6.QtWidgets.QScrollArea(0x702c2d3ca0) at 0x70454cfb80>
+
+tests/test_ui_canvas_and_export.py:1611: AssertionError
+___ CanvasAndExportTests.test_preview_analysis_controls_live_in_context_row ____
+
+self = <test_ui_canvas_and_export.CanvasAndExportTests testMethod=test_preview_analysis_controls_live_in_context_row>
+
+    def test_preview_analysis_controls_live_in_context_row(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
+            self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
+    
+            window.resize(1600, 900)
+            window.show()
+            self.app.processEvents()
+            window._preview_active = True
+            window._sync_workspace_mode()
+            window._update_preview_analysis_controls()
+            self.app.processEvents()
+    
+>           self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
+E           AssertionError: False is not true
+
+tests/test_ui_canvas_and_export.py:7239: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+____ test_image_page_fits_supported_small_workspace_without_scrolling[dark] ____
+
+app = <PySide6.QtWidgets.QApplication(0x6000028230c0) at 0x103456640>
+theme = 'dark'
+
+    @pytest.mark.parametrize("theme", ("dark", "light"))
+    def test_image_page_fits_supported_small_workspace_without_scrolling(
+        app: QApplication,
+        theme: str,
+    ) -> None:
+        # 1093×576 可用逻辑区域扣除窗口边距后的实际首选对话框尺寸。
+        apply_application_theme(app, theme)
+        dialog = _show_dialog(
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 9 == 0
+E                +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x7077574cc0>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x7077574cc0> = <PySide6.QtWidgets.QScrollBar(0x600031a337b0) at 0x7077574cc0>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x600031a337b0) at 0x7077574cc0> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x7077082500>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x7077082500> = <PySide6.QtWidgets.QScrollArea(0x7073ac0b20) at 0x7077082500>.verticalScrollBar
+
+tests/test_export_options_dialog.py:177: AssertionError
+___ test_image_page_fits_supported_small_workspace_without_scrolling[light] ____
+
+app = <PySide6.QtWidgets.QApplication(0x6000028230c0) at 0x103456640>
+theme = 'light'
+
+    @pytest.mark.parametrize("theme", ("dark", "light"))
+    def test_image_page_fits_supported_small_workspace_without_scrolling(
+        app: QApplication,
+        theme: str,
+    ) -> None:
+        # 1093×576 可用逻辑区域扣除窗口边距后的实际首选对话框尺寸。
+        apply_application_theme(app, theme)
+        dialog = _show_dialog(
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 9 == 0
+E                +  where 9 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x7075f659c0>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x7075f659c0> = <PySide6.QtWidgets.QScrollBar(0x6000359376f0) at 0x7075f659c0>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x6000359376f0) at 0x7075f659c0> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x70775b0ac0>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x70775b0ac0> = <PySide6.QtWidgets.QScrollArea(0x17fe2a5d0) at 0x70775b0ac0>.verticalScrollBar
+
+tests/test_export_options_dialog.py:177: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_compact_main_command_bar_keeps_commands_explicitly_reachable
+FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient
+FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_native_preview_switches_to_microview_host_surface
+FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_preview_analysis_controls_live_in_context_row
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]
+6 failed, 533 passed, 1082 subtests passed in 311.60s (0:05:11)

@@ -58,7 +58,8 @@ class BuildWindowsOnedirTests(unittest.TestCase):
     def _cu_live_report():
         return {"ok": True, "revision": 4, "cases": {name: True for name in (
             "manual_native", "traditional_native", "multiscale_native", "content_formula",
-            "field_motion", "field_preparation", "project_roundtrip", "windows_capture_import", "windows_capture_build",
+            "field_motion", "field_preparation", "project_roundtrip", "microview_bridge_import",
+            "microview_bridge_build", "microview_bridge_transport",
             "content_deferred_rebuild", "content_width_undo", "content_width_redo",
             "evidence_png_gray", "evidence_png_bgr", "evidence_png_bgra",
             "evidence_leases_released", "project_asset_rebase")}}
@@ -115,8 +116,8 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         self.assertIn('includes=["**/*.pyi"]', hook_payload)
         self.assertIn("copy_metadata(distribution_name)", spec_payload)
         self.assertIn('collection_packages.add("et_xmlfile")', spec_payload)
-        self.assertIn('hiddenimports.append("fdm._native._windows_capture")', spec_payload)
-        self.assertIn('"fdm._native._kernels", "fdm._native._windows_capture"}', spec_payload)
+        self.assertIn('hiddenimports.append("fdm._native._microview")', spec_payload)
+        self.assertIn('"fdm._native._kernels", "fdm._native._microview"}', spec_payload)
 
     def test_dependency_probe_is_derived_from_inherited_runtime_profile(self) -> None:
         def find_spec(module_name: str):

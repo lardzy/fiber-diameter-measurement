@@ -1,0 +1,6 @@
+EXTRACTING_INSTALLER
+Traceback (most recent call last):
+  File "C:\tmp\fdm-cu-live-ui-redesign-20261016\docs\validation\ui-redesign-20261016\windows\verify-payload.py", line 35, in <module>
+    assert sha(path) == row['sha256'], row['path']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: runtime/content-templates/-面积法-定量试验原始记录-新系统.xls

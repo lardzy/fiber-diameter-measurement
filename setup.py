@@ -34,7 +34,7 @@ if native_mode == "1":
     for path in native_files:
         digest.update(path.relative_to(ROOT).as_posix().encode("utf-8") + b"\0")
         digest.update(path.read_bytes() + b"\0")
-    # Targets are explicit: the Windows capture module has a separate module
+    # Targets are explicit: the Windows camera adapter has a separate module
     # initializer and OS libraries, and must never enter portable _kernels.
     sources = ["native/kernels.cpp", "native/cu_manual.cpp", "native/cu_automatic.cpp"]
     if not sources:
@@ -44,7 +44,7 @@ if native_mode == "1":
         "fdm._native._kernels",
         sources,
         include_dirs=[str(ROOT / "native")],
-        depends=[str(path) for path in native_files if path.suffix == ".hpp"],
+        depends=[str(path) for path in native_files] + [str(ROOT / "setup.py")],
         cxx_std=17,
         define_macros=[
             ("FDM_NATIVE_API_VERSION", "1"),
@@ -56,11 +56,12 @@ if native_mode == "1":
     )]
     if sys.platform == "win32":
         extensions.append(Pybind11Extension(
-            "fdm._native._windows_capture", ["native/windows_capture.cpp"],
+            "fdm._native._microview", ["native/microview_bridge.cpp"],
             cxx_std=17,
+            depends=[str(path) for path in native_files] + [str(ROOT / "setup.py")],
             define_macros=[("FDM_NATIVE_SOURCE_SHA256", f'"{digest.hexdigest()}"'),
                            ("FDM_NATIVE_PYTHON_ABI", f'"{abi}"')],
-            libraries=["d3d11", "dxgi", "windowsapp", "dwmapi", "user32", "runtimeobject"],
+            libraries=["kernel32"],
             extra_compile_args=["/EHsc", "/utf-8", "/fp:strict"],
         ))
     commands = {"build_ext": build_ext}

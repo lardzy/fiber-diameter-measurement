@@ -168,8 +168,8 @@ def test_probe_does_not_accept_an_extension_from_another_checkout(project):
 
 
 def test_two_extension_transaction_rolls_back_when_capture_is_locked(project, monkeypatch):
-    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_windows_capture"))
-    capture = extension(project).with_name("_windows_capture" + sysconfig.get_config_var("EXT_SUFFIX"))
+    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_microview"))
+    capture = extension(project).with_name("_microview" + sysconfig.get_config_var("EXT_SUFFIX"))
     extension(project).write_bytes(b"old kernel")
     capture.write_bytes(b"old capture")
     monkeypatch.setattr(native_build, "check_native_build_dependencies", Mock(side_effect=[["capture stale"], []]))
@@ -190,8 +190,8 @@ def test_two_extension_transaction_rolls_back_when_capture_is_locked(project, mo
 
 
 def test_two_extensions_postcheck_failure_rolls_back_both(project, monkeypatch):
-    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_windows_capture"))
-    capture = extension(project).with_name("_windows_capture" + sysconfig.get_config_var("EXT_SUFFIX"))
+    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_microview"))
+    capture = extension(project).with_name("_microview" + sysconfig.get_config_var("EXT_SUFFIX"))
     extension(project).write_bytes(b"old kernel")
     capture.write_bytes(b"old capture")
     monkeypatch.setattr(native_build, "check_native_build_dependencies", Mock(side_effect=[["capture missing"], [], ["capture ABI mismatch"]]))
@@ -203,7 +203,7 @@ def test_two_extensions_postcheck_failure_rolls_back_both(project, monkeypatch):
 
 
 def test_missing_second_compiler_output_never_publishes_first(project, monkeypatch):
-    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_windows_capture"))
+    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_microview"))
     extension(project).write_bytes(b"old kernel")
     monkeypatch.setattr(native_build, "check_native_build_dependencies", Mock(return_value=["capture missing"]))
     monkeypatch.setattr(native_build, "_build_python", Mock(return_value=sys.executable))
@@ -211,20 +211,20 @@ def test_missing_second_compiler_output_never_publishes_first(project, monkeypat
     def incomplete(command, **kwargs):
         result = fake_compiler(command, **kwargs)
         library = Path(command[command.index("--build-lib") + 1])
-        (library / "fdm/_native" / ("_windows_capture" + sysconfig.get_config_var("EXT_SUFFIX"))).unlink()
+        (library / "fdm/_native" / ("_microview" + sysconfig.get_config_var("EXT_SUFFIX"))).unlink()
         return result
 
     monkeypatch.setattr(native_build.subprocess, "run", incomplete)
     errors = native_build.ensure_native_kernels(project)
-    assert "_windows_capture" in errors[0]
+    assert "_microview" in errors[0]
     assert extension(project).read_bytes() == b"old kernel"
 
 
 def test_first_install_postcheck_failure_removes_entire_unverified_pair(project, monkeypatch):
-    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_windows_capture"))
+    monkeypatch.setattr(native_build, "_extension_names", lambda: ("_kernels", "_microview"))
     monkeypatch.setattr(native_build, "check_native_build_dependencies", Mock(side_effect=[["missing"], [], ["bad actual computation"]]))
     monkeypatch.setattr(native_build, "_build_python", Mock(return_value=sys.executable))
     monkeypatch.setattr(native_build.subprocess, "run", Mock(side_effect=fake_compiler))
     assert native_build.ensure_native_kernels(project)
     assert not extension(project).exists()
-    assert not extension(project).with_name("_windows_capture" + sysconfig.get_config_var("EXT_SUFFIX")).exists()
+    assert not extension(project).with_name("_microview" + sysconfig.get_config_var("EXT_SUFFIX")).exists()

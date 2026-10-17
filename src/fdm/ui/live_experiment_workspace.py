@@ -17,8 +17,10 @@ from PySide6.QtWidgets import (
     QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QSplitter, QTableView,
     QTabWidget, QToolBar, QVBoxLayout, QWidget, QTableWidget, QSpinBox, QScrollArea,
     QAbstractSpinBox, QPlainTextEdit, QTextEdit,
-    QStyledItemDelegate, QGridLayout,
+    QStyledItemDelegate, QGridLayout, QStatusBar,
 )
+
+from fdm.ui.widgets import NoWheelComboBox as QComboBox, NoWheelSpinBox as QSpinBox, NoWheelDoubleSpinBox as QDoubleSpinBox
 
 from fdm.live_experiment.controller import CalibrationSnapshot, LiveExperimentController
 from fdm.live_experiment.frames import FrameHandle, FrameBudgetExceeded, PresentedFrameToken, frame_from_qimage
@@ -36,9 +38,9 @@ class LiveMeasurementCanvas(QWidget):
         self.controller = controller
         self.frame = None
         self.image = None
-        self.zoom = 1.0
-        self.pan_offset = QPointF()
-        self._pan_anchor = None
+        self.display_mode = "pixel"
+        self.display_value = 100.0
+        self.screen_pixel_mm = None
         self.display_revision = 0
         self.cursor_point = None
         self.active_material_id = None
@@ -46,21 +48,17 @@ class LiveMeasurementCanvas(QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setCursor(Qt.CursorShape.CrossCursor)
-        self.setToolTip("右键取消草稿并快捷选类；标记为场内序号 [类别号]。滚轮缩放；中键平移；双击中键适应画面。变换显示会取消未完成测量。")
+        self.setToolTip("")
         controller.fieldChanged.connect(self._field_changed)
         controller.changed.connect(self.update)
         controller.candidatesChanged.connect(self.update)
 
     def set_frame(self, frame):
-        if frame is None or self.frame is None or (
-                frame.source_id, frame.generation, frame.size) != (
-                self.frame.source_id, self.frame.generation, self.frame.size):
-            self.zoom = 1.0
-            self.pan_offset = QPointF()
-            self._pan_anchor = None
+        old_size = self.frame.size if self.frame is not None else None
         self.frame = frame
         if frame is None:
             self.image = None
+            self._update_pixel_extent()
             self.update()
             return
         pixels = frame.pixels
@@ -68,7 +66,19 @@ class LiveMeasurementCanvas(QWidget):
                "BGR": QImage.Format.Format_BGR888,
                "BGRA": QImage.Format.Format_ARGB32}[frame.pixel_format]
         self.image = QImage(pixels.data, frame.size[0], frame.size[1], pixels.strides[0], fmt)
+        if old_size != frame.size:
+            self._update_pixel_extent()
         self.update()
+
+    def _update_pixel_extent(self):
+        # QScrollArea supplies explicit scrollbars for images larger than the
+        # viewport. Never silently shrink a 768/2K/4K frame to make it fit.
+        if self.frame is None or self.display_mode == "fit":
+            self.setMinimumSize(320, 240)
+        else:
+            scale, _ = self._transform()
+            self.setMinimumSize(max(320, math.ceil(self.frame.size[0] * scale)),
+                                max(240, math.ceil(self.frame.size[1] * scale)))
 
     def _field_changed(self, *_):
         self.cursor_point = None
@@ -78,26 +88,57 @@ class LiveMeasurementCanvas(QWidget):
         if self.frame is None:
             return 1.0, (0.0, 0.0)
         width, height = self.frame.size
-        scale = min(self.width() / width, self.height() / height) * self.zoom
-        return scale, ((self.width() - width * scale) / 2 + self.pan_offset.x(),
-                       (self.height() - height * scale) / 2 + self.pan_offset.y())
+        dpr = self.devicePixelRatioF()
+        if self.display_mode == "fit":
+            scale = min(self.width() / width, self.height() / height)
+        elif self.display_mode == "percent":
+            scale = self.display_value / 100 / dpr
+        elif self.display_mode == "magnification" and self.screen_pixel_mm and self.controller.calibration:
+            scale = self.controller.calibration.x_um * self.display_value / (self.screen_pixel_mm * 1000 * dpr)
+        else:
+            scale = 1 / dpr
+        # Align image edges to device pixels. Actual-pixel mode never resamples
+        # merely because the application is running at 125/150/200% DPI.
+        return scale, (round((self.width() - width * scale) * dpr / 2) / dpr,
+                       round((self.height() - height * scale) * dpr / 2) / dpr)
 
-    def fit_view(self):
+    def set_display_mode(self, mode, value=100.0, screen_pixel_mm=None):
+        if mode not in {"pixel", "fit", "percent", "magnification"}:
+            raise ValueError("未知显示模式")
+        if self.controller.pending_classification or self.controller._confirmation:
+            raise ValueError("请先核对待确认测量，再更换显示模式。")
+        if self.controller._jobs or self.controller.candidates:
+            raise ValueError("请先完成或取消当前测量／候选，再更换显示模式。")
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError("显示比例必须大于零。")
+        if mode == "magnification" and (not self.controller.calibration or not self.controller.calibration.isotropic
+                or screen_pixel_mm is None or not math.isfinite(screen_pixel_mm) or screen_pixel_mm <= 0):
+            raise ValueError("指定倍率需要等比例显微镜标尺和显示器标线长度。")
+        if self.frame is not None and mode in {"percent", "magnification"}:
+            scale = (value / 100 if mode == "percent" else
+                     self.controller.calibration.x_um * value / (screen_pixel_mm * 1000))
+            extent = max(self.frame.size) * scale / self.devicePixelRatioF()
+            if not math.isfinite(extent) or extent > 16777215:
+                raise ValueError("显示范围过大，请降低比例／倍率，并核对屏幕标线的毫米长度。")
         self.gestureCancelled.emit()
-        self.zoom = 1.0
-        self.pan_offset = QPointF()
-        self._pan_anchor = None
+        self.display_mode, self.display_value = mode, value
+        self.screen_pixel_mm = screen_pixel_mm
         self.cursor_point = None
         self.display_revision += 1
-        self.setCursor(Qt.CursorShape.CrossCursor)
+        self._update_pixel_extent()
         self.update()
+
+    def fit_view(self):
+        self.set_display_mode("fit")
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor("#111820"))
+        from fdm.ui.theme import semantic_colors
+        colors = semantic_colors(self.palette())
+        painter.fillRect(self.rect(), QColor(colors.canvas))
         if self.frame is None:
-            painter.setPen(QColor("#a6b4c5"))
-            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "选择图像来源，开始实时试验")
+            painter.setPen(QColor(colors.canvas_text))
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "等待实时画面\n在采集栏连接设备，在右侧完成试验准备")
             return
         frame = self.frame
         scale, offset = self._transform()
@@ -169,56 +210,31 @@ class LiveMeasurementCanvas(QWidget):
 
     def mousePressEvent(self, event):
         self.setFocus()
-        if event.button() == Qt.MouseButton.MiddleButton:
-            self.gestureCancelled.emit()
-            self._pan_anchor = event.position()
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        elif event.button() == Qt.MouseButton.RightButton:
-            self.gestureCancelled.emit()
-        elif event.button() == Qt.MouseButton.LeftButton and self._pan_anchor is None:
+        if event.button() == Qt.MouseButton.LeftButton:
             point = self._point(event)
             if point:
                 self.pointPressed.emit(point)
         self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.MiddleButton:
-            self._pan_anchor = None
-            self.setCursor(Qt.CursorShape.CrossCursor)
-        elif event.button() == Qt.MouseButton.RightButton:
+        if event.button() == Qt.MouseButton.RightButton:
+            self.gestureCancelled.emit()
             self.categoryRequested.emit(event.globalPosition().toPoint())
-        elif event.button() == Qt.MouseButton.LeftButton and self._pan_anchor is None:
+        elif event.button() == Qt.MouseButton.LeftButton:
             point = self._point(event)
             if point:
                 self.pointReleased.emit(point)
 
     def mouseMoveEvent(self, event):
-        if self._pan_anchor is not None:
-            self.pan_offset += event.position() - self._pan_anchor
-            self._pan_anchor = event.position()
-            self.display_revision += 1
-            self.update()
-            return
         self.cursor_point = self._point(event)
         if self.controller.draft:
             self.update()
 
     def wheelEvent(self, event):
-        self.gestureCancelled.emit()
-        position = event.position()
-        old_scale, old_offset = self._transform()
-        anchor = ((position.x() - old_offset[0]) / old_scale,
-                  (position.y() - old_offset[1]) / old_scale)
-        self.zoom = max(0.2, min(8.0, self.zoom * (1.15 if event.angleDelta().y() > 0 else 1 / 1.15)))
-        new_scale, new_offset = self._transform()
-        self.pan_offset += QPointF(position.x() - (anchor[0] * new_scale + new_offset[0]),
-                                   position.y() - (anchor[1] * new_scale + new_offset[1]))
-        self.display_revision += 1
-        self.update()
+        event.accept()
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.MouseButton.MiddleButton:
-            self.fit_view()
             event.accept()
         else:
             # A fast second left click remains the second measurement point.
@@ -228,6 +244,40 @@ class LiveMeasurementCanvas(QWidget):
         self.gestureCancelled.emit()
         self.display_revision += 1
         super().resizeEvent(event)
+
+    def event(self, event):
+        if event.type() == QEvent.Type.DevicePixelRatioChange:
+            self.gestureCancelled.emit()
+            self._update_pixel_extent()
+            self.display_revision += 1
+            self.update()
+        return super().event(event)
+
+
+class ExperimentRecordsTable(QTableView):
+    """Follow new records without laying out a collapsed/off-tab table."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._latest_pending = False
+        self._show_scroll_timer = QTimer(self)
+        self._show_scroll_timer.setSingleShot(True)
+        self._show_scroll_timer.timeout.connect(self._scroll_to_latest)
+
+    def follow_latest(self):
+        self._latest_pending = True
+        if self.isVisible():
+            self._scroll_to_latest()
+
+    def _scroll_to_latest(self):
+        if self._latest_pending and self.isVisible():
+            self.scrollToBottom()
+            self._latest_pending = False
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self._latest_pending:
+            # Finish the show/resize layout before positioning the last row.
+            self._show_scroll_timer.start(0)
 
 
 class ExperimentRecordsModel(QAbstractTableModel):
@@ -425,13 +475,15 @@ class CandidateMaterialDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentData(), Qt.ItemDataRole.EditRole)
 
 
-class LiveExperimentWorkspace(QMainWindow):
+class LiveExperimentWorkspace(QWidget):
     frameArrived = Signal()
     sourceFailed = Signal(object)
 
-    def __init__(self, host, session):
+    def __init__(self, host, session, *, embedded=False):
         super().__init__(host)
-        self.setWindowFlag(Qt.WindowType.Window, True)
+        self.embedded = embedded
+        self._bare_ctrl_pending = False
+        self.setWindowFlags(Qt.WindowType.Widget if embedded else Qt.WindowType.Window)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setWindowTitle("实时试验 · 纤维直径与含量")
         self.resize(1240, 840)
@@ -451,7 +503,9 @@ class LiveExperimentWorkspace(QMainWindow):
         self._pending_display_id = None
         self._statistics_pool = None
         self._statistics_job = None
-        self.controller = LiveExperimentController(session, parent=self, verify_before_present=True)
+        # Preview never waits for field detection. The controller still checks
+        # the latest painted frame before accepting a measurement into history.
+        self.controller = LiveExperimentController(session, parent=self, verify_before_present=False)
         self.canvas = LiveMeasurementCanvas(self.controller)
         self.controller.frameReady.connect(self.canvas.set_frame)
         self._last_summary_revision = -1
@@ -459,11 +513,39 @@ class LiveExperimentWorkspace(QMainWindow):
         self._static_generation = 0
         self._reminders_seen = set()
         self._last_dirty_state = (session.revision, session.active_operator_id, session.active_direction)
+        # Opening a workbench creates a usable draft, not project data.
+        self._draft_revision = session.revision
+        self._feedback = QStatusBar(self)
+        self._feedback.setSizeGripEnabled(False)
+        self._calibration_key = None
+        self._pending_calibration = None
+        self._rulers = getattr(host, "_capture_rulers", None)
+        if self._rulers is None:
+            from fdm.live_experiment.calibration_store import load_rulers
+            try:
+                self._rulers = load_rulers()
+            except (OSError, ValueError, TypeError) as exc:
+                self._rulers = {}
+                self._feedback.showMessage(str(exc))
+            host._capture_rulers = self._rulers
         self._build()
-        self.live_state_label = QLabel()
+        self._restore_view_preferences()
+        from fdm.ui.display_preferences import acquisition_display_store, AcquisitionDisplayBinding
+        self.display_binding = AcquisitionDisplayBinding(self.canvas,
+            store=acquisition_display_store(host), scroll_area=self.image_scroll,
+            calibration_provider=lambda: self.controller.calibration,
+            status_callback=lambda text: self.statusBar().showMessage(text, 8000), parent=self)
+        self.display_binding.applied.connect(lambda _: self.display_choice.setCurrentIndex(
+            self.display_choice.findData(self.display_binding.store.preferences.mode)))
+        self._display_busy = False
+        self._refresh_ruler_choices()
+        from fdm.ui.trial_report_panel import TrialReportPanel
+        self.report_panel = TrialReportPanel(self)
+        self.live_state_label = QLabel(self)
+        self.live_state_label.setMaximumWidth(360)
         self.statusBar().addPermanentWidget(self.live_state_label)
-        self.statistics_progress = QLabel()
-        self.statistics_cancel = QPushButton("取消重算")
+        self.statistics_progress = QLabel(self)
+        self.statistics_cancel = QPushButton("取消重算", self)
         self.statistics_cancel.clicked.connect(self._cancel_statistics_rebuild)
         self.statusBar().addPermanentWidget(self.statistics_progress)
         self.statusBar().addPermanentWidget(self.statistics_cancel)
@@ -478,6 +560,7 @@ class LiveExperimentWorkspace(QMainWindow):
         self.controller.recordAccepted.connect(self._record_accepted)
         self.controller.recordsAccepted.connect(self._records_accepted)
         self.controller.fieldChanged.connect(lambda *_: self.current_model.reset_ids([]))
+        self.controller.fieldChanged.connect(lambda *_: self.latest_value.setText("— μm"))
         self.controller.statusChanged.connect(self._status_changed)
         self.controller.resultRejected.connect(lambda text: self.statusBar().showMessage(text, 8000))
         self.controller.candidatesChanged.connect(self._candidates_changed)
@@ -489,9 +572,20 @@ class LiveExperimentWorkspace(QMainWindow):
         self._refresh_operators()
         self.history_model.reset_ids(session.measurements)
         self._record_model_revision = session.revision
-        self._guard(self._load_static)
+        if not embedded:
+            self._guard(self._load_static)
         self._check_reminders(announce=False)
+        self._refresh_persistence_state()
         QApplication.instance().installEventFilter(self)
+
+    def statusBar(self):
+        """Inline feedback beneath the command row, never a nested main window."""
+        return self._feedback
+
+    def setCentralWidget(self, widget):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(widget)
 
     def _button(self, label, callback, layout):
         button = QPushButton(label)
@@ -500,191 +594,63 @@ class LiveExperimentWorkspace(QMainWindow):
         return button
 
     def _build(self):
-        toolbar = QToolBar("实时试验")
-        toolbar.setMovable(False)
-        self.addToolBar(toolbar)
-        toolbar.addAction("切换／新建试验", lambda: self._guard(self._choose_experiment))
-        for label, callback in (("当前图片", self._load_static), ("本机相机", self._start_camera),
-                                ("CU 实时画面", self._start_external), ("标定", self._calibrate),
-                                ("新视场", self.controller.end_field)):
-            action = toolbar.addAction(label)
-            action.triggered.connect(lambda checked=False, fn=callback: self._guard(fn))
-        toolbar.addSeparator()
-        self.measure_mode = QComboBox()
-        self.measure_mode.addItem("贴边测径", "assisted")
-        self.measure_mode.addItem("自由测量", "free")
-        toolbar.addWidget(self.measure_mode)
-        self.gesture = QComboBox()
-        self.gesture.addItems(["两次点击", "拖动测量"])
-        self.gesture.setCurrentIndex(1 if getattr(self.session, "workspace_options", {}).get("gesture") == "drag" else 0)
-        self.gesture.currentIndexChanged.connect(self._gesture_changed)
-        toolbar.addWidget(self.gesture)
-        self.algorithm = QComboBox()
-        self.algorithm.addItem("传统全图", "traditional")
-        self.algorithm.addItem("多尺度全图", "multiscale")
-        toolbar.addWidget(self.algorithm)
-        toolbar.addAction("分析当前视场", lambda: self._guard(lambda: self.controller.analyze(self.algorithm.currentData())))
-        toolbar.addAction("取消分析", self.controller.discard_candidates)
-        toolbar.addAction("适应画面", self.canvas.fit_view)
-        root = QSplitter(Qt.Orientation.Horizontal)
-        left = QSplitter(Qt.Orientation.Vertical)
-        left.addWidget(self.canvas)
-        self.tabs = QTabWidget()
-        self.current_model = ExperimentRecordsModel(self.session)
-        self.history_model = ExperimentRecordsModel(self.session)
-        self.candidate_model = CandidatesModel()
-        self.current_table = self._table(self.current_model)
-        self.history_table = self._table(self.history_model)
-        self.candidate_table = self._table(self.candidate_model)
-        self.candidate_table.setItemDelegateForColumn(3, CandidateMaterialDelegate(self.candidate_table))
-        self.candidate_table.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked
-            | QAbstractItemView.EditTrigger.SelectedClicked | QAbstractItemView.EditTrigger.EditKeyPressed)
-        for column, width in enumerate((55, 55, 95, 150, 235, 145)):
-            self.candidate_table.setColumnWidth(column, width)
-        self.tabs.addTab(self.current_table, "当前视场")
-        self.tabs.addTab(self.history_table, "试验历史（全部操作者）")
-        candidate_panel = QWidget()
-        candidate_layout = QVBoxLayout(candidate_panel)
-        candidate_layout.addWidget(self.candidate_table)
-        candidate_note = QLabel("双击类别逐条赋类，或批量设置；核对直径和范围后可勾选保留越限项。未勾选接受的候选将在确认时排除。")
-        candidate_note.setWordWrap(True)
-        candidate_layout.addWidget(candidate_note)
-        candidate_actions = QHBoxLayout()
-        self._button("勾选项批量设为当前类别", self._assign_candidate_material, candidate_actions)
-        self._button("确认已赋类的勾选项", self._accept_candidates, candidate_actions)
-        candidate_layout.addLayout(candidate_actions)
-        self.tabs.addTab(candidate_panel, "全图候选")
-        left.addWidget(self.tabs)
-        left.setSizes([580, 230])
-        root.addWidget(left)
-        side = QWidget()
-        side.setMinimumWidth(370)
-        side.setMaximumWidth(445)
-        layout = QVBoxLayout(side)
-        self.mode = QComboBox()
-        self.mode.addItems(["含量试验", "直径试验"])
-        self.mode.setCurrentIndex(1 if getattr(self.session, "workspace_options", {}).get("mode") == "diameter" else 0)
-        layout.addWidget(self.mode)
-        self.sample = QLineEdit()
-        self.sample.setPlaceholderText("样品名称")
-        self.sample.setText(getattr(self.session, "sample_name", ""))
-        self.sample.editingFinished.connect(self._sample_changed)
-        layout.addWidget(self.sample)
-        row = QHBoxLayout()
-        self.operator = QComboBox()
-        self.operator.currentIndexChanged.connect(self._operator_changed)
-        row.addWidget(self.operator, 1)
-        self._button("添加", self._add_operator, row)
-        self._button("改名", self._rename_operator, row)
-        layout.addLayout(row)
-        self.direction = QComboBox()
-        self.direction.addItem("经向", "warp")
-        self.direction.addItem("纬向", "weft")
-        self.direction.currentIndexChanged.connect(self._direction_changed)
-        layout.addWidget(self.direction)
-        self.material = QComboBox()
-        layout.addWidget(self.material)
-        self.classification_mode = QComboBox()
-        self.classification_mode.addItems(["先选：先选类别，再测量", "后选：选类修改最新测量"])
-        self.classification_mode.setToolTip("后选跟随本场最新测量，计算和待确认期间也可选类；取消或失败后只用于下一次，不改上一条。")
-        self.classification_mode.setCurrentIndex(int(self.session.workspace_options["classification"] == "after"))
-        self.classification_mode.currentIndexChanged.connect(self._classification_changed)
-        layout.addWidget(self.classification_mode)
-        self.keyboard_mode = QComboBox()
-        self.keyboard_mode.addItems(["数字键选类", "数字键额外计数"])
-        self.keyboard_mode.setToolTip("1–9 与小键盘使用此模式；补计数模式下减号只减少当前类别的补计数。")
-        layout.addWidget(self.keyboard_mode)
-        self.after_select = QCheckBox("后选", side)
-        self.after_select.setChecked(self.classification_mode.currentIndex() == 1)
-        self.after_select.hide()
-        self.after_select.toggled.connect(lambda enabled: self.classification_mode.setCurrentIndex(int(enabled)))
-        self.material.activated.connect(self._after_select)
-        self.material.currentIndexChanged.connect(self._sync_material_buttons)
-        self.material_panel = QWidget()
-        self.material_panel_layout = QGridLayout(self.material_panel)
-        self.material_panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.material_panel_layout.setHorizontalSpacing(5)
-        self.material_panel_layout.setVerticalSpacing(3)
-        self.material_rows = {}
-        layout.addWidget(self.material_panel)
-        self.pending_label = QLabel()
-        self.pending_label.setWordWrap(True)
-        layout.addWidget(self.pending_label)
-        pending_row = QHBoxLayout()
-        self.pending_buttons = [
-            self._button("保留", lambda: self._resolve_displayed_pending(), pending_row),
-            self._button("改为当前类", lambda: self._resolve_displayed_pending(material_id=self.material.currentData()), pending_row),
-            self._button("放弃", lambda: self._resolve_displayed_pending(discard=True), pending_row)]
-        layout.addLayout(pending_row)
-        edit_row = QHBoxLayout()
-        self._button("撤销", lambda: self._history_action("undo"), edit_row)
-        self._button("重做", lambda: self._history_action("redo"), edit_row)
-        self._button("删除", self._delete_record, edit_row)
-        layout.addLayout(edit_row)
-        edit_row2 = QHBoxLayout()
-        self._button("改径／改类", self._edit_record, edit_row2)
-        self._button("查看原图", self._review_record, edit_row2)
-        layout.addLayout(edit_row2)
-        self._button("保存项目", self._save_project, layout)
-        self.advanced_toggle = QPushButton("更多设置与汇总 ▸")
-        self.advanced_toggle.setCheckable(True)
-        layout.addWidget(self.advanced_toggle)
-        self.advanced_panel = QWidget()
-        advanced = QVBoxLayout(self.advanced_panel)
-        advanced.setContentsMargins(0, 0, 0, 0)
-        self.advanced_toggle.toggled.connect(self.advanced_panel.setVisible)
-        self.advanced_toggle.toggled.connect(lambda checked: self.advanced_toggle.setText("更多设置与汇总 ▾" if checked else "更多设置与汇总 ▸"))
-        self.advanced_panel.hide()
-        layout.addWidget(self.advanced_panel)
-        self.sample_number = QLineEdit(self.session.sample_number)
-        self.sample_number.setPlaceholderText("样品编号")
-        self.sample_number.editingFinished.connect(lambda: self._configure(sample_number=self.sample_number.text()))
-        advanced.addWidget(self.sample_number)
-        self._button("设置本方向类别", self._materials, advanced)
-        self.weights_button = self._button("经纬重量", self._weights, advanced)
-        count_row = QHBoxLayout()
-        self.count_add_button = self._button("额外计数 +", lambda: self._count(1), count_row)
-        self.count_subtract_button = self._button("额外计数 −", lambda: self._count(-1), count_row)
-        advanced.addLayout(count_row)
-        self.keep_images = QCheckBox("保存测量原图")
-        self.keep_images.setChecked(self.session.save_images)
-        self.keep_images.toggled.connect(lambda value: self._configure(save_images=value))
-        advanced.addWidget(self.keep_images)
-        self.statistics_button = self._button("含量计算设置", self._statistics_settings, advanced)
-        self.summary_scope = QComboBox()
-        self.summary_scope.addItems(["当前操作者／方向", "当前操作者／经纬混合", "全部操作者／纤维汇总", "全部操作者／织物汇总"])
-        self.summary_scope.currentIndexChanged.connect(lambda _: setattr(self, "_last_summary_revision", -1))
-        advanced.addWidget(self.summary_scope)
-        self.summary = QLabel()
-        self.summary.setWordWrap(True)
-        self.summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        advanced.addWidget(self.summary)
-        self._button("放弃所选失败原图", self._discard_failed_evidence, advanced)
-        export_row = QHBoxLayout()
-        self._button("导出 CSV", lambda: self._export(False), export_row)
-        self._button("导出 Excel", lambda: self._export(True), export_row)
-        advanced.addLayout(export_row)
-        layout.addStretch(1)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(side)
-        scroll.setMinimumWidth(390)
-        root.addWidget(scroll)
-        root.setSizes([850, 390])
-        self.setCentralWidget(root)
-        self.mode.currentIndexChanged.connect(self._mode_changed)
-        self._mode_changed(self.mode.currentIndex(), persist=False)
-        for sequence, callback in (("Escape", self.controller.cancel_draft),
-                                   ("Ctrl+Z", lambda: self._history_action("undo")),
-                                   ("Ctrl+Y", lambda: self._history_action("redo"))):
-            action = QAction(self)
-            action.setShortcut(QKeySequence(sequence))
-            action.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-            action.triggered.connect(lambda checked=False, fn=callback: self._guard(fn))
-            self.addAction(action)
+        from fdm.ui.live_experiment_view import build_trial_view
+        build_trial_view(self)
+
+    def _restore_view_preferences(self):
+        import json
+        from fdm.settings import settings_file_path
+        self._view_preferences_path = settings_file_path().parent / "trial-workbench.json"
+        self._view_preferences_timer = QTimer(self)
+        self._view_preferences_timer.setSingleShot(True)
+        self._view_preferences_timer.setInterval(250)
+        self._view_preferences_timer.timeout.connect(self._persist_view_preferences)
+        try:
+            preferences = json.loads(self._view_preferences_path.read_text(encoding="utf-8"))
+            saved = preferences.get(self.session.workspace_options["mode"], {})
+            tab = max(0, min(2, int(saved.get("tab", 0))))
+            width = max(390, min(520, int(saved.get("sidebar_width", 432))))
+        except (OSError, ValueError, TypeError, AttributeError):
+            tab, width = 0, 432
+        self.workflow_tabs.setCurrentIndex(tab)
+        self.body_splitter.setSizes([max(320, self.width() - width), width])
+        self.workflow_tabs.currentChanged.connect(lambda _: self._view_preferences_timer.start())
+        self.body_splitter.splitterMoved.connect(lambda *_: self._view_preferences_timer.start())
+
+    def _persist_view_preferences(self):
+        import json
+        from fdm.atomic_io import atomic_write_text
+        self._view_preferences_timer.stop()
+        try:
+            try:
+                preferences = json.loads(self._view_preferences_path.read_text(encoding="utf-8"))
+                if not isinstance(preferences, dict):
+                    preferences = {}
+            except (OSError, ValueError, TypeError):
+                preferences = {}
+            preferences[self.session.workspace_options["mode"]] = {
+                "tab": self.workflow_tabs.currentIndex(),
+                "sidebar_width": max(390, min(520, self.trial_sidebar.width())),
+            }
+            self._view_preferences_path.parent.mkdir(parents=True, exist_ok=True)
+            atomic_write_text(self._view_preferences_path, json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError as exc:
+            self.statusBar().showMessage(f"本次布局已应用，偏好未能保存：{exc}", 8000)
+
+    def hideEvent(self, event):
+        if hasattr(self, "_view_preferences_timer") and self._view_preferences_timer.isActive():
+            self._persist_view_preferences()
+        super().hideEvent(event)
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() in (QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange) and hasattr(self, "workflow_tabs"):
+            from fdm.ui.live_experiment_view import apply_trial_theme
+            apply_trial_theme(self)
+            self.canvas.update()
 
     def _table(self, model):
-        table = QTableView()
+        table = ExperimentRecordsTable()
         table.setModel(model)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -702,9 +668,11 @@ class LiveExperimentWorkspace(QMainWindow):
     def _status_changed(self, message):
         self.statusBar().showMessage(message)
         if self.controller.state == "unavailable":
+            if hasattr(self, "display_binding"):
+                self.display_binding.clear_source()
             self.canvas.set_frame(None)
 
-    def _stop_source(self):
+    def _stop_source(self, *, preserve_field=False):
         with self._frame_mailbox_lock:
             if not self._source_retiring:
                 self._source_epoch += 1
@@ -716,13 +684,16 @@ class LiveExperimentWorkspace(QMainWindow):
             self._source_retiring = False
             return True
         self._source_retiring = True
-        self.controller.unavailable("正在停止旧图像来源，测量已暂停。")
+        if not preserve_field:
+            self.controller.unavailable("正在停止旧图像来源，测量已暂停。")
         try:
             stopped = self.source.stop() is True
             detail = ""
         except Exception as exc:
             stopped, detail = False, f"（{exc}）"
         if not stopped:
+            if preserve_field:
+                self.controller.unavailable("旧图像来源未能安全暂停，测量已停止。")
             # The old callback epoch is intentionally invalid, so its error
             # callback cannot be relied on to explain retirement failures.
             self.statusBar().showMessage("旧图像来源仍在释放资源，测量已暂停；请稍后再次切换来源或关闭窗口。" + detail)
@@ -793,7 +764,7 @@ class LiveExperimentWorkspace(QMainWindow):
     def _load_static(self):
         document = self.host.current_document()
         if document is None:
-            self.statusBar().showMessage("请在主窗口打开图片，或选择相机／CU 实时画面。")
+            self.statusBar().showMessage("请在主窗口打开图片，或从上方开始采集。")
             return
         if not self._stop_source():
             return False
@@ -832,22 +803,24 @@ class LiveExperimentWorkspace(QMainWindow):
         self._receive_frame(frame)
         if document.calibration:
             self.controller.set_calibration(CalibrationSnapshot.from_calibration(document.calibration, self._static_generation))
+        self._refresh_ruler_choices()
 
-    def _start_camera(self):
+    def _start_camera(self, *, preserve_field=False):
         from fdm.live_experiment.sources import CameraFrameSource
+        if self.source is not None and self.source.__class__.__name__ == "CameraFrameSource":
+            return True
         if not self._stop_source():
             return False
-        self.controller.unavailable("正在连接本机相机…")
-        self.source = CameraFrameSource(self.host._capture_manager, *self._source_callbacks())
-        self.source.start()
-
-    def _start_external(self):
-        from fdm.live_experiment.sources import ExternalCuFrameSource
-        if not self._stop_source():
+        manager = self.host._capture_manager
+        if not manager.is_preview_active():
+            self.host.start_live_preview()
+        if not manager.is_preview_active():
             return False
-        self.controller.unavailable("正在连接 CU 实时画面…")
-        self.source = ExternalCuFrameSource(*self._source_callbacks())
+        if not preserve_field:
+            self.controller.unavailable("正在等待采集完整帧…")
+        self.source = CameraFrameSource(manager, *self._source_callbacks())
         self.source.start()
+        return True
 
     def _receive_frame(self, frame):
         if self._closed:
@@ -855,18 +828,169 @@ class LiveExperimentWorkspace(QMainWindow):
         if id(self.host.project) != self.project_identity:
             self.close()
             return
-        if self.controller.receive_frame(frame) and not frame.live:
+        if self.controller.receive_frame(frame):
+            self._restore_calibration(frame)
             self.canvas.set_frame(frame)
+            self.display_binding.set_source(frame.source_id, frame.size)
 
     def _calibrate(self):
-        value, ok = QInputDialog.getDouble(self, "当前来源标定", "每像素微米数（μm/px）",
-            self.controller.calibration.x_um if self.controller.calibration else 1.0, 0.000001, 1000000, 6)
-        if ok:
-            revision = (self.controller.calibration.revision + 1) if self.controller.calibration else 1
-            self.controller.set_calibration(CalibrationSnapshot(value, value, revision, "实时试验来源标定"))
-            self.canvas.update()
+        # Reuse the application's ruler library, including imported CU .scl.
+        if hasattr(self.host, "add_calibration_preset"):
+            count = len(self.host._calibration_presets())
+            self.host.add_calibration_preset()
+            self._refresh_ruler_choices()
+            if len(self.host._calibration_presets()) > count:
+                self.ruler_choice.setCurrentIndex(count + 1)
+                self._select_ruler(count + 1)
+        else:
+            self.statusBar().showMessage("请从主窗口的标尺库选择或导入 CU 标尺。")
+
+    def _import_ruler(self):
+        if hasattr(self.host, "import_cu_calibration_presets"):
+            self.host.import_cu_calibration_presets()
+            self._refresh_ruler_choices()
+            self.statusBar().showMessage("标尺库已刷新，请从上方选择当前显微镜使用的标尺。", 6000)
+
+    def _select_display_mode(self, index):
+        mode = self.display_choice.itemData(index)
+        try:
+            if self.controller._jobs or self.controller.candidates or self.controller.pending_classification or self.controller._confirmation:
+                raise ValueError("请先完成或取消当前测量／候选，再更换显示模式。")
+            if mode == "percent":
+                value, accepted = QInputDialog.getDouble(self, "指定比例显示", "显示比例（%）",
+                    self.display_binding.store.preferences.percent, 1, 1600, 1)
+                if accepted:
+                    self.display_binding.set_mode(mode, value)
+            elif mode == "magnification":
+                if not self.controller.calibration or not self.controller.calibration.isotropic:
+                    raise ValueError("请先选择等比例显微镜标尺，再设置物理显示倍率。")
+                from fdm.ui.live_display import request_magnification
+                values = request_magnification(self, self.display_binding.store.preferences.magnification)
+                if values:
+                    self.display_binding.set_mode(mode, values[0])
+            else:
+                self.display_binding.set_mode(mode)
+        except (ValueError, OSError) as exc:
+            self.statusBar().showMessage(str(exc), 10000)
+        finally:
+            self.display_choice.setCurrentIndex(self.display_choice.findData(self.display_binding.store.preferences.mode))
+
+    def _refresh_ruler_choices(self):
+        combo = self.ruler_choice
+        combo.blockSignals(True)
+        combo.clear()
+        combo.addItem("选择已有标尺…", None)
+        current = self.controller.calibration or self._pending_calibration
+        choices = getattr(self.host, "_calibration_presets", lambda: [])()
+        for preset in choices:
+            try:
+                value = CalibrationSnapshot.from_calibration(preset.to_calibration())
+            except ValueError:
+                continue
+            combo.addItem(f"{preset.name} · {value.x_um:.6g} μm/px", value)
+        selected = 0
+        if current:
+            for i in range(1, combo.count()):
+                value = combo.itemData(i)
+                if (value.source, value.x_um, value.y_um) == (current.source, current.x_um, current.y_um):
+                    selected = i
+                    break
+            if not selected:
+                combo.addItem(f"{current.source or '已保存标尺'} · {current.x_um:.6g} μm/px", current)
+                selected = combo.count() - 1
+        combo.setCurrentIndex(selected)
+        combo.blockSignals(False)
+        self._refresh_measurement_readiness()
+
+    def _select_ruler(self, index):
+        value = self.ruler_choice.itemData(index)
+        if value is None:
+            return
+        revision = self.controller.calibration.revision + 1 if self.controller.calibration else 1
+        value = replace(value, revision=revision)
+        self._pending_calibration = value
+        self.controller.set_calibration(value)
+        self._remember_ruler(value)
+        self._refresh_measurement_readiness()
+        self.canvas._update_pixel_extent()
+        self.canvas.update()
+        if self.canvas.frame:
+            self.display_binding.set_source(self.canvas.frame.source_id, self.canvas.frame.size)
+
+    def _remember_ruler(self, value):
+        frame = self.controller.latest_frame
+        if frame is not None and frame.live:
+            from fdm.live_experiment.calibration_store import save_ruler, source_key
+            key = source_key(frame)
+            self._rulers[key] = value
+            self._calibration_key = key
+            self._pending_calibration = None
+            try:
+                save_ruler(key, value)
+            except (OSError, ValueError, TypeError) as exc:
+                self.statusBar().showMessage(f"本次标尺已应用，但未能保存到下次使用：{exc}")
+
+    def _restore_calibration(self, frame):
+        if not frame.live:
+            return
+        from fdm.live_experiment.calibration_store import source_key
+        key = source_key(frame)
+        if key == self._calibration_key and self._pending_calibration is None and (
+                self.controller.calibration is not None or key not in self._rulers):
+            return
+        value = self._pending_calibration or self._rulers.get(key)
+        self._calibration_key = key
+        if value is not None:
+            self.controller.set_calibration(value)
+            if self._pending_calibration:
+                self._remember_ruler(value)
+        self._refresh_ruler_choices()
+        self.canvas._update_pixel_extent()
+
+    def _refresh_measurement_readiness(self):
+        if not hasattr(self, "readiness_label"):
+            return
+        value = self.controller.calibration
+        operator = self.session.operators.get(self.session.active_operator_id)
+        if self.controller.latest_frame is None or self.controller.state == "unavailable":
+            text = '等待画面 · <a href="device">选择或检查采集设备</a>'
+        elif value is None:
+            text = '下一步 · <a href="ruler">选择测量标尺</a>，或从“管理”导入 CU 标尺。'
+        elif operator is None:
+            text = '下一步 · <a href="operator">添加操作者</a>'
+        elif operator.name == "操作者 A":
+            text = '试验准备 · <a href="operator">填写实际操作者姓名</a>'
+        elif self.mode.currentIndex() == 0 and self.material.count() == 0:
+            text = '下一步 · <a href="materials">选择本方向的纤维类别</a>'
+        elif self.controller.state != "ready":
+            text = "画面持续采集中；视场稳定后继续测量。"
+        else:
+            text = ""
+        self.readiness_label.setText(text)
+        self.readiness_label.setVisible(bool(text))
+        if self.readiness_label.property("needsRuler") != (value is None):
+            self.readiness_label.setProperty("needsRuler", value is None)
+            self.readiness_label.style().unpolish(self.readiness_label)
+            self.readiness_label.style().polish(self.readiness_label)
+
+    def _readiness_action(self, target):
+        if target == "device":
+            callback = getattr(self.host, "show_capture_device_menu", None)
+            if callback is not None:
+                self._guard(callback)
+        elif target == "ruler":
+            self.ruler_choice.setFocus()
+            self.ruler_choice.showPopup()
+        elif target == "operator":
+            self._guard(self._rename_operator if self.session.active_operator_id in self.session.operators else self._add_operator)
+        elif target == "materials":
+            self._guard(self._materials)
 
     def _press(self, point):
+        if self.controller.calibration is None:
+            self._refresh_measurement_readiness()
+            self.ruler_choice.setFocus()
+            return
         if self.gesture.currentIndex() == 0 and self.controller.draft:
             self._guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
         else:
@@ -888,6 +1012,7 @@ class LiveExperimentWorkspace(QMainWindow):
         self.direction.setCurrentIndex(max(0, self.direction.findData(self.session.active_direction)))
         self.direction.blockSignals(False)
         self._refresh_materials()
+        self._sync_weight_controls()
 
     def _refresh_materials(self):
         current = self.material.currentData()
@@ -912,16 +1037,19 @@ class LiveExperimentWorkspace(QMainWindow):
                 item.widget().hide()  # Deferred deletion must not leave old values painted.
                 item.widget().deleteLater()
         self.material_rows = {}
-        for column, text in enumerate(("纤维类别 1–9", "", "补计", "", "均径 μm", "含量%", "实测")):
-            label = QLabel(text)
+        for column, text in enumerate(("类别 1–9", "", "补计", "", "均径", "含量%", "实测")):
+            label = QLabel(text, self.material_panel)
+            label.setObjectName("trialColumnHeader")
             if column == 4:
                 label.setToolTip("原始实测直径的算术均值；不使用分组中心，不受补计数影响。")
             grid.addWidget(label, 0, column)
+            label.show()
         operator = self.session.operators.get(self.session.active_operator_id)
         for index, material in enumerate(operator.materials[self.session.active_direction] if operator else ()):
             select = QPushButton(f"{index + 1} · {material.name}")
             select.setCheckable(True)
-            select.setMinimumWidth(75)
+            select.setMinimumWidth(78)
+            select.setFixedHeight(32)
             select.setToolTip(f"{index + 1} · {material.name}；先选用于下一条，后选跟随最新测量；取消或失败后不改上一条。")
             color = category_color(self.session, operator.id, self.session.active_direction, material.id)
             marker = QLabel()
@@ -937,12 +1065,12 @@ class LiveExperimentWorkspace(QMainWindow):
             select.clicked.connect(lambda checked=False, key=material.id: self._guard(lambda: self._select_material(key)))
             add, subtract = QPushButton("+"), QPushButton("−")
             for button, delta in ((add, 1), (subtract, -1)):
-                button.setFixedWidth(25)
+                button.setFixedSize(28, 32)
                 button.setToolTip("只增减本类别的补计数；不改变选中类别或实测直径。")
                 button.clicked.connect(lambda checked=False, key=material.id, delta=delta:
                     self._guard(lambda: self._count_material(key, delta)))
             row = {"select": select, "color": marker, "add": add, "subtract": subtract,
-                "extra_count": QLabel("0"), "mean": QLabel("—"), "content": QLabel("待完善"),
+                "extra_count": QLabel("0"), "mean": QLabel("—"), "content": QLabel("—"),
                 "measured_count": QLabel("0")}
             for column, widget in enumerate((selector, add, row["extra_count"], subtract,
                                              row["mean"], row["content"], row["measured_count"])):
@@ -956,11 +1084,14 @@ class LiveExperimentWorkspace(QMainWindow):
     def _sync_material_buttons(self, *_):
         selected = self.material.currentData()
         self.canvas.active_material_id = selected
+        if hasattr(self, "current_class_label"):
+            self.current_class_label.setText("测径类：" + (self.material.currentText() or "未选择类别"))
         for material_id, row in getattr(self, "material_rows", {}).items():
             row["select"].setChecked(material_id == selected)
         self.canvas.update()
 
     def _select_material(self, material_id):
+        self.controller.cancel_draft()
         index = self.material.findData(material_id)
         if index < 0:
             raise ValueError("当前方向未配置此类别。")
@@ -1008,23 +1139,24 @@ class LiveExperimentWorkspace(QMainWindow):
             row["extra_count"].setText(str(category["extra_count"]))
             row["measured_count"].setText(str(category["measured_count"]))
             row["mean"].setText("—" if category["mean"] is None else f"{category['mean']:.3f}")
-            row["content"].setText("待完善" if category["content"] is None else f"{category['content']:.2f}")
+            row["content"].setText("—" if category["content"] is None else f"{category['content']:.2f}")
             row["subtract"].setEnabled(category["extra_count"] > 0)
 
     def _add_operator(self):
         name, ok = QInputDialog.getText(self, "添加操作者", "姓名")
         if ok and name.strip():
-            self.controller.end_field("已切换操作者")
+            self.controller.end_field("已结束当前视场并切换操作者；历史记录保留。")
             self.session.active_operator_id = self.session.add_operator(name.strip())
             self._refresh_operators()
             self._changed()
 
     def _operator_changed(self, index):
-        if index < 0:
+        if index < 0 or self.operator.currentData() == self.session.active_operator_id:
             return
-        self.controller.end_field("已切换操作者")
+        self.controller.end_field("已结束当前视场并切换操作者；历史记录保留。")
         self.session.active_operator_id = self.operator.currentData()
         self._refresh_materials()
+        self._sync_weight_controls()
         self._last_summary_revision = -1
         self._changed()
 
@@ -1040,6 +1172,14 @@ class LiveExperimentWorkspace(QMainWindow):
             self._changed()
 
     def _direction_changed(self, index):
+        if self.direction.currentData() == self.session.active_direction:
+            return
+        if self.controller.current_records or self.controller.pending_classification or self.controller._jobs:
+            self.direction.blockSignals(True)
+            self.direction.setCurrentIndex(self.direction.findData(self.session.active_direction))
+            self.direction.blockSignals(False)
+            self.statusBar().showMessage("本场已有测量，请先点击“新视场”再切换经纬方向；历史记录保留。", 10000)
+            return
         self.controller.end_field("已切换经纬方向")
         self.session.active_direction = self.direction.currentData()
         self._refresh_materials()
@@ -1082,6 +1222,26 @@ class LiveExperimentWorkspace(QMainWindow):
         form.addRow(buttons)
         if dialog.exec():
             self.session.set_weights(inputs[0].value(), inputs[1].value())
+            self._sync_weight_controls()
+            self._changed()
+
+    def _sync_weight_controls(self):
+        operator = self.session.operators.get(self.session.active_operator_id)
+        if operator is None:
+            return
+        for attribute in ("warp_weight", "weft_weight"):
+            editor = getattr(self, attribute)
+            editor.blockSignals(True)
+            editor.setValue(getattr(operator, attribute) or 0)
+            editor.blockSignals(False)
+
+    def _weights_edited(self):
+        operator = self.session.operators.get(self.session.active_operator_id)
+        if operator is None:
+            return
+        values = self.warp_weight.value(), self.weft_weight.value()
+        if values != (operator.warp_weight or 0, operator.weft_weight or 0):
+            self._guard(lambda: self.session.set_weights(*values))
             self._changed()
 
     def _materials(self):
@@ -1249,7 +1409,8 @@ class LiveExperimentWorkspace(QMainWindow):
             self._changed()
 
     def _sample_changed(self):
-        self._configure(sample_name=self.sample.text())
+        self._configure(sample_name=self.sample.text().strip())
+        self.sample_title.setText(self.session.sample_name or "未命名样品")
 
     def _gesture_changed(self, index):
         if self._statistics_job is not None:
@@ -1267,23 +1428,28 @@ class LiveExperimentWorkspace(QMainWindow):
     def _mode_changed(self, index, persist=True):
         content = index == 0
         for widget in (self.direction, self.keyboard_mode, self.classification_mode, self.material_panel, self.summary, self.summary_scope,
-                       self.weights_button, self.count_add_button, self.count_subtract_button, self.statistics_button):
+                       self.weights_button, self.statistics_button, self.direction_row, self.category_actions,
+                       self.current_class_label):
             widget.setVisible(content)
+        self.diameter_summary.setVisible(not content)
+        self.operation_help.setText("两次点击横跨纤维完成测径。Esc 取消草稿；右键选类；Ctrl 切换数字键的选类／补计数模式。"
+            if content else "两次点击横跨纤维完成测径。Esc 取消草稿；已入账记录可在记录页修订、删除或查看原图。")
         if persist:
             self._configure(workspace_options={**getattr(self.session, "workspace_options", {}),
                                               "mode": "content" if content else "diameter"})
 
     def _record_accepted(self, record):
+        self.latest_value.setText(f"{record.diameter_um:.3f} μm")
         self.current_model.append(record.id)
         self.history_model.append(record.id)
-        self.current_table.scrollToBottom()
+        self.current_table.follow_latest()
         self._record_model_revision = self.session.revision
 
     def _records_accepted(self, records):
         ids = [record.id for record in records]
         self.current_model.append_many(ids)
         self.history_model.append_many(ids)
-        self.current_table.scrollToBottom()
+        self.current_table.follow_latest()
         self._record_model_revision = self.session.revision
 
     def _candidates_changed(self, candidates):
@@ -1292,7 +1458,11 @@ class LiveExperimentWorkspace(QMainWindow):
         materials = operator.materials[self.session.active_direction] if operator else ()
         self.candidate_model.set_candidates(candidates, scale, materials)
         if candidates:
+            self.records_toggle.setChecked(True)
             self.tabs.setCurrentIndex(2)
+        self.candidate_feedback.setText(f"待审核 {len(candidates)} 条候选；确认接受后才计入试验。" if candidates else "")
+        self.candidate_feedback.setVisible(bool(candidates))
+        self.tabs.setTabText(2, f"候选 {len(candidates)}" if candidates else "候选审核")
         self.canvas.update()
 
     def _assign_candidate_material(self):
@@ -1323,9 +1493,28 @@ class LiveExperimentWorkspace(QMainWindow):
     def _changed(self):
         state = (self.session.revision, self.session.active_operator_id, self.session.active_direction)
         if id(self.host.project) == self.project_identity and state != self._last_dirty_state:
-            self.host.project.mark_extension_changed()
+            registered = any(session is self.session for session in self.host.project.live_experiments)
+            if not registered and self.session.revision != self._draft_revision:
+                self.host.project.live_experiments.append(self.session)
+                registered = True
+            if registered:
+                self.host.project.mark_extension_changed()
             self._last_dirty_state = state
+        self._refresh_persistence_state()
+        if hasattr(self, "display_binding"):
+            self.display_binding.apply()
         self.canvas.update()
+
+    def _refresh_persistence_state(self):
+        registered = any(session is self.session for session in self.host.project.live_experiments)
+        self.save_button.setEnabled(registered)
+        if not registered:
+            text = "尚无需要保存的试验改动"
+        elif getattr(self.host, "_project_dirty", lambda: True)() or not getattr(self.host, "_project_path", None):
+            text = "试验数据有更改 · 保存项目可保留样品、记录和设置"
+        else:
+            text = "试验数据已保存到项目"
+        self.persistence_label.setText(text)
 
     def _refresh_summary(self):
         self._poll_statistics_rebuild()
@@ -1333,8 +1522,11 @@ class LiveExperimentWorkspace(QMainWindow):
             self.close()
             return
         frame, calibration = self.controller.latest_frame, self.controller.calibration
-        source = ("CU 预览" if frame and frame.metadata.get("rendered_preview") else
-                  "相机" if frame and frame.live else "图片" if frame else "无来源")
+        self._refresh_measurement_readiness()
+        self._refresh_persistence_state()
+        mode = "含量试验" if self.mode.currentIndex() == 0 else "直径试验"
+        self.sample_subtitle.setText(f"{mode} · 本场实测 {len(self.controller.current_records)} · 累计实测 {len(self.session.measurements)}")
+        source = "相机" if frame and frame.live else "图片" if frame else "无来源"
         state = {"ready": "视场就绪", "stabilizing": "视场核验中", "unavailable": "来源不可用"}.get(
             self.controller.state, self.controller.state)
         ruler = ("未标定" if calibration is None else
@@ -1342,6 +1534,7 @@ class LiveExperimentWorkspace(QMainWindow):
                  f"X {calibration.x_um:.6g} / Y {calibration.y_um:.6g} μm/px")
         self.live_state_label.setText(f"{source} · {state} · {ruler}")
         pending = self.controller.pending_classification
+        previous_pending_id = self._pending_display_id
         self._pending_display_id = pending[0][0].id if pending else None
         if pending:
             intent, result = pending[0]
@@ -1358,6 +1551,11 @@ class LiveExperimentWorkspace(QMainWindow):
         else:
             request = self.controller._confirmation
             self.pending_label.setText("确认正在核验最新视场，尚未入账。" if request else "")
+        self.pending_panel.setVisible(bool(pending or self.controller._confirmation))
+        if pending and previous_pending_id != self._pending_display_id:
+            self.workflow_tabs.setCurrentIndex(0)
+            scroll = self.workflow_tabs.widget(0)
+            QTimer.singleShot(0, self, lambda: scroll.ensureWidgetVisible(self.pending_panel, 0, 12))
         for button in self.pending_buttons:
             button.setEnabled(bool(self.controller.pending_classification) and self.controller._confirmation is None)
         if self.session.revision == self._last_summary_revision:
@@ -1366,6 +1564,15 @@ class LiveExperimentWorkspace(QMainWindow):
         summary = summarize(self.session)
         self._refresh_material_row_stats(summary)
         operator = summary.get("operators", {}).get(self.session.active_operator_id, {})
+        measured_count, measured_sum = 0, 0.0
+        for direction_name in ("warp", "weft"):
+            groups = operator.get(direction_name, {}).get("categories", [])
+            for group in groups.values() if isinstance(groups, dict) else groups:
+                count = group.get("measured_count", 0)
+                measured_count += count
+                measured_sum += count * (group.get("mean") or 0.0)
+        mean = f"{measured_sum / measured_count:.3f}" if measured_count else "—"
+        self.diameter_summary.setText(f"当前操作者：累计实测 {measured_count} 根\n平均直径 {mean} μm")
         scope = self.summary_scope.currentIndex()
         direction = (operator.get(self.session.active_direction, {}) if scope == 0 else
                      operator.get("mixed", {}) if scope == 1 else summary["fiber" if scope == 2 else "fabric"])
@@ -1431,6 +1638,7 @@ class LiveExperimentWorkspace(QMainWindow):
             getattr(widget, setter)(value)
             widget.blockSignals(False)
         self._mode_changed(self.mode.currentIndex(), persist=False)
+        self._sync_weight_controls()
 
     def _rebuild_records(self):
         self.controller.current_records[:] = [key for key, record in self.session.measurements.items()
@@ -1514,7 +1722,10 @@ class LiveExperimentWorkspace(QMainWindow):
             self.statusBar().showMessage("；".join(messages), 15000)
 
     def _choose_experiment(self):
-        sessions = self.host.project.live_experiments
+        mode = self.session.workspace_options["mode"]
+        sessions = [s for s in self.host.project.live_experiments if s.workspace_options["mode"] == mode]
+        if self.session not in sessions:
+            sessions.append(self.session)
         choices = [f"{i + 1} · {s.sample_name or s.name}" for i, s in enumerate(sessions)] + ["＋ 新建试验"]
         selected, ok = QInputDialog.getItem(self, "试验", "选择已有试验，或建立独立样品记录", choices, sessions.index(self.session), False)
         if not ok or selected == choices[sessions.index(self.session)]:
@@ -1526,38 +1737,74 @@ class LiveExperimentWorkspace(QMainWindow):
                 return
         if not self.close():
             return
+        if self.embedded:
+            self.host._acquisition_workbench.pages.removeWidget(self)
         if target is None:
             from fdm.live_experiment import ExperimentSession, default_materials
-            target = ExperimentSession(sample_name=name.strip())
+            target = ExperimentSession(sample_name=name.strip(), workspace_options={"mode": mode})
             target.add_operator("操作者 A")
             target.set_materials(default_materials(), direction="warp")
             target.set_materials(default_materials(), direction="weft")
             target.establish_history_baseline()
-            sessions.append(target)
-            self.host.project.mark_extension_changed()
-        window = LiveExperimentWorkspace(self.host, target)
+            if name.strip():
+                self.host.project.live_experiments.append(target)
+                self.host.project.mark_extension_changed()
+        window = LiveExperimentWorkspace(self.host, target, embedded=self.embedded)
         self.host._live_experiment_workspace = window
+        self.host._live_experiment_workspaces[mode] = window
+        if self.embedded:
+            hub = self.host._acquisition_workbench
+            hub.pages.addWidget(window)
+            hub.pages.setCurrentWidget(window)
+            if self.host._capture_manager.is_preview_active():
+                window._start_camera()
         window.show()
 
-    def _save_project(self):
+    def commit_pending_edits(self):
+        """Flush focused editors before a project snapshot or accepted close."""
+        if self._closed or id(self.host.project) != self.project_identity:
+            return
         if self._statistics_job is not None:
             raise ValueError("组距设置尚未应用，请等待或取消重算后保存。")
+        sample_name, sample_number = self.sample.text().strip(), self.sample_number.text().strip()
+        self.warp_weight.interpretText()
+        self.weft_weight.interpretText()
+        self._weights_edited()
+        self._configure(sample_name=sample_name, sample_number=sample_number)
+        self.sample_title.setText(self.session.sample_name or "新试验")
+
+    def _save_project(self):
+        self.commit_pending_edits()
+        self._changed()
+        if not any(session is self.session for session in self.host.project.live_experiments):
+            self.statusBar().showMessage("尚无需要保存的试验改动；填写样品信息或开始测量后即可保存。", 8000)
+            return
         if self.controller.evidence.pending or self.controller._jobs:
             raise ValueError("测量或原图尚在写入，请稍后保存；实时画面继续更新。")
         self.host.save_project_action.trigger()
 
     def _export(self, excel):
+        if not self.session.measurements and not self.session.count_adjustments:
+            raise ValueError("还没有试验记录；完成测量或补计数后再导出报告。")
+        if excel:
+            self.report_panel.export()
+            return
         from fdm.live_experiment.exports import export_csv, session_export_xlsx
         path, _ = QFileDialog.getSaveFileName(self, "导出试验", "试验.xlsx" if excel else "试验.csv", "Excel (*.xlsx)" if excel else "CSV (*.csv)")
         if path:
             (session_export_xlsx if excel else export_csv)(self.session, path)
             self.statusBar().showMessage("已导出试验数据", 5000)
 
-    def _handle_digit_key(self, event):
+    def _measurement_focus_allowed(self):
         focus = QApplication.focusWidget()
-        if (self._closed or QApplication.activeWindow() is not self or QApplication.activePopupWidget() is not None
-                or isinstance(focus, (QLineEdit, QAbstractSpinBox, QPlainTextEdit, QTextEdit))
-                or (isinstance(focus, QComboBox) and self.candidate_table.isAncestorOf(focus))
+        return (not self._closed and self.isVisible() and QApplication.activeWindow() is self.window()
+            and QApplication.activePopupWidget() is None
+            and QApplication.activeModalWidget() is None
+            and not isinstance(focus, (QLineEdit, QAbstractSpinBox, QPlainTextEdit, QTextEdit))
+            and not (isinstance(focus, QComboBox) and self.candidate_table.isAncestorOf(focus)))
+
+    def _handle_digit_key(self, event):
+        if (not self._measurement_focus_allowed() or self.mode.currentIndex() != 0
                 or event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier
                                        | Qt.KeyboardModifier.MetaModifier | Qt.KeyboardModifier.ShiftModifier)):
             return False
@@ -1566,8 +1813,9 @@ class LiveExperimentWorkspace(QMainWindow):
                 return True
             index = event.key() - Qt.Key.Key_1
             if index < self.material.count():
-                self.material.setCurrentIndex(index)
-                self._guard(lambda: self._count(1) if self.keyboard_mode.currentIndex() else self._after_select())
+                key = self.material.itemData(index)
+                self._guard(lambda: self._count_material(key, 1) if self.keyboard_mode.currentIndex()
+                            else self._select_material(key))
                 return True
         if event.key() == Qt.Key.Key_Minus and self.keyboard_mode.currentIndex():
             if not event.isAutoRepeat():
@@ -1576,9 +1824,39 @@ class LiveExperimentWorkspace(QMainWindow):
         return False
 
     def eventFilter(self, watched, event):
-        if event.type() == QEvent.Type.KeyPress and self._handle_digit_key(event):
-            event.accept()
-            return True
+        kind = event.type()
+        if kind == QEvent.Type.Wheel:
+            # Also protect editors created inside Qt's static QInputDialog
+            # helpers (calibration / record correction), not just our widgets.
+            from PySide6.QtWidgets import QComboBox as QtComboBox
+            if isinstance(watched, (QAbstractSpinBox, QtComboBox)):
+                parent = watched.parent()
+                while parent is not None and parent is not self:
+                    parent = parent.parent()
+                if parent is self:
+                    from fdm.ui.widgets import _redirect_wheel_to_inspector_scroll
+                    _redirect_wheel_to_inspector_scroll(watched, event)
+                    self._bare_ctrl_pending = False
+                    return True
+        if kind in (QEvent.Type.WindowDeactivate, QEvent.Type.ApplicationDeactivate,
+                     QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonDblClick, QEvent.Type.Wheel):
+            self._bare_ctrl_pending = False
+        elif kind in (QEvent.Type.KeyPress, QEvent.Type.ShortcutOverride):
+            if event.key() != Qt.Key.Key_Control:
+                self._bare_ctrl_pending = False
+            elif kind == QEvent.Type.KeyPress and not event.isAutoRepeat():
+                self._bare_ctrl_pending = self._measurement_focus_allowed()
+            if kind == QEvent.Type.KeyPress and self._handle_digit_key(event):
+                event.accept()
+                return True
+        elif kind == QEvent.Type.KeyRelease and event.key() == Qt.Key.Key_Control:
+            if not event.isAutoRepeat():
+                toggle = self._bare_ctrl_pending and self._measurement_focus_allowed()
+                self._bare_ctrl_pending = False
+                if toggle and self.mode.currentIndex() == 0:
+                    self.keyboard_mode.setCurrentIndex(1 - self.keyboard_mode.currentIndex())
+                    event.accept()
+                    return True
         return super().eventFilter(watched, event)
 
     def keyPressEvent(self, event):
@@ -1587,22 +1865,47 @@ class LiveExperimentWorkspace(QMainWindow):
             return
         super().keyPressEvent(event)
 
-    def closeEvent(self, event):
+    def prepare_close(self):
+        """Quiesce producers and editors without discarding the visible page."""
         if self._statistics_job is not None:
             self._cancel_statistics_rebuild()
             if not self._statistics_job[1].done():
                 self.statusBar().showMessage("正在取消组距重算，窗口与来源仍保留；请稍后再次关闭。")
-                event.ignore()
-                return
+                return False
             self._poll_statistics_rebuild()
         if self.controller.evidence.pending:
             self.statusBar().showMessage("正在保存测量原图，请完成后关闭。")
-            event.ignore()
-            return
-        if not self._stop_source():
+            return False
+        if self.source is not None:
+            self._transition_resume_camera = True
+        if not self._stop_source(preserve_field=True):
+            return False
+        # Static-image trials have no source subscription to stop. Their
+        # in-flight results must also be invalidated before a save snapshot.
+        self.controller.cancel_pending_measurements("正在确认关闭或切换项目")
+        self.commit_pending_edits()
+        return True
+
+    def resume_after_cancel(self):
+        restart = getattr(self, "_transition_resume_camera", False)
+        self._transition_resume_camera = False
+        manager = getattr(self.host, "_capture_manager", None)
+        if (restart and manager is not None and not self._closed and self.isVisible()
+                and id(self.host.project) == self.project_identity
+                and manager.is_preview_active() and not manager.is_stopping()):
+            self._start_camera(preserve_field=True)
+
+    def closeEvent(self, event):
+        if not self.prepare_close():
             event.ignore()
             return
         self._closed = True
+        if self._view_preferences_timer.isActive():
+            self._persist_view_preferences()
+        self._view_preferences_timer.stop()
+        self.display_binding.close()
+        self.settings_dialog.close()
+        self.report_panel.close()
         QApplication.instance().removeEventFilter(self)
         self._refresh_timer.stop()
         if self._statistics_pool is not None:
@@ -1611,32 +1914,48 @@ class LiveExperimentWorkspace(QMainWindow):
         self.canvas.set_frame(None)
         if getattr(self.host, "_live_experiment_workspace", None) is self:
             self.host._live_experiment_workspace = None
-        self.controller.close()
+        cache = getattr(self.host, "_live_experiment_workspaces", {})
+        for mode, workspace in tuple(cache.items()):
+            if workspace is self:
+                del cache[mode]
+        self.controller.close(record_end=getattr(self, "_close_record_end", True))
         super().closeEvent(event)
 
 
-def open_live_experiment(host):
-    existing = getattr(host, "_live_experiment_workspace", None)
-    if existing is not None:
-        existing.show()
-        existing.raise_()
-        existing.activateWindow()
-        return existing
-    from fdm.live_experiment import ExperimentSession, default_materials
+def open_live_experiment(host, *, embedded=False, trial_mode=None):
+    """Reuse each trial page; a fresh untouched session remains outside the project."""
     if host.project.is_read_only_compatible:
         QMessageBox.information(host, "实时试验", "当前项目以只读兼容模式打开，请先另存可编辑项目。")
         return None
-    if not host.project.live_experiments:
-        session = ExperimentSession()
+    cache = getattr(host, "_live_experiment_workspaces", None)
+    if cache is None:
+        cache = host._live_experiment_workspaces = {}
+    current = getattr(host, "_live_experiment_workspace", None)
+    mode = trial_mode or (current.session.workspace_options.get("mode") if current is not None else "content")
+    existing = cache.get(mode)
+    if existing is not None:
+        if not existing._closed and existing.project_identity == id(host.project):
+            host._live_experiment_workspace = existing
+            if not embedded:
+                existing.show()
+                existing.raise_()
+                existing.activateWindow()
+            return existing
+        cache.pop(mode, None)
+    from fdm.live_experiment import ExperimentSession, default_materials
+    matching = [session for session in host.project.live_experiments
+                if session.workspace_options.get("mode") == mode]
+    if matching:
+        session = matching[-1]
+    else:
+        session = ExperimentSession(workspace_options={"mode": mode})
         session.add_operator("操作者 A")
         session.set_materials(default_materials(), direction="warp")
         session.set_materials(default_materials(), direction="weft")
         session.establish_history_baseline()
-        host.project.live_experiments.append(session)
-        host.project.mark_extension_changed()
-    else:
-        session = host.project.live_experiments[-1]
-    window = LiveExperimentWorkspace(host, session)
+    window = LiveExperimentWorkspace(host, session, embedded=embedded)
+    cache[mode] = window
     host._live_experiment_workspace = window
-    window.show()
+    if not embedded:
+        window.show()
     return window

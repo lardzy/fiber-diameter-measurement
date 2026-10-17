@@ -204,7 +204,7 @@ class BuildSupportTests(unittest.TestCase):
         self.assertEqual(
             core_profile.required_python_modules,
             ("numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy", "zlib_ng", "fdm._native._kernels")
-            + (("fdm._native._windows_capture",) if sys.platform == "win32" else ()) ,
+            + (("fdm._native._microview",) if sys.platform == "win32" else ()) ,
         )
         self.assertEqual(
             full_profile.required_python_modules,
@@ -218,7 +218,7 @@ class BuildSupportTests(unittest.TestCase):
                 "scipy",
                 "zlib_ng",
                 "fdm._native._kernels",
-                *(("fdm._native._windows_capture",) if sys.platform == "win32" else ()),
+                *(("fdm._native._microview",) if sys.platform == "win32" else ()),
                 "onnxruntime",
                 "torch",
                 "torchvision",
@@ -473,6 +473,21 @@ license = "LicenseRef-Test"
 
             stale = verify_release_manifest(app_dir, expected_commit="new-commit")
             self.assertTrue(any("stale dist" in error for error in stale["errors"]))
+
+    def test_editable_templates_survive_content_changes_without_weakening_binary_checks(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, _ = _create_release_fixture(root)
+            template = app_dir / "runtime/content-templates/sheet.xlt"
+            template.parent.mkdir(parents=True, exist_ok=True)
+            template.write_bytes(b"default template")
+            write_release_manifest(app_dir, root, profile="core", clean_build=True,
+                build_id="build-123", source_commit="abc123", source_dirty_entries=[])
+            template.write_bytes(b"user styles, formulas, macros and extra sheets")
+            template.with_name("custom.xlt").write_bytes(b"another editable template")
+            self.assertTrue(verify_release_manifest(app_dir, reject_extra_files=True)["ok"])
+            (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"tampered binary")
+            self.assertFalse(verify_release_manifest(app_dir, reject_extra_files=True)["ok"])
 
     def test_release_manifest_json_is_strict_and_inventory_is_complete(self) -> None:
         with TemporaryDirectory() as tmpdir:

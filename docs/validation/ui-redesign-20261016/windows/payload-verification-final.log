@@ -1,0 +1,11 @@
+VERIFYING_PREVIOUSLY_EXTRACTED_SAME_INSTALLER
+EXTRACTED_FILES_VERIFIED 4818
+Traceback (most recent call last):
+  File "C:\tmp\fdm-cu-live-ui-redesign-20261016\docs\validation\ui-redesign-20261016\windows\verify-payload.py", line 58, in <module>
+    check = json.loads((out / 'extracted-selfcheck.json').read_text(encoding='utf-8'))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc5 in position 1334: invalid continuation byte

@@ -129,21 +129,27 @@ def resource_snapshot():
 
 
 class ResourceSampler:
-    def __init__(self):
+    def __init__(self, *, trace=False):
         self.maxima = {}
         self.children = {}
         self.sample_count = 0
+        self.trace = trace
+        self.sample_spans = []
         self.stop = threading.Event()
         self.thread = threading.Thread(target=self._run, name="cu-benchmark-resources", daemon=True)
 
     def _run(self):
         while not self.stop.wait(.1):
+            started = time.perf_counter()
             try:
                 sample = resource_snapshot()
                 self._record(sample)
             except Exception:
                 # A worker may exit during process enumeration; next sample is valid.
                 pass
+            finally:
+                if self.trace:
+                    self.sample_spans.append({"started_at": started, "finished_at": time.perf_counter()})
 
     def _record(self, sample):
         self.sample_count += 1
@@ -178,10 +184,12 @@ class ResourceSampler:
         for key in ("rss_bytes", "children_rss_bytes", "total_rss_bytes", "native_threads", "process_lifetime_peak_rss_bytes"):
             values = [sample[key] for sample in samples if key in sample]
             self.result["sampled_max_" + key] = max(values) if values else None
+        if self.trace:
+            self.result["sampling_spans"] = self.sample_spans
 
 
-def fixture(size, *, kind="strip", width=20):
-    height = max(240, size * 2 // 3)
+def fixture(size, *, kind="strip", width=20, height=None):
+    height = height or max(240, size * 2 // 3)
     image = np.full((height, size, 3), 240, np.uint8)
     center = height // 2
     if kind == "sparse":

@@ -27,6 +27,7 @@ def test_postselection_input_targets_computing_gesture_not_previous_record(works
     controller.finish((30, 50), "wool", method="free")
     intent = controller._jobs[0][0]
     if input_mode == "digit":
+        workspace.keyboard_mode.setCurrentIndex(0)  # NK selects; default digits count.
         workspace.canvas.setFocus()
         QTest.keyClick(workspace.canvas, Qt.Key.Key_2)
     else:

@@ -101,6 +101,31 @@ def test_frequent_template_export_is_the_default_page(
         app.processEvents()
 
 
+@pytest.mark.parametrize("selection", [ExportSelection(include_excel=True),
+                                     ExportSelection(include_measurement_overlay=True),
+                                     ExportSelection.all_enabled()])
+def test_export_defaults_to_all_open_images_and_can_choose_current(app, selection):
+    dialog = _show_dialog(app, selection)
+    try:
+        assert dialog._scope_all.isChecked()
+        assert dialog.selection().scope == ExportScope.ALL_OPEN
+        dialog._scope_current.click()
+        assert dialog.selection().scope == ExportScope.CURRENT
+    finally:
+        dialog.close()
+
+
+def test_explicit_current_scope_and_single_image_dialog_remain_supported(app):
+    for selection, allow_all in ((ExportSelection(include_excel=True, scope=ExportScope.CURRENT), True),
+                                 (ExportSelection(include_excel=True), False)):
+        dialog = ExportOptionsDialog(selection, allow_all_scope=allow_all)
+        try:
+            assert dialog._scope_current.isChecked()
+            assert dialog.selection().scope == ExportScope.CURRENT
+        finally:
+            dialog.close()
+
+
 def test_image_only_selection_opens_image_page(
     app: QApplication,
 ) -> None:
@@ -151,7 +176,7 @@ def test_long_template_name_does_not_force_scrollbars(
         app.processEvents()
 
 
-@pytest.mark.parametrize("theme", ("dark", "light"))
+@pytest.mark.parametrize("theme", ("dark", "light", "navy", "warm"))
 def test_image_page_fits_supported_small_workspace_without_scrolling(
     app: QApplication,
     theme: str,
@@ -169,6 +194,12 @@ def test_image_page_fits_supported_small_workspace_without_scrolling(
         app.processEvents()
         page = dialog._export_page_scrolls[1]
         assert page.horizontalScrollBar().maximum() == 0
+        # Compact content names keep every checkbox legible, rather than
+        # merely hiding the horizontal scrollbar over cropped labels.
+        for control in (dialog._measurement_overlay, dialog._scale_overlay,
+                        dialog._combined_overlay, dialog._construction_geometry,
+                        dialog._watermark):
+            assert control.width() >= control.sizeHint().width()
         for export_format in RasterExportFormat:
             dialog._image_format_combo.setCurrentIndex(
                 dialog._image_format_combo.findData(export_format)

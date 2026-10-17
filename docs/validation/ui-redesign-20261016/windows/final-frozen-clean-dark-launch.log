@@ -1,0 +1,450 @@
+C:\tmp\fdm-cu-live-ui-redesign-20261016\build\ui-redesign-final\frozen-clean-dark\20261016-181948-16bf39893f1549128d89fdb552d1d10d\result.json
+{
+    "schema":  2,
+    "started_at":  "2026-10-16T18:19:48.2742065+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\dist\\windows\\installer-payload\\{app}\\FiberDiameterMeasurement.exe",
+    "theme":  "dark",
+    "real_hardware":  false,
+    "legacy_project":  "",
+    "legacy_settings":  "",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d",
+    "config":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\isolated-config",
+    "pid":  9836,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "��Ʒ���",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��Ʒ����",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "������",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "�������",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "���ӳ�",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "����",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��¼",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "����",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��ѡ",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��ѡ",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "������Ŀ",
+                             "present":  true,
+                             "visible":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  true,
+    "unsaved_dialog":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "requested_client_size":  [
+                                  1366,
+                                  690
+                              ],
+    "observed_client_sizes":  [
+                                  {
+                                      "phase":  "01-main-before-menu",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "02-acquisition",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-0",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-1",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-2",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-3",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-4",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-5",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-6",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-7",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-8",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-9",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-10",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-11",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-12",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-13",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-14",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-15",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-16",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-17",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-18",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "main-entry-19",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "03-content-reentry",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "04-sidebar-��¼",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "04-sidebar-����",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "04-sidebar-����",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "acquisition-page-ֱ������",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "acquisition-page-ʵʱ�ɼ�",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "acquisition-page-��������",
+                                      "actual":  [
+                                                     1366,
+                                                     690
+                                                 ],
+                                      "requested":  [
+                                                        1366,
+                                                        690
+                                                    ]
+                                  }
+                              ],
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\04-sidebar-��¼-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\04-sidebar-����-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign-final\\frozen-clean-dark\\20261016-181948-16bf39893f1549128d89fdb552d1d10d\\04-sidebar-����-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "main_title":  "��΢��������̨",
+    "client_size":  [
+                        1366,
+                        690
+                    ],
+    "os_dpi":  192,
+    "screen_bounds":  [
+                          0,
+                          0,
+                          2582,
+                          1644
+                      ],
+    "available_geometry":  [
+                               0,
+                               0,
+                               2582,
+                               1548
+                           ],
+    "entry_action":  "InvokePattern",
+    "stable_navigation_verified":  true,
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-16T18:20:02.1511507+08:00"
+}
+
+[ WARN:0@4.887] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ WARN:0@0.003] global cap_ffmpeg_impl.hpp:1217 open VIDEOIO/FFMPEG: Failed list devices for backend dshow
+[ERROR:0@4.919] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.920] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.927] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.927] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.932] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@4.932] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@4.936] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range

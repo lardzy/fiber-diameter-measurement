@@ -334,7 +334,7 @@ class ExperimentSession:
 
     def __init__(self, *, id: str | None = None, name: str = "含量试验", sample_number: str = "",
                  sample_name: str = "", method: str = "GB/T 16988-2013", group_width: float = 2.5,
-                 grouped: bool = True, profile: str = "normal", save_images: bool = True,
+                 grouped: bool = True, profile: str = "normal", save_images: bool = False,
                  workspace_options: dict[str, str] | None = None) -> None:
         from .statistics import resolve_method, resolve_profile
         self.id = id or _id()

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/scripts/sync_cu_live_windows.py", line 39, in powershell
+    raise RuntimeError(f"Windows command failed ({result.returncode}):\n{result.stdout}\n{result.stderr}")
+RuntimeError: Windows command failed (255):
+
+PrlVmGuest_RunProgram: Unable to open new session in this virtual machine. Make sure your virtual machine has finished booting, runs the latest version of Parallels Tools, and is not isolated from the host OS.
+

@@ -557,18 +557,30 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
     def test_responsive_geometry_matrix_keeps_explicit_commands_reachable(self) -> None:
         window = self._window()
         window.show()
-        for width, height, compact, command_style in (
-            (1093, 576, True, Qt.ToolButtonStyle.ToolButtonIconOnly),
-            (1280, 720, False, Qt.ToolButtonStyle.ToolButtonIconOnly),
-            (1536, 864, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
-            (1920, 1000, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
-            (2048, 1152, False, Qt.ToolButtonStyle.ToolButtonTextBesideIcon),
+        for width, height, compact in (
+            (1093, 576, True),
+            (1280, 720, False),
+            (1366, 768, False),
+            (1536, 864, False),
+            (1920, 1000, False),
+            (2048, 1152, False),
         ):
             with self.subTest(size=(width, height)):
                 window.resize(width, height)
                 self.app.processEvents()
                 self.assertEqual(window._adaptive_layout.is_compact, compact)
-                self.assertEqual(window._file_toolbar.toolButtonStyle(), command_style)
+                self.assertEqual(
+                    window._file_toolbar.toolButtonStyle(),
+                    Qt.ToolButtonStyle.ToolButtonTextBesideIcon,
+                )
+                # Width changes may move secondary shortcuts into More, but
+                # primary navigation must always retain visible labels.
+                for button in window._workspace_buttons:
+                    self.assertTrue(button.isVisible(), button.text())
+                    self.assertEqual(
+                        button.toolButtonStyle(),
+                        Qt.ToolButtonStyle.ToolButtonTextBesideIcon,
+                    )
                 self.assertGreaterEqual(window.tab_widget.width(), 560)
                 self.assertEqual(
                     window._inspector_scroll.horizontalScrollBarPolicy(),
@@ -578,8 +590,8 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                     window._inspector_scroll.verticalScrollBarPolicy(),
                     Qt.ScrollBarPolicy.ScrollBarAsNeeded,
                 )
-                self.assertIsNotNone(window.findChild(QToolButton, "openCommandButton"))
-                self.assertIsNotNone(window.findChild(QToolButton, "moreCommandButton"))
+                self.assertTrue(window.findChild(QToolButton, "openCommandButton").isVisible())
+                self.assertTrue(window.findChild(QToolButton, "moreCommandButton").isVisible())
 
     def test_main_command_bar_never_overflows_preferences_or_critical_commands(self) -> None:
         window = self._window()
@@ -587,17 +599,18 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
 
         critical_actions = (
             window.save_project_action,
-            window.undo_action,
-            window.redo_action,
             window.measure_workspace_action,
-            window.live_preview_action,
+            window.acquisition_workspace_action,
             window.digital_slide_action,
-            window.export_template_action,
-            window.export_overlay_action,
-            window.capture_frame_action,
             window.settings_action,
+            window.command_search_action,
         )
-        for width, height in ((1093, 576), (1280, 720), (1600, 900)):
+        menu_commands = (
+            (window._export_command_button, (window.export_template_action, window.export_overlay_action)),
+            (window._panel_command_button, (window.toggle_project_panel_action, window.toggle_inspector_panel_action, window.toggle_results_panel_action)),
+            (window._more_command_button, (window.undo_action, window.redo_action, window.capture_frame_action, window.switch_capture_device_action)),
+        )
+        for width, height in ((1093, 576), (1280, 720), (1366, 768), (1600, 900)):
             with self.subTest(size=(width, height)):
                 window.resize(width, height)
                 self.app.processEvents()
@@ -612,6 +625,32 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                     self.assertIsNotNone(button, action.text())
                     self.assertTrue(button.isVisible(), action.text())
                     self.assertFalse(button.isHidden(), action.text())
+                    self.assertEqual(button.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+                    self.assertTrue(toolbar.rect().contains(button.mapTo(toolbar, button.rect().bottomRight())), action.text())
+
+                # Exercise each visible named menu at every width. A hidden
+                # toolbar wrapper must never hide its shared QAction here.
+                for button, actions in menu_commands:
+                    self.assertTrue(button.isVisible(), button.text())
+                    self.assertTrue(toolbar.rect().contains(button.mapTo(toolbar, button.rect().bottomRight())), button.text())
+                    menu = button.menu()
+                    menu.popup(button.mapToGlobal(button.rect().bottomLeft()))
+                    self.app.processEvents()
+                    self.assertTrue(menu.isVisible(), button.text())
+                    for action in actions:
+                        self.assertIn(action, menu.actions())
+                        self.assertTrue(action.isVisible(), action.text())
+                        self.assertFalse(menu.actionGeometry(action).isEmpty(), action.text())
+                        self.assertTrue(menu.rect().contains(menu.actionGeometry(action)), action.text())
+                    menu.hide()
+                    self.app.processEvents()
+
+                for wrapper, button, action in window._command_bar_optional:
+                    self.assertIs(button.defaultAction(), action)
+                    self.assertTrue(action.isVisible(), action.text())
+                    if wrapper.isVisible():
+                        self.assertTrue(button.isVisible(), action.text())
+                        self.assertTrue(toolbar.rect().contains(button.mapTo(toolbar, button.rect().bottomRight())), action.text())
 
                 settings_button = window.findChild(QToolButton, "settingsCommandButton")
                 self.assertIs(settings_button, toolbar.widgetForAction(window.settings_action))
@@ -664,15 +703,18 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         window = self._window()
         content = window._inspector_scroll.widget()
         self.assertIs(content, window._inspector_content)
-        ordered = [content.layout().itemAt(index).widget() for index in range(6)]
+        scale_editor = content.layout().itemAt(0).widget()
+        self.assertEqual(scale_editor.objectName(), "scaleOverlayEditor")
+        self.assertTrue(scale_editor.isHidden())
+        ordered = [content.layout().itemAt(index).widget() for index in range(1, 7)]
         self.assertEqual(
             ordered,
             [
                 window._current_measurement_summary,
                 window._object_properties_section,
                 window._calibration_section,
-                window._records_section,
                 window._statistics_section,
+                window._records_section,
                 window._area_recognition_section,
             ],
         )
@@ -681,6 +723,16 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertTrue(window._records_section.isExpanded())
         self.assertFalse(window._area_recognition_section.isExpanded())
         self.assertFalse(window._object_properties_section.isExpanded())
+        self.assertEqual(
+            [widget for widget in ordered if not widget.isHidden()],
+            [
+                window._current_measurement_summary,
+                window._calibration_section,
+                window._statistics_section,
+                window._records_section,
+                window._area_recognition_section,
+            ],
+        )
 
     def test_inspector_sections_remain_contiguous_and_expansion_pushes_down(self) -> None:
         window = self._window()
@@ -694,8 +746,8 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         sections = (
             window._object_properties_section,
             window._calibration_section,
-            window._records_section,
             window._statistics_section,
+            window._records_section,
             window._area_recognition_section,
         )
 
@@ -817,18 +869,29 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertEqual(handle.cursor().shape(), Qt.CursorShape.SizeVerCursor)
 
     def test_workspace_mode_replaces_measurement_tools_with_acquisition_context(self) -> None:
-        window = self._window()
-        window._preview_active = True
-        window._sync_workspace_mode()
+        with patch("fdm.services.capture.available_capture_backends", return_value=[]):
+            window = self._window()
+        window.show()
+        window.acquisition_workspace_action.trigger()
+        self.app.processEvents()
         self.assertEqual(window._workspace_mode, WorkspaceMode.ACQUIRE)
+        self.assertIs(window._center_stack.currentWidget(), window._acquisition_workbench)
+        self.assertFalse(window._capture_manager.is_preview_active())
         self.assertFalse(window._measure_toolbar.isHidden())
         self.assertFalse(window._measurement_tool_strip.primaryToolsVisible())
         self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
         self.assertFalse(window._acquisition_right_panel.isHidden())
         self.assertTrue(window._right_standard_panel.isHidden())
-        window._preview_active = False
-        window._sync_workspace_mode()
+        # A no-device/stop callback updates capture state, not the user's route.
+        window._on_live_preview_state_changed(False)
+        self.app.processEvents()
+        self.assertEqual(window._workspace_mode, WorkspaceMode.ACQUIRE)
+        self.assertIs(window._center_stack.currentWidget(), window._acquisition_workbench)
+        window.measure_workspace_action.trigger()
+        self.app.processEvents()
         self.assertEqual(window._workspace_mode, WorkspaceMode.MEASURE)
+        # With no document, the measurement route displays its welcome page.
+        self.assertIs(window._center_stack.currentWidget(), window._welcome_panel)
         self.assertTrue(window._measurement_tool_strip.primaryToolsVisible())
         self.assertTrue(window._acquisition_right_panel.isHidden())
         self.assertFalse(window._right_standard_panel.isHidden())

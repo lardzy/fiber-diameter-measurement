@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import queue
+import threading
+import time
 import sys
 import tempfile
 from pathlib import Path
@@ -76,87 +80,88 @@ def _run_list() -> int:
 
 
 def _run_preview(args) -> int:
-    backend = MicroviewCaptureBackend()
-    target = _PreviewTarget(args.preview_hwnd, args.preview_width, args.preview_height)
-    device = _device(args.device_index)
+    from fdm.services.microview_transport import FramePublisher
+    backend = MicroviewCaptureBackend(frame_tap=True)
+    publisher = None
+    commands = queue.Queue()
+    control_closed = threading.Event()
+    stage = "open_device"
+    def enqueue_command(payload):
+        if control_closed.is_set():
+            return
+        commands.put(payload)
+        # Retain the tap across wake(). Even if stop_preview releases the
+        # backend reference concurrently, its event cannot be destroyed here.
+        tap = backend._frame_tap
+        if tap is not None:
+            tap.wake()
+    def read_commands():
+        try:
+            for line in sys.stdin:
+                try:
+                    payload = json.loads(line)
+                    if isinstance(payload, dict):
+                        enqueue_command(payload)
+                except json.JSONDecodeError:
+                    continue
+        finally:
+            enqueue_command({"command": "stop"})
+    threading.Thread(target=read_commands, name="microview-control", daemon=True).start()
     try:
-        backend.start_preview(
-            device,
-            preview_target=target,
+        target = _PreviewTarget(args.preview_hwnd, args.preview_width, args.preview_height)
+        backend.set_native_preview_visible(bool(args.native_preview_visible))
+        backend.start_preview(_device(args.device_index), preview_target=target,
             frame_callback=lambda image: None,
-            error_callback=lambda message: _emit({"type": "error", "message": message}),
-        )
-        resolution = backend.preview_resolution(device)
-        _emit(
-            {
-                "type": "started",
-                "resolution": list(resolution) if resolution is not None else [],
-                "warning": backend.active_warning(),
-                "board_type": int(backend._board_type or 0),
-            }
-        )
-        for raw_line in sys.stdin:
-            line = raw_line.strip()
-            if not line:
-                continue
+            error_callback=lambda message: _emit({"type": "error", "stage": stage, "message": message}))
+        stage = "await_complete_frame"
+        publisher = FramePublisher(backend, _emit)
+        announced = False
+        last_frame = time.perf_counter()
+        while True:
             try:
-                payload = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if not isinstance(payload, dict):
-                continue
-            command = str(payload.get("command", "")).strip()
-            if command == "stop":
+                command = commands.get_nowait()
+            except queue.Empty:
+                command = {}
+            kind = command.get("command")
+            if kind == "stop":
                 break
-            if command == "update_target":
-                try:
-                    target = _PreviewTarget(
-                        int(payload.get("hwnd", 0)),
-                        int(payload.get("width", 1)),
-                        int(payload.get("height", 1)),
-                    )
-                    backend.update_preview_target(target)
-                except Exception as exc:  # noqa: BLE001
-                    _emit({"type": "error", "message": f"Microview 预览目标更新失败: {exc}"})
-            if command == "snapshot":
-                request_id = int(payload.get("request_id", 0))
-                try:
-                    frame = backend._capture_single_frame_image(handle=backend._device_handle, process=False)
-                except Exception as exc:  # noqa: BLE001
-                    _emit({"type": "snapshot_error", "request_id": request_id, "message": str(exc)})
-                    continue
-                if frame.isNull():
-                    _emit(
-                        {
-                            "type": "snapshot_error",
-                            "request_id": request_id,
-                            "message": backend.last_capture_diagnostics() or "Microview 分析帧抓取失败。",
-                        }
-                    )
-                    continue
-                try:
-                    image_path = _save_temp_png(frame)
-                except Exception as exc:  # noqa: BLE001
-                    _emit({"type": "snapshot_error", "request_id": request_id, "message": str(exc)})
-                    continue
-                _emit(
-                    {
-                        "type": "snapshot",
-                        "request_id": request_id,
-                        "image_path": str(image_path),
-                        "width": frame.width(),
-                        "height": frame.height(),
-                    }
-                )
+            if kind == "ack":
+                publisher.acknowledge(command["sequence"])
+            elif kind == "update_target":
+                backend.update_preview_target(_PreviewTarget(int(command["hwnd"]),
+                    int(command["width"]), int(command["height"])))
+            elif kind == "native_preview_visible":
+                backend.set_native_preview_visible(bool(command["visible"]))
+            if publisher.publish():
+                last_frame = time.perf_counter()
+                if not announced:
+                    announced = True
+                    stage = "streaming"
+                    _emit({"type": "started", "resolution": list(backend._preview_resolution or ()),
+                           "warning": backend.active_warning(), "board_type": int(backend._board_type or 0)})
+            if time.perf_counter() - last_frame > (5 if not announced else 3):
+                diagnostic = backend._frame_tap.diagnostics()
+                raise TimeoutError("未收到有效完整帧或接收端未确认帧；" + json.dumps(diagnostic, allow_nan=False))
+            if commands.empty():
+                # Native callbacks and control input share a retained wake.
+                # The timeout is only for the disconnect watchdog; frame
+                # delivery never waits for a 3 ms Windows polling timer.
+                backend._frame_tap.wait(100)
         return 0
-    except Exception as exc:  # noqa: BLE001
-        _emit({"type": "error", "message": str(exc)})
+    except Exception as exc:
+        _emit({"type": "error", "stage": stage, "message": f"Microview [{stage}]: {exc}"})
         return 1
     finally:
+        control_closed.set()
+        # On failed SDK retirement the process owns all callback memory until
+        # termination. Never unload DLLs or unmap buffers underneath a writer.
         try:
             backend.stop_preview()
-        except Exception:
-            pass
+        except Exception as exc:
+            _emit({"type": "error", "stage": "stop_device", "message": str(exc)})
+            os._exit(2)
+        if publisher is not None:
+            publisher.close()
 
 
 def _run_capture(args) -> int:
@@ -216,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("--preview-hwnd", type=int, required=True)
     preview.add_argument("--preview-width", type=int, required=True)
     preview.add_argument("--preview-height", type=int, required=True)
+    preview.add_argument("--native-preview-visible", type=int, choices=(0, 1), default=1)
 
     capture = subparsers.add_parser("capture")
     capture.add_argument("--device-index", type=int, required=True)

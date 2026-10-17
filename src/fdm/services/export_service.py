@@ -71,7 +71,7 @@ class ExportSelection:
     include_scale_json: bool = False
     include_excel: bool = False
     include_csv: bool = False
-    scope: str = ExportScope.CURRENT
+    scope: str = ExportScope.ALL_OPEN
     render_mode: str = ExportImageRenderMode.FULL_RESOLUTION
     raw_record_template_path: str = ""
     image_encoding: RasterEncodingOptions = field(
@@ -82,7 +82,7 @@ class ExportSelection:
     include_annotations: bool = True
 
     @classmethod
-    def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
+    def all_enabled(cls, *, scope: str = ExportScope.ALL_OPEN) -> "ExportSelection":
         return cls(
             include_measurement_overlay=True,
             include_scale_overlay=True,

@@ -1,0 +1,22 @@
+{"verified_files": 1921, "destination": "C:\\tmp\\fdm-cu-live-ui-redesign-20261016", "head": "006035ad81f7b188632ada1a12ad746849bcc019"}
+{"snapshot_files": 1921, "zip_sha256": "bf03e55c1fdb6d6eb3c74a0def16bad4b384c9c09432ed196f51bd5698e5e339", "http_server_stopped": true}
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.14.41
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+running build_ext
+building 'fdm._native._kernels' extension
+cu_automatic.cpp
+cu_manual.cpp
+kernels.cpp
+  ���ڴ����� build\temp.win-amd64-cpython-312\Release\native\_kernels.cp312-win_amd64.lib �Ͷ��� build\temp.win-amd64-cpython-312\Release\native\_kernels.cp312-win_amd64.exp
+�������ɴ���
+����ɴ��������
+building 'fdm._native._microview' extension
+microview_bridge.cpp
+  ���ڴ����� build\temp.win-amd64-cpython-312\Release\native\_microview.cp312-win_amd64.lib �Ͷ��� build\temp.win-amd64-cpython-312\Release\native\_microview.cp312-win_amd64.exp
+�������ɴ���
+����ɴ��������
+copying build\lib.win-amd64-cpython-312\fdm\_native\_kernels.cp312-win_amd64.pyd -> src\fdm\_native
+copying build\lib.win-amd64-cpython-312\fdm\_native\_microview.cp312-win_amd64.pyd -> src\fdm\_native

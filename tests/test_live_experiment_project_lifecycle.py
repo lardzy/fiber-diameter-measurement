@@ -19,16 +19,18 @@ def test_last_document_does_not_drop_experiment_only_project():
 def test_project_transition_stops_live_producer_before_save_confirmation():
     events = []
     host = SimpleNamespace(project=ProjectState.empty(),
-        _close_live_experiment=lambda: events.append('stop') or True,
+        _prepare_live_experiment_close=lambda: events.append('stop') or True,
+        _close_live_experiment=lambda **_: events.append('dispose') or True,
+        _resume_live_experiment_after_cancel=lambda: events.append('resume'),
         _confirm_close_documents=lambda docs: events.append('confirm') or True)
     assert MainWindow._confirm_close_documents_for_transition(host, [], None)
-    assert events == ['stop', 'confirm']
+    assert events == ['stop', 'confirm', 'dispose']
 
 
 def test_pending_evidence_blocks_transition_before_confirmation():
     confirm = Mock()
     host = SimpleNamespace(project=ProjectState.empty(),
-        _close_live_experiment=lambda: False, _confirm_close_documents=confirm)
+        _prepare_live_experiment_close=lambda: False, _confirm_close_documents=confirm)
     assert not MainWindow._confirm_close_documents_for_transition(host, [], None)
     confirm.assert_not_called()
 
@@ -38,7 +40,7 @@ def test_reset_workspace_does_not_drop_pending_live_evidence():
     project = ProjectState.empty()
     coordinator = SimpleNamespace(busy=False, reset=Mock())
     host = SimpleNamespace(project=project, project_save_coordinator=coordinator,
-                           _close_live_experiment=lambda: False)
+                           _close_live_experiment=lambda **_: False)
     with pytest.raises(RuntimeError, match='实时试验'):
         MainWindow._reset_workspace(host)
     assert host.project is project

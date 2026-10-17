@@ -1,0 +1,2504 @@
+{
+  "schema_version": 1,
+  "tool_sha256": "cbb7bb47d70eb02a42664965fec8412d31ec21d6d8ed0aef6cf7aef99a06935a",
+  "rules_path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/cu-live-measurement-2026-10-15/performance-acceptance-rules.md",
+  "rules_sha256": "58bb3372a5827143b18cbeb2151c44b940300020cd57e28154b4e59ae11d24f4",
+  "files": [
+    {
+      "path": "docs/validation/ui-redesign-20261016/performance/cu-ui-stable.json",
+      "status": "READ",
+      "sha256": "d81a4f64b763b1cf946dc51a9f0e077cf63484c2ae28ba724ee8ea1a1901b893"
+    },
+    {
+      "path": "docs/validation/ui-redesign-20261016/performance/cu-ui-dynamic.json",
+      "status": "READ",
+      "sha256": "72cbf3ec5ba20715ba005de0458787523bf7e54637f44d770cad0abc245f5493"
+    }
+  ],
+  "ui_cases": [
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-stable.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 2048,
+      "png": false,
+      "input": "stable",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          2048,
+          1365
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "bcace1954e45dc0ca6db488e9135b1f199dc22c9ededf5dc59ba739bc64d9a75",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.9942499784519896,
+          "p95_ms": 2.7932789671467617,
+          "p99_ms": 3.4767256371560515,
+          "max_ms": 3.7522499915212393,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 6.8806045019300655,
+          "p95_ms": 8.379489408980588,
+          "p99_ms": 8.805049242801033,
+          "max_ms": 8.865332987625152,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.3684580005938187,
+          "p95_ms": 0.46014199906494463,
+          "p99_ms": 0.5686432321090252,
+          "max_ms": 0.6089169764891267,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 3.6306874972069636,
+          "p95_ms": 4.8740665981313205,
+          "p99_ms": 5.223777951032389,
+          "max_ms": 5.334666988346726,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 3.0384584970306605,
+          "p95_ms": 3.6266415540012527,
+          "p99_ms": 3.759777354716789,
+          "max_ms": 3.782082989346236,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.7396460025338456,
+          "p95_ms": 3.6594267352484158,
+          "p99_ms": 4.08141745487228,
+          "max_ms": 4.189333994872868,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 30.03583707685189,
+        "painted": 30.339229370557465
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 2.7932789671467617,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 3.4767256371560515,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "PASS",
+          "actual": 8.379489408980588,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "PASS",
+          "actual": 8.805049242801033,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.6089169764891267,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.339229370557465,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 41932800,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        }
+      ],
+      "observed_threshold_status": "PASS",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "PASS"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-stable.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 2048,
+      "png": true,
+      "input": "stable",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          2048,
+          1365
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "bcace1954e45dc0ca6db488e9135b1f199dc22c9ededf5dc59ba739bc64d9a75",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.0003545068902895,
+          "p95_ms": 2.7246500074397773,
+          "p99_ms": 2.933599812386092,
+          "max_ms": 3.0110419902484864,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 7.112854509614408,
+          "p95_ms": 10.071618598885834,
+          "p99_ms": 10.136046426196117,
+          "max_ms": 10.139332996914163,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.5329375126166269,
+          "p95_ms": 0.7842501567210995,
+          "p99_ms": 0.9059310774318874,
+          "max_ms": 0.9150420082733035,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 3.6336664925329387,
+          "p95_ms": 5.4420163098257035,
+          "p99_ms": 5.48486101673916,
+          "max_ms": 5.493416014360264,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 3.439832988078706,
+          "p95_ms": 4.683808442496229,
+          "p99_ms": 5.084763000777457,
+          "max_ms": 5.2320830000098795,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.9714789959834889,
+          "p95_ms": 3.9058536596712643,
+          "p99_ms": 4.5609483117004865,
+          "max_ms": 4.74083298468031,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 30.230851469936358,
+        "painted": 30.533159984635724
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 2.7246500074397773,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 2.933599812386092,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "PASS",
+          "actual": 10.071618598885834,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "PASS",
+          "actual": 10.136046426196117,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.9150420082733035,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.533159984635724,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 37732522,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        }
+      ],
+      "observed_threshold_status": "PASS",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "PASS"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-stable.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 4096,
+      "png": false,
+      "input": "stable",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          4096,
+          2730
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "c2bdbfb9d7ef1ec32e2d116c781fd35d756b93d0e5f2b31f275afdba2eda5b49",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.047187488642521,
+          "p95_ms": 2.752596355276181,
+          "p99_ms": 3.0074293559300713,
+          "max_ms": 3.030749998288229,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 7.540062491898425,
+          "p95_ms": 9.167450011591427,
+          "p99_ms": 12.926955196016937,
+          "max_ms": 14.461333019426093,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.3833954979199916,
+          "p95_ms": 0.5868670079507864,
+          "p99_ms": 1.5372132571064878,
+          "max_ms": 1.9159170042257756,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 4.335312492912635,
+          "p95_ms": 6.036420812597496,
+          "p99_ms": 9.473235331824984,
+          "max_ms": 10.696250014007092,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 3.153478988679126,
+          "p95_ms": 3.882599851931445,
+          "p99_ms": 4.157019627746195,
+          "max_ms": 4.2298339831177145,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.971729001728818,
+          "p95_ms": 5.297329371387604,
+          "p99_ms": 7.7013859443832215,
+          "max_ms": 8.631875010905787,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 29.88467271167499,
+        "painted": 30.186538092601
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 2.752596355276181,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 3.0074293559300713,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "PASS",
+          "actual": 9.167450011591427,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "PASS",
+          "actual": 12.926955196016937,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 1.9159170042257756,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.186538092601,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 167731200,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        }
+      ],
+      "observed_threshold_status": "PASS",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "PASS"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-stable.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 4096,
+      "png": true,
+      "input": "stable",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          4096,
+          2730
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "c2bdbfb9d7ef1ec32e2d116c781fd35d756b93d0e5f2b31f275afdba2eda5b49",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.346708508208394,
+          "p95_ms": 1.7112605914007872,
+          "p99_ms": 1.729933425958734,
+          "max_ms": 1.731625001411885,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 6.044104506145231,
+          "p95_ms": 7.570622554339934,
+          "p99_ms": 10.428299037739638,
+          "max_ms": 11.571709008421749,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.40443749458063394,
+          "p95_ms": 0.4551878038910217,
+          "p99_ms": 0.5322414386318998,
+          "max_ms": 0.5585830076597631,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 3.096521002589725,
+          "p95_ms": 4.557037653285077,
+          "p99_ms": 6.643943566014061,
+          "max_ms": 7.411041995510459,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.8716660162899643,
+          "p95_ms": 3.806243586586788,
+          "p99_ms": 4.08630607475061,
+          "max_ms": 4.16066701291129,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.058250000118278,
+          "p95_ms": 3.93103965325281,
+          "p99_ms": 4.53660060564289,
+          "max_ms": 4.757374990731478,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 30.06769949330984,
+        "painted": 30.374512753445654
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 1.7112605914007872,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 1.729933425958734,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "PASS",
+          "actual": 7.570622554339934,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "PASS",
+          "actual": 10.428299037739638,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.5585830076597631,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.374512753445654,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 167731200,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        }
+      ],
+      "observed_threshold_status": "PASS",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "PASS"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-dynamic.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 2048,
+      "png": false,
+      "input": "lsb-noise",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          2048,
+          1365
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "9b7993594d8c9bec005df78f9c9d1ea4c9d79bf580c39692a67f8eb4850395b7",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.1438545043347403,
+          "p95_ms": 1.2904374962090515,
+          "p99_ms": 1.4636241039261224,
+          "max_ms": 1.5309159934986383,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 14.686542024719529,
+          "p95_ms": 26.912789401831102,
+          "p99_ms": 27.419512465421576,
+          "max_ms": 27.475084003526717,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.2920830011134967,
+          "p95_ms": 0.3068337042350322,
+          "p99_ms": 0.32439667265862226,
+          "max_ms": 0.33141698804683983,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 12.167229011538438,
+          "p95_ms": 24.326252065657172,
+          "p99_ms": 24.726771400892176,
+          "max_ms": 24.791792005999014,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.55229149479419,
+          "p95_ms": 2.790201887546573,
+          "p99_ms": 2.818251556600444,
+          "max_ms": 2.823374990839511,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 11.504979003802873,
+          "p95_ms": 22.28721846913686,
+          "p99_ms": 23.209472322196234,
+          "max_ms": 23.49491699715145,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 29.95929993155984,
+        "painted": 30.244626597574698
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 1.2904374962090515,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 1.4636241039261224,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "PASS",
+          "actual": 26.912789401831102,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "PASS",
+          "actual": 27.419512465421576,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.33141698804683983,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.244626597574698,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 41932800,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        },
+        {
+          "name": "unique_sequence_marker",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        }
+      ],
+      "observed_threshold_status": "PASS",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "PASS"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-dynamic.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 2048,
+      "png": true,
+      "input": "lsb-noise",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          2048,
+          1365
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "9b7993594d8c9bec005df78f9c9d1ea4c9d79bf580c39692a67f8eb4850395b7",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.0490835120435804,
+          "p95_ms": 1.4191170033882372,
+          "p99_ms": 2.323515921307263,
+          "max_ms": 2.6857499906327575,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 14.459375001024455,
+          "p95_ms": 24.44779754441697,
+          "p99_ms": 24.98840188840404,
+          "max_ms": 25.16499999910593,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.3587079845601693,
+          "p95_ms": 0.39194999990286306,
+          "p99_ms": 0.411529106204398,
+          "max_ms": 0.418790994444862,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 12.00708351098001,
+          "p95_ms": 22.012347546115052,
+          "p99_ms": 22.474779566400684,
+          "max_ms": 22.62983299442567,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.565645510912873,
+          "p95_ms": 2.8617921605473384,
+          "p99_ms": 2.8770223786705174,
+          "max_ms": 2.880333020584658,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 11.109957995358855,
+          "p95_ms": 21.138520662498195,
+          "p99_ms": 21.47333924571285,
+          "max_ms": 21.558707987423986,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 30.084035093310362,
+        "painted": 30.37054971324665
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 1.4191170033882372,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 2.323515921307263,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "PASS",
+          "actual": 24.44779754441697,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "PASS",
+          "actual": 24.98840188840404,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.418790994444862,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.37054971324665,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 50319360,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        },
+        {
+          "name": "unique_sequence_marker",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        }
+      ],
+      "observed_threshold_status": "PASS",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "PASS"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-dynamic.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 4096,
+      "png": false,
+      "input": "lsb-noise",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          4096,
+          2730
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "a1befd2699d94d05351f2887e722c4ad64f35e16b82519cee704305f9b138a68",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 30,
+        "successful_and_painted": 30,
+        "failed_or_unfinished": 0,
+        "success_fraction": "30/30",
+        "formal_rejection_events": 0,
+        "warmup_or_unassigned_rejection_events": 0,
+        "rejection_reasons_all": {},
+        "failure_reasons": {}
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.080937494407408,
+          "p95_ms": 1.433912660286296,
+          "p99_ms": 1.5520726880640723,
+          "max_ms": 1.5825830050744116,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 202.1037914964836,
+          "p95_ms": 565.0099152582698,
+          "p99_ms": 806.0720477608268,
+          "max_ms": 904.0050840121694,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 0.2913124772021547,
+          "p95_ms": 0.37141264183446754,
+          "p99_ms": 0.4248223028844223,
+          "max_ms": 0.4412919806782156,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 199.65168749331497,
+          "p95_ms": 563.3596501545981,
+          "p99_ms": 805.146667500085,
+          "max_ms": 903.0236249964219,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 2.4521040031686425,
+          "p95_ms": 2.763648249674588,
+          "p99_ms": 3.2814309408422564,
+          "max_ms": 3.4730000188574195,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 199.4866879977053,
+          "p95_ms": 562.9513955005677,
+          "p99_ms": 804.8018442603645,
+          "max_ms": 902.7957080106717,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 29.998277847643692,
+        "painted": 30.093813764355936
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 1.433912660286296,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 1.5520726880640723,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "FAIL",
+          "actual": 565.0099152582698,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "FAIL",
+          "actual": 806.0720477608268,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.4412919806782156,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.093813764355936,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 201277440,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "ge",
+          "expected": 30
+        },
+        {
+          "name": "unique_sequence_marker",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        }
+      ],
+      "observed_threshold_status": "FAIL",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "FAIL"
+    },
+    {
+      "file": "docs/validation/ui-redesign-20261016/performance/cu-ui-dynamic.json",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "qt_platform": "offscreen",
+      "width": 4096,
+      "png": true,
+      "input": "lsb-noise",
+      "background": null,
+      "background_completion": null,
+      "display": {
+        "window_size": [
+          1366,
+          768
+        ],
+        "canvas_size": [
+          4096,
+          2730
+        ],
+        "device_pixel_ratio": 1.0,
+        "logical_dpi": 96.0,
+        "screen_size": [
+          800,
+          800
+        ]
+      },
+      "environment_key": "a1befd2699d94d05351f2887e722c4ad64f35e16b82519cee704305f9b138a68",
+      "formal_eligibility": "PASS",
+      "formal_eligibility_checks": [
+        {
+          "name": "warmup_attempts",
+          "status": "PASS",
+          "actual": 5,
+          "operator": "eq",
+          "expected": 5
+        },
+        {
+          "name": "formal_attempts_requested",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "all_formal_attempts_recorded",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        }
+      ],
+      "attempts": {
+        "planned_formal": 30,
+        "recorded_formal": 30,
+        "accepted": 28,
+        "successful_and_painted": 28,
+        "failed_or_unfinished": 2,
+        "success_fraction": "28/30",
+        "formal_rejection_events": 2,
+        "warmup_or_unassigned_rejection_events": 1,
+        "rejection_reasons_all": {
+          "视场核验超过两秒，本次结果未入账；请等待视场稳定后重试。": 3
+        },
+        "failure_reasons": {
+          "measurement_rejected": 2
+        }
+      },
+      "metrics": {
+        "draft": {
+          "count": 30,
+          "observations": null,
+          "p50_ms": 1.1085419973824173,
+          "p95_ms": 1.3089189058518969,
+          "p99_ms": 1.3618485743063502,
+          "max_ms": 1.3801669992972165,
+          "exact_max_ms": null
+        },
+        "result_visible": {
+          "count": 28,
+          "observations": null,
+          "p50_ms": 232.23520800820552,
+          "p95_ms": 1047.812835409422,
+          "p99_ms": 1397.2934276686285,
+          "max_ms": 1495.877459004987,
+          "exact_max_ms": null
+        },
+        "gui_publish": {
+          "count": 28,
+          "observations": null,
+          "p50_ms": 0.37868750223424286,
+          "p95_ms": 0.42789134313352406,
+          "p99_ms": 0.4878060726332479,
+          "max_ms": 0.5091250059194863,
+          "exact_max_ms": null
+        },
+        "accepted": {
+          "count": 28,
+          "observations": null,
+          "p50_ms": 229.41074951086193,
+          "p95_ms": 1045.1578001928278,
+          "p99_ms": 1394.5448927508553,
+          "max_ms": 1493.1097090011463,
+          "exact_max_ms": null
+        },
+        "accept_to_paint": {
+          "count": 28,
+          "observations": null,
+          "p50_ms": 2.696895520784892,
+          "p95_ms": 3.3253750953008416,
+          "p99_ms": 3.682405672443565,
+          "max_ms": 3.7593329907394946,
+          "exact_max_ms": null
+        },
+        "compute_to_accept": {
+          "count": 28,
+          "observations": null,
+          "p50_ms": 228.8953334937105,
+          "p95_ms": 1044.4041711423774,
+          "p99_ms": 1393.4032814984678,
+          "max_ms": 1491.9480840035249,
+          "exact_max_ms": null
+        }
+      },
+      "fps": {
+        "requested": 30,
+        "generated": 30.040043418754575,
+        "painted": 30.094562553815837
+      },
+      "checks": [
+        {
+          "name": "draft_p95_ms",
+          "status": "PASS",
+          "actual": 1.3089189058518969,
+          "operator": "le",
+          "expected": 16.7
+        },
+        {
+          "name": "draft_p99_ms",
+          "status": "PASS",
+          "actual": 1.3618485743063502,
+          "operator": "le",
+          "expected": 33
+        },
+        {
+          "name": "result_visible_p95_ms",
+          "status": "FAIL",
+          "actual": 1047.812835409422,
+          "operator": "le",
+          "expected": 50
+        },
+        {
+          "name": "result_visible_p99_ms",
+          "status": "FAIL",
+          "actual": 1397.2934276686285,
+          "operator": "le",
+          "expected": 100
+        },
+        {
+          "name": "gui_publish_max_ms",
+          "status": "PASS",
+          "actual": 0.5091250059194863,
+          "operator": "le",
+          "expected": 4
+        },
+        {
+          "name": "supported_width",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "formal_failures",
+          "status": "FAIL",
+          "actual": 2,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "all_rejection_events_including_warmup",
+          "status": "FAIL",
+          "actual": 3,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "input_requested_hz",
+          "status": "PASS",
+          "actual": 30,
+          "operator": "eq",
+          "expected": 30
+        },
+        {
+          "name": "distinct_painted_fps",
+          "status": "PASS",
+          "actual": 30.094562553815837,
+          "operator": "ge",
+          "expected": 27
+        },
+        {
+          "name": "producer_errors",
+          "status": "PASS",
+          "actual": 0,
+          "operator": "eq",
+          "expected": 0
+        },
+        {
+          "name": "frame_budget_peak_bytes",
+          "status": "PASS",
+          "actual": 205463637,
+          "operator": "le",
+          "expected": 536870912
+        },
+        {
+          "name": "raw_trials_match_draft",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_result_visible",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_gui_publish",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accepted",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_accept_to_paint",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "raw_trials_match_compute_to_accept",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        },
+        {
+          "name": "gui_samples_cover_accepts",
+          "status": "PASS",
+          "actual": 28,
+          "operator": "ge",
+          "expected": 28
+        },
+        {
+          "name": "unique_sequence_marker",
+          "status": "PASS",
+          "actual": true,
+          "operator": "eq",
+          "expected": true
+        }
+      ],
+      "observed_threshold_status": "FAIL",
+      "relative_png_auto": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Applies only to PNG enabled plus background automatic."
+      },
+      "source_sha256": {
+        "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+        "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+        "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+        "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+        "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+        "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+        "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+        "src/fdm/live_experiment/calibration_store.py": "f8a56da1b5c808e31f3c366e0baa9451bc4204b5acbfc6d1f01178b745424468",
+        "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+        "src/fdm/live_experiment/controller.py": "a2c79315a3ad689514112c14881e779fc52461132f16d85eae472da17bd228ed",
+        "src/fdm/live_experiment/evidence.py": "280d777756dac84ad2c8ca46be7840d5f911da77095673c7233d35e091e84ece",
+        "src/fdm/live_experiment/excel_template.py": "37447d2d3d2745eb8fe595c1b858a74974e6b502579484f76bcc2c9bf58b53e4",
+        "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+        "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+        "src/fdm/live_experiment/models.py": "ea748a9a66d7743a786feae04dde9e144a8b7c27dd24e70d475b02446c18a34a",
+        "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+        "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+        "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+        "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+        "src/fdm/live_experiment/project_assets.py": "8ff028f33752bb4eebe83c7641890af49893b44c6ed57b17ffa270c114fc12f5",
+        "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+        "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+        "src/fdm/services/cu_manual_measurement.py": "eb4564132aa4350858dd906bfa381b583f04eb1ed115b5c78a4257352f6f1561",
+        "src/fdm/services/cu_automatic_measurement.py": "19797517664752e95ca3d6527901cfbc15297f35e82a3a7756167354db823269",
+        "src/fdm/services/cu_automatic_worker.py": "c71442dba3fc58a93b3c7c6e4c24ffe33526b7f327d59d1fd5b20c964c5ce3a8",
+        "src/fdm/ui/live_experiment_workspace.py": "94b156ce69279cd76fd64cbc59036eb42e840667665525e1aab6d3fda1ff3961",
+        "src/fdm/ui/live_experiment_view.py": "35ff60585a8596cce75fc7d8ec8f6fb024d6239d7bb648a3b46c288387991f1a",
+        "src/fdm/ui/icons.py": "2b3db4ace1192e187ece2041fc6d03e7637ecde6fc79dff3c1b2d1e155a449df",
+        "src/fdm/ui/theme.py": "3b8b3a71c33d826c177ae1c725813020189fac9c924a89443d97977286edbd64",
+        "scripts/benchmark_cu_live_ui.py": "4eeb32cc5d754a25fd2cf0ce542fed240f4ccf9f13610e966d8e61e241478188",
+        "scripts/benchmark_cu_live_measurement.py": "54537979da744849755d2999a671111193f3b4d1bfdc1124314ae8220b485009",
+        "scripts/validation/gui_publish_profile.py": "19e4babfa8fbf6fc570b8553ac62bc986e4b73c7043f556e0628c1ad769136c2",
+        "scripts/validation/gui_resource_sampler.py": "4492a354d6de55515ad52930ea3fdb37eb9d72b267934e61db011ff3c5ee5b33"
+      },
+      "notes": [
+        "Success-only latency quantiles do not erase failed attempts.",
+        "Synthetic Qt paints do not measure camera or physical scan-out."
+      ],
+      "overall_status": "FAIL"
+    }
+  ],
+  "soaks": [],
+  "limits": [
+    "Only reads supplied result JSON. No test, benchmark, CV2, Qt, subprocess or network is executed.",
+    "No independent verification that benchmarks ran without concurrent host/VM workloads; review run logs.",
+    "Windows ARM64/x64 emulation and physical hardware boundaries still require human contextual review.",
+    "P99 relative increase is diagnostic only; the hard relative condition applies to P95."
+  ],
+  "summary": {
+    "ui_cases": 8,
+    "ui_status_counts": {
+      "PASS": 6,
+      "FAIL": 2
+    },
+    "soak_status_counts": {},
+    "missing_or_invalid_files": 0,
+    "background_algorithms_observed": [],
+    "multiscale_concurrent_coverage": "NOT_TESTED; do not infer from traditional",
+    "real_qt_soak_reports_observed": 0,
+    "one_hour_duration_reports_observed": 0
+  }
+}

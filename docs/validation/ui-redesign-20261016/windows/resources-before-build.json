@@ -1,0 +1,45 @@
+{
+  "resources": [
+    {
+      "path": "runtime/camera/microview/x64/MVAPI.dll",
+      "bytes": 145408,
+      "sha256": "1d22ce270ea4aa37fb1073943a707c82f44f255164e480e1877d606b531933ea"
+    },
+    {
+      "path": "runtime/camera/microview/x64/saa7130.dll",
+      "bytes": 131072,
+      "sha256": "cbb60864f7c2526ce32515132bc04b89eb2c5e177ec5af62804e8b68e7cb6315"
+    },
+    {
+      "path": "runtime/content-templates/-面积法-定量试验原始记录-新系统.xls",
+      "bytes": 218624,
+      "sha256": "425fde3551e232fcb4bef7dbf453bc720f746409aff252416e4eee73bdf5ede1"
+    },
+    {
+      "path": "runtime/content-templates/sheet.xlt",
+      "bytes": 2307072,
+      "sha256": "2ecc9cdd777ee37b8555192ce612becb205d252f390b296775d6063973d108a0"
+    },
+    {
+      "path": "runtime/content-templates/.DS_Store",
+      "bytes": 6148,
+      "sha256": "da01b5f08e68b0e08487a2fa1fbad8ad7c1872649ae9d041c6ba409bf579e8cf"
+    },
+    {
+      "path": "runtime/content-templates/副本-面积法-定量试验原始记录-新系统.xlsm",
+      "bytes": 108917,
+      "sha256": "76df6ac421d6d741eb0f0bfd6c93b5b99cef400145ff786e14f903c6439f165d"
+    }
+  ],
+  "previous_local_installer": {
+    "path": "dist/internal/save-publish-fix-20261016/FDM-0.4.8-save-publish-fix-20261016.exe",
+    "exists": false,
+    "action": "not modified"
+  },
+  "previous_vm_installer": {
+    "path": "C:\\Users\\lishuyang\\Downloads\\FDM-0.4.8-save-publish-fix-20261016.exe",
+    "bytes": 398859868,
+    "sha256": "bf7a32367b490e8510858bd3d9cc39b2262e41582ff33273b78001a582f3e403",
+    "action": "read-only verification; not modified"
+  }
+}

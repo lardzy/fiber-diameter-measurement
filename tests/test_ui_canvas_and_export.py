@@ -1598,7 +1598,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIn(captured_document.id, window._images)
         self.assertTrue(window._project_dirty())
 
-    def test_native_preview_switches_to_microview_host_surface(self) -> None:
+    def test_native_preview_uses_qt_surface_and_keeps_sdk_target_hidden(self) -> None:
         window = MainWindow()
         window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
         window._capture_manager.preview_resolution = lambda: (1760, 1328)  # type: ignore[method-assign]
@@ -1608,9 +1608,12 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNone(window.current_canvas())
         self.assertIsNotNone(window._preview_display_stack)
         self.assertIsNotNone(window._microview_preview_host)
-        self.assertIs(window._preview_display_stack.currentWidget(), window._microview_preview_scroll)
+        self.assertIs(window._preview_display_stack.currentWidget(), window._preview_canvas)
+        self.assertFalse(window._microview_preview_host.isVisible())
         self.assertEqual(window._microview_preview_host.size().width(), 1760)
         self.assertEqual(window._microview_preview_host.size().height(), 1328)
+        window._preview_active = False
+        window.close()
 
     def test_start_live_preview_applies_native_resolution_before_backend_start(self) -> None:
         window = MainWindow()
@@ -5053,17 +5056,21 @@ class CanvasAndExportTests(unittest.TestCase):
             window.show()
             self.app.processEvents()
 
-            self.assertEqual(window._file_toolbar.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+            self.assertEqual(window._file_toolbar.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             more_button = window._file_toolbar.findChild(QToolButton, "moreCommandButton")
             self.assertIsNotNone(more_button)
             self.assertTrue(more_button.isVisible())
             self.assertEqual(
                 [action for action in more_button.menu().actions() if not action.isSeparator()],
                 [
+                    window.undo_action,
+                    window.redo_action,
+                    window.capture_frame_action,
                     window.focus_workspace_action,
                     window.review_workspace_action,
                     window.fullscreen_measurement_action,
                     window.reset_workspace_layout_action,
+                    window.switch_capture_device_action,
                     window.optimize_capture_signal_action,
                     window.close_current_action,
                     window.close_all_action,
@@ -5078,20 +5085,20 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             for action in (
                 window.save_project_action,
-                window.undo_action,
-                window.redo_action,
                 window.measure_workspace_action,
-                window.live_preview_action,
+                window.acquisition_workspace_action,
                 window.digital_slide_action,
-                window.export_template_action,
-                window.export_overlay_action,
-                window.capture_frame_action,
                 window.settings_action,
             ):
                 self.assertTrue(any(
                     button.defaultAction() is action and button.isVisible()
                     for button in window._file_toolbar.findChildren(QToolButton)
                 ), action.text())
+            for action in (window.export_template_action, window.export_overlay_action):
+                self.assertIn(action, window._export_command_button.menu().actions())
+            for button in window._workspace_buttons:
+                self.assertTrue(button.text())
+                self.assertFalse(button.icon().isNull())
         finally:
             window.close()
 
@@ -7159,8 +7166,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window.resize(1600, 900)
             window.show()
             self.app.processEvents()
-            window._preview_active = True
-            window._sync_workspace_mode()
+            with patch.object(window, "start_live_preview"):
+                window.acquisition_workspace_action.trigger()
             window._update_preview_analysis_controls()
             self.app.processEvents()
 
@@ -7168,8 +7175,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._measurement_tool_strip.primaryToolsVisible())
             self.assertTrue(window._measurement_tool_strip.isContextInline())
 
-            window._preview_active = False
-            window._sync_workspace_mode()
+            window.measure_workspace_action.trigger()
             window._update_preview_analysis_controls()
 
             self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
@@ -7201,8 +7207,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(strip.isContextInline())
 
             window.set_tool_mode("select")
-            window._preview_active = True
-            window._sync_workspace_mode()
+            with patch.object(window, "start_live_preview"):
+                window.acquisition_workspace_action.trigger()
             window._update_magic_segment_controls()
             window._update_preview_analysis_controls()
             self.app.processEvents()

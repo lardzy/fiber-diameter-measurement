@@ -1,0 +1,30 @@
+{
+  "changes": [
+    {
+      "path": "src/fdm/ui/dialogs.py",
+      "size": 202044,
+      "sha256": "5ce6a8e3354dbe8d4414a451fb9f0e60ba973a2fff6190a5ec8583519104312d"
+    },
+    {
+      "path": "scripts/validation/probe_workflow_redesign_frozen.ps1",
+      "size": 27362,
+      "sha256": "45879042d9b94e043084b93116de196ecf0b39a314e5bf5f81eff85b42a59cd2"
+    }
+  ],
+  "verification": {
+    "production_files_verified": 419,
+    "manifest_sha256": "6340ee8d3a54985f58ddaa1e5f8286975a4de257749760241e98f98558461130",
+    "updates": [
+      {
+        "path": "src/fdm/ui/dialogs.py",
+        "before": "8ffae836c5bc722c1daa6cf1fdb20ff31d25342fe05d41f0e1b125e467649339",
+        "after": "5ce6a8e3354dbe8d4414a451fb9f0e60ba973a2fff6190a5ec8583519104312d"
+      },
+      {
+        "path": "scripts/validation/probe_workflow_redesign_frozen.ps1",
+        "before": "8c457d2cb253ef52567efe83977419a00fdfd8e8ecd45aabf4478f207b741d9f",
+        "after": "45879042d9b94e043084b93116de196ecf0b39a314e5bf5f81eff85b42a59cd2"
+      }
+    ]
+  }
+}

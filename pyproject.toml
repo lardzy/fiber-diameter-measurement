@@ -58,7 +58,9 @@ where = ["src"]
 version = {attr = "fdm.version.__version__"}
 
 [tool.setuptools.package-data]
+"fdm.ui" = ["assets/fluent/*.svg", "assets/fluent/LICENSE", "assets/fluent/NOTICE", "assets/fluent/manifest.json"]
 "fdm._native" = ["licenses/*.txt"]
+"fdm.live_experiment" = ["excel_template.ps1"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

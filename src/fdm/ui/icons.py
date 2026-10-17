@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from functools import lru_cache
+import math
+import re
 import sys
 from typing import Callable
 
-from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF
+from PySide6.QtCore import QByteArray, QPointF, QRect, QRectF, QSize, Qt, qVersion
+from PySide6.QtGui import QColor, QIcon, QIconEngine, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QApplication, QStyle
 
 from fdm.settings import bundle_resource_root
@@ -76,9 +80,116 @@ QT_AWESOME_NAMES: dict[str, str] = {
 }
 
 
+# A deliberately small, pinned, offline subset. See assets/fluent/manifest.json
+# for unmodified upstream file hashes and LICENSE/NOTICE for attribution.
+FLUENT_ICON_NAMES: dict[str, str] = {
+    "open_images": "image_multiple", "open_folder": "folder_open",
+    "open_project": "document_arrow_right", "save_project": "save",
+    "close_current": "dismiss", "close_all": "dismiss",
+    "capture_device": "video", "acquisition": "video", "realtime": "video",
+    "live_preview": "play", "start_capture": "play", "stop_capture": "stop",
+    "capture_frame": "camera", "digital_slide": "image_multiple",
+    "undo": "arrow_undo", "redo": "arrow_redo", "delete": "delete",
+    "add": "add", "rename": "edit", "fit": "arrow_expand",
+    "fullscreen": "full_screen_maximize",
+    "exit_fullscreen": "full_screen_minimize", "navigator": "map",
+    "export": "arrow_export", "settings": "settings", "search": "search",
+    "statistics": "data_histogram", "results": "table", "records": "clipboard_bullet_list",
+    "preset_add": "add", "preset_import": "document_arrow_right", "preset_apply": "checkmark",
+    "select": "cursor", "calibration": "ruler", "measurement": "microscope",
+    "content_trial": "beaker", "diameter_trial": "ruler", "microscope": "microscope",
+    "report": "document", "help": "question_circle", "next_field": "arrow_next",
+    "info": "info", "warning": "warning", "retry": "arrow_sync", "count": "number_symbol",
+    "digital_slide_start": "play", "digital_slide_stop": "stop", "direction_clear": "dismiss",
+}
+
+_SCALED_PIXMAP_SIZE_IS_PHYSICAL = tuple(int(part) for part in qVersion().split(".")[:2]) < (6, 8)
+
+
+@lru_cache(maxsize=64)
+def _fluent_svg(asset_name: str) -> bytes:
+    path = Path(__file__).resolve().parent / "assets" / "fluent" / f"{asset_name}_20_regular.svg"
+    try:
+        return path.read_bytes()
+    except OSError:
+        return b""
+
+
+class _VectorIconEngine(QIconEngine):
+    """Render SVG or our geometric fallback at the requested device resolution."""
+
+    def __init__(self, color: str, *, svg: bytes = b"", builder=None) -> None:
+        super().__init__()
+        self._color = color
+        self._svg = svg
+        self._builder = builder
+        self._renderers: dict[str, QSvgRenderer] = {}
+
+    def clone(self):
+        return _VectorIconEngine(self._color, svg=self._svg, builder=self._builder)
+
+    def key(self) -> str:
+        return "fdm-vector-icon"
+
+    def actualSize(self, size: QSize, mode, state) -> QSize:
+        return QSize(size)
+
+    def paint(self, painter: QPainter, rect: QRect, mode, state) -> None:
+        color = self._color
+        if mode == QIcon.Mode.Disabled and QApplication.instance():
+            color = QApplication.palette().color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText).name()
+        elif mode == QIcon.Mode.Selected and QApplication.instance():
+            color = QApplication.palette().color(QPalette.ColorRole.HighlightedText).name()
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        edge = min(rect.width(), rect.height())
+        target = QRectF(rect.x() + (rect.width() - edge) / 2,
+                        rect.y() + (rect.height() - edge) / 2, edge, edge)
+        if self._svg:
+            renderer = self._renderers.get(color)
+            if renderer is None:
+                data = re.sub(rb'fill="(?!none)[^"]*"',
+                              b'fill="' + color.encode("ascii") + b'"', self._svg)
+                renderer = QSvgRenderer(QByteArray(data))
+                self._renderers[color] = renderer
+            renderer.render(painter, target)
+        elif self._builder:
+            # Legacy geometric icons use logical 18px coordinates and pens.
+            painter.translate(target.topLeft())
+            painter.scale(edge / 18.0, edge / 18.0)
+            self._builder(painter, QColor(color), QRectF(1, 1, 16, 16))
+        painter.restore()
+
+    def pixmap(self, size: QSize, mode, state) -> QPixmap:
+        return self.scaledPixmap(size, mode, state, 1.0)
+
+    def scaledPixmap(self, size: QSize, mode, state, scale: float) -> QPixmap:
+        scale = max(1.0, float(scale))
+        if _SCALED_PIXMAP_SIZE_IS_PHYSICAL:
+            # Qt 6.7 passed physical size here; 6.8 corrected this to logical
+            # size. Keep the project's >=6.7 compatibility without double DPI.
+            size = QSize(max(1, round(size.width() / scale)), max(1, round(size.height() / scale)))
+        pixmap = QPixmap(max(1, math.ceil(size.width() * scale)),
+                         max(1, math.ceil(size.height() * scale)))
+        pixmap.setDevicePixelRatio(scale)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        self.paint(painter, QRect(0, 0, size.width(), size.height()), mode, state)
+        painter.end()
+        return pixmap
+
+
 def themed_icon(name: str, *, color: str | None = None, size: int = 18) -> QIcon:
     if color is None:
         color = QApplication.palette().color(QPalette.ColorRole.WindowText).name() if QApplication.instance() else "#1F2933"
+    if name == "actual_size":
+        # The 1:1 pixel tool must remain distinguishable from fullscreen.
+        return _paint_icon(_draw_actual_size, color=color, size=size)
+    asset_name = FLUENT_ICON_NAMES.get(name)
+    if asset_name:
+        svg = _fluent_svg(asset_name)
+        if svg:
+            return QIcon(_VectorIconEngine(color, svg=svg))
     if qta is not None:
         icon_name = QT_AWESOME_NAMES.get(name)
         if icon_name:
@@ -116,13 +227,7 @@ def application_icon() -> QIcon:
 
 
 def _paint_icon(builder: Callable[[QPainter, QColor, QRectF], None], *, color: str, size: int) -> QIcon:
-    pixmap = QPixmap(size, size)
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-    builder(painter, QColor(color), QRectF(1.0, 1.0, size - 2.0, size - 2.0))
-    painter.end()
-    return QIcon(pixmap)
+    return QIcon(_VectorIconEngine(color, builder=builder))
 
 
 def _pen(color: QColor, width: float = 1.8) -> QPen:
@@ -546,7 +651,15 @@ def _draw_direction(dx: float, dy: float) -> Callable[[QPainter, QColor, QRectF]
     return draw
 
 
+def _draw_more(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(color)
+    for fraction in (0.2, 0.5, 0.8):
+        painter.drawEllipse(QPointF(rect.left() + rect.width() * fraction, rect.center().y()), 1.25, 1.25)
+
+
 _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
+    "more": _draw_more,
     "select": _draw_select,
     "manual": _draw_manual,
     "continuous_manual": _draw_continuous_manual,

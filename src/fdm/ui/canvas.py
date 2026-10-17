@@ -990,6 +990,7 @@ class DocumentCanvas(QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._document: ImageDocument | None = None
+        self._empty_message = "打开图片后开始测量"
         self._image: QImage | None = None
         self._watermark_visual_state = None
         self._tool_mode = "select"
@@ -4483,12 +4484,16 @@ class DocumentCanvas(QWidget):
             return
         super().keyReleaseEvent(event)
 
+    def set_empty_message(self, message: str) -> None:
+        self._empty_message = str(message)
+        self.update()
+
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), canvas_workspace_background(self.palette()))
         if self._image is None or self._document is None:
             painter.setPen(canvas_workspace_foreground(self.palette()))
-            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "打开图片后开始测量")
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self._empty_message)
             return
         paint_context = self._paint_context(QRectF(event.rect()))
 

@@ -1,0 +1,42 @@
+            app,
+            ExportSelection.all_enabled(),
+            width=900,
+            height=544,
+        )
+        try:
+            dialog._export_navigation.setCurrentRow(1)
+            app.processEvents()
+            page = dialog._export_page_scrolls[1]
+            assert page.horizontalScrollBar().maximum() == 0
+            # Compact content names keep every checkbox legible, rather than
+            # merely hiding the horizontal scrollbar over cropped labels.
+            for control in (dialog._measurement_overlay, dialog._scale_overlay,
+                            dialog._combined_overlay, dialog._construction_geometry,
+                            dialog._watermark):
+                assert control.width() >= control.sizeHint().width()
+            for export_format in RasterExportFormat:
+                dialog._image_format_combo.setCurrentIndex(
+                    dialog._image_format_combo.findData(export_format)
+                )
+                app.processEvents()
+>               assert page.verticalScrollBar().maximum() == 0
+E               assert 1 == 0
+E                +  where 1 = <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x000001B4A2016EC0>()
+E                +    where <built-in method maximum of PySide6.QtWidgets.QScrollBar object at 0x000001B4A2016EC0> = <PySide6.QtWidgets.QScrollBar(0x1b4a3de6f30) at 0x000001B4A2016EC0>.maximum
+E                +      where <PySide6.QtWidgets.QScrollBar(0x1b4a3de6f30) at 0x000001B4A2016EC0> = <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x000001B4A2015E40>()
+E                +        where <built-in method verticalScrollBar of PySide6.QtWidgets.QScrollArea object at 0x000001B4A2015E40> = <PySide6.QtWidgets.QScrollArea(0x1b4a2fb4230) at 0x000001B4A2015E40>.verticalScrollBar
+
+tests\test_export_options_dialog.py:208: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[dark]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[light]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[navy]
+FAILED tests/test_export_options_dialog.py::test_image_page_fits_supported_small_workspace_without_scrolling[warm]
+4 failed, 307 passed, 24 subtests passed in 362.13s (0:06:02)
+Windows regression failure
+所在位置 C:\tmp\fdm-cu-live-ui-redesign-20261016\docs\validation\ui-redesign-20261016\windows\windows-tests.ps1:25 字符: 25
++ if($regressions -ne 0) {throw 'Windows regression failure'}
++                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Windows regression failure:String) [], RuntimeException
+    + FullyQualifiedErrorId : Windows regression failure
+ 

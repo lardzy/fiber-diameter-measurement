@@ -35,14 +35,14 @@ try:
     from fdm.services.cu_live_self_check import run_cu_live_self_check, cu_live_probe_passed
     live = run_cu_live_self_check()
     if sys.platform == "win32":
-        from fdm._native import _windows_capture
-        if Path(_windows_capture.__file__).resolve().parent != directory:
+        from fdm._native import _microview
+        if Path(_microview.__file__).resolve().parent != directory:
             raise RuntimeError("capture binary was imported from another checkout")
-        capture_info = dict(_windows_capture.build_info())
+        capture_info = dict(_microview.build_info())
         kernel_info = dict(module.build_info())
-        for key in ("api_version", "python_abi", "source_sha256"):
-            if capture_info.get(key) != kernel_info.get(key):
-                raise RuntimeError(f"capture build mismatch: {key}")
+        from fdm.services.microview_transport import bridge_build_matches
+        if not bridge_build_matches(capture_info, kernel_info):
+            raise RuntimeError("capture API, image-info ABI, or build mismatch")
     passed = native_probe_passed(report) and cu_live_probe_passed(live)
     print(json.dumps({"ok": passed, "native_kernels": report, "cu_live_measurement": live}))
     sys.exit(0 if passed else 1)
@@ -172,7 +172,7 @@ def _publish_extensions(candidates: dict[Path, Path], *, root: Path, backup_dir:
 
 
 def _extension_names() -> tuple[str, ...]:
-    return ("_kernels", "_windows_capture") if sys.platform == "win32" else ("_kernels",)
+    return ("_kernels", "_microview") if sys.platform == "win32" else ("_kernels",)
 
 
 def ensure_native_kernels(root: Path) -> list[str]:

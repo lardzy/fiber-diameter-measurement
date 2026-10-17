@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+import json
 
 from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
 from PySide6.QtWidgets import QDockWidget, QMainWindow, QWidget
@@ -87,6 +88,15 @@ class AdaptiveLayoutController(QObject):
         # Before that, isHidden() on the docks reports the never-shown
         # transitional state and must not be sampled into _wide_visibility.
         self._visibility_ready = False
+        self._embedded_controls = False
+        self._profiles = self._read_profiles()
+        if self._workspace.value in self._profiles:
+            self._restore_profile()
+        self._profile_save_timer = QTimer(self)
+        self._profile_save_timer.setSingleShot(True)
+        self._profile_save_timer.setInterval(200)
+        self._profile_save_timer.timeout.connect(self.persist_profiles)
+        self.layoutPreferencesChanged.connect(self._profile_save_timer.start)
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
             if isinstance(dock, WorkspaceDockWidget):
                 dock.extentChanged.connect(
@@ -155,7 +165,12 @@ class AdaptiveLayoutController(QObject):
     def set_workspace(self, workspace: WorkspaceMode | str) -> None:
         target_workspace = WorkspaceMode(workspace)
         workspace_changed = target_workspace is not self._workspace
+        if workspace_changed:
+            self._remember_profile()
         self._workspace = target_workspace
+        if workspace_changed:
+            self._restore_profile()
+            self._profile_save_timer.start()
         if self.is_presentation_suspended:
             return
         compact = int(self._window.width()) < self.COMPACT_WIDTH
@@ -163,6 +178,60 @@ class AdaptiveLayoutController(QObject):
         # the user's dock visibility unless the mode or breakpoint changed.
         if not workspace_changed and compact == self._compact:
             return
+        self.apply_for_width(self._window.width(), force=True)
+
+    @staticmethod
+    def _profiles_path():
+        from fdm.settings import settings_file_path
+        return settings_file_path().parent / "workspace-layouts.json"
+
+    def _read_profiles(self):
+        try:
+            payload = json.loads(self._profiles_path().read_text(encoding="utf-8"))
+            profiles = payload.get("workspaces", {})
+            return profiles if isinstance(profiles, dict) else {}
+        except (OSError, ValueError, AttributeError):
+            return {}
+
+    def _remember_profile(self):
+        self._profiles[self._workspace.value] = {
+            "visibility": dict(self._wide_visibility),
+            "extents": self._layout_settings.to_dict(),
+        }
+
+    def _restore_profile(self):
+        default = {
+            "project": self._workspace is not WorkspaceMode.ACQUIRE,
+            "inspector": True, "results": False,
+        }
+        profile = self._profiles.get(self._workspace.value, {})
+        if not isinstance(profile, dict):
+            profile = {}
+        visibility = profile.get("visibility", {})
+        if not isinstance(visibility, dict):
+            visibility = {}
+        self._wide_visibility = {key: bool(visibility.get(key, value)) for key, value in default.items()}
+        extents = WorkspaceLayoutSettings.from_dict(profile.get("extents", {}))
+        for key in ("project_width", "inspector_width", "results_height"):
+            setattr(self._layout_settings, key, getattr(extents, key))
+
+    def persist_profiles(self):
+        from fdm.atomic_io import atomic_write_text
+        self._remember_profile()
+        path = self._profiles_path()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            atomic_write_text(path, json.dumps({"version": 1, "workspaces": self._profiles},
+                ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            # Preferences must never make a measurement or application close fail.
+            pass
+
+    def set_embedded_controls(self, enabled: bool):
+        """Trial controls temporarily replace docks without changing preferences."""
+        if self._embedded_controls == bool(enabled):
+            return
+        self._embedded_controls = bool(enabled)
         self.apply_for_width(self._window.width(), force=True)
 
     def begin_window_resize(self) -> None:
@@ -195,7 +264,7 @@ class AdaptiveLayoutController(QObject):
             return
         self._applying = True
         try:
-            if compact and not self._compact and self._window.isVisible():
+            if compact and not self._compact and self._window.isVisible() and not self._embedded_controls and self._visibility_ready:
                 self._wide_visibility = {
                     "project": not self._project_dock.isHidden(),
                     "inspector": not self._inspector_dock.isHidden(),
@@ -210,7 +279,11 @@ class AdaptiveLayoutController(QObject):
                 # 留在旧布局。
                 self._layout_apply_pending = True
                 return
-            if compact:
+            if self._embedded_controls:
+                self._project_dock.hide()
+                self._inspector_dock.hide()
+                self._results_dock.hide()
+            elif compact:
                 self._results_dock.hide()
                 if self._workspace == WorkspaceMode.DIGITAL_SLIDE_ACQUIRE:
                     self._inspector_dock.hide()
@@ -219,19 +292,9 @@ class AdaptiveLayoutController(QObject):
                     self._project_dock.hide()
                     self._inspector_dock.show()
             else:
-                if self._workspace is WorkspaceMode.ACQUIRE:
-                    self._project_dock.hide()
-                    self._inspector_dock.show()
-                    self._results_dock.hide()
-                elif self._workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE:
-                    self._project_dock.show()
-                    self._inspector_dock.show()
-                    self._results_dock.hide()
-                else:
-                    results_visible = self._wide_visibility["results"]
-                    self._project_dock.setVisible(self._wide_visibility["project"])
-                    self._inspector_dock.setVisible(self._wide_visibility["inspector"])
-                    self._results_dock.setVisible(results_visible)
+                self._project_dock.setVisible(self._wide_visibility["project"])
+                self._inspector_dock.setVisible(self._wide_visibility["inspector"])
+                self._results_dock.setVisible(self._wide_visibility["results"])
         finally:
             self._applying = False
         self._layout_apply_pending = False
@@ -312,6 +375,9 @@ class AdaptiveLayoutController(QObject):
         if self.is_presentation_suspended:
             return
         self._visibility_ready = True
+        if self._workspace.value in self._profiles:
+            self._restore_profile()
+            return
         self._wide_visibility = {
             "project": not self._project_dock.isHidden(),
             "inspector": not self._inspector_dock.isHidden(),
@@ -481,6 +547,7 @@ class AdaptiveLayoutController(QObject):
         if (
             self.is_presentation_suspended
             or self._applying
+            or self._embedded_controls
             or self._compact
             or not self._visibility_ready
         ):
@@ -490,3 +557,4 @@ class AdaptiveLayoutController(QObject):
             "inspector": not self._inspector_dock.isHidden(),
             "results": not self._results_dock.isHidden(),
         }
+        self.layoutPreferencesChanged.emit()

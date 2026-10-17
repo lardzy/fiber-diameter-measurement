@@ -20,6 +20,12 @@ DEVELOPMENT_FEATURES = frozenset(
 )
 
 
+def is_editable_template_path(value: str) -> bool:
+    """User report templates are intentionally outside binary integrity gates."""
+    token = str(value).replace("\\", "/").lower()
+    return token.startswith("runtime/content-templates/") and Path(token).suffix in {".xlt", ".xls", ".xltm", ".xltx", ".xlsx", ".xlsm", ".json"}
+
+
 def sha256_file(path: str | Path) -> str:
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
@@ -198,6 +204,9 @@ def verify_release_manifest(
         if not file_path.is_file():
             errors.append(f"missing packaged file: {token}")
             continue
+        if is_editable_template_path(token):
+            result["checked_files"] = int(result["checked_files"]) + 1
+            continue
         expected_size = entry.get("size")
         if not isinstance(expected_size, int) or file_path.stat().st_size != expected_size:
             errors.append(f"size mismatch: {token}")
@@ -242,7 +251,7 @@ def verify_release_manifest(
             for path in root.rglob("*")
             if path.is_file() and path.name != RELEASE_MANIFEST_FILENAME
         }
-        extras = sorted(actual_paths - listed_paths)
+        extras = sorted(p for p in actual_paths - listed_paths if not is_editable_template_path(p))
         missing_inventory = sorted(listed_paths - actual_paths)
         if extras:
             errors.append("unmanifested packaged files: " + ", ".join(extras))

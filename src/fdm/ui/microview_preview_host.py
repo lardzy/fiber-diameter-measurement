@@ -10,6 +10,10 @@ class MicroviewPreviewHost(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        # Only the SDK's surface needs an HWND. Promoting both stacked
+        # workspaces and all their ancestors to native windows leaves sibling
+        # surfaces competing when acquisition/trial pages are reparented.
+        self.setAttribute(Qt.WidgetAttribute.WA_DontCreateNativeAncestors, True)
         self.setAttribute(Qt.WidgetAttribute.WA_NativeWindow, True)
         self.setAttribute(Qt.WidgetAttribute.WA_PaintOnScreen, True)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)

@@ -1,0 +1,146 @@
+{
+  "default": [
+    {
+      "index": 0,
+      "name": "scaleOverlayEditor",
+      "class": "ScaleOverlayPanel",
+      "visible": false,
+      "y": 0,
+      "height": 30
+    },
+    {
+      "index": 1,
+      "name": "_current_measurement_summary",
+      "class": "CurrentMeasurementSummary",
+      "visible": true,
+      "y": 0,
+      "height": 115
+    },
+    {
+      "index": 2,
+      "name": "_object_properties_section",
+      "class": "CollapsibleSection",
+      "visible": false,
+      "y": 0,
+      "height": 30
+    },
+    {
+      "index": 3,
+      "name": "_calibration_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 121,
+      "height": 43
+    },
+    {
+      "index": 4,
+      "name": "_statistics_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 170,
+      "height": 43
+    },
+    {
+      "index": 5,
+      "name": "_records_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 219,
+      "height": 329
+    },
+    {
+      "index": 6,
+      "name": "_area_recognition_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 554,
+      "height": 43
+    }
+  ],
+  "spacing": 6,
+  "expanded": [
+    {
+      "index": 0,
+      "name": "scaleOverlayEditor",
+      "class": "ScaleOverlayPanel",
+      "visible": false,
+      "y": 0,
+      "height": 30
+    },
+    {
+      "index": 1,
+      "name": "_current_measurement_summary",
+      "class": "CurrentMeasurementSummary",
+      "visible": true,
+      "y": 0,
+      "height": 115
+    },
+    {
+      "index": 2,
+      "name": "_object_properties_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 121,
+      "height": 1322
+    },
+    {
+      "index": 3,
+      "name": "_calibration_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 1449,
+      "height": 43
+    },
+    {
+      "index": 4,
+      "name": "_statistics_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 1498,
+      "height": 333
+    },
+    {
+      "index": 5,
+      "name": "_records_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 1837,
+      "height": 43
+    },
+    {
+      "index": 6,
+      "name": "_area_recognition_section",
+      "class": "CollapsibleSection",
+      "visible": true,
+      "y": 1886,
+      "height": 43
+    }
+  ],
+  "adjacent_gaps": [
+    {
+      "from": "_current_measurement_summary",
+      "to": "_object_properties_section",
+      "gap": 6
+    },
+    {
+      "from": "_object_properties_section",
+      "to": "_calibration_section",
+      "gap": 6
+    },
+    {
+      "from": "_calibration_section",
+      "to": "_statistics_section",
+      "gap": 6
+    },
+    {
+      "from": "_statistics_section",
+      "to": "_records_section",
+      "gap": 6
+    },
+    {
+      "from": "_records_section",
+      "to": "_area_recognition_section",
+      "gap": 6
+    }
+  ]
+}

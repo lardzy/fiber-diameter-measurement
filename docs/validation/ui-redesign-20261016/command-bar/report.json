@@ -1,0 +1,159 @@
+{
+  "platform": "darwin",
+  "qt_platform": "offscreen",
+  "boundary": "real MainWindow, no capture started, logical window sizes",
+  "frames": [
+    {
+      "theme": "light",
+      "logical_window": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1366,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-light-1366@1x.png",
+      "toolbar_screenshot": "main-light-1366@1x-toolbar.png"
+    },
+    {
+      "theme": "light",
+      "logical_window": [
+        1280,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1280,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-light-1280@1x.png",
+      "toolbar_screenshot": "main-light-1280@1x-toolbar.png"
+    },
+    {
+      "theme": "dark",
+      "logical_window": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1366,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-dark-1366@1x.png",
+      "toolbar_screenshot": "main-dark-1366@1x-toolbar.png"
+    },
+    {
+      "theme": "dark",
+      "logical_window": [
+        1280,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1280,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-dark-1280@1x.png",
+      "toolbar_screenshot": "main-dark-1280@1x-toolbar.png"
+    },
+    {
+      "theme": "navy",
+      "logical_window": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1366,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-navy-1366@1x.png",
+      "toolbar_screenshot": "main-navy-1366@1x-toolbar.png"
+    },
+    {
+      "theme": "navy",
+      "logical_window": [
+        1280,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1280,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-navy-1280@1x.png",
+      "toolbar_screenshot": "main-navy-1280@1x-toolbar.png"
+    },
+    {
+      "theme": "warm",
+      "logical_window": [
+        1366,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1366,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-warm-1366@1x.png",
+      "toolbar_screenshot": "main-warm-1366@1x-toolbar.png"
+    },
+    {
+      "theme": "warm",
+      "logical_window": [
+        1280,
+        768
+      ],
+      "dpr": 1.0,
+      "toolbar_size": [
+        1280,
+        37
+      ],
+      "optional_visible": [
+        "撤销",
+        "重做",
+        "抓拍"
+      ],
+      "screenshot": "main-warm-1280@1x.png",
+      "toolbar_screenshot": "main-warm-1280@1x-toolbar.png"
+    }
+  ]
+}

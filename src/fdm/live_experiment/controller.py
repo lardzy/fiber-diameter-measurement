@@ -200,7 +200,7 @@ class LiveExperimentController(QObject):
     def observe_source_identity(self, identity):
         """Apply source metadata before pixel admission can fail for capacity."""
         if self._source_identity is not None and identity != self._source_identity:
-            self.unavailable("图像来源或尺寸已变化，旧标定已清除；请等待新画面并重新标定。")
+            self.unavailable("采集来源或图像尺寸已变化，正在核对已保存的标尺。")
         self._source_identity = identity
 
     @staticmethod
@@ -240,16 +240,11 @@ class LiveExperimentController(QObject):
         self.state = "unavailable"
         self.statusChanged.emit(reason)
 
-    def end_field(self, reason="视场已变化，请重新测量"):
-        if self.field_id in self.session.fields:
-            self.session.update_field(self.field_id, ended_at=datetime.now(timezone.utc).isoformat(), end_reason=reason)
-        self.field_epoch += 1
-        self.field_id = uuid.uuid4().hex
+    def _cancel_unfinished_measurements(self):
         self.draft = None
         self._release_frame_reference("_draft_lease")
-        self.current_records.clear()
-        self._classification_target = None
-        self._measurement_number = 0
+        if self._classification_target and self._classification_target["state"] in {"draft", "pending"}:
+            self._classification_target = None
         for intent, _ in self._jobs:
             intent.cancel.set()
         for intent, _ in self.pending_classification:
@@ -261,6 +256,23 @@ class LiveExperimentController(QObject):
             self._automatic.cancel()
             self.budget.release(self._automatic_context["lease"])
             self._automatic_context = None
+
+    def cancel_pending_measurements(self, reason="未完成的测量已取消"):
+        """Quiesce publication while retaining the accepted current field."""
+        self._cancel_unfinished_measurements()
+        self.candidatesChanged.emit([])
+        self.statusChanged.emit(reason)
+        self.changed.emit()
+
+    def end_field(self, reason="视场已变化，请重新测量", *, record_end=True):
+        if record_end and self.field_id in self.session.fields:
+            self.session.update_field(self.field_id, ended_at=datetime.now(timezone.utc).isoformat(), end_reason=reason)
+        self.field_epoch += 1
+        self.field_id = uuid.uuid4().hex
+        self._cancel_unfinished_measurements()
+        self.current_records.clear()
+        self._classification_target = None
+        self._measurement_number = 0
         self._motion_reset = True
         self._motion_sequence = -1
         self._last_prepare_sequence = -1
@@ -995,11 +1007,11 @@ class LiveExperimentController(QObject):
     def busy(self):
         return bool(self._jobs or self.pending_classification or self._confirmation or self._automatic_context or self.evidence.pending)
 
-    def close(self):
+    def close(self, *, record_end=True):
         if self._closed:
             return
         self._timer.stop()
-        self.end_field("试验工作区已关闭")
+        self.end_field("试验工作区已关闭", record_end=record_end)
         self._closed = True
         self._manual_pool.shutdown(wait=True, cancel_futures=False)
         for intent, _ in self._jobs:

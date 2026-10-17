@@ -83,6 +83,10 @@ class ProjectSaveCoordinator(QObject):
         self._settle_timer.setSingleShot(True)
         self._settle_timer.setInterval(3000)
         self._settle_timer.timeout.connect(self._settle)
+        self._reap_timer = QTimer(self)
+        self._reap_timer.setSingleShot(True)
+        self._reap_timer.setInterval(1)
+        self._reap_timer.timeout.connect(self._finish)
 
     @property
     def busy(self) -> bool:
@@ -122,7 +126,9 @@ class ProjectSaveCoordinator(QObject):
             return
         if self._dirty():
             if self.status.phase != "saved_newer" or not self._settle_timer.isActive():
-                self._set_status("dirty", "未保存")
+                describe = getattr(self.host, "_unsaved_project_summary", None)
+                detail = "\n".join(describe()) if callable(describe) else ""
+                self._set_status("dirty", "未保存", detail=detail)
         elif not self._settle_timer.isActive():
             self._set_status(
                 "clean" if self.host._project_path else "idle",
@@ -209,7 +215,6 @@ class ProjectSaveCoordinator(QObject):
         worker.finished.connect(worker.deleteLater)
         thread.started.connect(worker.run)
         thread.finished.connect(self._finish)
-        thread.finished.connect(thread.deleteLater)
         self._thread, self._worker = thread, worker
         self._set_status("saving", "正在保存…")
         self.busyChanged.emit(True)
@@ -228,8 +233,21 @@ class ProjectSaveCoordinator(QObject):
 
     @Slot()
     def _finish(self) -> None:
+        thread = self._thread
+        if thread is None:
+            return
+        # finished is emitted BEFORE the thread drains deferred QObject deletes
+        # and native thread cleanup. In particular, the worker's Shiboken
+        # wrapper must not lose its last reference during that destruction.
+        # Keep both objects alive, and keep close/switch/queued saves deferred,
+        # until the OS thread has exited. Poll without blocking the GUI.
+        if not thread.wait(0):
+            self._reap_timer.start()
+            return
+        self._reap_timer.stop()
         request, outcome = self.active, self._outcome
         self._thread = self._worker = None
+        thread.deleteLater()
         if request is None:
             return
         valid = self._active_epoch == self._epoch and request.project_identity == id(

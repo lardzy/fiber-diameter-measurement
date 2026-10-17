@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtGui import QColor, QFontDatabase, QFontInfo, QPalette
 from PySide6.QtWidgets import QApplication, QStyleFactory, QWidget
@@ -10,7 +12,7 @@ from fdm.settings import AppThemeMode, normalize_theme_mode
 _SYSTEM_THEME_CACHE: dict[int, tuple[str, QPalette]] = {}
 _THEME_CACHE_PROPERTY = "fdmAppliedThemeMode"
 _THEME_STYLE_REVISION_PROPERTY = "fdmThemeStyleRevision"
-_THEME_STYLE_REVISION = 5
+_THEME_STYLE_REVISION = 6
 _RESOLVED_THEME_PROPERTY = "fdmResolvedThemeMode"
 _BASE_STYLE_PROPERTY = "fdmBaseWidgetStyle"
 
@@ -107,6 +109,106 @@ def build_light_palette() -> QPalette:
     return palette
 
 
+def build_navy_palette() -> QPalette:
+    """A low-glare blue workspace; image pixels and category colors are untouched."""
+    palette = build_dark_palette()
+    overrides = {
+        "Window": "#182638", "WindowText": "#E8F0F8", "Base": "#111D2D",
+        "AlternateBase": "#203247", "Button": "#263B52", "ButtonText": "#E8F0F8",
+        "Text": "#E8F0F8", "ToolTipBase": "#263B52", "ToolTipText": "#E8F0F8",
+        "Highlight": "#80BAF0", "HighlightedText": "#10243A",
+        "Link": "#91C9FF", "Light": "#425E79", "Midlight": "#2E4661",
+        "Mid": "#506880", "Dark": "#0C1724", "Shadow": "#07101B",
+        "PlaceholderText": "#A5B6C9",
+    }
+    for name, color in overrides.items():
+        _set_role_color(palette, getattr(QPalette.ColorRole, name), color)
+    for role in (QPalette.ColorRole.WindowText, QPalette.ColorRole.Text,
+                 QPalette.ColorRole.ButtonText, QPalette.ColorRole.PlaceholderText):
+        palette.setColor(QPalette.ColorGroup.Disabled, role, QColor("#8194A9"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Highlight, QColor("#405A74"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, QColor("#CFDBE7"))
+    return palette
+
+
+def build_warm_palette() -> QPalette:
+    palette = build_light_palette()
+    overrides = {
+        "Window": "#F3F0EA", "WindowText": "#342F29", "Base": "#FFFDFA",
+        "AlternateBase": "#EAE5DC", "Button": "#F0EBE3", "ButtonText": "#342F29",
+        "Text": "#342F29", "ToolTipBase": "#FFFDFA", "ToolTipText": "#342F29",
+        "Highlight": "#805B36", "HighlightedText": "#FFFFFF",
+        "Link": "#295D89", "Light": "#FFFDFA", "Midlight": "#E5DED3",
+        "Mid": "#B4A99A", "Dark": "#C4B9AA", "Shadow": "#9A8E7F",
+        "PlaceholderText": "#70665B",
+    }
+    for name, color in overrides.items():
+        _set_role_color(palette, getattr(QPalette.ColorRole, name), color)
+    for role in (QPalette.ColorRole.WindowText, QPalette.ColorRole.Text,
+                 QPalette.ColorRole.ButtonText, QPalette.ColorRole.PlaceholderText):
+        palette.setColor(QPalette.ColorGroup.Disabled, role, QColor("#93897D"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Highlight, QColor("#D4C3AF"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, QColor("#514639"))
+    return palette
+
+
+def build_theme_palette(theme_mode: str) -> QPalette:
+    """Build an explicit palette; resolve 'system' when applying to QApplication."""
+    builders = {
+        AppThemeMode.DARK: build_dark_palette,
+        AppThemeMode.LIGHT: build_light_palette,
+        AppThemeMode.NAVY: build_navy_palette,
+        AppThemeMode.WARM: build_warm_palette,
+    }
+    return builders.get(normalize_theme_mode(theme_mode), build_dark_palette)()
+
+
+@dataclass(frozen=True)
+class ThemeColors:
+    """UI semantic colors only. Never use these to recolor measurement pixels."""
+
+    text: str
+    muted: str
+    disabled: str
+    accent: str
+    on_accent: str
+    border: str
+    info: str
+    success: str
+    warning: str
+    error: str
+    info_background: str
+    success_background: str
+    warning_background: str
+    error_background: str
+    canvas: str
+    canvas_text: str
+
+
+def semantic_colors(palette: QPalette | None = None) -> ThemeColors:
+    """Resolve semantic tokens from a widget or application palette."""
+    palette = palette or (QApplication.palette() if QApplication.instance() else build_dark_palette())
+    dark = palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5
+    return ThemeColors(
+        text=palette.color(QPalette.ColorRole.WindowText).name(),
+        muted="#BAC6D2" if dark else "#52606D",
+        disabled=palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText).name(),
+        accent=palette.color(QPalette.ColorRole.Highlight).name(),
+        on_accent=palette.color(QPalette.ColorRole.HighlightedText).name(),
+        border=palette.color(QPalette.ColorRole.Mid).name(),
+        info="#96CAFA" if dark else "#155B96",
+        success="#8DDCB7" if dark else "#1C6A47",
+        warning="#FFD185" if dark else "#825000",
+        error="#FFAAA5" if dark else "#AB2925",
+        info_background="#1B344A" if dark else "#E8F2FC",
+        success_background="#193C30" if dark else "#E7F3EB",
+        warning_background="#483A22" if dark else "#FFF0CD",
+        error_background="#482B2D" if dark else "#FCE9E7",
+        canvas="#101820" if dark else "#D6DEE7",
+        canvas_text="#C3D0DE" if dark else "#35495C",
+    )
+
+
 def _system_color_mode(app: QApplication) -> str:
     scheme = app.styleHints().colorScheme()
     if scheme == Qt.ColorScheme.Dark:
@@ -156,7 +258,7 @@ def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
     # System mode follows the OS color scheme with the same geometry as our
     # explicit themes, including when the OS changes appearance while running.
     _set_style_by_name(app, "Fusion")
-    app.setPalette(build_light_palette() if resolved == AppThemeMode.LIGHT else build_dark_palette())
+    app.setPalette(build_theme_palette(resolved))
     if not app.property("fdmThemeFontInitialized"):
         system_font = QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont)
         resolved_family = QFontInfo(system_font).family()
@@ -177,7 +279,8 @@ def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
 def build_application_stylesheet() -> str:
     """Stable, low-chrome control geometry shared by every color theme."""
 
-    return """
+    colors = semantic_colors()
+    stylesheet = """
         QMainWindow, QDialog { background: palette(window); }
         QFrame#measurementContextBar, QFrame#captureTaskBar {
             background: palette(alternate-base);
@@ -201,15 +304,15 @@ def build_application_stylesheet() -> str:
         }
         QToolBar#measurementContextToolbar { padding: 0; spacing: 0; }
         QToolButton#persistentCalibrationButton[uncalibrated="true"] {
-            background: #FFF0CD; color: #713F12;
-            border: 2px solid #B45309; font-weight: 700;
+            background: @warning_background; color: @warning;
+            border: 2px solid @warning; font-weight: 700;
             border-radius: 4px;
         }
         QToolButton#persistentCalibrationButton[uncalibrated="true"]:hover {
-            background: #FFE4A6;
+            background: @warning_background;
         }
         QToolButton#quickAreaOperationButton[magicPrompt="negative"] {
-            background: #FEE2E2; color: #7F1D1D; border: 1px solid #DC2626;
+            background: @error_background; color: @error; border: 1px solid @error;
         }
         QFrame#currentMeasurementSummary {
             background: palette(base); border-bottom: 1px solid palette(mid);
@@ -236,7 +339,7 @@ def build_application_stylesheet() -> str:
         QToolButton:hover { background: palette(midlight); }
         QToolButton:pressed { background: palette(mid); }
         QToolButton:checked {
-            border-color: #2A9D8F;
+            border-color: palette(highlight);
             background: palette(highlight);
             color: palette(highlighted-text);
         }
@@ -255,7 +358,7 @@ def build_application_stylesheet() -> str:
             border-radius: 6px;
             background: palette(button);
         }
-        QPushButton:hover { border-color: #2A9D8F; background: palette(midlight); }
+        QPushButton:hover { border-color: palette(highlight); background: palette(midlight); }
         QPushButton:pressed { background: palette(mid); }
         QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
             min-height: 28px;
@@ -266,7 +369,7 @@ def build_application_stylesheet() -> str:
             selection-background-color: palette(highlight);
         }
         QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {
-            border-color: #2A9D8F;
+            border-color: palette(highlight);
         }
         QMenu {
             padding: 5px;
@@ -289,8 +392,15 @@ def build_application_stylesheet() -> str:
             background: palette(alternate-base);
             font-weight: 600;
         }
-        QTabBar::tab { min-height: 27px; padding: 3px 10px; }
-        QTabBar::tab:selected { border-bottom: 2px solid #2A9D8F; }
+        QTabBar::tab {
+            min-height: 27px; padding: 3px 10px;
+            border: 0; border-bottom: 2px solid transparent;
+            background: transparent; color: palette(window-text);
+        }
+        QTabBar::tab:hover { background: palette(midlight); }
+        QTabBar::tab:selected {
+            border-bottom: 2px solid palette(highlight); background: palette(alternate-base);
+        }
         QHeaderView::section {
             padding: 5px 7px;
             border: 0;
@@ -306,7 +416,33 @@ def build_application_stylesheet() -> str:
             alternate-background-color: palette(alternate-base);
             gridline-color: palette(mid);
         }
+        QPushButton:focus, QToolButton:focus {
+            border: 1px solid palette(highlight);
+        }
+        QPushButton:checked {
+            border-color: palette(highlight); background: palette(alternate-base);
+        }
+        QPushButton[emphasis="primary"], QToolButton[emphasis="primary"] {
+            background: palette(highlight); color: palette(highlighted-text);
+            border: 1px solid palette(highlight); font-weight: 600;
+        }
+        QPushButton:disabled, QToolButton:disabled {
+            color: @disabled; background: palette(window); border-color: palette(mid);
+        }
+        QLabel[secondary="true"] { color: @muted; }
+        QLabel[statusTone="info"] { color: @info; }
+        QLabel[statusTone="success"] { color: @success; }
+        QLabel[statusTone="warning"] { color: @warning; }
+        QLabel[statusTone="error"] { color: @error; }
+        QFrame[statusTone="info"] { background: @info_background; }
+        QFrame[statusTone="success"] { background: @success_background; }
+        QFrame[statusTone="warning"] { background: @warning_background; }
+        QFrame[statusTone="error"] { background: @error_background; }
     """
+    # Replace longer names first so @warning does not consume its background token.
+    for name in sorted(ThemeColors.__dataclass_fields__, key=len, reverse=True):
+        stylesheet = stylesheet.replace("@" + name, getattr(colors, name))
+    return stylesheet
 
 
 def refresh_widget_theme(widget: QWidget | None) -> None:

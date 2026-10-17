@@ -538,6 +538,7 @@ from fdm.ui.widgets import (
     OverlayToolSplitButton,
 )
 from fdm.ui.workspace import AdaptiveLayoutController, WorkspaceDockWidget, WorkspaceMode
+from fdm.ui.workspace_stack import WorkspaceStack
 
 try:
     from fdm.services.capture import CaptureDevice, CaptureSessionManager
@@ -2680,6 +2681,13 @@ class MainWindow(QMainWindow):
         self.switch_capture_device_action.setIcon(themed_icon("capture_device", color="#D7E3FC"))
         self.switch_capture_device_action.triggered.connect(self.show_capture_device_menu)
 
+        self.acquisition_workspace_action = QAction("采集与试验", self)
+        self.acquisition_workspace_action.setIcon(themed_icon("acquisition"))
+        self.acquisition_workspace_action.setCheckable(True)
+        self.acquisition_workspace_action.setToolTip("实时采集、含量试验与直径试验")
+        self.acquisition_workspace_action.triggered.connect(self._activate_acquisition_workspace)
+        self._acquisition_workspace_selected = False
+        self._acquisition_workbench = None
         self.live_preview_action = QAction("实时预览", self)
         self.live_experiment_action = QAction("实时试验", self)
         self.live_experiment_action.setToolTip("实时贴边测径、全图候选和含量试验")
@@ -3504,19 +3512,85 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.command_search_action)
         help_menu.addAction(self.shortcuts_help_action)
 
-    def _open_live_experiment(self) -> None:
-        from fdm.ui.live_experiment_workspace import open_live_experiment
-        open_live_experiment(self)
+    def _activate_acquisition_workspace(self):
+        if self._digital_slide_mode:
+            self._toggle_digital_slide_mode(False)
+            if self._digital_slide_mode:
+                return
+        self._open_acquisition_workbench()
 
-    def _close_live_experiment(self) -> bool:
-        window = getattr(self, "_live_experiment_workspace", None)
-        if window is not None and not window.close():
-            message = ("实时试验图像来源仍在释放资源，请完成后重试。"
-                       if getattr(window, "_source_retiring", False)
-                       else "实时试验原图正在保存，请完成后重试。")
-            self.statusBar().showMessage(message, 6000)
-            return False
+    def _open_acquisition_workbench(self, trial_index=None, *, select=True, auto_start=True):
+        already_visible = (self._acquisition_workbench is not None
+                           and self._center_stack.currentWidget() is self._acquisition_workbench)
+        if self._acquisition_workbench is None:
+            from fdm.ui.acquisition_workbench import AcquisitionWorkbench
+            self._center_stack.removeWidget(self._preview_page)
+            self._acquisition_workbench = AcquisitionWorkbench(self, self._preview_page)
+            self._center_stack.addWidget(self._acquisition_workbench)
+            if trial_index is None:
+                self._acquisition_workbench.restore_page()
+        if select:
+            self._acquisition_workspace_selected = True
+        if already_visible and trial_index is None:
+            self.acquisition_workspace_action.blockSignals(True)
+            self.acquisition_workspace_action.setChecked(True)
+            self.acquisition_workspace_action.blockSignals(False)
+            if select:
+                self._acquisition_workbench.enter(auto_start=auto_start)
+            return self._acquisition_workbench
+        if trial_index is not None:
+            self._acquisition_workbench.select_page(trial_index)
+        # Remove measurement-only chrome before exposing the taller workbench.
+        # Otherwise Qt can permanently enlarge the top-level window for one
+        # transient layout combining both workspaces' minimum heights.
+        self._sync_workspace_mode()
+        self._center_stack.setCurrentWidget(self._acquisition_workbench)
+        if select:
+            self._acquisition_workbench.enter(auto_start=auto_start)
+        return self._acquisition_workbench
+
+    def _open_live_experiment(self) -> None:
+        self._open_acquisition_workbench(trial_index=1)
+
+    def _close_live_experiment(self, *, preserve_snapshot=False) -> bool:
+        windows = list(getattr(self, "_live_experiment_workspaces", {}).values())
+        current = getattr(self, "_live_experiment_workspace", None)
+        if current is not None and current not in windows:
+            windows.append(current)
+        for window in windows:
+            # An accepted project transition must not append field metadata
+            # after the confirmed/saved snapshot. Standalone close keeps the
+            # ordinary field-ending semantics.
+            window._close_record_end = not preserve_snapshot
+            if not window.close():
+                message = ("实时试验图像来源仍在释放资源，请完成后重试。"
+                           if getattr(window, "_source_retiring", False)
+                           else "实时试验原图正在保存，请完成后重试。")
+                self.statusBar().showMessage(message, 6000)
+                return False
+        if windows and self._acquisition_workbench is not None:
+            self._acquisition_workbench.clear_trial_pages()
+            self._sync_workspace_mode()
         return True
+
+    def _prepare_live_experiment_close(self) -> bool:
+        windows = list(getattr(self, "_live_experiment_workspaces", {}).values())
+        current = getattr(self, "_live_experiment_workspace", None)
+        if current is not None and current not in windows:
+            windows.append(current)
+        for window in windows:
+            if not window.prepare_close():
+                self._resume_live_experiment_after_cancel()
+                return False
+        return True
+
+    def _resume_live_experiment_after_cancel(self) -> None:
+        windows = list(getattr(self, "_live_experiment_workspaces", {}).values())
+        current = getattr(self, "_live_experiment_workspace", None)
+        if current is not None and current not in windows:
+            windows.append(current)
+        for window in windows:
+            window.resume_after_cancel()
 
     def _build_toolbar(self) -> None:
         file_toolbar = QToolBar("主命令栏")
@@ -3541,7 +3615,7 @@ class MainWindow(QMainWindow):
             action.setIconText(label)
         self._workspace_buttons = []
         for action, label in ((self.measure_workspace_action, "测量分析"),
-                              (self.live_preview_action, "实时采集"),
+                              (self.acquisition_workspace_action, "采集与试验"),
                               (self.digital_slide_action, "数字切片")):
             button = action_button(action, self, text=label)
             button.setProperty("workspaceTab", True)
@@ -3565,59 +3639,76 @@ class MainWindow(QMainWindow):
         self._save_status_indicator.cancelTransitionRequested.connect(self.project_save_coordinator.cancel_transition)
         self.project_save_coordinator.statusChanged.connect(self._save_status_indicator.set_status)
         file_toolbar.addWidget(self._save_status_indicator)
-        file_toolbar.addWidget(action_button(self.export_template_action, self, text="导出模板"))
-        file_toolbar.addWidget(action_button(self.export_overlay_action, self, text="叠加图"))
-
         export_button = QToolButton(self)
         self._export_command_button = export_button
         export_button.setText("导出")
-        export_button.setIcon(themed_icon("export", color="#D7E3FC"))
+        export_button.setIcon(themed_icon("export", color=self._tool_icon_color("command")))
         export_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         export_menu = QMenu(export_button)
         export_menu.addAction(self.export_current_image_action)
+        export_menu.addAction(self.export_overlay_action)
+        export_menu.addAction(self.export_template_action)
         export_menu.addSeparator()
         for action in self.export_actions:
             export_menu.addAction(action)
         export_button.setMenu(export_menu)
         file_toolbar.addWidget(export_button)
-        file_toolbar.addSeparator()
-
-        file_toolbar.addAction(self.undo_action)
-        file_toolbar.addAction(self.redo_action)
-        file_toolbar.addSeparator()
-
-        file_toolbar.addAction(self.capture_frame_action)
+        self._command_bar_optional = []
+        for action, label in ((self.undo_action, "撤销"), (self.redo_action, "重做"),
+                              (self.capture_frame_action, "抓拍")):
+            button = action_button(action, file_toolbar, text=label)
+            # Hide only this toolbar presentation; the shared QAction stays
+            # reachable from menus and retains its shortcut and enabled state.
+            wrapper = file_toolbar.addWidget(button)
+            self._command_bar_optional.append((wrapper, button, action))
 
         more_button = QToolButton(self)
+        self._more_command_button = more_button
         more_button.setObjectName("moreCommandButton")
         more_button.setText("更多")
+        more_button.setIcon(themed_icon("more", color=self._tool_icon_color("command")))
         more_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         more_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         more_menu = QMenu(more_button)
+        # Original actions remain in the menu at every width, just as Edit
+        # commands remain available alongside their toolbar shortcuts.
+        for _wrapper, _button, action in self._command_bar_optional:
+            more_menu.addAction(action)
+        more_menu.addSeparator()
         for action in (self.focus_workspace_action, self.review_workspace_action,
                        self.fullscreen_measurement_action, self.reset_workspace_layout_action):
             more_menu.addAction(action)
         more_menu.addSeparator()
+        more_menu.addAction(self.switch_capture_device_action)
         more_menu.addAction(self.optimize_capture_signal_action)
         more_menu.addSeparator()
         more_menu.addAction(self.close_current_action)
         more_menu.addAction(self.close_all_action)
         more_button.setMenu(more_menu)
-        file_toolbar.addWidget(more_button)
+        self._command_bar_more_menu = more_menu
 
         spacer = QWidget(self)
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         file_toolbar.addWidget(spacer)
 
-        file_toolbar.addAction(self.toggle_project_panel_action)
-        file_toolbar.addAction(self.toggle_inspector_panel_action)
-        file_toolbar.addAction(self.toggle_results_panel_action)
+        panel_button = QToolButton(self)
+        self._panel_command_button = panel_button
+        panel_button.setObjectName("panelCommandButton")
+        panel_button.setText("面板")
+        panel_button.setIcon(themed_icon("results", color=self._tool_icon_color("command")))
+        panel_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        panel_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        panel_menu = QMenu(panel_button)
         for action in (self.toggle_project_panel_action, self.toggle_inspector_panel_action, self.toggle_results_panel_action):
-            file_toolbar.widgetForAction(action).setProperty("panelToggle", True)
-        file_toolbar.addAction(self.switch_capture_device_action)
+            panel_menu.addAction(action)
+        panel_menu.addSeparator()
+        panel_menu.addAction(self.reset_workspace_layout_action)
+        panel_button.setMenu(panel_menu)
+        file_toolbar.addWidget(panel_button)
         file_toolbar.addAction(self.settings_action)
         file_toolbar.addAction(self.command_search_action)
+        file_toolbar.addWidget(more_button)
         self._settings_command_button = file_toolbar.widgetForAction(self.settings_action)
         if self._settings_command_button is not None:
             self._settings_command_button.setObjectName("settingsCommandButton")
@@ -4951,7 +5042,7 @@ class MainWindow(QMainWindow):
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
-        self._center_stack = QStackedWidget()
+        self._center_stack = WorkspaceStack()
         self.tab_widget = QTabWidget()
         self.tab_widget.setUsesScrollButtons(True)
         self.tab_widget.tabBar().setExpanding(False)
@@ -4997,14 +5088,29 @@ class MainWindow(QMainWindow):
         preview_layout = QVBoxLayout(self._preview_page)
         preview_layout.setContentsMargins(0, 0, 0, 0)
         self._preview_status_label = QLabel("请选择采集设备并开始实时预览")
-        preview_layout.addWidget(self._preview_status_label)
-        self._preview_display_stack = QStackedWidget()
+        preview_header = QHBoxLayout()
+        preview_header.addWidget(self._preview_status_label, 1)
+        self._preview_display_choice = NoWheelComboBox(self._preview_page)
+        self._preview_display_choice.setAccessibleName("实时采集显示方式")
+        for text, value in (("实际像素 1:1", "pixel"), ("适应窗口", "fit"),
+                            ("指定百分比…", "percent"), ("指定物理倍率…", "magnification")):
+            self._preview_display_choice.addItem(text, value)
+        self._preview_display_choice.activated.connect(self._select_preview_display_mode)
+        preview_header.addWidget(self._preview_display_choice)
+        preview_layout.addLayout(preview_header)
+        self._preview_display_stack = WorkspaceStack()
         self._preview_canvas = DocumentCanvas()
+        self._preview_canvas.set_empty_message("连接采集设备后自动显示实时画面")
         self._preview_canvas.set_read_only(True)
         self._preview_canvas.set_fit_alignment("top_left")
         self._preview_canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._preview_canvas.installEventFilter(self)
         self._preview_display_stack.addWidget(self._preview_canvas)
+        from fdm.ui.display_preferences import acquisition_display_store, AcquisitionDisplayBinding
+        self._preview_display_binding = AcquisitionDisplayBinding(self._preview_canvas,
+            store=acquisition_display_store(self), calibration_provider=self._preview_calibration_snapshot,
+            status_callback=lambda text: self.statusBar().showMessage(text, 8000), parent=self)
+        self._preview_display_binding.applied.connect(self._sync_preview_display_choice)
         self._microview_preview_host = MicroviewPreviewHost()
         self._microview_preview_host.installEventFilter(self)
         self._microview_preview_host.metricsChanged.connect(self._on_preview_host_metrics_changed)
@@ -6062,7 +6168,7 @@ class MainWindow(QMainWindow):
         else:
             text, details = "标定 · 请先打开图片", "打开图片后确认标定，再测量真实尺寸。"
         bar.set_calibration(text, details, missing=available and calibration is None, enabled=available)
-        if not self._preview_active:
+        if not self._preview_active and not self._acquisition_workspace_selected:
             self._center_stack.setCurrentWidget(self.tab_widget if entries else self._welcome_panel)
 
     def _populate_quick_calibration_menu(self) -> None:
@@ -13373,7 +13479,8 @@ class MainWindow(QMainWindow):
         return self._preview_kind() == "native_embed"
 
     def _current_preview_target(self) -> object | None:
-        if self._is_native_preview():
+        device = self._selected_capture_device()
+        if self._is_native_preview() or (device is not None and device.backend_key == "microview"):
             return self._microview_preview_host
         return None
 
@@ -13388,6 +13495,14 @@ class MainWindow(QMainWindow):
                 return bool(event.isAccepted())
         if event.type() == QEvent.Type.Wheel and self._should_intercept_digital_slide_preview_wheel(watched):
             return self._handle_digital_slide_focus_wheel(event)
+        if (event.type() == QEvent.Type.Wheel and watched is getattr(self, "_preview_canvas", None)
+                and self._preview_active and not self._digital_slide_mode):
+            self._preview_canvas.wheelEvent(event)
+            try:
+                self._preview_display_binding.remember_document_zoom()
+            except (ValueError, OSError) as exc:
+                self.statusBar().showMessage(str(exc), 8000)
+            return True
         return super().eventFilter(watched, event)
 
     def _digital_slide_canvas_for_window_key(
@@ -13490,16 +13605,65 @@ class MainWindow(QMainWindow):
             or self._microview_preview_scroll is None
         ):
             return
-        target_widget = self._microview_preview_scroll if preview_kind == "native_embed" else self._preview_canvas
-        self._preview_display_stack.setCurrentWidget(target_widget)
+        # Native SDK target and visible presentation have separate lifetimes.
+        # Processed frames are painted by Qt in every visible workspace.
+        self._preview_display_stack.setCurrentWidget(self._preview_canvas)
+        self._microview_preview_host.hide()
 
     def _refresh_preview_surface(self) -> None:
         self._apply_preview_surface(self._preview_kind())
 
     def _on_preview_host_metrics_changed(self) -> None:
-        if not self._preview_active or not self._is_native_preview() or self._microview_preview_host is None:
-            return
-        self._capture_manager.update_preview_target(self._microview_preview_host)
+        # Moving/resizing a page must not rebind the SDK HWND (SHOW_OPEN can
+        # make it cover the navigation). Resolution is negotiated on start.
+        return
+
+    def _preview_calibration_snapshot(self):
+        selected = self._selected_capture_device()
+        document = self._preview_document
+        if selected is None or document is None:
+            return None
+        key = json.dumps(["camera:" + selected.id, *document.image_size], ensure_ascii=False, separators=(",", ":"))
+        if getattr(self, "_preview_ruler_key", None) != key:
+            from fdm.live_experiment.calibration_store import load_rulers
+            try:
+                self._preview_ruler_snapshot = load_rulers().get(key)
+            except (OSError, ValueError, TypeError):
+                self._preview_ruler_snapshot = None
+            self._preview_ruler_key = key
+        return getattr(self, "_preview_ruler_snapshot", None)
+
+    def _sync_preview_display_choice(self, _resolved=None):
+        preferences = self._preview_display_binding.store.preferences
+        self._preview_display_choice.setCurrentIndex(self._preview_display_choice.findData(preferences.mode))
+        self._preview_display_choice.setToolTip(
+            f"显示方式跨采集页面及重启保留；百分比 {preferences.percent:g}%，物理倍率 {preferences.magnification:g} 倍。")
+
+    def _active_acquisition_display_binding(self):
+        hub = self._acquisition_workbench
+        if hub is not None and hub.pages.currentWidget() is not hub.capture_page:
+            return hub.pages.currentWidget().display_binding
+        return self._preview_display_binding
+
+    def _select_preview_display_mode(self, index):
+        binding = self._preview_display_binding
+        mode = self._preview_display_choice.itemData(index)
+        try:
+            if mode == "percent":
+                value, accepted = QInputDialog.getDouble(self, "显示百分比", "物理像素比例（%）",
+                    binding.store.preferences.percent, 1, 1600, 1)
+                if accepted:
+                    binding.set_mode(mode, value)
+            elif mode == "magnification":
+                from fdm.ui.live_display import request_magnification
+                result = request_magnification(self, binding.store.preferences.magnification)
+                if result is not None:
+                    binding.set_mode(mode, result[0])
+            else:
+                binding.set_mode(mode)
+        except (OSError, ValueError) as exc:
+            self.statusBar().showMessage(str(exc), 8000)
+        self._sync_preview_display_choice()
 
     def _show_active_capture_warning(self) -> None:
         warning = self._capture_manager.active_warning().strip()
@@ -13516,13 +13680,9 @@ class MainWindow(QMainWindow):
         return palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5
 
     def _status_color(self, kind: str) -> str:
-        if kind == "danger":
-            return "#FF7B72" if self._is_dark_palette() else "#C62828"
-        if kind == "info":
-            return "#79C0FF" if self._is_dark_palette() else "#1565C0"
-        if kind == "muted":
-            return "#C8D3DD" if self._is_dark_palette() else "#4E5969"
-        return self.palette().color(QPalette.ColorRole.WindowText).name()
+        from fdm.ui.theme import semantic_colors
+        colors = semantic_colors(self.palette())
+        return getattr(colors, "error" if kind == "danger" else kind, colors.text)
 
     def _tool_icon_color(self, kind: str) -> str:
         del kind
@@ -13533,17 +13693,23 @@ class MainWindow(QMainWindow):
             app = QApplication.instance()
             palette = app.palette() if app is not None else self.palette()
             return palette.color(QPalette.ColorRole.WindowText).name()
-        return "#D7E3FC" if self._is_dark_palette() else "#51606F"
+        from fdm.ui.theme import semantic_colors
+        return semantic_colors(self.palette()).muted
 
     def _refresh_theme_sensitive_icons(self) -> None:
+        self._theme_icon_refresh_pending = False
         color = self._tool_icon_color("command")
+        if getattr(self, "_last_theme_icon_color", None) == color:
+            return
+        self._last_theme_icon_color = color
         for name, icon_name in {
             "open_images_action": "open_images", "open_folder_action": "open_folder",
             "open_project_action": "open_project", "save_project_action": "save_project",
             "export_current_image_action": "export", "export_template_action": "export",
             "undo_action": "undo", "redo_action": "redo", "settings_action": "settings",
-            "measure_workspace_action": "select", "live_preview_action": "live_preview",
-            "digital_slide_action": "capture_frame", "capture_frame_action": "capture_frame",
+            "measure_workspace_action": "measurement", "live_preview_action": "live_preview",
+            "acquisition_workspace_action": "acquisition", "live_experiment_action": "content_trial",
+            "digital_slide_action": "digital_slide", "capture_frame_action": "capture_frame",
             "switch_capture_device_action": "capture_device", "toggle_project_panel_action": "open_project",
             "toggle_inspector_panel_action": "statistics", "toggle_results_panel_action": "results",
             "rename_group_action": "rename", "add_group_action": "add", "toggle_edge_snap_action": "snap",
@@ -13556,6 +13722,7 @@ class MainWindow(QMainWindow):
             action.setIcon(themed_icon("export", color=color))
         for name, icon_name in {
             "_export_command_button": "export", "_add_group_button": "add",
+            "_panel_command_button": "results", "_more_command_button": "more",
             "_rename_group_button": "rename", "_add_preset_button": "preset_add",
             "_edit_preset_button": "rename", "_apply_preset_button": "preset_apply",
             "_import_cu_preset_button": "preset_import", "_area_auto_button": "area_auto",
@@ -13827,23 +13994,38 @@ class MainWindow(QMainWindow):
             self._update_statusbar_aux_labels()
             self._update_image_resolution_label()
             self._update_group_list_header_styles()
-            self._refresh_theme_sensitive_icons()
+            # Style polishing can synchronously issue PaletteChange while Qt
+            # holds connection locks. Reconnecting action icons in that stack
+            # can deadlock with a retiring worker's disconnectNotify/GIL.
+            if not getattr(self, "_theme_icon_refresh_pending", False):
+                self._theme_icon_refresh_pending = True
+                QTimer.singleShot(0, self, self._refresh_theme_sensitive_icons)
             if getattr(self, "tab_widget", None) is not None and hasattr(self, "calibration_label"):
                 self._update_calibration_panel(self.current_document())
             self._apply_tool_menu_stylesheets()
 
     def _update_main_command_bar_density(self, width: int) -> None:
-        """Keep every explicit command reachable without Qt's overflow menu."""
-
-        if self._file_toolbar is not None:
-            self._save_status_indicator.set_compact(False)
-            self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-            self._file_toolbar.layout().invalidate()
-            if self._file_toolbar.sizeHint().width() > int(width):
-                self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
-                self._file_toolbar.layout().invalidate()
-            if self._file_toolbar.sizeHint().width() > int(width):
-                self._save_status_indicator.set_compact(True)
+        """Keep task labels; move optional toolbar presentations into More."""
+        toolbar = self._file_toolbar
+        if toolbar is None:
+            return
+        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self._save_status_indicator.set_compact(False)
+        optional = getattr(self, "_command_bar_optional", ())
+        for wrapper, _button, action in optional:
+            wrapper.setVisible(action.isVisible())
+        available = max(0, int(width) - 16)
+        toolbar.layout().invalidate()
+        # Capture, Redo, then Undo are secondary to navigation, Open/Save/
+        # Export and the named settings/panels menus.
+        for wrapper, _button, _action in reversed(optional):
+            if toolbar.sizeHint().width() <= available:
+                break
+            wrapper.setVisible(False)
+            toolbar.layout().invalidate()
+        if toolbar.sizeHint().width() > available:
+            self._save_status_indicator.set_compact(True)
+            toolbar.layout().invalidate()
 
     def _schedule_main_command_bar_density_update(self) -> None:
         if getattr(self, "_file_toolbar", None) is None:
@@ -13990,18 +14172,27 @@ class MainWindow(QMainWindow):
             return
         if self._digital_slide_mode:
             self._toggle_digital_slide_mode(False)
-        if self._preview_active:
-            self.stop_live_preview()
+        self._acquisition_workspace_selected = False
+        # A synchronous stop callback can restore measurement chrome. Expose
+        # its shorter page first so that callback never combines the retained
+        # trial page's height with measurement toolbars and status rows.
         self._workspace_mode = WorkspaceMode.MEASURE
+        self._center_stack.setCurrentWidget(self.tab_widget)
+        if self._acquisition_workbench is not None:
+            self._acquisition_workbench.leave()
+        elif self._preview_active:
+            self.stop_live_preview()
         self._sync_workspace_mode()
 
     def _sync_workspace_mode(self) -> None:
         if self._digital_slide_mode and self._preview_active:
             workspace = WorkspaceMode.DIGITAL_SLIDE_ACQUIRE
-        elif self._preview_active:
+        elif self._acquisition_workspace_selected:
             workspace = WorkspaceMode.ACQUIRE
         else:
             workspace = WorkspaceMode.MEASURE
+        hub = self._acquisition_workbench
+        in_trial = workspace is WorkspaceMode.ACQUIRE and hub is not None and hub.navigation.currentIndex() != 0
         if workspace is not WorkspaceMode.MEASURE:
             self._restore_workbench_presentation()
         if (
@@ -14018,6 +14209,9 @@ class MainWindow(QMainWindow):
             WorkspaceMode.MEASURE: "当前对象与测量", WorkspaceMode.ACQUIRE: "采集设置",
             WorkspaceMode.DIGITAL_SLIDE_ACQUIRE: "样品台与采集设置",
         }[workspace])
+        self.acquisition_workspace_action.blockSignals(True)
+        self.acquisition_workspace_action.setChecked(workspace is WorkspaceMode.ACQUIRE)
+        self.acquisition_workspace_action.blockSignals(False)
         self.measure_workspace_action.blockSignals(True)
         self.measure_workspace_action.setChecked(workspace is WorkspaceMode.MEASURE)
         self.measure_workspace_action.blockSignals(False)
@@ -14028,13 +14222,23 @@ class MainWindow(QMainWindow):
             self._measurement_tool_strip.setPreviewContextVisible(workspace is WorkspaceMode.ACQUIRE)
             self._measurement_tool_strip.setVisible(workspace is not WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
         if self._measure_toolbar is not None:
-            self._measure_toolbar.setVisible(workspace is not WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
+            # Apply the final state directly. Showing then hiding this bar on
+            # every device callback transiently raises the trial minimum size.
+            self._measure_toolbar.setVisible(workspace is not WorkspaceMode.DIGITAL_SLIDE_ACQUIRE and not in_trial)
         if self._right_standard_panel is not None:
             self._right_standard_panel.setVisible(workspace is WorkspaceMode.MEASURE)
         if self._acquisition_right_panel is not None:
             self._acquisition_right_panel.setVisible(workspace is WorkspaceMode.ACQUIRE)
         if self._digital_slide_right_panel is not None:
             self._digital_slide_right_panel.setVisible(workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
+        if self._adaptive_layout is not None:
+            self._adaptive_layout.set_embedded_controls(in_trial)
+        if not (self._fullscreen_controller is not None and self._fullscreen_controller.is_active):
+            # Full-screen measurement owns its status controls; workspace
+            # refresh must not hide the bar underneath its presentation.
+            self.statusBar().setVisible(not in_trial)
+        self._image_resolution_label.setVisible(not in_trial and not (
+            self._fullscreen_controller is not None and self._fullscreen_controller.is_active))
         self._update_acquisition_panel()
 
     def _update_acquisition_panel(self) -> None:
@@ -15319,31 +15523,40 @@ class MainWindow(QMainWindow):
             return
         self.stop_live_preview()
 
-    def start_live_preview(self) -> None:
+    def start_live_preview(self, *, automatic=False) -> None:
+        if self._capture_manager.is_stopping():
+            if self._acquisition_workbench is not None:
+                self._acquisition_workbench._restart_pending = True
+                self._acquisition_workbench._want_capture = True
+            return
+        if self._capture_manager.is_preview_active():
+            return
         self._refresh_capture_devices()
         if not self._capture_devices:
-            QMessageBox.information(self, "实时预览", self._capture_refresh_message())
+            if self._acquisition_workbench is not None:
+                self._acquisition_workbench.show_error(self._capture_refresh_message())
+            elif not automatic:
+                QMessageBox.information(self, "实时预览", self._capture_refresh_message())
             self._sync_live_preview_action()
             return
         preview_kind = self._preview_kind()
         if self._center_stack is not None and self._preview_page is not None:
-            self._center_stack.setCurrentWidget(self._preview_page)
+            self._open_acquisition_workbench(auto_start=False)
         self._apply_preview_surface(preview_kind)
-        if preview_kind == "native_embed" and self._microview_preview_host is not None:
+        selected = self._selected_capture_device()
+        if (preview_kind == "native_embed" or (selected is not None and selected.backend_key == "microview")) and self._microview_preview_host is not None:
             self._apply_native_preview_resolution()
             self._microview_preview_host.ensure_native_handle()
-            QApplication.processEvents()
         preview_target = self._current_preview_target()
+        self._capture_manager.set_native_preview_visible(False)
         if not self._capture_manager.start_preview(preview_target=preview_target):
-            if self._center_stack is not None:
-                self._center_stack.setCurrentWidget(self.tab_widget)
             self._sync_live_preview_action()
             return
         selected = self._selected_capture_device()
         if self._preview_status_label is not None:
             if preview_kind == "native_embed":
                 self._preview_status_label.setText(
-                    f"正在预览: {selected.name if selected is not None else '采集设备'}  (Microview 原生预览)"
+                    f"正在连接: {selected.name if selected is not None else '采集设备'}"
                 )
             else:
                 self._preview_status_label.setText(f"正在预览: {selected.name if selected is not None else '采集设备'}")
@@ -15362,25 +15575,25 @@ class MainWindow(QMainWindow):
             self._update_ui_for_current_document()
             self._sync_live_preview_action()
             return
-        result = self._capture_manager.stop_preview()
-        if result:
-            self.statusBar().showMessage("实时预览已停止", 3000)
+        if self._digital_slide_mode:
+            self._acquisition_workspace_selected = False
+        self.statusBar().showMessage("正在停止采集…", 3000)
+        self._capture_manager.request_stop_preview()
 
     def _on_live_preview_state_changed(self, active: bool) -> None:
         if not active and self._preview_analysis_mode != "none":
             self._cancel_preview_analysis_session()
         self._preview_active = active
-        if self._center_stack is not None and self._preview_page is not None:
-            self._center_stack.setCurrentWidget(self._preview_page if active else self.tab_widget)
+        # Only explicit workspace actions choose the visible page. Device
+        # callbacks can arrive after the user has left or returned.
         if active:
             self._refresh_preview_surface()
             if self._is_native_preview() and self._microview_preview_host is not None:
                 self._apply_native_preview_resolution()
-                QApplication.processEvents()
-                self._capture_manager.update_preview_target(self._microview_preview_host)
             self._show_active_capture_warning()
             self._maybe_hint_signal_optimization()
         if not active:
+            self.statusBar().showMessage("采集已停止，试验记录已保留", 3000)
             self._digital_slide_mode = False
             self._sync_digital_slide_mode_ui()
             self._clear_preview_surface_state()
@@ -15398,12 +15611,17 @@ class MainWindow(QMainWindow):
             canvas.fit_to_view()
 
     def _on_live_preview_frame_ready(self, image: object) -> None:
-        if not self._preview_active or self._is_native_preview():
+        if not self._preview_active:
             return
         if not isinstance(image, QImage) or image.isNull() or self._preview_canvas is None:
             return
         self._preview_frame_serial += 1
         self._latest_preview_frame = QImage(image)
+        hub = self._acquisition_workbench
+        if hub is not None and hub.pages.currentWidget() is not hub.capture_page and not self._digital_slide_mode:
+            # Trial subscribers already own the frame. Do not also repaint the
+            # hidden legacy preview/document tree on every camera tick.
+            return
         display_image = self._scaled_digital_slide_preview_image(image)
         selected = self._selected_capture_device()
         signature = (
@@ -15421,12 +15639,18 @@ class MainWindow(QMainWindow):
                 image_size=(display_image.width(), display_image.height()),
                 source_type="project_asset",
             )
-            self._preview_canvas.set_document(self._preview_document, display_image)
-            self._preview_canvas.fit_to_view()
+            with self._preview_display_binding.mounting_frame():
+                self._preview_canvas.set_document(self._preview_document, display_image)
+                if self._digital_slide_mode:
+                    self._preview_canvas.fit_to_view()
         else:
             self._preview_canvas.set_image(display_image)
             if presentation_changed and self._digital_slide_mode:
                 self._preview_canvas.fit_to_view()
+        if not self._digital_slide_mode:
+            self._preview_display_binding.set_source("camera:" + (selected.id if selected is not None else "unknown"),
+                (image.width(), image.height()))
+            self._sync_preview_display_choice()
         if not presentation_changed:
             return
         self._preview_display_signature = signature
@@ -15451,13 +15675,16 @@ class MainWindow(QMainWindow):
         self._sync_digital_slide_task_state()
 
     def _clear_preview_surface_state(self) -> None:
+        self._preview_display_binding.clear_source()
+        self._preview_ruler_key = None
         self._preview_display_signature = None
         self._preview_document = None
         self._latest_preview_frame = None
         self._preview_frame_serial = 0
         self._apply_preview_surface("frame_stream")
         if self._preview_canvas is not None:
-            self._preview_canvas.clear_document()
+            with self._preview_display_binding.mounting_frame():
+                self._preview_canvas.clear_document()
         if self._preview_status_label is not None:
             self._preview_status_label.setText("请选择采集设备并开始实时预览")
 
@@ -15465,7 +15692,10 @@ class MainWindow(QMainWindow):
         self._sync_live_preview_action()
         self._update_action_states()
         self.statusBar().showMessage(message, 5000)
-        QMessageBox.warning(self, "实时预览", message)
+        if self._acquisition_workspace_selected and self._acquisition_workbench is not None:
+            self._acquisition_workbench.show_error(message)
+        else:
+            QMessageBox.warning(self, "实时预览", message)
 
     def _next_project_capture_relative_path(self) -> str:
         existing = {
@@ -15617,6 +15847,8 @@ class MainWindow(QMainWindow):
             return
         if checked and self._preview_analysis_mode != "none":
             self._cancel_preview_analysis_session()
+        if checked and self._acquisition_workbench is not None:
+            self._acquisition_workbench.select_page(0)
         self._digital_slide_mode = bool(checked)
         self._sync_digital_slide_mode_ui()
         if checked:
@@ -18610,6 +18842,7 @@ class MainWindow(QMainWindow):
 
     def _persist_window_geometry(self) -> None:
         if self._adaptive_layout is not None:
+            self._adaptive_layout.persist_profiles()
             self._app_settings.workspace_layout = self._adaptive_layout.layout_settings
         if self._fullscreen_controller is not None:
             persistence_state = (
@@ -18694,6 +18927,7 @@ class MainWindow(QMainWindow):
             project_group_templates=project_group_templates,
             project_extension_state_id=self.project.extension_state_id,
             document_persistence=persistence_snapshot,
+            live_experiment_revisions=tuple((session.id, session.revision) for session in self.project.live_experiments),
         )
 
     def _mark_project_saved(self) -> None:
@@ -18707,6 +18941,36 @@ class MainWindow(QMainWindow):
 
     def _project_dirty(self) -> bool:
         return self._project_clean_snapshot is not None and self._project_snapshot() != self._project_clean_snapshot
+
+    def _unsaved_project_summary(self) -> list[str]:
+        """Explain actual changed categories without copying measurement payloads."""
+        previous = self._project_clean_snapshot
+        if previous is None:
+            return []
+        current = self._project_snapshot()
+        messages = []
+        if current.project_default_calibration != previous.project_default_calibration:
+            messages.append("项目默认标尺已更改。")
+        if (current.project_asset_documents != previous.project_asset_documents
+                or current.document_persistence != previous.document_persistence):
+            messages.append("项目图片或文件关联已更改。")
+        if current.project_group_templates != previous.project_group_templates:
+            messages.append("项目类别已更改。")
+        if current.project_default_document_ids != previous.project_default_document_ids:
+            messages.append("图片的标尺继承设置已更改。")
+        previous_trials = dict(previous.live_experiment_revisions)
+        changed_trials = [session for session in self.project.live_experiments
+                          if previous_trials.get(session.id) != session.revision]
+        for session in changed_trials:
+            mode = "直径试验" if session.workspace_options.get("mode") == "diameter" else "含量试验"
+            label = session.sample_name or session.sample_number or "未命名样品"
+            messages.append(f"{mode}“{label}”的试验信息或记录已更改（当前 {len(session.measurements)} 条实测记录）。")
+        removed = set(previous_trials) - {session.id for session in self.project.live_experiments}
+        if removed:
+            messages.append(f"已移除 {len(removed)} 项试验。")
+        if current.project_extension_state_id != previous.project_extension_state_id and not changed_trials and not removed:
+            messages.append("项目分析数据或试验配置已更改。")
+        return messages
 
     def _clone_preset(self, preset: CalibrationPreset, *, name: str | None = None) -> CalibrationPreset:
         return CalibrationPreset(
@@ -20691,6 +20955,11 @@ class MainWindow(QMainWindow):
             action.setChecked(bool(checked))
             action.blockSignals(False)
 
+    def _commit_live_experiment_edits(self) -> None:
+        """Include focused trial editors in every project save snapshot."""
+        for workspace in tuple(getattr(self, "_live_experiment_workspaces", {}).values()):
+            workspace.commit_pending_edits()
+
     def save_project(self, path: str | None = None) -> ProjectSaveResult:
         if self.project_save_coordinator.busy:
             return ProjectSaveResult(False, message="后台保存正在进行，请使用 request_save_project 排队保存。")
@@ -20716,16 +20985,26 @@ class MainWindow(QMainWindow):
     def _confirm_close_documents_for_transition(self, documents, callback) -> bool:
         # Stop producers before taking a save snapshot or confirming discard.
         # Otherwise a live result could arrive after confirmation and be lost.
-        if {document.id for document in documents} == {document.id for document in self.project.documents}:
-            if not self._close_live_experiment():
+        whole_project = {document.id for document in documents} == {document.id for document in self.project.documents}
+        if whole_project:
+            if not self._prepare_live_experiment_close():
                 return False
         # Preserve the existing one-argument confirmation hook for integrations.
         previous = getattr(self, "_save_transition_continuation", None)
         self._save_transition_continuation = callback
+        confirmed = False
         try:
-            return self._confirm_close_documents(documents)
+            confirmed = self._confirm_close_documents(documents)
         finally:
             self._save_transition_continuation = previous
+            if whole_project and not confirmed:
+                self._resume_live_experiment_after_cancel()
+        if whole_project and confirmed:
+            hub = getattr(self, "_acquisition_workbench", None)
+            if hub is not None:
+                hub.retire_entry()
+            return self._close_live_experiment(preserve_snapshot=True)
+        return confirmed
 
     def load_project(self) -> ProjectLoadResult:
         return self.project_session_controller.load_project()
@@ -20767,6 +21046,9 @@ class MainWindow(QMainWindow):
         return self.export_controller.raw_record_template_for_path(template_path)
 
     def fit_current_image(self) -> None:
+        if self._acquisition_workspace_selected and not self._digital_slide_mode:
+            self._active_acquisition_display_binding().set_mode("fit")
+            return
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.fit_to_view()
@@ -20795,11 +21077,17 @@ class MainWindow(QMainWindow):
         return False
 
     def actual_size_current_image(self) -> None:
+        if self._acquisition_workspace_selected and not self._digital_slide_mode:
+            self._active_acquisition_display_binding().set_mode("pixel")
+            return
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.actual_size()
 
     def _set_current_view_zoom(self, zoom: float) -> None:
+        if self._acquisition_workspace_selected and not self._digital_slide_mode:
+            self._active_acquisition_display_binding().set_mode("percent", float(zoom) * 100)
+            return
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_view_zoom(float(zoom))
@@ -23805,7 +24093,7 @@ class MainWindow(QMainWindow):
             else:
                 message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的项目改动。")
         if has_project_dirty:
-            message_parts.append("当前项目的比例尺、图片、类别、实时试验或继承关系有未保存改动。")
+            message_parts.extend(self._unsaved_project_summary() or ["项目数据有未保存改动。"])
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("未保存的改动")
@@ -23831,8 +24119,10 @@ class MainWindow(QMainWindow):
     def _reset_workspace(self) -> None:
         if self.project_save_coordinator.busy:
             raise RuntimeError("项目正在后台保存，暂不能释放工作区资源。")
-        if not self._close_live_experiment():
+        if not self._close_live_experiment(preserve_snapshot=True):
             raise RuntimeError("实时试验正在保存原图，工作区暂不能释放。")
+        if self._acquisition_workbench is not None:
+            self._acquisition_workbench.retire_entry()
         self.project_save_coordinator.reset()
         queue = getattr(self, "_measurement_commit_queue", None)
         if queue is not None:
@@ -28892,9 +29182,6 @@ class MainWindow(QMainWindow):
         if self._defer_for_project_save(self.close, "关闭软件"):
             event.ignore()
             return
-        if not self._close_live_experiment():
-            event.ignore()
-            return
         if self._device_import_dialog is not None:
             self._device_import_dialog.reject()
             event.ignore()
@@ -28912,6 +29199,11 @@ class MainWindow(QMainWindow):
         if not self._confirm_close_documents_for_transition(self.project.documents, self.close):
             event.ignore()
             return
+        if not self._close_live_experiment(preserve_snapshot=True):
+            event.ignore()
+            return
+        if self._acquisition_workbench is not None:
+            self._acquisition_workbench.retire_entry()
         transition = self._prepare_transition(intent, disposition=disposition)
         if not transition.completed:
             if transition.reason:
@@ -28962,4 +29254,5 @@ class MainWindow(QMainWindow):
         if self._application_key_filter_installed and app is not None:
             app.removeEventFilter(self)
             self._application_key_filter_installed = False
+        self._preview_display_binding.close()
         event.accept()

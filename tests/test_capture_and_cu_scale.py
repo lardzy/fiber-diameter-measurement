@@ -507,7 +507,7 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         )
 
     @unittest.skipIf(capture_module is None, "PySide6 not installed")
-    def test_microview_isolated_backend_snapshot_command_is_sent(self) -> None:
+    def test_microview_isolated_backend_analysis_uses_owned_preview_frame(self) -> None:
         class FakeProcess:
             def __init__(self) -> None:
                 self.payloads: list[bytes] = []
@@ -528,6 +528,9 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         backend._preview_started = True
         requested: list[int] = []
 
+        from fdm.live_experiment.frames import FrameHandle
+        import numpy as np
+        backend._last_frame = FrameHandle.snapshot(np.full((2, 3, 3), 20, np.uint8), source_id="microview")
         backend.request_analysis_frame(
             capture_module.CaptureDevice(id="microview:0", name="Microview #1", backend_key="microview", native_id=0),
             request_id=11,
@@ -535,10 +538,8 @@ class CaptureAndCuScaleTests(unittest.TestCase):
             error_callback=lambda request_id, message: requested.append(-request_id),
         )
 
-        self.assertEqual(requested, [])
-        self.assertEqual(len(backend._preview_process.payloads), 1)
-        payload = json.loads(backend._preview_process.payloads[0].decode("utf-8"))
-        self.assertEqual(payload, {"command": "snapshot", "request_id": 11})
+        self.assertEqual(requested, [11])
+        self.assertEqual(backend._preview_process.payloads, [])
 
     @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
     def test_microview_rgb24_buffer_converts_to_qimage(self) -> None:
@@ -811,31 +812,22 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         capture_module is None or _microview_buffer_to_qimage is None or MicroviewCaptureBackend is None,
         "PySide6 not installed",
     )
-    def test_microview_capture_single_uses_preallocated_buffer_when_sdk_returns_null_pointer(self) -> None:
+    def test_microview_capture_single_never_passes_pointer_in_dword(self) -> None:
         backend = MicroviewCaptureBackend()
-        payload = bytes([0, 0, 255, 0, 255, 0])
-
+        payload = ctypes.create_string_buffer(bytes([0, 0, 255, 0, 255, 0]))
         class FakeDll:
-            def MV_SetDeviceParameter(self, handle, parameter, value):
-                if int(parameter) == MicroviewCaptureBackend._PARAM_SET_GARBIMAGEINFO:
-                    info = ctypes.cast(int(value), ctypes.POINTER(MicroviewCaptureBackend._MVImageInfo)).contents
-                    info.Length = len(payload)
-                    info.Width = 2
-                    info.Heigth = 1
-                    info.nColor = 24
-                    info.SkipPixel = 0
-                return True
-
+            def MV_SetDeviceParameter(self, *args):
+                raise AssertionError("No pointer may pass through DWORD parameters")
             def MV_CaptureSingle(self, handle, process, buffer_ptr, buffer_len, info_ptr):
-                ctypes.memmove(int(buffer_ptr), payload, len(payload))
-                return 0
-
+                assert not buffer_ptr and not buffer_len
+                info = ctypes.cast(info_ptr, ctypes.POINTER(MicroviewCaptureBackend._MVImageInfo)).contents
+                info.Length, info.Width, info.Heigth, info.nColor, info.SkipPixel = 6, 2, 1, 24, 0
+                return ctypes.addressof(payload)
         backend._dll = FakeDll()
-
         image = backend._capture_single_frame_image(handle=1, process=False)
-
         self.assertFalse(image.isNull())
-        self.assertEqual((image.width(), image.height()), (2, 1))
+        self.assertEqual(image.pixelColor(0, 0).red(), 255)
+        ctypes.memset(ctypes.addressof(payload), 0, 6)
         self.assertEqual(image.pixelColor(0, 0).red(), 255)
 
     @unittest.skipIf(MicroviewCaptureBackend is None, "PySide6 not installed")

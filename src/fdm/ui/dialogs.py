@@ -895,9 +895,9 @@ class ExportOptionsDialog(QDialog):
         self._scale_overlay.setChecked(selection.include_scale_overlay)
         self._combined_overlay = QCheckBox("测量 + 比例尺叠加图")
         self._combined_overlay.setChecked(selection.include_combined_overlay)
-        self._construction_geometry = QCheckBox("在结果图中包含辅助几何")
+        self._construction_geometry = QCheckBox("辅助几何")
         self._watermark_counts = (watermark_count_current, watermark_count_all)
-        self._watermark = QCheckBox("包含水印（普通图片）")
+        self._watermark = QCheckBox("水印")
         self._watermark_uses_default = selection.scale_overlay is None and not selection.include_watermark
         all_selected = allow_all_scope and selection.scope == ExportScope.ALL_OPEN
         # A scale-editor selection already carries the chosen export content,
@@ -1131,7 +1131,7 @@ class ExportOptionsDialog(QDialog):
         image_content = QWidget(self)
         image_layout = QVBoxLayout(image_content)
         image_layout.setContentsMargins(0, 0, 8, 0)
-        image_layout.setSpacing(6)
+        image_layout.setSpacing(3)
         image_layout.addWidget(self._overlay_group)
         scale_row = QHBoxLayout()
         self._adjust_scale = QPushButton("在画布调整比例尺…")
@@ -1199,7 +1199,7 @@ class ExportOptionsDialog(QDialog):
         self._export_page_description.setWordWrap(True)
         page_layout = QVBoxLayout()
         page_layout.setContentsMargins(16, 12, 12, 0)
-        page_layout.setSpacing(6)
+        page_layout.setSpacing(4)
         page_layout.addWidget(self._export_page_title)
         page_layout.addWidget(self._export_page_description)
         page_layout.addWidget(self._scope_group)
@@ -1282,6 +1282,9 @@ class ExportOptionsDialog(QDialog):
                 border: none;
                 border-right: 1px solid palette(mid);
             }
+            /* The title already reserves its margin; avoid stacking an
+               extra global group padding above every encoding section. */
+            QGroupBox { padding-top: 0px; }
             QLabel#exportOptionsSidebarTitle,
             QLabel#exportOptionsPageTitle {
                 font-size: 18px;
@@ -2434,8 +2437,10 @@ class SettingsDialog(QDialog):
         display_form = QFormLayout(display_group)
         self._theme_mode_combo = NoWheelComboBox()
         self._theme_mode_combo.addItem("跟随系统", AppThemeMode.SYSTEM)
-        self._theme_mode_combo.addItem("深色", AppThemeMode.DARK)
-        self._theme_mode_combo.addItem("浅色", AppThemeMode.LIGHT)
+        self._theme_mode_combo.addItem("实验室浅色", AppThemeMode.LIGHT)
+        self._theme_mode_combo.addItem("石墨深色", AppThemeMode.DARK)
+        self._theme_mode_combo.addItem("深蓝", AppThemeMode.NAVY)
+        self._theme_mode_combo.addItem("暖灰", AppThemeMode.WARM)
         self._theme_mode_combo.setCurrentIndex(
             max(0, self._theme_mode_combo.findData(settings.theme_mode))
         )

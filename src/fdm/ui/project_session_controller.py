@@ -94,6 +94,7 @@ class ProjectDirtySnapshot:
     project_group_templates: tuple[tuple[str, str], ...]
     project_extension_state_id: int
     document_persistence: ProjectPersistenceSnapshot
+    live_experiment_revisions: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -544,6 +545,12 @@ class ProjectSessionController:
 
     def prepare_save(self, path: str | None = None) -> PreparedProjectSave | ProjectSaveResult:
         host = self._host
+        commit_editors = getattr(host, "_commit_live_experiment_edits", None)
+        if callable(commit_editors):
+            try:
+                commit_editors()
+            except ValueError as exc:
+                return ProjectSaveResult(False, message=str(exc))
         if not self._ordered_persisted_document_sources() and not host.project.live_experiments:
             host._show_project_information("保存项目", "请先打开图片或建立实时试验。")
             return ProjectSaveResult(False, message="当前项目没有文档或试验。")

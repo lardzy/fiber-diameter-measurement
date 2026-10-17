@@ -1,0 +1,10 @@
+python.exe : QWidget::paintEngine: Should no longer be called
+所在位置 行:8 字符: 1
++ & 'C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Scri ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (QWidget::paintE...onger be called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"boundary": "native test DLL, real MainWindow, no physical Microview", "checks": ["automatic capture entry", "hidden SDK host with Qt pixel display", "AFTER_PROCESS trial pixels", "shared helper across pages", "first-click frame pinned while preview updates", "numeric count does not select class", "free measurement 30 um", "20 main-entry repeats", "5 realtime/diameter/content roundtrips", "2 stop/restart cycles", "history and ruler retained", "single status surface", "stable SDK HWND"], "errors": [], "frame_stats": {"received": 4, "displayed": 3, "coalesced": 0, "pending_wakeups": 1, "latest_frame_bytes": 1769472, "latest_age_ms": 14.655541337560862}}
+
+

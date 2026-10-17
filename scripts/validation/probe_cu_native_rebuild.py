@@ -27,7 +27,7 @@ def main() -> int:
     if sys.platform != "win32" or not ROOT.name.startswith("fdm-cu-live-") or ROOT.parent != Path(r"C:\tmp"):
         parser.error("This destructive fixture is restricted to C:\\tmp\\fdm-cu-live-* snapshots")
     suffix = sysconfig.get_config_var("EXT_SUFFIX")
-    paths = [ROOT / "src/fdm/_native" / (name + suffix) for name in ("_kernels", "_windows_capture")]
+    paths = [ROOT / "src/fdm/_native" / (name + suffix) for name in ("_kernels", "_microview")]
     before = {path.name: digest(path) for path in paths}
     errors = []
     with tempfile.TemporaryDirectory(prefix="rebuild-fixture-", dir=ROOT / "build") as directory:

@@ -91,7 +91,7 @@ class ExportController:
             else:
                 host._show_export_information("导出结果", "当前没有可导出的图片。")
             return
-        preset = preset or ExportSelection.all_enabled(scope=ExportScope.CURRENT)
+        preset = preset or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
         dialog = host._create_export_options_dialog(preset)
         if dialog.exec() != dialog.DialogCode.Accepted:
             if getattr(dialog, "adjust_scale_requested", False):

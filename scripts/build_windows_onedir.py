@@ -44,7 +44,7 @@ def check_windows_build_dependencies(
     resolved = resolve_runtime_profile(project_root, str(profile or "").strip().lower())
     missing: list[str] = []
     for module_name in resolved.required_python_modules:
-        if module_name in {"fdm._native._kernels", "fdm._native._windows_capture"}:
+        if module_name in {"fdm._native._kernels", "fdm._native._microview"}:
             # The dedicated preflight below builds this dependency when needed.
             continue
         try:

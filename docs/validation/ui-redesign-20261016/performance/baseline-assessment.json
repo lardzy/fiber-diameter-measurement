@@ -1,0 +1,45 @@
+{
+  "paired_baseline_available": false,
+  "reference_report": "docs/validation/cu-live-measurement-2026-10-15/performance-ui-macos.json",
+  "reference_environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "git_head": "f1a90a5a84e90376a4300fb0874a87771765d91c",
+    "native_build_info": {
+      "api_version": 1,
+      "source_sha256": "63952b99da931452d1bdd1f21f91d2d419617ba31601279340e8a9160b6e25eb",
+      "python_abi": "cpython-313-darwin",
+      "python_version": "3.13.12",
+      "pybind11_version": "3.0.4",
+      "build_type": "release",
+      "cpp_standard": 201703,
+      "compiler": "Clang 21.0.0 (clang-2100.3.34.2)"
+    }
+  },
+  "reference_parameters": {
+    "output": "docs/validation/cu-live-measurement-2026-10-15/performance-ui-macos.json",
+    "sizes": [
+      2048,
+      4096,
+      6144
+    ],
+    "warmup": 5,
+    "samples": 30,
+    "frame_hz": 30,
+    "interval_ms": 100,
+    "evidence": "both",
+    "window_width": 1240,
+    "window_height": 840,
+    "screenshot": "build/cu-live-measurement/workspace-benchmark.png"
+  },
+  "reasons": [
+    "The prior report predates later capture/publishing changes and uses a different native source hash.",
+    "It uses a 1240x840 standalone view; this run uses the redesigned themed 1366x768 view plus real MainWindow navigation.",
+    "No controlled same-checkout, same-theme, same-runtime before/after pair exists for this UI change."
+  ],
+  "comparison_policy": "Report current measured values and applicable previously fixed absolute thresholds; do not attribute historical differences to the UI redesign.",
+  "known_prior_failure": {
+    "source": "docs/validation/cu-live-measurement-2026-10-15/performance-audit-short-final-r4.md",
+    "observation": "macOS 4K lsb-noise already failed fixed result-visible latency gates; PNG on accepted28/30 attempts.",
+    "not_a_causal_comparison": "Different source/runtime/display configurations prevent isolated attribution or an improvement percentage."
+  }
+}

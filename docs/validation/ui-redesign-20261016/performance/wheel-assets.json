@@ -1,0 +1,248 @@
+{
+  "passed": true,
+  "wheel_name": "fiber_diameter_measurement-0.4.9-py3-none-any.whl",
+  "wheel_sha256": "f2e6bae0a749daab63520a6809bc38ad318372ccf864892fb40cafab4b13a726",
+  "svg_count": 36,
+  "files": [
+    {
+      "path": "fdm/ui/assets/fluent/LICENSE",
+      "bytes": 1078,
+      "sha256": "69bc45dc42b9acb96a69823adbc6ae538374e3c0bde169b855b32c48eaaef52f",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/NOTICE",
+      "bytes": 3911,
+      "sha256": "2fb367a84df52c8b6f8401119708014b327f595554d41712d7407151c9ce73ef",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/add_20_regular.svg",
+      "bytes": 425,
+      "sha256": "fdf9fefaf083ff2349ac94afd47aab8ecb554650781c5797176b9d6ad3caee05",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/arrow_expand_20_regular.svg",
+      "bytes": 1299,
+      "sha256": "c74ed4ee85539396aa2fb24e0df80794332a6b4e1b5ddbb1c2889604643c8211",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/arrow_export_20_regular.svg",
+      "bytes": 753,
+      "sha256": "ee47d4a260546d0497ecb3d292ee1fb2a6781ef9d0549d3f94ba4ab8625c6bcc",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/arrow_next_20_regular.svg",
+      "bytes": 666,
+      "sha256": "c99b9211739cbaa33c402a3c0f212d2b29331b04b5d4ef4df33a1d61aaca945f",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/arrow_redo_20_regular.svg",
+      "bytes": 687,
+      "sha256": "374ec6ed97949ac3ae5ec6739c283f16a4a56fa7ad374b33e0b15d4d2154b991",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/arrow_sync_20_regular.svg",
+      "bytes": 1622,
+      "sha256": "1713352c66b798bd1bbf86467ab33e45ac615d8a18d3f79c50b195034a51ab9e",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/arrow_undo_20_regular.svg",
+      "bytes": 633,
+      "sha256": "a6f6566eb86df531ce5332ab4153b056fb8ff8af37655058f30afaf127892a2f",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/beaker_20_regular.svg",
+      "bytes": 812,
+      "sha256": "c274257915f44c0fcd3701d58aa887af098318d5061ccec783460ce6180c1ab2",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/camera_20_regular.svg",
+      "bytes": 1255,
+      "sha256": "950376e33dbf494c11adb3c13776ae620959c720a071ff6358ba4e7260a0a7ff",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/checkmark_20_regular.svg",
+      "bytes": 449,
+      "sha256": "d4eb7c05fcfe45d7799925431902dc0079fa0a8cf4c647cfd4cb3db22c3fd2b7",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/clipboard_bullet_list_20_regular.svg",
+      "bytes": 1524,
+      "sha256": "ad10eb0de53c19b300b6a9de88c60c012f2e980aa05596bbeac63839a74efa25",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/cursor_20_regular.svg",
+      "bytes": 474,
+      "sha256": "677c256bb99cd57a4189396fc836b669caae8084f5dfdd72c08969afe843a416",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/data_histogram_20_regular.svg",
+      "bytes": 469,
+      "sha256": "a5efc68b301c7a7c3dbcff7c5c9b1fe9131c49903e4842443c0f2b03b04eb9eb",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/delete_20_regular.svg",
+      "bytes": 922,
+      "sha256": "c3ce6fcb04fa1564fc50e00677d763ddf5cafa0ade58604df4c478268ef54452",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/dismiss_20_regular.svg",
+      "bytes": 782,
+      "sha256": "e84ad771fa8afba8e3ef52c98d9ab2d8ef4fc8e23c5954766a1c4e88fc13b355",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/document_20_regular.svg",
+      "bytes": 514,
+      "sha256": "9a4df1411feac56af539710455c0da05ed81c72b65f8c66c9775ca2f63552980",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/document_arrow_right_20_regular.svg",
+      "bytes": 1237,
+      "sha256": "0520222413b68241880578b1527d8a74911df0c6c8cc0a477432cfc6f03c4c3a",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/edit_20_regular.svg",
+      "bytes": 839,
+      "sha256": "f14fdc76c0e3953d273e99394e724003bebd8779a55e30df6130455841f237c6",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/folder_open_20_regular.svg",
+      "bytes": 1222,
+      "sha256": "c5f8b2db9af20a454c1f05ce6eda4b21c99f1b8677b14b6d7d07d5817140a487",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/full_screen_maximize_20_regular.svg",
+      "bytes": 895,
+      "sha256": "bcef45dfd2fc91dfef2e06079278330f774557a49451fe07b51834b1d65859ea",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/full_screen_minimize_20_regular.svg",
+      "bytes": 889,
+      "sha256": "22d70445c47ba6d76e8629cf8cb9f95fbed283d0d9ea57459a590d549a3effab",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/image_multiple_20_regular.svg",
+      "bytes": 1003,
+      "sha256": "838dc52d7065084e12f61591872c99b09d1f901ad44482c7dd8ab55926cf81b1",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/info_20_regular.svg",
+      "bytes": 815,
+      "sha256": "498bc2a24fb99480e7565b502467a4cc8e967b41b0c374c1283a68fc0da73b7a",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/manifest.json",
+      "bytes": 8117,
+      "sha256": "bbaa3fd103b59211f56cc56f73e72a583808958830160ee1823bbac0e6903a87",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/map_20_regular.svg",
+      "bytes": 729,
+      "sha256": "c6c2190a568fa941f09bc50ba63f9978a4d083574547fe083b0d3ab63b939657",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/microscope_20_regular.svg",
+      "bytes": 1272,
+      "sha256": "551a3b49bc63cd57b131facabcbd4a3265882563beed809fcd1cbfbd7e61ae21",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/number_symbol_20_regular.svg",
+      "bytes": 1278,
+      "sha256": "0d2575799ba5febfa729d916112ac2ed7ad55a1ec9fa7fdbcc4c8775df67f86f",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/play_20_regular.svg",
+      "bytes": 491,
+      "sha256": "0666c1378f63d4d5c32f91b4107086bc14799dff306027976be591da8843ae45",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/question_circle_20_regular.svg",
+      "bytes": 1091,
+      "sha256": "2a74ef3c4c4fe762581ba7339c01be2129b7e646a8f399703f1426558275a639",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/ruler_20_regular.svg",
+      "bytes": 777,
+      "sha256": "29ff61cf92ce98355c845c3be68c973bb1763e197574ca085cc862fec00cbb12",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/save_20_regular.svg",
+      "bytes": 819,
+      "sha256": "fdfbcf9c469ff958782a3f8ab4659c7f1c48062752bb6324b07e5bbb70f52969",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/search_20_regular.svg",
+      "bytes": 668,
+      "sha256": "5ac1eac82df532662cd1bad2c8e55763846e1b258740bcbb0612a48d22630d40",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/settings_20_regular.svg",
+      "bytes": 3314,
+      "sha256": "ac5bdb808bed91dc8c0b6f346e7a0a1ee1901fc4b50f5641987498a65e200685",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/stop_20_regular.svg",
+      "bytes": 406,
+      "sha256": "8023e072d92bf65ac7647ae651d828d083834abc2eee1a2d24d64e10815d493a",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/table_20_regular.svg",
+      "bytes": 621,
+      "sha256": "7acf041bc47eb694a3c3c74ba6d4d345cee8941c5f43dfe832494bfe4b8f0570",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/video_20_regular.svg",
+      "bytes": 658,
+      "sha256": "1d74113628b7c836425ad0888b31ee3c543942fd8035d1970366deb717c7b26f",
+      "matches_source": true
+    },
+    {
+      "path": "fdm/ui/assets/fluent/warning_20_regular.svg",
+      "bytes": 857,
+      "sha256": "c3bdfef09229240562268d03a5036cdd8185b7d25c2f21f572add0f3aeb62eb2",
+      "matches_source": true
+    }
+  ],
+  "modules": [
+    "fdm/ui/workspace_stack.py",
+    "fdm/ui/icons.py",
+    "fdm/ui/theme.py"
+  ],
+  "boundary": "Offline wheel build from an isolated source copy; FDM_BUILD_NATIVE=0 and native binaries excluded. Asset-packaging verification only, not a release/install/native runtime build."
+}

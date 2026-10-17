@@ -1,0 +1,402 @@
+{
+  "candidate_withdrawn": true,
+  "reason": "Window expands to 715 px after entering content trial",
+  "runs": [
+    {
+      "result": "evidence/frozen-legacy-upgrade/20261016-173413-d85cdf1de5ea40f89c8873277ba09a2a/result.json",
+      "initial_client": [
+        1366,
+        690
+      ],
+      "functional_checks_passed": true,
+      "small_height_maintained": false,
+      "observed": [
+        {
+          "phase": "01-main-before-menu",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              690
+            ]
+          ]
+        },
+        {
+          "phase": "02-acquisition",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              690
+            ]
+          ]
+        },
+        {
+          "phase": "03-content-reentry",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-报告",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-操作",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-记录",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "05-save-rounds-complete",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "result": "evidence/frozen-clean-light/20261016-173314-d221c5ff7ed443d6841e309cd21afc12/result.json",
+      "initial_client": [
+        1280,
+        670
+      ],
+      "functional_checks_passed": true,
+      "small_height_maintained": false,
+      "observed": [
+        {
+          "phase": "01-main-before-menu",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              670
+            ]
+          ]
+        },
+        {
+          "phase": "02-acquisition",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              670
+            ]
+          ]
+        },
+        {
+          "phase": "03-content-reentry",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-报告",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-操作",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-记录",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "result": "evidence/frozen-clean-warm/20261016-173353-e8a66682561b4649b1c60eee390abc05/result.json",
+      "initial_client": [
+        1280,
+        670
+      ],
+      "functional_checks_passed": true,
+      "small_height_maintained": false,
+      "observed": [
+        {
+          "phase": "01-main-before-menu",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              670
+            ]
+          ]
+        },
+        {
+          "phase": "02-acquisition",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              670
+            ]
+          ]
+        },
+        {
+          "phase": "03-content-reentry",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-报告",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-操作",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-记录",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1280,
+              715
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "result": "evidence/frozen-clean-dark/20261016-173058-fcee717d659f4f929314203b2b6dd4fb/result.json",
+      "initial_client": [
+        1366,
+        690
+      ],
+      "functional_checks_passed": true,
+      "small_height_maintained": false,
+      "observed": [
+        {
+          "phase": "01-main-before-menu",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              690
+            ]
+          ]
+        },
+        {
+          "phase": "02-acquisition",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              690
+            ]
+          ]
+        },
+        {
+          "phase": "03-content-reentry",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-报告",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-操作",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-记录",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "result": "evidence/frozen-clean-navy/20261016-173332-36531e0355be48abbca4b9c5c15b73d0/result.json",
+      "initial_client": [
+        1366,
+        690
+      ],
+      "functional_checks_passed": true,
+      "small_height_maintained": false,
+      "observed": [
+        {
+          "phase": "01-main-before-menu",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              690
+            ]
+          ]
+        },
+        {
+          "phase": "02-acquisition",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              690
+            ]
+          ]
+        },
+        {
+          "phase": "03-content-reentry",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-报告",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-操作",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        },
+        {
+          "phase": "04-sidebar-记录",
+          "main_uia_bounds": [
+            [
+              23,
+              68,
+              1366,
+              715
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,920 @@
+running egg_info
+creating src/fiber_diameter_measurement.egg-info
+writing src/fiber_diameter_measurement.egg-info/PKG-INFO
+writing dependency_links to src/fiber_diameter_measurement.egg-info/dependency_links.txt
+writing entry points to src/fiber_diameter_measurement.egg-info/entry_points.txt
+writing requirements to src/fiber_diameter_measurement.egg-info/requires.txt
+writing top-level names to src/fiber_diameter_measurement.egg-info/top_level.txt
+writing manifest file 'src/fiber_diameter_measurement.egg-info/SOURCES.txt'
+reading manifest file 'src/fiber_diameter_measurement.egg-info/SOURCES.txt'
+writing manifest file 'src/fiber_diameter_measurement.egg-info/SOURCES.txt'
+running bdist_wheel
+running build
+running build_py
+creating build/lib/fdm
+copying src/fdm/screenshot_protocol.py -> build/lib/fdm
+copying src/fdm/analysis_artifacts.py -> build/lib/fdm
+copying src/fdm/area_display.py -> build/lib/fdm
+copying src/fdm/construction_spatial_index.py -> build/lib/fdm
+copying src/fdm/application_launch.py -> build/lib/fdm
+copying src/fdm/screenshot_agent.py -> build/lib/fdm
+copying src/fdm/units.py -> build/lib/fdm
+copying src/fdm/version.py -> build/lib/fdm
+copying src/fdm/area_worker_protocol.py -> build/lib/fdm
+copying src/fdm/image_parameter_audit.py -> build/lib/fdm
+copying src/fdm/models.py -> build/lib/fdm
+copying src/fdm/watermark.py -> build/lib/fdm
+copying src/fdm/project_roi.py -> build/lib/fdm
+copying src/fdm/microview_helper.py -> build/lib/fdm
+copying src/fdm/canvas_benchmark.py -> build/lib/fdm
+copying src/fdm/cancellation.py -> build/lib/fdm
+copying src/fdm/__init__.py -> build/lib/fdm
+copying src/fdm/release_manifest.py -> build/lib/fdm
+copying src/fdm/operation_diagnostics.py -> build/lib/fdm
+copying src/fdm/construction_geometry.py -> build/lib/fdm
+copying src/fdm/ui_snapshot.py -> build/lib/fdm
+copying src/fdm/construction_document.py -> build/lib/fdm
+copying src/fdm/image_processing_models.py -> build/lib/fdm
+copying src/fdm/lifecycle.py -> build/lib/fdm
+copying src/fdm/geometry.py -> build/lib/fdm
+copying src/fdm/settings.py -> build/lib/fdm
+copying src/fdm/app.py -> build/lib/fdm
+copying src/fdm/scale_overlay.py -> build/lib/fdm
+copying src/fdm/runtime_logging.py -> build/lib/fdm
+copying src/fdm/project_io.py -> build/lib/fdm
+copying src/fdm/raster.py -> build/lib/fdm
+copying src/fdm/atomic_io.py -> build/lib/fdm
+copying src/fdm/__main__.py -> build/lib/fdm
+copying src/fdm/screenshot_settings.py -> build/lib/fdm
+copying src/fdm/history.py -> build/lib/fdm
+creating build/lib/fdm/ui
+copying src/fdm/ui/image_information_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/screenshot_editor.py -> build/lib/fdm/ui
+copying src/fdm/ui/main_window.py -> build/lib/fdm/ui
+copying src/fdm/ui/overlay_geometry_snapshot.py -> build/lib/fdm/ui
+copying src/fdm/ui/microview_preview_host.py -> build/lib/fdm/ui
+copying src/fdm/ui/scale_overlay_control.py -> build/lib/fdm/ui
+copying src/fdm/ui/layout_utils.py -> build/lib/fdm/ui
+copying src/fdm/ui/screenshot_annotation_overlay.py -> build/lib/fdm/ui
+copying src/fdm/ui/screenshot_overlay.py -> build/lib/fdm/ui
+copying src/fdm/ui/analysis_batch_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/preview_analysis_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/statistics_widgets.py -> build/lib/fdm/ui
+copying src/fdm/ui/scale_overlay_rendering.py -> build/lib/fdm/ui
+copying src/fdm/ui/acquisition_workbench.py -> build/lib/fdm/ui
+copying src/fdm/ui/prompt_segmentation_worker.py -> build/lib/fdm/ui
+copying src/fdm/ui/digital_slide_calibration.py -> build/lib/fdm/ui
+copying src/fdm/ui/overlay_process_renderer.py -> build/lib/fdm/ui
+copying src/fdm/ui/preview_analysis_worker.py -> build/lib/fdm/ui
+copying src/fdm/ui/project_save_indicator.py -> build/lib/fdm/ui
+copying src/fdm/ui/live_experiment_view.py -> build/lib/fdm/ui
+copying src/fdm/ui/contour_comparison_canvas.py -> build/lib/fdm/ui
+copying src/fdm/ui/measurement_results_model.py -> build/lib/fdm/ui
+copying src/fdm/ui/theme.py -> build/lib/fdm/ui
+copying src/fdm/ui/rendering.py -> build/lib/fdm/ui
+copying src/fdm/ui/live_display.py -> build/lib/fdm/ui
+copying src/fdm/ui/preview_analysis_task_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/analysis_parameters_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/advanced_analysis_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/associated_file_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/overlay_presentation.py -> build/lib/fdm/ui
+copying src/fdm/ui/project_save_self_check.py -> build/lib/fdm/ui
+copying src/fdm/ui/analysis_profile_controls.py -> build/lib/fdm/ui
+copying src/fdm/ui/screenshot_settings_page.py -> build/lib/fdm/ui
+copying src/fdm/ui/workbench_controls.py -> build/lib/fdm/ui
+copying src/fdm/ui/area_handle_cache.py -> build/lib/fdm/ui
+copying src/fdm/ui/icons.py -> build/lib/fdm/ui
+copying src/fdm/ui/display_adjustment_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/fiber_quick_geometry_worker.py -> build/lib/fdm/ui
+copying src/fdm/ui/dataset_export_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/screen_label_sprite_cache.py -> build/lib/fdm/ui
+copying src/fdm/ui/segmentation_engine_settings.py -> build/lib/fdm/ui
+copying src/fdm/ui/construction_widgets.py -> build/lib/fdm/ui
+copying src/fdm/ui/statistics_distribution.py -> build/lib/fdm/ui
+copying src/fdm/ui/area_inference_worker.py -> build/lib/fdm/ui
+copying src/fdm/ui/view_transform.py -> build/lib/fdm/ui
+copying src/fdm/ui/__init__.py -> build/lib/fdm/ui
+copying src/fdm/ui/device_import_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/export_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/workspace_stack.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_batch_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/display_preferences.py -> build/lib/fdm/ui
+copying src/fdm/ui/raster_derivation_dialogs.py -> build/lib/fdm/ui
+copying src/fdm/ui/background_task_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/widgets.py -> build/lib/fdm/ui
+copying src/fdm/ui/raster_export_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/screenshot_hotkey_edit.py -> build/lib/fdm/ui
+copying src/fdm/ui/scale_overlay_editor.py -> build/lib/fdm/ui
+copying src/fdm/ui/trial_report_panel.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_analysis_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/object_inspector.py -> build/lib/fdm/ui
+copying src/fdm/ui/contour_comparison_tasks.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_processing_workbench.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_loader.py -> build/lib/fdm/ui
+copying src/fdm/ui/construction_rendering.py -> build/lib/fdm/ui
+copying src/fdm/ui/scale_overlay_self_check.py -> build/lib/fdm/ui
+copying src/fdm/ui/analysis_batch_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/view_zoom_control.py -> build/lib/fdm/ui
+copying src/fdm/ui/measurement_records.py -> build/lib/fdm/ui
+copying src/fdm/ui/qt_raster_runtime.py -> build/lib/fdm/ui
+copying src/fdm/ui/draft_preview_cache.py -> build/lib/fdm/ui
+copying src/fdm/ui/fullscreen.py -> build/lib/fdm/ui
+copying src/fdm/ui/roi_manager.py -> build/lib/fdm/ui
+copying src/fdm/ui/project_session_controller.py -> build/lib/fdm/ui
+copying src/fdm/ui/thread_task_manager.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_batch_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/reference_instance_worker.py -> build/lib/fdm/ui
+copying src/fdm/ui/overlay_render_self_check.py -> build/lib/fdm/ui
+copying src/fdm/ui/dialogs.py -> build/lib/fdm/ui
+copying src/fdm/ui/workspace.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_parameter_data.py -> build/lib/fdm/ui
+copying src/fdm/ui/watermark_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/live_experiment_workspace.py -> build/lib/fdm/ui
+copying src/fdm/ui/analysis_results_center.py -> build/lib/fdm/ui
+copying src/fdm/ui/image_parameter_widgets.py -> build/lib/fdm/ui
+copying src/fdm/ui/digital_slide_canvas.py -> build/lib/fdm/ui
+copying src/fdm/ui/threshold_adjustment_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/contour_comparison_dialog.py -> build/lib/fdm/ui
+copying src/fdm/ui/canvas_tool_strategies.py -> build/lib/fdm/ui
+copying src/fdm/ui/project_save_coordinator.py -> build/lib/fdm/ui
+copying src/fdm/ui/contour_comparison_widgets.py -> build/lib/fdm/ui
+copying src/fdm/ui/watermark_self_check.py -> build/lib/fdm/ui
+copying src/fdm/ui/canvas_overlay_cache.py -> build/lib/fdm/ui
+copying src/fdm/ui/canvas.py -> build/lib/fdm/ui
+copying src/fdm/ui/screen_layer_cache.py -> build/lib/fdm/ui
+copying src/fdm/ui/watermark_rendering.py -> build/lib/fdm/ui
+copying src/fdm/ui/responsive_io.py -> build/lib/fdm/ui
+copying src/fdm/ui/measurement_commit_queue.py -> build/lib/fdm/ui
+copying src/fdm/ui/canvas_navigator.py -> build/lib/fdm/ui
+copying src/fdm/ui/screenshot_hotkey_status.py -> build/lib/fdm/ui
+creating build/lib/fdm/_vendor
+copying src/fdm/_vendor/__init__.py -> build/lib/fdm/_vendor
+creating build/lib/fdm/platform
+copying src/fdm/platform/windows_window_locator.py -> build/lib/fdm/platform
+copying src/fdm/platform/windows_autostart.py -> build/lib/fdm/platform
+copying src/fdm/platform/windows_screen_capture.py -> build/lib/fdm/platform
+copying src/fdm/platform/__init__.py -> build/lib/fdm/platform
+copying src/fdm/platform/windows_global_hotkey.py -> build/lib/fdm/platform
+creating build/lib/fdm/workers
+copying src/fdm/workers/area_worker.py -> build/lib/fdm/workers
+creating build/lib/fdm/services
+copying src/fdm/services/analysis_batch.py -> build/lib/fdm/services
+copying src/fdm/services/area_commit.py -> build/lib/fdm/services
+copying src/fdm/services/digital_slide_cache.py -> build/lib/fdm/services
+copying src/fdm/services/mask_region.py -> build/lib/fdm/services
+copying src/fdm/services/cu_scale_io.py -> build/lib/fdm/services
+copying src/fdm/services/watermark_preferences.py -> build/lib/fdm/services
+copying src/fdm/services/cu_manual_measurement.py -> build/lib/fdm/services
+copying src/fdm/services/digital_slide_calibration.py -> build/lib/fdm/services
+copying src/fdm/services/_olympus_oir.py -> build/lib/fdm/services
+copying src/fdm/services/prompt_segmentation.py -> build/lib/fdm/services
+copying src/fdm/services/motion_control.py -> build/lib/fdm/services
+copying src/fdm/services/cu_live_self_check.py -> build/lib/fdm/services
+copying src/fdm/services/screenshot_output.py -> build/lib/fdm/services
+copying src/fdm/services/dataset_export.py -> build/lib/fdm/services
+copying src/fdm/services/watermark_assets.py -> build/lib/fdm/services
+copying src/fdm/services/raster_io.py -> build/lib/fdm/services
+copying src/fdm/services/measurement_statistics.py -> build/lib/fdm/services
+copying src/fdm/services/snap_service.py -> build/lib/fdm/services
+copying src/fdm/services/digital_slide_store.py -> build/lib/fdm/services
+copying src/fdm/services/__init__.py -> build/lib/fdm/services
+copying src/fdm/services/tubeness_chain.py -> build/lib/fdm/services
+copying src/fdm/services/raw_record_export.py -> build/lib/fdm/services
+copying src/fdm/services/image_analysis.py -> build/lib/fdm/services
+copying src/fdm/services/advanced_image_analysis.py -> build/lib/fdm/services
+copying src/fdm/services/magic_segmentation_self_check.py -> build/lib/fdm/services
+copying src/fdm/services/object_snap_service.py -> build/lib/fdm/services
+copying src/fdm/services/raster_derivation.py -> build/lib/fdm/services
+copying src/fdm/services/cu5_preview_locator.py -> build/lib/fdm/services
+copying src/fdm/services/device_image_io.py -> build/lib/fdm/services
+copying src/fdm/services/screenshot_capture.py -> build/lib/fdm/services
+copying src/fdm/services/contour_comparison_wand.py -> build/lib/fdm/services
+copying src/fdm/services/contour_comparison.py -> build/lib/fdm/services
+copying src/fdm/services/model_provider.py -> build/lib/fdm/services
+copying src/fdm/services/capture.py -> build/lib/fdm/services
+copying src/fdm/services/analysis_profiles.py -> build/lib/fdm/services
+copying src/fdm/services/construction_operations.py -> build/lib/fdm/services
+copying src/fdm/services/fiber_quick_geometry.py -> build/lib/fdm/services
+copying src/fdm/services/export_service.py -> build/lib/fdm/services
+copying src/fdm/services/analysis_export.py -> build/lib/fdm/services
+copying src/fdm/services/digital_slide_renderer.py -> build/lib/fdm/services
+copying src/fdm/services/reference_instance_propagation.py -> build/lib/fdm/services
+copying src/fdm/services/cu_automatic_measurement.py -> build/lib/fdm/services
+copying src/fdm/services/raster_asset_reuse.py -> build/lib/fdm/services
+copying src/fdm/services/segmentation_performance.py -> build/lib/fdm/services
+copying src/fdm/services/image_recipe_presets.py -> build/lib/fdm/services
+copying src/fdm/services/capture_subscription.py -> build/lib/fdm/services
+copying src/fdm/services/screenshot_agent_client.py -> build/lib/fdm/services
+copying src/fdm/services/segmentation_engines.py -> build/lib/fdm/services
+copying src/fdm/services/compute_budget.py -> build/lib/fdm/services
+copying src/fdm/services/image_information.py -> build/lib/fdm/services
+copying src/fdm/services/microview_transport.py -> build/lib/fdm/services
+copying src/fdm/services/cu_automatic_worker.py -> build/lib/fdm/services
+copying src/fdm/services/sidecar_io.py -> build/lib/fdm/services
+copying src/fdm/services/image_batch.py -> build/lib/fdm/services
+copying src/fdm/services/preview_analysis.py -> build/lib/fdm/services
+copying src/fdm/services/advanced_analysis_registry.py -> build/lib/fdm/services
+copying src/fdm/services/image_processing.py -> build/lib/fdm/services
+copying src/fdm/services/group_manager.py -> build/lib/fdm/services
+copying src/fdm/services/screenshot_output_worker.py -> build/lib/fdm/services
+copying src/fdm/services/native_kernels_self_check.py -> build/lib/fdm/services
+copying src/fdm/services/analysis_asset_io.py -> build/lib/fdm/services
+copying src/fdm/services/raster_export.py -> build/lib/fdm/services
+copying src/fdm/services/area_inference.py -> build/lib/fdm/services
+copying src/fdm/services/segmentation_source.py -> build/lib/fdm/services
+creating build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/exports.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/persistence.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/controller.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/models.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/__init__.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/calibration_store.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/presentation.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/sources.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/motion.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/frames.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/capture_helper.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/excel_template.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/statistics.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/png_stream.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/evidence.py -> build/lib/fdm/live_experiment
+copying src/fdm/live_experiment/project_assets.py -> build/lib/fdm/live_experiment
+creating build/lib/fdm/_native
+copying src/fdm/_native/__init__.py -> build/lib/fdm/_native
+creating build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/efficient_sam_encoder.py -> build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/efficient_sam.py -> build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/build_efficient_sam.py -> build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/__init__.py -> build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/efficient_sam_decoder.py -> build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/mlp.py -> build/lib/fdm/_vendor/efficient_sam
+copying src/fdm/_vendor/efficient_sam/two_way_transformer.py -> build/lib/fdm/_vendor/efficient_sam
+running egg_info
+writing src/fiber_diameter_measurement.egg-info/PKG-INFO
+writing dependency_links to src/fiber_diameter_measurement.egg-info/dependency_links.txt
+writing entry points to src/fiber_diameter_measurement.egg-info/entry_points.txt
+writing requirements to src/fiber_diameter_measurement.egg-info/requires.txt
+writing top-level names to src/fiber_diameter_measurement.egg-info/top_level.txt
+reading manifest file 'src/fiber_diameter_measurement.egg-info/SOURCES.txt'
+writing manifest file 'src/fiber_diameter_measurement.egg-info/SOURCES.txt'
+creating build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/save_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/video_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_export_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/add_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/dismiss_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/clipboard_bullet_list_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/cursor_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_sync_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/stop_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/checkmark_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_undo_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/document_arrow_right_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/image_multiple_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/data_histogram_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/search_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/camera_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/settings_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/number_symbol_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/beaker_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/full_screen_maximize_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_redo_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/table_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/info_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_expand_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_next_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/warning_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/document_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/question_circle_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/edit_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/microscope_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/delete_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/map_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/full_screen_minimize_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/ruler_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/folder_open_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/play_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/LICENSE -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/NOTICE -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/manifest.json -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/live_experiment/excel_template.ps1 -> build/lib/fdm/live_experiment
+creating build/lib/fdm/_native/licenses
+copying src/fdm/_native/licenses/opencv-legacy.txt -> build/lib/fdm/_native/licenses
+copying src/fdm/_native/licenses/pybind11.txt -> build/lib/fdm/_native/licenses
+copying src/fdm/_native/licenses/zlib-ng.txt -> build/lib/fdm/_native/licenses
+copying src/fdm/ui/assets/fluent/LICENSE -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/NOTICE -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/add_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_expand_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_export_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_next_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_redo_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_sync_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/arrow_undo_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/beaker_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/camera_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/checkmark_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/clipboard_bullet_list_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/cursor_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/data_histogram_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/delete_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/dismiss_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/document_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/document_arrow_right_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/edit_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/folder_open_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/full_screen_maximize_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/full_screen_minimize_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/image_multiple_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/info_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/manifest.json -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/map_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/microscope_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/number_symbol_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/play_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/question_circle_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/ruler_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/save_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/search_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/settings_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/stop_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/table_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/video_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/ui/assets/fluent/warning_20_regular.svg -> build/lib/fdm/ui/assets/fluent
+copying src/fdm/_native/licenses/opencv-legacy.txt -> build/lib/fdm/_native/licenses
+copying src/fdm/_native/licenses/pybind11.txt -> build/lib/fdm/_native/licenses
+copying src/fdm/_native/licenses/zlib-ng.txt -> build/lib/fdm/_native/licenses
+installing to build/bdist.macosx-12.1-arm64/wheel
+running install
+running install_lib
+creating build/bdist.macosx-12.1-arm64/wheel
+creating build/bdist.macosx-12.1-arm64/wheel/fdm
+copying build/lib/fdm/screenshot_protocol.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/ui
+copying build/lib/fdm/ui/image_information_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screenshot_editor.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/main_window.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/overlay_geometry_snapshot.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/microview_preview_host.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/scale_overlay_control.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/layout_utils.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screenshot_annotation_overlay.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screenshot_overlay.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/analysis_batch_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/preview_analysis_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/statistics_widgets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/scale_overlay_rendering.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/acquisition_workbench.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/prompt_segmentation_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/digital_slide_calibration.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/overlay_process_renderer.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/preview_analysis_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/project_save_indicator.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/live_experiment_view.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/contour_comparison_canvas.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/measurement_results_model.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/theme.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/rendering.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/live_display.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/preview_analysis_task_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/analysis_parameters_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/advanced_analysis_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/associated_file_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/overlay_presentation.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/project_save_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/analysis_profile_controls.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screenshot_settings_page.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/workbench_controls.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/area_handle_cache.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/icons.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/display_adjustment_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/fiber_quick_geometry_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/dataset_export_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screen_label_sprite_cache.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/segmentation_engine_settings.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/construction_widgets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/statistics_distribution.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/area_inference_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/view_transform.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/device_import_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/export_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/workspace_stack.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_batch_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/display_preferences.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/raster_derivation_dialogs.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/background_task_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/widgets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/raster_export_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screenshot_hotkey_edit.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/scale_overlay_editor.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/trial_report_panel.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_analysis_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/object_inspector.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/contour_comparison_tasks.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_processing_workbench.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_loader.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/construction_rendering.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/scale_overlay_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/analysis_batch_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/view_zoom_control.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/measurement_records.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/qt_raster_runtime.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/draft_preview_cache.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/fullscreen.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/roi_manager.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/project_session_controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/thread_task_manager.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_batch_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/reference_instance_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/overlay_render_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/dialogs.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/workspace.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_parameter_data.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/watermark_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/live_experiment_workspace.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/analysis_results_center.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/image_parameter_widgets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/digital_slide_canvas.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/ui/assets
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/save_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/video_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/arrow_export_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/add_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/dismiss_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/clipboard_bullet_list_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/cursor_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/arrow_sync_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/stop_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/LICENSE -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/checkmark_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/arrow_undo_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/document_arrow_right_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/image_multiple_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/data_histogram_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/search_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/camera_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/settings_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/number_symbol_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/beaker_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/full_screen_maximize_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/arrow_redo_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/NOTICE -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/table_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/info_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/arrow_expand_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/arrow_next_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/warning_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/document_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/manifest.json -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/question_circle_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/edit_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/microscope_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/delete_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/map_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/full_screen_minimize_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/ruler_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/folder_open_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/assets/fluent/play_20_regular.svg -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui/assets/fluent
+copying build/lib/fdm/ui/threshold_adjustment_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/contour_comparison_dialog.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/canvas_tool_strategies.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/project_save_coordinator.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/contour_comparison_widgets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/watermark_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/canvas_overlay_cache.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/canvas.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screen_layer_cache.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/watermark_rendering.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/responsive_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/measurement_commit_queue.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/canvas_navigator.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/ui/screenshot_hotkey_status.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/ui
+copying build/lib/fdm/analysis_artifacts.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/area_display.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/construction_spatial_index.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/application_launch.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/screenshot_agent.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/units.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/version.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/area_worker_protocol.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/image_parameter_audit.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/models.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/watermark.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/project_roi.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/_vendor
+copying build/lib/fdm/_vendor/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/efficient_sam_encoder.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/efficient_sam.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/build_efficient_sam.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/efficient_sam_decoder.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/mlp.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/_vendor/efficient_sam/two_way_transformer.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_vendor/efficient_sam
+copying build/lib/fdm/microview_helper.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/canvas_benchmark.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/cancellation.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/platform
+copying build/lib/fdm/platform/windows_window_locator.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/platform
+copying build/lib/fdm/platform/windows_autostart.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/platform
+copying build/lib/fdm/platform/windows_screen_capture.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/platform
+copying build/lib/fdm/platform/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/platform
+copying build/lib/fdm/platform/windows_global_hotkey.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/platform
+copying build/lib/fdm/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/release_manifest.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/operation_diagnostics.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/construction_geometry.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/ui_snapshot.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/construction_document.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/image_processing_models.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/lifecycle.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/geometry.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/settings.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/app.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/workers
+copying build/lib/fdm/workers/area_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/workers
+copying build/lib/fdm/scale_overlay.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/runtime_logging.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/project_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/raster.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/atomic_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/__main__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+copying build/lib/fdm/screenshot_settings.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/services
+copying build/lib/fdm/services/analysis_batch.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/area_commit.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/digital_slide_cache.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/mask_region.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/cu_scale_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/watermark_preferences.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/cu_manual_measurement.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/digital_slide_calibration.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/_olympus_oir.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/prompt_segmentation.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/motion_control.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/cu_live_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/screenshot_output.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/dataset_export.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/watermark_assets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/raster_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/measurement_statistics.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/snap_service.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/digital_slide_store.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/tubeness_chain.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/raw_record_export.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/image_analysis.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/advanced_image_analysis.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/magic_segmentation_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/object_snap_service.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/raster_derivation.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/cu5_preview_locator.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/device_image_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/screenshot_capture.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/contour_comparison_wand.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/contour_comparison.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/model_provider.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/capture.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/analysis_profiles.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/construction_operations.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/fiber_quick_geometry.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/export_service.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/analysis_export.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/digital_slide_renderer.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/reference_instance_propagation.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/cu_automatic_measurement.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/raster_asset_reuse.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/segmentation_performance.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/image_recipe_presets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/capture_subscription.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/screenshot_agent_client.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/segmentation_engines.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/compute_budget.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/image_information.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/microview_transport.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/cu_automatic_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/sidecar_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/image_batch.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/preview_analysis.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/advanced_analysis_registry.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/image_processing.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/group_manager.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/screenshot_output_worker.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/native_kernels_self_check.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/analysis_asset_io.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/raster_export.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/area_inference.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+copying build/lib/fdm/services/segmentation_source.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/services
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/live_experiment
+copying build/lib/fdm/live_experiment/exports.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/persistence.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/controller.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/models.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/calibration_store.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/presentation.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/sources.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/motion.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/frames.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/capture_helper.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/excel_template.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/statistics.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/png_stream.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/evidence.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/project_assets.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/live_experiment/excel_template.ps1 -> build/bdist.macosx-12.1-arm64/wheel/./fdm/live_experiment
+copying build/lib/fdm/history.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/_native
+creating build/bdist.macosx-12.1-arm64/wheel/fdm/_native/licenses
+copying build/lib/fdm/_native/licenses/opencv-legacy.txt -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_native/licenses
+copying build/lib/fdm/_native/licenses/pybind11.txt -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_native/licenses
+copying build/lib/fdm/_native/licenses/zlib-ng.txt -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_native/licenses
+copying build/lib/fdm/_native/__init__.py -> build/bdist.macosx-12.1-arm64/wheel/./fdm/_native
+running install_egg_info
+Copying src/fiber_diameter_measurement.egg-info to build/bdist.macosx-12.1-arm64/wheel/./fiber_diameter_measurement-0.4.9-py3.13.egg-info
+running install_scripts
+creating build/bdist.macosx-12.1-arm64/wheel/fiber_diameter_measurement-0.4.9.dist-info/WHEEL
+creating '/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/fdm-package-audit-oxlj0y8u/wheel/.tmp-zzbjln8v/fiber_diameter_measurement-0.4.9-py3-none-any.whl' and adding 'build/bdist.macosx-12.1-arm64/wheel' to it
+adding 'fdm/__init__.py'
+adding 'fdm/__main__.py'
+adding 'fdm/analysis_artifacts.py'
+adding 'fdm/app.py'
+adding 'fdm/application_launch.py'
+adding 'fdm/area_display.py'
+adding 'fdm/area_worker_protocol.py'
+adding 'fdm/atomic_io.py'
+adding 'fdm/cancellation.py'
+adding 'fdm/canvas_benchmark.py'
+adding 'fdm/construction_document.py'
+adding 'fdm/construction_geometry.py'
+adding 'fdm/construction_spatial_index.py'
+adding 'fdm/geometry.py'
+adding 'fdm/history.py'
+adding 'fdm/image_parameter_audit.py'
+adding 'fdm/image_processing_models.py'
+adding 'fdm/lifecycle.py'
+adding 'fdm/microview_helper.py'
+adding 'fdm/models.py'
+adding 'fdm/operation_diagnostics.py'
+adding 'fdm/project_io.py'
+adding 'fdm/project_roi.py'
+adding 'fdm/raster.py'
+adding 'fdm/release_manifest.py'
+adding 'fdm/runtime_logging.py'
+adding 'fdm/scale_overlay.py'
+adding 'fdm/screenshot_agent.py'
+adding 'fdm/screenshot_protocol.py'
+adding 'fdm/screenshot_settings.py'
+adding 'fdm/settings.py'
+adding 'fdm/ui_snapshot.py'
+adding 'fdm/units.py'
+adding 'fdm/version.py'
+adding 'fdm/watermark.py'
+adding 'fdm/_native/__init__.py'
+adding 'fdm/_native/licenses/opencv-legacy.txt'
+adding 'fdm/_native/licenses/pybind11.txt'
+adding 'fdm/_native/licenses/zlib-ng.txt'
+adding 'fdm/_vendor/__init__.py'
+adding 'fdm/_vendor/efficient_sam/__init__.py'
+adding 'fdm/_vendor/efficient_sam/build_efficient_sam.py'
+adding 'fdm/_vendor/efficient_sam/efficient_sam.py'
+adding 'fdm/_vendor/efficient_sam/efficient_sam_decoder.py'
+adding 'fdm/_vendor/efficient_sam/efficient_sam_encoder.py'
+adding 'fdm/_vendor/efficient_sam/mlp.py'
+adding 'fdm/_vendor/efficient_sam/two_way_transformer.py'
+adding 'fdm/live_experiment/__init__.py'
+adding 'fdm/live_experiment/calibration_store.py'
+adding 'fdm/live_experiment/capture_helper.py'
+adding 'fdm/live_experiment/controller.py'
+adding 'fdm/live_experiment/evidence.py'
+adding 'fdm/live_experiment/excel_template.ps1'
+adding 'fdm/live_experiment/excel_template.py'
+adding 'fdm/live_experiment/exports.py'
+adding 'fdm/live_experiment/frames.py'
+adding 'fdm/live_experiment/models.py'
+adding 'fdm/live_experiment/motion.py'
+adding 'fdm/live_experiment/persistence.py'
+adding 'fdm/live_experiment/png_stream.py'
+adding 'fdm/live_experiment/presentation.py'
+adding 'fdm/live_experiment/project_assets.py'
+adding 'fdm/live_experiment/sources.py'
+adding 'fdm/live_experiment/statistics.py'
+adding 'fdm/platform/__init__.py'
+adding 'fdm/platform/windows_autostart.py'
+adding 'fdm/platform/windows_global_hotkey.py'
+adding 'fdm/platform/windows_screen_capture.py'
+adding 'fdm/platform/windows_window_locator.py'
+adding 'fdm/services/__init__.py'
+adding 'fdm/services/_olympus_oir.py'
+adding 'fdm/services/advanced_analysis_registry.py'
+adding 'fdm/services/advanced_image_analysis.py'
+adding 'fdm/services/analysis_asset_io.py'
+adding 'fdm/services/analysis_batch.py'
+adding 'fdm/services/analysis_export.py'
+adding 'fdm/services/analysis_profiles.py'
+adding 'fdm/services/area_commit.py'
+adding 'fdm/services/area_inference.py'
+adding 'fdm/services/capture.py'
+adding 'fdm/services/capture_subscription.py'
+adding 'fdm/services/compute_budget.py'
+adding 'fdm/services/construction_operations.py'
+adding 'fdm/services/contour_comparison.py'
+adding 'fdm/services/contour_comparison_wand.py'
+adding 'fdm/services/cu5_preview_locator.py'
+adding 'fdm/services/cu_automatic_measurement.py'
+adding 'fdm/services/cu_automatic_worker.py'
+adding 'fdm/services/cu_live_self_check.py'
+adding 'fdm/services/cu_manual_measurement.py'
+adding 'fdm/services/cu_scale_io.py'
+adding 'fdm/services/dataset_export.py'
+adding 'fdm/services/device_image_io.py'
+adding 'fdm/services/digital_slide_cache.py'
+adding 'fdm/services/digital_slide_calibration.py'
+adding 'fdm/services/digital_slide_renderer.py'
+adding 'fdm/services/digital_slide_store.py'
+adding 'fdm/services/export_service.py'
+adding 'fdm/services/fiber_quick_geometry.py'
+adding 'fdm/services/group_manager.py'
+adding 'fdm/services/image_analysis.py'
+adding 'fdm/services/image_batch.py'
+adding 'fdm/services/image_information.py'
+adding 'fdm/services/image_processing.py'
+adding 'fdm/services/image_recipe_presets.py'
+adding 'fdm/services/magic_segmentation_self_check.py'
+adding 'fdm/services/mask_region.py'
+adding 'fdm/services/measurement_statistics.py'
+adding 'fdm/services/microview_transport.py'
+adding 'fdm/services/model_provider.py'
+adding 'fdm/services/motion_control.py'
+adding 'fdm/services/native_kernels_self_check.py'
+adding 'fdm/services/object_snap_service.py'
+adding 'fdm/services/preview_analysis.py'
+adding 'fdm/services/prompt_segmentation.py'
+adding 'fdm/services/raster_asset_reuse.py'
+adding 'fdm/services/raster_derivation.py'
+adding 'fdm/services/raster_export.py'
+adding 'fdm/services/raster_io.py'
+adding 'fdm/services/raw_record_export.py'
+adding 'fdm/services/reference_instance_propagation.py'
+adding 'fdm/services/screenshot_agent_client.py'
+adding 'fdm/services/screenshot_capture.py'
+adding 'fdm/services/screenshot_output.py'
+adding 'fdm/services/screenshot_output_worker.py'
+adding 'fdm/services/segmentation_engines.py'
+adding 'fdm/services/segmentation_performance.py'
+adding 'fdm/services/segmentation_source.py'
+adding 'fdm/services/sidecar_io.py'
+adding 'fdm/services/snap_service.py'
+adding 'fdm/services/tubeness_chain.py'
+adding 'fdm/services/watermark_assets.py'
+adding 'fdm/services/watermark_preferences.py'
+adding 'fdm/ui/__init__.py'
+adding 'fdm/ui/acquisition_workbench.py'
+adding 'fdm/ui/advanced_analysis_dialog.py'
+adding 'fdm/ui/analysis_batch_controller.py'
+adding 'fdm/ui/analysis_batch_dialog.py'
+adding 'fdm/ui/analysis_parameters_dialog.py'
+adding 'fdm/ui/analysis_profile_controls.py'
+adding 'fdm/ui/analysis_results_center.py'
+adding 'fdm/ui/area_handle_cache.py'
+adding 'fdm/ui/area_inference_worker.py'
+adding 'fdm/ui/associated_file_controller.py'
+adding 'fdm/ui/background_task_controller.py'
+adding 'fdm/ui/canvas.py'
+adding 'fdm/ui/canvas_navigator.py'
+adding 'fdm/ui/canvas_overlay_cache.py'
+adding 'fdm/ui/canvas_tool_strategies.py'
+adding 'fdm/ui/construction_rendering.py'
+adding 'fdm/ui/construction_widgets.py'
+adding 'fdm/ui/contour_comparison_canvas.py'
+adding 'fdm/ui/contour_comparison_dialog.py'
+adding 'fdm/ui/contour_comparison_tasks.py'
+adding 'fdm/ui/contour_comparison_widgets.py'
+adding 'fdm/ui/dataset_export_dialog.py'
+adding 'fdm/ui/device_import_dialog.py'
+adding 'fdm/ui/dialogs.py'
+adding 'fdm/ui/digital_slide_calibration.py'
+adding 'fdm/ui/digital_slide_canvas.py'
+adding 'fdm/ui/display_adjustment_dialog.py'
+adding 'fdm/ui/display_preferences.py'
+adding 'fdm/ui/draft_preview_cache.py'
+adding 'fdm/ui/export_controller.py'
+adding 'fdm/ui/fiber_quick_geometry_worker.py'
+adding 'fdm/ui/fullscreen.py'
+adding 'fdm/ui/icons.py'
+adding 'fdm/ui/image_analysis_controller.py'
+adding 'fdm/ui/image_batch_controller.py'
+adding 'fdm/ui/image_batch_dialog.py'
+adding 'fdm/ui/image_information_dialog.py'
+adding 'fdm/ui/image_loader.py'
+adding 'fdm/ui/image_parameter_data.py'
+adding 'fdm/ui/image_parameter_widgets.py'
+adding 'fdm/ui/image_processing_workbench.py'
+adding 'fdm/ui/layout_utils.py'
+adding 'fdm/ui/live_display.py'
+adding 'fdm/ui/live_experiment_view.py'
+adding 'fdm/ui/live_experiment_workspace.py'
+adding 'fdm/ui/main_window.py'
+adding 'fdm/ui/measurement_commit_queue.py'
+adding 'fdm/ui/measurement_records.py'
+adding 'fdm/ui/measurement_results_model.py'
+adding 'fdm/ui/microview_preview_host.py'
+adding 'fdm/ui/object_inspector.py'
+adding 'fdm/ui/overlay_geometry_snapshot.py'
+adding 'fdm/ui/overlay_presentation.py'
+adding 'fdm/ui/overlay_process_renderer.py'
+adding 'fdm/ui/overlay_render_self_check.py'
+adding 'fdm/ui/preview_analysis_dialog.py'
+adding 'fdm/ui/preview_analysis_task_controller.py'
+adding 'fdm/ui/preview_analysis_worker.py'
+adding 'fdm/ui/project_save_coordinator.py'
+adding 'fdm/ui/project_save_indicator.py'
+adding 'fdm/ui/project_save_self_check.py'
+adding 'fdm/ui/project_session_controller.py'
+adding 'fdm/ui/prompt_segmentation_worker.py'
+adding 'fdm/ui/qt_raster_runtime.py'
+adding 'fdm/ui/raster_derivation_dialogs.py'
+adding 'fdm/ui/raster_export_dialog.py'
+adding 'fdm/ui/reference_instance_worker.py'
+adding 'fdm/ui/rendering.py'
+adding 'fdm/ui/responsive_io.py'
+adding 'fdm/ui/roi_manager.py'
+adding 'fdm/ui/scale_overlay_control.py'
+adding 'fdm/ui/scale_overlay_editor.py'
+adding 'fdm/ui/scale_overlay_rendering.py'
+adding 'fdm/ui/scale_overlay_self_check.py'
+adding 'fdm/ui/screen_label_sprite_cache.py'
+adding 'fdm/ui/screen_layer_cache.py'
+adding 'fdm/ui/screenshot_annotation_overlay.py'
+adding 'fdm/ui/screenshot_editor.py'
+adding 'fdm/ui/screenshot_hotkey_edit.py'
+adding 'fdm/ui/screenshot_hotkey_status.py'
+adding 'fdm/ui/screenshot_overlay.py'
+adding 'fdm/ui/screenshot_settings_page.py'
+adding 'fdm/ui/segmentation_engine_settings.py'
+adding 'fdm/ui/statistics_distribution.py'
+adding 'fdm/ui/statistics_widgets.py'
+adding 'fdm/ui/theme.py'
+adding 'fdm/ui/thread_task_manager.py'
+adding 'fdm/ui/threshold_adjustment_dialog.py'
+adding 'fdm/ui/trial_report_panel.py'
+adding 'fdm/ui/view_transform.py'
+adding 'fdm/ui/view_zoom_control.py'
+adding 'fdm/ui/watermark_dialog.py'
+adding 'fdm/ui/watermark_rendering.py'
+adding 'fdm/ui/watermark_self_check.py'
+adding 'fdm/ui/widgets.py'
+adding 'fdm/ui/workbench_controls.py'
+adding 'fdm/ui/workspace.py'
+adding 'fdm/ui/workspace_stack.py'
+adding 'fdm/ui/assets/fluent/LICENSE'
+adding 'fdm/ui/assets/fluent/NOTICE'
+adding 'fdm/ui/assets/fluent/add_20_regular.svg'
+adding 'fdm/ui/assets/fluent/arrow_expand_20_regular.svg'
+adding 'fdm/ui/assets/fluent/arrow_export_20_regular.svg'
+adding 'fdm/ui/assets/fluent/arrow_next_20_regular.svg'
+adding 'fdm/ui/assets/fluent/arrow_redo_20_regular.svg'
+adding 'fdm/ui/assets/fluent/arrow_sync_20_regular.svg'
+adding 'fdm/ui/assets/fluent/arrow_undo_20_regular.svg'
+adding 'fdm/ui/assets/fluent/beaker_20_regular.svg'
+adding 'fdm/ui/assets/fluent/camera_20_regular.svg'
+adding 'fdm/ui/assets/fluent/checkmark_20_regular.svg'
+adding 'fdm/ui/assets/fluent/clipboard_bullet_list_20_regular.svg'
+adding 'fdm/ui/assets/fluent/cursor_20_regular.svg'
+adding 'fdm/ui/assets/fluent/data_histogram_20_regular.svg'
+adding 'fdm/ui/assets/fluent/delete_20_regular.svg'
+adding 'fdm/ui/assets/fluent/dismiss_20_regular.svg'
+adding 'fdm/ui/assets/fluent/document_20_regular.svg'
+adding 'fdm/ui/assets/fluent/document_arrow_right_20_regular.svg'
+adding 'fdm/ui/assets/fluent/edit_20_regular.svg'
+adding 'fdm/ui/assets/fluent/folder_open_20_regular.svg'
+adding 'fdm/ui/assets/fluent/full_screen_maximize_20_regular.svg'
+adding 'fdm/ui/assets/fluent/full_screen_minimize_20_regular.svg'
+adding 'fdm/ui/assets/fluent/image_multiple_20_regular.svg'
+adding 'fdm/ui/assets/fluent/info_20_regular.svg'
+adding 'fdm/ui/assets/fluent/manifest.json'
+adding 'fdm/ui/assets/fluent/map_20_regular.svg'
+adding 'fdm/ui/assets/fluent/microscope_20_regular.svg'
+adding 'fdm/ui/assets/fluent/number_symbol_20_regular.svg'
+adding 'fdm/ui/assets/fluent/play_20_regular.svg'
+adding 'fdm/ui/assets/fluent/question_circle_20_regular.svg'
+adding 'fdm/ui/assets/fluent/ruler_20_regular.svg'
+adding 'fdm/ui/assets/fluent/save_20_regular.svg'
+adding 'fdm/ui/assets/fluent/search_20_regular.svg'
+adding 'fdm/ui/assets/fluent/settings_20_regular.svg'
+adding 'fdm/ui/assets/fluent/stop_20_regular.svg'
+adding 'fdm/ui/assets/fluent/table_20_regular.svg'
+adding 'fdm/ui/assets/fluent/video_20_regular.svg'
+adding 'fdm/ui/assets/fluent/warning_20_regular.svg'
+adding 'fdm/workers/area_worker.py'
+adding 'fiber_diameter_measurement-0.4.9.dist-info/METADATA'
+adding 'fiber_diameter_measurement-0.4.9.dist-info/WHEEL'
+adding 'fiber_diameter_measurement-0.4.9.dist-info/entry_points.txt'
+adding 'fiber_diameter_measurement-0.4.9.dist-info/top_level.txt'
+adding 'fiber_diameter_measurement-0.4.9.dist-info/RECORD'
+removing build/bdist.macosx-12.1-arm64/wheel
+Successfully built fiber_diameter_measurement-0.4.9-py3-none-any.whl
+* Getting build dependencies for wheel...
+* Building wheel...

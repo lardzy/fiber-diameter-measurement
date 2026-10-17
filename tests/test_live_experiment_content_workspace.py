@@ -174,6 +174,9 @@ def test_numeric_count_works_from_combo_and_table_but_not_text_or_diameter(works
     workspace.history_table.setFocus()
     QTest.keyClick(workspace.history_table, Qt.Key.Key_1)
     assert len(workspace.session.count_adjustments) == 2
+    workspace.advanced_toggle.setChecked(True)
+    workspace.settings_dialog.activateWindow()
+    QApplication.processEvents()
     workspace.sample.setFocus()
     QTest.keyClicks(workspace.sample, "2")
     assert workspace.sample.text() == "2"
@@ -369,6 +372,9 @@ def test_unavailable_source_releases_canvas_reference(workspace):
 
 def test_text_undo_does_not_undo_measurement(workspace):
     record = workspace.session.add_measurement(20, "wool")
+    workspace.advanced_toggle.setChecked(True)
+    workspace.settings_dialog.activateWindow()
+    QApplication.processEvents()
     workspace.sample.setFocus()
     QTest.keyClicks(workspace.sample, "abc")
     QTest.keyClick(workspace.sample, Qt.Key.Key_Z, Qt.KeyboardModifier.ControlModifier)
@@ -1025,11 +1031,9 @@ def test_retiring_source_blocks_all_replacements_until_confirmed_stopped(workspa
     new = SimpleNamespace(start=lambda: None, stop=lambda: True)
     constructed = []
     monkeypatch.setattr(sources, "CameraFrameSource", lambda *_: constructed.append("camera") or new)
-    monkeypatch.setattr(sources, "ExternalCuFrameSource", lambda *_: constructed.append("external") or new)
     generation = workspace._static_generation
     try:
         assert workspace._start_camera() is False
-        assert workspace._start_external() is False
         assert workspace._load_static() is False
         assert not constructed and workspace.source is old and workspace._source_retiring
         assert workspace._static_generation == generation
@@ -1040,8 +1044,8 @@ def test_retiring_source_blocks_all_replacements_until_confirmed_stopped(workspa
         QApplication.processEvents()
         assert workspace.controller.latest_frame is None
         old.finish()
-        workspace._start_external()
-        assert constructed == ["external"] and workspace.source is new
+        workspace._load_static()
+        assert constructed == [] and workspace.source is None
         assert not workspace._source_retiring
     finally:
         old.finish()

@@ -1,0 +1,126 @@
+C:\tmp\fdm-cu-live-ui-redesign-20261016\build\ui-redesign\frozen-clean-dark\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\result.json
+{
+    "schema":  2,
+    "started_at":  "2026-10-16T17:30:58.5981413+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\dist\\windows\\installer-payload\\{app}\\FiberDiameterMeasurement.exe",
+    "theme":  "dark",
+    "real_hardware":  false,
+    "legacy_project":  "",
+    "legacy_settings":  "",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb",
+    "config":  "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\isolated-config",
+    "pid":  8116,
+    "isolated_empty_project_verified":  true,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  true,
+    "live_window":  true,
+    "key_controls":  [
+                         {
+                             "name":  "��Ʒ���",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��Ʒ����",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "������",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "�������",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "���ӳ�",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "����",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��¼",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "����",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��ѡ",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "��ѡ",
+                             "present":  true,
+                             "visible":  true
+                         },
+                         {
+                             "name":  "������Ŀ",
+                             "present":  true,
+                             "visible":  true
+                         }
+                     ],
+    "key_controls_verified":  true,
+    "workspace_closed":  true,
+    "unsaved_dialog":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\01-main-before-menu-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\02-acquisition-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\03-content-reentry-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\04-sidebar-��¼-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\04-sidebar-����-uia.json",
+                      "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\ui-redesign\\frozen-clean-dark\\20261016-173058-fcee717d659f4f929314203b2b6dd4fb\\04-sidebar-����-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "main_title":  "��΢��������̨",
+    "client_size":  [
+                        1366,
+                        690
+                    ],
+    "os_dpi":  192,
+    "screen_bounds":  [
+                          0,
+                          0,
+                          2582,
+                          1644
+                      ],
+    "available_geometry":  [
+                               0,
+                               0,
+                               2582,
+                               1548
+                           ],
+    "entry_action":  "InvokePattern",
+    "stable_navigation_verified":  true,
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-16T17:31:19.1276322+08:00"
+}
+
+[ WARN:0@4.991] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ WARN:0@0.016] global cap_ffmpeg_impl.hpp:1217 open VIDEOIO/FFMPEG: Failed list devices for backend dshow
+[ERROR:0@5.073] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@5.075] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@5.085] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@5.086] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@5.095] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+[ WARN:0@5.096] global cap.cpp:480 cv::VideoCapture::open VIDEOIO(DSHOW): backend is generally available but can't be used to capture by index
+[ERROR:0@5.106] global obsensor_uvc_stream_channel.cpp:163 cv::obsensor::getStreamChannelGroup Camera index out of range
+

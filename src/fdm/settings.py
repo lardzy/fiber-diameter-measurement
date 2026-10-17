@@ -54,6 +54,8 @@ class AppThemeMode:
     SYSTEM = "system"
     DARK = "dark"
     LIGHT = "light"
+    NAVY = "navy"
+    WARM = "warm"
 
 
 def normalize_theme_mode(value: str | None) -> str:
@@ -62,6 +64,8 @@ def normalize_theme_mode(value: str | None) -> str:
         AppThemeMode.SYSTEM,
         AppThemeMode.DARK,
         AppThemeMode.LIGHT,
+        AppThemeMode.NAVY,
+        AppThemeMode.WARM,
     }:
         return token
     return AppThemeMode.DARK

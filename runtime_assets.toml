@@ -10,7 +10,7 @@ ignored_untracked_prefixes = [
 [profiles.core]
 groups = ["microview"]
 required_python_modules = ["numpy", "cv2", "PIL", "openpyxl", "tifffile", "skimage", "scipy", "zlib_ng", "fdm._native._kernels"]
-windows_required_python_modules = ["fdm._native._windows_capture"]
+windows_required_python_modules = ["fdm._native._microview"]
 required_files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 features = [
   "measurement",

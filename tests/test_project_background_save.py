@@ -524,6 +524,55 @@ def test_repeated_saves_release_qt_threads_and_snapshots(window, desktop_applica
         assert not coordinator.findChildren(QThread)
 
 
+@pytest.mark.parametrize("next_action", ["idle", "queued_save", "transition"])
+def test_save_completion_waits_for_native_worker_cleanup_without_blocking_gui(
+    window, monkeypatch, desktop_application, next_action
+):
+    """Qt finished precedes deferred worker deletion on the native thread."""
+    coordinator = window.project_save_coordinator
+    destroying, release_cleanup = Event(), Event()
+    completed, transitions = [], []
+    coordinator.completed.connect(lambda result: completed.append(result))
+
+    def pause_destruction(*_):
+        destroying.set()
+        release_cleanup.wait(5)
+
+    try:
+        with paused_writer(monkeypatch, desktop_application) as (entered, release_write, calls):
+            assert window.request_save_project()
+            wait_for(desktop_application, entered.is_set)
+            thread, worker = coordinator._thread, coordinator._worker
+            worker.destroyed.connect(pause_destruction, Qt.ConnectionType.DirectConnection)
+            if next_action == "queued_save":
+                window.current_document().metadata["queued"] = True
+                window.current_document().mark_session_dirty()
+                assert window.request_save_project()
+            elif next_action == "transition":
+                assert coordinator.defer_transition(lambda: transitions.append(True), "切换项目")
+            release_write.set()
+            assert destroying.wait(5), "worker did not reach native destruction"
+            # The event queue must remain responsive while cleanup is paused.
+            beats = []
+            QTimer.singleShot(0, lambda: beats.append(True))
+            wait_for(desktop_application, lambda: bool(beats))
+            assert coordinator.busy
+            assert coordinator._thread is thread and coordinator._worker is worker
+            assert not completed and not transitions
+            assert len(calls) == 1
+            release_cleanup.set()
+            wait_for(desktop_application, lambda: not coordinator.busy)
+            if next_action == "queued_save":
+                assert len(calls) == 2
+                assert ProjectIO.load(window._project_path).documents[0].metadata["queued"]
+            elif next_action == "transition":
+                wait_for(desktop_application, lambda: bool(transitions))
+            assert len(completed) == (2 if next_action == "queued_save" else 1)
+    finally:
+        release_cleanup.set()
+        wait_for(desktop_application, lambda: not coordinator.busy)
+
+
 def test_window_close_is_deferred_until_thread_finishes(
     window, monkeypatch, desktop_application
 ):

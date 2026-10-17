@@ -26,6 +26,7 @@ from fdm.release_manifest import (  # noqa: E402
     BUILD_ID_FILENAME,
     RELEASE_MANIFEST_FILENAME,
     sha256_file,
+    is_editable_template_path,
     verify_release_manifest,
 )
 
@@ -817,7 +818,8 @@ def _release_file_inventory(app_dir: Path) -> list[dict[str, object]]:
             {
                 "path": relative,
                 "size": file_path.stat().st_size,
-                "sha256": sha256_file(file_path),
+                "sha256": None if is_editable_template_path(relative) else sha256_file(file_path),
+                **({"editable": True} if is_editable_template_path(relative) else {}),
             }
         )
     return entries

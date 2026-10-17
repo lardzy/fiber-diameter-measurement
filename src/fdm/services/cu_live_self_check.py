@@ -112,7 +112,7 @@ def _project_asset_rebase_probe(root, evidence, pixels):
     from fdm.models import ProjectState, project_assets_root
     from fdm.project_io import ProjectIO
 
-    session = ExperimentSession()
+    session = ExperimentSession(save_images=True)
     session.add_operator("asset-rebase-probe")
     session.set_materials(default_materials())
     active = session.add_measurement(15, "wool", evidence=evidence)
@@ -235,12 +235,13 @@ def run_cu_live_self_check(*, validate_capture=True):
     cases.update(_content_configuration_probe())
     cases.update(_evidence_persistence_probe())
     if sys.platform == "win32" and validate_capture:
-        from fdm._native import _windows_capture
-        cases["windows_capture_import"] = callable(_windows_capture.WindowCapture)
-        capture_info = dict(_windows_capture.build_info())
+        from fdm._native import _microview
+        from fdm.services.microview_transport import bridge_build_matches
+        cases["microview_bridge_import"] = callable(_microview.FrameTap)
+        cases["microview_bridge_transport"] = all(_microview.self_check().values())
+        capture_info = dict(_microview.build_info())
         kernel_info = dict(native.build_info())
-        cases["windows_capture_build"] = all(capture_info.get(key) == kernel_info.get(key)
-                                             for key in ("api_version", "python_abi", "source_sha256"))
+        cases["microview_bridge_build"] = bridge_build_matches(capture_info, kernel_info)
     return {"ok": all(cases.values()), "revision": CU_LIVE_PROBE_REVISION, "cases": cases,
             "native_build_info": dict(native.build_info()), "hardware_capture_tested": False}
 
@@ -252,7 +253,7 @@ def cu_live_probe_passed(report):
                 "evidence_png_bgr", "evidence_png_bgra", "evidence_leases_released",
                 "project_asset_rebase"}
     if sys.platform == "win32":
-        required.update({"windows_capture_import", "windows_capture_build"})
+        required.update({"microview_bridge_import", "microview_bridge_build", "microview_bridge_transport"})
     return (isinstance(report, dict) and report.get("ok") is True and report.get("revision") == CU_LIVE_PROBE_REVISION
             and isinstance(report.get("cases"), dict)
             and all(report["cases"].get(name) is True for name in required))
