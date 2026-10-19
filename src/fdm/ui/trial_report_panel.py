@@ -6,7 +6,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 import threading
-from PySide6.QtCore import QObject, QTimer, QUrl
+from PySide6.QtCore import QObject, QTimer, QUrl, QEvent, Qt
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QVBoxLayout, QWidget
 from fdm.atomic_io import atomic_write_text
@@ -89,6 +89,33 @@ class TrialReportPanel(QObject):
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.poll)
         self.refresh_path()
+        if hasattr(workspace, "report_status_label"):
+            workspace.report_status_label.installEventFilter(self)
+        self._sync_actions()
+
+    def _sync_actions(self):
+        workspace = self.workspace
+        if hasattr(workspace, "export_button"):
+            workspace.export_button.setEnabled(self.future is None)
+            workspace.export_button.setText("正在导出…" if self.future is not None else "导出 Excel 报告")
+        label = getattr(workspace, "report_status_label", None)
+        if label is not None:
+            text = self.status.text().splitlines()[0] if self.status.text() else ""
+            label.setToolTip(self.status.text())
+            label.setText(label.fontMetrics().elidedText(text, Qt.TextElideMode.ElideRight, max(40, label.width())))
+        for name in ("open_report_button", "report_folder_button"):
+            button = getattr(workspace, name, None)
+            if button is not None:
+                button.setEnabled(self.last_report is not None)
+
+    def _set_status(self, text):
+        self.status.setText(text)
+        self._sync_actions()
+
+    def eventFilter(self, watched, event):
+        if watched is getattr(self.workspace, "report_status_label", None) and event.type() == QEvent.Type.Resize:
+            self._sync_actions()
+        return False
 
     def path(self, *, create=False):
         return Path(self.preferences["template"]) if self.preferences.get("template") else working_template(create=create)
@@ -139,14 +166,14 @@ class TrialReportPanel(QObject):
         self.set_diagnostics({})
         self.future = self.executor.submit(function)
         self.cancel_button.setEnabled(True)
-        self.status.setText("Excel 正在后台处理，实时采集与计数继续。")
+        self._set_status("Excel 正在后台处理，实时采集与计数继续。")
         self.timer.start()
 
     def cancel(self):
         if self.future is not None:
             self.cancel_event.set()
             self.cancel_button.setEnabled(False)
-            self.status.setText("正在取消模板任务并清理本次 Excel 实例，试验记录继续保留。")
+            self._set_status("正在取消模板任务并清理本次 Excel 实例，试验记录继续保留。")
 
     def toggle_diagnostics(self, checked):
         self.diagnostics_widget.setVisible(checked)
@@ -173,6 +200,11 @@ class TrialReportPanel(QObject):
         self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event))
 
     def export(self):
+        if self.future is not None:
+            raise ValueError("已有模板任务正在处理，测量可以继续。")
+        flush = getattr(self.workspace, "commit_pending_edits", None)
+        if flush is not None:
+            flush()
         template = self.path(create=True)
         suffix = ".xlsx" if template.suffix.lower() == ".xltx" else ".xlsm" if template.suffix.lower() in {".xltm", ".xlsm"} else ".xls"
         path, _ = QFileDialog.getSaveFileName(self.workspace, "生成模板报告", "试验报告" + suffix,
@@ -195,11 +227,11 @@ class TrialReportPanel(QObject):
             result = future.result()
         except Exception as exc:
             self.set_diagnostics(getattr(exc, "diagnostics", {"error_type": type(exc).__name__, "message": str(exc)}))
-            self.status.setText(str(exc))
+            self._set_status(str(exc))
             return
         self.set_diagnostics(result.get("diagnostics", {}))
         if result.get("operation") == "edit":
-            self.status.setText("模板原文件已在 Excel 中打开，可直接编辑并保存。")
+            self._set_status("模板原文件已在 Excel 中打开，可直接编辑并保存。")
             return
         if "methods" in result:
             self.method.blockSignals(True)
@@ -209,7 +241,7 @@ class TrialReportPanel(QObject):
                 self.method.addItem(item["label"], item["label"])
             self.method.setCurrentIndex(max(0, self.method.findData(self.preferences.get("method_label"))))
             self.method.blockSignals(False)
-            self.status.setText(f"已读取 {len(result['methods'])} 个模板方法；未改动模板文件。"
+            self._set_status(f"已读取 {len(result['methods'])} 个模板方法；未改动模板文件。"
                                 + ("\n" + "\n".join(result["warnings"]) if result.get("warnings") else ""))
             return
         lines = ["报告已生成：" + result["destination"], "报告方法：" + result["method"]]
@@ -223,7 +255,7 @@ class TrialReportPanel(QObject):
                 lines.append(f"{item['operator']}／{item['direction']}／{item['material']}：软件 {local:.3f}%，模板 {report:.3f}%")
         if result.get("status") != "ready":
             lines.insert(0, "模板计算需要复核；完整原始数据已写入。")
-        self.status.setText("\n".join(lines))
+        self._set_status("\n".join(lines))
         self.workspace.statusBar().showMessage(lines[0], 8000)
 
     def close(self):

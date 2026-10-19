@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "version": "0.4.10",
+  "git_baseline": "a6426a1",
+  "working_tree_uncommitted": true,
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12",
+  "qt": "6.10.2",
+  "qt_platform": "offscreen",
+  "command": "QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q",
+  "sandbox": "unrestricted for local IPC and shared memory",
+  "tests_passed": 5129,
+  "tests_skipped": 13,
+  "subtests_passed": 1653,
+  "warnings": 1,
+  "duration_seconds": 715.25,
+  "warning_detail": "openpyxl: Workbook contains no default style, apply openpyxl default (existing length-unit export test)",
+  "source_sha256": {
+    "src/fdm/ui/acquisition_workbench.py": "9e6a18608a63bd896b3a9d2d4578ad4bece8be727650219627d53afbc3a1d255",
+    "src/fdm/ui/dialogs.py": "a98e672cf4d28e60eb0e3c2346c07d0dda52ab64f5d3c3321277ae422f72ab3b",
+    "src/fdm/ui/digital_slide_canvas.py": "13496f3328d3b5f1484ba1f98a1cbd6b29ce00bf3160a823b0710483c9acab63",
+    "src/fdm/ui/live_experiment_view.py": "d958b0f9320a53eaec5a8559e2d3b0f3b9b60125d92997a5645d2e48e8c17cc7",
+    "src/fdm/ui/live_experiment_workspace.py": "548dbb11fb362105ed081d839ba3fce4f9a5d6e6b7ec765566b8668d19cdae9f",
+    "src/fdm/ui/main_window.py": "9bffa189b51e4088045a35c2fdd8f580a4e151501cff50ea2ef1c8d5d3170086",
+    "src/fdm/ui/quantity_targets.py": "a199efe9672a420fd7a4d1933e46631838226155eb10a32ebfedea115fa0c087",
+    "src/fdm/ui/theme.py": "063f500bfb95e93e3af706fe3f56dc367746950c204b1fd98107d9ce08f189a0",
+    "src/fdm/ui/trial_report_panel.py": "7b97e014428ca8af745529eb0d6e5f49f62cf42be32e339896340c7dab951b67",
+    "src/fdm/ui/trial_records.py": "5767ac97aea5dca42781d9e4945f152aa4c77e68391843741076dcc8ec8cb48d"
+  },
+  "real_microview_tested": false
+}

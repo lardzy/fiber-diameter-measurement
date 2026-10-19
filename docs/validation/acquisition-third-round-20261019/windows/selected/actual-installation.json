@@ -1,0 +1,10 @@
+{
+    "checkpoint":  "{e780653e-feda-49b1-8191-dad59ca7f5a2}",
+    "passed":  true,
+    "arguments":  "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOICONS /TASKS=\"\" /DIR=\"C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate\" /LOG=\"C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\actual-installation.log\"",
+    "installed":  "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate",
+    "caller":  "NT AUTHORITY\\SYSTEM",
+    "installer_sha256":  "790b16093df9948ac8a566e4b283cee56192b3f65d5d290a1591cb00f2889d8f",
+    "exit_code":  0,
+    "build_id":  "e1cf7774e0c1453796f966d222e2cf88"
+}

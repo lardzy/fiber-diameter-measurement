@@ -1,0 +1,394 @@
+{
+  "schema_version": 1,
+  "assembly": "Initial matrix plus targeted reruns after an additional safe Qt callback cleanup; every retained case must match the final source fingerprints.",
+  "retried_cases": [
+    "light-1920x1080-1p25",
+    "light-1920x1080-1",
+    "light-3840x2160-2",
+    "light-1366x768-1",
+    "light-1600x900-1",
+    "dark-1600x900-1",
+    "light-3840x2160-1p5",
+    "light-1600x900-1p25",
+    "dark-1600x900-1p25",
+    "light-1600x900-1p5",
+    "light-1920x1080-1p5"
+  ],
+  "source_fingerprints": {
+    "src/fdm/ui/live_experiment_view.py": "d958b0f9320a53eaec5a8559e2d3b0f3b9b60125d92997a5645d2e48e8c17cc7",
+    "src/fdm/ui/live_experiment_workspace.py": "548dbb11fb362105ed081d839ba3fce4f9a5d6e6b7ec765566b8668d19cdae9f",
+    "src/fdm/ui/quantity_targets.py": "a199efe9672a420fd7a4d1933e46631838226155eb10a32ebfedea115fa0c087",
+    "src/fdm/ui/trial_records.py": "5767ac97aea5dca42781d9e4945f152aa4c77e68391843741076dcc8ec8cb48d",
+    "src/fdm/ui/trial_report_panel.py": "7b97e014428ca8af745529eb0d6e5f49f62cf42be32e339896340c7dab951b67",
+    "src/fdm/ui/acquisition_workbench.py": "9e6a18608a63bd896b3a9d2d4578ad4bece8be727650219627d53afbc3a1d255",
+    "src/fdm/ui/theme.py": "063f500bfb95e93e3af706fe3f56dc367746950c204b1fd98107d9ce08f189a0",
+    "src/fdm/ui/digital_slide_canvas.py": "13496f3328d3b5f1484ba1f98a1cbd6b29ce00bf3160a823b0710483c9acab63",
+    "src/fdm/ui/dialogs.py": "a98e672cf4d28e60eb0e3c2346c07d0dda52ab64f5d3c3321277ae422f72ab3b"
+  },
+  "validation_script_sha256": "1fe25ac9e9739f1bdb76aed856215ac2c05c8964590295b9d5176762a8290a87",
+  "cases": [
+    {
+      "case": "dark-1366x768-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 5,
+      "result": "results/dark-1366x768-1.json"
+    },
+    {
+      "case": "dark-1600x900-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/dark-1600x900-1.json"
+    },
+    {
+      "case": "dark-1600x900-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/dark-1600x900-1p25.json"
+    },
+    {
+      "case": "dark-1600x900-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 1,
+      "result": "results/dark-1600x900-1p5.json"
+    },
+    {
+      "case": "dark-1920x1080-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/dark-1920x1080-1.json"
+    },
+    {
+      "case": "dark-1920x1080-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 8,
+      "result": "results/dark-1920x1080-1p25.json"
+    },
+    {
+      "case": "dark-1920x1080-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/dark-1920x1080-1p5.json"
+    },
+    {
+      "case": "dark-3840x2160-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/dark-3840x2160-1p5.json"
+    },
+    {
+      "case": "dark-3840x2160-2",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/dark-3840x2160-2.json"
+    },
+    {
+      "case": "light-1366x768-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 5,
+      "result": "results/light-1366x768-1.json"
+    },
+    {
+      "case": "light-1600x900-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 200,
+      "visible_categories": 9,
+      "result": "results/light-1600x900-1.json"
+    },
+    {
+      "case": "light-1600x900-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/light-1600x900-1p25.json"
+    },
+    {
+      "case": "light-1600x900-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 1,
+      "result": "results/light-1600x900-1p5.json"
+    },
+    {
+      "case": "light-1920x1080-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/light-1920x1080-1.json"
+    },
+    {
+      "case": "light-1920x1080-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 8,
+      "result": "results/light-1920x1080-1p25.json"
+    },
+    {
+      "case": "light-1920x1080-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/light-1920x1080-1p5.json"
+    },
+    {
+      "case": "light-3840x2160-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/light-3840x2160-1p5.json"
+    },
+    {
+      "case": "light-3840x2160-2",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/light-3840x2160-2.json"
+    },
+    {
+      "case": "navy-1366x768-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 5,
+      "result": "results/navy-1366x768-1.json"
+    },
+    {
+      "case": "navy-1600x900-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/navy-1600x900-1.json"
+    },
+    {
+      "case": "navy-1600x900-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/navy-1600x900-1p25.json"
+    },
+    {
+      "case": "navy-1600x900-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 1,
+      "result": "results/navy-1600x900-1p5.json"
+    },
+    {
+      "case": "navy-1920x1080-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/navy-1920x1080-1.json"
+    },
+    {
+      "case": "navy-1920x1080-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 8,
+      "result": "results/navy-1920x1080-1p25.json"
+    },
+    {
+      "case": "navy-1920x1080-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/navy-1920x1080-1p5.json"
+    },
+    {
+      "case": "navy-3840x2160-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/navy-3840x2160-1p5.json"
+    },
+    {
+      "case": "navy-3840x2160-2",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/navy-3840x2160-2.json"
+    },
+    {
+      "case": "warm-1366x768-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 5,
+      "result": "results/warm-1366x768-1.json"
+    },
+    {
+      "case": "warm-1600x900-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/warm-1600x900-1.json"
+    },
+    {
+      "case": "warm-1600x900-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/warm-1600x900-1p25.json"
+    },
+    {
+      "case": "warm-1600x900-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 1,
+      "result": "results/warm-1600x900-1p5.json"
+    },
+    {
+      "case": "warm-1920x1080-1",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/warm-1920x1080-1.json"
+    },
+    {
+      "case": "warm-1920x1080-1p25",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 8,
+      "result": "results/warm-1920x1080-1p25.json"
+    },
+    {
+      "case": "warm-1920x1080-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 4,
+      "result": "results/warm-1920x1080-1p5.json"
+    },
+    {
+      "case": "warm-3840x2160-1p5",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/warm-3840x2160-1p5.json"
+    },
+    {
+      "case": "warm-3840x2160-2",
+      "passed": true,
+      "source_changed": false,
+      "source_matches_final": true,
+      "screenshots": 15,
+      "navigation_cycles": 12,
+      "visible_categories": 9,
+      "result": "results/warm-3840x2160-2.json"
+    }
+  ],
+  "passed": true,
+  "raw_artifact_directory": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed",
+  "archive_note": "Raw per-case JSON preserved unchanged. Matrix result links are relative to this archive; screenshot source paths in per-case JSON refer to the ignored local raw directory. Only selected images are archived. See selected-manifest.json."
+}

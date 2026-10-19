@@ -2,7 +2,7 @@
 from dataclasses import replace
 
 from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFormLayout,
-    QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget)
+    QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget, QHBoxLayout, QToolButton, QSizePolicy)
 
 from fdm.live_experiment.reminders import ReminderPolicy, reminder_progress
 from fdm.ui.icons import themed_icon
@@ -14,14 +14,19 @@ class QuantityTargets(QWidget):
         super().__init__(parent)
         self.session, self.configure = session, configure
         self.setObjectName("quantityTargets")
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
         self.progress = QLabel(self)
-        self.progress.setWordWrap(True)
+        self.progress.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.progress.setMinimumWidth(0)
         self.progress.setAccessibleName("数量目标进度")
-        layout.addWidget(self.progress)
-        self.settings_button = QPushButton("数量目标", self)
+        layout.addWidget(self.progress, 1)
+        self.settings_button = QToolButton(self)
+        self.settings_button.setFixedSize(26, 26)
+        self.settings_button.setStyleSheet("QToolButton { min-height: 22px; padding: 0; }")
+        self.settings_button.setAccessibleName("数量目标")
+        self.settings_button.setToolTip("设置数量目标；每类进度显示在类别列表中。")
         self.settings_button.setIcon(themed_icon("count"))
         self.settings_button.clicked.connect(self.edit_targets)
         layout.addWidget(self.settings_button)
@@ -31,14 +36,20 @@ class QuantityTargets(QWidget):
         if self.session.active_operator_id not in self.session.operators:
             self.progress.setText("选择操作者后显示数量目标")
             return
-        lines = []
-        for row in reminder_progress(self.session):
-            title = (row.material_name + "实测" if row.kind == "measured" else
-                     "本方向总根数（实测＋补计）" if row.kind == "total" else "当前操作者有效测量")
-            lines.append(f"{'✓ ' if row.reached else ''}{title} {row.count} / {row.target}")
+        rows = reminder_progress(self.session)
+        total = next((row for row in rows if row.kind in ("total", "diameter_measured")), None)
+        if total is not None:
+            title = "有效测量" if total.kind == "diameter_measured" else "本方向总根数"
+            self.progress.setText(f"{'✓ ' if total.reached else ''}{title} {total.count} / {total.target}")
+        else:
+            self.progress.setText("配置类别后显示数量目标")
+        details = []
+        for row in rows:
+            title = row.material_name + "实测" if row.kind == "measured" else "本方向总根数（实测＋补计）" if row.kind == "total" else "当前操作者有效测量"
+            details.append(f"{'✓ ' if row.reached else ''}{title} {row.count} / {row.target}")
         if self.session.reminder_policy is None:
-            lines.append("沿用旧试验数量规则 · 可在数量目标中切换")
-        self.progress.setText("\n".join(lines))
+            details.append("沿用旧试验数量规则 · 可在数量目标中切换")
+        self.progress.setToolTip("\n".join(details))
 
     def edit_targets(self):
         dialog = QuantityTargetDialog(self.session, self)

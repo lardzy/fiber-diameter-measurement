@@ -14,6 +14,9 @@ def harness(tmp_path):
     with workflow.WorkflowHarness(tmp_path / "profile") as instance:
         instance.enter()
         page = instance.select(1)
+        from fdm.live_experiment import default_materials
+        page.session.set_materials(default_materials())
+        page._refresh_materials()
         page.sample.setText("取消后继续测量")
         page.commit_pending_edits()
         page.ruler_choice.setCurrentIndex(1)

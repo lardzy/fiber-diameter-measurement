@@ -29334,4 +29334,6 @@ class MainWindow(QMainWindow):
             app.removeEventFilter(self)
             self._application_key_filter_installed = False
         self._preview_display_binding.close()
+        if self._acquisition_workbench is not None:
+            self._acquisition_workbench.records.shutdown()
         event.accept()

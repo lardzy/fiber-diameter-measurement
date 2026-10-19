@@ -72,6 +72,8 @@ def test_motion_status_never_inserts_a_readiness_row(harness):
     page.ruler_choice.setCurrentIndex(1)
     page.ruler_choice.activated.emit(1)
     page.session.rename_operator("测试员", operator_id=page.session.active_operator_id)
+    from fdm.live_experiment import default_materials
+    page.session.set_materials(default_materials())
     page._refresh_operators()
     page._refresh_measurement_readiness()
     workflow.settle()
@@ -119,6 +121,9 @@ def test_rejected_feedback_is_viewport_anchored_and_click_passes_through(harness
 def test_goal_notice_progress_and_undo_are_separate_from_status(harness):
     harness.enter()
     page = harness.select(1)
+    from fdm.live_experiment import default_materials
+    page.session.set_materials(default_materials())
+    page._refresh_materials()
     page._configure(reminder_policy=ReminderPolicy(content_measured_target=2, content_total_target=3))
     page.statusBar().showMessage("上次测量未通过", 10000)
     for _ in range(2):
@@ -128,7 +133,8 @@ def test_goal_notice_progress_and_undo_are_separate_from_status(harness):
     assert page.measurement_feedback.feedback.code == "target_reached"
     assert "已计入" in page.statusBar().currentMessage()
     assert "未通过" not in page.statusBar().currentMessage()
-    assert "2 / 2" in page.quantity_targets.progress.text()
+    page._refresh_summary()
+    assert page.material_rows["wool"]["measured_count"].text() == "✓ 2/2"
     page.controller.statusChanged.emit("画面采集中")
     assert page.measurement_feedback.isVisible()
     before = page.session.revision

@@ -2,7 +2,8 @@
 import json
 
 import pytest
-from PySide6.QtCore import QPoint, QRect
+from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtTest import QTest
 
 from test_acquisition_workflow_redesign import workflow
 
@@ -19,7 +20,7 @@ def test_compact_client_keeps_metadata_save_and_scroll_controls_reachable(tmp_pa
         assert h.hub.navigation.currentIndex() == restored_trial
         # Exercise restored construction, direct navigation and cached pages.
         for route in (0, 1, 2, 0, restored_trial):
-            h.hub.select_page(route)
+            h.select(route)
             workflow.settle()
             h.backend.tick()
             h.assert_size()
@@ -34,18 +35,18 @@ def test_compact_client_keeps_metadata_save_and_scroll_controls_reachable(tmp_pa
                 h.assert_size()
                 assert page.image_scroll.geometry() == image_rectangle
                 assert page.image_scroll.viewport().height() >= 200
-                for control in (page.sample_number, page.sample, page.operator,
-                                page.ruler_choice, page.save_button):
+                for control in (page.sample_summary, page.operator,
+                                page.ruler_choice, page.save_button, page.export_button):
                     rectangle = QRect(control.mapTo(h.window, QPoint()), control.size())
                     assert control.isVisible()
                     assert h.window.rect().contains(rectangle)
                     assert control.visibleRegion().contains(control.rect())
-            operations = page.workflow_tabs.widget(0)
-            if route == 1:
-                assert operations.verticalScrollBar().maximum() > 0
-            operations.ensureWidgetVisible(page.operation_help)
+            QTest.mouseClick(page.sample_details_toggle, Qt.MouseButton.LeftButton)
             workflow.settle()
-            assert page.operation_help.visibleRegion().contains(page.operation_help.rect())
+            for editor in (page.sample, page.sample_number):
+                assert editor.isVisible() and editor.visibleRegion().contains(editor.rect())
+            QTest.mouseClick(page.sample_details_toggle, Qt.MouseButton.LeftButton)
+            assert page.workflow_tabs.widget(0).widget().toolTip()
             h.assert_size()
         h.leave()
         h.enter()

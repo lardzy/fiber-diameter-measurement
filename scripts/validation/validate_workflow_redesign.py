@@ -442,9 +442,9 @@ def capture_screenshots(harness, output):
     save("realtime")
     for index, mode in ((1, "content"), (2, "diameter")):
         page = harness.select(index)
-        assert page.sample_number.isVisible() and page.ruler_choice.isVisible()
+        assert page.sample_summary.isVisible() and page.ruler_choice.isVisible()
         viewport = page.image_scroll.geometry()
-        for tab, title in enumerate(("operation", "records", "report")):
+        for tab, title in enumerate(("operation", "review", "report")):
             page.workflow_tabs.setCurrentIndex(tab)
             settle()
             assert page.image_scroll.geometry() == viewport, "records/report must not cover the image"

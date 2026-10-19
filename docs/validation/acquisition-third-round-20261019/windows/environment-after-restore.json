@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "timestamp": "2026-10-19T15:34:16.8571022+08:00",
+  "user": "B1EA\\lishuyang",
+  "elevated": false,
+  "powershell": "5.1.26100.9711",
+  "policies": [
+    {
+      "scope": "MachinePolicy",
+      "policy": "Undefined"
+    },
+    {
+      "scope": "UserPolicy",
+      "policy": "Undefined"
+    },
+    {
+      "scope": "Process",
+      "policy": "Undefined"
+    },
+    {
+      "scope": "CurrentUser",
+      "policy": "RemoteSigned"
+    },
+    {
+      "scope": "LocalMachine",
+      "policy": "Undefined"
+    }
+  ],
+  "installed": [
+    {
+      "DisplayName": "特纤通用测量工具 0.4.7",
+      "DisplayVersion": "0.4.7",
+      "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+      "PSPath": "Microsoft.PowerShell.Core\\Registry::HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{F0F6A8B5-4838-4DF0-B2C1-18F1D5AA4A66}_is1"
+    }
+  ],
+  "resources": [
+    {
+      "name": "python",
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+      "exists": true
+    },
+    {
+      "name": "native_tools",
+      "path": "C:\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+      "exists": true
+    },
+    {
+      "name": "compiler",
+      "path": "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
+      "exists": true
+    },
+    {
+      "name": "extractor",
+      "path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\validation-tools\\innounp.exe",
+      "exists": true
+    }
+  ],
+  "existing_processes": [],
+  "excel_registered": true,
+  "candidate_directory_exists": true,
+  "system_state_modified": false
+}

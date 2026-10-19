@@ -1,0 +1,289 @@
+{
+  "schema": 1,
+  "run_id": "20261019-072421Z-34040aac",
+  "cases": [
+    {
+      "name": "excel-fixed-entry-light-1600x900",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "populated": true,
+      "export": true
+    }
+  ],
+  "windows_output": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac",
+  "executable_override": "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "real_hardware_tested": false,
+  "camera_sharing_managed": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false,
+  "preflight": {
+    "probe_sha256": "789f652c0c38136885dad2b15ebce4aa7d1dfa90547932ba4cf1f96dabbe0bcc",
+    "executable": "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "identity": {
+      "passed": true,
+      "version": "0.4.10",
+      "build_id": "e1cf7774e0c1453796f966d222e2cf88",
+      "source_commit": "unknown",
+      "source_git_baseline": "a6426a15523e00a8f8e536ea3a14bdb1bbd50745",
+      "installer": "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\installer\\fiber-diameter-measurement-setup-0.4.10-no-area-models.exe",
+      "sha256": "790b16093df9948ac8a566e4b283cee56192b3f65d5d290a1591cb00f2889d8f",
+      "bytes": 398674244,
+      "payload": "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installer-payload-790b16093df9\\{app}",
+      "files_verified": 4818,
+      "production_sources_verified": 425,
+      "source_snapshot_sha256": "91a283f579ff1ff5866f18d4d3fa308254f867e523f4da1943d850a2f780f969",
+      "selfcheck_encoding": "cp936",
+      "excluded_components": [
+        "area-models"
+      ],
+      "actual_installation_tested": false,
+      "hardware_capture_tested": false
+    }
+  },
+  "groups": [
+    {
+      "name": "excel-fixed-entry-light-1600x900",
+      "passed": true,
+      "result": {
+        "schema": 3,
+        "started_at": "2026-10-19T15:24:25.3710014+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "light",
+        "real_hardware": null,
+        "hardware_acceptance_tested": false,
+        "capture_note": "VM host-camera sharing is disabled within the validation checkpoint. No Microview hardware acceptance.",
+        "requested_capture_device_id": "microview:0",
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16",
+        "config": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\isolated-config",
+        "pid": 4232,
+        "isolated_empty_project_verified": false,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": false,
+        "live_window": false,
+        "key_controls": [],
+        "key_controls_verified": false,
+        "workspace_closed": false,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1600,
+          900
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "02-realtime",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "03-content",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "09-excel-save-dialog",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "10-excel-success",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "08-navigation-return",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\01-main-uia.json",
+          "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\02-realtime-uia.json",
+          "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\03-content-uia.json",
+          "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\09-excel-save-dialog-uia.json",
+          "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\10-excel-success-uia.json",
+          "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\08-navigation-return-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "populated": true,
+        "steps": [
+          {
+            "name": "采集与试验",
+            "action": "invoke"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "导出 Excel 报告",
+            "action": "invoke"
+          },
+          {
+            "name": "测量分析",
+            "action": "invoke"
+          }
+        ],
+        "fixture_sha256": "6a9a32ca2f57c8a5852cbebed4e9093cc6a035fe306654023f7cede455dbcd9a",
+        "excel_export_tested": true,
+        "os_dpi": 192,
+        "excel_entry": {
+          "name": "导出 Excel 报告",
+          "process_id": 4232,
+          "type": "ControlType.Button",
+          "class": "QPushButton",
+          "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.QPushButton",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            1466,
+            855,
+            134,
+            32
+          ],
+          "help_text": "",
+          "value": "",
+          "runtime_id": [
+            42,
+            132322,
+            4,
+            -2147482936
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern"
+          ]
+        },
+        "excel_verification": {
+          "passed": true,
+          "report": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\fixed-entry-report.xls",
+          "template": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\isolated-config\\FiberDiameterMeasurement\\templates\\sheet.xlt",
+          "expected": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\save-lifecycle-probe.expected.json",
+          "inputs_verified": 52,
+          "diameters_verified": 144,
+          "counts_verified": 12,
+          "sheets": [
+            {
+              "name": "标准选择",
+              "print_area": "",
+              "formula_cells": 1
+            },
+            {
+              "name": "原始数据",
+              "print_area": "",
+              "formula_cells": 496
+            },
+            {
+              "name": "特种毛(报出)",
+              "print_area": "$A$1:$K$66",
+              "formula_cells": 2668
+            },
+            {
+              "name": "麻棉(报出)",
+              "print_area": "$A$1:$K$66",
+              "formula_cells": 2664
+            },
+            {
+              "name": "分组统计",
+              "print_area": "",
+              "formula_cells": 11992
+            },
+            {
+              "name": "非棉麻织物",
+              "print_area": "$A$1:$U$40",
+              "formula_cells": 711
+            },
+            {
+              "name": "非棉麻纤维",
+              "print_area": "",
+              "formula_cells": 321
+            },
+            {
+              "name": "分组加权统计",
+              "print_area": "",
+              "formula_cells": 2213
+            },
+            {
+              "name": "织物纤维含量报告",
+              "print_area": "",
+              "formula_cells": 533
+            },
+            {
+              "name": "棉麻织物",
+              "print_area": "$A$1:$U$43",
+              "formula_cells": 617
+            },
+            {
+              "name": "棉麻纤维",
+              "print_area": "",
+              "formula_cells": 268
+            },
+            {
+              "name": "比重",
+              "print_area": "",
+              "formula_cells": 0
+            }
+          ],
+          "errors": [],
+          "excel_version": "16.0",
+          "vba_preserved": true,
+          "formulas_verified": 486,
+          "report_sha256": "3a8bed5faac859116b1793571c8a1f483f8b31b9292f9d0924715574d43bdcf3"
+        },
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-19T15:25:05.7479058+08:00"
+      }
+    }
+  ],
+  "passed": true
+}

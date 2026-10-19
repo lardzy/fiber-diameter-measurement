@@ -4,8 +4,11 @@ from pathlib import Path
 import importlib.util
 
 import pytest
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QPushButton
 
+from fdm.live_experiment import default_materials
 from fdm.live_experiment.feedback import feedback_for_reason
 from fdm.live_experiment.reminders import ReminderPolicy
 from fdm.ui import live_experiment_workspace as workspace_module
@@ -21,6 +24,10 @@ def page(tmp_path):
     with workflow.WorkflowHarness(tmp_path / "profile") as harness:
         harness.enter()
         page = harness.select(1)
+        # Content trials intentionally start without invented fiber classes.
+        for direction in ("warp", "weft"):
+            page.session.set_materials(default_materials(), direction=direction)
+        page._refresh_materials()
         page._configure(reminder_policy=ReminderPolicy(content_measured_target=2, content_total_target=3))
         yield page
 
@@ -33,7 +40,9 @@ def accept(page, diameter):
 
 
 def history_click(page, text):
-    next(button for button in page.findChildren(QPushButton) if button.text() == text).click()
+    button = next(button for button in page.findChildren(QPushButton) if button.accessibleName() == text)
+    QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    QTest.qWait(90)  # Visible per-category progress refreshes on the 80 ms UI timer.
     workflow.settle()
 
 
@@ -46,7 +55,8 @@ def test_real_undo_redo_buttons_refresh_value_and_do_not_replay_goal(page):
     assert page.controller.current_records == [first.id]
     assert page.latest_value.text() == "19.000 μm"
     assert page.measurement_outcome.text() == "最近有效测量"
-    assert "1 / 2" in page.quantity_targets.progress.text()
+    assert page.material_rows["wool"]["measured_count"].text() == "1/2"
+    assert "1 / 3" in page.quantity_targets.progress.text()
     history_click(page, "撤销")
     assert not page.session.measurements
     assert page.latest_value.text() == "— μm" and not page.measurement_outcome.text()
@@ -60,19 +70,33 @@ def test_real_undo_redo_buttons_refresh_value_and_do_not_replay_goal(page):
 
 
 def select_current_record(page, record):
-    page.workflow_tabs.setCurrentIndex(1)
-    page.tabs.setCurrentIndex(0)
-    page.current_table.setCurrentIndex(page.current_model.index(page.current_model.ids.index(record.id), 0))
+    presenter = page._records_presenter()
+    if not presenter.is_open:
+        QTest.mouseClick(page.records_toggle, Qt.MouseButton.LeftButton)
+        workflow.settle()
+    source = presenter.model.index(presenter.model.rows_by_key[("measurement", record.id)], 0)
+    index = presenter.proxy.mapFromSource(source)
+    presenter.table.scrollTo(index)
+    workflow.settle()
+    QTest.mouseClick(presenter.table.viewport(), Qt.MouseButton.LeftButton,
+                    pos=presenter.table.visualRect(index).center())
+    assert tuple(presenter.panel.selected_key()) == ("measurement", record.id)
+    return presenter.panel
+
+
+def record_action(panel, action):
+    button = panel.action_buttons[action]
+    assert button.isEnabled() and button.isVisible()
+    QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    workflow.settle()
 
 
 def test_delete_selected_record_removes_old_goal_and_last_value(page):
     first, second = accept(page, 19), accept(page, 21)
-    select_current_record(page, second)
-    page._delete_record()
+    record_action(select_current_record(page, second), "delete")
     assert not page.measurement_feedback.isVisible()
     assert page.latest_value.text() == "19.000 μm"
-    select_current_record(page, first)
-    page._delete_record()
+    record_action(select_current_record(page, first), "delete")
     assert not page.controller.current_records
     assert page.latest_value.text() == "— μm" and not page.measurement_outcome.text()
 
@@ -81,10 +105,10 @@ def test_edit_selected_record_refreshes_value_and_invalidates_rejection(page, mo
     record = accept(page, 19)
     page.controller.measurementFeedback.emit(feedback_for_reason("no_complete_crossing",
                                                                  **page.controller.feedback_context()))
-    select_current_record(page, record)
+    panel = select_current_record(page, record)
     monkeypatch.setattr(workspace_module.QInputDialog, "getDouble", lambda *a, **k: (23.5, True))
     monkeypatch.setattr(workspace_module.QInputDialog, "getItem", lambda *a, **k: (a[3][0], True))
-    page._edit_record()
+    record_action(panel, "edit")
     assert page.session.measurements[record.id].diameter_um == 23.5
     assert page.latest_value.text() == "23.500 μm"
     assert page.measurement_outcome.text() == "最近有效测量"

@@ -41,9 +41,9 @@ from fdm.settings import AppSettings, digital_slide_render_cache_directory
 from fdm.ui.canvas import (
     DocumentCanvas,
     canvas_image_border,
-    canvas_workspace_foreground,
 )
 from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
+from fdm.ui.theme import canvas_notice_colors
 from fdm.ui.view_transform import CanvasZoomMode
 
 
@@ -2758,10 +2758,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         text_rect.moveCenter(
             QPointF(self._content_rect().center().x(), self._content_rect().bottom() - 22.0).toPoint()
         )
+        notice_background, notice_text = canvas_notice_colors()
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(12, 20, 28, 210))
+        painter.setBrush(notice_background)
         painter.drawRoundedRect(QRectF(text_rect), 5.0, 5.0)
-        painter.setPen(canvas_workspace_foreground(self.palette()))
+        painter.setPen(notice_text)
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, message)
 
     def resizeEvent(self, event) -> None:

@@ -1,0 +1,241 @@
+{
+  "version": "0.4.10",
+  "platform": "offscreen",
+  "system_cases_simulated": true,
+  "screenshots": [
+    {
+      "name": "light-slide-browse",
+      "file": "light-slide-browse.png",
+      "sha256": "2e91c0221e307cb403b3d4cd39328781fcfdc46b2120c685a625c8e137302241"
+    },
+    {
+      "name": "light-settings",
+      "file": "light-settings.png",
+      "sha256": "335eb2807a213b7151253a39e3930fc99bee8d146efe0836c4c9adaa4e72d785"
+    },
+    {
+      "name": "light-measurement-settings",
+      "file": "light-measurement-settings.png",
+      "sha256": "0498e5652e0d860981b80ff4dabab3bb047ebafb9443f819743b40d16ac901f0"
+    },
+    {
+      "name": "light-export-data",
+      "file": "light-export-data.png",
+      "sha256": "b25bbdeacd48eb3a6dbeafb18c0dcb79098a6b56ee318ba027c2b71267839d2c"
+    },
+    {
+      "name": "light-export-image",
+      "file": "light-export-image.png",
+      "sha256": "53abf55bf58ac38ca99f6395dae553b85b75701e0b9a84064e4ab699cd671f5f"
+    },
+    {
+      "name": "warm-slide-browse",
+      "file": "warm-slide-browse.png",
+      "sha256": "6d7127082a6b258416025a9f159265880996e1b2d54f56942cca218ed62fa6ad"
+    },
+    {
+      "name": "warm-settings",
+      "file": "warm-settings.png",
+      "sha256": "3411677c9e9651c9f37036ec3e5820b840f453ec43da7b840a2db79eb256deb8"
+    },
+    {
+      "name": "warm-measurement-settings",
+      "file": "warm-measurement-settings.png",
+      "sha256": "20cf3ffc4020759b22d1daa1063ba52f7666fc8cbc65f8051b51543103b7799c"
+    },
+    {
+      "name": "warm-export-data",
+      "file": "warm-export-data.png",
+      "sha256": "14ad4e94fc78b3e9308e1c083004bd3726a721250ee62eaafed9a3fadf6e3999"
+    },
+    {
+      "name": "warm-export-image",
+      "file": "warm-export-image.png",
+      "sha256": "15ff0485d4b7369f4cfe857640a8f1230a06559e83df24f0a3d4cc95f8694ecb"
+    },
+    {
+      "name": "dark-slide-browse",
+      "file": "dark-slide-browse.png",
+      "sha256": "aa1029602ca5fae84ffc19105ca1a9c0071df4c222ced998b948bfbb601cac8a"
+    },
+    {
+      "name": "dark-settings",
+      "file": "dark-settings.png",
+      "sha256": "7031557d89db7745ba704c24a535f8a18a10de01ce95edafa9fbfad604ac296e"
+    },
+    {
+      "name": "dark-measurement-settings",
+      "file": "dark-measurement-settings.png",
+      "sha256": "23f9253b1816012b20b3cf0f7967c506b9bd073e1dfc4bd295100047dc51859d"
+    },
+    {
+      "name": "dark-export-data",
+      "file": "dark-export-data.png",
+      "sha256": "9fd34705be7f8d7b071051d85637ca712ef7f4cbc6251c630d3426413907457f"
+    },
+    {
+      "name": "dark-export-image",
+      "file": "dark-export-image.png",
+      "sha256": "a49cf482391c256592ca3ce7ff22e068cde65f759e0ab645b43b541b80193418"
+    },
+    {
+      "name": "navy-slide-browse",
+      "file": "navy-slide-browse.png",
+      "sha256": "aa1029602ca5fae84ffc19105ca1a9c0071df4c222ced998b948bfbb601cac8a"
+    },
+    {
+      "name": "navy-settings",
+      "file": "navy-settings.png",
+      "sha256": "e62d5641c6545c77641860b25e538e455e166167f2d511f3020deb840f097a31"
+    },
+    {
+      "name": "navy-measurement-settings",
+      "file": "navy-measurement-settings.png",
+      "sha256": "9daeb59e62da4be193f3428187b8630c21ae1a181dc062a23fd804eb796d461b"
+    },
+    {
+      "name": "navy-export-data",
+      "file": "navy-export-data.png",
+      "sha256": "6931f607edbf211745dbf764038a83539a312fb0535e045e0b42422f1f85a04b"
+    },
+    {
+      "name": "navy-export-image",
+      "file": "navy-export-image.png",
+      "sha256": "45034e9062eaf0a48743c6e3075bffee3192d6f4994407f4c1bf6e994c7c0887"
+    },
+    {
+      "name": "system-light-slide-browse",
+      "file": "system-light-slide-browse.png",
+      "sha256": "6d7127082a6b258416025a9f159265880996e1b2d54f56942cca218ed62fa6ad"
+    },
+    {
+      "name": "system-light-settings",
+      "file": "system-light-settings.png",
+      "sha256": "9141d27439ea5f91b428661deb6526dcfdfef31409e662b0b5d2620d39a76e06"
+    },
+    {
+      "name": "system-light-measurement-settings",
+      "file": "system-light-measurement-settings.png",
+      "sha256": "0498e5652e0d860981b80ff4dabab3bb047ebafb9443f819743b40d16ac901f0"
+    },
+    {
+      "name": "system-light-export-data",
+      "file": "system-light-export-data.png",
+      "sha256": "b25bbdeacd48eb3a6dbeafb18c0dcb79098a6b56ee318ba027c2b71267839d2c"
+    },
+    {
+      "name": "system-light-export-image",
+      "file": "system-light-export-image.png",
+      "sha256": "53abf55bf58ac38ca99f6395dae553b85b75701e0b9a84064e4ab699cd671f5f"
+    },
+    {
+      "name": "system-dark-slide-browse",
+      "file": "system-dark-slide-browse.png",
+      "sha256": "aa1029602ca5fae84ffc19105ca1a9c0071df4c222ced998b948bfbb601cac8a"
+    },
+    {
+      "name": "system-dark-settings",
+      "file": "system-dark-settings.png",
+      "sha256": "5c78814d8f94405757527133d21328b675b43fbc1fe8933e10e65f313b9b14b8"
+    },
+    {
+      "name": "system-dark-measurement-settings",
+      "file": "system-dark-measurement-settings.png",
+      "sha256": "23f9253b1816012b20b3cf0f7967c506b9bd073e1dfc4bd295100047dc51859d"
+    },
+    {
+      "name": "system-dark-export-data",
+      "file": "system-dark-export-data.png",
+      "sha256": "9fd34705be7f8d7b071051d85637ca712ef7f4cbc6251c630d3426413907457f"
+    },
+    {
+      "name": "system-dark-export-image",
+      "file": "system-dark-export-image.png",
+      "sha256": "a49cf482391c256592ca3ce7ff22e068cde65f759e0ab645b43b541b80193418"
+    }
+  ],
+  "cases": [
+    {
+      "mode": "light",
+      "resolved": "light",
+      "description_colors": [
+        "#52606d",
+        "#52606d"
+      ],
+      "selected_colors": [
+        "#197c70",
+        "#197c70"
+      ]
+    },
+    {
+      "mode": "warm",
+      "resolved": "warm",
+      "description_colors": [
+        "#52606d",
+        "#52606d"
+      ],
+      "selected_colors": [
+        "#805b36",
+        "#805b36"
+      ]
+    },
+    {
+      "mode": "dark",
+      "resolved": "dark",
+      "description_colors": [
+        "#bac6d2",
+        "#bac6d2"
+      ],
+      "selected_colors": [
+        "#2a9d8f",
+        "#2a9d8f"
+      ]
+    },
+    {
+      "mode": "navy",
+      "resolved": "navy",
+      "description_colors": [
+        "#bac6d2",
+        "#bac6d2"
+      ],
+      "selected_colors": [
+        "#80baf0",
+        "#80baf0"
+      ]
+    },
+    {
+      "mode": "system",
+      "resolved": "light",
+      "description_colors": [
+        "#52606d",
+        "#52606d"
+      ],
+      "selected_colors": [
+        "#197c70",
+        "#197c70"
+      ]
+    },
+    {
+      "mode": "system",
+      "resolved": "dark",
+      "description_colors": [
+        "#bac6d2",
+        "#bac6d2"
+      ],
+      "selected_colors": [
+        "#2a9d8f",
+        "#2a9d8f"
+      ]
+    }
+  ],
+  "source_image_unchanged": true,
+  "passed": true,
+  "retained_screenshots": [
+    "dark-settings.png",
+    "light-settings.png",
+    "light-export-data.png",
+    "light-slide-browse.png",
+    "warm-slide-browse.png"
+  ],
+  "all_screenshots_location": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/theme-final"
+}

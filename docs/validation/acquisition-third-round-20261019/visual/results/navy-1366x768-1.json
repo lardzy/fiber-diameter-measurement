@@ -1,0 +1,622 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-19T06:14:56.996014+00:00",
+  "theme": "navy",
+  "physical_client": [
+    1366,
+    768
+  ],
+  "logical_client": [
+    1366,
+    768
+  ],
+  "scale": 1.0,
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "real_hardware": false,
+  "validation_script_sha256": "1fe25ac9e9739f1bdb76aed856215ac2c05c8964590295b9d5176762a8290a87",
+  "real_windows": false,
+  "source_fingerprints": {
+    "src/fdm/ui/live_experiment_view.py": "d958b0f9320a53eaec5a8559e2d3b0f3b9b60125d92997a5645d2e48e8c17cc7",
+    "src/fdm/ui/live_experiment_workspace.py": "548dbb11fb362105ed081d839ba3fce4f9a5d6e6b7ec765566b8668d19cdae9f",
+    "src/fdm/ui/quantity_targets.py": "a199efe9672a420fd7a4d1933e46631838226155eb10a32ebfedea115fa0c087",
+    "src/fdm/ui/trial_records.py": "5767ac97aea5dca42781d9e4945f152aa4c77e68391843741076dcc8ec8cb48d",
+    "src/fdm/ui/trial_report_panel.py": "7b97e014428ca8af745529eb0d6e5f49f62cf42be32e339896340c7dab951b67",
+    "src/fdm/ui/acquisition_workbench.py": "9e6a18608a63bd896b3a9d2d4578ad4bece8be727650219627d53afbc3a1d255",
+    "src/fdm/ui/theme.py": "063f500bfb95e93e3af706fe3f56dc367746950c204b1fd98107d9ce08f189a0",
+    "src/fdm/ui/digital_slide_canvas.py": "13496f3328d3b5f1484ba1f98a1cbd6b29ce00bf3160a823b0710483c9acab63",
+    "src/fdm/ui/dialogs.py": "a98e672cf4d28e60eb0e3c2346c07d0dda52ab64f5d3c3321277ae422f72ab3b"
+  },
+  "screenshots": [
+    {
+      "name": "realtime",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/realtime.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "50c5865e5ee92ba5140ffbb32ee70ffb12833bdca019b37c449bbf859a9fc8be",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "left"
+    },
+    {
+      "name": "content-empty",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/content-empty.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "83162ecb37343006f151a9668fa83329b5ba83a121c0f32e3437c5e457861ca2",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "left",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        100,
+        70
+      ]
+    },
+    {
+      "name": "content-nine",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/content-nine.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "867cd2d27d22d44c2ebba9294309e35bc5d90fd4c21456add86bf6ae018c4eca",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "left",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "content-metadata",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/content-metadata.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "e712b8108a49df152ab65afdc1374874be4a5b387dcd67bfb4e50f9489948af0",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "left",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        166
+      ]
+    },
+    {
+      "name": "records-left",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-left.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "f070f1fe3588bc3c2f4114536f76fa7faff7812a50ab91ffb580f988315f0ad4",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": true,
+      "record_position": "left",
+      "image": [
+        422,
+        161,
+        490,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "records-new-while-reading",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-new-while-reading.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "9d7bea32d6d624482f07864a8260c554df410b436a46564f7d09c5dbe4e28ad8",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": true,
+      "record_position": "left",
+      "image": [
+        422,
+        161,
+        490,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "records-latest",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-latest.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "aff4fcbadffc94ce755ed3a85029e510f3204cf5eb61458169af2ce448aac0fa",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": true,
+      "record_position": "left",
+      "image": [
+        422,
+        161,
+        490,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "records-bottom",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-bottom.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "b0ada63b1cf7cee591618e9c0b0459b08706c73d2a3077df5cb7398968c7398d",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": true,
+      "record_position": "bottom",
+      "image": [
+        16,
+        161,
+        896,
+        303
+      ],
+      "export_button": [
+        1207,
+        399,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        388,
+        70
+      ]
+    },
+    {
+      "name": "records-bottom-metadata",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-bottom-metadata.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "a49fa4ce6cd99abeafb83330d2d2d784b03bd630d5fc60cd71872ddd2954ee51",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": true,
+      "record_position": "bottom",
+      "image": [
+        16,
+        161,
+        896,
+        303
+      ],
+      "export_button": [
+        1207,
+        399,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        388,
+        70
+      ]
+    },
+    {
+      "name": "records-floating",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-floating.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "4f195b27b5a5e255416a37c61ea4bc351262d65c21ac0d089d6161a3276f0f89",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": true,
+      "record_position": "floating",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "content-report",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/content-report.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "80c422cc0b178ddea7d47be4d703b25a3a33e5d985ea26b2f6a248629d57a4cc",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "floating",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "content-candidates",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/content-candidates.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "36169ee7c5738e24abf5782b7d3cd6bbec575a6d48a11c7e7068bac9713eea40",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "floating",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "content-rejected",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/content-rejected.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "945d419c4522d333c5edb8866c533384ad5c773dfa0be4b75d6ecadbe6bf386e",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "floating",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        406,
+        219
+      ]
+    },
+    {
+      "name": "diameter",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/diameter.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "d1b14a13c06019a4510b1384a76967a00e1ecd69c0c067e8dfc43f304637d378",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "floating",
+      "image": [
+        16,
+        161,
+        896,
+        559
+      ],
+      "export_button": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "export_text": "导出 Excel 报告",
+      "category_size": [
+        100,
+        70
+      ]
+    },
+    {
+      "name": "realtime-return",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/realtime-return.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "sha256": "4f8048a3ae478246a87d57f6a71b41694a5b244ba898c9ef19aaf5d0eb9b9b98",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "records_open": false,
+      "record_position": "floating"
+    }
+  ],
+  "transitions": [
+    {
+      "step": 0,
+      "page": 0,
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ]
+    },
+    {
+      "step": 1,
+      "page": 1,
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ]
+    },
+    {
+      "step": 2,
+      "page": 2,
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ]
+    },
+    {
+      "step": 9,
+      "page": 0,
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ]
+    },
+    {
+      "step": 10,
+      "page": 1,
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ]
+    },
+    {
+      "step": 11,
+      "page": 2,
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ]
+    }
+  ],
+  "records": {
+    "total_initial": 180,
+    "operators": 3,
+    "signed_count_events": 12,
+    "scrolled_up_position": 0,
+    "position_after_append": 0,
+    "new_message": "新增 1 条 · 回到最新"
+  },
+  "passed": true,
+  "limitations": [
+    "Real MainWindow navigation, synthetic camera, isolated application preferences.",
+    "Record fixtures use domain mutations; candidates enter at the controller presentation signal.",
+    "Qt scale factors do not validate physical monitor migration or native OS stacking.",
+    "Video uses Qt widget grabs and composites the application-owned floating dock; not a desktop recording.",
+    "Excel report visibility only; this visual pass does not invoke Excel COM."
+  ],
+  "font": {
+    "requested_family": null,
+    "requested_point_size": null,
+    "requested_family_installed": null,
+    "resolved_family": ".AppleSystemUIFont",
+    "point_size": 9.0,
+    "pixel_size": 12,
+    "height": 15,
+    "line_spacing": 15,
+    "chinese_sample": "样品编号含量试验",
+    "chinese_sample_width": 97,
+    "native_windows": false
+  },
+  "dpr": 1.0,
+  "visible_categories": [
+    "1 · 绵羊毛",
+    "2 · 山羊绒",
+    "3 · 山羊毛",
+    "4 · 羊驼毛",
+    "5 · 兔毛"
+  ],
+  "floating_window_screenshot": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-third-round-20261019/final-reviewed/navy-1366x768-1/records-floating-window.png",
+  "navigation_cycles": 12,
+  "window_events": [
+    {
+      "class": "_RecordsDock",
+      "name": "trialRecordsDock",
+      "title": "试验记录 · 含量试验 · 长样品名称视觉回归",
+      "size": [
+        400,
+        395
+      ]
+    }
+  ],
+  "source_changed_during_run": false,
+  "elapsed_seconds": 4.095
+}

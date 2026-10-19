@@ -165,7 +165,7 @@ def test_mailbox_coalesces_producer_frames_and_blocks_previous_source(workspace)
     assert workspace.controller.state != "unavailable"
 
 
-def test_numeric_count_works_from_combo_and_table_but_not_text_or_diameter(workspace):
+def test_numeric_count_works_from_combo_but_not_records_text_or_diameter(workspace):
     workspace.keyboard_mode.setCurrentIndex(1)
     workspace.material.setFocus()
     QTest.keyClick(workspace.material, Qt.Key.Key_2)
@@ -173,18 +173,18 @@ def test_numeric_count_works_from_combo_and_table_but_not_text_or_diameter(works
     assert next(iter(workspace.session.count_adjustments.values())).material_id == "cashmere"
     workspace.history_table.setFocus()
     QTest.keyClick(workspace.history_table, Qt.Key.Key_1)
-    assert len(workspace.session.count_adjustments) == 2
+    assert len(workspace.session.count_adjustments) == 1
     workspace.advanced_toggle.setChecked(True)
     workspace.settings_dialog.activateWindow()
     QApplication.processEvents()
     workspace.sample.setFocus()
     QTest.keyClicks(workspace.sample, "2")
     assert workspace.sample.text() == "2"
-    assert len(workspace.session.count_adjustments) == 2
+    assert len(workspace.session.count_adjustments) == 1
     workspace.mode.setCurrentIndex(1)
     workspace.canvas.setFocus()
     QTest.keyClick(workspace.canvas, Qt.Key.Key_2)
-    assert len(workspace.session.count_adjustments) == 2
+    assert len(workspace.session.count_adjustments) == 1
     assert workspace.count_add_button.isHidden() and workspace.weights_button.isHidden()
 
 
@@ -702,12 +702,13 @@ def test_new_workspace_default_setup_is_undo_baseline():
     fresh = open_live_experiment(host)
     try:
         assert not fresh.session.can_undo
-        assert len(fresh.session.operators) == 1 and fresh.material.count() == 2
+        assert len(fresh.session.operators) == 1 and fresh.material.count() == 0
+        fresh.session.set_materials(default_materials())
         record = fresh.session.add_measurement(20, "wool")
         fresh._history_action("undo")
         assert record.id not in fresh.session.measurements
         fresh._history_action("undo")
-        assert len(fresh.session.operators) == 1 and fresh.material.count() == 2
+        assert len(fresh.session.operators) == 1 and fresh.material.count() == 0
     finally:
         fresh.close()
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
@@ -916,13 +917,13 @@ def cu_three_record_sample(workspace):
 def test_material_board_plus_minus_preserves_current_class_and_raw_mean(workspace):
     records = cu_three_record_sample(workspace)
     assert workspace.material_rows["wool"]["mean"].text() == "22.500"
-    assert workspace.material_rows["wool"]["measured_count"].text() == "2"
+    assert workspace.material_rows["wool"]["measured_count"].text() == "2/300"
     assert workspace.material.currentData() == "wool"
     cashmere = workspace.material_rows["cashmere"]
     QTest.mouseClick(cashmere["add"], Qt.MouseButton.LeftButton)
     workspace._refresh_summary()
     assert workspace.material.currentData() == "wool" and cashmere["extra_count"].text() == "1"
-    assert cashmere["mean"].text() == "18.000" and cashmere["measured_count"].text() == "1"
+    assert cashmere["mean"].text() == "18.000" and cashmere["measured_count"].text() == "1/300"
     assert len(workspace.session.measurements) == 3
     QTest.mouseClick(cashmere["subtract"], Qt.MouseButton.LeftButton)
     workspace._refresh_summary()
@@ -943,8 +944,8 @@ def test_cu_before_after_classification_reassigns_only_last_valid_current_record
     workspace._refresh_summary()
     assert workspace.session.measurements[records[-1].id].material_id == "wool"
     assert workspace.material_rows["wool"]["mean"].text() == "21.000"
-    assert workspace.material_rows["wool"]["measured_count"].text() == "3"
-    assert workspace.material_rows["cashmere"]["measured_count"].text() == "0"
+    assert workspace.material_rows["wool"]["measured_count"].text() == "3/300"
+    assert workspace.material_rows["cashmere"]["measured_count"].text() == "0/300"
     QTest.mouseClick(workspace.material_rows["cashmere"]["select"], Qt.MouseButton.LeftButton)
     workspace._refresh_summary()
     assert workspace.material_rows["wool"]["mean"].text() == "22.500"

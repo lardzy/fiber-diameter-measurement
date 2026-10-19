@@ -200,12 +200,12 @@ def test_fast_reentry_waits_for_async_stop_then_restarts_once(tmp_path):
         harness.assert_clean()
 
 
-def test_records_and_reports_keep_same_image_rectangle(harness):
+def test_review_and_reports_keep_same_image_rectangle(harness):
     harness.enter()
     for index in (1, 2):
         page = harness.select(index)
         initial = page.image_scroll.geometry()
-        assert page.sample_number.isVisible() and page.ruler_choice.isVisible()
+        assert page.sample_summary.isVisible() and page.ruler_choice.isVisible()
         for tab in (1, 2, 0):
             page.workflow_tabs.setCurrentIndex(tab)
             workflow.settle()
@@ -263,7 +263,7 @@ def test_nine_materials_remain_reachable_by_scrolling_at_small_logical_size(tmp_
         page.session.set_materials([MaterialSnapshot(str(i), f"纤维类别 {i + 1}", 1.3) for i in range(9)])
         page._refresh_materials()
         workflow.settle()
-        controls = page.workflow_tabs.widget(0)
+        controls = page.category_scroll
         assert controls.verticalScrollBar().maximum() > 0
         for row in page.material_rows.values():
             controls.ensureWidgetVisible(row["select"])

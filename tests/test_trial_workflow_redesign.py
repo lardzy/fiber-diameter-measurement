@@ -68,8 +68,10 @@ def test_first_business_edit_registers_only_the_edited_draft(trial_host, edit):
         view.sample_number.setText("F-001")
         view.sample_number.editingFinished.emit()
     elif edit == "count":
+        view.session.set_materials(default_materials())
         view._count_material("wool", 1)
     elif edit == "measurement":
+        view.session.set_materials(default_materials())
         view.session.add_measurement(20, "wool")
         view._changed()
     else:
@@ -123,6 +125,9 @@ def test_global_save_commits_focused_trial_editor_before_snapshot(harness, tmp_p
     target = tmp_path / f"focused-{route}-{field}.fdmproj"
     harness.window._project_path = target
     editor = view.sample if field == "sample" else view.warp_weight
+    if field == "sample":
+        view.sample_details_toggle.click()
+        QApplication.processEvents()
     editor.setFocus()
     QApplication.processEvents()
     if field == "sample":
@@ -149,8 +154,10 @@ def test_global_save_commits_focused_trial_editor_before_snapshot(harness, tmp_p
     assert not harness.modal_messages and not harness.slot_errors
 
 
-def test_metadata_stays_visible_and_record_report_tabs_do_not_shrink_image(trial_host):
+def test_expanded_metadata_stays_visible_and_review_report_tabs_do_not_shrink_image(trial_host):
     view = show_trial(trial_host)
+    view.sample_details_toggle.click()
+    QApplication.processEvents()
     viewport = view.image_scroll.geometry()
     for index in range(3):
         view.workflow_tabs.setCurrentIndex(index)

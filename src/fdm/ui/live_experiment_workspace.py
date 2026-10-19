@@ -416,7 +416,9 @@ class CandidatesModel(QAbstractTableModel):
                     material.name if material else "未赋类 · 双击选择", self.range_description(index.row()),
                     "确认保留" if self.range_status(index.row()) == "越限，需核对" else "")[index.column()]
         if role == Qt.ItemDataRole.ForegroundRole and index.column() in (3, 4) and self.range_status(index.row()) != "范围内":
-            return QColor("#bd6d00" if self.assigned_material(index.row()) is None else "#d43a3a")
+            from fdm.ui.theme import semantic_colors
+            colors = semantic_colors()
+            return QColor(colors.warning if self.assigned_material(index.row()) is None else colors.error)
         return None
 
     def flags(self, index):
@@ -532,6 +534,11 @@ class LiveExperimentWorkspace(QWidget):
                 self._feedback.showMessage(str(exc))
             host._capture_rulers = self._rulers
         self._build()
+        self._refresh_sample_summary()
+        presenter = self._records_presenter()
+        if presenter is not None:
+            presenter.visibilityChanged.connect(self._sync_records_toggle)
+        self._sync_records_toggle()
         from fdm.ui.measurement_feedback_overlay import MeasurementFeedbackOverlay
         self.measurement_feedback = MeasurementFeedbackOverlay(self.image_scroll.viewport(), canvas=self.canvas)
         self._restore_view_preferences()
@@ -593,7 +600,17 @@ class LiveExperimentWorkspace(QWidget):
     def setCentralWidget(self, widget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(widget)
+        if self.embedded:
+            layout.addWidget(widget)
+        else:
+            from fdm.ui.trial_records import AcquisitionDockHost, RecordsPresentationController
+            self._standalone_dock_host = AcquisitionDockHost(self)
+            self._standalone_dock_host.setCentralWidget(widget)
+            layout.addWidget(self._standalone_dock_host)
+            self._standalone_records = RecordsPresentationController(self._standalone_dock_host,
+                is_current=lambda workspace: (workspace is self and self.isVisible() and not self._closed
+                    and self.project_identity == id(self.host.project)),
+                action_callback=lambda workspace, action, key: self._guard(lambda: self._record_action(action, key)))
 
     def _button(self, label, callback, layout):
         button = QPushButton(label)
@@ -617,9 +634,14 @@ class LiveExperimentWorkspace(QWidget):
             preferences = json.loads(self._view_preferences_path.read_text(encoding="utf-8"))
             saved = preferences.get(self.session.workspace_options["mode"], {})
             tab = max(0, min(2, int(saved.get("tab", 0))))
+            # Version 1's middle tab was records, now presented independently.
+            if preferences.get("version", 1) < 2 and tab == 1:
+                tab = 0
             width = max(390, min(520, int(saved.get("sidebar_width", 432))))
+            expanded = bool(saved.get("metadata_expanded", False))
         except (OSError, ValueError, TypeError, AttributeError):
-            tab, width = 0, 432
+            tab, width, expanded = 0, 432, False
+        self.sample_details_toggle.setChecked(expanded)
         self.workflow_tabs.setCurrentIndex(tab)
         self.body_splitter.setSizes([max(320, self.width() - width), width])
         self.workflow_tabs.currentChanged.connect(lambda _: self._view_preferences_timer.start())
@@ -642,11 +664,66 @@ class LiveExperimentWorkspace(QWidget):
             preferences[self.session.workspace_options["mode"]] = {
                 "tab": self.workflow_tabs.currentIndex(),
                 "sidebar_width": max(390, min(520, self.trial_sidebar.width())),
+                "metadata_expanded": self.sample_details_toggle.isChecked(),
             }
+            preferences["version"] = 2
             self._view_preferences_path.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_text(self._view_preferences_path, json.dumps(preferences, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
         except OSError as exc:
             self.statusBar().showMessage(f"本次布局已应用，偏好未能保存：{exc}", 8000)
+
+    def _metadata_expansion_changed(self, expanded):
+        if hasattr(self, "_view_preferences_timer"):
+            self._view_preferences_timer.start()
+
+    def _refresh_sample_summary(self):
+        if hasattr(self, "sample_summary"):
+            text = f"{self.session.sample_number or '未填编号'} · {self.session.sample_name or '未命名样品'}"
+            self.sample_summary.setText(text)
+            self.sample_summary.setToolTip(text)
+
+    def _records_presenter(self):
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        return getattr(hub, "records", None) if self.embedded else getattr(self, "_standalone_records", None)
+
+    def _notify_records(self, keys=None, *, rebuild=False):
+        presenter = self._records_presenter()
+        if presenter is not None:
+            presenter.notify_change(self, keys=keys, rebuild=rebuild)
+
+    def _show_records(self):
+        presenter = self._records_presenter()
+        if presenter is not None:
+            if presenter.workspace is self and presenter.is_open:
+                presenter.close()
+            else:
+                presenter.open(self)
+
+    def _sync_records_toggle(self, visible=None):
+        presenter = self._records_presenter()
+        self.records_toggle.setChecked(bool(presenter is not None
+            and presenter.workspace is self and (presenter.is_open if visible is None else visible)))
+
+    def _confirm_trial_navigation(self):
+        controller = self.controller
+        if not (controller.draft or controller._jobs or controller.pending_classification
+                or controller.candidates or controller._confirmation or controller._automatic_context):
+            return True
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("还有未入账的测量")
+        dialog.setText("离开当前试验会放弃未完成线段和未入账结果；已接受的实测与补计继续保留。")
+        leave = dialog.addButton("放弃未入账结果并离开", QMessageBox.ButtonRole.DestructiveRole)
+        stay = dialog.addButton("留在试验", QMessageBox.ButtonRole.RejectRole)
+        dialog.setDefaultButton(stay)
+        dialog.exec()
+        return dialog.clickedButton() is leave
+
+    def _return_to_capture(self):
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        if self.embedded and hub is not None:
+            hub.select_page(0)
+        elif self._confirm_trial_navigation():
+            self.close()
 
     def hideEvent(self, event):
         if hasattr(self, "_view_preferences_timer") and self._view_preferences_timer.isActive():
@@ -996,6 +1073,13 @@ class LiveExperimentWorkspace(QWidget):
             self._guard(self._materials)
 
     def _press(self, point):
+        if self.mode.currentIndex() == 0 and self.material.currentData() is None:
+            self.controller.cancel_draft()
+            self._refresh_measurement_readiness()
+            self.statusBar().showMessage("请先选择本方向的纤维类别，再在图像上测量。", 8000)
+            if hasattr(self, "choose_categories_button"):
+                self.choose_categories_button.setFocus()
+            return
         if self.controller.calibration is None:
             self._refresh_measurement_readiness()
             self.ruler_choice.setFocus()
@@ -1047,6 +1131,10 @@ class LiveExperimentWorkspace(QWidget):
         self.material.setCurrentIndex(max(0, self.material.findData(current)))
         self.material.blockSignals(blocked)
         self._rebuild_material_panel()
+        empty = self.mode.currentIndex() == 0 and self.material.count() == 0
+        if hasattr(self, "empty_categories"):
+            self.empty_categories.setVisible(empty)
+            self.category_scroll.setVisible(not empty)
         self._sync_material_buttons()
         self._last_summary_revision = -1
 
@@ -1059,7 +1147,7 @@ class LiveExperimentWorkspace(QWidget):
                 item.widget().hide()  # Deferred deletion must not leave old values painted.
                 item.widget().deleteLater()
         self.material_rows = {}
-        for column, text in enumerate(("类别 1–9", "", "补计", "", "均径", "含量%", "实测")):
+        for column, text in enumerate(("类别 1–9", "", "补计", "", "均径", "含量%", "实测/目标")):
             label = QLabel(text, self.material_panel)
             label.setObjectName("trialColumnHeader")
             if column == 4:
@@ -1150,6 +1238,8 @@ class LiveExperimentWorkspace(QWidget):
         self._configure(workspace_options={"classification": "after" if index else "before"})
 
     def _refresh_material_row_stats(self, summary):
+        from fdm.live_experiment.reminders import reminder_progress
+        targets = {item.material_id: item for item in reminder_progress(self.session) if item.kind == "measured"}
         operator = summary.get("operators", {}).get(self.session.active_operator_id, {})
         categories = operator.get(self.session.active_direction, {}).get("categories", [])
         if isinstance(categories, dict):
@@ -1159,7 +1249,12 @@ class LiveExperimentWorkspace(QWidget):
             if row is None:
                 continue
             row["extra_count"].setText(str(category["extra_count"]))
-            row["measured_count"].setText(str(category["measured_count"]))
+            target = targets.get(category["id"])
+            row["measured_count"].setText(
+                f"{'✓ ' if target.reached else ''}{category['measured_count']}/{target.target}" if target
+                else str(category["measured_count"]))
+            row["measured_count"].setToolTip(f"实测 {category['measured_count']} 根" +
+                (f"，目标 {target.target} 根；{'已达到目标' if target.reached else '可继续测量'}" if target else ""))
             row["mean"].setText("—" if category["mean"] is None else f"{category['mean']:.3f}")
             row["content"].setText("—" if category["content"] is None else f"{category['content']:.2f}")
             row["subtract"].setEnabled(category["extra_count"] > 0)
@@ -1214,7 +1309,8 @@ class LiveExperimentWorkspace(QWidget):
     def _count_material(self, material_id, delta):
         if self.mode.currentIndex() != 0:
             return
-        self.session.adjust_count(material_id, delta, field_id=self.controller.field_id)
+        event = self.session.adjust_count(material_id, delta, field_id=self.controller.field_id)
+        self._notify_records([("count", event.id)])
         self._changed()
 
     def _after_select(self):
@@ -1223,6 +1319,7 @@ class LiveExperimentWorkspace(QWidget):
             if record_id is not None:
                 self.current_model.notify_record(record_id)
                 self.history_model.notify_record(record_id)
+                self._notify_records([("measurement", record_id)])
             self._refresh_summary()
 
     def _weights(self):
@@ -1443,6 +1540,8 @@ class LiveExperimentWorkspace(QWidget):
 
     def _mode_changed(self, index, persist=True):
         content = index == 0
+        if hasattr(self, "category_area"):
+            self.category_area.setVisible(content)
         for widget in (self.direction, self.keyboard_mode, self.classification_mode, self.material_panel, self.summary, self.summary_scope,
                        self.weights_button, self.statistics_button, self.direction_row, self.category_actions,
                        self.current_class_label):
@@ -1464,6 +1563,7 @@ class LiveExperimentWorkspace(QWidget):
         self.history_model.append(record.id)
         self.current_table.follow_latest()
         self._record_model_revision = self.session.revision
+        self._notify_records([("measurement", record.id)])
 
     def _records_accepted(self, records):
         self.measurement_feedback.dismiss()
@@ -1476,6 +1576,7 @@ class LiveExperimentWorkspace(QWidget):
         self.current_model.append_many(ids)
         self.history_model.append_many(ids)
         self.current_table.follow_latest()
+        self._notify_records([("measurement", record.id) for record in records])
         self._record_model_revision = self.session.revision
 
     def _candidates_changed(self, candidates):
@@ -1484,11 +1585,10 @@ class LiveExperimentWorkspace(QWidget):
         materials = operator.materials[self.session.active_direction] if operator else ()
         self.candidate_model.set_candidates(candidates, scale, materials)
         if candidates:
-            self.records_toggle.setChecked(True)
-            self.tabs.setCurrentIndex(2)
+            self.workflow_tabs.setCurrentIndex(1)
         self.candidate_feedback.setText(f"待审核 {len(candidates)} 条候选；确认接受后才计入试验。" if candidates else "")
         self.candidate_feedback.setVisible(bool(candidates))
-        self.tabs.setTabText(2, f"候选 {len(candidates)}" if candidates else "候选审核")
+        self.workflow_tabs.setTabText(1, f"审核 {len(candidates)}" if candidates else "审核")
         self.canvas.update()
 
     def _assign_candidate_material(self):
@@ -1527,6 +1627,8 @@ class LiveExperimentWorkspace(QWidget):
                 self.host.project.mark_extension_changed()
             self._last_dirty_state = state
         self._refresh_persistence_state()
+        self._refresh_sample_summary()
+        self._notify_records()
         self._check_reminders()
         if hasattr(self, "display_binding"):
             self.display_binding.apply()
@@ -1685,14 +1787,53 @@ class LiveExperimentWorkspace(QWidget):
         else:
             self._clear_latest_value()
             self.statusBar().showMessage("本视场暂无有效测量记录。", 8000)
+        self._notify_records(rebuild=True)
         self._changed()
 
     def _selected_record(self):
-        if self.tabs.currentIndex() not in (0, 1):
+        key = getattr(self, "_record_action_key", None)
+        if key is not None:
+            return self.session.measurements.get(key[1]) if key[0] == "measurement" else None
+        if self.workflow_tabs.currentWidget() is self.candidate_review_page or self.tabs.currentIndex() not in (0, 1):
             raise ValueError("请先在当前视场或试验历史页选择一条测量记录；全图候选尚未入账。")
         table = self.history_table if self.tabs.currentIndex() == 1 else self.current_table
         index = table.currentIndex()
         return self.session.measurements.get(table.model().ids[index.row()]) if index.isValid() else None
+
+    def _record_action(self, action, key):
+        if self._closed or id(self.host.project) != self.project_identity:
+            return
+        if self.embedded:
+            hub = getattr(self.host, "_acquisition_workbench", None)
+            if hub is None or hub.pages.currentWidget() is not self or not self.host._acquisition_workspace_selected:
+                return
+        if key[0] == "count":
+            if action != "correct_count" or key[1] not in self.session.count_adjustments:
+                return
+            event = self.session.count_adjustments[key[1]]
+            owner = self.session.operators[event.operator_id]
+            material = self.session.material(event.material_id, operator_id=event.operator_id, direction=event.direction)
+            balance = sum(row.delta for row in self.session.count_adjustments.values()
+                          if (row.operator_id, row.direction, row.material_id) ==
+                          (event.operator_id, event.direction, event.material_id))
+            delta, accepted = QInputDialog.getInt(self, "更正补计", (
+                f"{owner.name}／{'经向' if event.direction == 'warp' else '纬向'}／{material.name}\n"
+                f"当前补计 {balance} 根。填写本次增减量（正数增加，负数减少）："),
+                0, -min(balance, 2147483647), 2147483647)
+            if accepted and delta:
+                change = self.session.adjust_count(event.material_id, delta, operator_id=event.operator_id,
+                    direction=event.direction, field_id=event.field_id, note=f"更正补计记录 {event.id}")
+                self._notify_records([("count", change.id)])
+                self._changed()
+            return
+        callbacks = {"edit": self._edit_record, "delete": self._delete_record, "evidence": self._review_record}
+        if key[0] != "measurement" or key[1] not in self.session.measurements or action not in callbacks:
+            return
+        self._record_action_key = key
+        try:
+            callbacks[action]()
+        finally:
+            self._record_action_key = None
 
     def _delete_record(self):
         record = self._selected_record()
@@ -1783,6 +1924,10 @@ class LiveExperimentWorkspace(QWidget):
         self.measurement_outcome.setText("")
         self._latest_value_is_previous = False
 
+    def _new_experiment(self):
+        if self._confirm_trial_navigation():
+            self._replace_experiment(_new_trial_session(self.session.workspace_options["mode"]))
+
     def _choose_experiment(self):
         mode = self.session.workspace_options["mode"]
         sessions = [s for s in self.host.project.live_experiments if s.workspace_options["mode"] == mode]
@@ -1794,23 +1939,16 @@ class LiveExperimentWorkspace(QWidget):
             return
         target = None if selected == choices[-1] else sessions[choices.index(selected)]
         if target is None:
-            name, ok = QInputDialog.getText(self, "新建试验", "样品名称")
-            if not ok:
-                return
+            self._new_experiment()
+        elif self._confirm_trial_navigation():
+            self._replace_experiment(target)
+
+    def _replace_experiment(self, target):
+        mode = target.workspace_options["mode"]
         if not self.close():
             return
         if self.embedded:
             self.host._acquisition_workbench.pages.removeWidget(self)
-        if target is None:
-            from fdm.live_experiment import ExperimentSession, default_materials
-            target = ExperimentSession(sample_name=name.strip(), workspace_options={"mode": mode})
-            target.add_operator("操作者 A")
-            target.set_materials(default_materials(), direction="warp")
-            target.set_materials(default_materials(), direction="weft")
-            target.establish_history_baseline()
-            if name.strip():
-                self.host.project.live_experiments.append(target)
-                self.host.project.mark_extension_changed()
         window = LiveExperimentWorkspace(self.host, target, embedded=self.embedded)
         self.host._live_experiment_workspace = window
         self.host._live_experiment_workspaces[mode] = window
@@ -1818,6 +1956,8 @@ class LiveExperimentWorkspace(QWidget):
             hub = self.host._acquisition_workbench
             hub.pages.addWidget(window)
             hub.pages.setCurrentWidget(window)
+            hub.records.bind(window)
+            hub.apply_sidebar_width()
             if self.host._capture_manager.is_preview_active():
                 window._start_camera()
         window.show()
@@ -1857,8 +1997,33 @@ class LiveExperimentWorkspace(QWidget):
             (session_export_xlsx if excel else export_csv)(self.session, path)
             self.statusBar().showMessage("已导出试验数据", 5000)
 
+    def _open_last_report(self):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        result = self.report_panel.last_report
+        if not result or not Path(result["destination"]).is_file():
+            raise ValueError("最近的报告文件不存在，请重新导出。")
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(result["destination"])):
+            raise ValueError("无法打开报告，请通过“所在位置”手动打开。")
+
+    def _open_report_folder(self):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        result = self.report_panel.last_report
+        if result:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(result["destination"]).parent)))
+
     def _measurement_focus_allowed(self):
         focus = QApplication.focusWidget()
+        presenter = self._records_presenter()
+        if presenter is not None and presenter.contains_focus(focus):
+            return False
+        if any(focus is table or (focus is not None and table.isAncestorOf(focus))
+               for table in (self.current_table, self.history_table)):
+            return False
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        if self.embedded and (hub is None or hub.pages.currentWidget() is not self):
+            return False
         return (not self._closed and self.isVisible() and QApplication.activeWindow() is self.window()
             and QApplication.activePopupWidget() is None
             and QApplication.activeModalWidget() is None
@@ -1968,6 +2133,12 @@ class LiveExperimentWorkspace(QWidget):
         self.display_binding.close()
         self.settings_dialog.close()
         self.report_panel.close()
+        presenter = self._records_presenter()
+        if presenter is not None and presenter.workspace is self:
+            if self.embedded:
+                presenter.suspend()
+            else:
+                presenter.shutdown()
         QApplication.instance().removeEventFilter(self)
         self._refresh_timer.stop()
         if self._statistics_pool is not None:
@@ -1982,6 +2153,18 @@ class LiveExperimentWorkspace(QWidget):
                 del cache[mode]
         self.controller.close(record_end=getattr(self, "_close_record_end", True))
         super().closeEvent(event)
+
+
+def _new_trial_session(mode):
+    """Content categories are explicit user input; diameter keeps its defaults."""
+    from fdm.live_experiment import ExperimentSession, default_materials
+    session = ExperimentSession(workspace_options={"mode": mode})
+    session.add_operator("操作者 A")
+    if mode == "diameter":
+        session.set_materials(default_materials(), direction="warp")
+        session.set_materials(default_materials(), direction="weft")
+    session.establish_history_baseline()
+    return session
 
 
 def open_live_experiment(host, *, embedded=False, trial_mode=None):
@@ -2004,17 +2187,12 @@ def open_live_experiment(host, *, embedded=False, trial_mode=None):
                 existing.activateWindow()
             return existing
         cache.pop(mode, None)
-    from fdm.live_experiment import ExperimentSession, default_materials
     matching = [session for session in host.project.live_experiments
                 if session.workspace_options.get("mode") == mode]
     if matching:
         session = matching[-1]
     else:
-        session = ExperimentSession(workspace_options={"mode": mode})
-        session.add_operator("操作者 A")
-        session.set_materials(default_materials(), direction="warp")
-        session.set_materials(default_materials(), direction="weft")
-        session.establish_history_baseline()
+        session = _new_trial_session(mode)
     window = LiveExperimentWorkspace(host, session, embedded=embedded)
     cache[mode] = window
     host._live_experiment_workspace = window

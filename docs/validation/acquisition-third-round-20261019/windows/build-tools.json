@@ -1,0 +1,27 @@
+{
+  "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+  "packages": {
+    "PySide6": "6.10.2",
+    "numpy": "2.4.3",
+    "pytest": "9.0.2",
+    "pyinstaller": "6.19.0",
+    "Pillow": "12.1.1",
+    "openpyxl": "3.1.5"
+  },
+  "free_bytes": 121358553088,
+  "inno_version": "0.0.0.0",
+  "extractor_sha256": "1c8453c198dd3fe7947f3705e59d2294ddce3dfa9f96a737e94449b119f44181",
+  "inno_help_probe": {
+    "exit_code": 1,
+    "header": [
+      "Inno Setup 6 Command-Line Compiler",
+      "Usage:  iscc [options] scriptfile.iss",
+      "or to read from standard input:  iscc [options] -",
+      "Options:",
+      "  /O(+|-)            Enable or disable output (overrides Output)",
+      "  /O<path>           Output files to specified path (overrides OutputDir)",
+      "  /F<filename>       Specifies an output filename (overrides OutputBaseFilename)",
+      "  /S<name>=<command> Sets a SignTool with the specified name and command"
+    ]
+  }
+}

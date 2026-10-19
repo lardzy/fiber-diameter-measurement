@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "run_id": "20261019-072631Z-08068479",
+  "cases": [
+    {
+      "name": "records-light-1067x600",
+      "theme": "light",
+      "width": 1067,
+      "height": 600,
+      "populated": true
+    }
+  ],
+  "windows_output": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072631Z-08068479",
+  "executable_override": "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "real_hardware_tested": false,
+  "camera_sharing_managed": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false
+}

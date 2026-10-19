@@ -39,6 +39,8 @@ def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(
         page.ruler_choice.activated.emit(1)
         value = page.controller.calibration
         assert value.x_um == .5 and value.source == "CU 40x"
+        from fdm.live_experiment import default_materials
+        page.session.set_materials(default_materials())
         record = page.session.add_measurement(20, "wool", field_id=page.controller.field_id)
         page.controller.current_records.append(record.id)
         session = page.session
@@ -111,7 +113,7 @@ def test_workspace_entry_and_trial_pages_keep_one_session(monkeypatch):
         assert page.material_panel.isVisible()
         # Nine categories use the operation console's own scroll viewport,
         # while the image retains its full rectangle.
-        operation_scroll = page.workflow_tabs.widget(0)
+        operation_scroll = page.category_scroll
         last_category = list(page.material_rows.values())[-1]["select"]
         before_image = page.image_scroll.geometry()
         operation_scroll.ensureWidgetVisible(last_category)

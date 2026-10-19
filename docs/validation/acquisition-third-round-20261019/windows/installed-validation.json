@@ -1,0 +1,152 @@
+{
+  "schema": 1,
+  "version": "0.4.10",
+  "build_id": "e1cf7774e0c1453796f966d222e2cf88",
+  "installer_sha256": "790b16093df9948ac8a566e4b283cee56192b3f65d5d290a1591cb00f2889d8f",
+  "installer_bytes": 398674244,
+  "actual_installation_tested": true,
+  "installation_exit_code": 0,
+  "installation_caller": "NT AUTHORITY\\SYSTEM",
+  "installation_evidence": "selected/actual-installation.json",
+  "ordinary_user_explorer_start": {
+    "passed": true,
+    "elevated": false,
+    "policy": "RemoteSigned",
+    "evidence": "selected/explorer-start.json"
+  },
+  "windows_source_tests": {
+    "passed": 291,
+    "duration_seconds": 207.71,
+    "evidence": "windows-tests.json"
+  },
+  "native_gui_cases": [
+    {
+      "case": "empty-light-1600x900",
+      "passed": true,
+      "summary": "frozen-gui/20261019-070904Z-48bd25d6/summary.json",
+      "client_size": [
+        1600,
+        900
+      ],
+      "os_dpi": 192,
+      "graceful_exit": true,
+      "forced_cleanup": false
+    },
+    {
+      "case": "records-light-1600x900",
+      "passed": true,
+      "summary": "frozen-gui/20261019-071226Z-0cb30229/summary.json",
+      "client_size": [
+        1600,
+        900
+      ],
+      "os_dpi": 192,
+      "graceful_exit": true,
+      "forced_cleanup": false
+    },
+    {
+      "case": "excel-fixed-entry-light-1600x900",
+      "passed": true,
+      "summary": "frozen-gui/20261019-072421Z-34040aac/summary.json",
+      "client_size": [
+        1600,
+        900
+      ],
+      "os_dpi": 192,
+      "graceful_exit": true,
+      "forced_cleanup": false
+    },
+    {
+      "case": "records-light-1067x600",
+      "passed": true,
+      "summary": "frozen-gui/20261019-072631Z-08068479/summary.json",
+      "client_size": [
+        1067,
+        600
+      ],
+      "os_dpi": 192,
+      "graceful_exit": true,
+      "forced_cleanup": false
+    }
+  ],
+  "display_configuration": {
+    "os_dpi": 192,
+    "QT_SCALE_FACTOR": "0.5",
+    "note": "Validated native Windows controls at observed physical client sizes under this explicit scaling combination; not true system 100% DPI or cross-monitor acceptance."
+  },
+  "real_excel_export": {
+    "passed": true,
+    "entry": "Fixed Excel button on operation page; did not navigate to report tab",
+    "excel_version": "16.0",
+    "sample_number": "0000123",
+    "operators": 3,
+    "directions": 2,
+    "explicit_fixture_categories": 2,
+    "input_cells_verified": 52,
+    "diameters_verified": 144,
+    "count_cells_verified": 12,
+    "original_formula_strip_cells_verified": 486,
+    "sheet_names_and_print_areas_verified": 12,
+    "vba_presence_preserved": true,
+    "report_sha256": "3a8bed5faac859116b1793571c8a1f483f8b31b9292f9d0924715574d43bdcf3",
+    "evidence": "selected/excel-verification.json",
+    "report": "selected/fixed-entry-report.xls"
+  },
+  "vm_restoration": {
+    "schema": 1,
+    "vm": "Windows 11",
+    "checkpoint_id": "{e780653e-feda-49b1-8191-dad59ca7f5a2}",
+    "checkpoint_name": "fdm-third-round-pre-install-20261019",
+    "camera_sharing_before": "on",
+    "existing_install_before": "0.4.7",
+    "policy_change_requested": false,
+    "created": true,
+    "restored": true,
+    "restored_install_matches_baseline": true,
+    "restored_policies_match_baseline": true,
+    "install_comparison_fields": [
+      "DisplayName",
+      "DisplayVersion",
+      "InstallLocation"
+    ],
+    "baseline_comparison_note": "The restore probe additionally reports PSPath; the shared installation identity fields match.",
+    "camera_sharing_after": "on",
+    "fdm_or_excel_processes_after_restore": [],
+    "shutdown_method": "prlctl stop Windows 11 (normal shutdown)",
+    "vm_initial_state": "stopped",
+    "vm_final_state": "stopped",
+    "temporary_checkpoint_deleted": true,
+    "unrelated_checkpoints_deleted": false,
+    "restoration_evidence": [
+      "environment-before.json",
+      "environment-after-restore.json",
+      "vm-after-restore.txt"
+    ],
+    "power_and_checkpoint_evidence": "Tool-confirmed successful normal prlctl stop, prlctl list -a showing stopped, and snapshot-delete for this checkpoint only."
+  },
+  "real_microview_tested": false,
+  "remaining_acceptance": [
+    "Offline real Microview capture and continuous measurement",
+    "Physical 4K / cross-monitor DPI movement",
+    "This run used RemoteSigned; no new Restricted or organization-policy installation validation"
+  ],
+  "probe_only_issues": [
+    {
+      "run_id": "20261019-070904Z-48bd25d6",
+      "issue": "Runner initially interpreted two identical JSON console emissions as malformed output; equality-checked duplicate parser fixed, original successful GUI result retained without rerun."
+    },
+    {
+      "run_id": "20261019-071456Z-e21a23f5",
+      "issue": "Save dialog native controls exposed as UIA Pane; first probe could not locate filename control and closed only its owned FDM process. Corrected with observed Win32 class/control-ID plus PID/IsChild guards; later real Excel export passed."
+    }
+  ],
+  "evidence_archive": {
+    "file": "runtime-evidence.zip",
+    "bytes": 4279746,
+    "sha256": "75d8270f8757bdb6d1e57f50d494f7c095245eb346225ce836ec4962ac88b096"
+  },
+  "selected_screenshot_notes": {
+    "installed-records-bottom-1067.png": "Position-selection menu remains expanded; fixed footer is visible. This is a menu interaction state.",
+    "installed-excel-success.png": "Two categories were explicitly created by the export fixture; fresh entry is separately verified empty."
+  }
+}

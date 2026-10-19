@@ -12,7 +12,7 @@ from fdm.settings import AppThemeMode, normalize_theme_mode
 _SYSTEM_THEME_CACHE: dict[int, tuple[str, QPalette]] = {}
 _THEME_CACHE_PROPERTY = "fdmAppliedThemeMode"
 _THEME_STYLE_REVISION_PROPERTY = "fdmThemeStyleRevision"
-_THEME_STYLE_REVISION = 6
+_THEME_STYLE_REVISION = 7
 _RESOLVED_THEME_PROPERTY = "fdmResolvedThemeMode"
 _BASE_STYLE_PROPERTY = "fdmBaseWidgetStyle"
 
@@ -207,6 +207,17 @@ def semantic_colors(palette: QPalette | None = None) -> ThemeColors:
         canvas="#101820" if dark else "#D6DEE7",
         canvas_text="#C3D0DE" if dark else "#35495C",
     )
+
+
+def canvas_notice_colors() -> tuple[QColor, QColor]:
+    """A paired background/text treatment for notices drawn over image pixels.
+
+    The plate stays dark in every theme: ordinary canvas text is dark in a
+    light theme and cannot be used on this translucent image overlay.  Its
+    opacity also keeps the light text legible over a completely white image.
+    These colors never apply to image data or user-configured annotations.
+    """
+    return QColor(12, 20, 28, 224), QColor("#F3F4F6")
 
 
 def _system_color_mode(app: QApplication) -> str:
@@ -429,7 +440,8 @@ def build_application_stylesheet() -> str:
         QPushButton:disabled, QToolButton:disabled {
             color: @disabled; background: palette(window); border-color: palette(mid);
         }
-        QLabel[secondary="true"] { color: @muted; }
+        QLabel[secondary="true"], QLabel#settingsPageDescription,
+        QLabel#settingsSearchEmpty, QLabel#exportOptionsPageDescription { color: @muted; }
         QLabel[statusTone="info"] { color: @info; }
         QLabel[statusTone="success"] { color: @success; }
         QLabel[statusTone="warning"] { color: @warning; }

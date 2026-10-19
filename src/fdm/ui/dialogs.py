@@ -1290,9 +1290,6 @@ class ExportOptionsDialog(QDialog):
                 font-size: 18px;
                 font-weight: 700;
             }
-            QLabel#exportOptionsPageDescription {
-                color: palette(placeholder-text);
-            }
             QListWidget#exportOptionsNavigation {
                 border: none;
                 background: transparent;
@@ -1303,17 +1300,17 @@ class ExportOptionsDialog(QDialog):
                 border-radius: 6px;
             }
             QListWidget#exportOptionsNavigation::item:hover {
-                background: rgba(42, 157, 143, 45);
+                background: palette(midlight);
             }
             QListWidget#exportOptionsNavigation::item:selected {
-                background: #2A9D8F;
-                color: white;
+                background: palette(highlight);
+                color: palette(highlighted-text);
             }
             QGroupBox#exportPrimaryTemplateGroup {
-                border: 1px solid #2A9D8F;
+                border: 1px solid palette(highlight);
             }
             QGroupBox#exportPrimaryTemplateGroup::title {
-                color: #2A9D8F;
+                color: palette(window-text);
                 font-weight: 700;
             }
             QLabel#exportOptionsSummary {
@@ -1325,18 +1322,19 @@ class ExportOptionsDialog(QDialog):
             }
             QPushButton#exportOptionsSaveButton {
                 min-width: 88px;
-                border: 1px solid #238B7F;
+                border: 1px solid palette(highlight);
                 border-radius: 6px;
-                background: #2A9D8F;
-                color: white;
+                background: palette(highlight);
+                color: palette(highlighted-text);
                 font-weight: 600;
                 padding: 2px 16px;
             }
             QPushButton#exportOptionsSaveButton:hover {
-                background: #31AA9B;
+                border-color: palette(window-text);
             }
             QPushButton#exportOptionsSaveButton:pressed {
-                background: #238B7F;
+                background: palette(midlight);
+                color: palette(window-text);
             }
             QPushButton#exportOptionsSaveButton:disabled {
                 border-color: palette(mid);
@@ -2026,9 +2024,6 @@ class SettingsDialog(QDialog):
                 font-size: 18px;
                 font-weight: 700;
             }
-            QLabel#settingsPageDescription, QLabel#settingsSearchEmpty {
-                color: palette(placeholder-text);
-            }
             QListWidget#settingsNavigation {
                 border: none;
                 background: transparent;
@@ -2039,11 +2034,11 @@ class SettingsDialog(QDialog):
                 border-radius: 6px;
             }
             QListWidget#settingsNavigation::item:hover {
-                background: rgba(42, 157, 143, 45);
+                background: palette(midlight);
             }
             QListWidget#settingsNavigation::item:selected {
-                background: #2A9D8F;
-                color: white;
+                background: palette(highlight);
+                color: palette(highlighted-text);
             }
             """
         )

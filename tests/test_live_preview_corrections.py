@@ -77,7 +77,7 @@ def test_direction_switch_requires_new_field_and_preserves_history(workspace):
 
 def test_settings_tabs_fit_without_horizontal_scroll_or_hidden_fields(workspace):
     workspace.settings_dialog.resize(620, 480)
-    workspace.advanced_toggle.click()
+    workspace.advanced_toggle.trigger()
     QApplication.processEvents()
     assert workspace.settings_tabs.count() == 2
     assert workspace.workflow_tabs.count() == 3

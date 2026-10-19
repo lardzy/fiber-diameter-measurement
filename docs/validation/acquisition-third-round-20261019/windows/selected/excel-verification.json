@@ -1,0 +1,78 @@
+{
+    "passed":  true,
+    "report":  "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\fixed-entry-report.xls",
+    "template":  "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\isolated-config\\FiberDiameterMeasurement\\templates\\sheet.xlt",
+    "expected":  "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\third-round\\frozen-gui\\20261019-072421Z-34040aac\\excel-fixed-entry-light-1600x900\\20261019-152425-f6e0adc4309044249f4dd6244ff0dc16\\save-lifecycle-probe.expected.json",
+    "inputs_verified":  52,
+    "diameters_verified":  144,
+    "counts_verified":  12,
+    "sheets":  [
+                   {
+                       "name":  "标准选择",
+                       "print_area":  "",
+                       "formula_cells":  1
+                   },
+                   {
+                       "name":  "原始数据",
+                       "print_area":  "",
+                       "formula_cells":  496
+                   },
+                   {
+                       "name":  "特种毛(报出)",
+                       "print_area":  "$A$1:$K$66",
+                       "formula_cells":  2668
+                   },
+                   {
+                       "name":  "麻棉(报出)",
+                       "print_area":  "$A$1:$K$66",
+                       "formula_cells":  2664
+                   },
+                   {
+                       "name":  "分组统计",
+                       "print_area":  "",
+                       "formula_cells":  11992
+                   },
+                   {
+                       "name":  "非棉麻织物",
+                       "print_area":  "$A$1:$U$40",
+                       "formula_cells":  711
+                   },
+                   {
+                       "name":  "非棉麻纤维",
+                       "print_area":  "",
+                       "formula_cells":  321
+                   },
+                   {
+                       "name":  "分组加权统计",
+                       "print_area":  "",
+                       "formula_cells":  2213
+                   },
+                   {
+                       "name":  "织物纤维含量报告",
+                       "print_area":  "",
+                       "formula_cells":  533
+                   },
+                   {
+                       "name":  "棉麻织物",
+                       "print_area":  "$A$1:$U$43",
+                       "formula_cells":  617
+                   },
+                   {
+                       "name":  "棉麻纤维",
+                       "print_area":  "",
+                       "formula_cells":  268
+                   },
+                   {
+                       "name":  "比重",
+                       "print_area":  "",
+                       "formula_cells":  0
+                   }
+               ],
+    "errors":  [
+
+               ],
+    "excel_version":  "16.0",
+    "vba_preserved":  true,
+    "formulas_verified":  486,
+    "report_sha256":  "3a8bed5faac859116b1793571c8a1f483f8b31b9292f9d0924715574d43bdcf3"
+}

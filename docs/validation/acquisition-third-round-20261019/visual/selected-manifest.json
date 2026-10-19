@@ -1,0 +1,134 @@
+[
+  {
+    "case": "light-1600x900-1",
+    "scene": "realtime",
+    "file": "selected/light-1600x900-1--realtime.png",
+    "sha256": "23d6bf1257a8f093ee38f212a0e150f383081ae0261df5458b574be24d9057f6"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "content-empty",
+    "file": "selected/light-1600x900-1--content-empty.png",
+    "sha256": "1edd920c47ebffc109d69d940a5a7051952a104e911e0a040b1339911f28e146"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "content-nine",
+    "file": "selected/light-1600x900-1--content-nine.png",
+    "sha256": "f1c0da7599e41bac0917eb187de1e75266e5e150f6fcbe0a9019069adda1f04e"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "content-metadata",
+    "file": "selected/light-1600x900-1--content-metadata.png",
+    "sha256": "ba26faf73f6b1930d2a94e43eeea35402df9a2fb938afec644544fe46c97a5ea"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "records-left",
+    "file": "selected/light-1600x900-1--records-left.png",
+    "sha256": "9d535760bb74bf2b1db359b4d1b37db3fd3ba4495c5401a213ec178a77c408c1"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "records-new-while-reading",
+    "file": "selected/light-1600x900-1--records-new-while-reading.png",
+    "sha256": "d955177c2d319d613c11d0f8bb59eb793a011382c4623dfd1b893aa13cfc96ed"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "records-latest",
+    "file": "selected/light-1600x900-1--records-latest.png",
+    "sha256": "24bbc999efe0636ef913111a17c405dfea50e092800f6a9a7cbed628a1199277"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "records-bottom",
+    "file": "selected/light-1600x900-1--records-bottom.png",
+    "sha256": "866a07b7753b16d1d90e45a3c7bf21dce7d47e2eeb9f12b663c45df89c977134"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "records-floating",
+    "file": "selected/light-1600x900-1--records-floating.png",
+    "sha256": "8d51d625b3165556e330993a6a328cc212859344102c552de354929713d31158"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "records-floating-window",
+    "file": "selected/light-1600x900-1--records-floating-window.png",
+    "sha256": "061bc001a673bc094800bcecd9da762fd68def0592dc19fe2fd53360d406e1a7"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "content-report",
+    "file": "selected/light-1600x900-1--content-report.png",
+    "sha256": "11262c9388e74225464a9fec8f4e8c05ea9b5f6c48a336437afc87ddca4cf295"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "content-rejected",
+    "file": "selected/light-1600x900-1--content-rejected.png",
+    "sha256": "f06cf05ca1464a850dacb464073b204fc35632c0406fab127bde9e6ff45d340f"
+  },
+  {
+    "case": "light-1600x900-1",
+    "scene": "diameter",
+    "file": "selected/light-1600x900-1--diameter.png",
+    "sha256": "aeff9e6411d771c50f7a65f8bfaaf1f8c562d492841badd9954b44b46c532ed4"
+  },
+  {
+    "case": "light-1600x900-1p25",
+    "scene": "content-nine",
+    "file": "selected/light-1600x900-1p25--content-nine.png",
+    "sha256": "c450f6ca30dc004f8367f27feecd9be5a82631aea9551e35b4d2ff28d6aa9ced"
+  },
+  {
+    "case": "light-1600x900-1p5",
+    "scene": "records-bottom-metadata",
+    "file": "selected/light-1600x900-1p5--records-bottom-metadata.png",
+    "sha256": "723b42a94c53d26cbb2cad3fa73a88507312bc4b808aa47cb5f0839479701040"
+  },
+  {
+    "case": "light-1366x768-1",
+    "scene": "content-nine",
+    "file": "selected/light-1366x768-1--content-nine.png",
+    "sha256": "ba3dd074766954ccebbb4007eaaf747a99524c7996a37b7ec911c46be40cfa3a"
+  },
+  {
+    "case": "dark-1600x900-1",
+    "scene": "content-candidates",
+    "file": "selected/dark-1600x900-1--content-candidates.png",
+    "sha256": "683663fbf3d5a111c3f63fc9022c9dd9a67f53b077342a7966d8325f00491814"
+  },
+  {
+    "case": "navy-1600x900-1",
+    "scene": "content-nine",
+    "file": "selected/navy-1600x900-1--content-nine.png",
+    "sha256": "21fb65f4707153ca6c91700fb257b7f7d021ff49df770d039d72e77e19cf2b8e"
+  },
+  {
+    "case": "warm-1600x900-1",
+    "scene": "content-nine",
+    "file": "selected/warm-1600x900-1--content-nine.png",
+    "sha256": "b48eaf8ac1031f545a96e3344b64000bfa203911768ec6f516cb3c43d0bb563b"
+  },
+  {
+    "case": "light-1600x900-1",
+    "file": "videos/light-1600x900-1--navigation-records.mp4",
+    "sha256": "3fbc81652d8beaef5dcf74337e5e0e02e558883955c31b077af7294f15a359cb",
+    "kind": "Qt widget grab sequence with floating dock compositing",
+    "fps": 8,
+    "duration": 9.25,
+    "frames": 74
+  },
+  {
+    "case": "light-1600x900-1p25",
+    "file": "videos/light-1600x900-1p25--navigation-records.mp4",
+    "sha256": "a6b38985779ca654fb0b60dc110799601ce3f69bf587ef4924eb49e8efec1cbc",
+    "kind": "Qt widget grab sequence with floating dock compositing",
+    "fps": 8,
+    "duration": 6.75,
+    "frames": 54
+  }
+]

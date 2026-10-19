@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "vm": "Windows 11",
+  "checkpoint_id": "{e780653e-feda-49b1-8191-dad59ca7f5a2}",
+  "checkpoint_name": "fdm-third-round-pre-install-20261019",
+  "camera_sharing_before": "on",
+  "existing_install_before": "0.4.7",
+  "policy_change_requested": false,
+  "created": true,
+  "restored": true,
+  "restored_install_matches_baseline": true,
+  "restored_policies_match_baseline": true,
+  "install_comparison_fields": [
+    "DisplayName",
+    "DisplayVersion",
+    "InstallLocation"
+  ],
+  "baseline_comparison_note": "The restore probe additionally reports PSPath; the shared installation identity fields match.",
+  "camera_sharing_after": "on",
+  "fdm_or_excel_processes_after_restore": [],
+  "shutdown_method": "prlctl stop Windows 11 (normal shutdown)",
+  "vm_initial_state": "stopped",
+  "vm_final_state": "stopped",
+  "temporary_checkpoint_deleted": true,
+  "unrelated_checkpoints_deleted": false,
+  "restoration_evidence": [
+    "environment-before.json",
+    "environment-after-restore.json",
+    "vm-after-restore.txt"
+  ],
+  "power_and_checkpoint_evidence": "Tool-confirmed successful normal prlctl stop, prlctl list -a showing stopped, and snapshot-delete for this checkpoint only."
+}

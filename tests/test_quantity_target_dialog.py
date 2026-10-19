@@ -108,7 +108,7 @@ def test_visible_settings_button_applies_one_change_and_refreshes_progress():
         assert session.revision == before + 1
         assert session.reminder_policy.content_measured_target == 500
         assert dict(session.reminder_policy.material_targets) == {"wool": 17}
-        assert "0 / 17" in widget.progress.text() and "0 / 500" in widget.progress.text()
+        assert "0 / 17" in widget.progress.toolTip() and "0 / 500" in widget.progress.toolTip()
     finally:
         widget.close()
         widget.deleteLater()

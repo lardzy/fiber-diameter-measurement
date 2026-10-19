@@ -5,11 +5,11 @@ The fixed category matrix is always available; configuration lives in a drawer.
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QEvent, QSize, QTimer
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QScrollArea, QSplitter, QTabWidget,
+    QLabel, QLineEdit, QPushButton, QScrollArea, QSplitter, QTabWidget, QToolButton, QStylePainter, QStyleOptionButton, QStyle,
     QVBoxLayout, QWidget, QFrame, QSizePolicy, QDialogButtonBox, QMenu, QApplication,
 )
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox
@@ -51,6 +51,69 @@ class SegmentedChoice(QWidget):
             self.currentIndexChanged.emit(index)
 
 
+class ElidedLabel(QLabel):
+    """Keep full diagnostics accessible without growing compact chrome."""
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(0)
+
+    def setText(self, text):
+        super().setText(text)
+        self.setToolTip(text)
+
+    def paintEvent(self, event):
+        painter = QStylePainter(self)
+        text = self.fontMetrics().elidedText(self.text(), Qt.TextElideMode.ElideRight, self.contentsRect().width())
+        painter.drawItemText(self.contentsRect(), self.alignment(), self.palette(), self.isEnabled(), text, self.foregroundRole())
+
+
+class ElidedButton(QPushButton):
+    def setText(self, text):
+        super().setText(text)
+        self.setToolTip(text)
+
+    def paintEvent(self, event):
+        painter = QStylePainter(self)
+        option = QStyleOptionButton()
+        self.initStyleOption(option)
+        option.features |= QStyleOptionButton.ButtonFeature.HasMenu
+        option.text = self.fontMetrics().elidedText(option.text, Qt.TextElideMode.ElideRight, max(0, self.width() - 32))
+        painter.drawControl(QStyle.ControlElement.CE_PushButton, option)
+
+
+class TrialMetadataScroll(QScrollArea):
+    """Use natural metadata height normally; scroll locally in a short dock body."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setMinimumHeight(70)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
+    def setWidget(self, widget):
+        super().setWidget(widget)
+        widget.installEventFilter(self)
+        self._update_extent()
+
+    def _update_extent(self):
+        if self.widget() is not None:
+            self.setMaximumHeight(max(70, self.widget().sizeHint().height()))
+            self.updateGeometry()
+
+    def sizeHint(self):
+        return QSize(0, max(70, self.widget().sizeHint().height() if self.widget() else 70))
+
+    def minimumSizeHint(self):
+        return QSize(0, 70)
+
+    def eventFilter(self, watched, event):
+        if watched is self.widget() and event.type() == QEvent.Type.LayoutRequest:
+            self._update_extent()
+        return super().eventFilter(watched, event)
+
+
 class WeightInput(NoWheelDoubleSpinBox):
     """Keep six-decimal input precision without padding every weight with zeros."""
 
@@ -76,9 +139,10 @@ def apply_trial_theme(view):
         #trialSidebar QPushButton:hover, #trialHeader QPushButton:hover {{ border-color: {colors.accent}; background: {select}; }}
         #trialSidebar QPushButton:checked, #trialHeader QPushButton:checked {{ background: {select}; border-color: {colors.accent}; color: {ink}; font-weight: 600; }}
         #trialSidebar QPushButton:disabled {{ color: {muted}; }}
+        #trialSidebar QToolButton {{ min-height: 20px; padding: 0; }}
         #trialSidebar QComboBox, #trialHeader QComboBox {{ min-height: 30px; border: 1px solid {border}; border-radius: 4px; padding-left: 7px; }}
         #acquisitionTrial #trialSubtitle, #acquisitionTrial #trialHint, #acquisitionTrial #trialColumnHeader {{ color: {muted}; font-size: 9pt; }}
-        #acquisitionTrial #trialLastValue {{ font-size: 18pt; font-weight: 600; }}
+        #acquisitionTrial #trialLastValue {{ font-size: 16pt; font-weight: 600; }}
         #acquisitionTrial #trialTitle {{ font-size: 12pt; font-weight: 600; }}
         #trialReadiness {{ padding: 4px 8px; border-radius: 4px; background: {surface}; }}
         #trialReadiness[needsRuler="true"] {{ color: {colors.warning}; background: {colors.warning_background}; }}
@@ -91,7 +155,7 @@ def apply_trial_theme(view):
 
 
 def build_trial_view(v):
-    """One stable image area and a persistent, task-oriented trial console."""
+    """Keep measurement tools compact and give categories their own viewport."""
     from fdm.ui.live_experiment_workspace import ExperimentRecordsModel, CandidatesModel, CandidateMaterialDelegate
     from fdm.ui.icons import themed_icon
     from fdm.ui.acquisition_layout import view_controls, configure_splitter, configure_status
@@ -100,6 +164,7 @@ def build_trial_view(v):
         control = v._button(text, callback, layout)
         if icon:
             control.setIcon(themed_icon(icon))
+        control.setAccessibleName(text)
         return control
 
     def scroll_page(tabs, title, description=None):
@@ -111,8 +176,8 @@ def build_trial_view(v):
         content = QWidget(scroll)
         content.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
         if description:
             note = QLabel(description, content)
             note.setWordWrap(True)
@@ -126,23 +191,10 @@ def build_trial_view(v):
     outer = QVBoxLayout(root)
     outer.setContentsMargins(8, 8, 8, 4)
     outer.setSpacing(6)
-    # Trial metadata belongs to the console, never a page-wide image header.
-    header = QFrame(root)
-    header.setObjectName("trialHeader")
-    top = QHBoxLayout(header)
-    top.setContentsMargins(10, 5, 10, 5)
-    v.sample_title = QLabel(v.session.sample_name or "新试验", header)
-    v.sample_title.setObjectName("trialTitle")
-    v.sample_title.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-    v.sample_title.hide()  # The editable sample name below is the visible title.
-    v.sample_subtitle = QLabel(header)
-    v.sample_subtitle.setObjectName("trialSubtitle")
-    v.sample_subtitle.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-    top.addWidget(v.sample_subtitle, 1)
-    button("切换试验", v._choose_experiment, top, "open_project")
     v.measure_mode = NoWheelComboBox(root)
     v.measure_mode.addItem("贴边测径", "assisted")
     v.measure_mode.addItem("自由测量", "free")
+    v.measure_mode.setAccessibleName("测量方式")
     v.measure_mode.setToolTip("贴边测径自动定位纤维两侧；自由测量使用两个点击点的距离。")
     v.display_choice = NoWheelComboBox(root)
     for label, mode in (("实际像素", "pixel"), ("当前窗口", "fit"), ("指定倍率…", "magnification"), ("指定比例…", "percent")):
@@ -168,48 +220,103 @@ def build_trial_view(v):
 
     side = QFrame(v.body_splitter)
     side.setObjectName("trialSidebar")
-    side.setMinimumWidth(390)
-    side.setMaximumWidth(520)
     v.trial_sidebar = side
     sidebar = QVBoxLayout(side)
-    sidebar.setContentsMargins(8, 8, 8, 8)
-    sidebar.setSpacing(6)
-    sidebar.addWidget(header)
-    metadata = QFormLayout()
-    metadata.setContentsMargins(0, 0, 0, 0)
-    metadata.setHorizontalSpacing(6)
-    metadata.setVerticalSpacing(5)
-    metadata.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
-    v.sample_number = QLineEdit(v.session.sample_number, side)
+    sidebar.setContentsMargins(6, 6, 6, 6)
+    sidebar.setSpacing(4)
+    v.metadata_scroll = TrialMetadataScroll(side)
+    v.metadata_scroll.setObjectName("trialMetadataScroll")
+    metadata_content = QWidget(v.metadata_scroll)
+    metadata_layout = QVBoxLayout(metadata_content)
+    metadata_layout.setContentsMargins(0, 0, 0, 0)
+    metadata_layout.setSpacing(4)
+    header = QHBoxLayout()
+    header.setSpacing(3)
+    v.sample_details_toggle = ElidedButton("样品信息 ▾", side)
+    v.sample_details_toggle.setObjectName("trialSampleSummary")
+    v.sample_details_toggle.setAccessibleName("展开或收起样品信息")
+    v.sample_details_toggle.setCheckable(True)
+    v.sample_details_toggle.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+    v.sample_details_toggle.setMinimumWidth(72)
+    v.sample_summary = v.sample_details_toggle
+    header.addWidget(v.sample_details_toggle, 1)
+    v.new_trial_button = button("新建", lambda: v._new_experiment(), header, "add")
+    v.switch_trial_button = button("切换", v._choose_experiment, header, "open_project")
+    v.return_capture_button = button("返回采集", lambda: v._return_to_capture(), header, "acquisition")
+    metadata_layout.addLayout(header)
+    # Retain data-binding labels without introducing another title row.
+    v.sample_title = QLabel(v.session.sample_name or "新试验", side)
+    v.sample_subtitle = QLabel(side)
+    v.sample_title.hide()
+    v.sample_subtitle.hide()
+    v.sample_details = QWidget(side)
+    sample_fields = QHBoxLayout(v.sample_details)
+    sample_fields.setContentsMargins(0, 0, 0, 0)
+    sample_fields.setSpacing(6)
+    v.sample_number = QLineEdit(v.session.sample_number, v.sample_details)
     v.sample_number.setPlaceholderText("填写样品编号")
     v.sample_number.editingFinished.connect(lambda: v._configure(sample_number=v.sample_number.text().strip()))
-    v.sample = QLineEdit(v.session.sample_name, side)
+    v.sample = QLineEdit(v.session.sample_name, v.sample_details)
     v.sample.setPlaceholderText("填写样品名称")
     v.sample.editingFinished.connect(v._sample_changed)
-    sample_fields = QHBoxLayout()
     for label, editor in (("样品编号", v.sample_number), ("样品名称", v.sample)):
         field = QVBoxLayout()
         field.setSpacing(2)
-        caption = QLabel(label, side)
+        caption = QLabel(label, v.sample_details)
         caption.setObjectName("trialHint")
         field.addWidget(caption)
         editor.setAccessibleName(label)
         field.addWidget(editor)
         sample_fields.addLayout(field, 1)
-    sidebar.addLayout(sample_fields)
+    metadata_layout.addWidget(v.sample_details)
+    v.sample_details.hide()
+    def expand_sample(expanded):
+        v.sample_details.setVisible(expanded)
+        v._metadata_expansion_changed(expanded)
+        v.metadata_scroll._update_extent()
+        if expanded:
+            QTimer.singleShot(0, v.metadata_scroll, lambda: v.metadata_scroll.ensureWidgetVisible(v.sample_details))
+    v.sample_details_toggle.toggled.connect(expand_sample)
+
     row = QHBoxLayout()
+    row.setSpacing(4)
+    row.addWidget(QLabel("操作者", side))
     v.operator = NoWheelComboBox(side)
-    v.operator.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    v.operator.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+    v.operator.setAccessibleName("操作者")
     v.operator.setToolTip("切换操作者会结束当前视场，已入账的历史记录保留。")
     v.operator.currentIndexChanged.connect(v._operator_changed)
     row.addWidget(v.operator, 1)
-    v.rename_operator_button = button("改名", v._rename_operator, row, "rename")
-    v.add_operator_button = button("添加", v._add_operator, row, "add")
-    metadata.addRow("操作者", row)
+    operator_manage = QPushButton("管理", side)
+    operator_manage.setAccessibleName("管理操作者")
+    operator_manage.setIcon(themed_icon("settings"))
+    operator_menu = QMenu(operator_manage)
+    v.rename_operator_button = operator_menu.addAction(themed_icon("rename"), "修改姓名")
+    v.add_operator_button = operator_menu.addAction(themed_icon("add"), "添加操作者")
+    v.rename_operator_button.triggered.connect(lambda: v._guard(v._rename_operator))
+    v.add_operator_button.triggered.connect(lambda: v._guard(v._add_operator))
+    operator_manage.setMenu(operator_menu)
+    row.addWidget(operator_manage)
+    v.direction_row = QWidget(side)
+    direction_row = QHBoxLayout(v.direction_row)
+    direction_row.setContentsMargins(0, 0, 0, 0)
+    direction_row.setSpacing(4)
+    direction_row.addWidget(QLabel("方向", v.direction_row))
+    v.direction = NoWheelComboBox(v.direction_row)
+    v.direction.addItem("经向", "warp")
+    v.direction.addItem("纬向", "weft")
+    v.direction.setAccessibleName("试验方向")
+    v.direction.currentIndexChanged.connect(v._direction_changed)
+    direction_row.addWidget(v.direction)
+    row.addWidget(v.direction_row)
+    metadata_layout.addLayout(row)
+    ruler_row = QHBoxLayout()
+    ruler_row.setSpacing(4)
+    ruler_row.addWidget(QLabel("标尺", side))
     v.ruler_choice = NoWheelComboBox(side)
     v.ruler_choice.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+    v.ruler_choice.setAccessibleName("测量标尺")
     v.ruler_choice.activated.connect(v._select_ruler)
-    ruler_row = QHBoxLayout()
     ruler_row.addWidget(v.ruler_choice, 1)
     ruler_menu = QMenu(side)
     for title, callback in (("导入 CU 标尺", v._import_ruler), ("新增标尺", v._calibrate)):
@@ -218,66 +325,76 @@ def build_trial_view(v):
     ruler_manage = QPushButton("管理", side)
     ruler_manage.setMenu(ruler_menu)
     ruler_manage.setIcon(themed_icon("calibration"))
+    ruler_manage.setAccessibleName("管理测量标尺")
     ruler_row.addWidget(ruler_manage)
-    metadata.addRow("测量标尺", ruler_row)
-    sidebar.addLayout(metadata)
+    metadata_layout.addLayout(ruler_row)
     v.readiness_label = QLabel(side)
     v.readiness_label.setObjectName("trialReadiness")
     v.readiness_label.setWordWrap(True)
     v.readiness_label.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse | Qt.TextInteractionFlag.LinksAccessibleByKeyboard)
     v.readiness_label.setOpenExternalLinks(False)
     v.readiness_label.linkActivated.connect(v._readiness_action)
-    sidebar.addWidget(v.readiness_label)
+    metadata_layout.addWidget(v.readiness_label)
+    v.metadata_scroll.setWidget(metadata_content)
+    sidebar.addWidget(v.metadata_scroll)
     v.workflow_tabs = QTabWidget(side)
     v.workflow_tabs.setObjectName("trialWorkflowTabs")
-    v.workflow_tabs.setMinimumHeight(140)
+    v.workflow_tabs.setMinimumHeight(80)
     v.workflow_tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Ignored)
     sidebar.addWidget(v.workflow_tabs, 1)
 
     operations, controls = scroll_page(v.workflow_tabs, "操作")
     from fdm.ui.quantity_targets import QuantityTargets
     tools = QHBoxLayout()
-    tools.addWidget(v.measure_mode, 1)
-    button("新视场", v.controller.end_field, tools, "next_field")
-    controls.addLayout(tools)
-    latest = QHBoxLayout()
-    v.latest_value = QLabel("— μm", operations)
+    tools.setSpacing(4)
+    latest = QVBoxLayout()
+    latest.setSpacing(0)
+    v.latest_value = ElidedLabel("— μm", operations)
     v.latest_value.setObjectName("trialLastValue")
-    latest.addWidget(v.latest_value, 1)
-    v.measurement_outcome = QLabel(operations)
+    v.latest_value.setMinimumWidth(94)
+    latest.addWidget(v.latest_value)
+    v.measurement_outcome = ElidedLabel(operations)
     v.measurement_outcome.setObjectName("trialHint")
     v.measurement_outcome.setAccessibleName("本次测量状态")
-    v.measurement_outcome.setFixedHeight(22)
-    v.direction_row = QWidget(operations)
-    row = QHBoxLayout(v.direction_row)
-    row.setContentsMargins(0, 0, 0, 0)
-    row.addWidget(QLabel("方向", v.direction_row))
-    v.direction = NoWheelComboBox(v.direction_row)
-    v.direction.addItem("经向", "warp")
-    v.direction.addItem("纬向", "weft")
-    v.direction.currentIndexChanged.connect(v._direction_changed)
-    row.addWidget(v.direction)
+    v.measurement_outcome.setFixedHeight(15)
+    latest.addWidget(v.measurement_outcome)
+    tools.addLayout(latest, 1)
+    v.measure_mode.setMinimumWidth(110)
+    v.measure_mode.setMaximumWidth(140)
+    tools.addWidget(v.measure_mode)
+    button("新视场", v.controller.end_field, tools, "next_field")
+    v.trial_tools_button = QToolButton(operations)
+    v.trial_tools_button.setIcon(themed_icon("settings"))
+    v.trial_tools_button.setAccessibleName("试验工具与设置")
+    v.trial_tools_button.setToolTip("含量计算设置与高级选项")
+    v.trial_tools_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+    v.trial_tools_button.setFixedSize(28, 32)
+    trial_tools = QMenu(v.trial_tools_button)
+    v.statistics_button = trial_tools.addAction(themed_icon("statistics"), "含量计算设置")
+    v.statistics_button.triggered.connect(lambda: v._guard(v._statistics_settings))
+    v.advanced_toggle = trial_tools.addAction(themed_icon("settings"), "高级选项")
+    v.advanced_toggle.setCheckable(True)
+    v.trial_tools_button.setMenu(trial_tools)
+    tools.addWidget(v.trial_tools_button)
+    controls.addLayout(tools)
     v.weights_button = QWidget(operations)
     weights = QHBoxLayout(v.weights_button)
     weights.setContentsMargins(0, 0, 0, 0)
-    weights.setSpacing(3)
-    for label, attribute in (("经向重量", "warp_weight"), ("纬向重量", "weft_weight")):
+    weights.setSpacing(4)
+    for label, attribute in (("经重", "warp_weight"), ("纬重", "weft_weight")):
         weights.addWidget(QLabel(label, v.weights_button))
         editor = WeightInput(v.weights_button)
         editor.setRange(0, 1000000)
         editor.setDecimals(6)
         editor.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-        editor.setMinimumWidth(100)
+        editor.setMinimumWidth(64)
         editor.setMaximumWidth(180)
         editor.setButtonSymbols(editor.ButtonSymbols.NoButtons)
-        editor.setAccessibleName(label)
+        editor.setAccessibleName("经向重量" if attribute == "warp_weight" else "纬向重量")
         editor.setToolTip("经纬重量应使用相同单位，用于织物混合含量计算。")
         editor.editingFinished.connect(v._weights_edited)
         setattr(v, attribute, editor)
         weights.addWidget(editor, 1)
-    latest.addWidget(v.direction_row)
-    controls.addLayout(latest)
-    controls.addWidget(v.measurement_outcome)
     controls.addWidget(v.weights_button)
     v.classification_mode = SegmentedChoice(["先选", "后选"], operations)
     v.classification_mode.setToolTip("先选类别用于下一根；测后改类修改本视场的最新有效测量。")
@@ -286,10 +403,14 @@ def build_trial_view(v):
     v.keyboard_mode = SegmentedChoice(["数字选类", "数字补计"], operations)
     v.keyboard_mode.setCurrentIndex(1)
     v.keyboard_mode.setToolTip("单独按 Ctrl 切换。补计数只增加根数，不改变测量类别或实测直径。")
-    modes = QHBoxLayout()
-    modes.addWidget(v.classification_mode, 1)
-    modes.addWidget(v.keyboard_mode, 1)
-    controls.addLayout(modes)
+    v.category_actions = QWidget(operations)
+    modes = QHBoxLayout(v.category_actions)
+    modes.setContentsMargins(0, 0, 0, 0)
+    modes.setSpacing(4)
+    modes.addWidget(v.classification_mode, 2)
+    modes.addWidget(v.keyboard_mode, 3)
+    button("类别", v._materials, modes, "settings").setAccessibleName("管理纤维类别")
+    controls.addWidget(v.category_actions)
     v.after_select = QCheckBox("后选", v)
     v.after_select.setChecked(v.classification_mode.currentIndex() == 1)
     v.after_select.hide()
@@ -298,29 +419,49 @@ def build_trial_view(v):
     v.material.hide()
     v.material.activated.connect(v._after_select)
     v.material.currentIndexChanged.connect(v._sync_material_buttons)
-    v.category_actions = QWidget(operations)
-    row = QHBoxLayout(v.category_actions)
-    row.setContentsMargins(0, 0, 0, 0)
     v.current_class_label = QLabel("当前测量类", v.category_actions)
-    v.current_class_label.setWordWrap(True)
     v.current_class_label.setObjectName("trialHint")
-    row.addWidget(v.current_class_label, 1)
-    button("管理类别", v._materials, row, "settings")
-    controls.addWidget(v.category_actions)
-    v.material_panel = QWidget(operations)
+    v.current_class_label.setFixedSize(0, 0)
+
+    v.category_area = QWidget(operations)
+    category_layout = QVBoxLayout(v.category_area)
+    category_layout.setContentsMargins(0, 0, 0, 0)
+    category_layout.setSpacing(0)
+    v.empty_categories = QFrame(v.category_area)
+    empty_layout = QVBoxLayout(v.empty_categories)
+    empty_layout.setContentsMargins(8, 8, 8, 8)
+    empty_layout.addStretch(1)
+    note = QLabel("选择本次试验的纤维类别后，即可开始测量。", v.empty_categories)
+    note.setWordWrap(True)
+    empty_layout.addWidget(note)
+    v.choose_categories_button = button("选择纤维类别", v._materials, empty_layout, "add")
+    empty_layout.addStretch(1)
+    category_layout.addWidget(v.empty_categories)
+    v.empty_categories.hide()
+    v.category_scroll = QScrollArea(v.category_area)
+    v.category_scroll.setObjectName("trialCategoryScroll")
+    v.category_scroll.setFrameShape(QFrame.Shape.NoFrame)
+    v.category_scroll.setWidgetResizable(True)
+    v.category_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    v.category_scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Ignored)
+    v.category_scroll.setMinimumHeight(70)
+    v.material_panel = QWidget(v.category_scroll)
     v.material_panel_layout = QGridLayout(v.material_panel)
     v.material_panel_layout.setContentsMargins(0, 0, 0, 0)
     v.material_panel_layout.setHorizontalSpacing(3)
     v.material_panel_layout.setVerticalSpacing(3)
+    v.material_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
     v.material_rows = {}
-    controls.addWidget(v.material_panel)
+    v.category_scroll.setWidget(v.material_panel)
+    category_layout.addWidget(v.category_scroll, 1)
+    controls.addWidget(v.category_area, 1)
     v.diameter_summary = QLabel("累计实测 0 根 · 均径 — μm", operations)
     v.diameter_summary.setWordWrap(True)
     controls.addWidget(v.diameter_summary)
     v.pending_panel = QFrame(operations)
     v.pending_panel.setObjectName("trialPending")
     pending = QVBoxLayout(v.pending_panel)
-    pending.setContentsMargins(6, 6, 6, 6)
+    pending.setContentsMargins(4, 4, 4, 4)
     v.pending_label = QLabel(v.pending_panel)
     v.pending_label.setWordWrap(True)
     pending.addWidget(v.pending_label)
@@ -335,65 +476,47 @@ def build_trial_view(v):
     v.candidate_feedback.setWordWrap(True)
     v.candidate_feedback.hide()
     controls.addWidget(v.candidate_feedback)
-    v.records_toggle = QPushButton("查看本场记录", operations)
-    v.records_toggle.setCheckable(True)
-    v.records_toggle.setIcon(themed_icon("results"))
-    controls.addWidget(v.records_toggle)
     v.quantity_targets = QuantityTargets(v.session, v._configure, operations)
     controls.addWidget(v.quantity_targets)
-    v.statistics_button = button("含量计算设置", v._statistics_settings, controls, "statistics")
-    v.advanced_toggle = QPushButton("高级选项", operations)
-    v.advanced_toggle.setIcon(themed_icon("settings"))
-    v.advanced_toggle.setCheckable(True)
-    controls.addWidget(v.advanced_toggle)
-    v.operation_help = QLabel("两次点击横跨纤维完成测径。Esc 取消未完成线段；撤销可回退已入账操作。", operations)
+    v.operation_help = QLabel(operations)
     v.operation_help.setObjectName("trialHint")
-    v.operation_help.setWordWrap(True)
-    controls.addWidget(v.operation_help)
-    controls.addStretch(1)
+    v.operation_help.hide()  # Available as the operation page's tooltip, without another row.
+    operations.setToolTip("两次点击横跨纤维完成测径。Esc 取消未完成线段；撤销可回退已入账操作。")
 
-    v.tabs = QTabWidget(v.workflow_tabs)
+    # Legacy selectors remain as model adapters while the dock owns record browsing.
+    v.tabs = QTabWidget(v)
     v.tabs.setObjectName("trialRecords")
     v.current_model = ExperimentRecordsModel(v.session)
     v.history_model = ExperimentRecordsModel(v.session)
     v.candidate_model = CandidatesModel()
     v.current_table = v._table(v.current_model)
     v.history_table = v._table(v.history_model)
+    for table, title in ((v.current_table, "本场"), (v.history_table, "全部操作者")):
+        panel = QWidget(v.tabs)
+        layout = QVBoxLayout(panel)
+        layout.addWidget(table)
+        v.tabs.addTab(panel, title)
+    v.tabs.addTab(QWidget(v.tabs), "候选审核")
+    v.tabs.hide()
+    candidates = QWidget(v.workflow_tabs)
+    v.candidate_review_page = candidates
+    candidates_layout = QVBoxLayout(candidates)
+    candidates_layout.setContentsMargins(4, 4, 4, 4)
+    note = QLabel("候选尚未入账。选择类别，核对越限项，再确认接受。", candidates)
+    note.setWordWrap(True)
+    candidates_layout.addWidget(note)
     v.candidate_table = v._table(v.candidate_model)
     v.candidate_table.setItemDelegateForColumn(3, CandidateMaterialDelegate(v.candidate_table))
     v.candidate_table.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked |
         QAbstractItemView.EditTrigger.SelectedClicked | QAbstractItemView.EditTrigger.EditKeyPressed)
     for column, width in enumerate((45, 45, 80, 115, 150, 115)):
         v.candidate_table.setColumnWidth(column, width)
-    for table, title in ((v.current_table, "本场"), (v.history_table, "全部操作者")):
-        panel = QWidget(v.tabs)
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.addWidget(table, 1)
-        actions = QHBoxLayout()
-        button("修订", v._edit_record, actions, "rename")
-        button("删除", v._delete_record, actions, "delete")
-        button("原图", v._review_record, actions, "open_images")
-        layout.addLayout(actions)
-        v.tabs.addTab(panel, title)
-    candidates = QWidget(v.tabs)
-    candidates_layout = QVBoxLayout(candidates)
-    note = QLabel("候选尚未入账。选择类别，核对越限项，再确认接受。", candidates)
-    note.setWordWrap(True)
-    candidates_layout.addWidget(note)
     candidates_layout.addWidget(v.candidate_table, 1)
     button("勾选项设为当前类别", v._assign_candidate_material, candidates_layout)
     button("确认已赋类项", v._accept_candidates, candidates_layout, "preset_apply")
-    v.tabs.addTab(candidates, "候选审核")
-    v.workflow_tabs.addTab(v.tabs, "记录")
-    v.records_toggle.toggled.connect(lambda checked: v.workflow_tabs.setCurrentIndex(1 if checked else 0))
-    def sync_record_tab(index):
-        v.records_toggle.blockSignals(True)
-        v.records_toggle.setChecked(index == 1)
-        v.records_toggle.blockSignals(False)
-    v.workflow_tabs.currentChanged.connect(sync_record_tab)
+    v.workflow_tabs.addTab(candidates, "审核")
 
-    report, report_layout = scroll_page(v.workflow_tabs, "报告", "保存项目保留试验记录与设置；生成报告可用于复核、编辑和打印。")
+    report, report_layout = scroll_page(v.workflow_tabs, "报告", "固定下方的“导出 Excel”可随时生成报告；这里设置模板、查看结果与诊断。")
     v.summary_scope = NoWheelComboBox(report)
     v.summary_scope.addItems(["当前操作者／方向", "当前操作者／经纬混合", "全部操作者／纤维汇总", "全部操作者／织物汇总"])
     v.summary_scope.currentIndexChanged.connect(lambda _: setattr(v, "_last_summary_revision", -1))
@@ -403,22 +526,51 @@ def build_trial_view(v):
     v.summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
     report_layout.addWidget(v.summary)
     button("导出原始记录 CSV", lambda: v._export(False), report_layout, "export")
-    button("生成模板报告", lambda: v._export(True), report_layout, "export")
     v.report_layout = QVBoxLayout()
     report_layout.addLayout(v.report_layout)
     report_layout.addStretch(1)
 
     actions = QHBoxLayout()
-    button("撤销", lambda: v._history_action("undo"), actions, "undo")
-    button("重做", lambda: v._history_action("redo"), actions, "redo")
+    actions.setSpacing(3)
+    for label, callback, icon in (("撤销", lambda: v._history_action("undo"), "undo"),
+                                  ("重做", lambda: v._history_action("redo"), "redo")):
+        control = button("", callback, actions, icon)
+        control.setFixedWidth(32)
+        control.setAccessibleName(label)
+        control.setToolTip(label)
+    v.records_toggle = button("记录", lambda: v._show_records(), actions, "results")
+    v.records_toggle.setCheckable(True)
     actions.addStretch(1)
-    v.save_button = button("保存项目", v._save_project, actions, "save_project")
+    v.save_button = button("保存", v._save_project, actions, "save_project")
+    v.save_button.setAccessibleName("保存项目")
+    v.save_button.setToolTip("保存项目，保留试验记录、样品和配置。")
+    v.export_button = button("导出 Excel", lambda: v._export(True), actions, "export")
+    v.export_button.setAccessibleName("导出 Excel 报告")
     sidebar.addLayout(actions)
-    v.persistence_label = QLabel("尚无需要保存的试验改动", side)
+    status = QWidget(side)
+    status.setFixedHeight(22)
+    status_row = QHBoxLayout(status)
+    status_row.setContentsMargins(0, 0, 0, 0)
+    status_row.setSpacing(3)
+    v.persistence_label = ElidedLabel("尚无需要保存的试验改动", status)
     v.persistence_label.setObjectName("trialHint")
-    v.persistence_label.setWordWrap(True)
-    v.persistence_label.setMaximumHeight(34)
-    sidebar.addWidget(v.persistence_label)
+    status_row.addWidget(v.persistence_label, 1)
+    v.report_status_label = ElidedLabel(status)
+    v.report_status_label.setObjectName("trialHint")
+    v.report_status_label.setAccessibleName("Excel 报告状态")
+    status_row.addWidget(v.report_status_label, 1)
+    for name, title, icon, callback in (("open_report_button", "打开 Excel 报告", "open_images", lambda: v._open_last_report()),
+            ("report_folder_button", "打开报告文件夹", "open_project", lambda: v._open_report_folder())):
+        control = QToolButton(status)
+        control.setIcon(themed_icon(icon))
+        control.setAccessibleName(title)
+        control.setToolTip(title)
+        control.setFixedSize(22, 22)
+        control.clicked.connect(lambda checked=False, fn=callback: v._guard(fn))
+        control.setEnabled(False)
+        status_row.addWidget(control)
+        setattr(v, name, control)
+    sidebar.addWidget(status)
     v.body_splitter.addWidget(side)
     configure_splitter(v.body_splitter, side)
     outer.addWidget(v.body_splitter, 1)

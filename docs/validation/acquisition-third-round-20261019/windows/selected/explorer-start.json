@@ -1,0 +1,21 @@
+{
+    "schema":  1,
+    "executable":  "C:\\tmp\\fdm-cu-live-third-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "build_id":  "e1cf7774e0c1453796f966d222e2cf88",
+    "launch":  "explorer.exe executable-path",
+    "user":  "B1EA\\lishuyang",
+    "elevated":  false,
+    "policy":  "RemoteSigned",
+    "started_at":  "2026-10-19T15:26:54.8777874+08:00",
+    "ok":  true,
+    "hardware_tested":  false,
+    "pid":  9692,
+    "parent_name":  "explorer.exe",
+    "title":  "显微测量工作台",
+    "error":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "main_window_handle":  18219780,
+    "exit_code":  0,
+    "finished_at":  "2026-10-19T15:26:57.0907870+08:00"
+}

@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "result": "291 passed in 207.71s",
+  "environment": "Windows 11 Parallels, Python 3.12.13, Qt windows, QT_SCALE_FACTOR=0.5",
+  "log_encoding": "utf-16le BOM",
+  "log_sha256": "e5757c7fb04982dba0ebab5bd708a00d42995dfa3bdc29231ab86912db37d819",
+  "real_hardware_tested": false,
+  "notes": [
+    "Full selected suite includes the three adapted Windows fixture cases.",
+    "Earlier failed logs are preserved under .tmp; no failing test result was packaged."
+  ]
+}

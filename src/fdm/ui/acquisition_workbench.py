@@ -72,11 +72,19 @@ class AcquisitionWorkbench(QWidget):
         self.feedback.hide()
         layout.addWidget(self.feedback)
         self.pages = WorkspaceStack(self)
+        from fdm.ui.trial_records import AcquisitionDockHost, RecordsPresentationController
+        self.body_host = AcquisitionDockHost(self)
+        self.body_host.setCentralWidget(self.pages)
+        self.records = RecordsPresentationController(self.body_host,
+            is_current=lambda workspace: (self.pages.currentWidget() is workspace
+                and not workspace._closed and self.host._acquisition_workspace_selected
+                and workspace.project_identity == id(self.host.project)),
+            action_callback=lambda workspace, action, key: workspace._guard(lambda: workspace._record_action(action, key)))
         self.capture_page = capture_page
         self.pages.addWidget(capture_page)
         if hasattr(host, "_preview_body_splitter"):
             self.register_splitter(host._preview_body_splitter)
-        layout.addWidget(self.pages, 1)
+        layout.addWidget(self.body_host, 1)
         self.navigation.currentChanged.connect(self.select_page)
         manager = host._capture_manager
         manager.previewStateChanged.connect(self._preview_state_changed)
@@ -146,6 +154,9 @@ class AcquisitionWorkbench(QWidget):
     def enter(self, *, auto_start=True):
         first_entry = not self._entered
         self._entered = True
+        trial = self.pages.currentWidget()
+        if trial is not self.capture_page:
+            self.records.bind(trial)
         if first_entry and auto_start:
             self.request_start()
 
@@ -162,6 +173,7 @@ class AcquisitionWorkbench(QWidget):
         self._entered = False
         self._want_capture = False
         self._restart_pending = False
+        self.records.suspend()
 
     def suspend_trial(self, reason):
         trial = self.pages.currentWidget()
@@ -175,6 +187,7 @@ class AcquisitionWorkbench(QWidget):
     def clear_trial_pages(self):
         """A project replacement must not leave navigation on a disposed page."""
         self._switching = True
+        self.records.suspend()
         try:
             for index in range(self.pages.count() - 1, -1, -1):
                 page = self.pages.widget(index)
@@ -195,6 +208,16 @@ class AcquisitionWorkbench(QWidget):
             return
         self._switching = True
         try:
+            if current is not self.capture_page and not current._confirm_trial_navigation():
+                self.navigation.setCurrentIndex(self._selected)
+                return
+            if current is not self.capture_page:
+                try:
+                    current.commit_pending_edits()
+                except (ValueError, RuntimeError, OSError) as exc:
+                    current.statusBar().showMessage(str(exc), 8000)
+                    self.navigation.setCurrentIndex(self._selected)
+                    return
             binding = getattr(self.host, "_preview_display_binding", None)
             if current is self.capture_page and binding is not None:
                 binding.flush()
@@ -202,6 +225,7 @@ class AcquisitionWorkbench(QWidget):
                 self.navigation.setCurrentIndex(self._selected)
                 return
             if index == 0:
+                self.records.suspend()
                 self.host._preview_ruler_key = None
                 self.pages.setCurrentWidget(self.capture_page)
                 frame = self.host._capture_manager.latest_preview_frame()
@@ -223,6 +247,7 @@ class AcquisitionWorkbench(QWidget):
                 self.navigation.setCurrentIndex(index)
                 self.host._sync_workspace_mode()
                 self.pages.setCurrentWidget(trial)
+                self.records.bind(trial)
                 if self.host._capture_manager.is_preview_active() and not self.host._capture_manager.is_stopping():
                     trial._start_camera()
                 else:
