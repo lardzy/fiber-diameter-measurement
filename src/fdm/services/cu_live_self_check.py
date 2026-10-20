@@ -5,7 +5,31 @@ import math
 import sys
 
 
-CU_LIVE_PROBE_REVISION = 4
+CU_LIVE_PROBE_REVISION = 5
+
+_ALIGNMENT_WORKER_CASES = {
+    "ok": "candidate_alignment_worker",
+    "same": "candidate_alignment_same",
+    "noisy": "candidate_alignment_noisy",
+    "drift": "candidate_alignment_drift",
+    "reference_reset": "candidate_alignment_reference_reset",
+    "closed": "candidate_alignment_closed",
+    "child_process": "candidate_alignment_child_process",
+}
+
+
+def _candidate_alignment_worker_probe():
+    """Run the actual spawn path and retain failure/runtime details for offline checks."""
+    try:
+        from fdm.live_experiment.candidate_alignment_worker import run_alignment_worker_self_check
+
+        result = run_alignment_worker_self_check()
+        if not isinstance(result, dict):
+            result = {"ok": False, "error": "Invalid alignment worker self-check result"}
+    except Exception as exc:
+        result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    cases = {name: result.get(field) is True for field, name in _ALIGNMENT_WORKER_CASES.items()}
+    return cases, result
 
 
 def _field_preparation_probe():
@@ -234,6 +258,8 @@ def run_cu_live_self_check(*, validate_capture=True):
     }
     cases.update(_content_configuration_probe())
     cases.update(_evidence_persistence_probe())
+    alignment_cases, alignment_report = _candidate_alignment_worker_probe()
+    cases.update(alignment_cases)
     if sys.platform == "win32" and validate_capture:
         from fdm._native import _microview
         from fdm.services.microview_transport import bridge_build_matches
@@ -243,6 +269,7 @@ def run_cu_live_self_check(*, validate_capture=True):
         kernel_info = dict(native.build_info())
         cases["microview_bridge_build"] = bridge_build_matches(capture_info, kernel_info)
     return {"ok": all(cases.values()), "revision": CU_LIVE_PROBE_REVISION, "cases": cases,
+            "candidate_alignment_worker": alignment_report,
             "native_build_info": dict(native.build_info()), "hardware_capture_tested": False}
 
 
@@ -252,6 +279,7 @@ def cu_live_probe_passed(report):
                 "content_width_undo", "content_width_redo", "evidence_png_gray",
                 "evidence_png_bgr", "evidence_png_bgra", "evidence_leases_released",
                 "project_asset_rebase"}
+    required.update(_ALIGNMENT_WORKER_CASES.values())
     if sys.platform == "win32":
         required.update({"microview_bridge_import", "microview_bridge_build", "microview_bridge_transport"})
     return (isinstance(report, dict) and report.get("ok") is True and report.get("revision") == CU_LIVE_PROBE_REVISION

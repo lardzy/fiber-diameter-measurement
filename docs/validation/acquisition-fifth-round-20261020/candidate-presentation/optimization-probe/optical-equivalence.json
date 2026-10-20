@@ -1,0 +1,1138 @@
+{
+  "scope": "Existing optical fixture center crops; BGR, new independent sensor-like noise, movement, exposure and blur. No actual Microview raw capture.",
+  "all_decisions_match": true,
+  "max_shift_error": 0.0,
+  "max_response_error": 0.0,
+  "count": 94,
+  "cases": [
+    {
+      "source": "optical1",
+      "case": "noise0",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "noise1",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "noise2",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "noise5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "noise15",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-0",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-1",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-2",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-3",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-4",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-6",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-7",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-8",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-9",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-10",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-11",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-12",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-13",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-14",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-15",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-16",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-17",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-18",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-19",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-20",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-21",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-22",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-23",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-24",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-25",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-26",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-27",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-28",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-29",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-30",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-31",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-32",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-33",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "shift-noise-34",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "gain0.6",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "gain0.9",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "gain1.1",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "gain1.5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "blur3",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "blur5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical1",
+      "case": "blur9",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "noise0",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "noise1",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "noise2",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "noise5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "noise15",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-0",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-1",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-2",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-3",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-4",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-6",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-7",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-8",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-9",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-10",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-11",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-12",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-13",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-14",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-15",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-16",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-17",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-18",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-19",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-20",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-21",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-22",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-23",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-24",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-25",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-26",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-27",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-28",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-29",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-30",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-31",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-32",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-33",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "shift-noise-34",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "gain0.6",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "gain0.9",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "gain1.1",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "gain1.5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "blur3",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "blur5",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    },
+    {
+      "source": "optical4",
+      "case": "blur9",
+      "shape": [
+        576,
+        768,
+        3
+      ],
+      "decision_match": true,
+      "shift_error": 0.0,
+      "response_error": 0.0
+    }
+  ],
+  "prototype_sha256": "0716d05a5e2eea5905012f7ca756aa23dc25241aceda9dc22cba64d73220def6"
+}

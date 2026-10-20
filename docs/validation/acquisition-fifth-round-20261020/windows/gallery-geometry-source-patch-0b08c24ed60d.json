@@ -1,0 +1,26 @@
+{
+  "production_changed": true,
+  "rows": [
+    {
+      "path": "src\\fdm\\ui\\measurement_evidence_gallery.py",
+      "before": "153504a13165ca4ba8bc3c504777a0bd2c5d40e14b309e2ceda708c555bdb63a",
+      "manifest_before": "153504a13165ca4ba8bc3c504777a0bd2c5d40e14b309e2ceda708c555bdb63a",
+      "after": "7697a27d04030f1e34b2b94cca1fe8764ba22881874131aff1bc89299e05fba3"
+    },
+    {
+      "path": "tests\\test_measurement_evidence_gallery.py",
+      "before": "6a6c00087241f86f61ba59d1738ac11ff49f152b55dac45b427df1a33237a5a4",
+      "manifest_before": "6a6c00087241f86f61ba59d1738ac11ff49f152b55dac45b427df1a33237a5a4",
+      "after": "d0648e6bf4e54666052e6dd0fee4d6f94bab29fc83821a52c6c49af73bcdaba8"
+    },
+    {
+      "path": "scripts\\validation\\probe_acquisition_fifth_round_frozen.ps1",
+      "before": "93450237cf49ffdd7d78bef016ee8eb85d17a6651952b7099db41527478359e5",
+      "manifest_before": "93450237cf49ffdd7d78bef016ee8eb85d17a6651952b7099db41527478359e5",
+      "after": "93450237cf49ffdd7d78bef016ee8eb85d17a6651952b7099db41527478359e5"
+    }
+  ],
+  "id": "0b08c24ed60d",
+  "source_manifest_before": "c23922f679507b3a29c953f65a75cccc9210cbff35decc81b3cda468fa959d48",
+  "source_manifest_after": "b531fb6ef89285535ff577e828feda35c7f5ca8fb63fc0ab669bcf2b668aa72a"
+}

@@ -2718,12 +2718,15 @@ class MainWindow(QMainWindow):
         self.undo_action = QAction("撤回", self)
         self.undo_action.setIcon(themed_icon("undo", color="#E7ECEF"))
         self.undo_action.setShortcut("Ctrl+Z")
-        self.undo_action.triggered.connect(self.undo_current_document)
+        self.undo_action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
+        self.undo_action.triggered.connect(lambda: self._trigger_workspace_history("undo"))
 
         self.redo_action = QAction("重做", self)
         self.redo_action.setIcon(themed_icon("redo", color="#E7ECEF"))
-        self.redo_action.setShortcut("Ctrl+Shift+Z")
-        self.redo_action.triggered.connect(self.redo_current_document)
+        self.redo_action.setShortcuts([QKeySequence("Ctrl+Shift+Z"), QKeySequence("Ctrl+Y")])
+        self.redo_action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
+        self.redo_action.triggered.connect(lambda: self._trigger_workspace_history("redo"))
+        self.addActions([self.undo_action, self.redo_action])
 
         self.delete_measurement_action = QAction("删除选中对象", self)
         self.delete_measurement_action.setIcon(themed_icon("delete", color="#F28482"))
@@ -14307,6 +14310,10 @@ class MainWindow(QMainWindow):
             self._fullscreen_controller is not None and self._fullscreen_controller.is_active))
         self._update_acquisition_panel()
 
+        # Navigation, including a stopped camera, owns history routing. Do not
+        # infer the active workbench from whether preview pixels are arriving.
+        self._update_history_action_states()
+
     def _update_acquisition_panel(self) -> None:
         selected = self._selected_capture_device()
         if self._acquisition_device_label is not None:
@@ -23863,7 +23870,47 @@ class MainWindow(QMainWindow):
             return
         self._update_ui_for_current_document()
 
+    def _active_trial_history_workspace(self):
+        hub = getattr(self, "_acquisition_workbench", None)
+        if not getattr(self, "_acquisition_workspace_selected", False) or hub is None:
+            return None
+        page = hub.pages.currentWidget()
+        return page if page is not None and page.isVisible() and callable(getattr(page, "_history_action", None)) else None
+
+    def _trigger_workspace_history(self, action):
+        # The shared actions also belong to the floating records dock. Only
+        # this main window and its children may consume its history actions.
+        active = QApplication.activeWindow()
+        owner = active
+        while owner is not None and owner is not self:
+            owner = owner.parentWidget()
+        # QWidget.isAncestorOf stops at a floating window boundary, while its
+        # QObject/widget ownership chain still points to this main window.
+        if active is not None and owner is not self:
+            return
+        focus = QApplication.focusWidget()
+        if isinstance(focus, QAbstractSpinBox) or isinstance(focus, QComboBox) and focus.isEditable():
+            focus = focus.lineEdit()
+        if isinstance(focus, (QLineEdit, QPlainTextEdit, QTextEdit)):
+            getattr(focus, action)()
+            return
+        if QApplication.activeModalWidget() is not None:
+            return
+        getattr(self, f"{action}_current_document")()
+
+    def _route_trial_history(self, action):
+        page = self._active_trial_history_workspace()
+        if page is not None:
+            page._guard(lambda: page._history_action(action))
+            return True
+        # Real-time acquisition and slide acquisition have no image-document
+        # history. Even direct callers must not mutate a hidden image tab.
+        return bool(getattr(self, "_acquisition_workspace_selected", False)
+                    or getattr(self, "_digital_slide_mode", False))
+
     def undo_current_document(self) -> None:
+        if self._route_trial_history("undo"):
+            return
         if self.scale_preview.editing:
             self.scale_preview.undo()
             return
@@ -23899,6 +23946,8 @@ class MainWindow(QMainWindow):
         self._update_ui_for_current_document()
 
     def redo_current_document(self) -> None:
+        if self._route_trial_history("redo"):
+            return
         if self.scale_preview.editing:
             self.scale_preview.redo()
             return
@@ -26935,11 +26984,76 @@ class MainWindow(QMainWindow):
             return f"导出过程中写入文件失败：\n{resolved_path}\n\n{exc}"
         return f"导出过程中发生错误：\n{exc}"
 
+    def _update_history_action_states(self) -> None:
+        if self._active_trial_history_workspace() is not None:
+            dock = self._acquisition_workbench.records.dock
+            for action in (self.undo_action, self.redo_action):
+                if action not in dock.actions():
+                    dock.addAction(action)
+            # Keep trial actions reachable while stopped or waiting for a
+            # candidate check; the trial's history method explains its guard.
+            self.undo_action.setEnabled(True)
+            self.redo_action.setEnabled(True)
+            return
+        if self._workspace_mode is not WorkspaceMode.MEASURE:
+            self.undo_action.setEnabled(False)
+            self.redo_action.setEnabled(False)
+            return
+        document = self.current_document()
+        history = document.history if document is not None else None
+        preview_active = self._preview_active
+        active_canvas = self.current_canvas()
+        pixel_work_enabled = not isinstance(active_canvas, DigitalSlideCanvas) or not (
+            active_canvas.pixel_work_controls_blocked()
+            or (document is not None and document.id in self._digital_slide_suspended_tools)
+        )
+        workspace_undo_available = bool(
+            document
+            and self._workspace_composite_available_for(document, redo=False)
+        )
+        workspace_redo_available = bool(
+            document
+            and self._workspace_composite_available_for(document, redo=True)
+        )
+        undo_waiting = bool(
+            document
+            and self._workspace_composite_waits_on_other_document(
+                document,
+                redo=False,
+            )
+        )
+        redo_waiting = bool(
+            document
+            and self._workspace_composite_waits_on_other_document(
+                document,
+                redo=True,
+            )
+        )
+        self.undo_action.setEnabled(
+            (
+                workspace_undo_available
+                or bool(history and history.can_undo() and not undo_waiting)
+                or bool(
+                    getattr(self, "_measurement_commit_queue", None)
+                    and self._measurement_commit_queue.pending(document)
+                )
+            )
+            and not preview_active
+            and pixel_work_enabled
+        )
+        self.redo_action.setEnabled(
+            (
+                workspace_redo_available
+                or bool(history and history.can_redo() and not redo_waiting)
+            )
+            and not preview_active
+            and pixel_work_enabled
+        )
+
     def _update_action_states(self) -> None:
         self._prune_invalid_workspace_composites()
         self._sync_measurement_context()
         document = self.current_document()
-        history = document.history if document is not None else None
         has_document = document is not None
         self.watermark_action.setEnabled(bool(
             document is not None and document.document_kind == "image"
@@ -27186,48 +27300,7 @@ class MainWindow(QMainWindow):
                 and not (document is not None and document.is_digital_slide())
                 and not is_height_image
             )
-        workspace_undo_available = bool(
-            document
-            and self._workspace_composite_available_for(document, redo=False)
-        )
-        workspace_redo_available = bool(
-            document
-            and self._workspace_composite_available_for(document, redo=True)
-        )
-        undo_waiting = bool(
-            document
-            and self._workspace_composite_waits_on_other_document(
-                document,
-                redo=False,
-            )
-        )
-        redo_waiting = bool(
-            document
-            and self._workspace_composite_waits_on_other_document(
-                document,
-                redo=True,
-            )
-        )
-        self.undo_action.setEnabled(
-            (
-                workspace_undo_available
-                or bool(history and history.can_undo() and not undo_waiting)
-                or bool(
-                    getattr(self, "_measurement_commit_queue", None)
-                    and self._measurement_commit_queue.pending(document)
-                )
-            )
-            and not preview_active
-            and pixel_work_enabled
-        )
-        self.redo_action.setEnabled(
-            (
-                workspace_redo_available
-                or bool(history and history.can_redo() and not redo_waiting)
-            )
-            and not preview_active
-            and pixel_work_enabled
-        )
+        self._update_history_action_states()
         self.scale_preview.sync()
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)

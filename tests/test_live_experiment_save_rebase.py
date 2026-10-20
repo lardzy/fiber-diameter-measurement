@@ -5,7 +5,7 @@ import time
 
 import pytest
 from PySide6.QtGui import QColor, QImage
-from PySide6.QtWidgets import QDialog, QLabel
+from PySide6.QtWidgets import QGraphicsPixmapItem
 
 from fdm.live_experiment import ExperimentSession, default_materials
 from fdm.live_experiment.project_assets import rebase_experiment_assets
@@ -79,11 +79,19 @@ def test_save_as_move_original_then_review_and_save_current_project(tmp_path, de
         view.tabs.setCurrentIndex(1)
         view.history_table.selectRow(0)
         view._review_record()
-        dialogs = [dialog for dialog in view.findChildren(QDialog) if dialog.windowTitle().startswith("历史原图")]
-        assert len(dialogs) == 1
-        assert not dialogs[0].findChild(QLabel).pixmap().isNull()
+        review = view.evidence_review
+        assert review.dialog.isVisible()
+        deadline = time.monotonic() + 3
+        while review.dialog.image.image_size is None and time.monotonic() < deadline:
+            desktop_application.processEvents()
+            review.refresh()
+            time.sleep(.003)
+        assert review.dialog.image.image_size is not None, review.dialog.status.text()
+        pixels = [item for item in review.dialog.image.scene().items() if isinstance(item, QGraphicsPixmapItem)]
+        assert len(pixels) == 1
+        assert pixels[0].pixmap().toImage().pixelColor(0, 0) == QColor(17, 83, 159)
         assert QImage(str(expected)).pixelColor(0, 0) == QColor(17, 83, 159)
-        dialogs[0].close()
+        review.dialog.close()
 
         session.edit_measurement(record_id, diameter_um=21, material_id="cashmere")
         assert session.undo() and session.redo()

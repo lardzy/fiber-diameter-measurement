@@ -29,7 +29,7 @@ def test_failed_evidence_saves_record_without_temporary_path(tmp_path, failed_pa
     project, session, record = make_project(evidence)
     path = tmp_path / "experiment.fdm.json"
     ProjectIO.save(project, path)
-    payload = json.loads(path.read_text())
+    payload = json.loads(path.read_text(encoding="utf-8"))
     saved = payload["live_experiments"][0]["measurements"][0]
     assert saved["diameter_um"] == 20
     assert saved["evidence"] == {"state": "failed", "frame_id": "frame1", "error": "disk full", "sha256": None}

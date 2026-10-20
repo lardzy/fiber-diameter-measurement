@@ -56,13 +56,17 @@ class BuildWindowsOnedirTests(unittest.TestCase):
 
     @staticmethod
     def _cu_live_report():
-        return {"ok": True, "revision": 4, "cases": {name: True for name in (
+        return {"ok": True, "revision": 5, "cases": {name: True for name in (
             "manual_native", "traditional_native", "multiscale_native", "content_formula",
             "field_motion", "field_preparation", "project_roundtrip", "microview_bridge_import",
             "microview_bridge_build", "microview_bridge_transport",
             "content_deferred_rebuild", "content_width_undo", "content_width_redo",
             "evidence_png_gray", "evidence_png_bgr", "evidence_png_bgra",
-            "evidence_leases_released", "project_asset_rebase")}}
+            "evidence_leases_released", "project_asset_rebase",
+            "candidate_alignment_worker", "candidate_alignment_same",
+            "candidate_alignment_noisy", "candidate_alignment_drift",
+            "candidate_alignment_reference_reset", "candidate_alignment_closed",
+            "candidate_alignment_child_process")}}
 
     def test_failed_native_rebuild_preserves_existing_package(self) -> None:
         with TemporaryDirectory() as tmpdir:

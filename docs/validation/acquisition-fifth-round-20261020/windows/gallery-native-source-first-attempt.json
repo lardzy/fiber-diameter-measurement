@@ -1,0 +1,41 @@
+{
+  "passed": false,
+  "observations": [
+    {
+      "name": "first-show",
+      "native_bounds": [
+        -5,
+        8,
+        1066,
+        791
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "qt_client": [
+        8,
+        66,
+        1040,
+        720
+      ],
+      "qt_frame": [
+        8,
+        8,
+        1040,
+        778
+      ],
+      "margins": [
+        0,
+        58,
+        0,
+        0
+      ],
+      "dpr": 1.0,
+      "inside": false,
+      "required": true
+    }
+  ]
+}

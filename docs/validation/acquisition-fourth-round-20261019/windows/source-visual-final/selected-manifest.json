@@ -1,0 +1,68 @@
+[
+  {
+    "case": "light-1600x900-1",
+    "screenshot": "content-candidates",
+    "file": "selected/light-1600x900-1-content-candidates.png",
+    "sha256": "c524dd41b242592aef2f428bb8ad890f5c777944bd16d57da78d2e5e8c24e793"
+  },
+  {
+    "case": "light-1600x900-1",
+    "screenshot": "evidence-pinned",
+    "file": "selected/light-1600x900-1-evidence-pinned.png",
+    "sha256": "093f0ce72b16fd86f761df42ebb5f7f78af745c1100ddeefd0c6b502ce34bd2e"
+  },
+  {
+    "case": "dark-1600x900-1",
+    "screenshot": "content-candidates",
+    "file": "selected/dark-1600x900-1-content-candidates.png",
+    "sha256": "8cc8e1e7cb7de00e238ea819d2fe6b863f299d4656c85ff4d737b4951751d7ce"
+  },
+  {
+    "case": "dark-1600x900-1",
+    "screenshot": "evidence-pinned",
+    "file": "selected/dark-1600x900-1-evidence-pinned.png",
+    "sha256": "59aac221996f9f597129908059119c2a2a1140373df36512fcd271d44b46c0d8"
+  },
+  {
+    "case": "navy-1600x900-1",
+    "screenshot": "content-candidates",
+    "file": "selected/navy-1600x900-1-content-candidates.png",
+    "sha256": "a1da9948d16510d8d43762d4043dd470abfc9ca0a9a1605de59e8cb094478123"
+  },
+  {
+    "case": "navy-1600x900-1",
+    "screenshot": "evidence-pinned",
+    "file": "selected/navy-1600x900-1-evidence-pinned.png",
+    "sha256": "9a254c99c1bcb569ec44408da91dfa797e4c45b5cb579a59a048ec7380a82ab2"
+  },
+  {
+    "case": "warm-1600x900-1",
+    "screenshot": "content-candidates",
+    "file": "selected/warm-1600x900-1-content-candidates.png",
+    "sha256": "0ccded00d1b7f4d8ffdd147f53ab3d16a60b0a111a74662f2d19a6e7aef20b8c"
+  },
+  {
+    "case": "warm-1600x900-1",
+    "screenshot": "evidence-pinned",
+    "file": "selected/warm-1600x900-1-evidence-pinned.png",
+    "sha256": "1ce4c1b0e8ed2be3f9f865f0be4e3a1123b3ae24e6dd3d94ba808b2f65e63be3"
+  },
+  {
+    "case": "light-1600x900-1p25",
+    "screenshot": "content-candidates",
+    "file": "selected/light-1600x900-1p25-content-candidates.png",
+    "sha256": "530837c03523ce63f5d3cbd4b946799e5fa3c8b9a915a95fc29f6f3a81e87a66"
+  },
+  {
+    "case": "light-1600x900-1p5",
+    "screenshot": "content-candidates",
+    "file": "selected/light-1600x900-1p5-content-candidates.png",
+    "sha256": "807fd39fe645a85b81df18ec125ada4ceec4f95538d4a6285a0be24f42a67404"
+  },
+  {
+    "case": "light-1366x768-1",
+    "screenshot": "content-candidates",
+    "file": "selected/light-1366x768-1-content-candidates.png",
+    "sha256": "986ab21d7ffbe0f4cf431ee2a76b7e090e0b5ac99714e814cb3af3acec134ee4"
+  }
+]

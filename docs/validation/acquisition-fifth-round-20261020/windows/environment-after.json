@@ -1,0 +1,114 @@
+{
+    "whole_vm_rollback":  false,
+    "visible_windows":  [
+                            {
+                                "ProcessName":  "ApplicationFrameHost",
+                                "Id":  5316,
+                                "MainWindowTitle":  "设置",
+                                "Responding":  true
+                            },
+                            {
+                                "ProcessName":  "clash-verge",
+                                "Id":  6164,
+                                "MainWindowTitle":  "",
+                                "Responding":  true
+                            },
+                            {
+                                "ProcessName":  "explorer",
+                                "Id":  6596,
+                                "MainWindowTitle":  "",
+                                "Responding":  true
+                            },
+                            {
+                                "ProcessName":  "prl_cc",
+                                "Id":  8400,
+                                "MainWindowTitle":  "",
+                                "Responding":  true
+                            },
+                            {
+                                "ProcessName":  "SystemSettings",
+                                "Id":  3376,
+                                "MainWindowTitle":  "设置",
+                                "Responding":  false
+                            },
+                            {
+                                "ProcessName":  "TextInputHost",
+                                "Id":  10060,
+                                "MainWindowTitle":  "Windows 输入体验",
+                                "Responding":  true
+                            },
+                            {
+                                "ProcessName":  "WindowsTerminal",
+                                "Id":  2540,
+                                "MainWindowTitle":  "C:\\Program Files\\Parallels\\Parallels Tools\\Services\\prl_tools_service.exe",
+                                "Responding":  true
+                            }
+                        ],
+    "fresh_process_policies":  {
+                                   "value":  [
+                                                 {
+                                                     "policy":  "Undefined",
+                                                     "scope":  "MachinePolicy"
+                                                 },
+                                                 {
+                                                     "policy":  "Undefined",
+                                                     "scope":  "UserPolicy"
+                                                 },
+                                                 {
+                                                     "policy":  "Bypass",
+                                                     "scope":  "Process"
+                                                 },
+                                                 {
+                                                     "policy":  "RemoteSigned",
+                                                     "scope":  "CurrentUser"
+                                                 },
+                                                 {
+                                                     "policy":  "Undefined",
+                                                     "scope":  "LocalMachine"
+                                                 }
+                                             ],
+                                   "Count":  5
+                               },
+    "forced_process_cleanup":  false,
+    "scoped_installation_restore":  {
+                                        "passed":  true,
+                                        "uninstaller_run":  false,
+                                        "restored_original_files":  [
+                                                                        {
+                                                                            "sha256":  "ff1fa310aa50855fe87a4228940e1ecd0bc53ce8865e5a5842baee67c1bf2f4a",
+                                                                            "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\FiberDiameterMeasurement.exe"
+                                                                        },
+                                                                        {
+                                                                            "sha256":  "c9f8b50f0abe3d3783c6946e65bf2326a24a05898801a5da159d81dc5eda9f05",
+                                                                            "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\release-manifest.json"
+                                                                        },
+                                                                        {
+                                                                            "sha256":  "144980e0e4cbc2c30dbb4ed2e0143e95bb354ed72c25ab4d55ca48d75f05d539",
+                                                                            "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe"
+                                                                        },
+                                                                        {
+                                                                            "sha256":  "e08df0d758072e2508effa792fdcb58553c643fbe012eb685c37ebee1f232e8d",
+                                                                            "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.dat"
+                                                                        }
+                                                                    ],
+                                        "whole_vm_rollback":  false,
+                                        "candidate_preserved":  "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installed-candidate-validated",
+                                        "finished_at":  "2026-10-20T16:25:59.6162439+08:00",
+                                        "changed_registry_indexes":  [
+                                                                         0
+                                                                     ]
+                                    },
+    "caller":  "B1EA\\lishuyang",
+    "timestamp":  "2026-10-20T16:29:02.8988596+08:00",
+    "candidate_or_excel":  [
+
+                           ],
+    "baseline_process":  [
+                             {
+                                 "Name":  "python.exe",
+                                 "ProcessId":  3404,
+                                 "CreationDate":  "\/Date(1792462976345)\/"
+                             }
+                         ],
+    "schema":  1
+}

@@ -1,0 +1,52 @@
+{
+  "scope": "synthetic frames; fixed analysis fixture; actual Qt/alignment/acceptance/JPEG; not camera or algorithm acceptance",
+  "mode": "guard",
+  "qt_platform": "cocoa",
+  "frame_size": [
+    768,
+    576
+  ],
+  "frame_interval_ms": 33,
+  "measure_interval_ms": 150,
+  "opencv_threads": 18,
+  "warmup_seconds": 1.5,
+  "frames": 180,
+  "fps": 30.285111909184682,
+  "paint_count": 257,
+  "hidden_paints": 0,
+  "ready_sample_fraction": 1.0,
+  "p95_frame_age_ms": 18.943338098688397,
+  "accepted": 49,
+  "saved": 49,
+  "jpeg_bytes": 1425078,
+  "peak_budget_bytes": 32964608,
+  "remaining_budget_bytes": 0,
+  "metrics": {
+    "analysis_ms": {
+      "n": 1,
+      "p50": 1.0790830056066625,
+      "p95": 1.0790830056066625
+    },
+    "alignment_ms": {
+      "n": 222,
+      "p50": 9.715750002214918,
+      "p95": 12.531066698284118
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_to_paint_ms": {
+      "n": 1,
+      "p50": 14.07508300326299,
+      "p95": 14.07508300326299
+    }
+  },
+  "measurement_errors": []
+}

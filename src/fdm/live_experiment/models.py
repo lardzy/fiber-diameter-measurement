@@ -11,6 +11,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 from .reminders import ReminderPolicy, normalize_policy
+from .evidence_options import effective_evidence_options, normalize_evidence_options
 
 
 def _id() -> str:
@@ -338,6 +339,7 @@ class ExperimentSession:
                  sample_name: str = "", method: str = "GB/T 16988-2013", group_width: float = 2.5,
                  grouped: bool = True, profile: str = "normal", save_images: bool = False,
                  workspace_options: dict[str, str] | None = None,
+                 evidence_options: dict[str, Any] | None = None,
                  reminder_policy: ReminderPolicy | dict[str, Any] | None = ReminderPolicy()) -> None:
         from .statistics import resolve_method, resolve_profile
         self.id = id or _id()
@@ -345,6 +347,9 @@ class ExperimentSession:
         self.method = resolve_method(method).label
         self.group_width = _finite(group_width, "组距", positive=True)
         self.grouped, self.profile, self.save_images = bool(grouped), resolve_profile(profile), bool(save_images)
+        self.evidence_options = normalize_evidence_options(evidence_options)
+        if self.evidence_options is not None:
+            self.save_images = self.evidence_options["mode"] != "disabled"
         self.workspace_options = _workspace_options({} if workspace_options is None else workspace_options)
         self.created_at = _now()
         self.operators: dict[str, Operator] = {}
@@ -366,6 +371,10 @@ class ExperimentSession:
         self._summary_cache: tuple[Any, dict[str, Any]] | None = None
         self._evidence_overrides: dict[str, dict[str, Any] | None] = {}
         self._known_measurement_ids: set[str] = set()
+
+    @property
+    def effective_evidence_options(self) -> dict[str, Any]:
+        return effective_evidence_options(self.evidence_options, save_images=self.save_images)
 
     @property
     def can_undo(self) -> bool:
@@ -464,10 +473,19 @@ class ExperimentSession:
         """
         from .statistics import resolve_method, resolve_profile
         allowed = {"method", "group_width", "grouped", "profile", "save_images", "measured_reminder", "total_reminder",
-                   "name", "sample_name", "sample_number", "workspace_options", "reminder_policy"}
+                   "name", "sample_name", "sample_number", "workspace_options", "reminder_policy", "evidence_options"}
         if changes.keys() - allowed:
             raise ValueError("未知试验配置")
         new = dict(changes)
+        if "evidence_options" in new:
+            new["evidence_options"] = normalize_evidence_options(new["evidence_options"])
+            if new["evidence_options"] is not None:
+                new["save_images"] = new["evidence_options"]["mode"] != "disabled"
+        elif "save_images" in new and self.evidence_options is not None:
+            # A legacy checkbox is an explicit full-PNG/disabled choice; keep
+            # the boolean and the versioned policy in one reversible command.
+            new["evidence_options"] = normalize_evidence_options(
+                {"mode": "full_png" if new["save_images"] else "disabled"})
         if "workspace_options" in new:
             new["workspace_options"] = _workspace_options(new["workspace_options"], self.workspace_options)
         for key in ("name", "sample_name", "sample_number"):
@@ -801,6 +819,8 @@ class ExperimentSession:
                 "fields": deepcopy(self.fields), "batches": deepcopy(self.batches)}
         if self.reminder_policy is not None:
             payload["reminder_policy"] = self.reminder_policy.to_dict()
+        if self.evidence_options is not None:
+            payload["evidence_options"] = deepcopy(self.evidence_options)
         return payload
 
     @classmethod
@@ -809,7 +829,7 @@ class ExperimentSession:
             raise ValueError("不支持的实时试验格式版本")
         session = cls(reminder_policy=payload.get("reminder_policy"),
                       **{key: payload[key] for key in ("id", "name", "sample_number", "sample_name", "method",
-                        "group_width", "grouped", "profile", "save_images", "workspace_options") if key in payload})
+                        "group_width", "grouped", "profile", "save_images", "workspace_options", "evidence_options") if key in payload})
         for item in payload.get("operators", []):
             if item["id"] in session.operators or any(op.name == item["name"] for op in session.operators.values()):
                 raise ValueError("重复操作者")

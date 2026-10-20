@@ -1,0 +1,24 @@
+{"verified_files": 2385, "destination": "C:\\tmp\\fdm-cu-live-fifth-round-20261020", "head": "a836e1dc10408acf01f5bb4445c837dc75a7140e"}
+{"snapshot_files": 2385, "zip_sha256": "5f008e897e557738c1fc98cd5f6e6f3d06fa7c1057afa7480c16226c23de4157", "http_server_stopped": true}
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.14.41
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+running build_ext
+building 'fdm._native._kernels' extension
+creating build\temp.win-amd64-cpython-312\Release\native
+cu_automatic.cpp
+cu_manual.cpp
+kernels.cpp
+creating C:\tmp\fdm-cu-live-fifth-round-20261020\build\lib.win-amd64-cpython-312\fdm\_native
+  ���ڴ����� build\temp.win-amd64-cpython-312\Release\native\_kernels.cp312-win_amd64.lib �Ͷ��� build\temp.win-amd64-cpython-312\Release\native\_kernels.cp312-win_amd64.exp
+�������ɴ���
+����ɴ��������
+building 'fdm._native._microview' extension
+microview_bridge.cpp
+  ���ڴ����� build\temp.win-amd64-cpython-312\Release\native\_microview.cp312-win_amd64.lib �Ͷ��� build\temp.win-amd64-cpython-312\Release\native\_microview.cp312-win_amd64.exp
+�������ɴ���
+����ɴ��������
+copying build\lib.win-amd64-cpython-312\fdm\_native\_kernels.cp312-win_amd64.pyd -> src\fdm\_native
+copying build\lib.win-amd64-cpython-312\fdm\_native\_microview.cp312-win_amd64.pyd -> src\fdm\_native

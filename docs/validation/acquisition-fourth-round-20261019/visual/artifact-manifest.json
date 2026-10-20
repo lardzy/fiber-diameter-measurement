@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-19T14:54:13.503996+00:00",
+  "passed": true,
+  "source_fingerprints": {
+    "src/fdm/ui/main_window.py": "bb401f328a0a33654839d97cca5b6a335c6b7c10ce716b5b9972c67d9d742fe4",
+    "src/fdm/ui/live_experiment_workspace.py": "675b1f919088297fe33f8305c94935c36148f7f7f3a9bb3f3b597dc70bc349ce",
+    "src/fdm/ui/live_experiment_view.py": "db63a687b41f75f3cf111044e8e173b27de7f58bd187ed0520d0b6110d740993",
+    "src/fdm/ui/live_measurement_canvas.py": "a1f5a0282076dde3dd9479930587c198075573c9d41687a6eb980069ee03d143",
+    "src/fdm/ui/live_measurement_annotations.py": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34",
+    "src/fdm/ui/trial_assistance.py": "d4eb59c4273ef7806e58ccdebccec09a99c80f52c9dec8722fc9974f512fbe15",
+    "src/fdm/ui/measurement_evidence_view.py": "73ceb49d33e905d61931ccef55013d4cd70c5f5d3167a67db2a25cffec0860b1",
+    "src/fdm/live_experiment/controller.py": "d315c28ee8c8af2b5c3308a827015ef0e4696685e7ab954fce3f4cba62871a61",
+    "src/fdm/live_experiment/candidate_alignment.py": "78d3c5edfe05d945fa58779a15e2c08f45aec6a9356a567c38d51f460b2c9370",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993"
+  },
+  "script_sha256": "3f08996c7aa8ce594a4f0924ddad6474a2966d79bbb45be6e4f720c530215083",
+  "matrix_cases": 16,
+  "actual_navigation_cycles": 290,
+  "qt_mainwindow_screenshots": 176,
+  "additional_evidence_window_screenshots": 16,
+  "selected_artifact_files": [
+    {
+      "path": "README.md",
+      "bytes": 6907,
+      "sha256": "51928118da24757b22ce1b4de5fdab1e63717b4176e9c652dad5dccc7c5fcae4"
+    },
+    {
+      "path": "canvas-isolated-performance.json",
+      "bytes": 592,
+      "sha256": "566085b8b422341e6445da30e4088791abca20587cc7818d2f0fd3e59b3bda66"
+    },
+    {
+      "path": "dark-1366x768-1/result.json",
+      "bytes": 20458,
+      "sha256": "b9e710b2cb260ddebdeaa3a535e778ee08c933c2819c421eb865933d10c88790"
+    },
+    {
+      "path": "dark-1600x900-1/content-partial-accepted.png",
+      "bytes": 222212,
+      "sha256": "f1280b6a7f05ff8783600bcbfc3293de194b62d1ecf181437d672e5d1793a2a5"
+    },
+    {
+      "path": "dark-1600x900-1/result.json",
+      "bytes": 20488,
+      "sha256": "de7cdbc85c02d0fca5b496d86fea3f439a4725a67ac303581198a1142e72a0c6"
+    },
+    {
+      "path": "dark-1600x900-1p25/result.json",
+      "bytes": 20399,
+      "sha256": "c8f3542114d078678ba7e8f60bd9bf1da766f328ca749aa2b9d6bf9441bb882f"
+    },
+    {
+      "path": "dark-1600x900-1p5/result.json",
+      "bytes": 20318,
+      "sha256": "3fd36e2ced74309d80a7f00a3d0d25e2f7b205b37835f7b6eba61321478734cf"
+    },
+    {
+      "path": "light-1366x768-1/result.json",
+      "bytes": 20401,
+      "sha256": "f96dbe802ee341d43c917e0b3d1075eaefe1f53a48687750ecfba90453380abe"
+    },
+    {
+      "path": "light-1600x900-1/candidate-evidence-navigation.mp4",
+      "bytes": 1556553,
+      "sha256": "bee31e5d21bf2f6ee6b5c7aef725bfab2a5fe2f976290df6ce82f271dddf43f6"
+    },
+    {
+      "path": "light-1600x900-1/content-candidates-hidden.png",
+      "bytes": 214432,
+      "sha256": "e65e14c9835b6ee56b9fc123e7e0c1065bc1fbc6512a596f8c7d55f2dd13db14"
+    },
+    {
+      "path": "light-1600x900-1/content-empty.png",
+      "bytes": 188235,
+      "sha256": "7789801627e5a319ffc91d387659acb5fbadfbae75556c2ac0a4a95dc6ff0561"
+    },
+    {
+      "path": "light-1600x900-1/content-partial-accepted.png",
+      "bytes": 221702,
+      "sha256": "e519c4f204a25e3d0842331958ddd212f36bcabc5e6da6672d2e711d026c92d0"
+    },
+    {
+      "path": "light-1600x900-1/content-ready.png",
+      "bytes": 209240,
+      "sha256": "1c5f11c0a60d5f85b0481d1bcb383d25f12baea6bdb93c004cd0b2f3fbb03b86"
+    },
+    {
+      "path": "light-1600x900-1/diameter-ready.png",
+      "bytes": 164762,
+      "sha256": "6b0e277e3fc606f801d9782bb485de33ef57fba662fd9b203c79b4b7ea299e55"
+    },
+    {
+      "path": "light-1600x900-1/evidence-clean-image.png",
+      "bytes": 245912,
+      "sha256": "9062acb780a8230bda0697c189a24654c4799153cfb2e45c1df64e99af67158c"
+    },
+    {
+      "path": "light-1600x900-1/evidence-pinned.png",
+      "bytes": 246111,
+      "sha256": "f9c410b42007ad2db89aa48e39cf99068b2658b24f94991c1d2ec1cb0910b788"
+    },
+    {
+      "path": "light-1600x900-1/evidence-window.png",
+      "bytes": 33541,
+      "sha256": "6720f54b460279e547547a3e96a1c7d14f6bfbfa8d52873f919a257b7370d16c"
+    },
+    {
+      "path": "light-1600x900-1/realtime.png",
+      "bytes": 148970,
+      "sha256": "3c73523e0d72f3d2eb3c6271daf8b4640d82d3229fa0776a8c4ddfc50ae79e5c"
+    },
+    {
+      "path": "light-1600x900-1/result.json",
+      "bytes": 48167,
+      "sha256": "8d011dc5894e65d518e36acf0923b281e2c5678745dbebcd6e3683b1b760db68"
+    },
+    {
+      "path": "light-1600x900-1p25/candidate-evidence-navigation.mp4",
+      "bytes": 909857,
+      "sha256": "49049422fb981a192ed20e916f93cd02268d26e15ce452778d4d64df09d1989c"
+    },
+    {
+      "path": "light-1600x900-1p25/content-partial-accepted.png",
+      "bytes": 253670,
+      "sha256": "9a6902af3e2e11d580052097f718e026a7e5976b64bd3094df05958f7f17ea90"
+    },
+    {
+      "path": "light-1600x900-1p25/result.json",
+      "bytes": 22279,
+      "sha256": "ac8ee00d7c30bbb14d2411f944aa76dc8faf67ec4a1f6b54bad76e876850d2be"
+    },
+    {
+      "path": "light-1600x900-1p5/content-ready.png",
+      "bytes": 247885,
+      "sha256": "07bfabe5b46bf55c72e0ddf93dbbfd3078b8b553264df23ab2a112d83bff4877"
+    },
+    {
+      "path": "light-1600x900-1p5/result.json",
+      "bytes": 20326,
+      "sha256": "a1c485d9b7b59a526a6662ab11decba759dcb07cc17f6df1bd364575805b1258"
+    },
+    {
+      "path": "matrix-summary.json",
+      "bytes": 8322,
+      "sha256": "9836d7eae1631152fc542a2504b36f48167bb3a3cf10799f3b14b7cb029f6013"
+    },
+    {
+      "path": "navy-1366x768-1/result.json",
+      "bytes": 20453,
+      "sha256": "290fea7b1c2d3e0d0c40dd797ad2e18d42c9c5eddf81da187f2ab15dcefafc5d"
+    },
+    {
+      "path": "navy-1600x900-1/content-partial-accepted.png",
+      "bytes": 222763,
+      "sha256": "aba76be3a61e4fa4f630d539190619ab5f02aa542f7cd065dc92d98cd896e58e"
+    },
+    {
+      "path": "navy-1600x900-1/result.json",
+      "bytes": 20491,
+      "sha256": "606a9883fb6b21971b11f53eae0b2a3423fde3754f2e87f022ef8916f6d0d357"
+    },
+    {
+      "path": "navy-1600x900-1p25/result.json",
+      "bytes": 20401,
+      "sha256": "a319949b954dde447c5265bd7169d184ccd85acfccb4b6abeb64151d1dada86f"
+    },
+    {
+      "path": "navy-1600x900-1p5/result.json",
+      "bytes": 20325,
+      "sha256": "cb989ff6774ac777690056ced7259f79c492a1776b7d445a98ae069e87dddef4"
+    },
+    {
+      "path": "optical-screenshot-fixture-labels.png",
+      "bytes": 455540,
+      "sha256": "980d87f8eb9c7f5b188d75a133c361f895e7527b1373ef59294aeb9dc3319946"
+    },
+    {
+      "path": "warm-1366x768-1/content-partial-accepted.png",
+      "bytes": 208525,
+      "sha256": "13ac52c036e136ba7dc310464264e43b6bd86f33194f518d62a4188d7422830f"
+    },
+    {
+      "path": "warm-1366x768-1/result.json",
+      "bytes": 20383,
+      "sha256": "ac4fa0b54a855ccbd8dce3a8ca596466eb3e092e1655793d205de61e4cb79291"
+    },
+    {
+      "path": "warm-1600x900-1/content-partial-accepted.png",
+      "bytes": 222200,
+      "sha256": "fee3f045c0fad92c5db0b3211ade3ababbd5483352e383d6ddec1d83d7e8b3fe"
+    },
+    {
+      "path": "warm-1600x900-1/result.json",
+      "bytes": 20493,
+      "sha256": "013b2a6c54b04a3759c90e90805a5133cbdb701af3c963885256a1403dd544a3"
+    },
+    {
+      "path": "warm-1600x900-1p25/result.json",
+      "bytes": 20398,
+      "sha256": "fa3af80264d454f2cf7a5749feba0b9f3e172abe447d2902920077d4cdd66371"
+    },
+    {
+      "path": "warm-1600x900-1p5/result.json",
+      "bytes": 20316,
+      "sha256": "1dfaa914ef0ffbe6b04090859d6e13e623e79939b75ce894b151376765693693"
+    }
+  ],
+  "scope": "macOS Qt offscreen, real analyzer/alignment/commit/evidence writer, deterministic 768x576 camera fixture; no physical Microview or Windows acceptance",
+  "full_output": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual"
+}

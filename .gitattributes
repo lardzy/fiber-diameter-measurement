@@ -19,3 +19,10 @@ docs/validation/cu-acquisition-rebuild-20261015/** -text -whitespace
 docs/validation/cu-preview-corrections-20261015/** -text -whitespace
 docs/validation/cu-save-publish-20261016/** -text -whitespace
 docs/validation/microview-display-2026-10-15/** -text -whitespace
+# Fourth/fifth-round captured results include Windows encodings and hashed bytes.
+docs/validation/acquisition-fourth-round-20261019/**/*.json -text -whitespace
+docs/validation/acquisition-fourth-round-20261019/**/*.log -text -whitespace
+docs/validation/acquisition-fourth-round-20261019/**/*.txt -text -whitespace
+docs/validation/acquisition-fifth-round-20261020/**/*.json -text -whitespace
+docs/validation/acquisition-fifth-round-20261020/**/*.log -text -whitespace
+docs/validation/acquisition-fifth-round-20261020/**/*.txt -text -whitespace

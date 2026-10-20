@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "run_id": "20261020-082258Z-49fe7f9d",
+  "cases": [
+    {
+      "name": "records-light-1366x768",
+      "theme": "light",
+      "width": 1366,
+      "height": 768,
+      "populated": true
+    },
+    {
+      "name": "records-light-1067x600",
+      "theme": "light",
+      "width": 1067,
+      "height": 600,
+      "populated": true
+    },
+    {
+      "name": "records-light-1600x900-scale125",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "scale": 1.25,
+      "populated": true
+    },
+    {
+      "name": "excel-fixed-entry-light-1600x900",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "populated": true,
+      "export": true
+    }
+  ],
+  "windows_output": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-082258Z-49fe7f9d",
+  "executable_override": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "real_hardware_tested": false,
+  "camera_sharing_managed": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false
+}

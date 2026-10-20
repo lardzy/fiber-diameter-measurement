@@ -1,0 +1,23 @@
+{
+  "production_changed": true,
+  "rows": [
+    {
+      "path": "src\\fdm\\ui\\measurement_evidence_gallery.py",
+      "before": "32de4b4456fa7d870e52945e341cf410fdea0f765f204bda7b4ce6710e33fe63",
+      "after": "a2a479704c5e53a8c2d4951410ce4e833ab78c070c283c43ed11722a2db8eec1"
+    },
+    {
+      "path": "tests\\test_measurement_evidence_gallery.py",
+      "before": "02fb4cbb3c949f710474349ac77cd528dce589fb065cc09896616467e9469f77",
+      "after": "f7c0f013e5b1c95eb3ea621fe3e811dd62bb36b4180ffe66383a48a4411371e4"
+    },
+    {
+      "path": "tests\\test_live_experiment_post_classification.py",
+      "before": "d9f8c8bcdddf9346e3d05a9d24e7c217a556fd5bf7dfeb594dd3d6d813a4fcd3",
+      "after": "e4161b2322aa4a144c8a5fc2385d2f2fbc52843e1fdc08b66985f93b388623a7"
+    }
+  ],
+  "id": "917455fe3685",
+  "source_manifest_before": "828a3a6087ad9d340e574fb2450dbae3ba6b449d866f687d14b0f44dcd816e04",
+  "source_manifest_after": "233d2e508fa035f9a5b3d5b7867e97056a41eb58b664a2187c18332e5ed2b30e"
+}

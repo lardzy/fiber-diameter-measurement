@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "report": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-070717Z-92891522\\excel-fixed-entry-light-1600x900\\20261020-150721-8226508a1721442e983b99e8683f1842\\fixed-entry-report.xls",
+  "template": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-070717Z-92891522\\excel-fixed-entry-light-1600x900\\20261020-150721-8226508a1721442e983b99e8683f1842\\isolated-config\\FiberDiameterMeasurement\\templates\\sheet.xlt",
+  "expected": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-070717Z-92891522\\excel-fixed-entry-light-1600x900\\20261020-150721-8226508a1721442e983b99e8683f1842\\expected.json",
+  "inputs_verified": 52,
+  "diameters_verified": 144,
+  "counts_verified": 12,
+  "sheets": [
+    {
+      "name": "标准选择",
+      "print_area": "",
+      "formula_cells": 1
+    },
+    {
+      "name": "原始数据",
+      "print_area": "",
+      "formula_cells": 496
+    },
+    {
+      "name": "特种毛(报出)",
+      "print_area": "$A$1:$K$66",
+      "formula_cells": 2668
+    },
+    {
+      "name": "麻棉(报出)",
+      "print_area": "$A$1:$K$66",
+      "formula_cells": 2664
+    },
+    {
+      "name": "分组统计",
+      "print_area": "",
+      "formula_cells": 11992
+    },
+    {
+      "name": "非棉麻织物",
+      "print_area": "$A$1:$U$40",
+      "formula_cells": 711
+    },
+    {
+      "name": "非棉麻纤维",
+      "print_area": "",
+      "formula_cells": 321
+    },
+    {
+      "name": "分组加权统计",
+      "print_area": "",
+      "formula_cells": 2213
+    },
+    {
+      "name": "织物纤维含量报告",
+      "print_area": "",
+      "formula_cells": 533
+    },
+    {
+      "name": "棉麻织物",
+      "print_area": "$A$1:$U$43",
+      "formula_cells": 617
+    },
+    {
+      "name": "棉麻纤维",
+      "print_area": "",
+      "formula_cells": 268
+    },
+    {
+      "name": "比重",
+      "print_area": "",
+      "formula_cells": 0
+    }
+  ],
+  "errors": [],
+  "excel_version": "16.0",
+  "vba_preserved": true,
+  "formulas_verified": 486,
+  "report_sha256": "2a28bdd3f8bc71263f9a19f84c404305312d8bede6c06e50123597bb01711147"
+}

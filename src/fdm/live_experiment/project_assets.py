@@ -9,6 +9,42 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from fdm.atomic_io import atomic_copy_file
 
 
+def _asset_extension(evidence: dict, path: Path, *, inspect_file: bool = False) -> str:
+    """Validate new codec metadata without reinterpreting legacy PNG records."""
+    codec = evidence.get("codec")
+    if codec is None and "metadata_version" not in evidence:
+        return ".png"
+    if type(evidence.get("metadata_version")) is not int or evidence["metadata_version"] != 1 or codec not in ("png", "jpeg"):
+        raise ValueError("测量证据编码或元数据版本无效。")
+    extension = ".jpg" if codec == "jpeg" else ".png"
+    if path.suffix.lower() not in ((".jpg", ".jpeg") if codec == "jpeg" else (".png",)):
+        raise ValueError("测量证据扩展名与编码不匹配。")
+    crop, size = evidence.get("crop"), evidence.get("source_size")
+    if (not isinstance(crop, (list, tuple)) or len(crop) != 4 or
+            not isinstance(size, (list, tuple)) or len(size) != 2 or
+            any(type(value) is not int for value in (*crop, *size))):
+        raise ValueError("测量证据裁剪元数据无效。")
+    x, y, width, height = crop
+    if min(x, y) < 0 or min(width, height, *size) <= 0 or x + width > size[0] or y + height > size[1]:
+        raise ValueError("测量证据裁剪范围超出源图。")
+    if evidence.get("mode") not in ("crop_jpeg", "full_png"):
+        raise ValueError("测量证据存档模式无效。")
+    if evidence["mode"] == "full_png" and (codec != "png" or list(crop) != [0, 0, *size]):
+        raise ValueError("完整测量证据必须覆盖全帧并使用无损 PNG。")
+    if codec == "jpeg" and (type(evidence.get("quality")) is not int or not 1 <= evidence["quality"] <= 100 or
+                            evidence.get("subsampling") != "4:4:4"):
+        raise ValueError("测量证据 JPEG 压缩元数据无效。")
+    if inspect_file:
+        from PIL import Image
+        try:
+            with Image.open(path) as image:
+                if image.format != codec.upper() or image.size != (width, height):
+                    raise ValueError("测量证据文件内容与编码或裁剪尺寸不匹配。")
+        except (OSError, SyntaxError) as exc:
+            raise ValueError("测量证据文件无法识别。") from exc
+    return extension
+
+
 def _file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -65,11 +101,14 @@ def stage_experiment_assets(payload: dict, root: Path, created: list[Path]) -> d
             digest = str(evidence.get("sha256") or "")
             if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
                 raise ValueError("试验原图摘要无效。")
-            relative = f"experiments/{digest}.png"
+            extension = _asset_extension(evidence, path)
+            relative = f"experiments/{digest}{extension}"
             destination = root / relative
-            if digest not in copied:
+            key = (digest, extension)
+            if key not in copied:
                 if not path.is_file() or _file_sha256(path) != digest:
                     raise ValueError("试验原图缺失或摘要不匹配。")
+                _asset_extension(evidence, path, inspect_file=True)
                 if destination.exists():
                     if _file_sha256(destination) != digest:
                         raise ValueError("项目内试验原图摘要不匹配。")
@@ -77,7 +116,9 @@ def stage_experiment_assets(payload: dict, root: Path, created: list[Path]) -> d
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     atomic_copy_file(path, destination)
                     created.append(destination)
-                copied[digest] = relative
+                copied[key] = evidence.get("crop", [None, None, None, None])[2:]
+            elif "metadata_version" in evidence and evidence["crop"][2:] != copied[key]:
+                raise ValueError("共享测量证据文件的裁剪尺寸不一致。")
             evidence["path"] = relative
     return output
 
@@ -118,7 +159,11 @@ def rebase_experiment_assets(experiments, saved_payload: dict, root: Path) -> No
             # Do not reread/hash potentially large PNGs on the GUI thread.
             if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
                 continue
-            evidence = {**deepcopy(current), "path": str(root / "experiments" / f"{digest}.png")}
+            try:
+                extension = _asset_extension(original, Path(original.get("path", "")))
+            except ValueError:
+                continue
+            evidence = {**deepcopy(current), "path": str(root / "experiments" / f"{digest}{extension}")}
             session._evidence_overrides[record_id] = evidence
             if record is not None:
                 session.measurements[record_id] = replace(record, evidence=evidence)
@@ -147,5 +192,10 @@ def hydrate_experiment_assets(experiments, root: Path) -> None:
                     # expected digest. A conflicting reference must still fail.
                     if verified[path] != evidence.get("sha256"):
                         evidence.update(state="failed", error="试验原图摘要不匹配")
+                    else:
+                        try:
+                            _asset_extension(evidence, path, inspect_file=True)
+                        except ValueError as exc:
+                            evidence.update(state="failed", error=str(exc))
                 evidence["path"] = str(path)
             session.measurements[record_id] = replace(record, evidence=evidence)

@@ -1,0 +1,246 @@
+{
+  "passed": true,
+  "source_sha256": "fea6e3ba036badfed4efb2e3fccc00cd8c72bad838af0cb5fadc8fd70800d524",
+  "observations": [
+    {
+      "name": "first-show",
+      "native_bounds": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "qt_client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qt_frame": [
+        21,
+        8,
+        1040,
+        778
+      ],
+      "normal_geometry": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences_geometry": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "margins": [
+        0,
+        58,
+        0,
+        0
+      ],
+      "dpr": 1.0,
+      "inside": true,
+      "required": true
+    },
+    {
+      "name": "maximized-system-frame",
+      "native_bounds": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "qt_client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "qt_frame": [
+        0,
+        -13,
+        2582,
+        1561
+      ],
+      "normal_geometry": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences_geometry": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "margins": [
+        0,
+        58,
+        0,
+        0
+      ],
+      "dpr": 1.0,
+      "inside": false,
+      "required": false
+    },
+    {
+      "name": "restore-normal",
+      "native_bounds": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "qt_client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qt_frame": [
+        21,
+        8,
+        1040,
+        778
+      ],
+      "normal_geometry": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences_geometry": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "margins": [
+        0,
+        58,
+        0,
+        0
+      ],
+      "dpr": 1.0,
+      "inside": true,
+      "required": true
+    },
+    {
+      "name": "resume-offscreen-legacy-client",
+      "native_bounds": [
+        8,
+        8,
+        2026,
+        1532
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "qt_client": [
+        21,
+        66,
+        2000,
+        1461
+      ],
+      "qt_frame": [
+        21,
+        8,
+        2000,
+        1519
+      ],
+      "normal_geometry": [
+        21,
+        66,
+        2000,
+        1461
+      ],
+      "preferences_geometry": [
+        21,
+        66,
+        2000,
+        1461
+      ],
+      "margins": [
+        0,
+        58,
+        0,
+        0
+      ],
+      "dpr": 1.0,
+      "inside": true,
+      "required": true
+    },
+    {
+      "name": "repeated-resume",
+      "native_bounds": [
+        8,
+        8,
+        2026,
+        1532
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "qt_client": [
+        21,
+        66,
+        2000,
+        1461
+      ],
+      "qt_frame": [
+        21,
+        8,
+        2000,
+        1519
+      ],
+      "normal_geometry": [
+        21,
+        66,
+        2000,
+        1461
+      ],
+      "preferences_geometry": [
+        21,
+        66,
+        2000,
+        1461
+      ],
+      "margins": [
+        0,
+        58,
+        0,
+        0
+      ],
+      "dpr": 1.0,
+      "inside": true,
+      "required": true
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "baseline_suite": {
+    "passed": 558,
+    "failed": 1,
+    "seconds": 319.78,
+    "log": "pre-timing-fix-tests.log",
+    "failure": "derived startup_transport_overhead_ms absent because Windows monotonic clock was coarse"
+  },
+  "post_clock_fix": {
+    "passed": 56,
+    "failed": 0,
+    "seconds": 9.38,
+    "log": "windows-timing-retest.log",
+    "coverage": [
+      "worker",
+      "performance diagnostics",
+      "candidate controller",
+      "trial assistance UI"
+    ]
+  },
+  "reference_cache": {
+    "passed": 32,
+    "failed": 0,
+    "seconds": 1.75,
+    "log": "reference-cache-tests.log"
+  },
+  "combined_caches": {
+    "passed": 149,
+    "failed": 0,
+    "seconds": 2.69,
+    "log": "cache-combined-tests.log"
+  },
+  "complete_suite_repeated_after_each_patch": false,
+  "hardware_tested": false,
+  "incremental_layout": {
+    "passed": 153,
+    "failed": 0,
+    "seconds": 3.91,
+    "log": "incremental-label-tests.log"
+  },
+  "final_bounded_preview": {
+    "passed": 154,
+    "failed": 0,
+    "seconds": 4.04,
+    "log": "bounded-preview-tests.log"
+  }
+}

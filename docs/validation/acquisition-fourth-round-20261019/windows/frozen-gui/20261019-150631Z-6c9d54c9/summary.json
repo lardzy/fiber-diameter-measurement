@@ -1,0 +1,406 @@
+{
+  "schema": 1,
+  "run_id": "20261019-150631Z-6c9d54c9",
+  "cases": [
+    {
+      "name": "empty-light-1600x900",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "populated": false
+    },
+    {
+      "name": "records-light-1600x900",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "populated": true
+    },
+    {
+      "name": "records-dark-1600x900",
+      "theme": "dark",
+      "width": 1600,
+      "height": 900,
+      "populated": true
+    },
+    {
+      "name": "records-navy-1600x900",
+      "theme": "navy",
+      "width": 1600,
+      "height": 900,
+      "populated": true
+    },
+    {
+      "name": "records-warm-1600x900",
+      "theme": "warm",
+      "width": 1600,
+      "height": 900,
+      "populated": true
+    },
+    {
+      "name": "records-light-1366x768",
+      "theme": "light",
+      "width": 1366,
+      "height": 768,
+      "populated": true
+    },
+    {
+      "name": "records-light-1067x600",
+      "theme": "light",
+      "width": 1067,
+      "height": 600,
+      "populated": true
+    },
+    {
+      "name": "excel-fixed-entry-light-1600x900",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "populated": true,
+      "export": true
+    }
+  ],
+  "windows_output": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9",
+  "executable_override": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "real_hardware_tested": false,
+  "camera_sharing_managed": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false,
+  "preflight": {
+    "probe_sha256": "e6f59e67646a01d2cfdfe5cd1d78dd63856a9b5076355b0a80ced92da3474204",
+    "executable": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "identity": {
+      "passed": true,
+      "version": "0.4.10",
+      "build_id": "bd7168a578074dfb8a5758d918e86c68",
+      "source_commit": "unknown",
+      "source_git_baseline": "a836e1dc10408acf01f5bb4445c837dc75a7140e",
+      "installer": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\installer\\fiber-diameter-measurement-setup-0.4.10-no-area-models.exe",
+      "sha256": "1b1b7a01a32d5f077488113e96e97a535fc33539dad530e978644f9420e50546",
+      "bytes": 398773132,
+      "payload": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installer-payload-1b1b7a01a32d\\{app}",
+      "files_verified": 4818,
+      "production_sources_verified": 433,
+      "source_snapshot_sha256": "099f6056c78b073961b64db06a2e0d76a356390554ccb9e5d9945a0be6e5e94f",
+      "selfcheck_encoding": "cp936",
+      "excluded_components": [
+        "area-models"
+      ],
+      "actual_installation_tested": false,
+      "hardware_capture_tested": false
+    }
+  },
+  "groups": [
+    {
+      "name": "empty-light-1600x900",
+      "passed": true,
+      "result": {
+        "schema": 4,
+        "started_at": "2026-10-19T23:06:35.8525653+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "light",
+        "real_hardware": null,
+        "hardware_acceptance_tested": false,
+        "capture_note": "VM host-camera sharing is temporarily disabled and restored after scoped installation validation. No Microview hardware acceptance.",
+        "requested_capture_device_id": "microview:0",
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9\\empty-light-1600x900\\20261019-230635-f13914a456574fae8fc54c50f7cad774",
+        "config": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9\\empty-light-1600x900\\20261019-230635-f13914a456574fae8fc54c50f7cad774\\isolated-config",
+        "pid": 11288,
+        "isolated_empty_project_verified": false,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": false,
+        "live_window": false,
+        "key_controls": [],
+        "key_controls_verified": false,
+        "workspace_closed": false,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1600,
+          900
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "02-realtime",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "03-content",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "08-navigation-return",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9\\empty-light-1600x900\\20261019-230635-f13914a456574fae8fc54c50f7cad774\\01-main-uia.json",
+          "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9\\empty-light-1600x900\\20261019-230635-f13914a456574fae8fc54c50f7cad774\\02-realtime-uia.json",
+          "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9\\empty-light-1600x900\\20261019-230635-f13914a456574fae8fc54c50f7cad774\\03-content-uia.json",
+          "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150631Z-6c9d54c9\\empty-light-1600x900\\20261019-230635-f13914a456574fae8fc54c50f7cad774\\08-navigation-return-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "populated": false,
+        "steps": [
+          {
+            "name": "采集与试验",
+            "action": "invoke"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "全图分析或刷新候选",
+            "bounds": {
+              "name": "全图分析或刷新候选",
+              "process_id": 11288,
+              "type": "ControlType.Button",
+              "class": "QToolButton",
+              "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.QWidget.acquisitionViewControls.trialAnalyze",
+              "native_handle": 0,
+              "enabled": false,
+              "offscreen": false,
+              "bounds": [
+                43,
+                210,
+                105,
+                38
+              ],
+              "help_text": "",
+              "value": "",
+              "runtime_id": [
+                42,
+                6554348,
+                4,
+                -2147482892
+              ],
+              "patterns": [
+                "InvokePatternIdentifiers.Pattern",
+                "ValuePatternIdentifiers.Pattern"
+              ]
+            },
+            "action": "fourth-entry-visible"
+          },
+          {
+            "name": "候选显示与不透明度",
+            "bounds": {
+              "name": "候选显示与不透明度",
+              "process_id": 11288,
+              "type": "ControlType.Button",
+              "class": "QToolButton",
+              "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.QWidget.acquisitionViewControls.QToolButton",
+              "native_handle": 0,
+              "enabled": true,
+              "offscreen": false,
+              "bounds": [
+                208,
+                210,
+                57,
+                38
+              ],
+              "help_text": "",
+              "value": "",
+              "runtime_id": [
+                42,
+                6554348,
+                4,
+                -2147482890
+              ],
+              "patterns": [
+                "InvokePatternIdentifiers.Pattern",
+                "ValuePatternIdentifiers.Pattern"
+              ]
+            },
+            "action": "fourth-entry-visible"
+          },
+          {
+            "name": "查看测量证据及存档设置",
+            "bounds": {
+              "name": "查看测量证据及存档设置",
+              "process_id": 11288,
+              "type": "ControlType.Button",
+              "class": "QToolButton",
+              "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.trialWorkflowTabs.qt_tabwidget_stackedwidget.QScrollArea.qt_scrollarea_viewport.QWidget.trialEvidence",
+              "native_handle": 0,
+              "enabled": true,
+              "offscreen": false,
+              "bounds": [
+                1294,
+                418,
+                72,
+                22
+              ],
+              "help_text": "",
+              "value": "",
+              "runtime_id": [
+                42,
+                6554348,
+                4,
+                -2147482886
+              ],
+              "patterns": [
+                "InvokePatternIdentifiers.Pattern",
+                "ValuePatternIdentifiers.Pattern"
+              ]
+            },
+            "action": "fourth-entry-visible"
+          },
+          {
+            "name": "返回采集",
+            "action": "invoke"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "测量分析",
+            "action": "invoke"
+          }
+        ],
+        "fixture_sha256": null,
+        "excel_export_tested": false,
+        "os_dpi": 192,
+        "excel_entry": {
+          "name": "导出 Excel 报告",
+          "process_id": 11288,
+          "type": "ControlType.Button",
+          "class": "QPushButton",
+          "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.QPushButton",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            1466,
+            855,
+            134,
+            32
+          ],
+          "help_text": "",
+          "value": "",
+          "runtime_id": [
+            42,
+            6554348,
+            4,
+            -2147482936
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern"
+          ]
+        },
+        "automatic_toggle_verified": true,
+        "empty_category_entry_verified": true,
+        "empty_return_verified": true,
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-19T23:06:47.7747655+08:00"
+      }
+    },
+    {
+      "name": "records-light-1600x900",
+      "passed": false,
+      "error": "Windows command failed (1):\n\npython.exe : Traceback (most recent call last):\n所在位置 C:\\tmp\\fdm-cu-live-fourth-round-20261019\\scripts\\validation\\probe_acquisition_fourth_round_frozen.ps1:79 字符: 5\n+     & $python $fixturePath\n+     ~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException\n    + FullyQualifiedErrorId : NativeCommandError\n \n"
+    }
+  ],
+  "passed": false
+}

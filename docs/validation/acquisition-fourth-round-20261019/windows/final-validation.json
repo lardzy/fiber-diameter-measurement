@@ -1,0 +1,243 @@
+{
+  "schema": 1,
+  "version": "0.4.10",
+  "build_id": "bd7168a578074dfb8a5758d918e86c68",
+  "installer_sha256": "1b1b7a01a32d5f077488113e96e97a535fc33539dad530e978644f9420e50546",
+  "installer_bytes": 398773132,
+  "installer_path": "dist/internal/acquisition-fourth-round-20261019/FDM-0.4.10-round4-bd7168a57807.exe",
+  "source_commit": "unknown",
+  "source_git_baseline": "a836e1dc10408acf01f5bb4445c837dc75a7140e",
+  "source_snapshot_sha256": "099f6056c78b073961b64db06a2e0d76a356390554ccb9e5d9945a0be6e5e94f",
+  "package_payload_files_verified": 4818,
+  "production_sources_verified": 433,
+  "excluded_components": [
+    "area-models"
+  ],
+  "internal_cu_templates_preserved": true,
+  "frozen_selfcheck_passed": true,
+  "actual_installation_passed": true,
+  "explorer_launch": {
+    "passed": true,
+    "ordinary_user": true,
+    "via_isolated_cmd_helper": true,
+    "graceful_exit": true
+  },
+  "installed_gui": {
+    "passed": true,
+    "cases_passed": 8,
+    "cases": [
+      {
+        "name": "empty-light-1600x900",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\empty-light-1600x900\\20261019-230838-5415647924dc4ca8a2b1e740da879f90"
+      },
+      {
+        "name": "records-light-1600x900",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\records-light-1600x900\\20261019-230852-d31c7c18ab5347649a6a391763d41ede"
+      },
+      {
+        "name": "records-dark-1600x900",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\records-dark-1600x900\\20261019-230916-3c4fd446a382430f8714b5005c6b9507"
+      },
+      {
+        "name": "records-navy-1600x900",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\records-navy-1600x900\\20261019-230941-313a29e27c4b44619df118d578f1e5d5"
+      },
+      {
+        "name": "records-warm-1600x900",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\records-warm-1600x900\\20261019-231006-153863573c4d4a0688c91d4b37cb60ff"
+      },
+      {
+        "name": "records-light-1366x768",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\records-light-1366x768\\20261019-231031-e5b0dd63b77d46b69503f05a542ab294"
+      },
+      {
+        "name": "records-light-1067x600",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-150834Z-a48a8a55\\records-light-1067x600\\20261019-231055-23058d90bcab438facb06cb7fda39041"
+      },
+      {
+        "name": "excel-fixed-entry-light-1600x900",
+        "ok": true,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "source_run_directory": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c"
+      }
+    ],
+    "visual_inspection": [
+      "records-light-1600x900-04b-evidence-pinned.png",
+      "records-light-1067x600-03-content.png",
+      "records-dark-1600x900-03-content.png"
+    ],
+    "no_camera": true,
+    "real_automatic_worker_in_installed_ui_tested": false,
+    "automatic_worker_covered_by_source_matrix": true
+  },
+  "excel": {
+    "passed": true,
+    "report": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\fixed-entry-report.xls",
+    "template": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\isolated-config\\FiberDiameterMeasurement\\templates\\sheet.xlt",
+    "expected": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\expected.json",
+    "inputs_verified": 52,
+    "diameters_verified": 144,
+    "counts_verified": 12,
+    "sheets": [
+      {
+        "name": "标准选择",
+        "print_area": "",
+        "formula_cells": 1
+      },
+      {
+        "name": "原始数据",
+        "print_area": "",
+        "formula_cells": 496
+      },
+      {
+        "name": "特种毛(报出)",
+        "print_area": "$A$1:$K$66",
+        "formula_cells": 2668
+      },
+      {
+        "name": "麻棉(报出)",
+        "print_area": "$A$1:$K$66",
+        "formula_cells": 2664
+      },
+      {
+        "name": "分组统计",
+        "print_area": "",
+        "formula_cells": 11992
+      },
+      {
+        "name": "非棉麻织物",
+        "print_area": "$A$1:$U$40",
+        "formula_cells": 711
+      },
+      {
+        "name": "非棉麻纤维",
+        "print_area": "",
+        "formula_cells": 321
+      },
+      {
+        "name": "分组加权统计",
+        "print_area": "",
+        "formula_cells": 2213
+      },
+      {
+        "name": "织物纤维含量报告",
+        "print_area": "",
+        "formula_cells": 533
+      },
+      {
+        "name": "棉麻织物",
+        "print_area": "$A$1:$U$43",
+        "formula_cells": 617
+      },
+      {
+        "name": "棉麻纤维",
+        "print_area": "",
+        "formula_cells": 268
+      },
+      {
+        "name": "比重",
+        "print_area": "",
+        "formula_cells": 0
+      }
+    ],
+    "errors": [],
+    "excel_version": "16.0",
+    "vba_preserved": true,
+    "formulas_verified": 486,
+    "report_sha256": "c2d68825e666f15f50c3ece04688c95954a658dad057d63336b42a7f13a29f9f"
+  },
+  "source_visual_matrix": {
+    "passed": 16,
+    "failed": 0,
+    "native_base_dpr": 2,
+    "physical_raster_verified": true,
+    "main_navigation_cycles": 200,
+    "other_case_cycles": 6
+  },
+  "final_windows_targeted_tests": {
+    "passed": 154,
+    "failed": 0,
+    "log": "bounded-preview-tests.log",
+    "prior_failed_runs_preserved": true
+  },
+  "performance": {
+    "fixture": "768x576 synthetic live frames, fixed algorithm fixture, real Qt/alignment/JPEG, 30 seconds",
+    "baseline_fps": 30.301455,
+    "candidate_fps": 30.316635,
+    "baseline_frame_age_p95_ms": 9.155032,
+    "candidate_frame_age_p95_ms": 18.93625,
+    "numerical_thresholds_passed": true,
+    "evidence_written": 198,
+    "evidence_expected": 198,
+    "candidate_visible_paints": 695,
+    "total_paints": 2354,
+    "candidate_visible_paint_fraction": 0.29524214103653357,
+    "wallclock_clickability_fraction_measured": false,
+    "real_hardware_tested": false,
+    "limitations": "Heavy VM load temporarily hides unverifiable candidates; 29.5% passive visible-paint samples are not continuous click availability. Real device validation still required."
+  },
+  "restoration": {
+    "passed": true,
+    "changed_registry_indexes": [
+      0
+    ],
+    "all_scoped_registry_signatures_match": true,
+    "old_install_version": "0.4.7",
+    "old_file_hashes_match": 4,
+    "candidate_preserved": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate-validated",
+    "camera": "on",
+    "vm_state": "running",
+    "global_and_user_policies_equal_baseline": true,
+    "owned_fdm_excel_processes_remaining": [],
+    "host_task_servers_and_runners_remaining": [],
+    "unrelated_background_process_unchanged_pid": 10468,
+    "unrelated_background_process_creation_date": "/Date(1792410973592)/",
+    "whole_vm_snapshot_or_rollback": false,
+    "uninstaller_run": false
+  },
+  "harness_failures_preserved": [
+    {
+      "run": "20261019-150631Z-6c9d54c9",
+      "reason": "Fixture JPEG atomic path exceeded Windows MAX_PATH before product launch; fixture moved to shorter owned directory."
+    },
+    {
+      "run": "20261019-150834Z-a48a8a55",
+      "reason": "Report generated; expected JSON outside strict run whitelist. Copied expected into run and reran full Excel path. Prior report separately audited and closed."
+    }
+  ],
+  "remaining_acceptance": [
+    "real Microview camera and 30-minute dynamic capture",
+    "raw-camera alignment threshold and candidate availability",
+    "actual multi-monitor DPI movement",
+    "candidate click video on offline hardware"
+  ],
+  "raw_evidence_archive": {
+    "remote": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\installed-validation-evidence.zip",
+    "local": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/windows-installed-validation-evidence.zip",
+    "bytes": 7902827,
+    "sha256": "0e2b3a73a740568d6a461e78373938878627b49c85964f318784fe361a512836",
+    "verified": true
+  }
+}

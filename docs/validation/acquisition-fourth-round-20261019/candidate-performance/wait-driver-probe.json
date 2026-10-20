@@ -1,0 +1,27 @@
+{
+  "scope": "Same worker, same 768x576 BGRA arrays, same process; only Qt test-driver waiting method changed. Main app.exec does not use QTest.qWait.",
+  "process_events_sleep_2ms": [
+    9.691625,
+    11.368667,
+    9.92075,
+    9.3155,
+    9.692709,
+    9.360167
+  ],
+  "qtest_qwait_20ms": [
+    798.209167,
+    798.558708,
+    797.540958,
+    799.260042,
+    797.79875,
+    795.779084
+  ],
+  "qtest_qwait_5ms": [
+    369.448875,
+    366.595875,
+    380.895458,
+    364.4625,
+    341.4635,
+    376.499583
+  ]
+}

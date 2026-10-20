@@ -1,0 +1,6702 @@
+{
+  "scope": "synthetic frames; fixed analysis fixture; actual Qt/alignment/acceptance/JPEG; not camera or algorithm acceptance",
+  "mode": "guard",
+  "qt_platform": "offscreen",
+  "frame_size": [
+    768,
+    576
+  ],
+  "frame_interval_ms": 33,
+  "measure_interval_ms": 150,
+  "sample_interval_ms": 0,
+  "preview_policy": "production",
+  "opencv_threads": 18,
+  "warmup_seconds": 1.5,
+  "frames": 852,
+  "fps": 30.292252650054532,
+  "paint_count": 1211,
+  "hidden_paints": 72,
+  "paint_duration_ms": {
+    "n": 1211,
+    "p50": 2.293458004714921,
+    "p95": 5.166729002667125
+  },
+  "ready_sample_fraction": null,
+  "p95_frame_age_ms": 14.101883697730951,
+  "accepted": 197,
+  "saved": 197,
+  "jpeg_bytes": 5728370,
+  "peak_budget_bytes": 33849344,
+  "remaining_budget_bytes": 0,
+  "metrics": {
+    "analysis_ms": {
+      "n": 1,
+      "p50": 0.6820419948780909,
+      "p95": 0.6820419948780909
+    },
+    "alignment_ms": {
+      "n": 512,
+      "p50": 8.466229497571476,
+      "p95": 10.178994049783794
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 512,
+      "p50": 8.590395496867131,
+      "p95": 11.740466305491282
+    },
+    "candidate_available_ms": {
+      "n": 1,
+      "p50": 778.6646250024205,
+      "p95": 778.6646250024205
+    },
+    "candidate_unavailable_ms": {
+      "n": 2,
+      "p50": 1068.96102099563,
+      "p95": 1723.3629270995152
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_to_paint_ms": {
+      "n": 1,
+      "p50": 353.8261670037173,
+      "p95": 353.8261670037173
+    },
+    "ingest_fps": {
+      "n": 512,
+      "p50": 30.310569407845968,
+      "p95": 31.63414024749551
+    },
+    "presented_fps": {
+      "n": 512,
+      "p50": 30.23770631894991,
+      "p95": 35.05821682103659
+    },
+    "frame_age_ms": {
+      "n": 512,
+      "p50": 11.40737500099931,
+      "p95": 14.741254340333398
+    },
+    "analysis_service_total_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_preparation_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_processing_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_shared_memory_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_budget_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_process_start_call_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    }
+  },
+  "metrics_schema": {
+    "version": 1,
+    "sample_limit_per_metric": 512,
+    "percentiles": "Linear interpolation over retained samples; n=0 yields null, not zero.",
+    "clock": "Qt/controller use parent perf_counter. FrameHandle receipt uses the same OS counter (Microview native QPC). Worker timings use same-process durations only, with no cross-process timestamp subtraction.",
+    "frame_scope": "Most recent admitted source/generation and capture run; retained after stop, reset at next run. Analysis metrics span this workspace lifetime.",
+    "fps": "P50/P95 use instantaneous inverse intervals; frame_sampling.window_fps uses (retained_frames-1)/elapsed_span. Neither is camera sensor FPS.",
+    "limitations": [
+      "No sensor exposure timestamp",
+      "No isolated Qt paint CPU measurement",
+      "Child startup and IPC overhead are combined, not individually measured",
+      "Synthetic and real-device runs require separate baseline comparison"
+    ],
+    "metrics": {
+      "analysis_ms": {
+        "unit": "ms",
+        "definition": "Controller submission to result consumption; includes scheduling, process startup, shared memory, service, IPC and Qt polling."
+      },
+      "alignment_ms": {
+        "unit": "ms",
+        "definition": "Independent fixed-reference alignment function wall time; excludes executor queue wait."
+      },
+      "candidate_verification_delivery_ms": {
+        "unit": "ms",
+        "definition": "Alignment submission to GUI consumption, including executor and Qt scheduling; measured for the actual checked frame."
+      },
+      "candidate_available_ms": {
+        "unit": "ms",
+        "definition": "Completed continuous candidate presentation interval before a latched pause; excludes unfinished intervals."
+      },
+      "candidate_unavailable_ms": {
+        "unit": "ms",
+        "definition": "Completed latched candidate pause until sustained timely recovery; live image presentation continues."
+      },
+      "click_to_accept_ms": {
+        "unit": "ms",
+        "definition": "Candidate intent creation to ledger insertion; includes queued clicks and motion/alignment verification, excludes subsequent UI painting."
+      },
+      "stable_wait_ms": {
+        "unit": "ms",
+        "definition": "Additional automatic-analysis stable interval after global readiness and first successful independent alignment; excludes earlier field settling."
+      },
+      "analysis_to_paint_ms": {
+        "unit": "ms",
+        "definition": "Controller submission to first paint containing candidates; includes analysis and presentation delay, not isolated paint CPU time."
+      },
+      "ingest_fps": {
+        "unit": "frames/s",
+        "definition": "Reciprocal intervals between distinct live frames admitted by the controller, using parent perf_counter; upstream mailbox drops are not counted."
+      },
+      "presented_fps": {
+        "unit": "frames/s",
+        "definition": "Reciprocal intervals between distinct live frames completing Qt paint; repeated paints of one frame are excluded."
+      },
+      "frame_age_ms": {
+        "unit": "ms",
+        "definition": "First completed Qt paint minus FrameHandle.received_at on the OS performance-counter timeline. Microview uses SDK callback buffer-copy completion (QPC); other adapters use application receipt. NOT sensor exposure age."
+      },
+      "analysis_service_total_ms": {
+        "unit": "ms",
+        "definition": "Child analyze_frame total wall time, including input preparation and native analysis."
+      },
+      "analysis_preparation_ms": {
+        "unit": "ms",
+        "definition": "Child analyze_frame input validation/native loading/pixel preparation before native invocation."
+      },
+      "analysis_processing_ms": {
+        "unit": "ms",
+        "definition": "Service total minus preparation; native invocation and result wrapping, not an isolated native kernel benchmark."
+      },
+      "analysis_shared_memory_ms": {
+        "unit": "ms",
+        "definition": "Parent shared-memory allocation and source-pixel copy."
+      },
+      "analysis_budget_wait_ms": {
+        "unit": "ms",
+        "definition": "Parent wait for the shared heavy-compute permit after pixel copy; excludes process startup."
+      },
+      "analysis_process_start_call_ms": {
+        "unit": "ms",
+        "definition": "Cold starts only: parent Pipe/Event/process.start call. Does not include all child imports or readiness."
+      },
+      "analysis_dispatch_to_receive_ms": {
+        "unit": "ms",
+        "definition": "Parent command-send start to reader recv completion/deserialization; includes child startup/imports, service, IPC and scheduling."
+      },
+      "analysis_startup_transport_overhead_ms": {
+        "unit": "ms",
+        "definition": "Dispatch-to-receive minus child service total: combined startup/imports, shared-memory attachment, IPC/serialization and scheduling; these components are NOT independently separated. Unavailable for a missing service duration or negative duration difference, never clamped to zero."
+      }
+    }
+  },
+  "frame_sampling": {
+    "source": {
+      "source_id": "benchmark-synthetic",
+      "generation": 0,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": true,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 512,
+      "span_seconds": 16.863369042010163,
+      "first_sequence": 388,
+      "last_sequence": 899,
+      "window_fps": 30.302367144251697
+    },
+    "presented": {
+      "frames": 512,
+      "span_seconds": 16.861018666997552,
+      "first_sequence": 387,
+      "last_sequence": 898,
+      "window_fps": 30.30659120259393
+    },
+    "candidate_preview": {
+      "fallback_count": 2,
+      "immediate_mode": false,
+      "recovery_timely_checks": 0,
+      "state": "coherent",
+      "events": [
+        {
+          "at": 95673.249812166,
+          "state": "paused",
+          "reason": "verification_late"
+        },
+        {
+          "at": 95673.591659958,
+          "state": "ready",
+          "reason": "timely_recovery"
+        },
+        {
+          "at": 95674.370324583,
+          "state": "paused",
+          "reason": "verification_late"
+        },
+        {
+          "at": 95676.166398833,
+          "state": "ready",
+          "reason": "timely_recovery"
+        }
+      ],
+      "ongoing_unavailable_ms": null,
+      "definition": "A missed presentation budget latches all candidate overlays and hit targets off while pixels remain live. Recovery requires at least 300 ms and 8 consecutive timely exact-frame checks. Verified pixels and overlays are then published together; a valid older completion is not mistaken for a new frame."
+    }
+  },
+  "measurement_errors": [],
+  "presentation_trace": {
+    "started_at": "2026-10-20T02:30:11.223434+00:00",
+    "finished_at": "2026-10-20T02:30:41.048582+00:00",
+    "scope": "Fixed pixels and candidate fixture. Real Qt/alignment/acceptance/JPEG. No real camera or native-menu acceptance.",
+    "injected_alignment_delay_ms": 40,
+    "injection_interval_seconds": [
+      1.5,
+      3.0
+    ],
+    "visibility_transitions": [
+      {
+        "seconds": 0.7700401670008432,
+        "sequence": 19,
+        "visible": true
+      },
+      {
+        "seconds": 1.548674083998776,
+        "sequence": 42,
+        "visible": false
+      },
+      {
+        "seconds": 3.3465624999953434,
+        "sequence": 97,
+        "visible": true
+      }
+    ],
+    "visibility_transition_count": 3,
+    "batch_count": 1,
+    "recovered_continuously_visible": true,
+    "paints": [
+      {
+        "seconds": 0.16455720900557935,
+        "sequence": 1,
+        "visible": false
+      },
+      {
+        "seconds": 0.19833383400691673,
+        "sequence": 2,
+        "visible": false
+      },
+      {
+        "seconds": 0.23126266700273845,
+        "sequence": 3,
+        "visible": false
+      },
+      {
+        "seconds": 0.2634952090011211,
+        "sequence": 4,
+        "visible": false
+      },
+      {
+        "seconds": 0.29719916700560134,
+        "sequence": 5,
+        "visible": false
+      },
+      {
+        "seconds": 0.33040750000509433,
+        "sequence": 6,
+        "visible": false
+      },
+      {
+        "seconds": 0.3443105420010397,
+        "sequence": 6,
+        "visible": false
+      },
+      {
+        "seconds": 0.3640681249962654,
+        "sequence": 7,
+        "visible": false
+      },
+      {
+        "seconds": 0.3735155419999501,
+        "sequence": 7,
+        "visible": false
+      },
+      {
+        "seconds": 0.3966314169956604,
+        "sequence": 8,
+        "visible": false
+      },
+      {
+        "seconds": 0.41683908400591463,
+        "sequence": 8,
+        "visible": false
+      },
+      {
+        "seconds": 0.4171105840068776,
+        "sequence": 8,
+        "visible": false
+      },
+      {
+        "seconds": 0.4273278339969693,
+        "sequence": 8,
+        "visible": false
+      },
+      {
+        "seconds": 0.42889758400269784,
+        "sequence": 9,
+        "visible": false
+      },
+      {
+        "seconds": 0.46191166700737085,
+        "sequence": 10,
+        "visible": false
+      },
+      {
+        "seconds": 0.4932989590015495,
+        "sequence": 10,
+        "visible": false
+      },
+      {
+        "seconds": 0.49487895899801515,
+        "sequence": 11,
+        "visible": false
+      },
+      {
+        "seconds": 0.49747720900631975,
+        "sequence": 11,
+        "visible": false
+      },
+      {
+        "seconds": 0.5287653749983292,
+        "sequence": 12,
+        "visible": false
+      },
+      {
+        "seconds": 0.5618956249963958,
+        "sequence": 13,
+        "visible": false
+      },
+      {
+        "seconds": 0.5952197919978062,
+        "sequence": 14,
+        "visible": false
+      },
+      {
+        "seconds": 0.6270797500037588,
+        "sequence": 15,
+        "visible": false
+      },
+      {
+        "seconds": 0.6431600420037284,
+        "sequence": 15,
+        "visible": false
+      },
+      {
+        "seconds": 0.6502510419959435,
+        "sequence": 15,
+        "visible": false
+      },
+      {
+        "seconds": 0.6597221670090221,
+        "sequence": 16,
+        "visible": false
+      },
+      {
+        "seconds": 0.6936501669988502,
+        "sequence": 17,
+        "visible": false
+      },
+      {
+        "seconds": 0.7259689170023194,
+        "sequence": 18,
+        "visible": false
+      },
+      {
+        "seconds": 0.7595074999990175,
+        "sequence": 19,
+        "visible": false
+      },
+      {
+        "seconds": 0.7700401670008432,
+        "sequence": 19,
+        "visible": true
+      },
+      {
+        "seconds": 0.793627834005747,
+        "sequence": 19,
+        "visible": true
+      },
+      {
+        "seconds": 0.8034245839953655,
+        "sequence": 20,
+        "visible": true
+      },
+      {
+        "seconds": 0.8342504589963937,
+        "sequence": 21,
+        "visible": true
+      },
+      {
+        "seconds": 0.8674957500043092,
+        "sequence": 22,
+        "visible": true
+      },
+      {
+        "seconds": 0.8998992919950979,
+        "sequence": 23,
+        "visible": true
+      },
+      {
+        "seconds": 0.9335853340016911,
+        "sequence": 24,
+        "visible": true
+      },
+      {
+        "seconds": 0.9439349169988418,
+        "sequence": 24,
+        "visible": true
+      },
+      {
+        "seconds": 0.9454585000057705,
+        "sequence": 24,
+        "visible": true
+      },
+      {
+        "seconds": 0.9656312090082793,
+        "sequence": 25,
+        "visible": true
+      },
+      {
+        "seconds": 0.9974427090055542,
+        "sequence": 26,
+        "visible": true
+      },
+      {
+        "seconds": 1.0312545000051614,
+        "sequence": 27,
+        "visible": true
+      },
+      {
+        "seconds": 1.0644765420001931,
+        "sequence": 28,
+        "visible": true
+      },
+      {
+        "seconds": 1.0940009170008125,
+        "sequence": 28,
+        "visible": true
+      },
+      {
+        "seconds": 1.0983804169954965,
+        "sequence": 28,
+        "visible": true
+      },
+      {
+        "seconds": 1.0988975840009516,
+        "sequence": 29,
+        "visible": true
+      },
+      {
+        "seconds": 1.1316733749990817,
+        "sequence": 30,
+        "visible": true
+      },
+      {
+        "seconds": 1.162902916999883,
+        "sequence": 31,
+        "visible": true
+      },
+      {
+        "seconds": 1.1960180000023684,
+        "sequence": 32,
+        "visible": true
+      },
+      {
+        "seconds": 1.2304960839974228,
+        "sequence": 33,
+        "visible": true
+      },
+      {
+        "seconds": 1.2439916250004899,
+        "sequence": 33,
+        "visible": true
+      },
+      {
+        "seconds": 1.250139334006235,
+        "sequence": 33,
+        "visible": true
+      },
+      {
+        "seconds": 1.261978916998487,
+        "sequence": 34,
+        "visible": true
+      },
+      {
+        "seconds": 1.2949105000006966,
+        "sequence": 35,
+        "visible": true
+      },
+      {
+        "seconds": 1.328157750001992,
+        "sequence": 36,
+        "visible": true
+      },
+      {
+        "seconds": 1.364991916998406,
+        "sequence": 37,
+        "visible": true
+      },
+      {
+        "seconds": 1.3949867920018733,
+        "sequence": 37,
+        "visible": true
+      },
+      {
+        "seconds": 1.398277041997062,
+        "sequence": 38,
+        "visible": true
+      },
+      {
+        "seconds": 1.4293229169998085,
+        "sequence": 39,
+        "visible": true
+      },
+      {
+        "seconds": 1.4591937500081258,
+        "sequence": 40,
+        "visible": true
+      },
+      {
+        "seconds": 1.4960332089976873,
+        "sequence": 41,
+        "visible": true
+      },
+      {
+        "seconds": 1.543549958994845,
+        "sequence": 41,
+        "visible": true
+      },
+      {
+        "seconds": 1.546317291999003,
+        "sequence": 41,
+        "visible": true
+      },
+      {
+        "seconds": 1.548674083998776,
+        "sequence": 42,
+        "visible": false
+      },
+      {
+        "seconds": 1.5516879170027096,
+        "sequence": 43,
+        "visible": false
+      },
+      {
+        "seconds": 1.5841042499960167,
+        "sequence": 44,
+        "visible": false
+      },
+      {
+        "seconds": 1.6185352500033332,
+        "sequence": 45,
+        "visible": false
+      },
+      {
+        "seconds": 1.65085116699629,
+        "sequence": 46,
+        "visible": false
+      },
+      {
+        "seconds": 1.6829269590089098,
+        "sequence": 47,
+        "visible": false
+      },
+      {
+        "seconds": 1.6938204589969246,
+        "sequence": 47,
+        "visible": false
+      },
+      {
+        "seconds": 1.6983238749962766,
+        "sequence": 47,
+        "visible": false
+      },
+      {
+        "seconds": 1.71593925000343,
+        "sequence": 48,
+        "visible": false
+      },
+      {
+        "seconds": 1.749176166995312,
+        "sequence": 49,
+        "visible": false
+      },
+      {
+        "seconds": 1.7824677500029793,
+        "sequence": 50,
+        "visible": false
+      },
+      {
+        "seconds": 1.8159603340027388,
+        "sequence": 51,
+        "visible": false
+      },
+      {
+        "seconds": 1.8437562089966377,
+        "sequence": 51,
+        "visible": false
+      },
+      {
+        "seconds": 1.8489905419992283,
+        "sequence": 52,
+        "visible": false
+      },
+      {
+        "seconds": 1.8494177499960642,
+        "sequence": 52,
+        "visible": false
+      },
+      {
+        "seconds": 1.8818080839992035,
+        "sequence": 53,
+        "visible": false
+      },
+      {
+        "seconds": 1.914414625003701,
+        "sequence": 54,
+        "visible": false
+      },
+      {
+        "seconds": 1.947032042007777,
+        "sequence": 55,
+        "visible": false
+      },
+      {
+        "seconds": 1.9795081250049407,
+        "sequence": 56,
+        "visible": false
+      },
+      {
+        "seconds": 1.9942882500035921,
+        "sequence": 56,
+        "visible": false
+      },
+      {
+        "seconds": 2.002663459003088,
+        "sequence": 56,
+        "visible": false
+      },
+      {
+        "seconds": 2.0134013339993544,
+        "sequence": 57,
+        "visible": false
+      },
+      {
+        "seconds": 2.046131167007843,
+        "sequence": 58,
+        "visible": false
+      },
+      {
+        "seconds": 2.0798009999998612,
+        "sequence": 59,
+        "visible": false
+      },
+      {
+        "seconds": 2.112804749995121,
+        "sequence": 60,
+        "visible": false
+      },
+      {
+        "seconds": 2.144530917008524,
+        "sequence": 60,
+        "visible": false
+      },
+      {
+        "seconds": 2.145358417008538,
+        "sequence": 61,
+        "visible": false
+      },
+      {
+        "seconds": 2.1548653750069207,
+        "sequence": 61,
+        "visible": false
+      },
+      {
+        "seconds": 2.177608041994972,
+        "sequence": 62,
+        "visible": false
+      },
+      {
+        "seconds": 2.210776709005586,
+        "sequence": 63,
+        "visible": false
+      },
+      {
+        "seconds": 2.244582541999989,
+        "sequence": 64,
+        "visible": false
+      },
+      {
+        "seconds": 2.2772610840038396,
+        "sequence": 65,
+        "visible": false
+      },
+      {
+        "seconds": 2.294439417004469,
+        "sequence": 65,
+        "visible": false
+      },
+      {
+        "seconds": 2.298310041995137,
+        "sequence": 65,
+        "visible": false
+      },
+      {
+        "seconds": 2.3102977499947883,
+        "sequence": 66,
+        "visible": false
+      },
+      {
+        "seconds": 2.342872459004866,
+        "sequence": 67,
+        "visible": false
+      },
+      {
+        "seconds": 2.376123042005929,
+        "sequence": 68,
+        "visible": false
+      },
+      {
+        "seconds": 2.4095018340012757,
+        "sequence": 69,
+        "visible": false
+      },
+      {
+        "seconds": 2.4438786249957047,
+        "sequence": 70,
+        "visible": false
+      },
+      {
+        "seconds": 2.445475375003298,
+        "sequence": 70,
+        "visible": false
+      },
+      {
+        "seconds": 2.450705791998189,
+        "sequence": 70,
+        "visible": false
+      },
+      {
+        "seconds": 2.4753234170057112,
+        "sequence": 71,
+        "visible": false
+      },
+      {
+        "seconds": 2.5085299589991337,
+        "sequence": 72,
+        "visible": false
+      },
+      {
+        "seconds": 2.5413223340001423,
+        "sequence": 73,
+        "visible": false
+      },
+      {
+        "seconds": 2.5742988340061856,
+        "sequence": 74,
+        "visible": false
+      },
+      {
+        "seconds": 2.5941414590051863,
+        "sequence": 74,
+        "visible": false
+      },
+      {
+        "seconds": 2.602657334005926,
+        "sequence": 74,
+        "visible": false
+      },
+      {
+        "seconds": 2.608007083996199,
+        "sequence": 75,
+        "visible": false
+      },
+      {
+        "seconds": 2.6409468750061933,
+        "sequence": 76,
+        "visible": false
+      },
+      {
+        "seconds": 2.6739679589954903,
+        "sequence": 77,
+        "visible": false
+      },
+      {
+        "seconds": 2.7068032920069527,
+        "sequence": 78,
+        "visible": false
+      },
+      {
+        "seconds": 2.7391002920048777,
+        "sequence": 79,
+        "visible": false
+      },
+      {
+        "seconds": 2.743976166995708,
+        "sequence": 79,
+        "visible": false
+      },
+      {
+        "seconds": 2.7458168340090197,
+        "sequence": 79,
+        "visible": false
+      },
+      {
+        "seconds": 2.772584459002246,
+        "sequence": 80,
+        "visible": false
+      },
+      {
+        "seconds": 2.8048096249985974,
+        "sequence": 81,
+        "visible": false
+      },
+      {
+        "seconds": 2.8389036250009667,
+        "sequence": 82,
+        "visible": false
+      },
+      {
+        "seconds": 2.871537291997811,
+        "sequence": 83,
+        "visible": false
+      },
+      {
+        "seconds": 2.893766584005789,
+        "sequence": 83,
+        "visible": false
+      },
+      {
+        "seconds": 2.8992822090076515,
+        "sequence": 83,
+        "visible": false
+      },
+      {
+        "seconds": 2.9045897089963546,
+        "sequence": 84,
+        "visible": false
+      },
+      {
+        "seconds": 2.9380925840087,
+        "sequence": 85,
+        "visible": false
+      },
+      {
+        "seconds": 2.9714494590007234,
+        "sequence": 86,
+        "visible": false
+      },
+      {
+        "seconds": 3.0032320419995813,
+        "sequence": 87,
+        "visible": false
+      },
+      {
+        "seconds": 3.036321624997072,
+        "sequence": 88,
+        "visible": false
+      },
+      {
+        "seconds": 3.0440424590051407,
+        "sequence": 88,
+        "visible": false
+      },
+      {
+        "seconds": 3.0476010419952217,
+        "sequence": 88,
+        "visible": false
+      },
+      {
+        "seconds": 3.0692764170089504,
+        "sequence": 89,
+        "visible": false
+      },
+      {
+        "seconds": 3.103264292003587,
+        "sequence": 90,
+        "visible": false
+      },
+      {
+        "seconds": 3.1354293750046054,
+        "sequence": 91,
+        "visible": false
+      },
+      {
+        "seconds": 3.16821054200409,
+        "sequence": 92,
+        "visible": false
+      },
+      {
+        "seconds": 3.1940398340084357,
+        "sequence": 92,
+        "visible": false
+      },
+      {
+        "seconds": 3.2020964590046788,
+        "sequence": 93,
+        "visible": false
+      },
+      {
+        "seconds": 3.235607666996657,
+        "sequence": 94,
+        "visible": false
+      },
+      {
+        "seconds": 3.267466292003519,
+        "sequence": 95,
+        "visible": false
+      },
+      {
+        "seconds": 3.301088542008074,
+        "sequence": 96,
+        "visible": false
+      },
+      {
+        "seconds": 3.3342475420067785,
+        "sequence": 97,
+        "visible": false
+      },
+      {
+        "seconds": 3.3465624999953434,
+        "sequence": 97,
+        "visible": true
+      },
+      {
+        "seconds": 3.3551093340065563,
+        "sequence": 97,
+        "visible": true
+      },
+      {
+        "seconds": 3.3752169590006815,
+        "sequence": 98,
+        "visible": true
+      },
+      {
+        "seconds": 3.408935458995984,
+        "sequence": 99,
+        "visible": true
+      },
+      {
+        "seconds": 3.441486833995441,
+        "sequence": 100,
+        "visible": true
+      },
+      {
+        "seconds": 3.4754269590048352,
+        "sequence": 101,
+        "visible": true
+      },
+      {
+        "seconds": 3.4943739590089535,
+        "sequence": 101,
+        "visible": true
+      },
+      {
+        "seconds": 3.4988149169948883,
+        "sequence": 101,
+        "visible": true
+      },
+      {
+        "seconds": 3.5084502499958035,
+        "sequence": 102,
+        "visible": true
+      },
+      {
+        "seconds": 3.539872542009107,
+        "sequence": 103,
+        "visible": true
+      },
+      {
+        "seconds": 3.57380770900636,
+        "sequence": 104,
+        "visible": true
+      },
+      {
+        "seconds": 3.6069483750034124,
+        "sequence": 105,
+        "visible": true
+      },
+      {
+        "seconds": 3.640013584008557,
+        "sequence": 106,
+        "visible": true
+      },
+      {
+        "seconds": 3.644271500001196,
+        "sequence": 106,
+        "visible": true
+      },
+      {
+        "seconds": 3.6506179999996675,
+        "sequence": 106,
+        "visible": true
+      },
+      {
+        "seconds": 3.6731519589957315,
+        "sequence": 107,
+        "visible": true
+      },
+      {
+        "seconds": 3.7060919590003323,
+        "sequence": 108,
+        "visible": true
+      },
+      {
+        "seconds": 3.7389585000055376,
+        "sequence": 109,
+        "visible": true
+      },
+      {
+        "seconds": 3.7728668339987053,
+        "sequence": 110,
+        "visible": true
+      },
+      {
+        "seconds": 3.795016125004622,
+        "sequence": 110,
+        "visible": true
+      },
+      {
+        "seconds": 3.8028173750062706,
+        "sequence": 110,
+        "visible": true
+      },
+      {
+        "seconds": 3.803722459007986,
+        "sequence": 111,
+        "visible": true
+      },
+      {
+        "seconds": 3.835629124994739,
+        "sequence": 112,
+        "visible": true
+      },
+      {
+        "seconds": 3.870082209003158,
+        "sequence": 113,
+        "visible": true
+      },
+      {
+        "seconds": 3.9024597920069937,
+        "sequence": 114,
+        "visible": true
+      },
+      {
+        "seconds": 3.9359106670017354,
+        "sequence": 115,
+        "visible": true
+      },
+      {
+        "seconds": 3.9441860420047306,
+        "sequence": 115,
+        "visible": true
+      },
+      {
+        "seconds": 3.9460950840002624,
+        "sequence": 115,
+        "visible": true
+      },
+      {
+        "seconds": 3.968988292006543,
+        "sequence": 116,
+        "visible": true
+      },
+      {
+        "seconds": 4.001917708999827,
+        "sequence": 117,
+        "visible": true
+      },
+      {
+        "seconds": 4.0358172499982174,
+        "sequence": 118,
+        "visible": true
+      },
+      {
+        "seconds": 4.068476250002277,
+        "sequence": 119,
+        "visible": true
+      },
+      {
+        "seconds": 4.095720375000383,
+        "sequence": 119,
+        "visible": true
+      },
+      {
+        "seconds": 4.098849750007503,
+        "sequence": 119,
+        "visible": true
+      },
+      {
+        "seconds": 4.1041432920028456,
+        "sequence": 120,
+        "visible": true
+      },
+      {
+        "seconds": 4.1347680000035325,
+        "sequence": 121,
+        "visible": true
+      },
+      {
+        "seconds": 4.167867042007856,
+        "sequence": 122,
+        "visible": true
+      },
+      {
+        "seconds": 4.201015583996195,
+        "sequence": 123,
+        "visible": true
+      },
+      {
+        "seconds": 4.234254459006479,
+        "sequence": 124,
+        "visible": true
+      },
+      {
+        "seconds": 4.244167750002816,
+        "sequence": 124,
+        "visible": true
+      },
+      {
+        "seconds": 4.250711708999006,
+        "sequence": 124,
+        "visible": true
+      },
+      {
+        "seconds": 4.2679073750041425,
+        "sequence": 125,
+        "visible": true
+      },
+      {
+        "seconds": 4.300500124998507,
+        "sequence": 126,
+        "visible": true
+      },
+      {
+        "seconds": 4.330669417002355,
+        "sequence": 127,
+        "visible": true
+      },
+      {
+        "seconds": 4.363906458995189,
+        "sequence": 128,
+        "visible": true
+      },
+      {
+        "seconds": 4.3947384589992,
+        "sequence": 128,
+        "visible": true
+      },
+      {
+        "seconds": 4.397853292000946,
+        "sequence": 129,
+        "visible": true
+      },
+      {
+        "seconds": 4.430946374995983,
+        "sequence": 130,
+        "visible": true
+      },
+      {
+        "seconds": 4.463713459001156,
+        "sequence": 131,
+        "visible": true
+      },
+      {
+        "seconds": 4.497224167003878,
+        "sequence": 132,
+        "visible": true
+      },
+      {
+        "seconds": 4.5307356669945875,
+        "sequence": 133,
+        "visible": true
+      },
+      {
+        "seconds": 4.545259334001457,
+        "sequence": 133,
+        "visible": true
+      },
+      {
+        "seconds": 4.555561000001035,
+        "sequence": 133,
+        "visible": true
+      },
+      {
+        "seconds": 4.565257499998552,
+        "sequence": 134,
+        "visible": true
+      },
+      {
+        "seconds": 4.596802166997804,
+        "sequence": 135,
+        "visible": true
+      },
+      {
+        "seconds": 4.629536624997854,
+        "sequence": 136,
+        "visible": true
+      },
+      {
+        "seconds": 4.6624457919970155,
+        "sequence": 137,
+        "visible": true
+      },
+      {
+        "seconds": 4.694679292006185,
+        "sequence": 137,
+        "visible": true
+      },
+      {
+        "seconds": 4.6961368750053225,
+        "sequence": 138,
+        "visible": true
+      },
+      {
+        "seconds": 4.698024459008593,
+        "sequence": 138,
+        "visible": true
+      },
+      {
+        "seconds": 4.726879124995321,
+        "sequence": 139,
+        "visible": true
+      },
+      {
+        "seconds": 4.760683792002965,
+        "sequence": 140,
+        "visible": true
+      },
+      {
+        "seconds": 4.793737875006627,
+        "sequence": 141,
+        "visible": true
+      },
+      {
+        "seconds": 4.827270459005376,
+        "sequence": 142,
+        "visible": true
+      },
+      {
+        "seconds": 4.844053459004499,
+        "sequence": 142,
+        "visible": true
+      },
+      {
+        "seconds": 4.8505810420028865,
+        "sequence": 142,
+        "visible": true
+      },
+      {
+        "seconds": 4.860258417000296,
+        "sequence": 143,
+        "visible": true
+      },
+      {
+        "seconds": 4.894062374994974,
+        "sequence": 144,
+        "visible": true
+      },
+      {
+        "seconds": 4.927135208999971,
+        "sequence": 145,
+        "visible": true
+      },
+      {
+        "seconds": 4.960105125006521,
+        "sequence": 146,
+        "visible": true
+      },
+      {
+        "seconds": 4.996163917006925,
+        "sequence": 147,
+        "visible": true
+      },
+      {
+        "seconds": 5.00310816700221,
+        "sequence": 147,
+        "visible": true
+      },
+      {
+        "seconds": 5.026625541999238,
+        "sequence": 148,
+        "visible": true
+      },
+      {
+        "seconds": 5.057904250003048,
+        "sequence": 149,
+        "visible": true
+      },
+      {
+        "seconds": 5.091705084007117,
+        "sequence": 150,
+        "visible": true
+      },
+      {
+        "seconds": 5.122965458998806,
+        "sequence": 151,
+        "visible": true
+      },
+      {
+        "seconds": 5.144246833995567,
+        "sequence": 151,
+        "visible": true
+      },
+      {
+        "seconds": 5.146271042001899,
+        "sequence": 151,
+        "visible": true
+      },
+      {
+        "seconds": 5.156025500007672,
+        "sequence": 152,
+        "visible": true
+      },
+      {
+        "seconds": 5.18945704199723,
+        "sequence": 153,
+        "visible": true
+      },
+      {
+        "seconds": 5.223113625004771,
+        "sequence": 154,
+        "visible": true
+      },
+      {
+        "seconds": 5.255729291995522,
+        "sequence": 155,
+        "visible": true
+      },
+      {
+        "seconds": 5.288093292008853,
+        "sequence": 156,
+        "visible": true
+      },
+      {
+        "seconds": 5.29485258400382,
+        "sequence": 156,
+        "visible": true
+      },
+      {
+        "seconds": 5.2979609169997275,
+        "sequence": 156,
+        "visible": true
+      },
+      {
+        "seconds": 5.321700125001371,
+        "sequence": 157,
+        "visible": true
+      },
+      {
+        "seconds": 5.3544626670045545,
+        "sequence": 158,
+        "visible": true
+      },
+      {
+        "seconds": 5.386986708996119,
+        "sequence": 159,
+        "visible": true
+      },
+      {
+        "seconds": 5.419305750008789,
+        "sequence": 160,
+        "visible": true
+      },
+      {
+        "seconds": 5.445114208996529,
+        "sequence": 160,
+        "visible": true
+      },
+      {
+        "seconds": 5.451114625000628,
+        "sequence": 160,
+        "visible": true
+      },
+      {
+        "seconds": 5.453851500002202,
+        "sequence": 161,
+        "visible": true
+      },
+      {
+        "seconds": 5.488021209006547,
+        "sequence": 162,
+        "visible": true
+      },
+      {
+        "seconds": 5.52040466699691,
+        "sequence": 163,
+        "visible": true
+      },
+      {
+        "seconds": 5.552937625005143,
+        "sequence": 164,
+        "visible": true
+      },
+      {
+        "seconds": 5.585563542001182,
+        "sequence": 165,
+        "visible": true
+      },
+      {
+        "seconds": 5.59550120899803,
+        "sequence": 165,
+        "visible": true
+      },
+      {
+        "seconds": 5.6031947919982485,
+        "sequence": 165,
+        "visible": true
+      },
+      {
+        "seconds": 5.618037584004924,
+        "sequence": 166,
+        "visible": true
+      },
+      {
+        "seconds": 5.651053791996674,
+        "sequence": 167,
+        "visible": true
+      },
+      {
+        "seconds": 5.6845219590031775,
+        "sequence": 168,
+        "visible": true
+      },
+      {
+        "seconds": 5.718473875007476,
+        "sequence": 169,
+        "visible": true
+      },
+      {
+        "seconds": 5.7457022500020685,
+        "sequence": 169,
+        "visible": true
+      },
+      {
+        "seconds": 5.7552592499996535,
+        "sequence": 170,
+        "visible": true
+      },
+      {
+        "seconds": 5.7848453750048066,
+        "sequence": 171,
+        "visible": true
+      },
+      {
+        "seconds": 5.81750612500764,
+        "sequence": 172,
+        "visible": true
+      },
+      {
+        "seconds": 5.85193462499592,
+        "sequence": 173,
+        "visible": true
+      },
+      {
+        "seconds": 5.883276666994789,
+        "sequence": 174,
+        "visible": true
+      },
+      {
+        "seconds": 5.8945721670024795,
+        "sequence": 174,
+        "visible": true
+      },
+      {
+        "seconds": 5.898862625006586,
+        "sequence": 174,
+        "visible": true
+      },
+      {
+        "seconds": 5.915727750005317,
+        "sequence": 175,
+        "visible": true
+      },
+      {
+        "seconds": 5.948634875006974,
+        "sequence": 176,
+        "visible": true
+      },
+      {
+        "seconds": 5.982359292000183,
+        "sequence": 177,
+        "visible": true
+      },
+      {
+        "seconds": 6.01568366700667,
+        "sequence": 178,
+        "visible": true
+      },
+      {
+        "seconds": 6.044483584002592,
+        "sequence": 178,
+        "visible": true
+      },
+      {
+        "seconds": 6.047827709000558,
+        "sequence": 179,
+        "visible": true
+      },
+      {
+        "seconds": 6.081448124998133,
+        "sequence": 180,
+        "visible": true
+      },
+      {
+        "seconds": 6.115117334004026,
+        "sequence": 181,
+        "visible": true
+      },
+      {
+        "seconds": 6.1479026669985615,
+        "sequence": 182,
+        "visible": true
+      },
+      {
+        "seconds": 6.1805855840066215,
+        "sequence": 183,
+        "visible": true
+      },
+      {
+        "seconds": 6.195405334001407,
+        "sequence": 183,
+        "visible": true
+      },
+      {
+        "seconds": 6.203313292004168,
+        "sequence": 183,
+        "visible": true
+      },
+      {
+        "seconds": 6.213224374994752,
+        "sequence": 184,
+        "visible": true
+      },
+      {
+        "seconds": 6.245643709000433,
+        "sequence": 185,
+        "visible": true
+      },
+      {
+        "seconds": 6.278676959002041,
+        "sequence": 186,
+        "visible": true
+      },
+      {
+        "seconds": 6.312355458998354,
+        "sequence": 187,
+        "visible": true
+      },
+      {
+        "seconds": 6.346598333999282,
+        "sequence": 187,
+        "visible": true
+      },
+      {
+        "seconds": 6.3482098749955185,
+        "sequence": 188,
+        "visible": true
+      },
+      {
+        "seconds": 6.354785959003493,
+        "sequence": 188,
+        "visible": true
+      },
+      {
+        "seconds": 6.378608291997807,
+        "sequence": 189,
+        "visible": true
+      },
+      {
+        "seconds": 6.411593750002794,
+        "sequence": 190,
+        "visible": true
+      },
+      {
+        "seconds": 6.444376833998831,
+        "sequence": 191,
+        "visible": true
+      },
+      {
+        "seconds": 6.477442458999576,
+        "sequence": 192,
+        "visible": true
+      },
+      {
+        "seconds": 6.495024999996531,
+        "sequence": 192,
+        "visible": true
+      },
+      {
+        "seconds": 6.498480249996646,
+        "sequence": 192,
+        "visible": true
+      },
+      {
+        "seconds": 6.510383708999143,
+        "sequence": 193,
+        "visible": true
+      },
+      {
+        "seconds": 6.543654916997184,
+        "sequence": 194,
+        "visible": true
+      },
+      {
+        "seconds": 6.5785762919986155,
+        "sequence": 195,
+        "visible": true
+      },
+      {
+        "seconds": 6.611053333996097,
+        "sequence": 196,
+        "visible": true
+      },
+      {
+        "seconds": 6.644264292001026,
+        "sequence": 197,
+        "visible": true
+      },
+      {
+        "seconds": 6.646898624996538,
+        "sequence": 197,
+        "visible": true
+      },
+      {
+        "seconds": 6.650357749997056,
+        "sequence": 197,
+        "visible": true
+      },
+      {
+        "seconds": 6.676480834008544,
+        "sequence": 198,
+        "visible": true
+      },
+      {
+        "seconds": 6.708458666995284,
+        "sequence": 199,
+        "visible": true
+      },
+      {
+        "seconds": 6.74132220899628,
+        "sequence": 200,
+        "visible": true
+      },
+      {
+        "seconds": 6.77471329200489,
+        "sequence": 201,
+        "visible": true
+      },
+      {
+        "seconds": 6.796277417000965,
+        "sequence": 201,
+        "visible": true
+      },
+      {
+        "seconds": 6.803662459002226,
+        "sequence": 201,
+        "visible": true
+      },
+      {
+        "seconds": 6.807819417008432,
+        "sequence": 202,
+        "visible": true
+      },
+      {
+        "seconds": 6.839344916996197,
+        "sequence": 203,
+        "visible": true
+      },
+      {
+        "seconds": 6.873024166998221,
+        "sequence": 204,
+        "visible": true
+      },
+      {
+        "seconds": 6.9055674170085695,
+        "sequence": 205,
+        "visible": true
+      },
+      {
+        "seconds": 6.9400060000043595,
+        "sequence": 206,
+        "visible": true
+      },
+      {
+        "seconds": 6.944706124995719,
+        "sequence": 206,
+        "visible": true
+      },
+      {
+        "seconds": 6.94692720900639,
+        "sequence": 206,
+        "visible": true
+      },
+      {
+        "seconds": 6.9723201250017155,
+        "sequence": 207,
+        "visible": true
+      },
+      {
+        "seconds": 7.004996292002033,
+        "sequence": 208,
+        "visible": true
+      },
+      {
+        "seconds": 7.039048459002515,
+        "sequence": 209,
+        "visible": true
+      },
+      {
+        "seconds": 7.072635042000911,
+        "sequence": 210,
+        "visible": true
+      },
+      {
+        "seconds": 7.095344625005964,
+        "sequence": 210,
+        "visible": true
+      },
+      {
+        "seconds": 7.099092083997675,
+        "sequence": 210,
+        "visible": true
+      },
+      {
+        "seconds": 7.105776750002406,
+        "sequence": 211,
+        "visible": true
+      },
+      {
+        "seconds": 7.13762345899886,
+        "sequence": 212,
+        "visible": true
+      },
+      {
+        "seconds": 7.171027959004277,
+        "sequence": 213,
+        "visible": true
+      },
+      {
+        "seconds": 7.202190249998239,
+        "sequence": 214,
+        "visible": true
+      },
+      {
+        "seconds": 7.238554916999419,
+        "sequence": 215,
+        "visible": true
+      },
+      {
+        "seconds": 7.2453929589973995,
+        "sequence": 215,
+        "visible": true
+      },
+      {
+        "seconds": 7.251670750003541,
+        "sequence": 215,
+        "visible": true
+      },
+      {
+        "seconds": 7.271989750006469,
+        "sequence": 216,
+        "visible": true
+      },
+      {
+        "seconds": 7.305135875009,
+        "sequence": 217,
+        "visible": true
+      },
+      {
+        "seconds": 7.334034708997933,
+        "sequence": 218,
+        "visible": true
+      },
+      {
+        "seconds": 7.368144834006671,
+        "sequence": 219,
+        "visible": true
+      },
+      {
+        "seconds": 7.396683416998712,
+        "sequence": 219,
+        "visible": true
+      },
+      {
+        "seconds": 7.403602792008314,
+        "sequence": 219,
+        "visible": true
+      },
+      {
+        "seconds": 7.405330541994772,
+        "sequence": 220,
+        "visible": true
+      },
+      {
+        "seconds": 7.436070584008121,
+        "sequence": 221,
+        "visible": true
+      },
+      {
+        "seconds": 7.468449874999351,
+        "sequence": 222,
+        "visible": true
+      },
+      {
+        "seconds": 7.500532834004844,
+        "sequence": 223,
+        "visible": true
+      },
+      {
+        "seconds": 7.5339442920085276,
+        "sequence": 224,
+        "visible": true
+      },
+      {
+        "seconds": 7.5463111249991925,
+        "sequence": 224,
+        "visible": true
+      },
+      {
+        "seconds": 7.555954709008802,
+        "sequence": 224,
+        "visible": true
+      },
+      {
+        "seconds": 7.565781249999418,
+        "sequence": 225,
+        "visible": true
+      },
+      {
+        "seconds": 7.6001518340053735,
+        "sequence": 226,
+        "visible": true
+      },
+      {
+        "seconds": 7.633788542007096,
+        "sequence": 227,
+        "visible": true
+      },
+      {
+        "seconds": 7.667009334007162,
+        "sequence": 228,
+        "visible": true
+      },
+      {
+        "seconds": 7.696941458998481,
+        "sequence": 228,
+        "visible": true
+      },
+      {
+        "seconds": 7.699725583996042,
+        "sequence": 229,
+        "visible": true
+      },
+      {
+        "seconds": 7.731811083998764,
+        "sequence": 230,
+        "visible": true
+      },
+      {
+        "seconds": 7.763428667007247,
+        "sequence": 231,
+        "visible": true
+      },
+      {
+        "seconds": 7.797510542004602,
+        "sequence": 232,
+        "visible": true
+      },
+      {
+        "seconds": 7.83079579200421,
+        "sequence": 233,
+        "visible": true
+      },
+      {
+        "seconds": 7.845604458998423,
+        "sequence": 233,
+        "visible": true
+      },
+      {
+        "seconds": 7.851278917005402,
+        "sequence": 233,
+        "visible": true
+      },
+      {
+        "seconds": 7.863735874998383,
+        "sequence": 234,
+        "visible": true
+      },
+      {
+        "seconds": 7.897851208996144,
+        "sequence": 235,
+        "visible": true
+      },
+      {
+        "seconds": 7.930789209000068,
+        "sequence": 236,
+        "visible": true
+      },
+      {
+        "seconds": 7.964418458999717,
+        "sequence": 237,
+        "visible": true
+      },
+      {
+        "seconds": 7.996928916996694,
+        "sequence": 237,
+        "visible": true
+      },
+      {
+        "seconds": 7.999002124997787,
+        "sequence": 238,
+        "visible": true
+      },
+      {
+        "seconds": 8.002682916994672,
+        "sequence": 238,
+        "visible": true
+      },
+      {
+        "seconds": 8.02947412499634,
+        "sequence": 239,
+        "visible": true
+      },
+      {
+        "seconds": 8.060664709002594,
+        "sequence": 240,
+        "visible": true
+      },
+      {
+        "seconds": 8.093789334001485,
+        "sequence": 241,
+        "visible": true
+      },
+      {
+        "seconds": 8.126909958999022,
+        "sequence": 242,
+        "visible": true
+      },
+      {
+        "seconds": 8.146339833998354,
+        "sequence": 242,
+        "visible": true
+      },
+      {
+        "seconds": 8.15577700000722,
+        "sequence": 242,
+        "visible": true
+      },
+      {
+        "seconds": 8.165177834001952,
+        "sequence": 243,
+        "visible": true
+      },
+      {
+        "seconds": 8.194046417003847,
+        "sequence": 244,
+        "visible": true
+      },
+      {
+        "seconds": 8.226627249998273,
+        "sequence": 245,
+        "visible": true
+      },
+      {
+        "seconds": 8.260200792006799,
+        "sequence": 246,
+        "visible": true
+      },
+      {
+        "seconds": 8.292697917000623,
+        "sequence": 247,
+        "visible": true
+      },
+      {
+        "seconds": 8.296738208999159,
+        "sequence": 247,
+        "visible": true
+      },
+      {
+        "seconds": 8.299385792008252,
+        "sequence": 247,
+        "visible": true
+      },
+      {
+        "seconds": 8.3257012499962,
+        "sequence": 248,
+        "visible": true
+      },
+      {
+        "seconds": 8.358524625000427,
+        "sequence": 249,
+        "visible": true
+      },
+      {
+        "seconds": 8.390896917000646,
+        "sequence": 250,
+        "visible": true
+      },
+      {
+        "seconds": 8.425310749997152,
+        "sequence": 251,
+        "visible": true
+      },
+      {
+        "seconds": 8.446440250001615,
+        "sequence": 251,
+        "visible": true
+      },
+      {
+        "seconds": 8.451524834003067,
+        "sequence": 251,
+        "visible": true
+      },
+      {
+        "seconds": 8.456796458995086,
+        "sequence": 252,
+        "visible": true
+      },
+      {
+        "seconds": 8.490940125004272,
+        "sequence": 253,
+        "visible": true
+      },
+      {
+        "seconds": 8.52392979200522,
+        "sequence": 254,
+        "visible": true
+      },
+      {
+        "seconds": 8.556790333997924,
+        "sequence": 255,
+        "visible": true
+      },
+      {
+        "seconds": 8.589526584008127,
+        "sequence": 256,
+        "visible": true
+      },
+      {
+        "seconds": 8.596043209006893,
+        "sequence": 256,
+        "visible": true
+      },
+      {
+        "seconds": 8.603133209006046,
+        "sequence": 256,
+        "visible": true
+      },
+      {
+        "seconds": 8.622305583994603,
+        "sequence": 257,
+        "visible": true
+      },
+      {
+        "seconds": 8.656545874997391,
+        "sequence": 258,
+        "visible": true
+      },
+      {
+        "seconds": 8.6891897089954,
+        "sequence": 259,
+        "visible": true
+      },
+      {
+        "seconds": 8.723440166999353,
+        "sequence": 260,
+        "visible": true
+      },
+      {
+        "seconds": 8.74629945900233,
+        "sequence": 260,
+        "visible": true
+      },
+      {
+        "seconds": 8.756366625006194,
+        "sequence": 260,
+        "visible": true
+      },
+      {
+        "seconds": 8.757855749994633,
+        "sequence": 261,
+        "visible": true
+      },
+      {
+        "seconds": 8.789114917002735,
+        "sequence": 262,
+        "visible": true
+      },
+      {
+        "seconds": 8.821503125000163,
+        "sequence": 263,
+        "visible": true
+      },
+      {
+        "seconds": 8.854384209000273,
+        "sequence": 264,
+        "visible": true
+      },
+      {
+        "seconds": 8.888890083995648,
+        "sequence": 265,
+        "visible": true
+      },
+      {
+        "seconds": 8.896307333998266,
+        "sequence": 265,
+        "visible": true
+      },
+      {
+        "seconds": 8.898938541999087,
+        "sequence": 265,
+        "visible": true
+      },
+      {
+        "seconds": 8.920907584004453,
+        "sequence": 266,
+        "visible": true
+      },
+      {
+        "seconds": 8.952691084006801,
+        "sequence": 267,
+        "visible": true
+      },
+      {
+        "seconds": 8.985654417003389,
+        "sequence": 268,
+        "visible": true
+      },
+      {
+        "seconds": 9.018754792006803,
+        "sequence": 269,
+        "visible": true
+      },
+      {
+        "seconds": 9.04675158399914,
+        "sequence": 269,
+        "visible": true
+      },
+      {
+        "seconds": 9.051853791999747,
+        "sequence": 269,
+        "visible": true
+      },
+      {
+        "seconds": 9.055775875007384,
+        "sequence": 270,
+        "visible": true
+      },
+      {
+        "seconds": 9.083831833995646,
+        "sequence": 271,
+        "visible": true
+      },
+      {
+        "seconds": 9.117339042000822,
+        "sequence": 272,
+        "visible": true
+      },
+      {
+        "seconds": 9.150803124997765,
+        "sequence": 273,
+        "visible": true
+      },
+      {
+        "seconds": 9.185187334005604,
+        "sequence": 274,
+        "visible": true
+      },
+      {
+        "seconds": 9.196564958998351,
+        "sequence": 274,
+        "visible": true
+      },
+      {
+        "seconds": 9.203766834005364,
+        "sequence": 274,
+        "visible": true
+      },
+      {
+        "seconds": 9.217604083998594,
+        "sequence": 275,
+        "visible": true
+      },
+      {
+        "seconds": 9.25033229199471,
+        "sequence": 276,
+        "visible": true
+      },
+      {
+        "seconds": 9.28413520900358,
+        "sequence": 277,
+        "visible": true
+      },
+      {
+        "seconds": 9.31673841700831,
+        "sequence": 278,
+        "visible": true
+      },
+      {
+        "seconds": 9.348417291999795,
+        "sequence": 278,
+        "visible": true
+      },
+      {
+        "seconds": 9.350842875006492,
+        "sequence": 279,
+        "visible": true
+      },
+      {
+        "seconds": 9.354557541999384,
+        "sequence": 279,
+        "visible": true
+      },
+      {
+        "seconds": 9.380264916995657,
+        "sequence": 280,
+        "visible": true
+      },
+      {
+        "seconds": 9.413144624995766,
+        "sequence": 281,
+        "visible": true
+      },
+      {
+        "seconds": 9.446688334006467,
+        "sequence": 282,
+        "visible": true
+      },
+      {
+        "seconds": 9.481589125003666,
+        "sequence": 283,
+        "visible": true
+      },
+      {
+        "seconds": 9.49756845900265,
+        "sequence": 283,
+        "visible": true
+      },
+      {
+        "seconds": 9.507767458999297,
+        "sequence": 283,
+        "visible": true
+      },
+      {
+        "seconds": 9.516625375006697,
+        "sequence": 284,
+        "visible": true
+      },
+      {
+        "seconds": 9.546820500007016,
+        "sequence": 285,
+        "visible": true
+      },
+      {
+        "seconds": 9.580787833998329,
+        "sequence": 286,
+        "visible": true
+      },
+      {
+        "seconds": 9.61278929200489,
+        "sequence": 287,
+        "visible": true
+      },
+      {
+        "seconds": 9.646030125004472,
+        "sequence": 287,
+        "visible": true
+      },
+      {
+        "seconds": 9.648089209003956,
+        "sequence": 288,
+        "visible": true
+      },
+      {
+        "seconds": 9.650781749995076,
+        "sequence": 288,
+        "visible": true
+      },
+      {
+        "seconds": 9.67859608400613,
+        "sequence": 289,
+        "visible": true
+      },
+      {
+        "seconds": 9.71043274999829,
+        "sequence": 290,
+        "visible": true
+      },
+      {
+        "seconds": 9.743583250005031,
+        "sequence": 291,
+        "visible": true
+      },
+      {
+        "seconds": 9.776723999995738,
+        "sequence": 292,
+        "visible": true
+      },
+      {
+        "seconds": 9.798940209002467,
+        "sequence": 292,
+        "visible": true
+      },
+      {
+        "seconds": 9.80355262500234,
+        "sequence": 292,
+        "visible": true
+      },
+      {
+        "seconds": 9.812194375001127,
+        "sequence": 293,
+        "visible": true
+      },
+      {
+        "seconds": 9.84478312500869,
+        "sequence": 294,
+        "visible": true
+      },
+      {
+        "seconds": 9.876744542008964,
+        "sequence": 295,
+        "visible": true
+      },
+      {
+        "seconds": 9.910148791997926,
+        "sequence": 296,
+        "visible": true
+      },
+      {
+        "seconds": 9.944648834003601,
+        "sequence": 297,
+        "visible": true
+      },
+      {
+        "seconds": 9.947915374999866,
+        "sequence": 297,
+        "visible": true
+      },
+      {
+        "seconds": 9.95517841700348,
+        "sequence": 297,
+        "visible": true
+      },
+      {
+        "seconds": 9.975669209001353,
+        "sequence": 298,
+        "visible": true
+      },
+      {
+        "seconds": 10.008607958996436,
+        "sequence": 299,
+        "visible": true
+      },
+      {
+        "seconds": 10.043308374995831,
+        "sequence": 300,
+        "visible": true
+      },
+      {
+        "seconds": 10.076920167004573,
+        "sequence": 301,
+        "visible": true
+      },
+      {
+        "seconds": 10.099849999998696,
+        "sequence": 301,
+        "visible": true
+      },
+      {
+        "seconds": 10.107632458995795,
+        "sequence": 301,
+        "visible": true
+      },
+      {
+        "seconds": 10.11081812500197,
+        "sequence": 302,
+        "visible": true
+      },
+      {
+        "seconds": 10.139774499999476,
+        "sequence": 303,
+        "visible": true
+      },
+      {
+        "seconds": 10.172960084004444,
+        "sequence": 304,
+        "visible": true
+      },
+      {
+        "seconds": 10.20662016699498,
+        "sequence": 305,
+        "visible": true
+      },
+      {
+        "seconds": 10.239831084007164,
+        "sequence": 306,
+        "visible": true
+      },
+      {
+        "seconds": 10.245300167007372,
+        "sequence": 306,
+        "visible": true
+      },
+      {
+        "seconds": 10.251406833995134,
+        "sequence": 306,
+        "visible": true
+      },
+      {
+        "seconds": 10.273092167000868,
+        "sequence": 307,
+        "visible": true
+      },
+      {
+        "seconds": 10.305986791994656,
+        "sequence": 308,
+        "visible": true
+      },
+      {
+        "seconds": 10.340001542004757,
+        "sequence": 309,
+        "visible": true
+      },
+      {
+        "seconds": 10.37254454199865,
+        "sequence": 310,
+        "visible": true
+      },
+      {
+        "seconds": 10.397739667008864,
+        "sequence": 310,
+        "visible": true
+      },
+      {
+        "seconds": 10.40313341699948,
+        "sequence": 310,
+        "visible": true
+      },
+      {
+        "seconds": 10.408155583994812,
+        "sequence": 311,
+        "visible": true
+      },
+      {
+        "seconds": 10.438577499997336,
+        "sequence": 312,
+        "visible": true
+      },
+      {
+        "seconds": 10.471063292003237,
+        "sequence": 313,
+        "visible": true
+      },
+      {
+        "seconds": 10.50317312500556,
+        "sequence": 314,
+        "visible": true
+      },
+      {
+        "seconds": 10.536542500005453,
+        "sequence": 315,
+        "visible": true
+      },
+      {
+        "seconds": 10.545394875007332,
+        "sequence": 315,
+        "visible": true
+      },
+      {
+        "seconds": 10.555950292007765,
+        "sequence": 315,
+        "visible": true
+      },
+      {
+        "seconds": 10.568611499998951,
+        "sequence": 316,
+        "visible": true
+      },
+      {
+        "seconds": 10.601562541996827,
+        "sequence": 317,
+        "visible": true
+      },
+      {
+        "seconds": 10.637031334001222,
+        "sequence": 318,
+        "visible": true
+      },
+      {
+        "seconds": 10.669265542004723,
+        "sequence": 319,
+        "visible": true
+      },
+      {
+        "seconds": 10.698472375006531,
+        "sequence": 319,
+        "visible": true
+      },
+      {
+        "seconds": 10.708305584004847,
+        "sequence": 320,
+        "visible": true
+      },
+      {
+        "seconds": 10.735260083994945,
+        "sequence": 321,
+        "visible": true
+      },
+      {
+        "seconds": 10.768684624999878,
+        "sequence": 322,
+        "visible": true
+      },
+      {
+        "seconds": 10.801138249997166,
+        "sequence": 323,
+        "visible": true
+      },
+      {
+        "seconds": 10.835059334000107,
+        "sequence": 324,
+        "visible": true
+      },
+      {
+        "seconds": 10.845945875000325,
+        "sequence": 324,
+        "visible": true
+      },
+      {
+        "seconds": 10.851190959001542,
+        "sequence": 324,
+        "visible": true
+      },
+      {
+        "seconds": 10.867198834006558,
+        "sequence": 325,
+        "visible": true
+      },
+      {
+        "seconds": 10.898860708999564,
+        "sequence": 326,
+        "visible": true
+      },
+      {
+        "seconds": 10.932292291996418,
+        "sequence": 327,
+        "visible": true
+      },
+      {
+        "seconds": 10.965242125006625,
+        "sequence": 328,
+        "visible": true
+      },
+      {
+        "seconds": 10.996804084003088,
+        "sequence": 328,
+        "visible": true
+      },
+      {
+        "seconds": 10.999046708995593,
+        "sequence": 329,
+        "visible": true
+      },
+      {
+        "seconds": 11.002869125004509,
+        "sequence": 329,
+        "visible": true
+      },
+      {
+        "seconds": 11.032687792001525,
+        "sequence": 330,
+        "visible": true
+      },
+      {
+        "seconds": 11.06507320899982,
+        "sequence": 331,
+        "visible": true
+      },
+      {
+        "seconds": 11.098615541995969,
+        "sequence": 332,
+        "visible": true
+      },
+      {
+        "seconds": 11.131777667003917,
+        "sequence": 333,
+        "visible": true
+      },
+      {
+        "seconds": 11.147171709002578,
+        "sequence": 333,
+        "visible": true
+      },
+      {
+        "seconds": 11.155955666996306,
+        "sequence": 333,
+        "visible": true
+      },
+      {
+        "seconds": 11.166148083997541,
+        "sequence": 334,
+        "visible": true
+      },
+      {
+        "seconds": 11.197193084008177,
+        "sequence": 335,
+        "visible": true
+      },
+      {
+        "seconds": 11.231680084005347,
+        "sequence": 336,
+        "visible": true
+      },
+      {
+        "seconds": 11.263743375006015,
+        "sequence": 337,
+        "visible": true
+      },
+      {
+        "seconds": 11.297101625008509,
+        "sequence": 337,
+        "visible": true
+      },
+      {
+        "seconds": 11.299395916998037,
+        "sequence": 338,
+        "visible": true
+      },
+      {
+        "seconds": 11.307728291998501,
+        "sequence": 338,
+        "visible": true
+      },
+      {
+        "seconds": 11.328822750001564,
+        "sequence": 339,
+        "visible": true
+      },
+      {
+        "seconds": 11.361206875008065,
+        "sequence": 340,
+        "visible": true
+      },
+      {
+        "seconds": 11.39544316699903,
+        "sequence": 341,
+        "visible": true
+      },
+      {
+        "seconds": 11.428870917006861,
+        "sequence": 342,
+        "visible": true
+      },
+      {
+        "seconds": 11.446343125004205,
+        "sequence": 342,
+        "visible": true
+      },
+      {
+        "seconds": 11.45160733400553,
+        "sequence": 342,
+        "visible": true
+      },
+      {
+        "seconds": 11.461741000006441,
+        "sequence": 343,
+        "visible": true
+      },
+      {
+        "seconds": 11.494010499998694,
+        "sequence": 344,
+        "visible": true
+      },
+      {
+        "seconds": 11.527723624996725,
+        "sequence": 345,
+        "visible": true
+      },
+      {
+        "seconds": 11.560194999998203,
+        "sequence": 346,
+        "visible": true
+      },
+      {
+        "seconds": 11.592650999999023,
+        "sequence": 347,
+        "visible": true
+      },
+      {
+        "seconds": 11.596268791996408,
+        "sequence": 347,
+        "visible": true
+      },
+      {
+        "seconds": 11.603520625008969,
+        "sequence": 347,
+        "visible": true
+      },
+      {
+        "seconds": 11.62593162500707,
+        "sequence": 348,
+        "visible": true
+      },
+      {
+        "seconds": 11.658266792001086,
+        "sequence": 349,
+        "visible": true
+      },
+      {
+        "seconds": 11.692317209002795,
+        "sequence": 350,
+        "visible": true
+      },
+      {
+        "seconds": 11.724223459008499,
+        "sequence": 351,
+        "visible": true
+      },
+      {
+        "seconds": 11.746608500005095,
+        "sequence": 351,
+        "visible": true
+      },
+      {
+        "seconds": 11.755822000006447,
+        "sequence": 351,
+        "visible": true
+      },
+      {
+        "seconds": 11.757626125006936,
+        "sequence": 352,
+        "visible": true
+      },
+      {
+        "seconds": 11.790845334006008,
+        "sequence": 353,
+        "visible": true
+      },
+      {
+        "seconds": 11.824318041995866,
+        "sequence": 354,
+        "visible": true
+      },
+      {
+        "seconds": 11.85797145900142,
+        "sequence": 355,
+        "visible": true
+      },
+      {
+        "seconds": 11.891154209006345,
+        "sequence": 356,
+        "visible": true
+      },
+      {
+        "seconds": 11.896130292007001,
+        "sequence": 356,
+        "visible": true
+      },
+      {
+        "seconds": 11.899110291997204,
+        "sequence": 356,
+        "visible": true
+      },
+      {
+        "seconds": 11.923552916996414,
+        "sequence": 357,
+        "visible": true
+      },
+      {
+        "seconds": 11.957610249999561,
+        "sequence": 358,
+        "visible": true
+      },
+      {
+        "seconds": 11.98922400000447,
+        "sequence": 359,
+        "visible": true
+      },
+      {
+        "seconds": 12.024015041999519,
+        "sequence": 360,
+        "visible": true
+      },
+      {
+        "seconds": 12.04634575000091,
+        "sequence": 360,
+        "visible": true
+      },
+      {
+        "seconds": 12.052444000000833,
+        "sequence": 360,
+        "visible": true
+      },
+      {
+        "seconds": 12.057931542003644,
+        "sequence": 361,
+        "visible": true
+      },
+      {
+        "seconds": 12.086954375001369,
+        "sequence": 362,
+        "visible": true
+      },
+      {
+        "seconds": 12.119889042005525,
+        "sequence": 363,
+        "visible": true
+      },
+      {
+        "seconds": 12.15325129199482,
+        "sequence": 364,
+        "visible": true
+      },
+      {
+        "seconds": 12.186794167006155,
+        "sequence": 365,
+        "visible": true
+      },
+      {
+        "seconds": 12.196048708996386,
+        "sequence": 365,
+        "visible": true
+      },
+      {
+        "seconds": 12.203110333997756,
+        "sequence": 365,
+        "visible": true
+      },
+      {
+        "seconds": 12.219496042001992,
+        "sequence": 366,
+        "visible": true
+      },
+      {
+        "seconds": 12.252397667005425,
+        "sequence": 367,
+        "visible": true
+      },
+      {
+        "seconds": 12.285502625003573,
+        "sequence": 368,
+        "visible": true
+      },
+      {
+        "seconds": 12.319693666999228,
+        "sequence": 369,
+        "visible": true
+      },
+      {
+        "seconds": 12.351038875000086,
+        "sequence": 369,
+        "visible": true
+      },
+      {
+        "seconds": 12.35551208400284,
+        "sequence": 369,
+        "visible": true
+      },
+      {
+        "seconds": 12.358400459008408,
+        "sequence": 370,
+        "visible": true
+      },
+      {
+        "seconds": 12.38604516700434,
+        "sequence": 371,
+        "visible": true
+      },
+      {
+        "seconds": 12.418657583999448,
+        "sequence": 372,
+        "visible": true
+      },
+      {
+        "seconds": 12.452831000002334,
+        "sequence": 373,
+        "visible": true
+      },
+      {
+        "seconds": 12.485746000005747,
+        "sequence": 374,
+        "visible": true
+      },
+      {
+        "seconds": 12.496679208998103,
+        "sequence": 374,
+        "visible": true
+      },
+      {
+        "seconds": 12.499725458998,
+        "sequence": 374,
+        "visible": true
+      },
+      {
+        "seconds": 12.517691083994578,
+        "sequence": 375,
+        "visible": true
+      },
+      {
+        "seconds": 12.54903862500214,
+        "sequence": 376,
+        "visible": true
+      },
+      {
+        "seconds": 12.582091917007347,
+        "sequence": 377,
+        "visible": true
+      },
+      {
+        "seconds": 12.615190334006911,
+        "sequence": 378,
+        "visible": true
+      },
+      {
+        "seconds": 12.649708875003853,
+        "sequence": 378,
+        "visible": true
+      },
+      {
+        "seconds": 12.652173709007911,
+        "sequence": 379,
+        "visible": true
+      },
+      {
+        "seconds": 12.659133209002903,
+        "sequence": 379,
+        "visible": true
+      },
+      {
+        "seconds": 12.681663249997655,
+        "sequence": 380,
+        "visible": true
+      },
+      {
+        "seconds": 12.716342542000348,
+        "sequence": 381,
+        "visible": true
+      },
+      {
+        "seconds": 12.749035250002635,
+        "sequence": 382,
+        "visible": true
+      },
+      {
+        "seconds": 12.781510708999122,
+        "sequence": 383,
+        "visible": true
+      },
+      {
+        "seconds": 12.796688208996784,
+        "sequence": 383,
+        "visible": true
+      },
+      {
+        "seconds": 12.80350166700373,
+        "sequence": 383,
+        "visible": true
+      },
+      {
+        "seconds": 12.813957375008613,
+        "sequence": 384,
+        "visible": true
+      },
+      {
+        "seconds": 12.84803829199518,
+        "sequence": 385,
+        "visible": true
+      },
+      {
+        "seconds": 12.880622917000437,
+        "sequence": 386,
+        "visible": true
+      },
+      {
+        "seconds": 12.914892667002277,
+        "sequence": 387,
+        "visible": true
+      },
+      {
+        "seconds": 12.947238499997184,
+        "sequence": 387,
+        "visible": true
+      },
+      {
+        "seconds": 12.949177583999699,
+        "sequence": 388,
+        "visible": true
+      },
+      {
+        "seconds": 12.980587416997878,
+        "sequence": 389,
+        "visible": true
+      },
+      {
+        "seconds": 13.013508834003005,
+        "sequence": 390,
+        "visible": true
+      },
+      {
+        "seconds": 13.045153500002925,
+        "sequence": 391,
+        "visible": true
+      },
+      {
+        "seconds": 13.078530291997595,
+        "sequence": 392,
+        "visible": true
+      },
+      {
+        "seconds": 13.096539667007164,
+        "sequence": 392,
+        "visible": true
+      },
+      {
+        "seconds": 13.099648959003389,
+        "sequence": 392,
+        "visible": true
+      },
+      {
+        "seconds": 13.111476624995703,
+        "sequence": 393,
+        "visible": true
+      },
+      {
+        "seconds": 13.144263875001343,
+        "sequence": 394,
+        "visible": true
+      },
+      {
+        "seconds": 13.178448000006028,
+        "sequence": 395,
+        "visible": true
+      },
+      {
+        "seconds": 13.212245041999267,
+        "sequence": 396,
+        "visible": true
+      },
+      {
+        "seconds": 13.244133333995705,
+        "sequence": 397,
+        "visible": true
+      },
+      {
+        "seconds": 13.248192500002915,
+        "sequence": 397,
+        "visible": true
+      },
+      {
+        "seconds": 13.25119533399993,
+        "sequence": 397,
+        "visible": true
+      },
+      {
+        "seconds": 13.276866917003645,
+        "sequence": 398,
+        "visible": true
+      },
+      {
+        "seconds": 13.30969224999717,
+        "sequence": 399,
+        "visible": true
+      },
+      {
+        "seconds": 13.342478916994878,
+        "sequence": 400,
+        "visible": true
+      },
+      {
+        "seconds": 13.376270749999094,
+        "sequence": 401,
+        "visible": true
+      },
+      {
+        "seconds": 13.397926250007004,
+        "sequence": 401,
+        "visible": true
+      },
+      {
+        "seconds": 13.40411195899651,
+        "sequence": 401,
+        "visible": true
+      },
+      {
+        "seconds": 13.409366959007457,
+        "sequence": 402,
+        "visible": true
+      },
+      {
+        "seconds": 13.441022416998749,
+        "sequence": 403,
+        "visible": true
+      },
+      {
+        "seconds": 13.472893875004956,
+        "sequence": 404,
+        "visible": true
+      },
+      {
+        "seconds": 13.507109958998626,
+        "sequence": 405,
+        "visible": true
+      },
+      {
+        "seconds": 13.539973999999347,
+        "sequence": 406,
+        "visible": true
+      },
+      {
+        "seconds": 13.545986958997673,
+        "sequence": 406,
+        "visible": true
+      },
+      {
+        "seconds": 13.555764999997336,
+        "sequence": 406,
+        "visible": true
+      },
+      {
+        "seconds": 13.572302583997953,
+        "sequence": 407,
+        "visible": true
+      },
+      {
+        "seconds": 13.605738625003141,
+        "sequence": 408,
+        "visible": true
+      },
+      {
+        "seconds": 13.639460083999438,
+        "sequence": 409,
+        "visible": true
+      },
+      {
+        "seconds": 13.673836333997315,
+        "sequence": 410,
+        "visible": true
+      },
+      {
+        "seconds": 13.696942541995668,
+        "sequence": 410,
+        "visible": true
+      },
+      {
+        "seconds": 13.707976375008002,
+        "sequence": 411,
+        "visible": true
+      },
+      {
+        "seconds": 13.739406292006606,
+        "sequence": 412,
+        "visible": true
+      },
+      {
+        "seconds": 13.771601375003229,
+        "sequence": 413,
+        "visible": true
+      },
+      {
+        "seconds": 13.805197124995175,
+        "sequence": 414,
+        "visible": true
+      },
+      {
+        "seconds": 13.838324042008026,
+        "sequence": 415,
+        "visible": true
+      },
+      {
+        "seconds": 13.846120041998802,
+        "sequence": 415,
+        "visible": true
+      },
+      {
+        "seconds": 13.851480917001027,
+        "sequence": 415,
+        "visible": true
+      },
+      {
+        "seconds": 13.869141458999366,
+        "sequence": 416,
+        "visible": true
+      },
+      {
+        "seconds": 13.902335792008671,
+        "sequence": 417,
+        "visible": true
+      },
+      {
+        "seconds": 13.935644500001217,
+        "sequence": 418,
+        "visible": true
+      },
+      {
+        "seconds": 13.969049874998746,
+        "sequence": 419,
+        "visible": true
+      },
+      {
+        "seconds": 13.998154458997305,
+        "sequence": 419,
+        "visible": true
+      },
+      {
+        "seconds": 14.0035393750004,
+        "sequence": 419,
+        "visible": true
+      },
+      {
+        "seconds": 14.007102292001946,
+        "sequence": 420,
+        "visible": true
+      },
+      {
+        "seconds": 14.036308499998995,
+        "sequence": 421,
+        "visible": true
+      },
+      {
+        "seconds": 14.068740167000215,
+        "sequence": 422,
+        "visible": true
+      },
+      {
+        "seconds": 14.101628000003984,
+        "sequence": 423,
+        "visible": true
+      },
+      {
+        "seconds": 14.13432766700862,
+        "sequence": 424,
+        "visible": true
+      },
+      {
+        "seconds": 14.146539000008488,
+        "sequence": 424,
+        "visible": true
+      },
+      {
+        "seconds": 14.15651012500166,
+        "sequence": 424,
+        "visible": true
+      },
+      {
+        "seconds": 14.166922500007786,
+        "sequence": 425,
+        "visible": true
+      },
+      {
+        "seconds": 14.200653916996089,
+        "sequence": 426,
+        "visible": true
+      },
+      {
+        "seconds": 14.234927583995159,
+        "sequence": 427,
+        "visible": true
+      },
+      {
+        "seconds": 14.266648000004352,
+        "sequence": 428,
+        "visible": true
+      },
+      {
+        "seconds": 14.297262791995308,
+        "sequence": 428,
+        "visible": true
+      },
+      {
+        "seconds": 14.301455249995342,
+        "sequence": 429,
+        "visible": true
+      },
+      {
+        "seconds": 14.333336084004259,
+        "sequence": 430,
+        "visible": true
+      },
+      {
+        "seconds": 14.365697250002995,
+        "sequence": 431,
+        "visible": true
+      },
+      {
+        "seconds": 14.397289333996014,
+        "sequence": 432,
+        "visible": true
+      },
+      {
+        "seconds": 14.429865291996975,
+        "sequence": 433,
+        "visible": true
+      },
+      {
+        "seconds": 14.44665637500293,
+        "sequence": 433,
+        "visible": true
+      },
+      {
+        "seconds": 14.451875917002326,
+        "sequence": 433,
+        "visible": true
+      },
+      {
+        "seconds": 14.462159667004016,
+        "sequence": 434,
+        "visible": true
+      },
+      {
+        "seconds": 14.495990791998338,
+        "sequence": 435,
+        "visible": true
+      },
+      {
+        "seconds": 14.53081954200752,
+        "sequence": 436,
+        "visible": true
+      },
+      {
+        "seconds": 14.563407124995138,
+        "sequence": 437,
+        "visible": true
+      },
+      {
+        "seconds": 14.598224208995816,
+        "sequence": 437,
+        "visible": true
+      },
+      {
+        "seconds": 14.601099292005529,
+        "sequence": 438,
+        "visible": true
+      },
+      {
+        "seconds": 14.61228845900041,
+        "sequence": 438,
+        "visible": true
+      },
+      {
+        "seconds": 14.62834316700173,
+        "sequence": 439,
+        "visible": true
+      },
+      {
+        "seconds": 14.661775375003344,
+        "sequence": 440,
+        "visible": true
+      },
+      {
+        "seconds": 14.695775792002678,
+        "sequence": 441,
+        "visible": true
+      },
+      {
+        "seconds": 14.728482334001455,
+        "sequence": 442,
+        "visible": true
+      },
+      {
+        "seconds": 14.746849792005378,
+        "sequence": 442,
+        "visible": true
+      },
+      {
+        "seconds": 14.755755542006227,
+        "sequence": 442,
+        "visible": true
+      },
+      {
+        "seconds": 14.760296292006387,
+        "sequence": 443,
+        "visible": true
+      },
+      {
+        "seconds": 14.793570000008913,
+        "sequence": 444,
+        "visible": true
+      },
+      {
+        "seconds": 14.827327042003162,
+        "sequence": 445,
+        "visible": true
+      },
+      {
+        "seconds": 14.859233584007598,
+        "sequence": 446,
+        "visible": true
+      },
+      {
+        "seconds": 14.892012167008943,
+        "sequence": 447,
+        "visible": true
+      },
+      {
+        "seconds": 14.89595333399484,
+        "sequence": 447,
+        "visible": true
+      },
+      {
+        "seconds": 14.898906000002171,
+        "sequence": 447,
+        "visible": true
+      },
+      {
+        "seconds": 14.926141125004506,
+        "sequence": 448,
+        "visible": true
+      },
+      {
+        "seconds": 14.959184000006644,
+        "sequence": 449,
+        "visible": true
+      },
+      {
+        "seconds": 14.993468750006286,
+        "sequence": 450,
+        "visible": true
+      },
+      {
+        "seconds": 15.02515879200655,
+        "sequence": 451,
+        "visible": true
+      },
+      {
+        "seconds": 15.046086125003058,
+        "sequence": 451,
+        "visible": true
+      },
+      {
+        "seconds": 15.052000249997946,
+        "sequence": 451,
+        "visible": true
+      },
+      {
+        "seconds": 15.057283292000648,
+        "sequence": 452,
+        "visible": true
+      },
+      {
+        "seconds": 15.090696375002153,
+        "sequence": 453,
+        "visible": true
+      },
+      {
+        "seconds": 15.12537170900032,
+        "sequence": 454,
+        "visible": true
+      },
+      {
+        "seconds": 15.15885554200213,
+        "sequence": 455,
+        "visible": true
+      },
+      {
+        "seconds": 15.190856667002663,
+        "sequence": 456,
+        "visible": true
+      },
+      {
+        "seconds": 15.195991792003042,
+        "sequence": 456,
+        "visible": true
+      },
+      {
+        "seconds": 15.203955375007354,
+        "sequence": 456,
+        "visible": true
+      },
+      {
+        "seconds": 15.222495249996427,
+        "sequence": 457,
+        "visible": true
+      },
+      {
+        "seconds": 15.254527166995103,
+        "sequence": 458,
+        "visible": true
+      },
+      {
+        "seconds": 15.288664791994961,
+        "sequence": 459,
+        "visible": true
+      },
+      {
+        "seconds": 15.322085042003891,
+        "sequence": 460,
+        "visible": true
+      },
+      {
+        "seconds": 15.34742591700342,
+        "sequence": 460,
+        "visible": true
+      },
+      {
+        "seconds": 15.35759120900184,
+        "sequence": 460,
+        "visible": true
+      },
+      {
+        "seconds": 15.359749416995328,
+        "sequence": 461,
+        "visible": true
+      },
+      {
+        "seconds": 15.38833975000307,
+        "sequence": 462,
+        "visible": true
+      },
+      {
+        "seconds": 15.420665041994653,
+        "sequence": 463,
+        "visible": true
+      },
+      {
+        "seconds": 15.454437459004112,
+        "sequence": 464,
+        "visible": true
+      },
+      {
+        "seconds": 15.487943583997549,
+        "sequence": 465,
+        "visible": true
+      },
+      {
+        "seconds": 15.497002000003704,
+        "sequence": 465,
+        "visible": true
+      },
+      {
+        "seconds": 15.508326334005687,
+        "sequence": 465,
+        "visible": true
+      },
+      {
+        "seconds": 15.519984792001196,
+        "sequence": 466,
+        "visible": true
+      },
+      {
+        "seconds": 15.553189375001239,
+        "sequence": 467,
+        "visible": true
+      },
+      {
+        "seconds": 15.58516304200748,
+        "sequence": 468,
+        "visible": true
+      },
+      {
+        "seconds": 15.623170667007798,
+        "sequence": 469,
+        "visible": true
+      },
+      {
+        "seconds": 15.649116250002407,
+        "sequence": 469,
+        "visible": true
+      },
+      {
+        "seconds": 15.66230229199573,
+        "sequence": 469,
+        "visible": true
+      },
+      {
+        "seconds": 15.666855000003125,
+        "sequence": 470,
+        "visible": true
+      },
+      {
+        "seconds": 15.688936292004655,
+        "sequence": 471,
+        "visible": true
+      },
+      {
+        "seconds": 15.716644708998501,
+        "sequence": 472,
+        "visible": true
+      },
+      {
+        "seconds": 15.750432959001046,
+        "sequence": 473,
+        "visible": true
+      },
+      {
+        "seconds": 15.783416709004086,
+        "sequence": 474,
+        "visible": true
+      },
+      {
+        "seconds": 15.797197624997352,
+        "sequence": 474,
+        "visible": true
+      },
+      {
+        "seconds": 15.803726541998913,
+        "sequence": 474,
+        "visible": true
+      },
+      {
+        "seconds": 15.817252875000122,
+        "sequence": 475,
+        "visible": true
+      },
+      {
+        "seconds": 15.85053241699643,
+        "sequence": 476,
+        "visible": true
+      },
+      {
+        "seconds": 15.884669125007349,
+        "sequence": 477,
+        "visible": true
+      },
+      {
+        "seconds": 15.917033375008032,
+        "sequence": 478,
+        "visible": true
+      },
+      {
+        "seconds": 15.9471800839965,
+        "sequence": 478,
+        "visible": true
+      },
+      {
+        "seconds": 15.950578000003588,
+        "sequence": 479,
+        "visible": true
+      },
+      {
+        "seconds": 15.982652334001614,
+        "sequence": 480,
+        "visible": true
+      },
+      {
+        "seconds": 16.015673542002332,
+        "sequence": 481,
+        "visible": true
+      },
+      {
+        "seconds": 16.0488964170072,
+        "sequence": 482,
+        "visible": true
+      },
+      {
+        "seconds": 16.080165250008577,
+        "sequence": 483,
+        "visible": true
+      },
+      {
+        "seconds": 16.096465374997933,
+        "sequence": 483,
+        "visible": true
+      },
+      {
+        "seconds": 16.099383292006678,
+        "sequence": 483,
+        "visible": true
+      },
+      {
+        "seconds": 16.112885750000714,
+        "sequence": 484,
+        "visible": true
+      },
+      {
+        "seconds": 16.147325708996505,
+        "sequence": 485,
+        "visible": true
+      },
+      {
+        "seconds": 16.181954500003485,
+        "sequence": 486,
+        "visible": true
+      },
+      {
+        "seconds": 16.21257116700872,
+        "sequence": 487,
+        "visible": true
+      },
+      {
+        "seconds": 16.24693604200729,
+        "sequence": 487,
+        "visible": true
+      },
+      {
+        "seconds": 16.249818124997546,
+        "sequence": 488,
+        "visible": true
+      },
+      {
+        "seconds": 16.260030459001428,
+        "sequence": 488,
+        "visible": true
+      },
+      {
+        "seconds": 16.280045250008698,
+        "sequence": 489,
+        "visible": true
+      },
+      {
+        "seconds": 16.312820209001075,
+        "sequence": 490,
+        "visible": true
+      },
+      {
+        "seconds": 16.34579799999483,
+        "sequence": 491,
+        "visible": true
+      },
+      {
+        "seconds": 16.38079562499479,
+        "sequence": 492,
+        "visible": true
+      },
+      {
+        "seconds": 16.398287250005524,
+        "sequence": 492,
+        "visible": true
+      },
+      {
+        "seconds": 16.404639000000316,
+        "sequence": 492,
+        "visible": true
+      },
+      {
+        "seconds": 16.414041374999215,
+        "sequence": 493,
+        "visible": true
+      },
+      {
+        "seconds": 16.44544991699513,
+        "sequence": 494,
+        "visible": true
+      },
+      {
+        "seconds": 16.477052166999783,
+        "sequence": 495,
+        "visible": true
+      },
+      {
+        "seconds": 16.51097225000558,
+        "sequence": 496,
+        "visible": true
+      },
+      {
+        "seconds": 16.543500833999133,
+        "sequence": 497,
+        "visible": true
+      },
+      {
+        "seconds": 16.547654417008744,
+        "sequence": 497,
+        "visible": true
+      },
+      {
+        "seconds": 16.555575167003553,
+        "sequence": 497,
+        "visible": true
+      },
+      {
+        "seconds": 16.576569541997742,
+        "sequence": 498,
+        "visible": true
+      },
+      {
+        "seconds": 16.610060834005708,
+        "sequence": 499,
+        "visible": true
+      },
+      {
+        "seconds": 16.641996459002257,
+        "sequence": 500,
+        "visible": true
+      },
+      {
+        "seconds": 16.675794750000932,
+        "sequence": 501,
+        "visible": true
+      },
+      {
+        "seconds": 16.697191250001197,
+        "sequence": 501,
+        "visible": true
+      },
+      {
+        "seconds": 16.70808045900776,
+        "sequence": 502,
+        "visible": true
+      },
+      {
+        "seconds": 16.74076908400457,
+        "sequence": 503,
+        "visible": true
+      },
+      {
+        "seconds": 16.77444204200583,
+        "sequence": 504,
+        "visible": true
+      },
+      {
+        "seconds": 16.80667491699569,
+        "sequence": 505,
+        "visible": true
+      },
+      {
+        "seconds": 16.84130295900104,
+        "sequence": 506,
+        "visible": true
+      },
+      {
+        "seconds": 16.846417292006663,
+        "sequence": 506,
+        "visible": true
+      },
+      {
+        "seconds": 16.851972792006563,
+        "sequence": 506,
+        "visible": true
+      },
+      {
+        "seconds": 16.8730798339966,
+        "sequence": 507,
+        "visible": true
+      },
+      {
+        "seconds": 16.906132208998315,
+        "sequence": 508,
+        "visible": true
+      },
+      {
+        "seconds": 16.93897529199603,
+        "sequence": 509,
+        "visible": true
+      },
+      {
+        "seconds": 16.97338808400673,
+        "sequence": 510,
+        "visible": true
+      },
+      {
+        "seconds": 16.997165666994988,
+        "sequence": 510,
+        "visible": true
+      },
+      {
+        "seconds": 17.00428666699736,
+        "sequence": 510,
+        "visible": true
+      },
+      {
+        "seconds": 17.0074638340011,
+        "sequence": 511,
+        "visible": true
+      },
+      {
+        "seconds": 17.038459333998617,
+        "sequence": 512,
+        "visible": true
+      },
+      {
+        "seconds": 17.07137550000334,
+        "sequence": 513,
+        "visible": true
+      },
+      {
+        "seconds": 17.105122749999282,
+        "sequence": 514,
+        "visible": true
+      },
+      {
+        "seconds": 17.137460833997466,
+        "sequence": 515,
+        "visible": true
+      },
+      {
+        "seconds": 17.146906666996074,
+        "sequence": 515,
+        "visible": true
+      },
+      {
+        "seconds": 17.155607125008828,
+        "sequence": 515,
+        "visible": true
+      },
+      {
+        "seconds": 17.17068762499548,
+        "sequence": 516,
+        "visible": true
+      },
+      {
+        "seconds": 17.20259724999778,
+        "sequence": 517,
+        "visible": true
+      },
+      {
+        "seconds": 17.237830750003923,
+        "sequence": 518,
+        "visible": true
+      },
+      {
+        "seconds": 17.268683917005546,
+        "sequence": 519,
+        "visible": true
+      },
+      {
+        "seconds": 17.29768150000018,
+        "sequence": 519,
+        "visible": true
+      },
+      {
+        "seconds": 17.30717304200516,
+        "sequence": 520,
+        "visible": true
+      },
+      {
+        "seconds": 17.33532916700642,
+        "sequence": 521,
+        "visible": true
+      },
+      {
+        "seconds": 17.36927925000782,
+        "sequence": 522,
+        "visible": true
+      },
+      {
+        "seconds": 17.402039791995776,
+        "sequence": 523,
+        "visible": true
+      },
+      {
+        "seconds": 17.43430537500535,
+        "sequence": 524,
+        "visible": true
+      },
+      {
+        "seconds": 17.446947584001464,
+        "sequence": 524,
+        "visible": true
+      },
+      {
+        "seconds": 17.4512902090064,
+        "sequence": 524,
+        "visible": true
+      },
+      {
+        "seconds": 17.46797054199851,
+        "sequence": 525,
+        "visible": true
+      },
+      {
+        "seconds": 17.49934412499715,
+        "sequence": 526,
+        "visible": true
+      },
+      {
+        "seconds": 17.531663125002524,
+        "sequence": 527,
+        "visible": true
+      },
+      {
+        "seconds": 17.56493187500746,
+        "sequence": 528,
+        "visible": true
+      },
+      {
+        "seconds": 17.59688508399995,
+        "sequence": 528,
+        "visible": true
+      },
+      {
+        "seconds": 17.59958700000425,
+        "sequence": 529,
+        "visible": true
+      },
+      {
+        "seconds": 17.603629709003144,
+        "sequence": 529,
+        "visible": true
+      },
+      {
+        "seconds": 17.631667834008113,
+        "sequence": 530,
+        "visible": true
+      },
+      {
+        "seconds": 17.664814792005927,
+        "sequence": 531,
+        "visible": true
+      },
+      {
+        "seconds": 17.698202458996093,
+        "sequence": 532,
+        "visible": true
+      },
+      {
+        "seconds": 17.7329017919983,
+        "sequence": 533,
+        "visible": true
+      },
+      {
+        "seconds": 17.747545542006264,
+        "sequence": 533,
+        "visible": true
+      },
+      {
+        "seconds": 17.756930959003512,
+        "sequence": 533,
+        "visible": true
+      },
+      {
+        "seconds": 17.767095584000344,
+        "sequence": 534,
+        "visible": true
+      },
+      {
+        "seconds": 17.798236834001727,
+        "sequence": 535,
+        "visible": true
+      },
+      {
+        "seconds": 17.828765750004095,
+        "sequence": 536,
+        "visible": true
+      },
+      {
+        "seconds": 17.86313437500212,
+        "sequence": 537,
+        "visible": true
+      },
+      {
+        "seconds": 17.897875709008076,
+        "sequence": 537,
+        "visible": true
+      },
+      {
+        "seconds": 17.9008794590045,
+        "sequence": 538,
+        "visible": true
+      },
+      {
+        "seconds": 17.90754499999457,
+        "sequence": 538,
+        "visible": true
+      },
+      {
+        "seconds": 17.930078167002648,
+        "sequence": 539,
+        "visible": true
+      },
+      {
+        "seconds": 17.96327587500855,
+        "sequence": 540,
+        "visible": true
+      },
+      {
+        "seconds": 17.99638137500733,
+        "sequence": 541,
+        "visible": true
+      },
+      {
+        "seconds": 18.029411666997476,
+        "sequence": 542,
+        "visible": true
+      },
+      {
+        "seconds": 18.046127499997965,
+        "sequence": 542,
+        "visible": true
+      },
+      {
+        "seconds": 18.051838833998772,
+        "sequence": 542,
+        "visible": true
+      },
+      {
+        "seconds": 18.063562334005837,
+        "sequence": 543,
+        "visible": true
+      },
+      {
+        "seconds": 18.094004625003436,
+        "sequence": 544,
+        "visible": true
+      },
+      {
+        "seconds": 18.128004041995155,
+        "sequence": 545,
+        "visible": true
+      },
+      {
+        "seconds": 18.16060204200039,
+        "sequence": 546,
+        "visible": true
+      },
+      {
+        "seconds": 18.19783625000855,
+        "sequence": 547,
+        "visible": true
+      },
+      {
+        "seconds": 18.20354633399984,
+        "sequence": 547,
+        "visible": true
+      },
+      {
+        "seconds": 18.227059084005305,
+        "sequence": 548,
+        "visible": true
+      },
+      {
+        "seconds": 18.26019295900187,
+        "sequence": 549,
+        "visible": true
+      },
+      {
+        "seconds": 18.294625334005104,
+        "sequence": 550,
+        "visible": true
+      },
+      {
+        "seconds": 18.32718229200691,
+        "sequence": 551,
+        "visible": true
+      },
+      {
+        "seconds": 18.35161258399603,
+        "sequence": 551,
+        "visible": true
+      },
+      {
+        "seconds": 18.3561318340071,
+        "sequence": 551,
+        "visible": true
+      },
+      {
+        "seconds": 18.36555674999545,
+        "sequence": 552,
+        "visible": true
+      },
+      {
+        "seconds": 18.391500291996635,
+        "sequence": 553,
+        "visible": true
+      },
+      {
+        "seconds": 18.426373374997638,
+        "sequence": 554,
+        "visible": true
+      },
+      {
+        "seconds": 18.457185000006575,
+        "sequence": 555,
+        "visible": true
+      },
+      {
+        "seconds": 18.490302542006248,
+        "sequence": 556,
+        "visible": true
+      },
+      {
+        "seconds": 18.496959249998326,
+        "sequence": 556,
+        "visible": true
+      },
+      {
+        "seconds": 18.50832508399617,
+        "sequence": 556,
+        "visible": true
+      },
+      {
+        "seconds": 18.523144125007093,
+        "sequence": 557,
+        "visible": true
+      },
+      {
+        "seconds": 18.55631333400379,
+        "sequence": 558,
+        "visible": true
+      },
+      {
+        "seconds": 18.588598792004632,
+        "sequence": 559,
+        "visible": true
+      },
+      {
+        "seconds": 18.62201020900102,
+        "sequence": 560,
+        "visible": true
+      },
+      {
+        "seconds": 18.647630000006757,
+        "sequence": 560,
+        "visible": true
+      },
+      {
+        "seconds": 18.651892209003563,
+        "sequence": 560,
+        "visible": true
+      },
+      {
+        "seconds": 18.66024379200826,
+        "sequence": 561,
+        "visible": true
+      },
+      {
+        "seconds": 18.687973542007967,
+        "sequence": 562,
+        "visible": true
+      },
+      {
+        "seconds": 18.721884875005344,
+        "sequence": 563,
+        "visible": true
+      },
+      {
+        "seconds": 18.754410666995682,
+        "sequence": 564,
+        "visible": true
+      },
+      {
+        "seconds": 18.787587583996356,
+        "sequence": 565,
+        "visible": true
+      },
+      {
+        "seconds": 18.797552999996697,
+        "sequence": 565,
+        "visible": true
+      },
+      {
+        "seconds": 18.80412458399951,
+        "sequence": 565,
+        "visible": true
+      },
+      {
+        "seconds": 18.819552375003695,
+        "sequence": 566,
+        "visible": true
+      },
+      {
+        "seconds": 18.852616417003446,
+        "sequence": 567,
+        "visible": true
+      },
+      {
+        "seconds": 18.885981500003254,
+        "sequence": 568,
+        "visible": true
+      },
+      {
+        "seconds": 18.92030091700144,
+        "sequence": 569,
+        "visible": true
+      },
+      {
+        "seconds": 18.94932387500012,
+        "sequence": 569,
+        "visible": true
+      },
+      {
+        "seconds": 18.952301541998168,
+        "sequence": 569,
+        "visible": true
+      },
+      {
+        "seconds": 18.961591667000903,
+        "sequence": 570,
+        "visible": true
+      },
+      {
+        "seconds": 18.98654120900028,
+        "sequence": 571,
+        "visible": true
+      },
+      {
+        "seconds": 19.020081084003323,
+        "sequence": 572,
+        "visible": true
+      },
+      {
+        "seconds": 19.052465000000666,
+        "sequence": 573,
+        "visible": true
+      },
+      {
+        "seconds": 19.085692791995825,
+        "sequence": 574,
+        "visible": true
+      },
+      {
+        "seconds": 19.09759729199868,
+        "sequence": 574,
+        "visible": true
+      },
+      {
+        "seconds": 19.108257959000184,
+        "sequence": 574,
+        "visible": true
+      },
+      {
+        "seconds": 19.119482916998095,
+        "sequence": 575,
+        "visible": true
+      },
+      {
+        "seconds": 19.149954042004538,
+        "sequence": 576,
+        "visible": true
+      },
+      {
+        "seconds": 19.183749999996508,
+        "sequence": 577,
+        "visible": true
+      },
+      {
+        "seconds": 19.21637091699813,
+        "sequence": 578,
+        "visible": true
+      },
+      {
+        "seconds": 19.249073583996505,
+        "sequence": 578,
+        "visible": true
+      },
+      {
+        "seconds": 19.252555583996582,
+        "sequence": 579,
+        "visible": true
+      },
+      {
+        "seconds": 19.260650249998434,
+        "sequence": 579,
+        "visible": true
+      },
+      {
+        "seconds": 19.283244542006287,
+        "sequence": 580,
+        "visible": true
+      },
+      {
+        "seconds": 19.316501499997685,
+        "sequence": 581,
+        "visible": true
+      },
+      {
+        "seconds": 19.349672042008024,
+        "sequence": 582,
+        "visible": true
+      },
+      {
+        "seconds": 19.382328916995903,
+        "sequence": 583,
+        "visible": true
+      },
+      {
+        "seconds": 19.397441459004767,
+        "sequence": 583,
+        "visible": true
+      },
+      {
+        "seconds": 19.404345709001063,
+        "sequence": 583,
+        "visible": true
+      },
+      {
+        "seconds": 19.41610858400236,
+        "sequence": 584,
+        "visible": true
+      },
+      {
+        "seconds": 19.448152541997842,
+        "sequence": 585,
+        "visible": true
+      },
+      {
+        "seconds": 19.48155720900104,
+        "sequence": 586,
+        "visible": true
+      },
+      {
+        "seconds": 19.51375774999906,
+        "sequence": 587,
+        "visible": true
+      },
+      {
+        "seconds": 19.548329291996197,
+        "sequence": 587,
+        "visible": true
+      },
+      {
+        "seconds": 19.551241749999463,
+        "sequence": 588,
+        "visible": true
+      },
+      {
+        "seconds": 19.555568666997715,
+        "sequence": 588,
+        "visible": true
+      },
+      {
+        "seconds": 19.5800702090055,
+        "sequence": 589,
+        "visible": true
+      },
+      {
+        "seconds": 19.61303766700439,
+        "sequence": 590,
+        "visible": true
+      },
+      {
+        "seconds": 19.64611212500313,
+        "sequence": 591,
+        "visible": true
+      },
+      {
+        "seconds": 19.67909633400268,
+        "sequence": 592,
+        "visible": true
+      },
+      {
+        "seconds": 19.697674374998314,
+        "sequence": 592,
+        "visible": true
+      },
+      {
+        "seconds": 19.708359459007625,
+        "sequence": 592,
+        "visible": true
+      },
+      {
+        "seconds": 19.711994166995282,
+        "sequence": 593,
+        "visible": true
+      },
+      {
+        "seconds": 19.744841334002558,
+        "sequence": 594,
+        "visible": true
+      },
+      {
+        "seconds": 19.777821833995404,
+        "sequence": 595,
+        "visible": true
+      },
+      {
+        "seconds": 19.81089229200734,
+        "sequence": 596,
+        "visible": true
+      },
+      {
+        "seconds": 19.84628595900722,
+        "sequence": 597,
+        "visible": true
+      },
+      {
+        "seconds": 19.851114417004283,
+        "sequence": 597,
+        "visible": true
+      },
+      {
+        "seconds": 19.860105250001652,
+        "sequence": 597,
+        "visible": true
+      },
+      {
+        "seconds": 19.87645500000508,
+        "sequence": 598,
+        "visible": true
+      },
+      {
+        "seconds": 19.90932674999931,
+        "sequence": 599,
+        "visible": true
+      },
+      {
+        "seconds": 19.942282042000443,
+        "sequence": 600,
+        "visible": true
+      },
+      {
+        "seconds": 19.97729520899884,
+        "sequence": 601,
+        "visible": true
+      },
+      {
+        "seconds": 19.998131166998064,
+        "sequence": 601,
+        "visible": true
+      },
+      {
+        "seconds": 20.004075792006915,
+        "sequence": 601,
+        "visible": true
+      },
+      {
+        "seconds": 20.0090630420018,
+        "sequence": 602,
+        "visible": true
+      },
+      {
+        "seconds": 20.041892334003933,
+        "sequence": 603,
+        "visible": true
+      },
+      {
+        "seconds": 20.074895249999827,
+        "sequence": 604,
+        "visible": true
+      },
+      {
+        "seconds": 20.110218083995278,
+        "sequence": 605,
+        "visible": true
+      },
+      {
+        "seconds": 20.142009083996527,
+        "sequence": 606,
+        "visible": true
+      },
+      {
+        "seconds": 20.14738008400309,
+        "sequence": 606,
+        "visible": true
+      },
+      {
+        "seconds": 20.156044874995132,
+        "sequence": 606,
+        "visible": true
+      },
+      {
+        "seconds": 20.17369612499897,
+        "sequence": 607,
+        "visible": true
+      },
+      {
+        "seconds": 20.20650212500186,
+        "sequence": 608,
+        "visible": true
+      },
+      {
+        "seconds": 20.240846750006313,
+        "sequence": 609,
+        "visible": true
+      },
+      {
+        "seconds": 20.274040250005783,
+        "sequence": 610,
+        "visible": true
+      },
+      {
+        "seconds": 20.297397125003044,
+        "sequence": 610,
+        "visible": true
+      },
+      {
+        "seconds": 20.309024500005762,
+        "sequence": 611,
+        "visible": true
+      },
+      {
+        "seconds": 20.339819625005475,
+        "sequence": 612,
+        "visible": true
+      },
+      {
+        "seconds": 20.37180991700734,
+        "sequence": 613,
+        "visible": true
+      },
+      {
+        "seconds": 20.406238374998793,
+        "sequence": 614,
+        "visible": true
+      },
+      {
+        "seconds": 20.438611208999646,
+        "sequence": 615,
+        "visible": true
+      },
+      {
+        "seconds": 20.447484625008656,
+        "sequence": 615,
+        "visible": true
+      },
+      {
+        "seconds": 20.452154875005363,
+        "sequence": 615,
+        "visible": true
+      },
+      {
+        "seconds": 20.470190624997485,
+        "sequence": 616,
+        "visible": true
+      },
+      {
+        "seconds": 20.503867374995025,
+        "sequence": 617,
+        "visible": true
+      },
+      {
+        "seconds": 20.537089000004926,
+        "sequence": 618,
+        "visible": true
+      },
+      {
+        "seconds": 20.57137099999818,
+        "sequence": 619,
+        "visible": true
+      },
+      {
+        "seconds": 20.599246958998265,
+        "sequence": 619,
+        "visible": true
+      },
+      {
+        "seconds": 20.604084542006603,
+        "sequence": 619,
+        "visible": true
+      },
+      {
+        "seconds": 20.61007054199581,
+        "sequence": 620,
+        "visible": true
+      },
+      {
+        "seconds": 20.637178624994704,
+        "sequence": 621,
+        "visible": true
+      },
+      {
+        "seconds": 20.668690709004295,
+        "sequence": 622,
+        "visible": true
+      },
+      {
+        "seconds": 20.701272834005067,
+        "sequence": 623,
+        "visible": true
+      },
+      {
+        "seconds": 20.73435758400592,
+        "sequence": 624,
+        "visible": true
+      },
+      {
+        "seconds": 20.747681459004525,
+        "sequence": 624,
+        "visible": true
+      },
+      {
+        "seconds": 20.75715591700282,
+        "sequence": 624,
+        "visible": true
+      },
+      {
+        "seconds": 20.76766937499633,
+        "sequence": 625,
+        "visible": true
+      },
+      {
+        "seconds": 20.80069333400752,
+        "sequence": 626,
+        "visible": true
+      },
+      {
+        "seconds": 20.83484066699748,
+        "sequence": 627,
+        "visible": true
+      },
+      {
+        "seconds": 20.866072999997414,
+        "sequence": 628,
+        "visible": true
+      },
+      {
+        "seconds": 20.89800420899701,
+        "sequence": 628,
+        "visible": true
+      },
+      {
+        "seconds": 20.901461041998118,
+        "sequence": 629,
+        "visible": true
+      },
+      {
+        "seconds": 20.90831062500365,
+        "sequence": 629,
+        "visible": true
+      },
+      {
+        "seconds": 20.932780000002822,
+        "sequence": 630,
+        "visible": true
+      },
+      {
+        "seconds": 20.965767500005313,
+        "sequence": 631,
+        "visible": true
+      },
+      {
+        "seconds": 20.999098084008438,
+        "sequence": 632,
+        "visible": true
+      },
+      {
+        "seconds": 21.032174624997424,
+        "sequence": 633,
+        "visible": true
+      },
+      {
+        "seconds": 21.047533459000988,
+        "sequence": 633,
+        "visible": true
+      },
+      {
+        "seconds": 21.05224229200394,
+        "sequence": 633,
+        "visible": true
+      },
+      {
+        "seconds": 21.064247083995724,
+        "sequence": 634,
+        "visible": true
+      },
+      {
+        "seconds": 21.09742591700342,
+        "sequence": 635,
+        "visible": true
+      },
+      {
+        "seconds": 21.132251292001456,
+        "sequence": 636,
+        "visible": true
+      },
+      {
+        "seconds": 21.163504334006575,
+        "sequence": 637,
+        "visible": true
+      },
+      {
+        "seconds": 21.1976993749995,
+        "sequence": 637,
+        "visible": true
+      },
+      {
+        "seconds": 21.200961875001667,
+        "sequence": 638,
+        "visible": true
+      },
+      {
+        "seconds": 21.21241912500409,
+        "sequence": 638,
+        "visible": true
+      },
+      {
+        "seconds": 21.22863308399974,
+        "sequence": 639,
+        "visible": true
+      },
+      {
+        "seconds": 21.262578334004502,
+        "sequence": 640,
+        "visible": true
+      },
+      {
+        "seconds": 21.295525124995038,
+        "sequence": 641,
+        "visible": true
+      },
+      {
+        "seconds": 21.33092058400507,
+        "sequence": 642,
+        "visible": true
+      },
+      {
+        "seconds": 21.34789533400908,
+        "sequence": 642,
+        "visible": true
+      },
+      {
+        "seconds": 21.35636037500808,
+        "sequence": 642,
+        "visible": true
+      },
+      {
+        "seconds": 21.36134241700347,
+        "sequence": 643,
+        "visible": true
+      },
+      {
+        "seconds": 21.395522334001726,
+        "sequence": 644,
+        "visible": true
+      },
+      {
+        "seconds": 21.4287292920053,
+        "sequence": 645,
+        "visible": true
+      },
+      {
+        "seconds": 21.461768000008306,
+        "sequence": 646,
+        "visible": true
+      },
+      {
+        "seconds": 21.492996917004348,
+        "sequence": 647,
+        "visible": true
+      },
+      {
+        "seconds": 21.4982154169993,
+        "sequence": 647,
+        "visible": true
+      },
+      {
+        "seconds": 21.508672291995026,
+        "sequence": 647,
+        "visible": true
+      },
+      {
+        "seconds": 21.526029833999928,
+        "sequence": 648,
+        "visible": true
+      },
+      {
+        "seconds": 21.559957375007798,
+        "sequence": 649,
+        "visible": true
+      },
+      {
+        "seconds": 21.59292966700741,
+        "sequence": 650,
+        "visible": true
+      },
+      {
+        "seconds": 21.62677779200021,
+        "sequence": 651,
+        "visible": true
+      },
+      {
+        "seconds": 21.648055958998157,
+        "sequence": 651,
+        "visible": true
+      },
+      {
+        "seconds": 21.652742334001232,
+        "sequence": 651,
+        "visible": true
+      },
+      {
+        "seconds": 21.662537500000326,
+        "sequence": 652,
+        "visible": true
+      },
+      {
+        "seconds": 21.69240012500086,
+        "sequence": 653,
+        "visible": true
+      },
+      {
+        "seconds": 21.725220584005,
+        "sequence": 654,
+        "visible": true
+      },
+      {
+        "seconds": 21.75808329200663,
+        "sequence": 655,
+        "visible": true
+      },
+      {
+        "seconds": 21.792461417004233,
+        "sequence": 656,
+        "visible": true
+      },
+      {
+        "seconds": 21.797484334005276,
+        "sequence": 656,
+        "visible": true
+      },
+      {
+        "seconds": 21.804770542003098,
+        "sequence": 656,
+        "visible": true
+      },
+      {
+        "seconds": 21.823781125000096,
+        "sequence": 657,
+        "visible": true
+      },
+      {
+        "seconds": 21.856735541994567,
+        "sequence": 658,
+        "visible": true
+      },
+      {
+        "seconds": 21.890137334004976,
+        "sequence": 659,
+        "visible": true
+      },
+      {
+        "seconds": 21.92450700000336,
+        "sequence": 660,
+        "visible": true
+      },
+      {
+        "seconds": 21.948102916998323,
+        "sequence": 660,
+        "visible": true
+      },
+      {
+        "seconds": 21.956670084007783,
+        "sequence": 660,
+        "visible": true
+      },
+      {
+        "seconds": 21.959679499996128,
+        "sequence": 661,
+        "visible": true
+      },
+      {
+        "seconds": 21.98944216700329,
+        "sequence": 662,
+        "visible": true
+      },
+      {
+        "seconds": 22.021377708995715,
+        "sequence": 663,
+        "visible": true
+      },
+      {
+        "seconds": 22.05620099999942,
+        "sequence": 664,
+        "visible": true
+      },
+      {
+        "seconds": 22.0886167090066,
+        "sequence": 665,
+        "visible": true
+      },
+      {
+        "seconds": 22.097689000001992,
+        "sequence": 665,
+        "visible": true
+      },
+      {
+        "seconds": 22.109395084000425,
+        "sequence": 665,
+        "visible": true
+      },
+      {
+        "seconds": 22.12044962499931,
+        "sequence": 666,
+        "visible": true
+      },
+      {
+        "seconds": 22.15478549999534,
+        "sequence": 667,
+        "visible": true
+      },
+      {
+        "seconds": 22.188970999995945,
+        "sequence": 668,
+        "visible": true
+      },
+      {
+        "seconds": 22.22186762500496,
+        "sequence": 669,
+        "visible": true
+      },
+      {
+        "seconds": 22.2503721670073,
+        "sequence": 669,
+        "visible": true
+      },
+      {
+        "seconds": 22.25369362499623,
+        "sequence": 669,
+        "visible": true
+      },
+      {
+        "seconds": 22.262663375004195,
+        "sequence": 670,
+        "visible": true
+      },
+      {
+        "seconds": 22.284569709008792,
+        "sequence": 671,
+        "visible": true
+      },
+      {
+        "seconds": 22.31807879199914,
+        "sequence": 672,
+        "visible": true
+      },
+      {
+        "seconds": 22.352443791998667,
+        "sequence": 673,
+        "visible": true
+      },
+      {
+        "seconds": 22.386846209003124,
+        "sequence": 674,
+        "visible": true
+      },
+      {
+        "seconds": 22.39809229200182,
+        "sequence": 674,
+        "visible": true
+      },
+      {
+        "seconds": 22.40415537499939,
+        "sequence": 674,
+        "visible": true
+      },
+      {
+        "seconds": 22.417697209006292,
+        "sequence": 675,
+        "visible": true
+      },
+      {
+        "seconds": 22.45199958399462,
+        "sequence": 676,
+        "visible": true
+      },
+      {
+        "seconds": 22.485488499994972,
+        "sequence": 677,
+        "visible": true
+      },
+      {
+        "seconds": 22.517541709006764,
+        "sequence": 678,
+        "visible": true
+      },
+      {
+        "seconds": 22.54899475000275,
+        "sequence": 678,
+        "visible": true
+      },
+      {
+        "seconds": 22.55275320900546,
+        "sequence": 679,
+        "visible": true
+      },
+      {
+        "seconds": 22.5562587500026,
+        "sequence": 679,
+        "visible": true
+      },
+      {
+        "seconds": 22.582345542003168,
+        "sequence": 680,
+        "visible": true
+      },
+      {
+        "seconds": 22.615695291999145,
+        "sequence": 681,
+        "visible": true
+      },
+      {
+        "seconds": 22.64939979200426,
+        "sequence": 682,
+        "visible": true
+      },
+      {
+        "seconds": 22.68326795900066,
+        "sequence": 683,
+        "visible": true
+      },
+      {
+        "seconds": 22.697774333995767,
+        "sequence": 683,
+        "visible": true
+      },
+      {
+        "seconds": 22.70872949999466,
+        "sequence": 683,
+        "visible": true
+      },
+      {
+        "seconds": 22.715193291995092,
+        "sequence": 684,
+        "visible": true
+      },
+      {
+        "seconds": 22.74867699999595,
+        "sequence": 685,
+        "visible": true
+      },
+      {
+        "seconds": 22.782099333999213,
+        "sequence": 686,
+        "visible": true
+      },
+      {
+        "seconds": 22.814108125006896,
+        "sequence": 687,
+        "visible": true
+      },
+      {
+        "seconds": 22.849868959005107,
+        "sequence": 687,
+        "visible": true
+      },
+      {
+        "seconds": 22.853191875008633,
+        "sequence": 688,
+        "visible": true
+      },
+      {
+        "seconds": 22.86022062500706,
+        "sequence": 688,
+        "visible": true
+      },
+      {
+        "seconds": 22.879495291999774,
+        "sequence": 689,
+        "visible": true
+      },
+      {
+        "seconds": 22.91267937500379,
+        "sequence": 690,
+        "visible": true
+      },
+      {
+        "seconds": 22.946010250001564,
+        "sequence": 691,
+        "visible": true
+      },
+      {
+        "seconds": 22.979755125008523,
+        "sequence": 692,
+        "visible": true
+      },
+      {
+        "seconds": 22.999356125001214,
+        "sequence": 692,
+        "visible": true
+      },
+      {
+        "seconds": 23.005368291997,
+        "sequence": 692,
+        "visible": true
+      },
+      {
+        "seconds": 23.01496087500709,
+        "sequence": 693,
+        "visible": true
+      },
+      {
+        "seconds": 23.045290124995518,
+        "sequence": 694,
+        "visible": true
+      },
+      {
+        "seconds": 23.077283999999054,
+        "sequence": 695,
+        "visible": true
+      },
+      {
+        "seconds": 23.111594500005594,
+        "sequence": 696,
+        "visible": true
+      },
+      {
+        "seconds": 23.144485291995807,
+        "sequence": 697,
+        "visible": true
+      },
+      {
+        "seconds": 23.14951691700844,
+        "sequence": 697,
+        "visible": true
+      },
+      {
+        "seconds": 23.15648954200151,
+        "sequence": 697,
+        "visible": true
+      },
+      {
+        "seconds": 23.17658866700367,
+        "sequence": 698,
+        "visible": true
+      },
+      {
+        "seconds": 23.21007987500343,
+        "sequence": 699,
+        "visible": true
+      },
+      {
+        "seconds": 23.24313412500487,
+        "sequence": 700,
+        "visible": true
+      },
+      {
+        "seconds": 23.277636291997624,
+        "sequence": 701,
+        "visible": true
+      },
+      {
+        "seconds": 23.30093870899873,
+        "sequence": 701,
+        "visible": true
+      },
+      {
+        "seconds": 23.30733224999858,
+        "sequence": 701,
+        "visible": true
+      },
+      {
+        "seconds": 23.320221500005573,
+        "sequence": 702,
+        "visible": true
+      },
+      {
+        "seconds": 23.34192033400177,
+        "sequence": 703,
+        "visible": true
+      },
+      {
+        "seconds": 23.37415654200595,
+        "sequence": 704,
+        "visible": true
+      },
+      {
+        "seconds": 23.40865091700107,
+        "sequence": 705,
+        "visible": true
+      },
+      {
+        "seconds": 23.440449292000267,
+        "sequence": 706,
+        "visible": true
+      },
+      {
+        "seconds": 23.44859808399633,
+        "sequence": 706,
+        "visible": true
+      },
+      {
+        "seconds": 23.452281874997425,
+        "sequence": 706,
+        "visible": true
+      },
+      {
+        "seconds": 23.47303366700362,
+        "sequence": 707,
+        "visible": true
+      },
+      {
+        "seconds": 23.507139292007196,
+        "sequence": 708,
+        "visible": true
+      },
+      {
+        "seconds": 23.541123667004285,
+        "sequence": 709,
+        "visible": true
+      },
+      {
+        "seconds": 23.57433845900232,
+        "sequence": 710,
+        "visible": true
+      },
+      {
+        "seconds": 23.598772833996918,
+        "sequence": 710,
+        "visible": true
+      },
+      {
+        "seconds": 23.604943917001947,
+        "sequence": 710,
+        "visible": true
+      },
+      {
+        "seconds": 23.613913000008324,
+        "sequence": 711,
+        "visible": true
+      },
+      {
+        "seconds": 23.638711084000533,
+        "sequence": 712,
+        "visible": true
+      },
+      {
+        "seconds": 23.672620375000406,
+        "sequence": 713,
+        "visible": true
+      },
+      {
+        "seconds": 23.70457124999666,
+        "sequence": 714,
+        "visible": true
+      },
+      {
+        "seconds": 23.73840349999955,
+        "sequence": 715,
+        "visible": true
+      },
+      {
+        "seconds": 23.748429625004064,
+        "sequence": 715,
+        "visible": true
+      },
+      {
+        "seconds": 23.756793334003305,
+        "sequence": 715,
+        "visible": true
+      },
+      {
+        "seconds": 23.77157100000477,
+        "sequence": 716,
+        "visible": true
+      },
+      {
+        "seconds": 23.804836916999193,
+        "sequence": 717,
+        "visible": true
+      },
+      {
+        "seconds": 23.838005708996207,
+        "sequence": 718,
+        "visible": true
+      },
+      {
+        "seconds": 23.870987041998887,
+        "sequence": 719,
+        "visible": true
+      },
+      {
+        "seconds": 23.89932762499666,
+        "sequence": 719,
+        "visible": true
+      },
+      {
+        "seconds": 23.907797292005853,
+        "sequence": 720,
+        "visible": true
+      },
+      {
+        "seconds": 23.936993374998565,
+        "sequence": 721,
+        "visible": true
+      },
+      {
+        "seconds": 23.96922108400031,
+        "sequence": 722,
+        "visible": true
+      },
+      {
+        "seconds": 24.00271754199639,
+        "sequence": 723,
+        "visible": true
+      },
+      {
+        "seconds": 24.03633958399587,
+        "sequence": 724,
+        "visible": true
+      },
+      {
+        "seconds": 24.04725375000271,
+        "sequence": 724,
+        "visible": true
+      },
+      {
+        "seconds": 24.052198917008354,
+        "sequence": 724,
+        "visible": true
+      },
+      {
+        "seconds": 24.067925584007753,
+        "sequence": 725,
+        "visible": true
+      },
+      {
+        "seconds": 24.100947041995823,
+        "sequence": 726,
+        "visible": true
+      },
+      {
+        "seconds": 24.134444499999518,
+        "sequence": 727,
+        "visible": true
+      },
+      {
+        "seconds": 24.166690209007356,
+        "sequence": 728,
+        "visible": true
+      },
+      {
+        "seconds": 24.19953316700412,
+        "sequence": 728,
+        "visible": true
+      },
+      {
+        "seconds": 24.20322424999904,
+        "sequence": 729,
+        "visible": true
+      },
+      {
+        "seconds": 24.212744917007512,
+        "sequence": 729,
+        "visible": true
+      },
+      {
+        "seconds": 24.233453791996,
+        "sequence": 730,
+        "visible": true
+      },
+      {
+        "seconds": 24.266586750003626,
+        "sequence": 731,
+        "visible": true
+      },
+      {
+        "seconds": 24.300014334003208,
+        "sequence": 732,
+        "visible": true
+      },
+      {
+        "seconds": 24.332340167005896,
+        "sequence": 733,
+        "visible": true
+      },
+      {
+        "seconds": 24.349480459000915,
+        "sequence": 733,
+        "visible": true
+      },
+      {
+        "seconds": 24.357559209005558,
+        "sequence": 733,
+        "visible": true
+      },
+      {
+        "seconds": 24.36827187500603,
+        "sequence": 734,
+        "visible": true
+      },
+      {
+        "seconds": 24.397496542005683,
+        "sequence": 735,
+        "visible": true
+      },
+      {
+        "seconds": 24.432065458997386,
+        "sequence": 736,
+        "visible": true
+      },
+      {
+        "seconds": 24.46421362500405,
+        "sequence": 737,
+        "visible": true
+      },
+      {
+        "seconds": 24.499200792008196,
+        "sequence": 737,
+        "visible": true
+      },
+      {
+        "seconds": 24.50283345900243,
+        "sequence": 738,
+        "visible": true
+      },
+      {
+        "seconds": 24.508751375004067,
+        "sequence": 738,
+        "visible": true
+      },
+      {
+        "seconds": 24.530006000000867,
+        "sequence": 739,
+        "visible": true
+      },
+      {
+        "seconds": 24.562977834008052,
+        "sequence": 740,
+        "visible": true
+      },
+      {
+        "seconds": 24.595992959002615,
+        "sequence": 741,
+        "visible": true
+      },
+      {
+        "seconds": 24.63045687500562,
+        "sequence": 742,
+        "visible": true
+      },
+      {
+        "seconds": 24.647831084002974,
+        "sequence": 742,
+        "visible": true
+      },
+      {
+        "seconds": 24.653898542004754,
+        "sequence": 742,
+        "visible": true
+      },
+      {
+        "seconds": 24.664878709008917,
+        "sequence": 743,
+        "visible": true
+      },
+      {
+        "seconds": 24.69251345899829,
+        "sequence": 744,
+        "visible": true
+      },
+      {
+        "seconds": 24.727204750000965,
+        "sequence": 745,
+        "visible": true
+      },
+      {
+        "seconds": 24.761883209008374,
+        "sequence": 746,
+        "visible": true
+      },
+      {
+        "seconds": 24.79378791700583,
+        "sequence": 747,
+        "visible": true
+      },
+      {
+        "seconds": 24.799534459001734,
+        "sequence": 747,
+        "visible": true
+      },
+      {
+        "seconds": 24.804286124999635,
+        "sequence": 747,
+        "visible": true
+      },
+      {
+        "seconds": 24.826354375007213,
+        "sequence": 748,
+        "visible": true
+      },
+      {
+        "seconds": 24.860076500001014,
+        "sequence": 749,
+        "visible": true
+      },
+      {
+        "seconds": 24.89278112500324,
+        "sequence": 750,
+        "visible": true
+      },
+      {
+        "seconds": 24.92589054199925,
+        "sequence": 751,
+        "visible": true
+      },
+      {
+        "seconds": 24.948806291999063,
+        "sequence": 751,
+        "visible": true
+      },
+      {
+        "seconds": 24.956177917003515,
+        "sequence": 751,
+        "visible": true
+      },
+      {
+        "seconds": 24.960538125000312,
+        "sequence": 752,
+        "visible": true
+      },
+      {
+        "seconds": 24.991314334009076,
+        "sequence": 753,
+        "visible": true
+      },
+      {
+        "seconds": 25.02553904200613,
+        "sequence": 754,
+        "visible": true
+      },
+      {
+        "seconds": 25.06003312500252,
+        "sequence": 755,
+        "visible": true
+      },
+      {
+        "seconds": 25.091228584002238,
+        "sequence": 756,
+        "visible": true
+      },
+      {
+        "seconds": 25.09822145900398,
+        "sequence": 756,
+        "visible": true
+      },
+      {
+        "seconds": 25.108923167004832,
+        "sequence": 756,
+        "visible": true
+      },
+      {
+        "seconds": 25.12319558400486,
+        "sequence": 757,
+        "visible": true
+      },
+      {
+        "seconds": 25.157174000007217,
+        "sequence": 758,
+        "visible": true
+      },
+      {
+        "seconds": 25.190248917002464,
+        "sequence": 759,
+        "visible": true
+      },
+      {
+        "seconds": 25.224522292002803,
+        "sequence": 760,
+        "visible": true
+      },
+      {
+        "seconds": 25.249097667008755,
+        "sequence": 760,
+        "visible": true
+      },
+      {
+        "seconds": 25.260781250006403,
+        "sequence": 761,
+        "visible": true
+      },
+      {
+        "seconds": 25.289073292005924,
+        "sequence": 762,
+        "visible": true
+      },
+      {
+        "seconds": 25.32207108399598,
+        "sequence": 763,
+        "visible": true
+      },
+      {
+        "seconds": 25.35644879200845,
+        "sequence": 764,
+        "visible": true
+      },
+      {
+        "seconds": 25.38931904200581,
+        "sequence": 765,
+        "visible": true
+      },
+      {
+        "seconds": 25.39865641700453,
+        "sequence": 765,
+        "visible": true
+      },
+      {
+        "seconds": 25.404633124999236,
+        "sequence": 765,
+        "visible": true
+      },
+      {
+        "seconds": 25.421315041996422,
+        "sequence": 766,
+        "visible": true
+      },
+      {
+        "seconds": 25.45330500000273,
+        "sequence": 767,
+        "visible": true
+      },
+      {
+        "seconds": 25.486695833998965,
+        "sequence": 768,
+        "visible": true
+      },
+      {
+        "seconds": 25.520853875001194,
+        "sequence": 769,
+        "visible": true
+      },
+      {
+        "seconds": 25.549979792005615,
+        "sequence": 769,
+        "visible": true
+      },
+      {
+        "seconds": 25.557262625006842,
+        "sequence": 769,
+        "visible": true
+      },
+      {
+        "seconds": 25.56014858400158,
+        "sequence": 770,
+        "visible": true
+      },
+      {
+        "seconds": 25.589441500007524,
+        "sequence": 771,
+        "visible": true
+      },
+      {
+        "seconds": 25.61964945899672,
+        "sequence": 772,
+        "visible": true
+      },
+      {
+        "seconds": 25.65317854200839,
+        "sequence": 773,
+        "visible": true
+      },
+      {
+        "seconds": 25.684760333999293,
+        "sequence": 774,
+        "visible": true
+      },
+      {
+        "seconds": 25.69871924999461,
+        "sequence": 774,
+        "visible": true
+      },
+      {
+        "seconds": 25.710664500002167,
+        "sequence": 774,
+        "visible": true
+      },
+      {
+        "seconds": 25.721876167008304,
+        "sequence": 775,
+        "visible": true
+      },
+      {
+        "seconds": 25.750317500001984,
+        "sequence": 776,
+        "visible": true
+      },
+      {
+        "seconds": 25.785389958997257,
+        "sequence": 777,
+        "visible": true
+      },
+      {
+        "seconds": 25.818291792005766,
+        "sequence": 778,
+        "visible": true
+      },
+      {
+        "seconds": 25.84970983400126,
+        "sequence": 778,
+        "visible": true
+      },
+      {
+        "seconds": 25.854428624996217,
+        "sequence": 779,
+        "visible": true
+      },
+      {
+        "seconds": 25.86064612500195,
+        "sequence": 779,
+        "visible": true
+      },
+      {
+        "seconds": 25.884006417007186,
+        "sequence": 780,
+        "visible": true
+      },
+      {
+        "seconds": 25.921301084003062,
+        "sequence": 781,
+        "visible": true
+      },
+      {
+        "seconds": 25.958468124998035,
+        "sequence": 782,
+        "visible": true
+      },
+      {
+        "seconds": 25.987371416995302,
+        "sequence": 783,
+        "visible": true
+      },
+      {
+        "seconds": 26.007106375007425,
+        "sequence": 783,
+        "visible": true
+      },
+      {
+        "seconds": 26.014004416996613,
+        "sequence": 783,
+        "visible": true
+      },
+      {
+        "seconds": 26.023434417002136,
+        "sequence": 784,
+        "visible": true
+      },
+      {
+        "seconds": 26.04733929199574,
+        "sequence": 785,
+        "visible": true
+      },
+      {
+        "seconds": 26.080425667008967,
+        "sequence": 786,
+        "visible": true
+      },
+      {
+        "seconds": 26.115322334007942,
+        "sequence": 787,
+        "visible": true
+      },
+      {
+        "seconds": 26.149276291995193,
+        "sequence": 787,
+        "visible": true
+      },
+      {
+        "seconds": 26.15293495899823,
+        "sequence": 788,
+        "visible": true
+      },
+      {
+        "seconds": 26.155634209004347,
+        "sequence": 788,
+        "visible": true
+      },
+      {
+        "seconds": 26.181042209005682,
+        "sequence": 789,
+        "visible": true
+      },
+      {
+        "seconds": 26.215281166994828,
+        "sequence": 790,
+        "visible": true
+      },
+      {
+        "seconds": 26.247039417008637,
+        "sequence": 791,
+        "visible": true
+      },
+      {
+        "seconds": 26.280117417001748,
+        "sequence": 792,
+        "visible": true
+      },
+      {
+        "seconds": 26.299007541994797,
+        "sequence": 792,
+        "visible": true
+      },
+      {
+        "seconds": 26.30908454200835,
+        "sequence": 792,
+        "visible": true
+      },
+      {
+        "seconds": 26.313374709003256,
+        "sequence": 793,
+        "visible": true
+      },
+      {
+        "seconds": 26.3458455420041,
+        "sequence": 794,
+        "visible": true
+      },
+      {
+        "seconds": 26.37818937499833,
+        "sequence": 795,
+        "visible": true
+      },
+      {
+        "seconds": 26.411770499995328,
+        "sequence": 796,
+        "visible": true
+      },
+      {
+        "seconds": 26.446189209003933,
+        "sequence": 797,
+        "visible": true
+      },
+      {
+        "seconds": 26.45178520900663,
+        "sequence": 797,
+        "visible": true
+      },
+      {
+        "seconds": 26.460328333996586,
+        "sequence": 797,
+        "visible": true
+      },
+      {
+        "seconds": 26.476922208996257,
+        "sequence": 798,
+        "visible": true
+      },
+      {
+        "seconds": 26.51043212499644,
+        "sequence": 799,
+        "visible": true
+      },
+      {
+        "seconds": 26.54250462500204,
+        "sequence": 800,
+        "visible": true
+      },
+      {
+        "seconds": 26.576777459005825,
+        "sequence": 801,
+        "visible": true
+      },
+      {
+        "seconds": 26.59934954199707,
+        "sequence": 801,
+        "visible": true
+      },
+      {
+        "seconds": 26.604822042005253,
+        "sequence": 801,
+        "visible": true
+      },
+      {
+        "seconds": 26.610904542001663,
+        "sequence": 802,
+        "visible": true
+      },
+      {
+        "seconds": 26.642295041994657,
+        "sequence": 803,
+        "visible": true
+      },
+      {
+        "seconds": 26.67772658400645,
+        "sequence": 804,
+        "visible": true
+      },
+      {
+        "seconds": 26.711477959004696,
+        "sequence": 805,
+        "visible": true
+      },
+      {
+        "seconds": 26.743435833996045,
+        "sequence": 806,
+        "visible": true
+      },
+      {
+        "seconds": 26.751004167002975,
+        "sequence": 806,
+        "visible": true
+      },
+      {
+        "seconds": 26.757195166996098,
+        "sequence": 806,
+        "visible": true
+      },
+      {
+        "seconds": 26.774993291997816,
+        "sequence": 807,
+        "visible": true
+      },
+      {
+        "seconds": 26.807884750000085,
+        "sequence": 808,
+        "visible": true
+      },
+      {
+        "seconds": 26.840299999996205,
+        "sequence": 809,
+        "visible": true
+      },
+      {
+        "seconds": 26.873999041999923,
+        "sequence": 810,
+        "visible": true
+      },
+      {
+        "seconds": 26.898856291998527,
+        "sequence": 810,
+        "visible": true
+      },
+      {
+        "seconds": 26.91001220900216,
+        "sequence": 810,
+        "visible": true
+      },
+      {
+        "seconds": 26.913534959006938,
+        "sequence": 811,
+        "visible": true
+      },
+      {
+        "seconds": 26.94074216700392,
+        "sequence": 812,
+        "visible": true
+      },
+      {
+        "seconds": 26.973848541994812,
+        "sequence": 813,
+        "visible": true
+      },
+      {
+        "seconds": 27.00687095899775,
+        "sequence": 814,
+        "visible": true
+      },
+      {
+        "seconds": 27.037573875000817,
+        "sequence": 815,
+        "visible": true
+      },
+      {
+        "seconds": 27.048083500005305,
+        "sequence": 815,
+        "visible": true
+      },
+      {
+        "seconds": 27.052067958997213,
+        "sequence": 815,
+        "visible": true
+      },
+      {
+        "seconds": 27.07075095899927,
+        "sequence": 816,
+        "visible": true
+      },
+      {
+        "seconds": 27.10563233400171,
+        "sequence": 817,
+        "visible": true
+      },
+      {
+        "seconds": 27.13798504200531,
+        "sequence": 818,
+        "visible": true
+      },
+      {
+        "seconds": 27.169509041996207,
+        "sequence": 819,
+        "visible": true
+      },
+      {
+        "seconds": 27.19942191700102,
+        "sequence": 819,
+        "visible": true
+      },
+      {
+        "seconds": 27.204865000006976,
+        "sequence": 819,
+        "visible": true
+      },
+      {
+        "seconds": 27.20952849999594,
+        "sequence": 820,
+        "visible": true
+      },
+      {
+        "seconds": 27.237121166996076,
+        "sequence": 821,
+        "visible": true
+      },
+      {
+        "seconds": 27.267901041996083,
+        "sequence": 822,
+        "visible": true
+      },
+      {
+        "seconds": 27.301271208998514,
+        "sequence": 823,
+        "visible": true
+      },
+      {
+        "seconds": 27.334233458997915,
+        "sequence": 824,
+        "visible": true
+      },
+      {
+        "seconds": 27.34923920899746,
+        "sequence": 824,
+        "visible": true
+      },
+      {
+        "seconds": 27.356244209004217,
+        "sequence": 824,
+        "visible": true
+      },
+      {
+        "seconds": 27.36672333399474,
+        "sequence": 825,
+        "visible": true
+      },
+      {
+        "seconds": 27.401004958999692,
+        "sequence": 826,
+        "visible": true
+      },
+      {
+        "seconds": 27.433982709000702,
+        "sequence": 827,
+        "visible": true
+      },
+      {
+        "seconds": 27.46689570900344,
+        "sequence": 828,
+        "visible": true
+      },
+      {
+        "seconds": 27.49826037499588,
+        "sequence": 828,
+        "visible": true
+      },
+      {
+        "seconds": 27.502665874999366,
+        "sequence": 829,
+        "visible": true
+      },
+      {
+        "seconds": 27.508729749999475,
+        "sequence": 829,
+        "visible": true
+      },
+      {
+        "seconds": 27.53382712500752,
+        "sequence": 830,
+        "visible": true
+      },
+      {
+        "seconds": 27.566328708999208,
+        "sequence": 831,
+        "visible": true
+      },
+      {
+        "seconds": 27.59916399999929,
+        "sequence": 832,
+        "visible": true
+      },
+      {
+        "seconds": 27.632265874999575,
+        "sequence": 833,
+        "visible": true
+      },
+      {
+        "seconds": 27.6487191250053,
+        "sequence": 833,
+        "visible": true
+      },
+      {
+        "seconds": 27.652628042007564,
+        "sequence": 833,
+        "visible": true
+      },
+      {
+        "seconds": 27.665837791995727,
+        "sequence": 834,
+        "visible": true
+      },
+      {
+        "seconds": 27.69888770900434,
+        "sequence": 835,
+        "visible": true
+      },
+      {
+        "seconds": 27.731286209003883,
+        "sequence": 836,
+        "visible": true
+      },
+      {
+        "seconds": 27.76515229200595,
+        "sequence": 837,
+        "visible": true
+      },
+      {
+        "seconds": 27.80078679199505,
+        "sequence": 837,
+        "visible": true
+      },
+      {
+        "seconds": 27.80561883399787,
+        "sequence": 838,
+        "visible": true
+      },
+      {
+        "seconds": 27.813036709005246,
+        "sequence": 838,
+        "visible": true
+      },
+      {
+        "seconds": 27.831421209004475,
+        "sequence": 839,
+        "visible": true
+      },
+      {
+        "seconds": 27.863577249998343,
+        "sequence": 840,
+        "visible": true
+      },
+      {
+        "seconds": 27.896827167001902,
+        "sequence": 841,
+        "visible": true
+      },
+      {
+        "seconds": 27.930540250003105,
+        "sequence": 842,
+        "visible": true
+      },
+      {
+        "seconds": 27.949846750008874,
+        "sequence": 842,
+        "visible": true
+      },
+      {
+        "seconds": 27.956889709006646,
+        "sequence": 842,
+        "visible": true
+      },
+      {
+        "seconds": 27.962385083999834,
+        "sequence": 843,
+        "visible": true
+      },
+      {
+        "seconds": 27.99629195900343,
+        "sequence": 844,
+        "visible": true
+      },
+      {
+        "seconds": 28.03030816699902,
+        "sequence": 845,
+        "visible": true
+      },
+      {
+        "seconds": 28.06376483400527,
+        "sequence": 846,
+        "visible": true
+      },
+      {
+        "seconds": 28.09474566699646,
+        "sequence": 847,
+        "visible": true
+      },
+      {
+        "seconds": 28.101498125004582,
+        "sequence": 847,
+        "visible": true
+      },
+      {
+        "seconds": 28.109162875000038,
+        "sequence": 847,
+        "visible": true
+      },
+      {
+        "seconds": 28.128187750000507,
+        "sequence": 848,
+        "visible": true
+      },
+      {
+        "seconds": 28.161142166994978,
+        "sequence": 849,
+        "visible": true
+      },
+      {
+        "seconds": 28.19548224999744,
+        "sequence": 850,
+        "visible": true
+      },
+      {
+        "seconds": 28.22897075000219,
+        "sequence": 851,
+        "visible": true
+      },
+      {
+        "seconds": 28.249726750000264,
+        "sequence": 851,
+        "visible": true
+      },
+      {
+        "seconds": 28.261806750000687,
+        "sequence": 851,
+        "visible": true
+      },
+      {
+        "seconds": 28.264731333998498,
+        "sequence": 852,
+        "visible": true
+      },
+      {
+        "seconds": 28.292486042002565,
+        "sequence": 853,
+        "visible": true
+      },
+      {
+        "seconds": 28.326572375008254,
+        "sequence": 854,
+        "visible": true
+      },
+      {
+        "seconds": 28.358374292001827,
+        "sequence": 855,
+        "visible": true
+      },
+      {
+        "seconds": 28.392385958999512,
+        "sequence": 856,
+        "visible": true
+      },
+      {
+        "seconds": 28.399239417005447,
+        "sequence": 856,
+        "visible": true
+      },
+      {
+        "seconds": 28.404372459001024,
+        "sequence": 856,
+        "visible": true
+      },
+      {
+        "seconds": 28.424672292007017,
+        "sequence": 857,
+        "visible": true
+      },
+      {
+        "seconds": 28.45828329199867,
+        "sequence": 858,
+        "visible": true
+      },
+      {
+        "seconds": 28.491106208995916,
+        "sequence": 859,
+        "visible": true
+      },
+      {
+        "seconds": 28.526054041998577,
+        "sequence": 860,
+        "visible": true
+      },
+      {
+        "seconds": 28.549407375001465,
+        "sequence": 860,
+        "visible": true
+      },
+      {
+        "seconds": 28.556691999998293,
+        "sequence": 860,
+        "visible": true
+      },
+      {
+        "seconds": 28.561672499999986,
+        "sequence": 861,
+        "visible": true
+      },
+      {
+        "seconds": 28.58925525000086,
+        "sequence": 862,
+        "visible": true
+      },
+      {
+        "seconds": 28.62198187499598,
+        "sequence": 863,
+        "visible": true
+      },
+      {
+        "seconds": 28.655746375006856,
+        "sequence": 864,
+        "visible": true
+      },
+      {
+        "seconds": 28.68878312500601,
+        "sequence": 865,
+        "visible": true
+      },
+      {
+        "seconds": 28.6987777500035,
+        "sequence": 865,
+        "visible": true
+      },
+      {
+        "seconds": 28.70957104199624,
+        "sequence": 865,
+        "visible": true
+      },
+      {
+        "seconds": 28.720520333998138,
+        "sequence": 866,
+        "visible": true
+      },
+      {
+        "seconds": 28.75498295899888,
+        "sequence": 867,
+        "visible": true
+      },
+      {
+        "seconds": 28.787405833994853,
+        "sequence": 868,
+        "visible": true
+      },
+      {
+        "seconds": 28.821918542002095,
+        "sequence": 869,
+        "visible": true
+      },
+      {
+        "seconds": 28.851431584000238,
+        "sequence": 869,
+        "visible": true
+      },
+      {
+        "seconds": 28.861620833995403,
+        "sequence": 869,
+        "visible": true
+      },
+      {
+        "seconds": 28.865018708995194,
+        "sequence": 870,
+        "visible": true
+      },
+      {
+        "seconds": 28.88655424999888,
+        "sequence": 871,
+        "visible": true
+      },
+      {
+        "seconds": 28.918922958997427,
+        "sequence": 872,
+        "visible": true
+      },
+      {
+        "seconds": 28.953668750007637,
+        "sequence": 873,
+        "visible": true
+      },
+      {
+        "seconds": 28.98573529200803,
+        "sequence": 874,
+        "visible": true
+      },
+      {
+        "seconds": 28.999542667006608,
+        "sequence": 874,
+        "visible": true
+      },
+      {
+        "seconds": 29.00501391700527,
+        "sequence": 874,
+        "visible": true
+      },
+      {
+        "seconds": 29.017597416997887,
+        "sequence": 875,
+        "visible": true
+      },
+      {
+        "seconds": 29.051235125007224,
+        "sequence": 876,
+        "visible": true
+      },
+      {
+        "seconds": 29.085863458996755,
+        "sequence": 877,
+        "visible": true
+      },
+      {
+        "seconds": 29.11874504199659,
+        "sequence": 878,
+        "visible": true
+      },
+      {
+        "seconds": 29.150107249995926,
+        "sequence": 878,
+        "visible": true
+      },
+      {
+        "seconds": 29.153943124998477,
+        "sequence": 879,
+        "visible": true
+      },
+      {
+        "seconds": 29.164902459000587,
+        "sequence": 879,
+        "visible": true
+      },
+      {
+        "seconds": 29.183783542001038,
+        "sequence": 880,
+        "visible": true
+      },
+      {
+        "seconds": 29.216782375006005,
+        "sequence": 881,
+        "visible": true
+      },
+      {
+        "seconds": 29.24847933399724,
+        "sequence": 882,
+        "visible": true
+      },
+      {
+        "seconds": 29.28334508399712,
+        "sequence": 883,
+        "visible": true
+      },
+      {
+        "seconds": 29.298813125002198,
+        "sequence": 883,
+        "visible": true
+      },
+      {
+        "seconds": 29.308746334005264,
+        "sequence": 883,
+        "visible": true
+      },
+      {
+        "seconds": 29.314646291997633,
+        "sequence": 884,
+        "visible": true
+      },
+      {
+        "seconds": 29.349639209001907,
+        "sequence": 885,
+        "visible": true
+      },
+      {
+        "seconds": 29.382232042000396,
+        "sequence": 886,
+        "visible": true
+      },
+      {
+        "seconds": 29.41557162499521,
+        "sequence": 887,
+        "visible": true
+      },
+      {
+        "seconds": 29.448385750001762,
+        "sequence": 887,
+        "visible": true
+      },
+      {
+        "seconds": 29.4522537090088,
+        "sequence": 888,
+        "visible": true
+      },
+      {
+        "seconds": 29.460887542009004,
+        "sequence": 888,
+        "visible": true
+      },
+      {
+        "seconds": 29.480466249995516,
+        "sequence": 889,
+        "visible": true
+      },
+      {
+        "seconds": 29.514602958995965,
+        "sequence": 890,
+        "visible": true
+      },
+      {
+        "seconds": 29.54658770900278,
+        "sequence": 891,
+        "visible": true
+      },
+      {
+        "seconds": 29.579647459002445,
+        "sequence": 892,
+        "visible": true
+      },
+      {
+        "seconds": 29.59873520900146,
+        "sequence": 892,
+        "visible": true
+      },
+      {
+        "seconds": 29.60472495900467,
+        "sequence": 892,
+        "visible": true
+      },
+      {
+        "seconds": 29.614685791995726,
+        "sequence": 893,
+        "visible": true
+      },
+      {
+        "seconds": 29.645756416997756,
+        "sequence": 894,
+        "visible": true
+      },
+      {
+        "seconds": 29.678655416995753,
+        "sequence": 895,
+        "visible": true
+      },
+      {
+        "seconds": 29.71119133400498,
+        "sequence": 896,
+        "visible": true
+      },
+      {
+        "seconds": 29.746684166995692,
+        "sequence": 897,
+        "visible": true
+      },
+      {
+        "seconds": 29.752855833998183,
+        "sequence": 897,
+        "visible": true
+      },
+      {
+        "seconds": 29.764994166995166,
+        "sequence": 897,
+        "visible": true
+      },
+      {
+        "seconds": 29.77591566700721,
+        "sequence": 898,
+        "visible": true
+      }
+    ],
+    "passed": true
+  },
+  "source_sha256": {
+    "src/fdm/live_experiment/controller.py": "edd5fb28f0b6b0afb9e4189b75d37e1e0f2ab5e2c2209fb98ae5e3af3b002b9e",
+    "src/fdm/live_experiment/candidate_alignment.py": "7dc731751e44754a8a07b0188194502e7a2baf4b723713f983e033031f7e2ab6",
+    "src/fdm/live_experiment/performance.py": "851d11131e8a1cccbb10894a2619dce5a37206bd6aa5e03d36eb85fcbca027a8",
+    "src/fdm/ui/live_measurement_canvas.py": "05023c79b698088d310e0663191fad7b98ddb17338cf0068d6904e7696c0a720"
+  }
+}

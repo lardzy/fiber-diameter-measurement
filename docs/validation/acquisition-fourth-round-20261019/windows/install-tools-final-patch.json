@@ -1,0 +1,97 @@
+{
+  "url": "http://10.211.55.2:58704/f7c7b70829f24327b6b7ab20babdafab.zip",
+  "sha256": "f21c12d744c415a6d607c9d7ab55c9252f3632494f0c751395ba8776a40b1e62",
+  "files": [
+    {
+      "path": "scripts/validation/benchmark_candidate_preview.py",
+      "size": 8181,
+      "sha256": "711676f42bac1f243b32068c93ebbff420a557fc98390d7a656355d717284408"
+    },
+    {
+      "path": "scripts/validation/fourth_round_remote.py",
+      "size": 3478,
+      "sha256": "8cea545320e7e3459133056e5726e3cba695985bfd0770089723814c86c1098e"
+    },
+    {
+      "path": "scripts/validation/install_acquisition_fourth_round.ps1",
+      "size": 2448,
+      "sha256": "3e07d48be8fa458cc10fda87f2342798430b3da1c1a75dcf9a3e028a979f4c84"
+    },
+    {
+      "path": "scripts/validation/probe_acquisition_fourth_round_explorer.ps1",
+      "size": 4090,
+      "sha256": "3c9bad484943bb57092977a54a8fa7d31bc440d07d5d8e6b12b4883b02333d75"
+    },
+    {
+      "path": "scripts/validation/probe_acquisition_fourth_round_frozen.ps1",
+      "size": 17658,
+      "sha256": "e6f59e67646a01d2cfdfe5cd1d78dd63856a9b5076355b0a80ced92da3474204"
+    },
+    {
+      "path": "scripts/validation/run_acquisition_fourth_round_frozen.py",
+      "size": 6986,
+      "sha256": "bc0072678a30e6256923259f3cb40548adb96d1cb779a364b2a3e314ebb2c6aa"
+    },
+    {
+      "path": "scripts/validation/validate_acquisition_fourth_round.py",
+      "size": 29359,
+      "sha256": "6ca101ab548f163485c710f7763e5844f8487a46a2dc80470fe829f5332f799e"
+    },
+    {
+      "path": "src/fdm/live_experiment/candidate_alignment.py",
+      "size": 7919,
+      "sha256": "78d3c5edfe05d945fa58779a15e2c08f45aec6a9356a567c38d51f460b2c9370"
+    },
+    {
+      "path": "src/fdm/live_experiment/controller.py",
+      "size": 80613,
+      "sha256": "d315c28ee8c8af2b5c3308a827015ef0e4696685e7ab954fce3f4cba62871a61"
+    },
+    {
+      "path": "src/fdm/live_experiment/performance.py",
+      "size": 8338,
+      "sha256": "0be3c84a4453a2948d9e0c87a0ee7ddc64d676fa826b58788707ac91e562bea5"
+    },
+    {
+      "path": "src/fdm/services/cu_automatic_worker.py",
+      "size": 15166,
+      "sha256": "d1d0d65e252001be1dc4fbc280e2186fdc3eb3b0a5f8e538013546f33a4548cd"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_annotations.py",
+      "size": 8154,
+      "sha256": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_canvas.py",
+      "size": 23121,
+      "sha256": "a1f5a0282076dde3dd9479930587c198075573c9d41687a6eb980069ee03d143"
+    },
+    {
+      "path": "tests/test_candidate_controller.py",
+      "size": 26746,
+      "sha256": "ff4eb0a1275643a43d3053cb67d1c5a97ebb360a6394ccf818f4c780b8e2a3bd"
+    },
+    {
+      "path": "tests/test_cu_automatic_worker.py",
+      "size": 6063,
+      "sha256": "9d48e8c2f680a407199834db30e6bde258004e4bcdea37088737fb517f1d3fb2"
+    },
+    {
+      "path": "tests/test_live_measurement_annotations.py",
+      "size": 7361,
+      "sha256": "3b79515620ab9dca9a58e164ca028c3e5284a13aaa3112204c4057a18b714624"
+    },
+    {
+      "path": "tests/test_live_measurement_candidate_canvas.py",
+      "size": 12232,
+      "sha256": "5eb62aa54c777c1939dcad105a15cd05da0aa54c85570666f65b917169dc4346"
+    },
+    {
+      "path": "scripts/validation/manage_acquisition_fourth_round_installation.ps1",
+      "sha256": "2fea72161df11094b8a445263b64148bd32932a4615e641e79a6f626bb61fa97",
+      "size": 6831
+    }
+  ],
+  "base_zip_sha256": "c9927f8dd0a798b819028c27be2c19be8e58d6d846ea0e028b9ddd3f5e06c321"
+}

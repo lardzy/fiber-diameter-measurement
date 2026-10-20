@@ -1,0 +1,17 @@
+{
+    "started_at":  "2026-10-20T14:19:31.0265754+08:00",
+    "source_snapshot_sha256":  "564525e8e25388920fc632505adc63469bba758804c7668f22b95bfd6be6137d",
+    "mode":  "baseline",
+    "measure_interval_ms":  150,
+    "load_seconds":  30,
+    "recovery_seconds":  3,
+    "qt_platform":  "windows",
+    "qt_scale_factor":  "0.5",
+    "python":  "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+    "gallery":  true,
+    "prototype":  false,
+    "real_camera":  false,
+    "finished_at":  "2026-10-20T14:20:04.9395080+08:00",
+    "exit_code":  0,
+    "result_sha256":  "69854adf81467e0159e2e26aa4dd89aef20383e4d9c4fbfd36f844a2696d590f"
+}

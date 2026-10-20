@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "version": "0.4.10",
+  "build_id": "4391f019bca842c094b7b281c1d927a7",
+  "source_commit": "unknown",
+  "source_git_baseline": "a836e1dc10408acf01f5bb4445c837dc75a7140e",
+  "installer": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\installer\\fiber-diameter-measurement-setup-0.4.10-no-area-models.exe",
+  "sha256": "7f5bd6f03900dd61586e2ee9ba35f82720fce6eb910da6d40a5b3ceaac1c89a1",
+  "bytes": 398839390,
+  "payload": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installer-payload-7f5bd6f03900\\{app}",
+  "files_verified": 4818,
+  "production_sources_verified": 435,
+  "source_snapshot_sha256": "0c6ad5ffd4f8c427883b639f8f2df4d12498112aade9edf9b03fcaeb0b8fb314",
+  "selfcheck_encoding": "cp936",
+  "alignment_worker_verified": true,
+  "alignment_worker_runtime": {
+    "opencv_threads": 4,
+    "pid": 3092
+  },
+  "excluded_components": [
+    "area-models"
+  ],
+  "actual_installation_tested": false,
+  "hardware_capture_tested": false
+}

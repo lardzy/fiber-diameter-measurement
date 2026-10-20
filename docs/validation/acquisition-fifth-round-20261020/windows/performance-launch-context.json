@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "scope": "Historical launch contract from executed commands; fields not instrumented in original JSON are explicitly unavailable.",
+  "common_launch_environment": {
+    "QT_QPA_PLATFORM": "windows",
+    "QT_SCALE_FACTOR": "0.5",
+    "PYTHONPATH": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\src"
+  },
+  "python": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe",
+  "runner": "scripts/validation/validate_candidate_presentation.py",
+  "canvas_requested_logical_size": [
+    768,
+    576
+  ],
+  "gallery_requested_logical_size": [
+    1040,
+    720
+  ],
+  "actual_historical_qt_dpr": null,
+  "actual_historical_physical_client": null,
+  "historical_foreground_pid": null,
+  "historical_foreground_is_test_process": null,
+  "runs": [
+    {
+      "measure_ms": 150,
+      "duration_seconds": 30,
+      "modes": [
+        "baseline",
+        "guard"
+      ],
+      "gallery": true
+    },
+    {
+      "measure_ms": 1000,
+      "duration_seconds": 30,
+      "modes": [
+        "baseline",
+        "guard"
+      ],
+      "gallery": true
+    }
+  ],
+  "source_ui_control": {
+    "file": "source-main-result.json",
+    "dpr": 1.0,
+    "qt_scale_factor": 0.5,
+    "logical_client": [
+      1600,
+      900
+    ],
+    "actual_client_raster": [
+      1600,
+      900
+    ]
+  },
+  "installed_ui_os_dpi": 192,
+  "claim": "Neither pair used an unset/default QT_SCALE_FACTOR. Both explicitly set 0.5. Actual benchmark DPR and foreground identity were not recorded; do not backfill them as observed."
+}

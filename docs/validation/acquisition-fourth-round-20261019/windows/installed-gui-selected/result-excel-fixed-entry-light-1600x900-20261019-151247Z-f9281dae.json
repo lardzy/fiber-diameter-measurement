@@ -1,0 +1,344 @@
+{
+    "schema":  4,
+    "started_at":  "2026-10-19T23:12:51.3800460+08:00",
+    "exe":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "theme":  "light",
+    "real_hardware":  null,
+    "hardware_acceptance_tested":  false,
+    "capture_note":  "VM host-camera sharing is temporarily disabled and restored after scoped installation validation. No Microview hardware acceptance.",
+    "requested_capture_device_id":  "microview:0",
+    "legacy_project":  "",
+    "legacy_settings":  "",
+    "run_directory":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c",
+    "config":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\isolated-config",
+    "pid":  6444,
+    "isolated_empty_project_verified":  false,
+    "main_window":  true,
+    "experiment_menu":  false,
+    "live_experiment_entry":  false,
+    "live_window":  false,
+    "key_controls":  [
+
+                     ],
+    "key_controls_verified":  false,
+    "workspace_closed":  false,
+    "unsaved_dialog":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "requested_client_size":  [
+                                  1600,
+                                  900
+                              ],
+    "observed_client_sizes":  [
+                                  {
+                                      "phase":  "01-main",
+                                      "actual":  [
+                                                     1600,
+                                                     900
+                                                 ],
+                                      "requested":  [
+                                                        1600,
+                                                        900
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "02-realtime",
+                                      "actual":  [
+                                                     1600,
+                                                     900
+                                                 ],
+                                      "requested":  [
+                                                        1600,
+                                                        900
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "03-content",
+                                      "actual":  [
+                                                     1600,
+                                                     900
+                                                 ],
+                                      "requested":  [
+                                                        1600,
+                                                        900
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "09-excel-save-dialog",
+                                      "actual":  [
+                                                     1600,
+                                                     900
+                                                 ],
+                                      "requested":  [
+                                                        1600,
+                                                        900
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "10-excel-success",
+                                      "actual":  [
+                                                     1600,
+                                                     900
+                                                 ],
+                                      "requested":  [
+                                                        1600,
+                                                        900
+                                                    ]
+                                  },
+                                  {
+                                      "phase":  "08-navigation-return",
+                                      "actual":  [
+                                                     1600,
+                                                     900
+                                                 ],
+                                      "requested":  [
+                                                        1600,
+                                                        900
+                                                    ]
+                                  }
+                              ],
+    "scroll_actions":  [
+
+                       ],
+    "snapshots":  [
+                      "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\01-main-uia.json",
+                      "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\02-realtime-uia.json",
+                      "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\03-content-uia.json",
+                      "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\09-excel-save-dialog-uia.json",
+                      "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\10-excel-success-uia.json",
+                      "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\08-navigation-return-uia.json"
+                  ],
+    "errors":  [
+
+               ],
+    "ok":  true,
+    "populated":  true,
+    "steps":  [
+                  {
+                      "name":  "采集与试验",
+                      "action":  "invoke"
+                  },
+                  {
+                      "name":  "含量试验",
+                      "action":  "select"
+                  },
+                  {
+                      "name":  "全图分析或刷新候选",
+                      "bounds":  {
+                                     "name":  "全图分析或刷新候选",
+                                     "process_id":  6444,
+                                     "type":  "ControlType.Button",
+                                     "class":  "QToolButton",
+                                     "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.QWidget.acquisitionViewControls.trialAnalyze",
+                                     "native_handle":  0,
+                                     "enabled":  false,
+                                     "offscreen":  false,
+                                     "bounds":  [
+                                                    43,
+                                                    210,
+                                                    105,
+                                                    38
+                                                ],
+                                     "help_text":  "",
+                                     "value":  "",
+                                     "runtime_id":  [
+                                                        42,
+                                                        132402,
+                                                        4,
+                                                        -2147482881
+                                                    ],
+                                     "patterns":  [
+                                                      "InvokePatternIdentifiers.Pattern",
+                                                      "ValuePatternIdentifiers.Pattern"
+                                                  ]
+                                 },
+                      "action":  "fourth-entry-visible"
+                  },
+                  {
+                      "name":  "候选显示与不透明度",
+                      "bounds":  {
+                                     "name":  "候选显示与不透明度",
+                                     "process_id":  6444,
+                                     "type":  "ControlType.Button",
+                                     "class":  "QToolButton",
+                                     "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.QWidget.acquisitionViewControls.QToolButton",
+                                     "native_handle":  0,
+                                     "enabled":  true,
+                                     "offscreen":  false,
+                                     "bounds":  [
+                                                    208,
+                                                    210,
+                                                    57,
+                                                    38
+                                                ],
+                                     "help_text":  "",
+                                     "value":  "",
+                                     "runtime_id":  [
+                                                        42,
+                                                        132402,
+                                                        4,
+                                                        -2147482879
+                                                    ],
+                                     "patterns":  [
+                                                      "InvokePatternIdentifiers.Pattern",
+                                                      "ValuePatternIdentifiers.Pattern"
+                                                  ]
+                                 },
+                      "action":  "fourth-entry-visible"
+                  },
+                  {
+                      "name":  "查看测量证据及存档设置",
+                      "bounds":  {
+                                     "name":  "查看测量证据及存档设置",
+                                     "process_id":  6444,
+                                     "type":  "ControlType.Button",
+                                     "class":  "QToolButton",
+                                     "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.trialWorkflowTabs.qt_tabwidget_stackedwidget.QScrollArea.qt_scrollarea_viewport.QWidget.trialEvidence",
+                                     "native_handle":  0,
+                                     "enabled":  true,
+                                     "offscreen":  false,
+                                     "bounds":  [
+                                                    1294,
+                                                    418,
+                                                    72,
+                                                    22
+                                                ],
+                                     "help_text":  "",
+                                     "value":  "",
+                                     "runtime_id":  [
+                                                        42,
+                                                        132402,
+                                                        4,
+                                                        -2147482875
+                                                    ],
+                                     "patterns":  [
+                                                      "InvokePatternIdentifiers.Pattern",
+                                                      "ValuePatternIdentifiers.Pattern"
+                                                  ]
+                                 },
+                      "action":  "fourth-entry-visible"
+                  },
+                  {
+                      "name":  "导出 Excel 报告",
+                      "action":  "invoke"
+                  },
+                  {
+                      "name":  "测量分析",
+                      "action":  "invoke"
+                  }
+              ],
+    "fixture_sha256":  "58b431a8b3d52259503e84ae3cfada11af254b8650ca628a31d8ccbe5ba852de",
+    "excel_export_tested":  true,
+    "fixture_path":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\fixtures\\dc3a0ee4ad81\\review.fdmproj",
+    "os_dpi":  192,
+    "excel_entry":  {
+                        "name":  "导出 Excel 报告",
+                        "process_id":  6444,
+                        "type":  "ControlType.Button",
+                        "class":  "QPushButton",
+                        "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.QPushButton",
+                        "native_handle":  0,
+                        "enabled":  true,
+                        "offscreen":  false,
+                        "bounds":  [
+                                       1466,
+                                       855,
+                                       134,
+                                       32
+                                   ],
+                        "help_text":  "",
+                        "value":  "",
+                        "runtime_id":  [
+                                           42,
+                                           132402,
+                                           4,
+                                           -2147482925
+                                       ],
+                        "patterns":  [
+                                         "InvokePatternIdentifiers.Pattern",
+                                         "ValuePatternIdentifiers.Pattern"
+                                     ]
+                    },
+    "automatic_toggle_verified":  true,
+    "excel_verification":  {
+                               "passed":  true,
+                               "report":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\fixed-entry-report.xls",
+                               "template":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\isolated-config\\FiberDiameterMeasurement\\templates\\sheet.xlt",
+                               "expected":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\frozen-gui\\20261019-151247Z-f9281dae\\excel-fixed-entry-light-1600x900\\20261019-231251-ade1410a820c46d19d97f4782de54c9c\\expected.json",
+                               "inputs_verified":  52,
+                               "diameters_verified":  144,
+                               "counts_verified":  12,
+                               "sheets":  [
+                                              {
+                                                  "name":  "标准选择",
+                                                  "print_area":  "",
+                                                  "formula_cells":  1
+                                              },
+                                              {
+                                                  "name":  "原始数据",
+                                                  "print_area":  "",
+                                                  "formula_cells":  496
+                                              },
+                                              {
+                                                  "name":  "特种毛(报出)",
+                                                  "print_area":  "$A$1:$K$66",
+                                                  "formula_cells":  2668
+                                              },
+                                              {
+                                                  "name":  "麻棉(报出)",
+                                                  "print_area":  "$A$1:$K$66",
+                                                  "formula_cells":  2664
+                                              },
+                                              {
+                                                  "name":  "分组统计",
+                                                  "print_area":  "",
+                                                  "formula_cells":  11992
+                                              },
+                                              {
+                                                  "name":  "非棉麻织物",
+                                                  "print_area":  "$A$1:$U$40",
+                                                  "formula_cells":  711
+                                              },
+                                              {
+                                                  "name":  "非棉麻纤维",
+                                                  "print_area":  "",
+                                                  "formula_cells":  321
+                                              },
+                                              {
+                                                  "name":  "分组加权统计",
+                                                  "print_area":  "",
+                                                  "formula_cells":  2213
+                                              },
+                                              {
+                                                  "name":  "织物纤维含量报告",
+                                                  "print_area":  "",
+                                                  "formula_cells":  533
+                                              },
+                                              {
+                                                  "name":  "棉麻织物",
+                                                  "print_area":  "$A$1:$U$43",
+                                                  "formula_cells":  617
+                                              },
+                                              {
+                                                  "name":  "棉麻纤维",
+                                                  "print_area":  "",
+                                                  "formula_cells":  268
+                                              },
+                                              {
+                                                  "name":  "比重",
+                                                  "print_area":  "",
+                                                  "formula_cells":  0
+                                              }
+                                          ],
+                               "errors":  [
+
+                                          ],
+                               "excel_version":  "16.0",
+                               "vba_preserved":  true,
+                               "formulas_verified":  486,
+                               "report_sha256":  "c2d68825e666f15f50c3ece04688c95954a658dad057d63336b42a7f13a29f9f"
+                           },
+    "exit_code":  0,
+    "process_exited_after_cleanup":  true,
+    "finished_at":  "2026-10-19T23:13:24.6103838+08:00"
+}

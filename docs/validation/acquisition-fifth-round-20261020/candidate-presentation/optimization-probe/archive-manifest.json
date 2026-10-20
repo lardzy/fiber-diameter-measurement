@@ -1,0 +1,32 @@
+{
+  "status": "Research-only, rejected for production because target-platform performance regressed.",
+  "prototype_path": ".tmp/round5-alignment-optimization/profile_alignment.py",
+  "prototype_sha256": "0716d05a5e2eea5905012f7ca756aa23dc25241aceda9dc22cba64d73220def6",
+  "files": [
+    {
+      "name": "README.md",
+      "size": 3293,
+      "sha256": "f6401a7419868c3cc4fa0ec4252dd89312bc544a127e1594174df94402be613d"
+    },
+    {
+      "name": "macos-profile-and-equivalence.json",
+      "size": 93633,
+      "sha256": "d774d47308a018826ab4ea15a20c446a50fc7e6e3fd641ff1738a76620048838"
+    },
+    {
+      "name": "optical-equivalence.json",
+      "size": 20743,
+      "sha256": "dd342dbf374a2f040cbd015f558f9bc17540bea43d05909c2c43fd25e5f1eccf"
+    },
+    {
+      "name": "windows-profile-thread1.json",
+      "size": 98473,
+      "sha256": "238c757d7ffde070afc40f9c8b34c6f9ed10235813b397593cbe9cb78d21feb5"
+    },
+    {
+      "name": "windows-profile-thread4.json",
+      "size": 98474,
+      "sha256": "232bdb4f0e51e407cf598b3a04b6cead771bfa1ea367323f8b500ca2f0921888"
+    }
+  ]
+}

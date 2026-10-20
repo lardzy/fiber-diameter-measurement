@@ -1,0 +1,56 @@
+{
+  "production_changed": true,
+  "rows": [
+    {
+      "path": "src\\fdm\\ui\\trial_assistance.py",
+      "before": "10ccc0e9bb630a59042b92aa6662887ad91de9650cc40a654d39466bfb2c0640",
+      "manifest_before": "10ccc0e9bb630a59042b92aa6662887ad91de9650cc40a654d39466bfb2c0640",
+      "after": "68090b4b51f215e880af710fc5ab7bec49e7aba9531de7dc598af725de66a4f7"
+    },
+    {
+      "path": "src\\fdm\\ui\\measurement_evidence_gallery.py",
+      "before": "a2a479704c5e53a8c2d4951410ce4e833ab78c070c283c43ed11722a2db8eec1",
+      "manifest_before": "a2a479704c5e53a8c2d4951410ce4e833ab78c070c283c43ed11722a2db8eec1",
+      "after": "a2a479704c5e53a8c2d4951410ce4e833ab78c070c283c43ed11722a2db8eec1"
+    },
+    {
+      "path": "tests\\test_trial_compact_layout.py",
+      "before": "d25e5f479f8de1b7c3891ccb5282fe4635937852e0bfd316b1e53ce8cdfe5093",
+      "manifest_before": "d25e5f479f8de1b7c3891ccb5282fe4635937852e0bfd316b1e53ce8cdfe5093",
+      "after": "75bf11fad378a520014ba2d1d98534c6c7b0ebfe5c1bd29afbcc9a24effb1d2b"
+    },
+    {
+      "path": "tests\\test_measurement_evidence_gallery.py",
+      "before": "f7c0f013e5b1c95eb3ea621fe3e811dd62bb36b4180ffe66383a48a4411371e4",
+      "manifest_before": "f7c0f013e5b1c95eb3ea621fe3e811dd62bb36b4180ffe66383a48a4411371e4",
+      "after": "f7c0f013e5b1c95eb3ea621fe3e811dd62bb36b4180ffe66383a48a4411371e4"
+    },
+    {
+      "path": "tests\\test_live_experiment_post_classification.py",
+      "before": "e4161b2322aa4a144c8a5fc2385d2f2fbc52843e1fdc08b66985f93b388623a7",
+      "manifest_before": "e4161b2322aa4a144c8a5fc2385d2f2fbc52843e1fdc08b66985f93b388623a7",
+      "after": "e4161b2322aa4a144c8a5fc2385d2f2fbc52843e1fdc08b66985f93b388623a7"
+    },
+    {
+      "path": "tests\\test_live_experiment_content_workspace.py",
+      "before": "ed2477b428ebc9dec34bb2142e259c6c4bd94070a991cfa38543ee0fcbfba092",
+      "manifest_before": "15db5c024a8410c33ffc2764d2cf025c6d53b9b5d7a5d7402d0fac178db6d230",
+      "after": "ed2477b428ebc9dec34bb2142e259c6c4bd94070a991cfa38543ee0fcbfba092"
+    },
+    {
+      "path": "scripts\\validation\\validate_acquisition_fifth_round.py",
+      "before": "ac2130b95a9a275f57ae8db843d28a7554b56346f02feea30f80e3c7ef36945e",
+      "manifest_before": "441bfe2b5acc973bbcec839847bfdf7ff281508fdd95c82579e6f09f9a56bbae",
+      "after": "ac2130b95a9a275f57ae8db843d28a7554b56346f02feea30f80e3c7ef36945e"
+    },
+    {
+      "path": "scripts\\validation\\validate_workflow_redesign.py",
+      "before": "6a10b225a909bd9babc74ba92ea7e6376b8321e35114075d4094bc48b8c3be2c",
+      "manifest_before": "6a10b225a909bd9babc74ba92ea7e6376b8321e35114075d4094bc48b8c3be2c",
+      "after": "6a10b225a909bd9babc74ba92ea7e6376b8321e35114075d4094bc48b8c3be2c"
+    }
+  ],
+  "id": "d00241787d8f",
+  "source_manifest_before": "233d2e508fa035f9a5b3d5b7867e97056a41eb58b664a2187c18332e5ed2b30e",
+  "source_manifest_after": "095b1dedeab0f83c2eecf97e8d04119a67bf98687a664387e2136764d439ffac"
+}

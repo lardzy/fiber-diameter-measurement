@@ -1,0 +1,43 @@
+{
+    "owned_fdm_and_excel_processes":  [
+
+                                      ],
+    "uninstaller_run":  false,
+    "time":  "2026-10-19T23:14:26.9932878+08:00",
+    "global_policy_modified":  false,
+    "whole_vm_rollback":  false,
+    "schema":  1,
+    "preexisting_background_process":  {
+                                           "ProcessId":  10468,
+                                           "Name":  "python.exe",
+                                           "ExecutablePath":  null,
+                                           "CreationDate":  "\/Date(1792410973592)\/"
+                                       },
+    "camera_restored_by_host":  true,
+    "old_install_location":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\",
+    "background_process_modified":  false,
+    "policies":  [
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "MachinePolicy"
+                     },
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "UserPolicy"
+                     },
+                     {
+                         "policy":  "Bypass",
+                         "scope":  "Process"
+                     },
+                     {
+                         "policy":  "RemoteSigned",
+                         "scope":  "CurrentUser"
+                     },
+                     {
+                         "policy":  "Undefined",
+                         "scope":  "LocalMachine"
+                     }
+                 ],
+    "old_install_version":  "0.4.7",
+    "original_files_checked_by_restore":  4
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-20",
+  "platform": "macOS",
+  "scope": "Qt gallery component; simulated image evidence, not installed Windows or real Microview acceptance",
+  "tests": {
+    "passed": 58,
+    "elapsed_seconds": 4.66,
+    "gallery_cases": 26,
+    "command": "QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q tests/test_measurement_evidence_gallery.py tests/test_measurement_evidence_view.py tests/test_trial_records.py"
+  },
+  "files": {
+    "src/fdm/ui/measurement_evidence_gallery.py": "f59249a16762e6585730c655c00fcdebbc59c50bb827626d1fabd6ddac533971",
+    "tests/test_measurement_evidence_gallery.py": "25247e1bc7104f96fb9a5cf6e95de373f9a567341a807883b69cbdc2b78861f2",
+    "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-dark.png": "efb8d6d936e455637876ac01174acf253afc911b45c1253405dacd02112e93ab",
+    "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-light.png": "6270b2f2f1cc6cdb23485638e652eb8e7527bdfff636fa97e6066ec89309b53b",
+    "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-navy.png": "f17d51c849363ed91a49407a065ce73b146d0dcf317d1c96806db358d928ceff",
+    "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-warm.png": "2d3f1da648ef708384a4af1d08618d8ebc8bbd4030b19e19b188d283fab1b724"
+  },
+  "paint_optimization": "No visual changes for successful header-to-decode handoff; completed thumbnails and errors invalidate only their current visible record card; model sync uses Qt model notifications. Existing screenshots precede this invalidation-only change."
+}

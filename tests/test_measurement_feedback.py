@@ -2,6 +2,7 @@
 from concurrent.futures import Future
 from dataclasses import FrozenInstanceError, asdict
 from types import SimpleNamespace
+import time
 
 import numpy as np
 import pytest
@@ -137,6 +138,7 @@ def automatic_context(controller, response):
     lease = controller.budget.acquire(token.frame)
     controller._automatic_context = {"task_id": "analysis-7", "token": token, "lease": lease,
         "calibration": controller.calibration, "algorithm": "traditional",
+        "started_at": time.perf_counter(), "completed": False,
         "operator_id": controller.session.active_operator_id, "direction": controller.session.active_direction}
     responses = [response]
     controller._automatic = SimpleNamespace(poll=lambda: [responses.pop()] if responses else [],
@@ -153,11 +155,19 @@ def test_automatic_feedback_requires_current_task_and_context(controller, scenar
     if scenario == "old_operator":
         controller.session.add_operator("新操作者")
     controller.poll()
-    if scenario in {"current", "empty"}:
+    if scenario == "current":
         assert len(events) == 1 and events[0].intent_id == "analysis-7"
-        assert events[0].code == ("no_valid_fibers" if scenario == "empty" else "worker_crashed")
+        assert events[0].code == "worker_crashed"
     else:
         assert not events
+    if scenario == "empty":
+        # Empty is a completed stable cycle, not an active task or a reason to
+        # continually repeat the same feedback on every controller poll.
+        context = controller._automatic_context
+        assert context["completed"] and not controller.busy
+        assert not controller.candidates and not controller.session.measurements
+        controller.poll()
+        assert not events and controller._automatic_context is context
 
 
 @pytest.mark.parametrize("change", ["field", "source", "unavailable", "cancel"])

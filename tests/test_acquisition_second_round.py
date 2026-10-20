@@ -95,6 +95,7 @@ def test_rejected_feedback_is_viewport_anchored_and_click_passes_through(harness
     page.ruler_choice.setCurrentIndex(1)
     page.ruler_choice.activated.emit(1)
     page.display_binding.set_mode("fit")
+    page.input_mode.setCurrentIndex(page.input_mode.findData("manual"))
     workflow.settle()
     before = page.session.to_dict()
     feedback = feedback_for_reason("no_complete_crossing", **page.controller.feedback_context())

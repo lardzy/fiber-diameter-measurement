@@ -1,0 +1,838 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-19T14:45:36.707948+00:00",
+  "theme": "warm",
+  "physical_client": [
+    1600,
+    900
+  ],
+  "logical_client": [
+    1600,
+    900
+  ],
+  "scale": 1.0,
+  "base_device_scale": 2.0,
+  "qt_scale_factor": 0.5,
+  "runtime": "Windows-11-10.0.26200-SP0",
+  "platform": "windows",
+  "real_hardware": false,
+  "real_windows": true,
+  "source_fingerprints": {
+    "src/fdm/ui/main_window.py": "bb401f328a0a33654839d97cca5b6a335c6b7c10ce716b5b9972c67d9d742fe4",
+    "src/fdm/ui/live_experiment_workspace.py": "675b1f919088297fe33f8305c94935c36148f7f7f3a9bb3f3b597dc70bc349ce",
+    "src/fdm/ui/live_experiment_view.py": "db63a687b41f75f3cf111044e8e173b27de7f58bd187ed0520d0b6110d740993",
+    "src/fdm/ui/live_measurement_canvas.py": "a1f5a0282076dde3dd9479930587c198075573c9d41687a6eb980069ee03d143",
+    "src/fdm/ui/live_measurement_annotations.py": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34",
+    "src/fdm/ui/trial_assistance.py": "d4eb59c4273ef7806e58ccdebccec09a99c80f52c9dec8722fc9974f512fbe15",
+    "src/fdm/ui/measurement_evidence_view.py": "73ceb49d33e905d61931ccef55013d4cd70c5f5d3167a67db2a25cffec0860b1",
+    "src/fdm/live_experiment/controller.py": "d315c28ee8c8af2b5c3308a827015ef0e4696685e7ab954fce3f4cba62871a61",
+    "src/fdm/live_experiment/candidate_alignment.py": "78d3c5edfe05d945fa58779a15e2c08f45aec6a9356a567c38d51f460b2c9370",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993"
+  },
+  "script_sha256": "6ca101ab548f163485c710f7763e5844f8487a46a2dc80470fe829f5332f799e",
+  "screenshots": [
+    {
+      "name": "realtime",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\realtime.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "f4275226ad8b73cee7b806438a99118a0a0a9d57b844f993fa7faf9dc319b95e",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 391241
+    },
+    {
+      "name": "content-empty",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-empty.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "5f463105dd918b261d3097403118a0c7e0cff58ffeb79d7bddd297fd9ac779d8",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          57,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    },
+    {
+      "name": "content-ready",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-ready.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "0495bf8c01a3e163b6656e5435c27636013db0390396166dd2bb04165b69eaed",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          57,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    },
+    {
+      "name": "content-candidates",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-candidates.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "0ccded00d1b7f4d8ffdd147f53ab3d16a60b0a111a74662f2d19a6e7aef20b8c",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 388552,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          69,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "content-partial-accepted",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-partial-accepted.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "3d12370188809a096564247944b82998494d2eb508611c0da0e99c09254b28c2",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 392019,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          69,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 1,
+      "candidate_count": 9
+    },
+    {
+      "name": "content-candidates-hidden",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-candidates-hidden.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "3d12370188809a096564247944b82998494d2eb508611c0da0e99c09254b28c2",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 392019,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          69,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 1,
+      "candidate_count": 9
+    },
+    {
+      "name": "evidence-pinned",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\evidence-pinned.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "1ce4c1b0e8ed2be3f9f865f0be4e3a1123b3ae24e6dd3d94ba808b2f65e63be3",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 357249,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          69,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "evidence-clean-image",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\evidence-clean-image.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "3fd9da599027691aead58e40f518b976bf901a532da8b77fe2995b7ce0e64405",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 360733,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          69,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 1,
+      "candidate_count": 9
+    },
+    {
+      "name": "content-automatic-result",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-automatic-result.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "dde786914f65535e09bbb9f2ba04b407f64cd5c2cb45d2e6ca0f2addd68eb5f1",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 388552,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          69,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "diameter-ready",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\diameter-ready.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "94854d5705b98e04e5211aa385aefa92ddb6043cc222f935a30432b33cb10fd4",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          57,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    },
+    {
+      "name": "content-return",
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\source-visual-final\\warm-1600x900-1\\content-return.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "8c82856edc345e6bc2c5019668d3ddb766dcc5f32f613c22bbbb6d772f60b575",
+      "navigation": [
+        16,
+        69,
+        312,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          105,
+          38
+        ],
+        "稳定后自动分析": [
+          129,
+          124,
+          52,
+          23
+        ],
+        "候选显示与不透明度": [
+          185,
+          117,
+          57,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    }
+  ],
+  "interactions": [
+    "category modal editor",
+    "real analyzer",
+    "candidate click commit",
+    "partial batch preserved",
+    "opacity slider",
+    "hidden candidates noninteractive",
+    "manual draft and Escape",
+    "pinned evidence and pure image",
+    "stable automatic analysis once",
+    "two-level navigation"
+  ],
+  "passed": true,
+  "limitations": [
+    "Real navigation, automatic worker, alignment, candidate commit and evidence writer.",
+    "Camera source is deterministic Qt-rendered synthetic fiber pixels.",
+    "Categories are filled through their actual modal editor; no candidate/result injection.",
+    "Qt scale factors do not test physical display migration or OS window stacking.",
+    "Video is Qt grab compositing, not a desktop or Microview capture.",
+    "This visual pass does not invoke Excel COM or certify capture throughput."
+  ],
+  "font": {
+    "requested_family": null,
+    "requested_point_size": null,
+    "requested_family_installed": null,
+    "resolved_family": "Microsoft YaHei UI",
+    "point_size": 9.0,
+    "pixel_size": 12,
+    "height": 15,
+    "line_spacing": 15,
+    "chinese_sample": "样品编号含量试验",
+    "chinese_sample_width": 96,
+    "native_windows": true
+  },
+  "dpr": 1.0,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "status_events": [
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:类别设置已变化",
+    "类别设置已变化",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:正在分析当前视场；实时画面继续更新。",
+    "正在分析当前视场；实时画面继续更新。",
+    "ui:检测到 9 条候选，请赋类后确认。",
+    "检测到 9 条候选，请赋类后确认。",
+    "ui:已接受 1 条有效测量并计入记录。",
+    "ui:视场已变化，请重新测量",
+    "视场已变化，请重新测量",
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:正在分析当前视场；实时画面继续更新。",
+    "正在分析当前视场；实时画面继续更新。",
+    "ui:检测到 9 条候选，请赋类后确认。",
+    "检测到 9 条候选，请赋类后确认。",
+    "ui:已切换试验页面，累计记录保留",
+    "已切换试验页面，累计记录保留",
+    "ui:正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "ui:正在等待采集完整帧…",
+    "正在等待采集完整帧…",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:已切换试验页面，累计记录保留",
+    "已切换试验页面，累计记录保留",
+    "ui:正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "ui:正在等待采集完整帧…",
+    "正在等待采集完整帧…",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:已切换试验页面，累计记录保留",
+    "已切换试验页面，累计记录保留",
+    "ui:正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "ui:正在等待采集完整帧…",
+    "正在等待采集完整帧…",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:正在确认关闭或切换项目",
+    "正在确认关闭或切换项目",
+    "ui:试验工作区已关闭",
+    "试验工作区已关闭"
+  ],
+  "visible_categories": [
+    "1 · 绵羊毛",
+    "2 · 山羊绒",
+    "3 · 山羊毛",
+    "4 · 羊驼毛",
+    "5 · 兔毛",
+    "6 · 粗兔毛",
+    "7 · 牦牛绒",
+    "8 · 牦牛毛",
+    "9 · 驼绒"
+  ],
+  "after_analyze_click": {
+    "enabled": true,
+    "controller_state": "ready",
+    "worker": true,
+    "context": true,
+    "message": "正在分析当前视场；实时画面继续更新。"
+  },
+  "analysis": {
+    "candidate_count": 9,
+    "algorithm": "traditional",
+    "fixture": false
+  },
+  "evidence": {
+    "state": "saved",
+    "path": "C:\\Users\\LISHUY~1\\AppData\\Local\\Temp\\fdm-live-evidence-is_xnyf8\\023d7171466f6da6f0655dc2234af89d2cf217f0eb6a4e23a180a6c15bf3b4af.jpg",
+    "frame_id": "camera:workflow-validation:0:2:11",
+    "sha256": "0222a2ce339f922e5ac486266ffe8262eef03ec51861fee01b522c6a92dc4c2f",
+    "error": null,
+    "evidence_id": "023d7171466f6da6f0655dc2234af89d2cf217f0eb6a4e23a180a6c15bf3b4af",
+    "metadata_version": 1,
+    "mode": "crop_jpeg",
+    "codec": "jpeg",
+    "source_size": [
+      768,
+      576
+    ],
+    "crop": [
+      512,
+      0,
+      256,
+      296
+    ],
+    "quality": 95,
+    "subsampling": "4:4:4",
+    "encoder": "jpeg-evidence-444-v1",
+    "size_bytes": 11341
+  },
+  "performance": {
+    "analysis_ms": {
+      "n": 2,
+      "p50": 411.6411250006422,
+      "p95": 526.4170000008562
+    },
+    "alignment_ms": {
+      "n": 52,
+      "p50": 18.59310399959213,
+      "p95": 60.91355000062295
+    },
+    "click_to_accept_ms": {
+      "n": 1,
+      "p50": 2.769459000774077,
+      "p95": 2.769459000774077
+    },
+    "stable_wait_ms": {
+      "n": 1,
+      "p50": 305.07070800013025,
+      "p95": 305.07070800013025
+    },
+    "analysis_to_paint_ms": {
+      "n": 2,
+      "p50": 430.23702100072114,
+      "p95": 553.8865396007168
+    },
+    "ingest_fps": {
+      "n": 57,
+      "p50": 21.06932069891136,
+      "p95": 41.05043645294065
+    },
+    "presented_fps": {
+      "n": 56,
+      "p50": 21.0492438004404,
+      "p95": 44.31594713304691
+    },
+    "frame_age_ms": {
+      "n": 57,
+      "p50": 3.6050829985470045,
+      "p95": 23.49563379975734
+    },
+    "analysis_service_total_ms": {
+      "n": 2,
+      "p50": 259.39458349967026,
+      "p95": 259.713933650346
+    },
+    "analysis_preparation_ms": {
+      "n": 2,
+      "p50": 4.254291999131965,
+      "p95": 5.217141698904015
+    },
+    "analysis_processing_ms": {
+      "n": 2,
+      "p50": 255.1402915005383,
+      "p95": 256.4224913509861
+    },
+    "analysis_shared_memory_ms": {
+      "n": 2,
+      "p50": 0.8826249995763646,
+      "p95": 0.9376374993735226
+    },
+    "analysis_budget_wait_ms": {
+      "n": 2,
+      "p50": 0.019979500393674243,
+      "p95": 0.0204110513550404
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 15.253084000505623,
+      "p95": 15.253084000505623
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 2,
+      "p50": 396.27787500012346,
+      "p95": 507.1642875006546
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 2,
+      "p50": 136.8832915004532,
+      "p95": 248.0890541516601
+    }
+  },
+  "navigation_cycles": 6,
+  "capture_starts": 1,
+  "window_events": [
+    {
+      "class": "QInputDialog",
+      "name": "",
+      "title": "操作者改名",
+      "size": [
+        204,
+        120
+      ]
+    },
+    {
+      "class": "QDialog",
+      "name": "",
+      "title": "本方向类别 · 材料参数保存在本试验内",
+      "size": [
+        830,
+        470
+      ]
+    },
+    {
+      "class": "QMenu",
+      "name": "",
+      "title": "",
+      "size": [
+        226,
+        82
+      ]
+    },
+    {
+      "class": "_EvidenceDialog",
+      "name": "",
+      "title": "测量证据",
+      "size": [
+        600,
+        470
+      ]
+    },
+    {
+      "class": "_EvidenceDialog",
+      "name": "",
+      "title": "测量证据",
+      "size": [
+        400,
+        320
+      ]
+    },
+    {
+      "class": "QInputDialog",
+      "name": "",
+      "title": "操作者改名",
+      "size": [
+        204,
+        120
+      ]
+    }
+  ],
+  "source_changed_during_run": false,
+  "elapsed_seconds": 7.804
+}

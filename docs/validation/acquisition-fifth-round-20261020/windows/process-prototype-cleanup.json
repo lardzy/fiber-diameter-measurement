@@ -1,0 +1,21 @@
+{
+  "after_probe": "process-alignment-1000ms",
+  "matching_process_names": [
+    "python",
+    "pythonw",
+    "FiberDiameterMeasurement",
+    "EXCEL"
+  ],
+  "remaining": [
+    {
+      "pid": 3404,
+      "name": "python",
+      "start_time_dotnet": "/Date(1792462976345)/",
+      "matches_original_baseline": true
+    }
+  ],
+  "owned_probe_python_or_worker_remaining": false,
+  "fdm_or_excel_remaining": false,
+  "termination_performed": false,
+  "note": "Read-only Get-Process query. No command lines inspected. PowerShell exit 1 comes from missing optional process names with SilentlyContinue; the returned inventory contained only the unchanged original Python."
+}

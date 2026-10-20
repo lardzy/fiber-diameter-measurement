@@ -1,0 +1,6 @@
+{
+  "file": "scripts/validation/probe_acquisition_fourth_round_frozen.ps1",
+  "sha256": "1fa959979a4c7df1a0daa44154d84f5b7778fa5d86a546a2025b1668d8985c1d",
+  "product_unchanged": true,
+  "reason": "Copy expected JSON into scoped GUI run before strict verifier."
+}

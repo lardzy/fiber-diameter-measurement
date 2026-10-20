@@ -1,0 +1,196 @@
+{
+  "scope": "Final frozen production source, Windows ARM64 AMD64 emulation; synthetic pixels and accepted measurements, actual Qt/JPEG/gallery/child process. Not real Microview acceptance.",
+  "source_manifest_sha256": "564525e8e25388920fc632505adc63469bba758804c7668f22b95bfd6be6137d",
+  "load_seconds": 30,
+  "separate_recovery_seconds": 3,
+  "all_strict_checks_passed": false,
+  "results": [
+    {
+      "measure_interval_ms": 1000,
+      "baseline_fps": 30.296884217577364,
+      "guard_fps": 30.30107300920377,
+      "fps_drop_percent": -0.013825816530580048,
+      "baseline_p95_frame_age_ms": 9.22647465158661,
+      "guard_p95_frame_age_ms": 21.450225299940936,
+      "p95_increase_ms": 12.223750648354326,
+      "allowed_increase_ms": 33,
+      "performance_magnitude_passed": true,
+      "strict_visibility_passed": true,
+      "visibility_transitions": [
+        {
+          "seconds": 1.372764042000199,
+          "sequence": 30,
+          "visible": true
+        }
+      ],
+      "post_load_recovery": {
+        "requested_seconds": 3.0,
+        "started_at_perf_counter": 11823.853179958,
+        "observed_seconds": 2.9847428330012917,
+        "start": {
+          "at": 11823.853179958,
+          "accepted": 29,
+          "saved": 29,
+          "measurement_attempts": 30
+        },
+        "accepted_at_end": 30,
+        "saved_at_end": 30,
+        "measurement_attempts_at_end": 30,
+        "paint_count": 91,
+        "hidden_paints": 0,
+        "first_visible_after_ms": 25.472417000855785,
+        "visibility_transitions": [],
+        "last_second_continuously_visible": true,
+        "definition": "New measurement timer stopped; source frames, pending acceptance, JPEG writes and gallery remain active. Load FPS/P95 above exclude this tail; original continuous-visibility acceptance is not relaxed."
+      },
+      "accepted": 30,
+      "saved": 30,
+      "remaining_budget_bytes": 0,
+      "source_sha256": {
+        "src/fdm/live_experiment/controller.py": "b1e569826f9310d9c09f4a0197d9771311b999c36743564b4c9dc6799c53e947",
+        "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+        "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+        "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+        "src/fdm/ui/live_measurement_canvas.py": "b1e7d0d7b9aef5f56004886b39bdd22d2d4501ab7e015db090d98e64d9cfded0",
+        "src/fdm/ui/measurement_evidence_gallery.py": "f59249a16762e6585730c655c00fcdebbc59c50bb827626d1fabd6ddac533971",
+        "scripts/validation/benchmark_candidate_preview.py": "c9992479f859cf2b2497582ad260a5308d3845048b249c792b461e3d59777bc1",
+        "scripts/validation/validate_candidate_presentation.py": "e6912c9ffc2386a5730b6b007b9bbfd970970154e3277ba65bb1763e4a11fa87"
+      },
+      "display_context": {
+        "process_id": 7032,
+        "qt_scale_factor": "0.5",
+        "device_pixel_ratio": 1.0,
+        "logical_canvas_size": [
+          768,
+          576
+        ],
+        "logical_dpi": 96.0,
+        "physical_dpi": 261.6581,
+        "foreground_process_id": 7032,
+        "native_client_size": [
+          768,
+          576
+        ]
+      },
+      "windows_memory_at_load_end": {
+        "available": true,
+        "processes": {
+          "gui": {
+            "pid": 7032,
+            "working_set_bytes": 164851712,
+            "peak_working_set_bytes": 164851712,
+            "private_bytes": 236691456
+          },
+          "alignment_child": {
+            "pid": 11500,
+            "working_set_bytes": 65331200,
+            "peak_working_set_bytes": 78868480,
+            "private_bytes": 181497856
+          }
+        },
+        "definition": "Working set/private bytes observed at phase end. Per-process peak working sets are not a simultaneous whole-application peak."
+      },
+      "baseline_sha256": "68e48515b0b18f70ebaf88b525e85c98bf6121df3f4044e034732cc38c596cb1",
+      "guard_sha256": "b52b4d4a052adc258a1f746e355e25339abb110add11b3a6dddf1aa17dc5f72b"
+    },
+    {
+      "measure_interval_ms": 150,
+      "baseline_fps": 30.293582328248192,
+      "guard_fps": 30.2579407204634,
+      "fps_drop_percent": 0.11765398822297114,
+      "baseline_p95_frame_age_ms": 17.36315770067449,
+      "guard_p95_frame_age_ms": 37.88687499945809,
+      "p95_increase_ms": 20.5237172987836,
+      "allowed_increase_ms": 33,
+      "performance_magnitude_passed": true,
+      "strict_visibility_passed": false,
+      "visibility_transitions": [
+        {
+          "seconds": 1.4131733330013958,
+          "sequence": 31,
+          "visible": true
+        },
+        {
+          "seconds": 10.059994500001267,
+          "sequence": 293,
+          "visible": false
+        },
+        {
+          "seconds": 10.513428750000458,
+          "sequence": 306,
+          "visible": true
+        }
+      ],
+      "post_load_recovery": {
+        "requested_seconds": 3.0,
+        "started_at_perf_counter": 11932.272219375,
+        "observed_seconds": 2.99876120800036,
+        "start": {
+          "at": 11932.272219375,
+          "accepted": 199,
+          "saved": 199,
+          "measurement_attempts": 199
+        },
+        "accepted_at_end": 199,
+        "saved_at_end": 199,
+        "measurement_attempts_at_end": 199,
+        "paint_count": 91,
+        "hidden_paints": 0,
+        "first_visible_after_ms": 29.290124999533873,
+        "visibility_transitions": [],
+        "last_second_continuously_visible": true,
+        "definition": "New measurement timer stopped; source frames, pending acceptance, JPEG writes and gallery remain active. Load FPS/P95 above exclude this tail; original continuous-visibility acceptance is not relaxed."
+      },
+      "accepted": 199,
+      "saved": 199,
+      "remaining_budget_bytes": 0,
+      "source_sha256": {
+        "src/fdm/live_experiment/controller.py": "b1e569826f9310d9c09f4a0197d9771311b999c36743564b4c9dc6799c53e947",
+        "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+        "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+        "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+        "src/fdm/ui/live_measurement_canvas.py": "b1e7d0d7b9aef5f56004886b39bdd22d2d4501ab7e015db090d98e64d9cfded0",
+        "src/fdm/ui/measurement_evidence_gallery.py": "f59249a16762e6585730c655c00fcdebbc59c50bb827626d1fabd6ddac533971",
+        "scripts/validation/benchmark_candidate_preview.py": "c9992479f859cf2b2497582ad260a5308d3845048b249c792b461e3d59777bc1",
+        "scripts/validation/validate_candidate_presentation.py": "e6912c9ffc2386a5730b6b007b9bbfd970970154e3277ba65bb1763e4a11fa87"
+      },
+      "display_context": {
+        "process_id": 11684,
+        "qt_scale_factor": "0.5",
+        "device_pixel_ratio": 1.0,
+        "logical_canvas_size": [
+          768,
+          576
+        ],
+        "logical_dpi": 96.0,
+        "physical_dpi": 261.6581,
+        "foreground_process_id": 11684,
+        "native_client_size": [
+          768,
+          576
+        ]
+      },
+      "windows_memory_at_load_end": {
+        "available": true,
+        "processes": {
+          "gui": {
+            "pid": 11684,
+            "working_set_bytes": 174383104,
+            "peak_working_set_bytes": 174383104,
+            "private_bytes": 246697984
+          },
+          "alignment_child": {
+            "pid": 3812,
+            "working_set_bytes": 64102400,
+            "peak_working_set_bytes": 78290944,
+            "private_bytes": 179122176
+          }
+        },
+        "definition": "Working set/private bytes observed at phase end. Per-process peak working sets are not a simultaneous whole-application peak."
+      },
+      "baseline_sha256": "69854adf81467e0159e2e26aa4dd89aef20383e4d9c4fbfd36f844a2696d590f",
+      "guard_sha256": "358c78b8a9d068a8eed29374b7ff0f911c0654b643d580975818a6d0c64613ca"
+    }
+  ],
+  "historical_failures_retained": true
+}

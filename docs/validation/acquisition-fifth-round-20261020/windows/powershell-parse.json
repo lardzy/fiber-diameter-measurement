@@ -1,0 +1,30 @@
+[
+  {
+    "file": "scripts/validation/build_acquisition_fifth_round.ps1",
+    "errors": []
+  },
+  {
+    "file": "scripts/validation/install_acquisition_fifth_round.ps1",
+    "errors": []
+  },
+  {
+    "file": "scripts/validation/manage_acquisition_fifth_round_installation.ps1",
+    "errors": []
+  },
+  {
+    "file": "scripts/validation/probe_acquisition_fifth_round_environment.ps1",
+    "errors": []
+  },
+  {
+    "file": "scripts/validation/probe_acquisition_fifth_round_explorer.ps1",
+    "errors": []
+  },
+  {
+    "file": "scripts/validation/probe_acquisition_fifth_round_frozen.ps1",
+    "errors": []
+  },
+  {
+    "file": "scripts/validation/verify_acquisition_fifth_round_excel.ps1",
+    "errors": []
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "file": "scripts/validation/probe_acquisition_fourth_round_frozen.ps1",
+  "sha256": "b7d467bcc6e383e6c23e12dea4f75592e7e44cb671b591e3455c3be0ab47957d",
+  "product_unchanged": true,
+  "reason": "Short owned fixture path avoids MAX_PATH from deeply nested test-run log tree."
+}

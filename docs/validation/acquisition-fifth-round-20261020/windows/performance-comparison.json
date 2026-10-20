@@ -1,0 +1,56 @@
+{
+  "scope": "Windows ARM64 VM running AMD64 application/runtime; synthetic768x576; no physical camera; all attempts retained",
+  "overall_passed": false,
+  "pairs": [
+    {
+      "measure_interval_ms": 150,
+      "baseline": "performance-baseline-attempt.json",
+      "guard": "performance-guard-attempt.json",
+      "fps_drop_percent": 0.1142502505502534,
+      "p95_age_increase_ms": 2.7659166995363194,
+      "performance_budget_passed": true,
+      "candidate_visibility_passed": false,
+      "visibility_transitions": 8,
+      "accepted": 199,
+      "saved": 199,
+      "gallery": {
+        "visible_at_event_loop_exit": false,
+        "visible_refreshes": 697,
+        "hidden_refreshes": 0,
+        "visibility_note": "QApplication.quit closes windows before app.exec returns; running visibility is counted by refreshes.",
+        "decoded": 199,
+        "records": 199,
+        "peak_memory_bytes": 8173440,
+        "limit_bytes": 67108864,
+        "remaining_memory_bytes": 0,
+        "passed": true
+      },
+      "remaining_budget_bytes": 0
+    },
+    {
+      "measure_interval_ms": 1000,
+      "baseline": "performance-baseline-1000ms.json",
+      "guard": "performance-guard-1000ms.json",
+      "fps_drop_percent": 1.0322736116626865,
+      "p95_age_increase_ms": 11.724392249334414,
+      "performance_budget_passed": true,
+      "candidate_visibility_passed": false,
+      "visibility_transitions": 31,
+      "accepted": 29,
+      "saved": 29,
+      "gallery": {
+        "visible_at_event_loop_exit": false,
+        "visible_refreshes": 357,
+        "hidden_refreshes": 0,
+        "visibility_note": "QApplication.quit closes windows before app.exec returns; running visibility is counted by refreshes.",
+        "decoded": 29,
+        "records": 29,
+        "peak_memory_bytes": 3347136,
+        "limit_bytes": 67108864,
+        "remaining_memory_bytes": 0,
+        "passed": true
+      },
+      "remaining_budget_bytes": 0
+    }
+  ]
+}

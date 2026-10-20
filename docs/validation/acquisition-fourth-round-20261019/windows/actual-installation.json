@@ -1,0 +1,11 @@
+{
+    "build_id":  "bd7168a578074dfb8a5758d918e86c68",
+    "whole_vm_rollback":  false,
+    "installer_sha256":  "1b1b7a01a32d5f077488113e96e97a535fc33539dad530e978644f9420e50546",
+    "passed":  true,
+    "caller":  "NT AUTHORITY\\SYSTEM",
+    "backup":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\installation-backup\\baseline.json",
+    "arguments":  "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOICONS /TASKS=\"\" /DIR=\"C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate\" /LOG=\"C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\actual-installation.log\"",
+    "exit_code":  0,
+    "installed":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate"
+}

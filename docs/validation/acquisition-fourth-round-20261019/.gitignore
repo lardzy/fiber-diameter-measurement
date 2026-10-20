@@ -1,0 +1,8 @@
+# Generated media stay local; reports, source identities and failures are tracked.
+# Inventory: ../local-evidence-20261020.json
+*.png
+*.mp4
+*.zip
+*-uia.json
+installer-build.log
+extract-installer.log

@@ -87,6 +87,19 @@ def test_metadata_expansion_with_bottom_records_does_not_enlarge_short_window(tm
     with workflow.WorkflowHarness(tmp_path / "profile", size=(1067, 600)) as harness:
         page = prepare_nine_categories(harness)
         QTest.mouseClick(page.records_toggle, Qt.MouseButton.LeftButton)
+        workflow.settle()
+        # Opening the default left dock is the tightest width, even when the
+        # user intends to move it to the bottom immediately afterwards.
+        harness.assert_size()
+        controls = (page.analyze_button, page.auto_analysis,
+                    page.candidate_display_button, page.display_choice)
+        for control in controls:
+            assert control.isVisible()
+            assert control.geometry().left() >= 0
+            assert control.geometry().right() < page.view_controls.width()
+        assert all(left.geometry().right() < right.geometry().left()
+                   for left, right in zip(controls, controls[1:]))
+        assert page.display_choice.width() >= page.display_choice.minimumSizeHint().width()
         records = harness.hub.records
         next(action for action in records.panel.position_button.menu().actions()
              if action.text() == "停靠底部").trigger()

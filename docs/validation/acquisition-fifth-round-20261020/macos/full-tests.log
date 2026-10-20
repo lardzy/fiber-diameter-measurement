@@ -1,0 +1,220 @@
+......................................................................................................................................... [  2%]
+........................................................................ [  3%]
+................................................................. [  5%]
+................................................................... [  6%]
+....................................................................... [  7%]
+............................ [  8%]
+.......................................................... [  9%]
+.................................. [  9%]
+................................................................ [ 10%]
+...................................................................... [ 12%]
+........................................................................ [ 13%]
+............................................. [ 14%]
+..................................................................... [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+................................................................. [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+................................................................. [ 32%]
+.ss................................................................. [ 33%]
+.............................................................. [ 34%]
+................................................................. [ 36%]
+........................................................................ [ 37%]
+................................................................................ [ 38%]
+............................. [ 39%]
+...................................................................................................... [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+....................................F................................... [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+...................................................................... [ 62%]
+........................................................................ [ 63%]
+.......sssssssssss............................................. [ 64%]
+............................................................... [ 65%]
+........................................................................ [ 67%]
+................................................................ [ 68%]
+................................................................................................................ [ 70%]
+........................................................................ [ 71%]
+...................................................................... [ 73%]
+........................................................... [ 74%]
+.................................................................... [ 75%]
+...................................................................... [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+.............................. [ 87%]
+.................................................................... [ 89%]
+.............................................F.......................... [ 90%]
+.............................F...................................... [ 91%]
+........................................................................ [ 92%]
+............................................................ [ 94%]
+........................................................................ [ 95%]
+.................................................................. [ 96%]
+............................................................ [ 97%]
+........................................................................ [ 98%]
+.......................................................                  [100%]
+=================================== FAILURES ===================================
+_____ test_evidence_writing_and_pure_automatic_analysis_do_not_block_undo ______
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x17e044370, name="acquisitionTrial") at 0x70d119dc40>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x707463e6d0>
+
+    def test_evidence_writing_and_pure_automatic_analysis_do_not_block_undo(workspace, monkeypatch):
+        session, controller = workspace.session, workspace.controller
+        record = session.add_measurement(20, "wool", field_id=controller.field_id)
+        workspace._rebuild_records()
+        with monkeypatch.context() as patch:
+            patch.setattr(type(controller.evidence), "pending", property(lambda self: True))
+            controller._automatic_context = {"task_id": "uncommitted-analysis"}
+            try:
+>               workspace._history_action("undo")
+
+tests/test_live_experiment_post_classification.py:277: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/fdm/ui/live_experiment_workspace.py:1622: in _history_action
+    self._sync_configuration_controls()
+src/fdm/ui/live_experiment_workspace.py:1642: in _sync_configuration_controls
+    self._refresh_assistance_state()
+src/fdm/ui/trial_assistance.py:215: in _refresh_assistance_state
+    self._update_assistance_state()
+src/fdm/ui/trial_assistance.py:231: in _update_assistance_state
+    key = (running, available, pending, controller.candidate_overlay_ready, self.session.revision,
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/live_experiment/controller.py:1318: in candidate_overlay_ready
+    return self.candidates_aligned_for(self.presented.frame if self.presented else None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/live_experiment/controller.py:1327: in candidates_aligned_for
+    return self._candidate_frame_aligned(frame)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/live_experiment/controller.py:1332: in _candidate_frame_aligned
+    if not context or frame is None or not self._automatic_current(context):
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <fdm.live_experiment.controller.LiveExperimentController(0x6000000ab0c0) at 0x70d119c580>
+context = {'task_id': 'uncommitted-analysis'}
+
+    def _automatic_current(self, context):
+        return (self._automatic_context is context and self._context_current(
+>           context["token"], context["calibration"], context["operator_id"], context["direction"]))
+            ^^^^^^^^^^^^^^^^
+E       KeyError: 'token'
+
+src/fdm/live_experiment/controller.py:298: KeyError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+__ test_metadata_expansion_with_bottom_records_does_not_enlarge_short_window ___
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-177/test_metadata_expansion_with_b0')
+
+    def test_metadata_expansion_with_bottom_records_does_not_enlarge_short_window(tmp_path):
+        with workflow.WorkflowHarness(tmp_path / "profile", size=(1067, 600)) as harness:
+            page = prepare_nine_categories(harness)
+            QTest.mouseClick(page.records_toggle, Qt.MouseButton.LeftButton)
+            records = harness.hub.records
+            next(action for action in records.panel.position_button.menu().actions()
+                 if action.text() == "停靠底部").trigger()
+            QTest.qWait(250)
+            navigation = geometry(harness.hub.navigation, harness.window)
+            QTest.mouseClick(page.sample_details_toggle, Qt.MouseButton.LeftButton)
+            QTest.qWait(250)
+>           harness.assert_size()
+
+tests/test_trial_compact_layout.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <second_round_workflow.WorkflowHarness object at 0x71440e5c80>
+
+    def assert_size(self):
+        actual = (self.window.width(), self.window.height())
+>       assert actual == self.size, f"workspace grew beyond requested size: {actual}, requested {self.size}"
+               ^^^^^^^^^^^^^^^^^^^
+E       AssertionError: workspace grew beyond requested size: (1068, 600), requested (1067, 600)
+
+scripts/validation/validate_workflow_redesign.py:284: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+__ test_bottom_dock_fits_small_logical_windows_and_preserves_latest[size0-2] ___
+
+tmp_path = PosixPath('/private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/pytest-of-lishuyang/pytest-177/test_bottom_dock_fits_small_lo0')
+size = (1067, 600), minimum_rows = 2
+
+    @pytest.mark.parametrize("size,minimum_rows", [((1067, 600), 2), ((1366, 768), 4), ((1600, 900), 4)])
+    def test_bottom_dock_fits_small_logical_windows_and_preserves_latest(tmp_path, size, minimum_rows):
+        with WorkflowHarness(tmp_path / "profile", size=size) as harness:
+            harness.enter()
+            page = content_page(harness)
+            seed_history(page)
+            presenter = open_records(harness, page)
+            baseline = navigation_geometry(harness)
+            for position in ("bottom", "left", "bottom", "floating", "bottom"):
+                choose_position(presenter, position)
+                # LayoutRequest propagation and the trial's 80 ms refresh can
+                # reveal minimum-size growth after the first settled frame.
+                QTest.qWait(200)
+>               harness.assert_size()
+
+tests/test_trial_records_integration.py:312: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <validate_workflow_redesign.WorkflowHarness object at 0x71485b8ec0>
+
+    def assert_size(self):
+        actual = (self.window.width(), self.window.height())
+>       assert actual == self.size, f"workspace grew beyond requested size: {actual}, requested {self.size}"
+               ^^^^^^^^^^^^^^^^^^^
+E       AssertionError: workspace grew beyond requested size: (1068, 600), requested (1067, 600)
+
+scripts/validation/validate_workflow_redesign.py:284: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_live_experiment_post_classification.py::test_evidence_writing_and_pure_automatic_analysis_do_not_block_undo
+FAILED tests/test_trial_compact_layout.py::test_metadata_expansion_with_bottom_records_does_not_enlarge_short_window
+FAILED tests/test_trial_records_integration.py::test_bottom_dock_fits_small_logical_windows_and_preserves_latest[size0-2]
+3 failed, 5442 passed, 13 skipped, 1 warning, 1653 subtests passed in 756.49s (0:12:36)

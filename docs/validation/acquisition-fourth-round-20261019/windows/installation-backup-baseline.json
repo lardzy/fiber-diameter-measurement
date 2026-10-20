@@ -1,0 +1,64 @@
+{
+    "registry":  [
+                     {
+                         "key":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{F0F6A8B5-4838-4DF0-B2C1-18F1D5AA4A66}_is1",
+                         "file_sha256":  "24542ece1de84c1ad35bc66656874d0203bc62f1a1ed724773c1400bec86e2bc",
+                         "file":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\fourth-round\\installation-backup\\key-0.reg",
+                         "signature":  "b7bb32950777648209871d94ca7600dbfd4c8f1a2c68b3fcf1dedac31dc8f14e",
+                         "exists":  true
+                     },
+                     {
+                         "key":  "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{F0F6A8B5-4838-4DF0-B2C1-18F1D5AA4A66}_is1",
+                         "signature":  "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+                         "exists":  false
+                     },
+                     {
+                         "key":  "SOFTWARE\\Classes\\.fdmproj",
+                         "signature":  "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+                         "exists":  false
+                     },
+                     {
+                         "key":  "SOFTWARE\\Classes\\.fdmslide",
+                         "signature":  "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+                         "exists":  false
+                     },
+                     {
+                         "key":  "SOFTWARE\\Classes\\LARD.FiberDiameterMeasurement.Project",
+                         "signature":  "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+                         "exists":  false
+                     },
+                     {
+                         "key":  "SOFTWARE\\Classes\\LARD.FiberDiameterMeasurement.DigitalSlide",
+                         "signature":  "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+                         "exists":  false
+                     },
+                     {
+                         "key":  "SOFTWARE\\Classes\\Applications\\FiberDiameterMeasurement.exe",
+                         "signature":  "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+                         "exists":  false
+                     }
+                 ],
+    "scope":  "FDM app registration and owned candidate directory only",
+    "whole_vm_rollback":  false,
+    "schema":  1,
+    "created_at":  "2026-10-19T22:45:05.1936947+08:00",
+    "target":  "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\dist\\windows\\installed-candidate",
+    "original_files":  [
+                           {
+                               "sha256":  "ff1fa310aa50855fe87a4228940e1ecd0bc53ce8865e5a5842baee67c1bf2f4a",
+                               "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\FiberDiameterMeasurement.exe"
+                           },
+                           {
+                               "sha256":  "c9f8b50f0abe3d3783c6946e65bf2326a24a05898801a5da159d81dc5eda9f05",
+                               "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\release-manifest.json"
+                           },
+                           {
+                               "sha256":  "144980e0e4cbc2c30dbb4ed2e0143e95bb354ed72c25ab4d55ca48d75f05d539",
+                               "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.exe"
+                           },
+                           {
+                               "sha256":  "e08df0d758072e2508effa792fdcb58553c643fbe012eb685c37ebee1f232e8d",
+                               "path":  "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\unins000.dat"
+                           }
+                       ]
+}

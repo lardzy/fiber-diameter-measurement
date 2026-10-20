@@ -1,0 +1,841 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-19T14:46:33.203668+00:00",
+  "theme": "warm",
+  "physical_client": [
+    1600,
+    900
+  ],
+  "logical_client": [
+    1600,
+    900
+  ],
+  "scale": 1.0,
+  "base_device_scale": 1.0,
+  "qt_scale_factor": 1.0,
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "real_hardware": false,
+  "real_windows": false,
+  "source_fingerprints": {
+    "src/fdm/ui/main_window.py": "bb401f328a0a33654839d97cca5b6a335c6b7c10ce716b5b9972c67d9d742fe4",
+    "src/fdm/ui/live_experiment_workspace.py": "675b1f919088297fe33f8305c94935c36148f7f7f3a9bb3f3b597dc70bc349ce",
+    "src/fdm/ui/live_experiment_view.py": "db63a687b41f75f3cf111044e8e173b27de7f58bd187ed0520d0b6110d740993",
+    "src/fdm/ui/live_measurement_canvas.py": "a1f5a0282076dde3dd9479930587c198075573c9d41687a6eb980069ee03d143",
+    "src/fdm/ui/live_measurement_annotations.py": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34",
+    "src/fdm/ui/trial_assistance.py": "d4eb59c4273ef7806e58ccdebccec09a99c80f52c9dec8722fc9974f512fbe15",
+    "src/fdm/ui/measurement_evidence_view.py": "73ceb49d33e905d61931ccef55013d4cd70c5f5d3167a67db2a25cffec0860b1",
+    "src/fdm/live_experiment/controller.py": "d315c28ee8c8af2b5c3308a827015ef0e4696685e7ab954fce3f4cba62871a61",
+    "src/fdm/live_experiment/candidate_alignment.py": "78d3c5edfe05d945fa58779a15e2c08f45aec6a9356a567c38d51f460b2c9370",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993"
+  },
+  "script_sha256": "3f08996c7aa8ce594a4f0924ddad6474a2966d79bbb45be6e4f720c530215083",
+  "screenshots": [
+    {
+      "name": "realtime",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/realtime.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "0bf752730b52bf946b2cebfaacdaaebe85e1486013218a8a43a4e65fb57d238d",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_source_pixels": 391241
+    },
+    {
+      "name": "content-empty",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-empty.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "9c9cf25ba8d89d956e6720c17489c591a960b3c6f0e960509d6a95f0e0388559",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          58,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    },
+    {
+      "name": "content-ready",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-ready.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "e92f47b509e0fd3a3f35411b1edca02a044460dd5ec6074cf5b155e02bf30073",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          58,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    },
+    {
+      "name": "content-candidates",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-candidates.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "cf19140a9698780a7962c88a24134a895a33c7d7ac82a6e909bc94b75ef6e733",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_candidate_labels": 9,
+      "visible_source_pixels": 388421,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "content-partial-accepted",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-partial-accepted.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "fee3f045c0fad92c5db0b3211ade3ababbd5483352e383d6ddec1d83d7e8b3fe",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_candidate_labels": 8,
+      "visible_source_pixels": 388465,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "content-candidates-hidden",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-candidates-hidden.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "3ea8a1edcb653444c803230a2bea6da831219af8da3723a088316908873ec1e1",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_source_pixels": 392078,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 1,
+      "candidate_count": 9
+    },
+    {
+      "name": "evidence-pinned",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/evidence-pinned.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "20762ade9642f58d5c4c2764229131927a43869755809c7b8a6a80a735d6162f",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_candidate_labels": 8,
+      "visible_source_pixels": 357137,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "evidence-clean-image",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/evidence-clean-image.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "aeeb9b6b1ba9d09fcbb08e2ab48b41f35530604c288fcac3437260cd7d4fcd48",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_candidate_labels": 8,
+      "visible_source_pixels": 357179,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "content-automatic-result",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-automatic-result.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "afba8f23cfe6d9078c8ddc0cf025d4beb81dbc9ce8dab12d3e50d551b5a543de",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_candidate_labels": 9,
+      "visible_source_pixels": 388421,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 9,
+      "candidate_count": 9
+    },
+    {
+      "name": "diameter-ready",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/diameter-ready.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "520311781c43a1542c0cc4c852da4ff2ff0bbf571da3fcbdd738a58aac553533",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          58,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    },
+    {
+      "name": "content-return",
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-return.png",
+      "raster": [
+        1600,
+        900
+      ],
+      "sha256": "6e69a59994881a33e430824a56af1ec552c3ef22ce4350170b8ad5a0778da012",
+      "navigation": [
+        16,
+        69,
+        315,
+        35
+      ],
+      "visible_source_pixels": 392459,
+      "image": [
+        16,
+        161,
+        1130,
+        691
+      ],
+      "controls": {
+        "trialAnalyze": [
+          20,
+          117,
+          106,
+          38
+        ],
+        "稳定后自动分析": [
+          130,
+          125,
+          59,
+          22
+        ],
+        "候选显示与不透明度": [
+          193,
+          117,
+          58,
+          38
+        ],
+        "": [
+          1034,
+          120,
+          108,
+          32
+        ]
+      },
+      "visible_annotations": 0,
+      "candidate_count": 0
+    }
+  ],
+  "interactions": [
+    "category modal editor",
+    "real analyzer",
+    "candidate click commit",
+    "partial batch preserved",
+    "opacity slider",
+    "hidden candidates noninteractive",
+    "manual draft and Escape",
+    "pinned evidence and pure image",
+    "stable automatic analysis once",
+    "two-level navigation"
+  ],
+  "passed": true,
+  "limitations": [
+    "Real navigation, automatic worker, alignment, candidate commit and evidence writer.",
+    "Camera source is deterministic Qt-rendered synthetic fiber pixels.",
+    "Categories are filled through their actual modal editor; no candidate/result injection.",
+    "Qt scale factors do not test physical display migration or OS window stacking.",
+    "Video is Qt grab compositing, not a desktop or Microview capture.",
+    "This visual pass does not invoke Excel COM or certify capture throughput."
+  ],
+  "font": {
+    "requested_family": null,
+    "requested_point_size": null,
+    "requested_family_installed": null,
+    "resolved_family": ".AppleSystemUIFont",
+    "point_size": 9.0,
+    "pixel_size": 12,
+    "height": 15,
+    "line_spacing": 15,
+    "chinese_sample": "样品编号含量试验",
+    "chinese_sample_width": 97,
+    "native_windows": false
+  },
+  "dpr": 1.0,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "status_events": [
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:类别设置已变化",
+    "类别设置已变化",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:正在分析当前视场；实时画面继续更新。",
+    "正在分析当前视场；实时画面继续更新。",
+    "ui:检测到 9 条候选，请赋类后确认。",
+    "检测到 9 条候选，请赋类后确认。",
+    "ui:已接受 1 条有效测量并计入记录。",
+    "ui:视场已变化，请重新测量",
+    "视场已变化，请重新测量",
+    "ui:视场稳定，可以测量",
+    "视场稳定，可以测量",
+    "ui:正在分析当前视场；实时画面继续更新。",
+    "正在分析当前视场；实时画面继续更新。",
+    "ui:检测到 9 条候选，请赋类后确认。",
+    "检测到 9 条候选，请赋类后确认。",
+    "ui:已切换试验页面，累计记录保留",
+    "已切换试验页面，累计记录保留",
+    "ui:正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "ui:正在等待采集完整帧…",
+    "正在等待采集完整帧…",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:已切换试验页面，累计记录保留",
+    "已切换试验页面，累计记录保留",
+    "ui:正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "ui:正在等待采集完整帧…",
+    "正在等待采集完整帧…",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:已切换试验页面，累计记录保留",
+    "已切换试验页面，累计记录保留",
+    "ui:正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "正在停止旧图像来源，测量已暂停。",
+    "ui:正在等待采集完整帧…",
+    "正在等待采集完整帧…",
+    "ui:标定已变化",
+    "标定已变化",
+    "ui:正在确认关闭或切换项目",
+    "正在确认关闭或切换项目",
+    "ui:试验工作区已关闭",
+    "试验工作区已关闭"
+  ],
+  "visible_categories": [
+    "1 · 绵羊毛",
+    "2 · 山羊绒",
+    "3 · 山羊毛",
+    "4 · 羊驼毛",
+    "5 · 兔毛",
+    "6 · 粗兔毛",
+    "7 · 牦牛绒",
+    "8 · 牦牛毛",
+    "9 · 驼绒"
+  ],
+  "after_analyze_click": {
+    "enabled": true,
+    "controller_state": "ready",
+    "worker": true,
+    "context": true,
+    "message": "正在分析当前视场；实时画面继续更新。"
+  },
+  "analysis": {
+    "candidate_count": 9,
+    "algorithm": "traditional",
+    "fixture": false
+  },
+  "evidence": {
+    "state": "saved",
+    "path": "/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/fdm-live-evidence-706lwrea/a37f3cb7e85e3b1b739d23596ff980b9157dc4dfde5666383d885029c8a78bfb.jpg",
+    "frame_id": "camera:workflow-validation:0:2:13",
+    "sha256": "0222a2ce339f922e5ac486266ffe8262eef03ec51861fee01b522c6a92dc4c2f",
+    "error": null,
+    "evidence_id": "a37f3cb7e85e3b1b739d23596ff980b9157dc4dfde5666383d885029c8a78bfb",
+    "metadata_version": 1,
+    "mode": "crop_jpeg",
+    "codec": "jpeg",
+    "source_size": [
+      768,
+      576
+    ],
+    "crop": [
+      512,
+      0,
+      256,
+      296
+    ],
+    "quality": 95,
+    "subsampling": "4:4:4",
+    "encoder": "jpeg-evidence-444-v1",
+    "size_bytes": 11341
+  },
+  "performance": {
+    "analysis_ms": {
+      "n": 2,
+      "p50": 119.52618800205528,
+      "p95": 172.54134410359256
+    },
+    "alignment_ms": {
+      "n": 45,
+      "p50": 7.2031250019790605,
+      "p95": 10.064458804845344
+    },
+    "click_to_accept_ms": {
+      "n": 1,
+      "p50": 0.8048329982557334,
+      "p95": 0.8048329982557334
+    },
+    "stable_wait_ms": {
+      "n": 1,
+      "p50": 309.05987500591436,
+      "p95": 309.05987500591436
+    },
+    "analysis_to_paint_ms": {
+      "n": 2,
+      "p50": 122.09956299921032,
+      "p95": 175.33251909917453
+    },
+    "ingest_fps": {
+      "n": 50,
+      "p50": 28.70977868942871,
+      "p95": 31.988164343040932
+    },
+    "presented_fps": {
+      "n": 50,
+      "p50": 28.7094479048799,
+      "p95": 32.0467643965267
+    },
+    "frame_age_ms": {
+      "n": 51,
+      "p50": 4.630791998351924,
+      "p95": 10.297542004991556
+    },
+    "analysis_service_total_ms": {
+      "n": 2,
+      "p50": 57.89329150138656,
+      "p95": 59.34776665162644
+    },
+    "analysis_preparation_ms": {
+      "n": 2,
+      "p50": 1.6439165010524448,
+      "p95": 2.8581294489413267
+    },
+    "analysis_processing_ms": {
+      "n": 2,
+      "p50": 56.24937500033411,
+      "p95": 56.48963720268512
+    },
+    "analysis_shared_memory_ms": {
+      "n": 2,
+      "p50": 3.1329795019701123,
+      "p95": 5.798536052316194
+    },
+    "analysis_budget_wait_ms": {
+      "n": 2,
+      "p50": 0.04889549745712429,
+      "p95": 0.06537674853461795
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 5.5458750066463836,
+      "p95": 5.5458750066463836
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 2,
+      "p50": 109.08204199949978,
+      "p95": 155.66821730171796
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 2,
+      "p50": 51.18875049811322,
+      "p95": 96.32045065009152
+    }
+  },
+  "navigation_cycles": 6,
+  "capture_starts": 1,
+  "window_events": [
+    {
+      "class": "QInputDialog",
+      "name": "",
+      "title": "操作者改名",
+      "size": [
+        207,
+        119
+      ]
+    },
+    {
+      "class": "QDialog",
+      "name": "",
+      "title": "本方向类别 · 材料参数保存在本试验内",
+      "size": [
+        830,
+        470
+      ]
+    },
+    {
+      "class": "QMenu",
+      "name": "",
+      "title": "",
+      "size": [
+        230,
+        84
+      ]
+    },
+    {
+      "class": "_EvidenceDialog",
+      "name": "",
+      "title": "测量证据",
+      "size": [
+        600,
+        470
+      ]
+    },
+    {
+      "class": "_EvidenceDialog",
+      "name": "",
+      "title": "测量证据",
+      "size": [
+        400,
+        320
+      ]
+    },
+    {
+      "class": "QInputDialog",
+      "name": "",
+      "title": "操作者改名",
+      "size": [
+        207,
+        119
+      ]
+    }
+  ],
+  "source_changed_during_run": false,
+  "elapsed_seconds": 3.759
+}

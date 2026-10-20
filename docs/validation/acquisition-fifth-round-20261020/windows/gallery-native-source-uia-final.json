@@ -1,0 +1,1885 @@
+{
+  "passed": true,
+  "child_exit": 0,
+  "observations": [
+    {
+      "label": "first-show",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "inside": true,
+      "dpr": 1.0
+    },
+    {
+      "label": "max1",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "inside": false,
+      "dpr": 1.0
+    },
+    {
+      "label": "normal1",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "inside": true,
+      "dpr": 1.0
+    },
+    {
+      "label": "max2",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "inside": false,
+      "dpr": 1.0
+    },
+    {
+      "label": "normal2",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "workarea": [
+        0,
+        0,
+        2582,
+        1548
+      ],
+      "inside": true,
+      "dpr": 1.0
+    }
+  ],
+  "events": [
+    {
+      "label": "apply-before",
+      "client": [
+        8,
+        8,
+        1040,
+        720
+      ],
+      "normal": [
+        8,
+        8,
+        1040,
+        720
+      ],
+      "preferences": [
+        8,
+        8,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "args": [
+        [
+          21,
+          66,
+          1040,
+          720
+        ]
+      ]
+    },
+    {
+      "label": "apply-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "event": "17",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        -5,
+        -50,
+        1066,
+        791
+      ],
+      "event": "17",
+      "old": null
+    },
+    {
+      "label": "clamp-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "apply-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "args": [
+        [
+          21,
+          66,
+          1040,
+          720
+        ]
+      ]
+    },
+    {
+      "label": "apply-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "clamp-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "clamp-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "apply-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "args": [
+        [
+          21,
+          66,
+          1040,
+          720
+        ]
+      ]
+    },
+    {
+      "label": "apply-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "clamp-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "105",
+      "old": 0
+    },
+    {
+      "label": "event-after",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "105",
+      "old": 0
+    },
+    {
+      "label": "event-before",
+      "client": [
+        0,
+        45,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        0,
+        45,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "105",
+      "old": 2
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "105",
+      "old": 2
+    },
+    {
+      "label": "clamp-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "apply-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "args": [
+        [
+          21,
+          66,
+          1040,
+          720
+        ]
+      ]
+    },
+    {
+      "label": "apply-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "clamp-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "105",
+      "old": 0
+    },
+    {
+      "label": "event-after",
+      "client": [
+        0,
+        45,
+        2582,
+        1503
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": true,
+      "iconic": false,
+      "native": [
+        -13,
+        -13,
+        2608,
+        1574
+      ],
+      "event": "105",
+      "old": 0
+    },
+    {
+      "label": "event-before",
+      "client": [
+        0,
+        45,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        0,
+        45,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "14",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 2,
+      "qtmax": true,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "13",
+      "old": null
+    },
+    {
+      "label": "event-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "105",
+      "old": 2
+    },
+    {
+      "label": "event-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "event": "105",
+      "old": 2
+    },
+    {
+      "label": "clamp-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "apply-before",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ],
+      "args": [
+        [
+          21,
+          66,
+          1040,
+          720
+        ]
+      ]
+    },
+    {
+      "label": "apply-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    },
+    {
+      "label": "clamp-after",
+      "client": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "normal": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "preferences": [
+        21,
+        66,
+        1040,
+        720
+      ],
+      "restore": null,
+      "qtstate": 0,
+      "qtmax": false,
+      "zoomed": false,
+      "iconic": false,
+      "native": [
+        8,
+        8,
+        1066,
+        791
+      ]
+    }
+  ],
+  "source_sha256": "6bc1ad4ce17a18a8fb729ccaf7bae5f6491d5bc0b67e315f3a7a669275f36ae8"
+}

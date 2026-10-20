@@ -1,0 +1,24 @@
+{
+  "stage": "preliminary; superseded by final validation",
+  "source_zip_sha256": "d2688015932ccdf27e6dbc99e886c439abea5137fa4f2dd5268834be3063224e",
+  "passed": false,
+  "tests_passed": 525,
+  "tests_failed": 6,
+  "seconds": 301.98,
+  "failure_groups": [
+    {
+      "file": "tests/test_live_experiment_content_project_assets.py",
+      "count": 5,
+      "cause": "test omitted encoding=utf-8 while reading UTF-8 project JSON on CP936 Windows",
+      "correction": "explicit encoding in test reader"
+    },
+    {
+      "file": "tests/test_live_measurement_candidate_canvas.py",
+      "count": 1,
+      "cause": "test read native hover signal immediately after QTest.mouseMove",
+      "correction": "activate window, move away, await actual native event"
+    }
+  ],
+  "log": "preliminary-tests.log",
+  "product_source_change_required": false
+}

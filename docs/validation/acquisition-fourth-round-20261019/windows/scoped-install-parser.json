@@ -1,0 +1,20 @@
+[
+    {
+        "errors":  [
+
+                   ],
+        "file":  "manage_acquisition_fourth_round_installation.ps1"
+    },
+    {
+        "errors":  [
+
+                   ],
+        "file":  "install_acquisition_fourth_round.ps1"
+    },
+    {
+        "errors":  [
+
+                   ],
+        "file":  "probe_acquisition_fourth_round_explorer.ps1"
+    }
+]

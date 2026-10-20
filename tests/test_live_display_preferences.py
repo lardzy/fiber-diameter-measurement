@@ -203,14 +203,24 @@ def test_missing_calibration_falls_back_without_replacing_remembered_mode(tmp_pa
 def test_pending_work_blocks_manual_change_without_persisting(tmp_path, trial_factory):
     store = AcquisitionDisplayStore(tmp_path / "display.json")
     page = trial_factory(store)
-    page.controller.candidates = [object()]
+    page.controller._confirmation = object()
     try:
         with pytest.raises(ValueError):
             page.binding.set_mode("percent", 150)
         assert store.preferences.mode == "pixel"
         assert page.canvas.display_mode == "pixel"
     finally:
-        page.controller.candidates = []
+        page.controller._confirmation = None
+
+
+def test_unaccepted_candidates_allow_view_changes(tmp_path, trial_factory):
+    store = AcquisitionDisplayStore(tmp_path / "display.json")
+    page = trial_factory(store)
+    page.controller.candidates = [{"candidate_id": "candidate", "state": "available"}]
+    page.binding.set_mode("percent", 150)
+    assert store.preferences.mode == "percent"
+    assert page.canvas.display_mode == "percent"
+    assert page.canvas.display_value == 150
 
 
 def test_document_preview_adapter_does_not_redefine_measurement_actual_size(tmp_path):

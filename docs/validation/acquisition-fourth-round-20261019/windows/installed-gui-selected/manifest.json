@@ -1,0 +1,65 @@
+{
+  "raw_archive_sha256": "0e2b3a73a740568d6a461e78373938878627b49c85964f318784fe361a512836",
+  "selected": [
+    {
+      "path": "records-light-1600x900-03-content.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1600x900/20261019-230852-d31c7c18ab5347649a6a391763d41ede/03-content.png",
+      "sha256": "458ba63329ca0f468c1fcc70e65eb9171354b5ec75b9c0d2acd8c75893b7b175"
+    },
+    {
+      "path": "records-light-1600x900-04a-evidence-review.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1600x900/20261019-230852-d31c7c18ab5347649a6a391763d41ede/04a-evidence-review.png",
+      "sha256": "55231ccef9ac39988ce39cb9f84dc231710d320c1a848353c7545866cb85159d"
+    },
+    {
+      "path": "records-light-1600x900-04b-evidence-pinned.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1600x900/20261019-230852-d31c7c18ab5347649a6a391763d41ede/04b-evidence-pinned.png",
+      "sha256": "0a6e7db7f71d09981d0f1e5fec61d8184d8da0bbf6b5f88ffe181e86bd008835"
+    },
+    {
+      "path": "records-light-1600x900-04-records-default.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1600x900/20261019-230852-d31c7c18ab5347649a6a391763d41ede/04-records-default.png",
+      "sha256": "0cc56b8b533bac01e401f2212688e3cf164cb2b492cfd7b9744c086bc272b625"
+    },
+    {
+      "path": "records-light-1600x900-05-停靠底部.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1600x900/20261019-230852-d31c7c18ab5347649a6a391763d41ede/05-停靠底部.png",
+      "sha256": "7f8d145ef07fb47ae1d1d41c5d3e20d2d72aeceacb8bba59781d4f6275377627"
+    },
+    {
+      "path": "records-light-1600x900-05-浮动窗口.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1600x900/20261019-230852-d31c7c18ab5347649a6a391763d41ede/05-浮动窗口.png",
+      "sha256": "9c2bee051036a0bb245801138be71df265b4f141a05f09e67ef7b0f4db750f14"
+    },
+    {
+      "path": "records-dark-1600x900-03-content.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-dark-1600x900/20261019-230916-3c4fd446a382430f8714b5005c6b9507/03-content.png",
+      "sha256": "a6f59edbdef493eb2efc5b63c9ed225259b900df53f974e1cadffbb2d16c9e68"
+    },
+    {
+      "path": "records-dark-1600x900-04b-evidence-pinned.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-dark-1600x900/20261019-230916-3c4fd446a382430f8714b5005c6b9507/04b-evidence-pinned.png",
+      "sha256": "f1073454303fa98ea0bc96d049c3e89fcb94d2dd5612ae6c3d8a60708d14690e"
+    },
+    {
+      "path": "records-navy-1600x900-03-content.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-navy-1600x900/20261019-230941-313a29e27c4b44619df118d578f1e5d5/03-content.png",
+      "sha256": "e45f9d892c1f8e240bac04683c8a2ff9e8cd898d67b83fd4a4218b6bd8dcdad6"
+    },
+    {
+      "path": "records-warm-1600x900-03-content.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-warm-1600x900/20261019-231006-153863573c4d4a0688c91d4b37cb60ff/03-content.png",
+      "sha256": "a8b3a90745c4bfa79bfb77d0f6817a3c2b69742496cedaf2e97998e600c1fe9d"
+    },
+    {
+      "path": "records-light-1366x768-03-content.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1366x768/20261019-231031-e5b0dd63b77d46b69503f05a542ab294/03-content.png",
+      "sha256": "2e1152984150c627c26dd2bfce2332133ea0de5a6bab48d08d67b2ddbe565cd9"
+    },
+    {
+      "path": "records-light-1067x600-03-content.png",
+      "raw": "frozen-gui/20261019-150834Z-a48a8a55/records-light-1067x600/20261019-231055-23058d90bcab438facb06cb7fda39041/03-content.png",
+      "sha256": "1a8caa149274bf443d5048544665eb6768388f611fb14795e9c88d287287ad0a"
+    }
+  ]
+}

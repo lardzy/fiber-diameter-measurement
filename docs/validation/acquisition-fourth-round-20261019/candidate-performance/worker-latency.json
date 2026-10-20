@@ -1,0 +1,482 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "boundary": "Actual CuAutomaticWorker with spawn/shared memory/IPC and 1ms polling. Screenshot crops include display conversion/annotations; excludes capture/global motion/300ms stable wait/Qt painting. Per-case fresh worker cold sample then 15 steady samples. Not Windows or real Microview.",
+  "results": [
+    {
+      "sample": "user_screenshot_1_768x576",
+      "algorithm": "traditional",
+      "shape": [
+        768,
+        576
+      ],
+      "pixels_sha256": "45862a009112e3e457b15c3be1c7bb91260f1c93fff8b87928ce4942093b0cf6",
+      "cold_first_ms": 145.92545800405787,
+      "steady_n": 15,
+      "steady_p50_ms": 25.324457994429395,
+      "steady_p95_ms": 25.516779397730716,
+      "runs": [
+        {
+          "total_ms": 145.92545800405787,
+          "service_ms": 28.0995420034742,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.556124994182028,
+          "service_ms": 24.44337499764515,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.47829199465923,
+          "service_ms": 24.365375000343192,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.32312499533873,
+          "service_ms": 24.198833998525515,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.365624998812564,
+          "service_ms": 24.182917004509363,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.334750003821682,
+          "service_ms": 24.082750001980457,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.21583400084637,
+          "service_ms": 24.167791998479515,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.18141699692933,
+          "service_ms": 24.385875003645197,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.4854160011746,
+          "service_ms": 23.950750000949483,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.44441699865274,
+          "service_ms": 24.14166599919554,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.324457994429395,
+          "service_ms": 24.03283400053624,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.2688330001547,
+          "service_ms": 24.088375001156237,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.30300000216812,
+          "service_ms": 24.33020899479743,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.49991699925158,
+          "service_ms": 24.19216700218385,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.214082997990772,
+          "service_ms": 24.17933300603181,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 25.126624997938052,
+          "service_ms": 24.031624998315237,
+          "status": "ok",
+          "candidate_count": 11
+        }
+      ],
+      "worker_runtime": {
+        "scheduling": {
+          "policy": "platform_default",
+          "applied": true
+        },
+        "opencv_requested_threads": 1,
+        "opencv_threads": 18
+      }
+    },
+    {
+      "sample": "user_screenshot_1_768x576",
+      "algorithm": "multiscale",
+      "shape": [
+        768,
+        576
+      ],
+      "pixels_sha256": "45862a009112e3e457b15c3be1c7bb91260f1c93fff8b87928ce4942093b0cf6",
+      "cold_first_ms": 261.28133299789624,
+      "steady_n": 15,
+      "steady_p50_ms": 140.68616700387793,
+      "steady_p95_ms": 142.6468793026288,
+      "runs": [
+        {
+          "total_ms": 261.28133299789624,
+          "service_ms": 142.7765000044019,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 139.58624999941094,
+          "service_ms": 138.0700000008801,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 139.38045800023247,
+          "service_ms": 137.6022920012474,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 141.35020899993833,
+          "service_ms": 139.7133330028737,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 138.74741600011475,
+          "service_ms": 137.5302499945974,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 140.40479099639924,
+          "service_ms": 138.2889160013292,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 140.3076249989681,
+          "service_ms": 138.5566250028205,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 141.29370800219476,
+          "service_ms": 139.12883299781242,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 143.92195799882757,
+          "service_ms": 141.87745800154516,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 139.99320800212445,
+          "service_ms": 138.47754200105555,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 142.1004170042579,
+          "service_ms": 139.93516600021394,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 141.6378750000149,
+          "service_ms": 139.99179199890932,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 141.21158300258685,
+          "service_ms": 139.6871250035474,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 141.03641599649563,
+          "service_ms": 139.51916600490222,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 140.6619999979739,
+          "service_ms": 138.5015830019256,
+          "status": "ok",
+          "candidate_count": 11
+        },
+        {
+          "total_ms": 140.68616700387793,
+          "service_ms": 138.60829099576222,
+          "status": "ok",
+          "candidate_count": 11
+        }
+      ],
+      "worker_runtime": {
+        "scheduling": {
+          "policy": "platform_default",
+          "applied": true
+        },
+        "opencv_requested_threads": 1,
+        "opencv_threads": 18
+      }
+    },
+    {
+      "sample": "user_screenshot_2_768x576",
+      "algorithm": "traditional",
+      "shape": [
+        768,
+        576
+      ],
+      "pixels_sha256": "e38f828abf7711fa18f0efb784ea8ead06fed881a3f5bb2aaf94893c08c18280",
+      "cold_first_ms": 135.6983330042567,
+      "steady_n": 15,
+      "steady_p50_ms": 16.649666999001056,
+      "steady_p95_ms": 17.974220604810398,
+      "runs": [
+        {
+          "total_ms": 135.6983330042567,
+          "service_ms": 19.60829200106673,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 18.050375001621433,
+          "service_ms": 16.300291994411964,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 17.919833000632934,
+          "service_ms": 16.416541999205947,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.68841700302437,
+          "service_ms": 16.025457996875048,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.637667002214584,
+          "service_ms": 15.914916999463458,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 17.941583006177098,
+          "service_ms": 16.803582999273203,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.361999994842336,
+          "service_ms": 15.75845800107345,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.426084002887364,
+          "service_ms": 15.67020799848251,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.649666999001056,
+          "service_ms": 15.303833002690226,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 17.73529099591542,
+          "service_ms": 16.234959002758842,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.53995800006669,
+          "service_ms": 15.788500000780914,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.652292004437186,
+          "service_ms": 15.603916996042244,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.63100000587292,
+          "service_ms": 15.844166002352722,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.49104099487886,
+          "service_ms": 15.35524999781046,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.292749998683576,
+          "service_ms": 15.602624996972736,
+          "status": "ok",
+          "candidate_count": 5
+        },
+        {
+          "total_ms": 16.699250001693144,
+          "service_ms": 15.794833001564257,
+          "status": "ok",
+          "candidate_count": 5
+        }
+      ],
+      "worker_runtime": {
+        "scheduling": {
+          "policy": "platform_default",
+          "applied": true
+        },
+        "opencv_requested_threads": 1,
+        "opencv_threads": 18
+      }
+    },
+    {
+      "sample": "user_screenshot_2_768x576",
+      "algorithm": "multiscale",
+      "shape": [
+        768,
+        576
+      ],
+      "pixels_sha256": "e38f828abf7711fa18f0efb784ea8ead06fed881a3f5bb2aaf94893c08c18280",
+      "cold_first_ms": 226.06195899425074,
+      "steady_n": 15,
+      "steady_p50_ms": 107.15045799588552,
+      "steady_p95_ms": 108.60433300040313,
+      "runs": [
+        {
+          "total_ms": 226.06195899425074,
+          "service_ms": 108.86983400268946,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 108.6192079965258,
+          "service_ms": 106.96908299723873,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 106.79054199863458,
+          "service_ms": 105.3716659953352,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 108.59795800206484,
+          "service_ms": 107.17162500077393,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 106.93024999636691,
+          "service_ms": 105.14620899630245,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 106.97520800022176,
+          "service_ms": 105.2713750032126,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 107.07183300110046,
+          "service_ms": 105.61358399718301,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 108.31654200592311,
+          "service_ms": 106.8897500008461,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 107.15045799588552,
+          "service_ms": 105.5425840022508,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 106.95329199370462,
+          "service_ms": 105.01920899696415,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 108.0407080007717,
+          "service_ms": 106.12195800058544,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 107.26275000342866,
+          "service_ms": 105.94616700109327,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 107.87337500369176,
+          "service_ms": 105.78037500090431,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 106.56924999784678,
+          "service_ms": 105.06754200469004,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 106.245625000156,
+          "service_ms": 104.70662499574246,
+          "status": "ok",
+          "candidate_count": 10
+        },
+        {
+          "total_ms": 107.67841699998826,
+          "service_ms": 106.31366700545186,
+          "status": "ok",
+          "candidate_count": 10
+        }
+      ],
+      "worker_runtime": {
+        "scheduling": {
+          "policy": "platform_default",
+          "applied": true
+        },
+        "opencv_requested_threads": 1,
+        "opencv_threads": 18
+      }
+    }
+  ]
+}

@@ -1,0 +1,978 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-20T08:52:15.525551+00:00",
+  "scope": [
+    "docs/validation/acquisition-fourth-round-20261019",
+    "docs/validation/acquisition-fifth-round-20261020"
+  ],
+  "retention": "Generated media and raw UIA/build artifacts retained locally; source, results and failure reports tracked. Installers are separately retained under ignored dist/.",
+  "file_count": 193,
+  "bytes": 64590698,
+  "files": [
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/after-1.0s.png",
+      "bytes": 834317,
+      "sha256": "d8b7e2a73f6ae8ed134607705be02707ddcb9367392fb26a1156eb984b9e168e"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/after-2.5s.png",
+      "bytes": 826626,
+      "sha256": "762f2a23531b8f4c5a277a96b8f9d26af955d1c5442e936532b575fbd3295434"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/after-4.5s.png",
+      "bytes": 834294,
+      "sha256": "54417a0eba68e8a0819767c7c3f42b05849a68efe56e1889e2e03c4bdd10d0d5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/after-6.5s.png",
+      "bytes": 834352,
+      "sha256": "0dee1533b12d889d14788a2bfa3b1d90c7f4ec9cc05123e4f900da36309b330d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/after.mp4",
+      "bytes": 5738695,
+      "sha256": "380c9cd82f5c56b644f94a5d1839239d9e29d13dee93b9e6b02f26ef611f80b2"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/before-1.0s.png",
+      "bytes": 834531,
+      "sha256": "126139205cd08c09e9bf80c472939a4d88b6ab1f44b941e35de1896fcc7b9bf7"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/before-2.5s.png",
+      "bytes": 826789,
+      "sha256": "f9bef369235253978936e9cc9659401595bd9a37607896282f1ea6af6656684d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/before-4.5s.png",
+      "bytes": 834378,
+      "sha256": "5e48cdeedfb3d3817a7cb050836cfca61392f9bb9d0cf47cc355891ccdaf6663"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/before-6.5s.png",
+      "bytes": 834455,
+      "sha256": "23890fea3475742cac4e33569f1e46bfb82553bbbd1685fdfdbcb64668c62ba5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/before.mp4",
+      "bytes": 6639923,
+      "sha256": "c5375aa0fac10b3c525a5f9b4233e3605ee45da669415d215299a6d3de2b62fd"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/final-process/after-1.0s.png",
+      "bytes": 834317,
+      "sha256": "d8b7e2a73f6ae8ed134607705be02707ddcb9367392fb26a1156eb984b9e168e"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/final-process/after-2.5s.png",
+      "bytes": 826626,
+      "sha256": "762f2a23531b8f4c5a277a96b8f9d26af955d1c5442e936532b575fbd3295434"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/final-process/after-4.5s.png",
+      "bytes": 834294,
+      "sha256": "54417a0eba68e8a0819767c7c3f42b05849a68efe56e1889e2e03c4bdd10d0d5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/final-process/after-6.5s.png",
+      "bytes": 834352,
+      "sha256": "0dee1533b12d889d14788a2bfa3b1d90c7f4ec9cc05123e4f900da36309b330d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/candidate-presentation/video/final-process/after.mp4",
+      "bytes": 5921663,
+      "sha256": "59d4e6c51a4039ba6e951f5934f68fc6f418a58fcae8d1bbb434185d6afe3298"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-dark.png",
+      "bytes": 89285,
+      "sha256": "efb8d6d936e455637876ac01174acf253afc911b45c1253405dacd02112e93ab"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-light.png",
+      "bytes": 91114,
+      "sha256": "6270b2f2f1cc6cdb23485638e652eb8e7527bdfff636fa97e6066ec89309b53b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-navy.png",
+      "bytes": 89690,
+      "sha256": "f17d51c849363ed91a49407a065ce73b146d0dcf317d1c96806db358d928ceff"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/gallery/gallery-warm.png",
+      "bytes": 89851,
+      "sha256": "2d3f1da648ef708384a4af1d08618d8ebc8bbd4030b19e19b188d283fab1b724"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1366x768-1/advanced-evidence-options.png",
+      "bytes": 55868,
+      "sha256": "335d3a23668176322d1a70889e830d6c13801b6a02a18239c992733cca72a529"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1366x768-1/content-partial-accepted.png",
+      "bytes": 208322,
+      "sha256": "37615d9f8cadd395cd6a8ca295f485f0c2024a0d46f117b5e7684f34649e53f6"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1366x768-1/evidence-gallery.png",
+      "bytes": 155752,
+      "sha256": "8387f3252745641d22ecbc5ef27386aa9cca78984306c8fb2204a92c0f83031c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1/advanced-evidence-options.png",
+      "bytes": 55868,
+      "sha256": "335d3a23668176322d1a70889e830d6c13801b6a02a18239c992733cca72a529"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1/content-partial-accepted.png",
+      "bytes": 222219,
+      "sha256": "bf5731c4b1713ba80091ae596ce3fab95b5305886e9f903fe8196d5a6c135af3"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1/evidence-gallery.png",
+      "bytes": 186987,
+      "sha256": "cb3552d074abc2d304fbf14fc0acf4b06b888b295120d41c5c9ff86ad79de9d8"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1p25/advanced-evidence-options.png",
+      "bytes": 73993,
+      "sha256": "647192f7e0017a78fba3bd664b65bc7f111c4f3968bfd3c15b36fc0e808f1330"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1p25/content-partial-accepted.png",
+      "bytes": 254228,
+      "sha256": "a66505fc1cd274ec2294ebcb6b7d78df6badb7963c9af13322f1266642bef06a"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1p25/evidence-gallery.png",
+      "bytes": 215495,
+      "sha256": "3896eaf2a16cb4ba4c8ab647a5f0d2e0206c316fac649da8ef5929f0e0e3a8aa"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1p5/advanced-evidence-options.png",
+      "bytes": 90830,
+      "sha256": "1729d562fa01fe0aa1e93744f4d6bd1a4cd92650869e505d1641ee3bc85bdb88"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1p5/content-partial-accepted.png",
+      "bytes": 269557,
+      "sha256": "23a341acfc0d51e00e40ad0033026b2862f98b68213ded9f4bcd755673587b14"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/dark-1600x900-1p5/evidence-gallery.png",
+      "bytes": 232727,
+      "sha256": "08cc2434563be74bbe7b9922ce8b01f707def6c19860c7ebff31bd2fbb39a78e"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1366x768-1/advanced-evidence-options.png",
+      "bytes": 55706,
+      "sha256": "bc2491262609ae6dc544f10e5c2875891061277467e90684f40b9341933c0d76"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1366x768-1/content-partial-accepted.png",
+      "bytes": 208377,
+      "sha256": "c99ae393cd9053ff11fcdb5341cea7acc34c0241ea50485f0fa39ed411f7fbce"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1366x768-1/evidence-gallery.png",
+      "bytes": 154476,
+      "sha256": "a7ae1ce60166188e84c053560c34a07157ea71ad30f6b6a3f89abb951cf23cd0"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1/advanced-evidence-options.png",
+      "bytes": 55706,
+      "sha256": "bc2491262609ae6dc544f10e5c2875891061277467e90684f40b9341933c0d76"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1/content-partial-accepted.png",
+      "bytes": 221636,
+      "sha256": "dc6bc076bd4a0d8cdae154036b6e03fa43a94bb7addb095e3ac4e9119bbddb82"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1/evidence-gallery.png",
+      "bytes": 185383,
+      "sha256": "b70b10b1ecb07ddcbb34a96f19fb1eadb229d045b83e6a41484ba68110ea8277"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1p25/advanced-evidence-options.png",
+      "bytes": 73571,
+      "sha256": "0a7e3f0fd9429f57a4f7c8022b01ec8237e0d87d3198db8d4c060d12877807cf"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1p25/content-partial-accepted.png",
+      "bytes": 253668,
+      "sha256": "2fd831290b7a633cfd5e20c5c44e30181a26dd0aa22ba966d701ae6aa34434ca"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1p25/evidence-gallery.png",
+      "bytes": 213833,
+      "sha256": "05da6c22f60c949f526d905f665f06b8831e8da9975dcbce752ac650c6cbeb65"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1p5/advanced-evidence-options.png",
+      "bytes": 90606,
+      "sha256": "503fde9e6a11258c517ee91ee137142f46e26e739df52914c5344469fe19b491"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1p5/content-partial-accepted.png",
+      "bytes": 267954,
+      "sha256": "9b3af0908eee8633293244520f7e8c20bd957cdeb09fc9d9adb3830bfadb33b4"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/light-1600x900-1p5/evidence-gallery.png",
+      "bytes": 229901,
+      "sha256": "4c6af89648bba2f22ed53980ebd26272d23eda2ea7230d74d43406a27a6f72fc"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1366x768-1/advanced-evidence-options.png",
+      "bytes": 56007,
+      "sha256": "e760d6c13c0dda3dae148af5777ffd30758d014eda8447867d47427f759cb86b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1366x768-1/content-partial-accepted.png",
+      "bytes": 209229,
+      "sha256": "d133cea9321eb28d8c9306d0266b085d9390a97672e09d93d40f3e8b85b22b0c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1366x768-1/evidence-gallery.png",
+      "bytes": 156526,
+      "sha256": "ccf7fef4be5da61f4cccb2f2070b6c29bba557cff837dd3a3aa9dab7447dd332"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1/advanced-evidence-options.png",
+      "bytes": 56007,
+      "sha256": "e760d6c13c0dda3dae148af5777ffd30758d014eda8447867d47427f759cb86b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1/content-partial-accepted.png",
+      "bytes": 222606,
+      "sha256": "dd2884ba3a5e76b2cd536f10bf33424852e59d07b4e583d78bd4f039856dd768"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1/evidence-gallery.png",
+      "bytes": 186737,
+      "sha256": "5e31f39f4a3c5f8f52ab04b3708255d439ab6497a745df99aa0560cb4f90a5c2"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1p25/advanced-evidence-options.png",
+      "bytes": 74172,
+      "sha256": "066f66db64ca5135cbbad0e5efa550c8c2de1ecece6595837b3390364379692c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1p25/content-partial-accepted.png",
+      "bytes": 255694,
+      "sha256": "d0c36ebb0249ee9477d72c3c475b6427c506b91997e125cbbb1467ba508d7e51"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1p25/evidence-gallery.png",
+      "bytes": 216053,
+      "sha256": "a9a52e0a52c79dae2467e97cee1b5ed5bdd33a16a89ea762cf591329f85b19df"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1p5/advanced-evidence-options.png",
+      "bytes": 91161,
+      "sha256": "eb8b0771515763ee119cb33fdd05b27c3bcc2b407a406d166bef9a7fdc875aa5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1p5/content-partial-accepted.png",
+      "bytes": 270481,
+      "sha256": "6286d49a9fbc16c225170484f75251646914e5110d77a3333b558cfb874fc6a5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/navy-1600x900-1p5/evidence-gallery.png",
+      "bytes": 231983,
+      "sha256": "898a7f61888425edbb03d3735898b1d5b68eab8503ae59738c0bd527bc296d7c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1366x768-1/advanced-evidence-options.png",
+      "bytes": 55780,
+      "sha256": "6ae4477629e4ce4895d301028f4a6ad51daf52c92f4bbeb9bcadec53a281316b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1366x768-1/content-partial-accepted.png",
+      "bytes": 208398,
+      "sha256": "ec40db73d175af16156a0fc5e89993f05fc04310328713a4c8c3f896d44b7ec5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1366x768-1/evidence-gallery.png",
+      "bytes": 155831,
+      "sha256": "4f554116ca7fd9ff4c908ba351f77e1793f93439daf36ae1364907d7349acdda"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1/advanced-evidence-options.png",
+      "bytes": 55780,
+      "sha256": "6ae4477629e4ce4895d301028f4a6ad51daf52c92f4bbeb9bcadec53a281316b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1/content-partial-accepted.png",
+      "bytes": 222122,
+      "sha256": "51ce8c5f9fe3152a9b1d2596c3e7c9ea04abdb7658187e443b6657c765cea3ad"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1/evidence-gallery.png",
+      "bytes": 186154,
+      "sha256": "9e3d405414e8d4bb471ccdc17224bc29007ef0565aa7730db1d6073a99e5f594"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1p25/advanced-evidence-options.png",
+      "bytes": 73668,
+      "sha256": "52f30998ac2821ec0307a7f9e4a0f2244a2e60e88c860b09a6bbbf4f0c8ac863"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1p25/content-partial-accepted.png",
+      "bytes": 254804,
+      "sha256": "c7a70e3bc452b6797a79c380a188f86f2aa144f69e7d7aac42bd50b09724c58a"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1p25/evidence-gallery.png",
+      "bytes": 215749,
+      "sha256": "c058c2022c8e86899828b9cd2591bcc3b35c2e64dae27c5d539fd4eaa1ef5a34"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1p5/advanced-evidence-options.png",
+      "bytes": 90652,
+      "sha256": "c6bec69277c39e094477ff8139a30b534189518382eaec49931bff6c2aec717f"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1p5/content-partial-accepted.png",
+      "bytes": 269243,
+      "sha256": "577eab5ad17638396deaf0e367aae49ee383956dc666f91f9bf22a448ccea39e"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-matrix/warm-1600x900-1p5/evidence-gallery.png",
+      "bytes": 232697,
+      "sha256": "133f290b84787fd92275b3b597a28b8d5689ec5f5a8c2c915379b4bb28a06aed"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/advanced-evidence-options.png",
+      "bytes": 55706,
+      "sha256": "bc2491262609ae6dc544f10e5c2875891061277467e90684f40b9341933c0d76"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/candidate-evidence-navigation.mp4",
+      "bytes": 3901362,
+      "sha256": "03a95d469db07114b0c56c5faf9fc9a9b1ac4f69c6a0f660aac5c6dc172a7289"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-automatic-result.png",
+      "bytes": 222194,
+      "sha256": "c7225ed8e97cd86ea257f6fc8d09e2a6495571cbe06a5febb838e031eb4898bd"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-candidates-hidden.png",
+      "bytes": 216990,
+      "sha256": "5e02f07648c2d187c2ffc013ecb463dd1c01e4f0ee7e47bb2b342404e08f94cf"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-candidates.png",
+      "bytes": 219896,
+      "sha256": "6c3afed0757f518d5d1b72eb25e945d48f84de07d825e649f1952c4a01dbe114"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-empty.png",
+      "bytes": 188434,
+      "sha256": "6e9ff5a4b7cbcdea16427f9f62c14edeb9251a92b58481348b4e0cc059e58828"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-partial-accepted.png",
+      "bytes": 221698,
+      "sha256": "b0e899d49ff49b19258e0548fe047dc11e97a76ceac0fe1402102c4bc954c4e8"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-ready.png",
+      "bytes": 209463,
+      "sha256": "d348c837eea31fd04bf1d8effb55d556e87d2531425efb95f2e91180c034fa40"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/content-return.png",
+      "bytes": 211636,
+      "sha256": "079371c3faa2644c3788bd16385beef31a05256e199c7159ddedc0efce6b16a0"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/diameter-ready.png",
+      "bytes": 165225,
+      "sha256": "a29ebdff964307fed147444c8b3e7178701a17f4cf2aabec51c8de0780110d50"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/evidence-clean-image.png",
+      "bytes": 246725,
+      "sha256": "5911877b76f66916dcc854a1d540ee391bbd770af86685af968ffe9ea0103f88"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/evidence-gallery.png",
+      "bytes": 186359,
+      "sha256": "f24d287f6d672283a88c058f4807e8d317ba91199f8305db82856c8ff1006fdb"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/evidence-pinned.png",
+      "bytes": 246935,
+      "sha256": "81cc8cacd401cac1d78072777c75ffd1eedc4b9edb0f6a659be264f35e89c03e"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/evidence-window.png",
+      "bytes": 33541,
+      "sha256": "6720f54b460279e547547a3e96a1c7d14f6bfbfa8d52873f919a257b7370d16c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/visual/macos-final-stress/realtime.png",
+      "bytes": 148970,
+      "sha256": "3c73523e0d72f3d2eb3c6271daf8b4640d82d3229fa0776a8c4ddfc50ae79e5c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-gallery-uia.json",
+      "bytes": 272708,
+      "sha256": "7734b800092a63c5a3f5a919131d32fe13270a8d73b796dc51634302d10d2518"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-dark-1600x900-gallery-window.png",
+      "bytes": 55071,
+      "sha256": "aa5198b5aa734f35bbcb18963df7f3f1d80925a79bb605aece0d8b4230f6b54f"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-dark-1600x900-gallery.png",
+      "bytes": 124492,
+      "sha256": "c33325ecc27a50b81b37d7bcf4dfa6248cc5deab289dc5d480d4125e3464c80d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-light-1600x900-gallery-native-before.png",
+      "bytes": 63106,
+      "sha256": "d0239460ae15dcd460f8dc4b0997cd5ea1d4d68c213a49edf13543279550f2ba"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-light-1600x900-gallery-window.png",
+      "bytes": 54686,
+      "sha256": "390e9c13624c65949b889378951a0a54eed0c3ba382ff74dc39874aef54f432c"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-light-1600x900-gallery.png",
+      "bytes": 135849,
+      "sha256": "78f925f51595d816e9213fef4c381f89b40036bbd007907d718a651de4748779"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-light-1600x900-scale125-content.png",
+      "bytes": 95936,
+      "sha256": "49d422d5b33a8f00ab4f84100114d5bf62aea91efcf87dc9bd2a99f1734dae3d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-navy-1600x900-gallery-window.png",
+      "bytes": 55327,
+      "sha256": "f06e21f865c5c26fa6d5073e43bc29a46ed102d548e870843b459f625eb25ae2"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-navy-1600x900-gallery.png",
+      "bytes": 124675,
+      "sha256": "be7cffd8cbc85a9411de3bf79a8ef8fb2d0574b239a741ba8da8c3ac88f6f895"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-warm-1600x900-gallery-window.png",
+      "bytes": 55443,
+      "sha256": "af65edbdf438bc3ac9aa5b30d5b52bca211b75f8b518d3666b6fc8866609892b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-installed-screenshots/records-warm-1600x900-gallery.png",
+      "bytes": 135194,
+      "sha256": "efaaf8c1357a0eb8e297c20f34734f98ce6be5eb2d167dca0da2694af4475e06"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-source-content-candidates.png",
+      "bytes": 162562,
+      "sha256": "94cc5b25365ec56281e193f31767f0b96a4f28711facdb902b9f30965c7160e6"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/final-source-evidence-gallery.png",
+      "bytes": 139638,
+      "sha256": "16de37618c18175e3d26bbcdc628f86a39e1ad89b9b43ef661e32545c1164e5d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/frozen-first-failure-uia.json",
+      "bytes": 198141,
+      "sha256": "c438bd644f37aa4bd281fd1750c976ef8eba215ba0deba23654b928ade367199"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/gallery-doubleclick-probe.png",
+      "bytes": 136114,
+      "sha256": "df30fe15d49a1135d056dd165bfece87d3b73a6582b9bcc84f5c4e8e662b05f7"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/installed-screenshots/dark-album.png",
+      "bytes": 56021,
+      "sha256": "6ad8053c8f836ad1ff96fd95f892af2f06d88abdc43abbdb32b3394127ee7825"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/installed-screenshots/light-album.png",
+      "bytes": 54768,
+      "sha256": "3753e2e33e6d79d5d40080c918d938454d71973950bb801d567f00fccbc9adc6"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/installed-screenshots/light-content-1600x900-scale125.png",
+      "bytes": 95936,
+      "sha256": "49d422d5b33a8f00ab4f84100114d5bf62aea91efcf87dc9bd2a99f1734dae3d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/installed-screenshots/navy-album.png",
+      "bytes": 56235,
+      "sha256": "a39b5702d78394986fe281bb11190746f76663927c9373d266b2c3ade0452474"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/installed-screenshots/warm-album.png",
+      "bytes": 55344,
+      "sha256": "2f95607ad25f2dd6ff48571bcca5ca52768e3373fbdd73a7d3c82254cfe12b11"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots.zip",
+      "bytes": 1664681,
+      "sha256": "7e464acedce49814d5ec621215d92a31cf0f9793b462c192fafefdbdcc366de8"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-dark-1600x900-gallery-native.png",
+      "bytes": 72113,
+      "sha256": "9b221a8b8d4d00823d41950049097d3e2be82edc708ecc0fc59e37342085bf4d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-dark-1600x900-gallery-restored-native.png",
+      "bytes": 156724,
+      "sha256": "ccc3e44cb6afbace86a343211c4b8b086ac0bdc25db98393b4b4c67297da2332"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-dark-1600x900-operation.png",
+      "bytes": 80811,
+      "sha256": "ba42154f79f9d4a961e59d4cef9b90a440f6485c217f29326061b0e85692e428"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1067x600-gallery-native.png",
+      "bytes": 73415,
+      "sha256": "2531a44e7d6099e5be35f460da64ee7fae688e34467d5829b055e206bc73867f"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1067x600-gallery-restored-native.png",
+      "bytes": 158209,
+      "sha256": "c3e12eb3c3ff35590973acc633031aad6565ff14e4093639c25102b9adc43e83"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1067x600-operation.png",
+      "bytes": 55779,
+      "sha256": "cbdef30a3760ac5834d1a45e6d9ce276043c35a66c2caa64a580bd5c5ca08def"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1366x768-gallery-native.png",
+      "bytes": 78006,
+      "sha256": "b0b25f0f4b1a156323afff2ac54de2e9c0b29bf5946ea1bcc73a2b4d9e1e7268"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1366x768-gallery-restored-native.png",
+      "bytes": 156890,
+      "sha256": "0bdfcdd3c4d704e5531c3cb154e77cfdee6259369b4a4edf844304eacf15f1fc"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1366x768-operation.png",
+      "bytes": 70526,
+      "sha256": "b9a0dcde78a2ae7ee8f8911a68ff7669125bce98b7dca4a05a717fee8a8c3a9b"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1600x900-gallery-native.png",
+      "bytes": 73839,
+      "sha256": "3e4cd8a3b0d4123a3c04700e47ea5b24f8716ae8e4174f38c5f1f950c81e72f9"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1600x900-gallery-restored-native.png",
+      "bytes": 73838,
+      "sha256": "527998c313b38c1ba75de15a4d8385a7bf79386b22d67ece71ef7e9b5c712f40"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1600x900-operation.png",
+      "bytes": 82576,
+      "sha256": "0a8f282538c1ddac32e9c6becbe162d79d2958dff796737013d756c8f2110a7d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1600x900-scale125-gallery-native.png",
+      "bytes": 102603,
+      "sha256": "da09cd1ff9910caf77994ccdbdfb51986aef2b446877418ef3c5d5c5eedad5c0"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1600x900-scale125-gallery-restored-native.png",
+      "bytes": 199834,
+      "sha256": "b43d211f6b2cf3cb1e39293babc450de7c064c3575aa2d0983dffebb5d644852"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-light-1600x900-scale125-operation.png",
+      "bytes": 95873,
+      "sha256": "197700d8330480d199cb63b51fcb25befa4fb2e1fb4c694fcfd03f73adc4d2f2"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-navy-1600x900-gallery-native.png",
+      "bytes": 72313,
+      "sha256": "5ee1ec19539d51cae524af6fb5ab5cccbf7a7d9c06a6a23bb3d11e76c97c8307"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-navy-1600x900-gallery-restored-native.png",
+      "bytes": 158963,
+      "sha256": "d06eace75d648ee2eb55881062b3d023f031721ca280b43af3ee5b6137eee332"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-navy-1600x900-operation.png",
+      "bytes": 81235,
+      "sha256": "47b6a768d4bda7e0542b62eb3a40626e947c4c4f6ae6d0c42e3ddb362fb4af45"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-warm-1600x900-gallery-native.png",
+      "bytes": 75090,
+      "sha256": "3a57a7ddf1c055cdf4733871f87f2f4293dde7044baf3997a62cee77ed3f8a9d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-warm-1600x900-gallery-restored-native.png",
+      "bytes": 155084,
+      "sha256": "53eed8c29bea595e81a03878afb662eb3d41c0d513e99e6c9411095e3343da92"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-installed-screenshots/records-warm-1600x900-operation.png",
+      "bytes": 81030,
+      "sha256": "c87d38e3c5387a956e29c277878e57fa20f81de4f2ee61d3c35fb4ccf829f220"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-record-menu-failure-uia.json",
+      "bytes": 379224,
+      "sha256": "928ba49757a28295bd754a8890eac0b12fd318dace06330039f4379905654d96"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-record-menu-failure.png",
+      "bytes": 51636,
+      "sha256": "953428040e3c167541e8f3cffad5b6f66f637c3ccb5de17c920b82d77d312ac5"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots.zip",
+      "bytes": 872447,
+      "sha256": "1ec01d0eba8729a6d76cd18a46536895b97dd6466dbba60a8f981c55e58cd6da"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-dark-1600x900-gallery-native.png",
+      "bytes": 72113,
+      "sha256": "9b221a8b8d4d00823d41950049097d3e2be82edc708ecc0fc59e37342085bf4d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-dark-1600x900-gallery-restored-native.png",
+      "bytes": 156724,
+      "sha256": "ccc3e44cb6afbace86a343211c4b8b086ac0bdc25db98393b4b4c67297da2332"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-dark-1600x900-operation.png",
+      "bytes": 80811,
+      "sha256": "ba42154f79f9d4a961e59d4cef9b90a440f6485c217f29326061b0e85692e428"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-light-1600x900-gallery-native.png",
+      "bytes": 73839,
+      "sha256": "3e4cd8a3b0d4123a3c04700e47ea5b24f8716ae8e4174f38c5f1f950c81e72f9"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-light-1600x900-gallery-restored-native.png",
+      "bytes": 73838,
+      "sha256": "527998c313b38c1ba75de15a4d8385a7bf79386b22d67ece71ef7e9b5c712f40"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-light-1600x900-operation.png",
+      "bytes": 82576,
+      "sha256": "0a8f282538c1ddac32e9c6becbe162d79d2958dff796737013d756c8f2110a7d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-navy-1600x900-gallery-native.png",
+      "bytes": 72313,
+      "sha256": "5ee1ec19539d51cae524af6fb5ab5cccbf7a7d9c06a6a23bb3d11e76c97c8307"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-navy-1600x900-gallery-restored-native.png",
+      "bytes": 158963,
+      "sha256": "d06eace75d648ee2eb55881062b3d023f031721ca280b43af3ee5b6137eee332"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-navy-1600x900-operation.png",
+      "bytes": 81235,
+      "sha256": "47b6a768d4bda7e0542b62eb3a40626e947c4c4f6ae6d0c42e3ddb362fb4af45"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-warm-1600x900-gallery-native.png",
+      "bytes": 75090,
+      "sha256": "3a57a7ddf1c055cdf4733871f87f2f4293dde7044baf3997a62cee77ed3f8a9d"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-warm-1600x900-gallery-restored-native.png",
+      "bytes": 155084,
+      "sha256": "53eed8c29bea595e81a03878afb662eb3d41c0d513e99e6c9411095e3343da92"
+    },
+    {
+      "path": "docs/validation/acquisition-fifth-round-20261020/windows/native-final-themes-installed-screenshots/records-warm-1600x900-operation.png",
+      "bytes": 81030,
+      "sha256": "c87d38e3c5387a956e29c277878e57fa20f81de4f2ee61d3c35fb4ccf829f220"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/dark-1600x900-1/content-partial-accepted.png",
+      "bytes": 222212,
+      "sha256": "f1280b6a7f05ff8783600bcbfc3293de194b62d1ecf181437d672e5d1793a2a5"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/candidate-evidence-navigation.mp4",
+      "bytes": 1556553,
+      "sha256": "bee31e5d21bf2f6ee6b5c7aef725bfab2a5fe2f976290df6ce82f271dddf43f6"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/content-candidates-hidden.png",
+      "bytes": 214432,
+      "sha256": "e65e14c9835b6ee56b9fc123e7e0c1065bc1fbc6512a596f8c7d55f2dd13db14"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/content-empty.png",
+      "bytes": 188235,
+      "sha256": "7789801627e5a319ffc91d387659acb5fbadfbae75556c2ac0a4a95dc6ff0561"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/content-partial-accepted.png",
+      "bytes": 221702,
+      "sha256": "e519c4f204a25e3d0842331958ddd212f36bcabc5e6da6672d2e711d026c92d0"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/content-ready.png",
+      "bytes": 209240,
+      "sha256": "1c5f11c0a60d5f85b0481d1bcb383d25f12baea6bdb93c004cd0b2f3fbb03b86"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/diameter-ready.png",
+      "bytes": 164762,
+      "sha256": "6b0e277e3fc606f801d9782bb485de33ef57fba662fd9b203c79b4b7ea299e55"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/evidence-clean-image.png",
+      "bytes": 245912,
+      "sha256": "9062acb780a8230bda0697c189a24654c4799153cfb2e45c1df64e99af67158c"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/evidence-pinned.png",
+      "bytes": 246111,
+      "sha256": "f9c410b42007ad2db89aa48e39cf99068b2658b24f94991c1d2ec1cb0910b788"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/evidence-window.png",
+      "bytes": 33541,
+      "sha256": "6720f54b460279e547547a3e96a1c7d14f6bfbfa8d52873f919a257b7370d16c"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1/realtime.png",
+      "bytes": 148970,
+      "sha256": "3c73523e0d72f3d2eb3c6271daf8b4640d82d3229fa0776a8c4ddfc50ae79e5c"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1p25/candidate-evidence-navigation.mp4",
+      "bytes": 909857,
+      "sha256": "49049422fb981a192ed20e916f93cd02268d26e15ce452778d4d64df09d1989c"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1p25/content-partial-accepted.png",
+      "bytes": 253670,
+      "sha256": "9a6902af3e2e11d580052097f718e026a7e5976b64bd3094df05958f7f17ea90"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/light-1600x900-1p5/content-ready.png",
+      "bytes": 247885,
+      "sha256": "07bfabe5b46bf55c72e0ddf93dbbfd3078b8b553264df23ab2a112d83bff4877"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/navy-1600x900-1/content-partial-accepted.png",
+      "bytes": 222763,
+      "sha256": "aba76be3a61e4fa4f630d539190619ab5f02aa542f7cd065dc92d98cd896e58e"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/optical-screenshot-fixture-labels.png",
+      "bytes": 455540,
+      "sha256": "980d87f8eb9c7f5b188d75a133c361f895e7527b1373ef59294aeb9dc3319946"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/warm-1366x768-1/content-partial-accepted.png",
+      "bytes": 208525,
+      "sha256": "13ac52c036e136ba7dc310464264e43b6bd86f33194f518d62a4188d7422830f"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/visual/warm-1600x900-1/content-partial-accepted.png",
+      "bytes": 222200,
+      "sha256": "fee3f045c0fad92c5db0b3211ade3ababbd5483352e383d6ddec1d83d7e8b3fe"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-dark-1600x900-03-content.png",
+      "bytes": 80656,
+      "sha256": "a6f59edbdef493eb2efc5b63c9ed225259b900df53f974e1cadffbb2d16c9e68"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-dark-1600x900-04b-evidence-pinned.png",
+      "bytes": 66694,
+      "sha256": "f1073454303fa98ea0bc96d049c3e89fcb94d2dd5612ae6c3d8a60708d14690e"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1067x600-03-content.png",
+      "bytes": 55601,
+      "sha256": "1a8caa149274bf443d5048544665eb6768388f611fb14795e9c88d287287ad0a"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1366x768-03-content.png",
+      "bytes": 70328,
+      "sha256": "2e1152984150c627c26dd2bfce2332133ea0de5a6bab48d08d67b2ddbe565cd9"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1600x900-03-content.png",
+      "bytes": 82441,
+      "sha256": "458ba63329ca0f468c1fcc70e65eb9171354b5ec75b9c0d2acd8c75893b7b175"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1600x900-04-records-default.png",
+      "bytes": 120638,
+      "sha256": "0cc56b8b533bac01e401f2212688e3cf164cb2b492cfd7b9744c086bc272b625"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1600x900-04a-evidence-review.png",
+      "bytes": 108637,
+      "sha256": "55231ccef9ac39988ce39cb9f84dc231710d320c1a848353c7545866cb85159d"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1600x900-04b-evidence-pinned.png",
+      "bytes": 95559,
+      "sha256": "0a6e7db7f71d09981d0f1e5fec61d8184d8da0bbf6b5f88ffe181e86bd008835"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1600x900-05-停靠底部.png",
+      "bytes": 98865,
+      "sha256": "7f8d145ef07fb47ae1d1d41c5d3e20d2d72aeceacb8bba59781d4f6275377627"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-light-1600x900-05-浮动窗口.png",
+      "bytes": 108199,
+      "sha256": "9c2bee051036a0bb245801138be71df265b4f141a05f09e67ef7b0f4db750f14"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-navy-1600x900-03-content.png",
+      "bytes": 81049,
+      "sha256": "e45f9d892c1f8e240bac04683c8a2ff9e8cd898d67b83fd4a4218b6bd8dcdad6"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installed-gui-selected/records-warm-1600x900-03-content.png",
+      "bytes": 80861,
+      "sha256": "a8b3a90745c4bfa79bfb77d0f6817a3c2b69742496cedaf2e97998e600c1fe9d"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/installer-build.log",
+      "bytes": 2329104,
+      "sha256": "89edcd87c8bada63de92a2b27d9f1d9f0cae961c684ca791cefb253da590e178"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-automatic-result.png",
+      "bytes": 164511,
+      "sha256": "878bab1045e1cc8852852278f93a29c16f6031d5eb39ac75c29a76bdfb2612ca"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-candidates-hidden.png",
+      "bytes": 158162,
+      "sha256": "6912088760cfb45dda494a321223f71a85468a180f9924bf1f5199be3b2b952f"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-candidates.png",
+      "bytes": 162675,
+      "sha256": "c524dd41b242592aef2f428bb8ad890f5c777944bd16d57da78d2e5e8c24e793"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-empty.png",
+      "bytes": 140804,
+      "sha256": "5c70ff72dfc3683e9941fa4e027b83bb430e3e6f501eb9765b124368b2b53596"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-partial-accepted.png",
+      "bytes": 164322,
+      "sha256": "3aa0e28adcde4d91b19bca9ab2e24835bf81f21f34b547e355d6c0732a830458"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-ready.png",
+      "bytes": 154326,
+      "sha256": "4fde6bf774d32973a5162c499edca2204d38e689c54e71dbbe72c189634fe42d"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/content-return.png",
+      "bytes": 156714,
+      "sha256": "931dafb52bb7373fbae02dca08bc9cfa14410fedba286e45d43f3cd1f4efb5fb"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/diameter-ready.png",
+      "bytes": 125362,
+      "sha256": "ff13977c4d462792fd203f91075efbe661bcd0e88045be6efbbc319064a95208"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/evidence-clean-image.png",
+      "bytes": 179537,
+      "sha256": "c4f1c029fe79d3333679d985d7d6f0fa5349d7b3473b49fcbb8708fafe95c027"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/evidence-pinned.png",
+      "bytes": 179735,
+      "sha256": "3965423bf177e232878427ce1d853b4b78d502d2e177e1bc89374d6e5f62e779"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/evidence-window.png",
+      "bytes": 22926,
+      "sha256": "0c32f67c04498a33c0ca135754cb44ea6e7633cc979578e8d8a97b018863f9df"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-dpi-smoke/source-visual-dpi-smoke/realtime.png",
+      "bytes": 119872,
+      "sha256": "e8f080e9d8b423c1e5c319bdc0178cae31e2f6de7e58688baace9e31dd07b08e"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/dark-1600x900-1-content-candidates.png",
+      "bytes": 162389,
+      "sha256": "8cc8e1e7cb7de00e238ea819d2fe6b863f299d4656c85ff4d737b4951751d7ce"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/dark-1600x900-1-evidence-pinned.png",
+      "bytes": 172946,
+      "sha256": "59aac221996f9f597129908059119c2a2a1140373df36512fcd271d44b46c0d8"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/light-1366x768-1-content-candidates.png",
+      "bytes": 154156,
+      "sha256": "986ab21d7ffbe0f4cf431ee2a76b7e090e0b5ac99714e814cb3af3acec134ee4"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/light-1600x900-1-content-candidates.png",
+      "bytes": 162675,
+      "sha256": "c524dd41b242592aef2f428bb8ad890f5c777944bd16d57da78d2e5e8c24e793"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/light-1600x900-1-evidence-pinned.png",
+      "bytes": 179767,
+      "sha256": "093f0ce72b16fd86f761df42ebb5f7f78af745c1100ddeefd0c6b502ce34bd2e"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/light-1600x900-1p25-content-candidates.png",
+      "bytes": 186161,
+      "sha256": "530837c03523ce63f5d3cbd4b946799e5fa3c8b9a915a95fc29f6f3a81e87a66"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/light-1600x900-1p5-content-candidates.png",
+      "bytes": 189170,
+      "sha256": "807fd39fe645a85b81df18ec125ada4ceec4f95538d4a6285a0be24f42a67404"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/navy-1600x900-1-content-candidates.png",
+      "bytes": 162906,
+      "sha256": "a1da9948d16510d8d43762d4043dd470abfc9ca0a9a1605de59e8cb094478123"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/navy-1600x900-1-evidence-pinned.png",
+      "bytes": 179422,
+      "sha256": "9a254c99c1bcb569ec44408da91dfa797e4c45b5cb579a59a048ec7380a82ab2"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/warm-1600x900-1-content-candidates.png",
+      "bytes": 163179,
+      "sha256": "0ccded00d1b7f4d8ffdd147f53ab3d16a60b0a111a74662f2d19a6e7aef20b8c"
+    },
+    {
+      "path": "docs/validation/acquisition-fourth-round-20261019/windows/source-visual-final/selected/warm-1600x900-1-evidence-pinned.png",
+      "bytes": 179755,
+      "sha256": "1ce4c1b0e8ed2be3f9f865f0be4e3a1123b3ae24e6dd3d94ba808b2f65e63be3"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "owned_fdm_test_processes": [],
+  "unrelated_existing_processes": [
+    {
+      "ProcessId": 4956,
+      "ParentProcessId": 1592,
+      "Name": "powershell.exe",
+      "ExecutablePath": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "[omitted: unrelated existing TextileExecutionBridge service; not modified]",
+      "CreationDate": "/Date(1792410961837)/"
+    },
+    {
+      "ProcessId": 10468,
+      "ParentProcessId": 4956,
+      "Name": "python.exe",
+      "ExecutablePath": "C:\\TextileExecutionBridge\\python\\python.exe",
+      "CommandLine": "[omitted: unrelated existing TextileExecutionBridge service; not modified]",
+      "CreationDate": "/Date(1792410973592)/"
+    }
+  ],
+  "action": "read-only; no process stopped"
+}

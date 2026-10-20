@@ -1,0 +1,22 @@
+[
+    {
+        "policy":  "Undefined",
+        "scope":  "MachinePolicy"
+    },
+    {
+        "policy":  "Undefined",
+        "scope":  "UserPolicy"
+    },
+    {
+        "policy":  "Undefined",
+        "scope":  "Process"
+    },
+    {
+        "policy":  "RemoteSigned",
+        "scope":  "CurrentUser"
+    },
+    {
+        "policy":  "Undefined",
+        "scope":  "LocalMachine"
+    }
+]

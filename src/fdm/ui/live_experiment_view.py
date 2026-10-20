@@ -584,31 +584,46 @@ def build_trial_view(v):
     settings_layout = QVBoxLayout(v.settings_dialog)
     v.settings_tabs = QTabWidget(v.settings_dialog)
     settings_layout.addWidget(v.settings_tabs)
-    v.advanced_panel, advanced = scroll_page(v.settings_tabs, "测量与原图", "常用样品信息和类别可在右侧直接调整。这里设置测量手势及可选证据。")
+    v.advanced_panel, advanced = scroll_page(v.settings_tabs, "测量与证据", "混合模式支持点击候选、两点测量和拖线；按住 Shift 可临时强制手工测量。")
     form = QFormLayout()
+    v.input_mode = NoWheelComboBox(v.advanced_panel)
+    v.input_mode.setObjectName("trialInputMode")
+    v.input_mode.setAccessibleName("试验交互模式")
+    for label, value in (("混合：候选点选与手工绘制", "mixed"), ("仅手工测量", "manual"), ("仅候选点选", "candidate")):
+        v.input_mode.addItem(label, value)
+    form.addRow("交互模式", v.input_mode)
     v.gesture = NoWheelComboBox(v.advanced_panel)
     v.gesture.addItems(["两次点击", "拖动测量"])
     v.gesture.setCurrentIndex(int(v.session.workspace_options.get("gesture") == "drag"))
     v.gesture.currentIndexChanged.connect(v._gesture_changed)
-    form.addRow("测量手势", v.gesture)
+    form.addRow("仅手工模式的手势", v.gesture)
     advanced.addLayout(form)
     v.keep_images = QCheckBox("保存测量原图（可选）", v.advanced_panel)
     v.keep_images.setChecked(v.session.save_images)
     v.keep_images.toggled.connect(lambda value: v._configure(save_images=value))
-    advanced.addWidget(v.keep_images)
+    v.keep_images.hide()  # Retain the legacy configuration binding for old projects.
+    v.evidence_storage = NoWheelComboBox(v.advanced_panel)
+    v.evidence_storage.setObjectName("trialEvidenceStorage")
+    v.evidence_storage.setAccessibleName("测量图片存档")
+    for label, value in (("不保存", "disabled"), ("局部 JPEG · 质量 95", "crop_jpeg"), ("完整无损 PNG", "full_png")):
+        v.evidence_storage.addItem(label, value)
+    v.evidence_storage.setCurrentIndex(v.evidence_storage.findData(v.session.effective_evidence_options["mode"]))
+    v.evidence_storage.currentIndexChanged.connect(lambda _: v._configure(evidence_options={"version": 1, "mode": v.evidence_storage.currentData()}))
+    form.addRow("测量图片存档", v.evidence_storage)
+    evidence_note = QLabel("仅影响之后接受的测量，已有图片保持原样。局部图片保留源像素，透明输入使用 PNG。点击操作页的“证据相册”浏览本试验图片。", v.advanced_panel)
+    evidence_note.setWordWrap(True)
+    advanced.addWidget(evidence_note)
     button("使用主窗口当前图片", v._load_static, advanced, "open_images")
-    button("放弃所选失败原图", v._discard_failed_evidence, advanced)
+    button("放弃所选失败证据", v._discard_failed_evidence, advanced)
     advanced.addStretch(1)
-    optional, optional_layout = scroll_page(v.settings_tabs, "全图分析", "分析固定的一帧，结果在右侧记录页审核。确认前不计入试验结果。")
+    optional, optional_layout = scroll_page(v.settings_tabs, "全图分析", "分析固定的一帧，在画布点选候选，或在审核页批量确认。确认前不计入试验结果。")
     v.algorithm = NoWheelComboBox(optional)
     v.algorithm.addItem("传统全图", "traditional")
     v.algorithm.addItem("多尺度全图", "multiscale")
     optional_layout.addWidget(v.algorithm)
     def analyze():
-        v.controller.analyze(v.algorithm.currentData())
+        v._analyze_candidates()
         v.settings_dialog.close()
-        v.candidate_feedback.setText("正在分析当前帧，实时画面继续更新。")
-        v.candidate_feedback.show()
     button("分析当前视场", analyze, optional_layout, "statistics")
     button("取消全图分析", v.controller.discard_candidates, optional_layout)
     optional_layout.addStretch(1)
@@ -628,8 +643,14 @@ def build_trial_view(v):
     v.count_subtract_button.hide()
     v.mode.currentIndexChanged.connect(v._mode_changed)
     v._mode_changed(v.mode.currentIndex(), persist=False)
-    for sequence, callback in (("Escape", v.controller.cancel_draft),
-            ("Ctrl+Z", lambda: v._history_action("undo")), ("Ctrl+Y", lambda: v._history_action("redo"))):
+    shortcuts = [("Escape", v._cancel_trial_gesture)]
+    # Embedded pages share the main window's history router, including their
+    # floating records view. A second Ctrl+Z action would be ambiguous.
+    if not v.embedded:
+        shortcuts.extend((("Ctrl+Z", lambda: v._history_action("undo")),
+                          ("Ctrl+Y", lambda: v._history_action("redo")),
+                          ("Ctrl+Shift+Z", lambda: v._history_action("redo"))))
+    for sequence, callback in shortcuts:
         action = QAction(v)
         action.setShortcut(QKeySequence(sequence))
         action.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)

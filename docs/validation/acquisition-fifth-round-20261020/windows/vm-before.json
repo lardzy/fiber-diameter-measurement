@@ -1,0 +1,9 @@
+{
+  "date": "2026-10-20",
+  "vm": "Windows 11",
+  "initial_state": "stopped",
+  "camera_sharing": "on",
+  "started_for_this_validation": true,
+  "whole_vm_rollback": false,
+  "real_microview": false
+}

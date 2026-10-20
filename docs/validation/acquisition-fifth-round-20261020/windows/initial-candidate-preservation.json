@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "build_id": "4211d52229824686bdda0862fa593c59",
+  "preserved_installer": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\history\\installer-initial-4211d522",
+  "preserved_windows": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\history\\windows-initial-4211d522",
+  "preserved_evidence_parts": [
+    "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round-initial-4211d522",
+    "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round-initial-4211d522-remaining"
+  ],
+  "retained_profile_remainder": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui",
+  "reason": "PowerShell recursive move encountered a long font-cache path; remaining individual directories were atomically renamed. Historical frozen-gui profile remainder is retained in place and future GUI runs use unique directories. No files were deleted.",
+  "complete_local_evidence_archive": "dist/internal/acquisition-fifth-round-20261020/initial-build-4211d522-windows-evidence.zip",
+  "archive_sha256": "e2266489e5bb4f3f0b7aa08c0e88752d03e49f1cfcb5cada5d37fe9a5075eceb",
+  "original_registration_restored": true,
+  "whole_vm_rollback": false
+}

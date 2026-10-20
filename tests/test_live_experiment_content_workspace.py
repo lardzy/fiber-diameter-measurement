@@ -45,7 +45,11 @@ def workspace():
     host.save_project_action = QAction(host)
     view = open_live_experiment(host)
     view.activateWindow()
-    QApplication.processEvents()
+    deadline = time.perf_counter() + 3
+    while (view.controller.presented is None or view.controller.state != "ready") and time.perf_counter() < deadline:
+        QApplication.processEvents()
+        time.sleep(.001)
+    assert view.controller.presented is not None and view.controller.state == "ready"
     yield view
     view.controller.poll()
     view.close()
@@ -846,6 +850,8 @@ def test_candidate_tab_record_actions_cannot_mutate_hidden_table_selection(works
     workspace._rebuild_records()
     workspace.current_table.setCurrentIndex(workspace.current_model.index(0, 0))
     show_candidates(workspace)
+    QTest.mouseClick(workspace.workflow_tabs.tabBar(), Qt.MouseButton.LeftButton,
+        pos=workspace.workflow_tabs.tabBar().tabRect(1).center())
     workspace.candidate_table.setCurrentIndex(workspace.candidate_model.index(0, 0))
     monkeypatch.setattr(QMessageBox, "question", lambda *_: pytest.fail("候选页面不应操作隐藏的测量记录"))
     for action in (workspace._delete_record, workspace._edit_record, workspace._review_record, workspace._discard_failed_evidence):

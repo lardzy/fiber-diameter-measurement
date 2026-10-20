@@ -1,0 +1,35 @@
+{
+  "frames": 129,
+  "fps": 31.26469794210212,
+  "paint_count": 129,
+  "ready_sample_fraction": 1.0,
+  "hidden_paints": 0,
+  "p95_frame_age_ms": 12.09568319900427,
+  "metrics": {
+    "analysis_ms": {
+      "n": 1,
+      "p50": 0.6634579985984601,
+      "p95": 0.6634579985984601
+    },
+    "alignment_ms": {
+      "n": 141,
+      "p50": 10.084916000778321,
+      "p95": 11.345999999321066
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_to_paint_ms": {
+      "n": 1,
+      "p50": 13.283124993904494,
+      "p95": 13.283124993904494
+    }
+  }
+}

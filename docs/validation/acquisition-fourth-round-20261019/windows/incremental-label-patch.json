@@ -1,0 +1,67 @@
+{
+  "url": "http://10.211.55.2:57924/d888af7e63fa4a038ab142c3d7566c2e.zip",
+  "sha256": "55ffd87c210c90cf843db9d5a2a93e97eaa30cc4bd623a250caeaf76e0971516",
+  "files": [
+    {
+      "path": "scripts/validation/benchmark_candidate_preview.py",
+      "size": 8181,
+      "sha256": "711676f42bac1f243b32068c93ebbff420a557fc98390d7a656355d717284408"
+    },
+    {
+      "path": "scripts/validation/fourth_round_remote.py",
+      "size": 3478,
+      "sha256": "8cea545320e7e3459133056e5726e3cba695985bfd0770089723814c86c1098e"
+    },
+    {
+      "path": "scripts/validation/validate_acquisition_fourth_round.py",
+      "size": 29359,
+      "sha256": "6ca101ab548f163485c710f7763e5844f8487a46a2dc80470fe829f5332f799e"
+    },
+    {
+      "path": "src/fdm/live_experiment/candidate_alignment.py",
+      "size": 7919,
+      "sha256": "78d3c5edfe05d945fa58779a15e2c08f45aec6a9356a567c38d51f460b2c9370"
+    },
+    {
+      "path": "src/fdm/live_experiment/performance.py",
+      "size": 8338,
+      "sha256": "0be3c84a4453a2948d9e0c87a0ee7ddc64d676fa826b58788707ac91e562bea5"
+    },
+    {
+      "path": "src/fdm/services/cu_automatic_worker.py",
+      "size": 15166,
+      "sha256": "d1d0d65e252001be1dc4fbc280e2186fdc3eb3b0a5f8e538013546f33a4548cd"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_annotations.py",
+      "size": 8154,
+      "sha256": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_canvas.py",
+      "size": 23121,
+      "sha256": "a1f5a0282076dde3dd9479930587c198075573c9d41687a6eb980069ee03d143"
+    },
+    {
+      "path": "tests/test_candidate_controller.py",
+      "size": 23981,
+      "sha256": "41139c6018e43c494c5a0c175dab2c17b7cab5909df01ffe9de3ac0bdf167048"
+    },
+    {
+      "path": "tests/test_cu_automatic_worker.py",
+      "size": 6063,
+      "sha256": "9d48e8c2f680a407199834db30e6bde258004e4bcdea37088737fb517f1d3fb2"
+    },
+    {
+      "path": "tests/test_live_measurement_annotations.py",
+      "size": 7361,
+      "sha256": "3b79515620ab9dca9a58e164ca028c3e5284a13aaa3112204c4057a18b714624"
+    },
+    {
+      "path": "tests/test_live_measurement_candidate_canvas.py",
+      "size": 12232,
+      "sha256": "5eb62aa54c777c1939dcad105a15cd05da0aa54c85570666f65b917169dc4346"
+    }
+  ],
+  "base_zip_sha256": "c9927f8dd0a798b819028c27be2c19be8e58d6d846ea0e028b9ddd3f5e06c321"
+}

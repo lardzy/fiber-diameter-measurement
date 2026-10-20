@@ -164,7 +164,9 @@ class WindowShowObserver(QObject):
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Type.Show and isinstance(watched, QWidget) and watched.isWindow():
             self.events.append({"class": type(watched).__name__, "name": watched.objectName(),
-                "title": watched.windowTitle(), "size": [watched.width(), watched.height()]})
+                "title": watched.windowTitle(), "size": [watched.width(), watched.height()],
+                "qt_class": watched.metaObject().className(), "window_type": int(watched.windowType()),
+                "parent_class": watched.parent().metaObject().className() if watched.parent() else None})
         return False
 
     def unexpected(self):

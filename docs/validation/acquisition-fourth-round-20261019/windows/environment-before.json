@@ -1,0 +1,59 @@
+{
+  "policies": [
+    {
+      "policy": "Undefined",
+      "scope": "MachinePolicy"
+    },
+    {
+      "policy": "Undefined",
+      "scope": "UserPolicy"
+    },
+    {
+      "policy": "Undefined",
+      "scope": "Process"
+    },
+    {
+      "policy": "RemoteSigned",
+      "scope": "CurrentUser"
+    },
+    {
+      "policy": "Undefined",
+      "scope": "LocalMachine"
+    }
+  ],
+  "timestamp": "2026-10-19T20:52:52.2596386+08:00",
+  "schema": 1,
+  "candidate_directory_exists": false,
+  "system_state_modified": false,
+  "user": "B1EA\\lishuyang",
+  "excel_registered": true,
+  "installed": [
+    {
+      "DisplayName": "特纤通用测量工具 0.4.7",
+      "DisplayVersion": "0.4.7",
+      "InstallLocation": "C:\\Users\\lishuyang\\Downloads\\fdm-native-validation-installed-20261013\\"
+    }
+  ],
+  "existing_processes": [],
+  "resources": [
+    {
+      "exists": true,
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe"
+    },
+    {
+      "exists": true,
+      "path": "C:\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat"
+    },
+    {
+      "exists": true,
+      "path": "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe"
+    },
+    {
+      "exists": true,
+      "path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\validation-tools\\innounp.exe"
+    }
+  ],
+  "vm_initial_state": "running",
+  "vm_started_for_validation": false,
+  "camera_sharing": "on"
+}

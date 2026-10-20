@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "timestamp": "2026-10-20T08:37:35.231223+00:00",
+  "vm": "Windows 11",
+  "initial_state": "stopped",
+  "final_state": "stopped",
+  "initial_camera_sharing": "on",
+  "final_camera_sharing": "on",
+  "normal_shutdown": true,
+  "stop_command": [
+    "prlctl",
+    "stop",
+    "Windows 11"
+  ],
+  "forced_stop": false,
+  "whole_vm_rollback": false,
+  "original_background_process_untouched_before_shutdown": true,
+  "baseline_process_pid": 3404,
+  "baseline_process_creation": "/Date(1792462976345)/",
+  "fresh_policy_record": "policies-after.json",
+  "installation_restore_record": "installation-restored-final.json",
+  "pre_shutdown_windows_record": "environment-after.json",
+  "restored": true
+}

@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "build_id": "f52ea0bef9024a608556f525e3d28b68",
+  "restored_registration": true,
+  "paths": [
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\history\\windows-f52e"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\installer",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\history\\installer-f52e"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\package",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\package"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\installation-backup",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\installation-backup"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\installed-selfcheck",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\installed-selfcheck"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\installer-build.log",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\installer-build.log"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\installer-build-status.txt",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\installer-build-status.txt"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\package-verify.log",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\package-verify.log"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\package-verify-status.txt",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\package-verify-status.txt"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\test-selection.json",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\test-selection.json"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\actual-installation.json",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\actual-installation.json"
+    },
+    {
+      "original": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\actual-installation.log",
+      "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\history-f52e\\actual-installation.log"
+    }
+  ]
+}

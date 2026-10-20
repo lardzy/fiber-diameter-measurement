@@ -1,0 +1,32 @@
+{
+  "url": "http://10.211.55.2:55890/e906343688f54ac9b65f02531a029506.zip",
+  "sha256": "802423532cab6a48e3d9a9c027ae2dec34d70ae786ad34ce4f3aaca28b75cab7",
+  "files": [
+    {
+      "path": "scripts/validation/benchmark_candidate_preview.py",
+      "size": 7368,
+      "sha256": "f1378899b1b98735e8fe1dd10013d93329bb3d1ea21973f4967dfc696bfcaff5"
+    },
+    {
+      "path": "scripts/validation/fourth_round_remote.py",
+      "size": 3478,
+      "sha256": "8cea545320e7e3459133056e5726e3cba695985bfd0770089723814c86c1098e"
+    },
+    {
+      "path": "src/fdm/live_experiment/performance.py",
+      "size": 8338,
+      "sha256": "0be3c84a4453a2948d9e0c87a0ee7ddc64d676fa826b58788707ac91e562bea5"
+    },
+    {
+      "path": "src/fdm/services/cu_automatic_worker.py",
+      "size": 15166,
+      "sha256": "d1d0d65e252001be1dc4fbc280e2186fdc3eb3b0a5f8e538013546f33a4548cd"
+    },
+    {
+      "path": "tests/test_cu_automatic_worker.py",
+      "size": 6063,
+      "sha256": "9d48e8c2f680a407199834db30e6bde258004e4bcdea37088737fb517f1d3fb2"
+    }
+  ],
+  "base_zip_sha256": "c9927f8dd0a798b819028c27be2c19be8e58d6d846ea0e028b9ddd3f5e06c321"
+}

@@ -158,7 +158,7 @@ def test_pending_action_rejects_stale_display_identity(workspace):
     image = workspace.canvas.grab().toImage().convertToFormat(QImage.Format.Format_RGBA8888)
     pixels = np.frombuffer(image.constBits(), np.uint8).reshape(image.height(), image.bytesPerLine())
     rgb = pixels[:, :image.width() * 4].reshape(image.height(), image.width(), 4)[:, :, :3]
-    assert np.count_nonzero(np.all(rgb == QColor("#ff9f43").getRgb()[:3], axis=2)) > 10
+    assert np.count_nonzero(np.all(rgb == QColor("#a45300").getRgb()[:3], axis=2)) > 10
     assert not controller.session.measurements  # Painted pending geometry is not a record.
     controller.resolve_pending(discard=True, intent_id=intent.id)
     with pytest.raises(ValueError, match="失效"):
@@ -206,7 +206,7 @@ def test_accepted_postselection_warns_and_preserves_record_when_new_category_out
 
 
 @pytest.mark.parametrize("newer_manual", [False, True])
-def test_postselection_after_automatic_batch_targets_latest_operation(tmp_path, newer_manual):
+def test_candidate_acceptance_ends_postselection_until_next_manual_gesture(tmp_path, newer_manual):
     controller = LiveExperimentController(make_session(), evidence_directory=tmp_path)
     try:
         ready_result(controller)
@@ -219,14 +219,14 @@ def test_postselection_after_automatic_batch_targets_latest_operation(tmp_path, 
             "algorithm": "traditional", "operator_id": controller.session.active_operator_id,
             "direction": "warp", "lease": controller.budget.acquire(frame), "diagnostics": {}}
         controller.candidates = [{"width_px": 20, "start": [50, 30], "end": [50, 50]}]
-        if newer_manual:
-            controller.start((60, 30))
-            controller.finish((60, 50), "wool", method="free")
-            target_id = controller._classification_target["id"]
         controller._motion_sequence = 1
         controller.accept_candidates([(0, "wool")])
         last = controller.session.measurements[controller.current_records[-1]]
         assert last.id != old.id
+        if newer_manual:
+            controller.start((60, 30))
+            controller.finish((60, 50), "wool", method="free")
+            target_id = controller._classification_target["id"]
         changed_id = controller.reclassify_latest("cashmere")
         assert controller.session.measurements[old.id].material_id == "wool"
         if newer_manual:
@@ -234,8 +234,8 @@ def test_postselection_after_automatic_batch_targets_latest_operation(tmp_path, 
             assert controller._jobs[-1][0].material_id == "cashmere"
             assert controller.session.measurements[last.id].material_id == "wool"
         else:
-            assert changed_id == last.id
-            assert controller.session.measurements[last.id].material_id == "cashmere"
+            assert changed_id is None
+            assert controller.session.measurements[last.id].material_id == "wool"
     finally:
         controller.close()
 
@@ -272,11 +272,16 @@ def test_evidence_writing_and_pure_automatic_analysis_do_not_block_undo(workspac
     workspace._rebuild_records()
     with monkeypatch.context() as patch:
         patch.setattr(type(controller.evidence), "pending", property(lambda self: True))
-        controller._automatic_context = {"task_id": "uncommitted-analysis"}
+        lease = controller.budget.acquire(controller.presented.frame)
+        controller._automatic_context = {"task_id": "uncommitted-analysis", "token": controller.presented,
+            "lease": lease, "calibration": controller.calibration,
+            "operator_id": session.active_operator_id, "direction": session.active_direction,
+            "completed": False}
         try:
             workspace._history_action("undo")
         finally:
             controller._automatic_context = None
+            controller.budget.release(lease)
     assert record.id not in session.measurements
 
 

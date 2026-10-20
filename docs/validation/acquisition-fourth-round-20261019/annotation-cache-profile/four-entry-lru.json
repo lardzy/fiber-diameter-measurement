@@ -1,0 +1,278 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "scope": "Isolated Qt canvas; static frame; deterministic same geometry as candidate-preview benchmark; no alignment worker or JPEG load",
+  "cases": [
+    {
+      "records": 0,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "visible",
+      "visible_labels": 1,
+      "paint_p50_ms": 0.13250050324131735,
+      "paint_p95_ms": 0.16430560608569067,
+      "layout_p50_ms": 0.003583998477552086,
+      "layout_p95_ms": 0.0038771006074966863
+    },
+    {
+      "records": 0,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "hidden",
+      "visible_labels": 0,
+      "paint_p50_ms": 0.1041664945660159,
+      "paint_p95_ms": 0.12321214599069208,
+      "layout_p50_ms": 0.0012294985936023295,
+      "layout_p95_ms": 0.001334003172814846
+    },
+    {
+      "records": 0,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "alternating",
+      "visible_labels": 0,
+      "paint_p50_ms": 0.11625000115600415,
+      "paint_p95_ms": 0.13992739950481337,
+      "layout_p50_ms": 0.0027290006983093917,
+      "layout_p95_ms": 0.0040000013541430235
+    },
+    {
+      "records": 0,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "visible",
+      "visible_labels": 1,
+      "paint_p50_ms": 0.12500050070229918,
+      "paint_p95_ms": 0.14413575154321734,
+      "layout_p50_ms": 0.0040000013541430235,
+      "layout_p95_ms": 0.004207999154459685
+    },
+    {
+      "records": 0,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "hidden",
+      "visible_labels": 0,
+      "paint_p50_ms": 0.09564600259182043,
+      "paint_p95_ms": 0.10977740203088615,
+      "layout_p50_ms": 0.0015420009731315076,
+      "layout_p95_ms": 0.001711055665509775
+    },
+    {
+      "records": 0,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "alternating",
+      "visible_labels": 0,
+      "paint_p50_ms": 0.10922900401055813,
+      "paint_p95_ms": 0.12884374809800647,
+      "layout_p50_ms": 0.002937500539701432,
+      "layout_p95_ms": 0.0043339969124644995
+    },
+    {
+      "records": 20,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "visible",
+      "visible_labels": 21,
+      "paint_p50_ms": 0.3736669968930073,
+      "paint_p95_ms": 0.3963916988141136,
+      "layout_p50_ms": 0.04425000224728137,
+      "layout_p95_ms": 0.0466877954750089
+    },
+    {
+      "records": 20,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "hidden",
+      "visible_labels": 20,
+      "paint_p50_ms": 0.34895849967142567,
+      "paint_p95_ms": 0.3723871508555021,
+      "layout_p50_ms": 0.0426660044468008,
+      "layout_p95_ms": 0.04367115143395495
+    },
+    {
+      "records": 20,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "alternating",
+      "visible_labels": 20,
+      "paint_p50_ms": 0.3627500045695342,
+      "paint_p95_ms": 0.40375830394623335,
+      "layout_p50_ms": 0.044166499719722196,
+      "layout_p95_ms": 0.048302400318789296
+    },
+    {
+      "records": 20,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "visible",
+      "visible_labels": 21,
+      "paint_p50_ms": 0.35127099909004755,
+      "paint_p95_ms": 0.36986009690735955,
+      "layout_p50_ms": 0.04475000241654925,
+      "layout_p95_ms": 0.04741910088341683
+    },
+    {
+      "records": 20,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "hidden",
+      "visible_labels": 20,
+      "paint_p50_ms": 0.3387500000826549,
+      "paint_p95_ms": 0.36321904735814314,
+      "layout_p50_ms": 0.04470850035431795,
+      "layout_p95_ms": 0.046718148587387986
+    },
+    {
+      "records": 20,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "alternating",
+      "visible_labels": 20,
+      "paint_p50_ms": 0.34545850212452933,
+      "paint_p95_ms": 0.3686416483105859,
+      "layout_p50_ms": 0.04466649625101127,
+      "layout_p95_ms": 0.04742020391859114
+    },
+    {
+      "records": 50,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "visible",
+      "visible_labels": 51,
+      "paint_p50_ms": 0.9493545003351755,
+      "paint_p95_ms": 0.9976729001209605,
+      "layout_p50_ms": 0.1068955025402829,
+      "layout_p95_ms": 0.10906875068030786
+    },
+    {
+      "records": 50,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "hidden",
+      "visible_labels": 50,
+      "paint_p50_ms": 0.9253330026695039,
+      "paint_p95_ms": 0.9574732535838848,
+      "layout_p50_ms": 0.10002100316341966,
+      "layout_p95_ms": 0.10648989918990992
+    },
+    {
+      "records": 50,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "alternating",
+      "visible_labels": 50,
+      "paint_p50_ms": 0.9283955005230382,
+      "paint_p95_ms": 0.9570524009177461,
+      "layout_p50_ms": 0.11143800293211825,
+      "layout_p95_ms": 0.11513334648043383
+    },
+    {
+      "records": 50,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "visible",
+      "visible_labels": 51,
+      "paint_p50_ms": 0.9457909982302226,
+      "paint_p95_ms": 0.9737627962749684,
+      "layout_p50_ms": 0.11170849757036194,
+      "layout_p95_ms": 0.12208125481265597
+    },
+    {
+      "records": 50,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "hidden",
+      "visible_labels": 50,
+      "paint_p50_ms": 0.9389379993081093,
+      "paint_p95_ms": 0.9721142483613221,
+      "layout_p50_ms": 0.10931249926215969,
+      "layout_p95_ms": 0.11638334835879505
+    },
+    {
+      "records": 50,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "alternating",
+      "visible_labels": 50,
+      "paint_p50_ms": 0.947062002524035,
+      "paint_p95_ms": 0.9842098064837046,
+      "layout_p50_ms": 0.1111249985115137,
+      "layout_p95_ms": 0.11766460083890706
+    },
+    {
+      "records": 100,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "visible",
+      "visible_labels": 81,
+      "paint_p50_ms": 1.6337710003426764,
+      "paint_p95_ms": 1.6850312502356246,
+      "layout_p50_ms": 0.2083750005112961,
+      "layout_p95_ms": 0.216515197098488
+    },
+    {
+      "records": 100,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "hidden",
+      "visible_labels": 80,
+      "paint_p50_ms": 1.6159374972630758,
+      "paint_p95_ms": 1.6745461547543528,
+      "layout_p50_ms": 0.20585449965437874,
+      "layout_p95_ms": 0.2163631532312138
+    },
+    {
+      "records": 100,
+      "candidate_count": 1,
+      "implementation": "LiveMeasurementCanvas",
+      "gate": "alternating",
+      "visible_labels": 80,
+      "paint_p50_ms": 1.6204165003728122,
+      "paint_p95_ms": 1.654677050828468,
+      "layout_p50_ms": 0.22008350060787052,
+      "layout_p95_ms": 0.2280103974044323
+    },
+    {
+      "records": 100,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "visible",
+      "visible_labels": 81,
+      "paint_p50_ms": 1.639062502363231,
+      "paint_p95_ms": 1.7044517979229568,
+      "layout_p50_ms": 0.22364549658959731,
+      "layout_p95_ms": 0.23672530114708934
+    },
+    {
+      "records": 100,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "hidden",
+      "visible_labels": 80,
+      "paint_p50_ms": 1.6210204994422384,
+      "paint_p95_ms": 1.6672666952217696,
+      "layout_p50_ms": 0.22249999892665073,
+      "layout_p95_ms": 0.23084824351826683
+    },
+    {
+      "records": 100,
+      "candidate_count": 1,
+      "implementation": "LruPrototype",
+      "gate": "alternating",
+      "visible_labels": 80,
+      "paint_p50_ms": 1.6296870016958565,
+      "paint_p95_ms": 1.6780062545876717,
+      "layout_p50_ms": 0.2234170024166815,
+      "layout_p95_ms": 0.23356460260401946
+    }
+  ],
+  "measurement_scope": "Isolated macOS offscreen Qt canvas; no automatic worker, alignment, capture controller or JPEG write load. Not end-to-end performance acceptance.",
+  "iterations_per_case": 100,
+  "warmup_iterations": 10,
+  "source_image_size": [
+    768,
+    576
+  ],
+  "result_stage": "Four-entry geometry cache implementation"
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "path": "advanced-evidence-options.png",
+    "bytes": 55706,
+    "sha256": "bc2491262609ae6dc544f10e5c2875891061277467e90684f40b9341933c0d76"
+  },
+  {
+    "path": "candidate-evidence-navigation.mp4",
+    "bytes": 3901362,
+    "sha256": "03a95d469db07114b0c56c5faf9fc9a9b1ac4f69c6a0f660aac5c6dc172a7289"
+  },
+  {
+    "path": "content-automatic-result.png",
+    "bytes": 222194,
+    "sha256": "c7225ed8e97cd86ea257f6fc8d09e2a6495571cbe06a5febb838e031eb4898bd"
+  },
+  {
+    "path": "content-candidates-hidden.png",
+    "bytes": 216990,
+    "sha256": "5e02f07648c2d187c2ffc013ecb463dd1c01e4f0ee7e47bb2b342404e08f94cf"
+  },
+  {
+    "path": "content-candidates.png",
+    "bytes": 219896,
+    "sha256": "6c3afed0757f518d5d1b72eb25e945d48f84de07d825e649f1952c4a01dbe114"
+  },
+  {
+    "path": "content-empty.png",
+    "bytes": 188434,
+    "sha256": "6e9ff5a4b7cbcdea16427f9f62c14edeb9251a92b58481348b4e0cc059e58828"
+  },
+  {
+    "path": "content-partial-accepted.png",
+    "bytes": 221698,
+    "sha256": "b0e899d49ff49b19258e0548fe047dc11e97a76ceac0fe1402102c4bc954c4e8"
+  },
+  {
+    "path": "content-ready.png",
+    "bytes": 209463,
+    "sha256": "d348c837eea31fd04bf1d8effb55d556e87d2531425efb95f2e91180c034fa40"
+  },
+  {
+    "path": "content-return.png",
+    "bytes": 211636,
+    "sha256": "079371c3faa2644c3788bd16385beef31a05256e199c7159ddedc0efce6b16a0"
+  },
+  {
+    "path": "diameter-ready.png",
+    "bytes": 165225,
+    "sha256": "a29ebdff964307fed147444c8b3e7178701a17f4cf2aabec51c8de0780110d50"
+  },
+  {
+    "path": "evidence-clean-image.png",
+    "bytes": 246725,
+    "sha256": "5911877b76f66916dcc854a1d540ee391bbd770af86685af968ffe9ea0103f88"
+  },
+  {
+    "path": "evidence-gallery.png",
+    "bytes": 186359,
+    "sha256": "f24d287f6d672283a88c058f4807e8d317ba91199f8305db82856c8ff1006fdb"
+  },
+  {
+    "path": "evidence-pinned.png",
+    "bytes": 246935,
+    "sha256": "81cc8cacd401cac1d78072777c75ffd1eedc4b9edb0f6a659be264f35e89c03e"
+  },
+  {
+    "path": "evidence-window.png",
+    "bytes": 33541,
+    "sha256": "6720f54b460279e547547a3e96a1c7d14f6bfbfa8d52873f919a257b7370d16c"
+  },
+  {
+    "path": "realtime.png",
+    "bytes": 148970,
+    "sha256": "3c73523e0d72f3d2eb3c6271daf8b4640d82d3229fa0776a8c4ddfc50ae79e5c"
+  },
+  {
+    "path": "result.json",
+    "bytes": 130736,
+    "sha256": "33f2d97af9f644aeb48b2c9708ddcf25b2ca064c5e2bc8944701f31ecc0e8d14"
+  }
+]

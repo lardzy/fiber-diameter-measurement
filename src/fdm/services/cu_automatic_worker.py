@@ -12,8 +12,9 @@ import multiprocessing as mp
 from multiprocessing import shared_memory
 import os
 import sys
+import math
 import threading
-from time import monotonic
+from time import monotonic, perf_counter
 import uuid
 
 
@@ -104,6 +105,9 @@ class CuAutomaticWorker:
         self._pending = None
         self._permit = None
         self._started = 0.0
+        self._queued_at = 0.0
+        self._dispatch_at = None
+        self._task_timing = {}
         self._generation = 0
         self._closed = False
         self._responses = deque()
@@ -148,9 +152,13 @@ class CuAutomaticWorker:
             try:
                 while True:
                     response = parent.recv()
+                    # Timestamp before acquiring the GUI/watchdog lock. This
+                    # includes recv deserialization, not GUI polling latency.
+                    received_at = perf_counter()
                     with self._lock:
                         if generation != self._generation:
                             return
+                        response["_parent_received_at"] = received_at
                         self._received.append(response)
             except (EOFError, OSError):
                 return
@@ -181,6 +189,7 @@ class CuAutomaticWorker:
             if self._active is not None:
                 raise RuntimeError("automatic_busy")
             identifier = task_id if task_id is not None else uuid.uuid4().hex
+            copy_started = perf_counter()
             segment = shared_memory.SharedMemory(create=True, size=source.nbytes)
             try:
                 np.copyto(np.ndarray(source.shape, dtype=np.uint8, buffer=segment.buf), source)
@@ -190,6 +199,10 @@ class CuAutomaticWorker:
                 raise
             self._segment, self._active = segment, identifier
             self._pending = (identifier, segment.name, tuple(source.shape), algorithm, limits)
+            self._queued_at = perf_counter()
+            self._dispatch_at = None
+            self._task_timing = {"version": 1, "clock": "perf_counter",
+                                 "shared_memory_ms": (self._queued_at - copy_started) * 1000}
             self._permit = HEAVY_COMPUTE_BUDGET.request("cu_automatic")
             self._dispatch()
             return identifier
@@ -198,14 +211,18 @@ class CuAutomaticWorker:
         if self._pending is None or self._permit is None or not self._permit.try_acquire():
             return
         try:
+            self._task_timing["budget_wait_ms"] = (perf_counter() - self._queued_at) * 1000
             if self._process is None or not self._process.is_alive():
                 # A crashed idle process has no pending computation to clean up.
                 old = self._permit
                 self._permit = None
                 self._stop_process()
                 self._permit = old
+                start_called = perf_counter()
                 self._start()
+                self._task_timing["process_start_call_ms"] = (perf_counter() - start_called) * 1000
             self._cancelled.clear()
+            self._dispatch_at = perf_counter()
             self._connection.send(self._pending)
             self._pending = None
             self._started = monotonic()
@@ -225,6 +242,22 @@ class CuAutomaticWorker:
         while self._received:
             response = self._received.popleft()
             if self._active == response.get("task_id"):
+                received_at = response.pop("_parent_received_at", None)
+                timings = dict(self._task_timing)
+                if self._dispatch_at is not None and received_at is not None:
+                    elapsed = (received_at - self._dispatch_at) * 1000
+                    timings["dispatch_to_receive_ms"] = elapsed
+                    service = ((response.get("result") or {}).get("diagnostics") or {}).get("total_ms")
+                    if isinstance(service, (int, float)) and math.isfinite(service) and 0 <= service <= elapsed:
+                        # Duration subtraction only, never clocks across
+                        # processes. Cold imports/startup and transport remain
+                        # an explicitly combined overhead measurement.
+                        timings["startup_transport_overhead_ms"] = elapsed - service
+                    else:
+                        timings["startup_transport_overhead_unavailable"] = (
+                            "duration_difference_negative" if isinstance(service, (int, float))
+                            and math.isfinite(service) and service > elapsed else "service_duration_unavailable")
+                response["timings"] = timings
                 self._responses.append(response)
                 self._active = None
                 self._release_frame()

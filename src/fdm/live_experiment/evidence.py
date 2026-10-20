@@ -1,9 +1,10 @@
-"""Asynchronous lossless evidence store; accepted records retain failures."""
+"""Asynchronous full/cropped evidence store; accepted records retain failures."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 import hashlib
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -12,12 +13,16 @@ import uuid
 
 from .frames import FrameBudget, FrameHandle, acquisition_reservation
 from .png_stream import ENCODER_REVISION, png_workspace_bytes, write_png_stream
+from .evidence_options import effective_evidence_options, evidence_crop
+from .jpeg_evidence import (ENCODER_REVISION as JPEG_ENCODER_REVISION,
+                            jpeg_workspace_bytes, write_jpeg_evidence)
 
 
 @dataclass(slots=True)
 class _WriteTask:
     frame: FrameHandle | None
     entry: dict
+    region: tuple[int, int, int, int] = (0, 0, 0, 0)
     lease: str | None = None
     scratch: str | None = None
     state: str = "prepared"
@@ -37,20 +42,48 @@ class EvidenceStore:
         self._lock = threading.RLock()
         self._closed = False
 
-    def reserve(self, frame: FrameHandle) -> dict:
-        """Reserve before ledger commit; dedup by immutable source frame identity."""
-        name = hashlib.sha256(frame.frame_id.encode()).hexdigest() + ".png"
+    def reserve(self, frame: FrameHandle, *, options: dict | None = None, points=None) -> dict:
+        """Reserve before ledger commit; dedup source, rectangle and encoding.
+
+        No options preserves the historical full PNG contract. A crop must have
+        original-pixel geometry, never a latest-preview or screen-space point.
+        """
+        policy = effective_evidence_options(options)
+        if policy["mode"] == "disabled":
+            return {"state": "disabled"}
+        width, height = frame.size
+        region = ((0, 0, width, height) if policy["mode"] == "full_png" else
+                  evidence_crop(frame.size, () if points is None else points, padding=policy["padding"],
+                                minimum_size=policy["minimum_size"]))
+        x, y, w, h = region
+        codec = "png" if policy["mode"] == "full_png" else "jpeg"
+        if codec == "jpeg" and frame.pixels.ndim == 3 and frame.pixels.shape[2] == 4:
+            # Reduce directly: an H×W boolean temporary would be unbudgeted
+            # pixel memory before admission for a large automatic crop.
+            if int(frame.pixels[y:y+h, x:x+w, 3].min()) != 255:
+                codec = "png"
+        identity = {"frame_id": frame.frame_id, "crop": list(region), "codec": codec,
+                    "quality": policy["quality"] if codec == "jpeg" else None,
+                    "subsampling": "4:4:4" if codec == "jpeg" else None}
+        # Keep legacy full-frame filenames stable, including old test fixtures.
+        evidence_id = (hashlib.sha256(frame.frame_id.encode()).hexdigest() if policy["mode"] == "full_png" else
+                       hashlib.sha256(json.dumps(identity, sort_keys=True, allow_nan=False).encode()).hexdigest())
+        name = evidence_id + (".jpg" if codec == "jpeg" else ".png")
         entry = {"state": "pending", "path": str(self.directory / name),
                  "frame_id": frame.frame_id, "sha256": None, "error": None,
-                 "encoder": ENCODER_REVISION}
-        task = _WriteTask(frame, entry)
+                 "evidence_id": evidence_id, "metadata_version": 1,
+                 "mode": policy["mode"], "codec": codec, "source_size": [width, height],
+                 "crop": list(region), "quality": identity["quality"],
+                 "subsampling": identity["subsampling"],
+                 "encoder": JPEG_ENCODER_REVISION if codec == "jpeg" else ENCODER_REVISION}
+        task = _WriteTask(frame, entry, region)
         channels = 1 if frame.pixels.ndim == 2 else int(frame.pixels.shape[2])
-        scratch_bytes = png_workspace_bytes(frame.size[0], channels)
+        scratch_bytes = jpeg_workspace_bytes(w, h) if codec == "jpeg" else png_workspace_bytes(w, channels)
         with self._lock:
             if self._closed:
-                raise RuntimeError("原图存储已关闭。")
-            if frame.frame_id in self._entries:
-                return self._entries[frame.frame_id]
+                raise RuntimeError("测量证据存储已关闭。")
+            if evidence_id in self._entries:
+                return self._entries[evidence_id]
             task.lease, task.scratch = self.budget.acquire_with_scratch(
                 frame, group=self._scratch_group, scratch_bytes=scratch_bytes,
                 reserve_bytes=acquisition_reservation(frame),
@@ -63,16 +96,16 @@ class EvidenceStore:
                 future = None
                 try:
                     future = self._pool.submit(self._write, task)
-                    self._entries[frame.frame_id] = entry
-                    self._futures[frame.frame_id] = future
-                    self._tasks[frame.frame_id] = task
+                    self._entries[evidence_id] = entry
+                    self._futures[evidence_id] = future
+                    self._tasks[evidence_id] = task
                     task.state = "armed"
                 except BaseException:
                     task.state = "aborted"
                     task.frame = None
-                    self._entries.pop(frame.frame_id, None)
-                    self._futures.pop(frame.frame_id, None)
-                    self._tasks.pop(frame.frame_id, None)
+                    self._entries.pop(evidence_id, None)
+                    self._futures.pop(evidence_id, None)
+                    self._tasks.pop(evidence_id, None)
                     self._release_task_resources(task)
                     if future is not None:
                         future.cancel()
@@ -99,10 +132,13 @@ class EvidenceStore:
         try:
             temporary = Path(entry["path"]).with_suffix(".pending")
             with temporary.open("wb", buffering=0) as handle:
-                encoded = write_png_stream(frame.pixels, handle)
+                x, y, width, height = task.region
+                pixels = frame.pixels[y:y+height, x:x+width]
+                encoded = (write_jpeg_evidence(pixels, handle, quality=entry["quality"])
+                           if entry["codec"] == "jpeg" else write_png_stream(pixels, handle))
                 # The encoder and executor argument no longer own the pixels.
                 # Other consumers' leases remain counted until they release.
-                frame = None
+                pixels = frame = None
                 with task.lock:
                     if task.lease is not None:
                         self.budget.release(task.lease)
@@ -111,7 +147,7 @@ class EvidenceStore:
                 os.fsync(handle.fileno())
             os.replace(temporary, entry["path"])
             return {**entry, "state": "saved", "sha256": encoded.sha256,
-                    "encoder": ENCODER_REVISION}
+                    "size_bytes": encoded.size_bytes}
         except Exception as exc:
             error = str(exc)
             # An error string is persisted, never an exception traceback that
@@ -123,10 +159,10 @@ class EvidenceStore:
             except OSError as cleanup_error:
                 # Losing write access can also prevent removal. Preserve the
                 # accepted record's failure instead of raising from GUI poll.
-                error += f"；临时原图清理失败：{cleanup_error}"
+                error += f"；临时测量证据清理失败：{cleanup_error}"
             return {**entry, "state": "failed", "error": error}
         finally:
-            frame = None
+            pixels = frame = None
             with task.lock:
                 task.state = "done"
                 self._release_task_resources(task)
@@ -134,9 +170,9 @@ class EvidenceStore:
     def poll(self) -> list[dict]:
         completed = []
         with self._lock:
-            for frame_id, future in list(self._futures.items()):
+            for evidence_id, future in list(self._futures.items()):
                 if future.done():
-                    task = self._tasks[frame_id]
+                    task = self._tasks[evidence_id]
                     try:
                         result = future.result()
                     except Exception as exc:
@@ -148,10 +184,10 @@ class EvidenceStore:
                                 task.state = "aborted"
                                 task.frame = None
                             self._release_task_resources(task)
-                    self._entries[frame_id].update(result)
+                    self._entries[evidence_id].update(result)
                     completed.append(dict(result))
-                    del self._futures[frame_id]
-                    del self._tasks[frame_id]
+                    del self._futures[evidence_id]
+                    del self._tasks[evidence_id]
         return completed
 
     @property

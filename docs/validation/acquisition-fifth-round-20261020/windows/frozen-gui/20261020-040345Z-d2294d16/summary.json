@@ -1,0 +1,607 @@
+{
+  "schema": 1,
+  "run_id": "20261020-040345Z-d2294d16",
+  "cases": [
+    {
+      "name": "records-light-1600x900",
+      "theme": "light",
+      "width": 1600,
+      "height": 900,
+      "populated": true
+    }
+  ],
+  "windows_output": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16",
+  "executable_override": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "real_hardware_tested": false,
+  "camera_sharing_managed": false,
+  "installation_performed": false,
+  "snapshot_management_performed": false,
+  "preflight": {
+    "probe_sha256": "0ab1c640624953fae73ef0602111d5550c318db0f96c0959bcba037a0ff14c25",
+    "executable": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "identity": {
+      "passed": true,
+      "version": "0.4.10",
+      "build_id": "4211d52229824686bdda0862fa593c59",
+      "source_commit": "unknown",
+      "source_git_baseline": "a836e1dc10408acf01f5bb4445c837dc75a7140e",
+      "installer": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\installer\\fiber-diameter-measurement-setup-0.4.10-no-area-models.exe",
+      "sha256": "da83e399811810277570eed3e95393b40b81f41e0341b8b8ed4d2e315637832e",
+      "bytes": 398788594,
+      "payload": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installer-payload-da83e3998118\\{app}",
+      "files_verified": 4818,
+      "production_sources_verified": 434,
+      "source_snapshot_sha256": "095b1dedeab0f83c2eecf97e8d04119a67bf98687a664387e2136764d439ffac",
+      "selfcheck_encoding": "cp936",
+      "excluded_components": [
+        "area-models"
+      ],
+      "actual_installation_tested": false,
+      "hardware_capture_tested": false
+    }
+  },
+  "groups": [
+    {
+      "name": "records-light-1600x900",
+      "passed": true,
+      "result": {
+        "schema": 5,
+        "started_at": "2026-10-20T12:03:49.8712310+08:00",
+        "exe": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+        "theme": "light",
+        "real_hardware": null,
+        "hardware_acceptance_tested": false,
+        "capture_note": "VM host-camera sharing is temporarily disabled and restored after scoped installation validation. No Microview hardware acceptance.",
+        "requested_capture_device_id": "microview:0",
+        "legacy_project": "",
+        "legacy_settings": "",
+        "run_directory": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5",
+        "config": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\isolated-config",
+        "pid": 11140,
+        "isolated_empty_project_verified": false,
+        "main_window": true,
+        "experiment_menu": false,
+        "live_experiment_entry": false,
+        "live_window": false,
+        "key_controls": [],
+        "key_controls_verified": false,
+        "workspace_closed": false,
+        "unsaved_dialog": null,
+        "graceful_exit": true,
+        "forced_cleanup": false,
+        "requested_client_size": [
+          1600,
+          900
+        ],
+        "observed_client_sizes": [
+          {
+            "phase": "01-main",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "02-realtime",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "03a-advanced-storage-options",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "03-content",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "04a-evidence-album",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "04b-evidence-album-maximized",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "04c-evidence-review",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "04d-evidence-pinned",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "04-records-default",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "05-停靠底部",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "05-停靠左侧",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "05-浮动窗口",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "06-realtime-return",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "07-sample-expanded",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          },
+          {
+            "phase": "08-navigation-return",
+            "actual": [
+              1600,
+              900
+            ],
+            "requested": [
+              1600,
+              900
+            ]
+          }
+        ],
+        "scroll_actions": [],
+        "snapshots": [
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\01-main-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\02-realtime-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\03a-advanced-storage-options-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\03-content-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\04a-evidence-album-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\04b-evidence-album-maximized-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\04c-evidence-review-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\04d-evidence-pinned-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\04-records-default-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\05-停靠底部-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\05-停靠左侧-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\05-浮动窗口-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\06-realtime-return-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\07-sample-expanded-uia.json",
+          "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-040345Z-d2294d16\\records-light-1600x900\\20261020-120349-4758fa15a4804ed3aa5cd1e95bcd0dc5\\08-navigation-return-uia.json"
+        ],
+        "errors": [],
+        "ok": true,
+        "ui_scale": 1,
+        "native_device_scale": 2,
+        "qt_scale_factor": 0.5,
+        "populated": true,
+        "steps": [
+          {
+            "name": "采集与试验",
+            "action": "invoke"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "全图分析或刷新候选",
+            "bounds": {
+              "name": "全图分析或刷新候选",
+              "process_id": 11140,
+              "type": "ControlType.Button",
+              "class": "QToolButton",
+              "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.QWidget.acquisitionViewControls.trialAnalyze",
+              "native_handle": 0,
+              "enabled": false,
+              "offscreen": false,
+              "bounds": [
+                43,
+                210,
+                105,
+                38
+              ],
+              "help_text": "",
+              "value": "",
+              "runtime_id": [
+                42,
+                13762812,
+                4,
+                -2147482883
+              ],
+              "patterns": [
+                "InvokePatternIdentifiers.Pattern",
+                "ValuePatternIdentifiers.Pattern"
+              ]
+            },
+            "action": "fifth-entry-visible"
+          },
+          {
+            "name": "候选显示与不透明度",
+            "bounds": {
+              "name": "候选显示与不透明度",
+              "process_id": 11140,
+              "type": "ControlType.Button",
+              "class": "QToolButton",
+              "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.QWidget.acquisitionViewControls.QToolButton",
+              "native_handle": 0,
+              "enabled": true,
+              "offscreen": false,
+              "bounds": [
+                208,
+                210,
+                69,
+                38
+              ],
+              "help_text": "",
+              "value": "",
+              "runtime_id": [
+                42,
+                13762812,
+                4,
+                -2147482881
+              ],
+              "patterns": [
+                "InvokePatternIdentifiers.Pattern",
+                "ValuePatternIdentifiers.Pattern"
+              ]
+            },
+            "action": "fifth-entry-visible"
+          },
+          {
+            "name": "证据相册及存档设置",
+            "bounds": {
+              "name": "证据相册及存档设置",
+              "process_id": 11140,
+              "type": "ControlType.Button",
+              "class": "QToolButton",
+              "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.trialWorkflowTabs.qt_tabwidget_stackedwidget.QScrollArea.qt_scrollarea_viewport.QWidget.trialEvidence",
+              "native_handle": 0,
+              "enabled": true,
+              "offscreen": false,
+              "bounds": [
+                1297,
+                418,
+                69,
+                22
+              ],
+              "help_text": "",
+              "value": "",
+              "runtime_id": [
+                42,
+                13762812,
+                4,
+                -2147482877
+              ],
+              "patterns": [
+                "InvokePatternIdentifiers.Pattern",
+                "ValuePatternIdentifiers.Pattern"
+              ]
+            },
+            "action": "fifth-entry-visible"
+          },
+          {
+            "name": "试验工具与设置",
+            "action": "native-mouse-menu"
+          },
+          {
+            "name": "高级选项",
+            "action": "invoke"
+          },
+          {
+            "name": "关闭",
+            "action": "invoke"
+          },
+          {
+            "name": "证据相册及存档设置",
+            "action": "invoke"
+          },
+          {
+            "name": "收起",
+            "action": "invoke"
+          },
+          {
+            "name": "记录",
+            "action": "invoke"
+          },
+          {
+            "name": "位置",
+            "action": "invoke"
+          },
+          {
+            "name": "停靠底部",
+            "action": "invoke"
+          },
+          {
+            "name": "位置",
+            "action": "invoke"
+          },
+          {
+            "name": "停靠左侧",
+            "action": "invoke"
+          },
+          {
+            "name": "位置",
+            "action": "invoke"
+          },
+          {
+            "name": "浮动窗口",
+            "action": "invoke"
+          },
+          {
+            "name": "返回采集",
+            "action": "invoke"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "记录",
+            "action": "invoke"
+          },
+          {
+            "name": "展开或收起样品信息",
+            "action": "invoke"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "直径试验",
+            "action": "select"
+          },
+          {
+            "name": "实时采集",
+            "action": "select"
+          },
+          {
+            "name": "含量试验",
+            "action": "select"
+          },
+          {
+            "name": "测量分析",
+            "action": "invoke"
+          }
+        ],
+        "fixture_sha256": "c3008945c2c0b00e90ce1e12c004bdb5ba1f5d2f7327f8e77f94d17cbf73ec45",
+        "excel_export_tested": false,
+        "fixture_path": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\fixtures\\52e4dd8ba342\\review.fdmproj",
+        "os_dpi": 192,
+        "excel_entry": {
+          "name": "导出 Excel 报告",
+          "process_id": 11140,
+          "type": "ControlType.Button",
+          "class": "QPushButton",
+          "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.WorkspaceStack.acquisitionTrial.QWidget.QSplitter.trialSidebar.QPushButton",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            1466,
+            855,
+            134,
+            32
+          ],
+          "help_text": "",
+          "value": "",
+          "runtime_id": [
+            42,
+            13762812,
+            4,
+            -2147482936
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern"
+          ]
+        },
+        "automatic_toggle_verified": true,
+        "mixed_input_value": "混合：候选点选与手工绘制",
+        "mixed_input_default_verified": true,
+        "advanced_storage_options_verified": true,
+        "evidence_album_item_count": 12,
+        "historical_evidence_card": "#155 · 30.0000 μm\n验证纤维 3 · 局部 JPEG\n验证丙 · 纬向\n2026-10-20 12:03:50",
+        "cropped_evidence_review_verified": true,
+        "evidence_album_verified": true,
+        "record_operator_filter": {
+          "name": "记录操作者筛选",
+          "process_id": 11140,
+          "type": "ControlType.ComboBox",
+          "class": "NoWheelComboBox",
+          "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.trialRecordsDock.trialRecordsPanel.NoWheelComboBox",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            37,
+            264,
+            190,
+            32
+          ],
+          "help_text": "",
+          "value": "全部操作者",
+          "runtime_id": [
+            42,
+            13762812,
+            4,
+            -2147483068
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern",
+            "ExpandCollapsePatternIdentifiers.Pattern"
+          ]
+        },
+        "record_direction_filter": {
+          "name": "记录方向筛选",
+          "process_id": 11140,
+          "type": "ControlType.ComboBox",
+          "class": "NoWheelComboBox",
+          "automation_id": "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.AcquisitionWorkbench.acquisitionDockHost.trialRecordsDock.trialRecordsPanel.NoWheelComboBox",
+          "native_handle": 0,
+          "enabled": true,
+          "offscreen": false,
+          "bounds": [
+            231,
+            264,
+            194,
+            32
+          ],
+          "help_text": "",
+          "value": "全部方向",
+          "runtime_id": [
+            42,
+            13762812,
+            4,
+            -2147483067
+          ],
+          "patterns": [
+            "InvokePatternIdentifiers.Pattern",
+            "ValuePatternIdentifiers.Pattern",
+            "ExpandCollapsePatternIdentifiers.Pattern"
+          ]
+        },
+        "visible_record_tables": [],
+        "exit_code": 0,
+        "process_exited_after_cleanup": true,
+        "finished_at": "2026-10-20T12:04:17.5270830+08:00"
+      }
+    }
+  ],
+  "passed": true
+}

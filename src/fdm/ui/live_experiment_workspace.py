@@ -27,232 +27,8 @@ from fdm.live_experiment.frames import FrameHandle, FrameBudgetExceeded, Present
 from fdm.live_experiment.presentation import category_color, category_number
 
 
-class LiveMeasurementCanvas(QWidget):
-    pointPressed = Signal(object)
-    pointReleased = Signal(object)
-    gestureCancelled = Signal()
-    categoryRequested = Signal(object)
-
-    def __init__(self, controller, parent=None):
-        super().__init__(parent)
-        self.controller = controller
-        self.frame = None
-        self.image = None
-        self.display_mode = "pixel"
-        self.display_value = 100.0
-        self.screen_pixel_mm = None
-        self.display_revision = 0
-        self.cursor_point = None
-        self.active_material_id = None
-        self.setMinimumSize(400, 300)
-        self.setMouseTracking(True)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setCursor(Qt.CursorShape.CrossCursor)
-        self.setToolTip("")
-        controller.fieldChanged.connect(self._field_changed)
-        controller.changed.connect(self.update)
-        controller.candidatesChanged.connect(self.update)
-
-    def set_frame(self, frame):
-        old_size = self.frame.size if self.frame is not None else None
-        self.frame = frame
-        if frame is None:
-            self.image = None
-            self._update_pixel_extent()
-            self.update()
-            return
-        pixels = frame.pixels
-        fmt = {"GRAY": QImage.Format.Format_Grayscale8,
-               "BGR": QImage.Format.Format_BGR888,
-               "BGRA": QImage.Format.Format_ARGB32}[frame.pixel_format]
-        self.image = QImage(pixels.data, frame.size[0], frame.size[1], pixels.strides[0], fmt)
-        if old_size != frame.size:
-            self._update_pixel_extent()
-        self.update()
-
-    def _update_pixel_extent(self):
-        # QScrollArea supplies explicit scrollbars for images larger than the
-        # viewport. Never silently shrink a 768/2K/4K frame to make it fit.
-        if self.frame is None or self.display_mode == "fit":
-            self.setMinimumSize(320, 240)
-        else:
-            scale, _ = self._transform()
-            self.setMinimumSize(max(320, math.ceil(self.frame.size[0] * scale)),
-                                max(240, math.ceil(self.frame.size[1] * scale)))
-
-    def _field_changed(self, *_):
-        self.cursor_point = None
-        self.update()
-
-    def _transform(self):
-        if self.frame is None:
-            return 1.0, (0.0, 0.0)
-        width, height = self.frame.size
-        dpr = self.devicePixelRatioF()
-        if self.display_mode == "fit":
-            scale = min(self.width() / width, self.height() / height)
-        elif self.display_mode == "percent":
-            scale = self.display_value / 100 / dpr
-        elif self.display_mode == "magnification" and self.screen_pixel_mm and self.controller.calibration:
-            scale = self.controller.calibration.x_um * self.display_value / (self.screen_pixel_mm * 1000 * dpr)
-        else:
-            scale = 1 / dpr
-        # Align image edges to device pixels. Actual-pixel mode never resamples
-        # merely because the application is running at 125/150/200% DPI.
-        return scale, (round((self.width() - width * scale) * dpr / 2) / dpr,
-                       round((self.height() - height * scale) * dpr / 2) / dpr)
-
-    def set_display_mode(self, mode, value=100.0, screen_pixel_mm=None):
-        if mode not in {"pixel", "fit", "percent", "magnification"}:
-            raise ValueError("未知显示模式")
-        if self.controller.pending_classification or self.controller._confirmation:
-            raise ValueError("请先核对待确认测量，再更换显示模式。")
-        if self.controller._jobs or self.controller.candidates:
-            raise ValueError("请先完成或取消当前测量／候选，再更换显示模式。")
-        if not math.isfinite(value) or value <= 0:
-            raise ValueError("显示比例必须大于零。")
-        if mode == "magnification" and (not self.controller.calibration or not self.controller.calibration.isotropic
-                or screen_pixel_mm is None or not math.isfinite(screen_pixel_mm) or screen_pixel_mm <= 0):
-            raise ValueError("指定倍率需要等比例显微镜标尺和显示器标线长度。")
-        if self.frame is not None and mode in {"percent", "magnification"}:
-            scale = (value / 100 if mode == "percent" else
-                     self.controller.calibration.x_um * value / (screen_pixel_mm * 1000))
-            extent = max(self.frame.size) * scale / self.devicePixelRatioF()
-            if not math.isfinite(extent) or extent > 16777215:
-                raise ValueError("显示范围过大，请降低比例／倍率，并核对屏幕标线的毫米长度。")
-        self.gestureCancelled.emit()
-        self.display_mode, self.display_value = mode, value
-        self.screen_pixel_mm = screen_pixel_mm
-        self.cursor_point = None
-        self.display_revision += 1
-        self._update_pixel_extent()
-        self.update()
-
-    def fit_view(self):
-        self.set_display_mode("fit")
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        from fdm.ui.theme import semantic_colors
-        colors = semantic_colors(self.palette())
-        painter.fillRect(self.rect(), QColor(colors.canvas))
-        if self.frame is None:
-            painter.setPen(QColor(colors.canvas_text))
-            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "等待实时画面\n在采集栏连接设备，在右侧完成试验准备")
-            return
-        frame = self.frame
-        scale, offset = self._transform()
-        painter.translate(*offset)
-        painter.scale(scale, scale)
-        painter.drawImage(QPointF(0, 0), self.image)
-        session = self.controller.session
-        for number, record_id in enumerate(self.controller.current_records, 1):
-            record = self.controller.session.measurements.get(record_id)
-            endpoints = getattr(record, "endpoints", None) if record else None
-            if endpoints and len(endpoints) == 2:
-                color = QColor(category_color(session, record.operator_id, record.direction, record.material_id))
-                painter.setPen(QPen(QColor(255, 255, 255, 180), 3.5 / scale))
-                painter.drawLine(QPointF(*endpoints[0]), QPointF(*endpoints[1]))
-                painter.setPen(QPen(color, 1.5 / scale))
-                painter.drawLine(QPointF(*endpoints[0]), QPointF(*endpoints[1]))
-                category = category_number(session, record.operator_id, record.direction, record.material_id)
-                label = f"{number} [{category}]" if category else str(number)
-                # Keep labels legible at every zoom without scaling the font.
-                painter.save()
-                painter.resetTransform()
-                location = QPointF(endpoints[1][0] * scale + offset[0] + 5,
-                                   endpoints[1][1] * scale + offset[1] - 5)
-                box = QRectF(painter.fontMetrics().boundingRect(label)).translated(location).adjusted(-2, -1, 2, 1)
-                painter.fillRect(box, QColor(255, 255, 255, 220))
-                painter.fillRect(QRectF(box.left() - 3, box.top(), 3, box.height()), color)
-                painter.setPen(QColor("#111820"))
-                painter.drawText(location, label)
-                painter.restore()
-        painter.setPen(QPen(QColor("#ffcf65"), 1.2 / scale, Qt.PenStyle.DashLine))
-        for candidate in self.controller.candidates:
-            painter.drawLine(QPointF(*candidate["start"]), QPointF(*candidate["end"]))
-        pending = [(intent, result, f"待确认 {index}") for index, (intent, result)
-                   in enumerate(self.controller.pending_classification, 1)]
-        request = self.controller._confirmation
-        if request and request["kind"] == "manual":
-            pending.extend((intent, result, "确认核验中") for intent, result in request["intents"])
-        for intent, result, prefix in pending:
-            painter.setPen(QPen(QColor("#ff9f43"), 2 / scale, Qt.PenStyle.DashLine))
-            painter.drawLine(QPointF(*result["start"]), QPointF(*result["end"]))
-            painter.save()
-            painter.resetTransform()
-            location = QPointF(result["end"][0] * scale + offset[0] + 5,
-                               result["end"][1] * scale + offset[1] + 15)
-            label = f"{prefix} · 测量 #{intent.measurement_number or intent.id[:6]}（未入账）"
-            box = QRectF(painter.fontMetrics().boundingRect(label)).translated(location).adjusted(-2, -1, 2, 1)
-            painter.fillRect(box, QColor("#fff0d5"))
-            painter.setPen(QColor("#7a3900"))
-            painter.drawText(location, label)
-            painter.restore()
-        if self.controller.draft:
-            start = self.controller.draft[1]
-            end = self.cursor_point or start
-            color = category_color(session, session.active_operator_id,
-                                   session.active_direction, self.active_material_id)
-            painter.setPen(QPen(QColor(color), 2 / scale))
-            painter.drawLine(QPointF(*start), QPointF(*end))
-            painter.drawEllipse(QPointF(*start), 3 / scale, 3 / scale)
-        painter.end()
-        # Publish only after painting; set_frame merely schedules a repaint.
-        self.controller.mark_presented(PresentedFrameToken(
-            frame, self.controller.field_epoch, self.display_revision, scale, offset))
-
-    def _point(self, event):
-        token = self.controller.presented
-        if token is None:
-            return None
-        return token.image_point(event.position().x(), event.position().y())
-
-    def mousePressEvent(self, event):
-        self.setFocus()
-        if event.button() == Qt.MouseButton.LeftButton:
-            point = self._point(event)
-            if point:
-                self.pointPressed.emit(point)
-        self.update()
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.RightButton:
-            self.gestureCancelled.emit()
-            self.categoryRequested.emit(event.globalPosition().toPoint())
-        elif event.button() == Qt.MouseButton.LeftButton:
-            point = self._point(event)
-            if point:
-                self.pointReleased.emit(point)
-
-    def mouseMoveEvent(self, event):
-        self.cursor_point = self._point(event)
-        if self.controller.draft:
-            self.update()
-
-    def wheelEvent(self, event):
-        event.accept()
-
-    def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.MouseButton.MiddleButton:
-            event.accept()
-        else:
-            # A fast second left click remains the second measurement point.
-            self.mousePressEvent(event)
-
-    def resizeEvent(self, event):
-        self.gestureCancelled.emit()
-        self.display_revision += 1
-        super().resizeEvent(event)
-
-    def event(self, event):
-        if event.type() == QEvent.Type.DevicePixelRatioChange:
-            self.gestureCancelled.emit()
-            self._update_pixel_extent()
-            self.display_revision += 1
-            self.update()
-        return super().event(event)
-
+from fdm.ui.live_measurement_canvas import LiveMeasurementCanvas
+from fdm.ui.trial_assistance import TrialAssistanceMixin
 
 class ExperimentRecordsTable(QTableView):
     """Follow new records without laying out a collapsed/off-tab table."""
@@ -346,6 +122,8 @@ class ExperimentRecordsModel(QAbstractTableModel):
 
 
 class CandidatesModel(QAbstractTableModel):
+    exclusionChanged = Signal(object, bool)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.candidates = []
@@ -354,16 +132,25 @@ class CandidatesModel(QAbstractTableModel):
         self.assignments = {}
         self.range_confirmations = {}
         self.scale = 1.0
+        self.session = None
 
     def set_candidates(self, candidates, scale, materials=()):
+        old_keys = getattr(self, "_candidate_keys", [])
+        assignments = {key: self.assignments[i] for i, key in enumerate(old_keys) if i in self.assignments}
+        excluded = {key for i, key in enumerate(old_keys) if i in self.excluded}
+        confirmations = {key: self.range_confirmations[i] for i, key in enumerate(old_keys) if i in self.range_confirmations}
         self.beginResetModel()
-        self.candidates = candidates
+        self.candidates = list(candidates)
+        self._candidate_keys = [item.get("candidate_id", id(item)) for item in candidates]
         self.scale = scale
-        self.excluded.clear()
         self.materials = tuple(materials)
-        self.assignments.clear()
-        self.range_confirmations.clear()
+        self.assignments = {i: assignments[key] for i, key in enumerate(self._candidate_keys) if key in assignments}
+        self.excluded = {i for i, key in enumerate(self._candidate_keys) if key in excluded}
+        self.range_confirmations = {i: confirmations[key] for i, key in enumerate(self._candidate_keys) if key in confirmations}
         self.endResetModel()
+
+    def available(self, row):
+        return self.candidates[row].get("state", "available") == "available"
 
     def rowCount(self, parent=QModelIndex()):
         return 0 if parent.isValid() else len(self.candidates)
@@ -371,8 +158,24 @@ class CandidatesModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return 6
 
+    def accepted_record(self, row):
+        candidate = self.candidates[row]
+        if self.session is not None and candidate.get("state") == "accepted":
+            return self.session.measurements.get(candidate.get("record_id"))
+        return None
+
+    def material_id(self, row):
+        record = self.accepted_record(row)
+        return record.material_id if record is not None else self.assignments.get(row)
+
+    def notify_accepted_records(self):
+        # Preserve the review selection and assignments of unaccepted rows.
+        for row in range(self.rowCount()):
+            if self.candidates[row].get("state") == "accepted":
+                self.dataChanged.emit(self.index(row, 2), self.index(row, 5))
+
     def assigned_material(self, row):
-        material_id = self.assignments.get(row)
+        material_id = self.material_id(row)
         return next((material for material in self.materials if material.id == material_id), None)
 
     def range_status(self, row):
@@ -404,15 +207,27 @@ class CandidatesModel(QAbstractTableModel):
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return None
+        state = self.candidates[index.row()].get("state", "available")
         if index.column() == 0 and role == Qt.ItemDataRole.CheckStateRole:
-            return Qt.CheckState.Unchecked if index.row() in self.excluded else Qt.CheckState.Checked
+            if state not in {"available", "excluded"}:
+                return None
+            return Qt.CheckState.Unchecked if index.row() in self.excluded or state == "excluded" else Qt.CheckState.Checked
         if index.column() == 5 and role == Qt.ItemDataRole.CheckStateRole and self.range_status(index.row()) == "越限，需核对":
             return Qt.CheckState.Checked if self.range_confirmed(index.row()) else Qt.CheckState.Unchecked
         if index.column() == 3 and role in (Qt.ItemDataRole.EditRole, Qt.ItemDataRole.UserRole):
-            return self.assignments.get(index.row())
+            return self.material_id(index.row())
+        if index.column() == 2 and role == Qt.ItemDataRole.ToolTipRole:
+            original = self.candidates[index.row()]["width_px"] * self.scale
+            record = self.accepted_record(index.row())
+            return (f"原候选测值 {original:.4f} μm；当前记录 {record.diameter_um:.4f} μm。修订不会改变原始测量几何。"
+                    if record is not None else f"候选测值 {original:.4f} μm，尚未入账。")
         if role == Qt.ItemDataRole.DisplayRole:
             material = self.assigned_material(index.row())
-            return ("", str(index.row() + 1), f"{self.candidates[index.row()]['width_px'] * self.scale:.4f}",
+            original = self.candidates[index.row()]["width_px"] * self.scale
+            record = self.accepted_record(index.row())
+            diameter = f"{original:.4f}" + ("（原候选）" if record is not None and abs(record.diameter_um - original) > 1e-8 else "")
+            return ({"accepted": "已计入", "confirming": "待计入", "excluded": "已排除"}.get(state, ""),
+                    f"C{self.candidates[index.row()].get('ordinal', index.row() + 1)}", diameter,
                     material.name if material else "未赋类 · 双击选择", self.range_description(index.row()),
                     "确认保留" if self.range_status(index.row()) == "越限，需核对" else "")[index.column()]
         if role == Qt.ItemDataRole.ForegroundRole and index.column() in (3, 4) and self.range_status(index.row()) != "范围内":
@@ -423,6 +238,10 @@ class CandidatesModel(QAbstractTableModel):
 
     def flags(self, index):
         flags = super().flags(index)
+        if index.isValid() and self.candidates[index.row()].get("state") == "excluded" and index.column() == 0:
+            return flags | Qt.ItemFlag.ItemIsUserCheckable
+        if index.isValid() and not self.available(index.row()):
+            return flags & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsUserCheckable
         if index.column() == 0:
             return flags | Qt.ItemFlag.ItemIsUserCheckable
         if index.column() == 5 and self.range_status(index.row()) == "越限，需核对":
@@ -431,6 +250,8 @@ class CandidatesModel(QAbstractTableModel):
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if not index.isValid():
+            return False
+        if not self.available(index.row()) and not (index.column() == 0 and self.candidates[index.row()].get("state") == "excluded"):
             return False
         if index.column() == 3 and role == Qt.ItemDataRole.EditRole:
             if value is not None and value not in {material.id for material in self.materials}:
@@ -454,6 +275,7 @@ class CandidatesModel(QAbstractTableModel):
             self.excluded.discard(index.row())
         else:
             self.excluded.add(index.row())
+        self.exclusionChanged.emit(self.candidates[index.row()].get("candidate_id"), index.row() in self.excluded)
         self.dataChanged.emit(index, index)
         return True
 
@@ -477,7 +299,7 @@ class CandidateMaterialDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentData(), Qt.ItemDataRole.EditRole)
 
 
-class LiveExperimentWorkspace(QWidget):
+class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
     frameArrived = Signal()
     sourceFailed = Signal(object)
 
@@ -542,6 +364,7 @@ class LiveExperimentWorkspace(QWidget):
         from fdm.ui.measurement_feedback_overlay import MeasurementFeedbackOverlay
         self.measurement_feedback = MeasurementFeedbackOverlay(self.image_scroll.viewport(), canvas=self.canvas)
         self._restore_view_preferences()
+        self._init_assistance()
         from fdm.ui.display_preferences import acquisition_display_store, AcquisitionDisplayBinding
         self.display_binding = AcquisitionDisplayBinding(self.canvas,
             store=acquisition_display_store(host), scroll_area=self.image_scroll,
@@ -567,6 +390,9 @@ class LiveExperimentWorkspace(QWidget):
         self.sourceFailed.connect(self._receive_source_error, Qt.ConnectionType.QueuedConnection)
         self.canvas.pointPressed.connect(self._press)
         self.canvas.pointReleased.connect(self._release)
+        self.canvas.manualGestureStarted.connect(self._manual_start)
+        self.canvas.manualGestureFinished.connect(self._manual_finish)
+        self.canvas.gestureRejected.connect(lambda text: self.statusBar().showMessage(text, 8000))
         self.canvas.gestureCancelled.connect(self.controller.cancel_draft)
         self.canvas.categoryRequested.connect(self._choose_material_at_cursor)
         self.controller.recordAccepted.connect(self._record_accepted)
@@ -666,7 +492,9 @@ class LiveExperimentWorkspace(QWidget):
                 "sidebar_width": max(390, min(520, self.trial_sidebar.width())),
                 "metadata_expanded": self.sample_details_toggle.isChecked(),
             }
-            preferences["version"] = 2
+            if hasattr(self, "auto_analysis"):
+                preferences["assistance"] = self._assistance_preferences()
+            preferences["version"] = 3
             self._view_preferences_path.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_text(self._view_preferences_path, json.dumps(preferences, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
         except OSError as exc:
@@ -707,7 +535,7 @@ class LiveExperimentWorkspace(QWidget):
     def _confirm_trial_navigation(self):
         controller = self.controller
         if not (controller.draft or controller._jobs or controller.pending_classification
-                or controller.candidates or controller._confirmation or controller._automatic_context):
+                or controller.has_unaccepted_candidates or controller._confirmation):
             return True
         dialog = QMessageBox(self)
         dialog.setWindowTitle("还有未入账的测量")
@@ -725,7 +553,23 @@ class LiveExperimentWorkspace(QWidget):
         elif self._confirm_trial_navigation():
             self.close()
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        if hasattr(self, "evidence_review"):
+            self.evidence_review.resume()
+            self._refresh_assistance_state()
+        gallery = getattr(self.host, "_evidence_gallery", None)
+        if gallery is not None:
+            gallery.resume(self)
+
     def hideEvent(self, event):
+        self.controller.configure_automatic(active=False)
+        if hasattr(self, "evidence_review"):
+            self.evidence_review.suspend()
+        gallery = getattr(self.host, "_evidence_gallery", None)
+        if gallery is not None and gallery.workspace is self:
+            gallery.suspend()
+        self.canvas.cancel_pointer_gesture()
         if hasattr(self, "_view_preferences_timer") and self._view_preferences_timer.isActive():
             self._persist_view_preferences()
         super().hideEvent(event)
@@ -918,7 +762,7 @@ class LiveExperimentWorkspace(QWidget):
             return
         if self.controller.receive_frame(frame):
             self._restore_calibration(frame)
-            self.canvas.set_frame(frame)
+            self.controller.present_preview_frame(frame)
             self.display_binding.set_source(frame.source_id, frame.size)
 
     def _calibrate(self):
@@ -942,7 +786,7 @@ class LiveExperimentWorkspace(QWidget):
     def _select_display_mode(self, index):
         mode = self.display_choice.itemData(index)
         try:
-            if self.controller._jobs or self.controller.candidates or self.controller.pending_classification or self.controller._confirmation:
+            if self.controller._jobs or self.controller.pending_classification or self.controller._confirmation or self.controller.candidate_pending_count:
                 raise ValueError("请先完成或取消当前测量／候选，再更换显示模式。")
             if mode == "percent":
                 value, accepted = QInputDialog.getDouble(self, "指定比例显示", "显示比例（%）",
@@ -1072,17 +916,31 @@ class LiveExperimentWorkspace(QWidget):
         elif target == "materials":
             self._guard(self._materials)
 
-    def _press(self, point):
+    def _manual_ready(self):
         if self.mode.currentIndex() == 0 and self.material.currentData() is None:
             self.controller.cancel_draft()
             self._refresh_measurement_readiness()
             self.statusBar().showMessage("请先选择本方向的纤维类别，再在图像上测量。", 8000)
             if hasattr(self, "choose_categories_button"):
                 self.choose_categories_button.setFocus()
-            return
+            return False
         if self.controller.calibration is None:
             self._refresh_measurement_readiness()
             self.ruler_choice.setFocus()
+            return False
+        return True
+
+    def _manual_start(self, point, token):
+        if self._manual_ready():
+            self._measurement_guard(lambda: self.controller.start(point, token=token))
+
+    def _manual_finish(self, point):
+        if self.controller.draft and self._manual_ready():
+            self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
+        self.canvas.update()
+
+    def _press(self, point):
+        if not self._manual_ready():
             return
         if self.gesture.currentIndex() == 0 and self.controller.draft:
             self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
@@ -1314,7 +1172,8 @@ class LiveExperimentWorkspace(QWidget):
         self._changed()
 
     def _after_select(self):
-        if self.mode.currentIndex() == 0 and self.after_select.isChecked():
+        if (self.mode.currentIndex() == 0 and self.after_select.isChecked()
+                and (not hasattr(self, "input_mode") or self.input_mode.currentData() != "candidate")):
             record_id = self.controller.reclassify_latest(self.material.currentData())
             if record_id is not None:
                 self.current_model.notify_record(record_id)
@@ -1537,6 +1396,8 @@ class LiveExperimentWorkspace(QWidget):
         # must not silently discard the measurement the user is still drawing.
         if before != desired and self.session.workspace_options["gesture"] == desired:
             self.controller.cancel_draft()
+            if hasattr(self, "auto_analysis"):
+                self._apply_assistance_controls()
 
     def _mode_changed(self, index, persist=True):
         content = index == 0
@@ -1580,15 +1441,19 @@ class LiveExperimentWorkspace(QWidget):
         self._record_model_revision = self.session.revision
 
     def _candidates_changed(self, candidates):
+        current = self.candidate_table.currentIndex()
+        selected = (self.candidate_model.candidates[current.row()].get("candidate_id")
+                    if current.isValid() and current.row() < self.candidate_model.rowCount() else None)
         scale = self.controller.calibration.x_um if self.controller.calibration else 1
         operator = self.session.operators.get(self.session.active_operator_id)
         materials = operator.materials[self.session.active_direction] if operator else ()
         self.candidate_model.set_candidates(candidates, scale, materials)
-        if candidates:
-            self.workflow_tabs.setCurrentIndex(1)
+        if selected is not None:
+            self._candidate_hovered(selected)
         self.candidate_feedback.setText(f"待审核 {len(candidates)} 条候选；确认接受后才计入试验。" if candidates else "")
-        self.candidate_feedback.setVisible(bool(candidates))
+        self.candidate_feedback.hide()  # Runtime messages must not move the category list.
         self.workflow_tabs.setTabText(1, f"审核 {len(candidates)}" if candidates else "审核")
+        self._refresh_assistance_state()
         self.canvas.update()
 
     def _assign_candidate_material(self):
@@ -1596,12 +1461,12 @@ class LiveExperimentWorkspace(QWidget):
         if material_id is None:
             raise ValueError("请先选择有效的当前类别。")
         for row in range(self.candidate_model.rowCount()):
-            if row not in self.candidate_model.excluded:
+            if row not in self.candidate_model.excluded and self.candidate_model.available(row):
                 self.candidate_model.setData(self.candidate_model.index(row, 3), material_id, Qt.ItemDataRole.EditRole)
 
     def _accept_candidates(self):
         selections = [(i, self.candidate_model.assignments.get(i)) for i in range(len(self.controller.candidates))
-                      if i not in self.candidate_model.excluded]
+                      if i not in self.candidate_model.excluded and self.candidate_model.available(i)]
         if any(material is None for _, material in selections):
             raise ValueError("仍有勾选候选未赋类；请逐条选择类别或批量设置后确认。")
         out_of_range = {index for index, _ in selections if self.candidate_model.range_status(index) == "越限，需核对"}
@@ -1653,6 +1518,7 @@ class LiveExperimentWorkspace(QWidget):
         frame, calibration = self.controller.latest_frame, self.controller.calibration
         self._refresh_measurement_readiness()
         self._refresh_persistence_state()
+        self._refresh_assistance_state()
         mode = "含量试验" if self.mode.currentIndex() == 0 else "直径试验"
         self.sample_subtitle.setText(f"{mode} · 本场实测 {len(self.controller.current_records)} · 累计实测 {len(self.session.measurements)}")
         source = "相机" if frame and frame.live else "图片" if frame else "无来源"
@@ -1680,7 +1546,8 @@ class LiveExperimentWorkspace(QWidget):
         else:
             request = self.controller._confirmation
             self.pending_label.setText("确认正在核验最新视场，尚未入账。" if request else "")
-        self.pending_panel.setVisible(bool(pending or self.controller._confirmation))
+        self.pending_panel.setVisible(bool(pending or (self.controller._confirmation
+            and self.controller._confirmation["kind"] == "manual")))
         if pending and previous_pending_id != self._pending_display_id:
             self.workflow_tabs.setCurrentIndex(0)
             scroll = self.workflow_tabs.widget(0)
@@ -1689,6 +1556,7 @@ class LiveExperimentWorkspace(QWidget):
             button.setEnabled(bool(self.controller.pending_classification) and self.controller._confirmation is None)
         if self.session.revision == self._last_summary_revision:
             return
+        self.candidate_model.notify_accepted_records()
         from fdm.live_experiment.statistics import summarize
         summary = summarize(self.session)
         self._refresh_material_row_stats(summary)
@@ -1737,7 +1605,7 @@ class LiveExperimentWorkspace(QWidget):
         if (controller.draft is not None
                 or any(controller._valid(intent) for intent, _ in controller._jobs)
                 or controller.pending_classification
-                or (controller._confirmation and controller._confirmation["kind"] == "manual")):
+                or controller.candidate_pending_count or controller._confirmation):
             raise ValueError("手工测量尚未完成，未撤销之前记录；请取消草稿，或等待计算／核验完成并处理待确认项后，再撤销或重做。")
         self.controller.cancel_draft()
         before = (self.session.active_operator_id, self.session.active_direction,
@@ -1759,6 +1627,7 @@ class LiveExperimentWorkspace(QWidget):
                 (self.sample, "setText", self.session.sample_name),
                 (self.sample_number, "setText", self.session.sample_number),
                 (self.keep_images, "setChecked", self.session.save_images),
+                (self.evidence_storage, "setCurrentIndex", self.evidence_storage.findData(self.session.effective_evidence_options["mode"])),
                 (self.after_select, "setChecked", self.session.workspace_options["classification"] == "after"),
                 (self.classification_mode, "setCurrentIndex", int(self.session.workspace_options["classification"] == "after")),
                 (self.mode, "setCurrentIndex", int(self.session.workspace_options["mode"] == "diameter")),
@@ -1768,6 +1637,9 @@ class LiveExperimentWorkspace(QWidget):
             widget.blockSignals(False)
         self._mode_changed(self.mode.currentIndex(), persist=False)
         self._sync_weight_controls()
+        if hasattr(self, "auto_analysis"):
+            self._apply_assistance_controls()
+            self._refresh_assistance_state()
 
     def _rebuild_records(self):
         # History and record edits can invalidate both a rejected attempt's
@@ -1787,6 +1659,8 @@ class LiveExperimentWorkspace(QWidget):
         else:
             self._clear_latest_value()
             self.statusBar().showMessage("本视场暂无有效测量记录。", 8000)
+        self.controller.sync_candidate_records()
+        self.candidate_model.notify_accepted_records()
         self._notify_records(rebuild=True)
         self._changed()
 
@@ -1858,21 +1732,9 @@ class LiveExperimentWorkspace(QWidget):
 
     def _review_record(self):
         record = self._selected_record()
-        evidence = getattr(record, "evidence", None) if record else None
-        if not evidence or evidence.get("state") != "saved":
-            raise ValueError("该记录没有可用原图。")
-        image = QImage(evidence["path"])
-        if image.isNull():
-            raise ValueError("原图文件缺失或无法读取。")
-        dialog = QDialog(self)
-        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        dialog.setWindowTitle(f"历史原图 · {record.diameter_um:.4f} μm")
-        layout = QVBoxLayout(dialog)
-        label = QLabel()
-        from PySide6.QtGui import QPixmap
-        label.setPixmap(QPixmap.fromImage(image).scaled(1000, 700, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-        layout.addWidget(label)
-        dialog.show()
+        if record is None:
+            raise ValueError("请先选择一条测量记录。")
+        self.evidence_review.show_record(record, latest=False)
 
     def _discard_failed_evidence(self):
         record = self._selected_record()
@@ -1920,9 +1782,11 @@ class LiveExperimentWorkspace(QWidget):
             self.measurement_outcome.setText("上一条有效测量" if getattr(self, "_latest_value_is_previous", False) else "")
 
     def _clear_latest_value(self, *_):
-        self.latest_value.setText("— μm")
-        self.measurement_outcome.setText("")
-        self._latest_value_is_previous = False
+        review = getattr(self, "evidence_review", None)
+        record = self.session.measurements.get(review.latest_record_id) if review is not None else None
+        self.latest_value.setText(f"{record.diameter_um:.3f} μm" if record else "— μm")
+        self.measurement_outcome.setText("上一条" if record else "")
+        self._latest_value_is_previous = record is not None
 
     def _new_experiment(self):
         if self._confirm_trial_navigation():
@@ -1945,8 +1809,12 @@ class LiveExperimentWorkspace(QWidget):
 
     def _replace_experiment(self, target):
         mode = target.workspace_options["mode"]
-        if not self.close():
-            return
+        self._gallery_rebinding = True
+        try:
+            if not self.close():
+                return
+        finally:
+            self._gallery_rebinding = False
         if self.embedded:
             self.host._acquisition_workbench.pages.removeWidget(self)
         window = LiveExperimentWorkspace(self.host, target, embedded=self.embedded)
@@ -2052,6 +1920,10 @@ class LiveExperimentWorkspace(QWidget):
 
     def eventFilter(self, watched, event):
         kind = event.type()
+        if (watched is getattr(self, "latest_value", None) and kind == QEvent.Type.MouseButtonPress
+                and event.button() == Qt.MouseButton.LeftButton):
+            self._guard(self._show_latest_evidence)
+            return True
         if kind == QEvent.Type.Wheel:
             # Also protect editors created inside Qt's static QInputDialog
             # helpers (calibration / record correction), not just our widgets.
@@ -2133,6 +2005,15 @@ class LiveExperimentWorkspace(QWidget):
         self.display_binding.close()
         self.settings_dialog.close()
         self.report_panel.close()
+        self.evidence_review.close()
+        gallery = getattr(self.host, "_evidence_gallery", None)
+        if gallery is not None and gallery.workspace is self:
+            if getattr(self, "_gallery_rebinding", False):
+                gallery.suspend()
+                gallery.bind(None)
+            else:
+                gallery.close()
+                self.host._evidence_gallery = None
         presenter = self._records_presenter()
         if presenter is not None and presenter.workspace is self:
             if self.embedded:
@@ -2158,7 +2039,8 @@ class LiveExperimentWorkspace(QWidget):
 def _new_trial_session(mode):
     """Content categories are explicit user input; diameter keeps its defaults."""
     from fdm.live_experiment import ExperimentSession, default_materials
-    session = ExperimentSession(workspace_options={"mode": mode})
+    session = ExperimentSession(workspace_options={"mode": mode},
+        evidence_options={"version": 1, "mode": "crop_jpeg"})
     session.add_operator("操作者 A")
     if mode == "diameter":
         session.set_materials(default_materials(), direction="warp")

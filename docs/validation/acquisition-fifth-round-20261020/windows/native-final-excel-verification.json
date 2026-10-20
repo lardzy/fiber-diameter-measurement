@@ -1,0 +1,80 @@
+{
+  "passed": true,
+  "report": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-082258Z-49fe7f9d\\excel-fixed-entry-light-1600x900\\20261020-162446-bbf244bf8be4406c9252aeeb280bd57a\\fixed-entry-report.xls",
+  "template": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-082258Z-49fe7f9d\\excel-fixed-entry-light-1600x900\\20261020-162446-bbf244bf8be4406c9252aeeb280bd57a\\isolated-config\\FiberDiameterMeasurement\\templates\\sheet.xlt",
+  "expected": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-082258Z-49fe7f9d\\excel-fixed-entry-light-1600x900\\20261020-162446-bbf244bf8be4406c9252aeeb280bd57a\\expected.json",
+  "inputs_verified": 52,
+  "diameters_verified": 144,
+  "counts_verified": 12,
+  "sheets": [
+    {
+      "name": "标准选择",
+      "print_area": "",
+      "formula_cells": 1
+    },
+    {
+      "name": "原始数据",
+      "print_area": "",
+      "formula_cells": 496
+    },
+    {
+      "name": "特种毛(报出)",
+      "print_area": "$A$1:$K$66",
+      "formula_cells": 2668
+    },
+    {
+      "name": "麻棉(报出)",
+      "print_area": "$A$1:$K$66",
+      "formula_cells": 2664
+    },
+    {
+      "name": "分组统计",
+      "print_area": "",
+      "formula_cells": 11992
+    },
+    {
+      "name": "非棉麻织物",
+      "print_area": "$A$1:$U$40",
+      "formula_cells": 711
+    },
+    {
+      "name": "非棉麻纤维",
+      "print_area": "",
+      "formula_cells": 321
+    },
+    {
+      "name": "分组加权统计",
+      "print_area": "",
+      "formula_cells": 2213
+    },
+    {
+      "name": "织物纤维含量报告",
+      "print_area": "",
+      "formula_cells": 533
+    },
+    {
+      "name": "棉麻织物",
+      "print_area": "$A$1:$U$43",
+      "formula_cells": 617
+    },
+    {
+      "name": "棉麻纤维",
+      "print_area": "",
+      "formula_cells": 268
+    },
+    {
+      "name": "比重",
+      "print_area": "",
+      "formula_cells": 0
+    }
+  ],
+  "errors": [],
+  "excel_version": "16.0",
+  "vba_preserved": true,
+  "formulas_verified": 486,
+  "report_sha256": "80a387d8ac80d6335a450983c25a518c5ddca4ad16486daa8bce5014fb77b078",
+  "build_id": "4391f019bca842c094b7b281c1d927a7",
+  "source_summary": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/acquisition-fifth-round-20261020/windows/frozen-gui/20261020-082258Z-49fe7f9d/summary.json",
+  "original_guest_verification": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\fifth-round\\frozen-gui\\20261020-082258Z-49fe7f9d\\excel-fixed-entry-light-1600x900\\20261020-162446-bbf244bf8be4406c9252aeeb280bd57a\\excel-verification.json",
+  "provenance_note": "Build identity from the actual installed GUI run preflight; original Excel verification remains unchanged in the guest evidence archive."
+}

@@ -1,0 +1,40 @@
+{
+  "source": "Fourth final patch; SHA256 checked against final source manifest. Other dependencies are current working-tree files.",
+  "files": [
+    {
+      "path": "src/fdm/live_experiment/candidate_alignment.py",
+      "sha256": "78d3c5edfe05d945fa58779a15e2c08f45aec6a9356a567c38d51f460b2c9370"
+    },
+    {
+      "path": "src/fdm/live_experiment/controller.py",
+      "sha256": "d315c28ee8c8af2b5c3308a827015ef0e4696685e7ab954fce3f4cba62871a61"
+    },
+    {
+      "path": "src/fdm/live_experiment/performance.py",
+      "sha256": "0be3c84a4453a2948d9e0c87a0ee7ddc64d676fa826b58788707ac91e562bea5"
+    },
+    {
+      "path": "src/fdm/services/cu_automatic_worker.py",
+      "sha256": "d1d0d65e252001be1dc4fbc280e2186fdc3eb3b0a5f8e538013546f33a4548cd"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_annotations.py",
+      "sha256": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_canvas.py",
+      "sha256": "a1f5a0282076dde3dd9479930587c198075573c9d41687a6eb980069ee03d143"
+    }
+  ],
+  "archive": ".tmp/fourth-final-patch.zip",
+  "archive_sha256": "f21c12d744c415a6d607c9d7ab55c9252f3632494f0c751395ba8776a40b1e62",
+  "manifest": "docs/validation/acquisition-fourth-round-20261019/windows/source-manifest.json",
+  "manifest_sha256": "099f6056c78b073961b64db06a2e0d76a356390554ccb9e5d9945a0be6e5e94f",
+  "matching_python_sources": 240,
+  "differing_python_sources": [
+    "src/fdm/ui/live_experiment_view.py",
+    "src/fdm/ui/live_experiment_workspace.py",
+    "src/fdm/ui/trial_assistance.py"
+  ],
+  "missing_python_sources": 0
+}
