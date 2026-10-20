@@ -4,7 +4,7 @@
 
 ## 最终 4391 候选包与实际安装验证
 
-应用版本保持 **0.4.10**，构建 ID `4391f019bca842c094b7b281c1d927a7`。本机安装包 `dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-4391f019bca8.exe`，398,839,390 bytes，SHA256 **`7f5bd6f03900dd61586e2ee9ba35f82720fce6eb910da6d40a5b3ceaac1c89a1`**。内部 `--exclude-area-models` 保留模板和 Microview 运行库；4,818 个载荷文件、435 个生产源码与最终 `0c6ad5ff…` 源清单一致。前序 4211、f52e、e731 包和失败记录均保留。
+应用版本保持 **0.4.10**，构建 ID `4391f019bca842c094b7b281c1d927a7`。本机安装包 `dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-4391f019bca8.exe`，398,839,390 bytes，SHA256 **`7f5bd6f03900dd61586e2ee9ba35f82720fce6eb910da6d40a5b3ceaac1c89a1`**。内部 `--exclude-area-models` 保留模板和 Microview 运行库；4,818 个载荷文件、435 个生产源码与最终 `0c6ad5ff…` 源清单一致。前序 4211、f52e、e731 的本机安装器已于 2026-10-20 按用户要求清理，其构建身份和失败记录保留；详见 [清理清单](../../artifact-cleanup-20261020.json)。
 
 独立目录安装 exit 0。普通未提权用户 `B1EA\lishuyang` 执行实际安装版 revision 5 自检通过：真实核验子进程 PID 5604、OpenCV 4 线程；same/noisy/drift/reference reset/child process/closed 等七个门禁全部通过，确认退出及共享内存清理。完整结果为 `native-final-installed-selfcheck.json`。
 
@@ -143,7 +143,7 @@ Excel 16.0 从常驻按钮完成实际导出：52 个输入、144 条直径、12
 
 主机相机共享已恢复 **on** 并读回确认；随后执行普通 `prlctl stop Windows 11` 成功，最终 **stopped**，与测试前一致。未强制停机、未整机回滚，记录为 `vm-before.json` 与 `vm-after.json`。独立新 PowerShell 进程的 `policies-after.json` 与初始策略一致：仅 CurrentUser 为 RemoteSigned，其余包括 Process 均 Undefined。`environment-after.json` 中名为 `fresh_process_policies` 的字段来自继承临时启动器环境的子进程，因此含进程级 Bypass；它不代表永久策略，最终以单独启动、无 ExecutionPolicy 参数的 `policies-after.json` 为准。
 
-最终原始证据 ZIP 为 `dist/internal/acquisition-fifth-round-20261020/final-windows-evidence.zip`：**1,290 项、50,423,038 bytes**，SHA256 **`27e42d4aa9ce5b3b2e8894d2755dc690dd154c1f1a1a6f81d5fbbf288dc55f3f`**，完整 CRC 与传输哈希通过。ZIP 中最终源清单哈希 `0c6ad5ff…`、安装自检构建 ID 和实际 Excel 文件哈希已分别核对。ZIP 保存 guest 原始结果、窗口轨迹、截图、报告和安装记录；本机聚合 summary、四个 final 别名及关机后状态位于本报告目录，由最终交付 `manifest.json` 逐项记录哈希。原失败记录和历史包均保留。
+最终原始证据 ZIP 为 `dist/internal/acquisition-fifth-round-20261020/final-windows-evidence.zip`：**1,290 项、50,423,038 bytes**，SHA256 **`27e42d4aa9ce5b3b2e8894d2755dc690dd154c1f1a1a6f81d5fbbf288dc55f3f`**，完整 CRC 与传输哈希通过。ZIP 中最终源清单哈希 `0c6ad5ff…`、安装自检构建 ID 和实际 Excel 文件哈希已分别核对。ZIP 保存 guest 原始结果、窗口轨迹、截图、报告和安装记录；本机聚合 summary、四个 final 别名及关机后状态位于本报告目录，由最终交付 `manifest.json` 逐项记录哈希。原失败记录及历史证据归档均保留；已撤回的本机安装器按上述清单清理。
 
 重建前将初次完整 `dist/windows` 和安装包目录保留到 `dist/history`，避免 clean build 删除。旧 build 证据因 PowerShell 长路径迁移限制分两处保留，旧 frozen-gui 字体缓存残余仍在原处；后续 GUI 使用独立 run ID。没有删除历史文件，完整证据 ZIP 已先完成校验，目录映射见 `initial-candidate-preservation.json`。
 

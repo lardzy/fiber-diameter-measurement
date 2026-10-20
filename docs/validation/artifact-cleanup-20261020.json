@@ -1,0 +1,297 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-20T08:55:15.724306+00:00",
+  "implementation_commit": "45f1736f1f5f029a9443a225e2e64a92eb705d16",
+  "version": "0.4.10",
+  "status": "completed",
+  "installers": [
+    {
+      "path": "build/cu-live-measurement/windows-release/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+      "bytes": 398393836,
+      "sha256": "8a37a58a382db75729ce8d33085df83445a3cfae299fbb622e79ddab2aa037be",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "build/cu-live-measurement/windows-release/final-r2/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+      "bytes": 398823789,
+      "sha256": "b47ff02a1fc1fd860af7a25f941e925534ac55927d26cd68cd741bc4b504640b",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "build/cu-live-measurement/windows-release/final-r3/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+      "bytes": 398844521,
+      "sha256": "e341089d859e2db05213dba2c10b16be40150e531fa2dbb6a86381fea3533058",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "build/cu-live-measurement/windows-release/final-r4/fiber-diameter-measurement-setup-0.4.7-no-area-models.exe",
+      "bytes": 398816084,
+      "sha256": "6faadecbd90c94a6cb3252dc68fb629e481e6a5408e7d12d4f4fb138b9eaca9a",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "build/cu-live-optimization/release/fiber-diameter-measurement-setup-0.4.8-no-area-models.exe",
+      "bytes": 398758036,
+      "sha256": "d58001fe9a97cd307d0561bee9b8836a95e8891eb5286f29e1aad025d4c8e20f",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "build/cu-live-windows/rejected-release/fiber-diameter-measurement-setup-0.4.7-no-area-models-rejected-stale-pyz.exe",
+      "bytes": 398386505,
+      "sha256": "1efb5d4af61901bfad3577e16f4cf701084fa2652b7e1d791400ef55ed0cf537",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-4211d5222982.exe",
+      "bytes": 398788594,
+      "sha256": "da83e399811810277570eed3e95393b40b81f41e0341b8b8ed4d2e315637832e",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-4391f019bca8.exe",
+      "bytes": 398839390,
+      "sha256": "7f5bd6f03900dd61586e2ee9ba35f82720fce6eb910da6d40a5b3ceaac1c89a1",
+      "action": "retain",
+      "reason": "final candidate"
+    },
+    {
+      "path": "dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-e7310fc55185.exe",
+      "bytes": 398809262,
+      "sha256": "2b66ec0b9dba84e8b8fc5e14780f2968ac86ffb92b14afdb72931d9b619763ba",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-f52ea0bef902.exe",
+      "bytes": 398787662,
+      "sha256": "7cd7d0de1a80e8be067653cf22d87f91e95f2c29b9dcf5fd5ae5d658948db038",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/acquisition-fourth-round-20261019/FDM-0.4.10-round4-bd7168a57807.exe",
+      "bytes": 398773132,
+      "sha256": "1b1b7a01a32d5f077488113e96e97a535fc33539dad530e978644f9420e50546",
+      "action": "retain",
+      "reason": "previous-round rollback with documented limitations"
+    },
+    {
+      "path": "dist/internal/acquisition-second-round-20261017/FDM-0.4.10-acquisition-second-round-20261017.exe",
+      "bytes": 398611410,
+      "sha256": "81efe93e5ba9fad47dd189cf6269d9c2c28242a4972bfb5782c743442c1f7840",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/acquisition-third-round-20261019/FDM-0.4.10-acquisition-third-round-20261019.exe",
+      "bytes": 398674244,
+      "sha256": "790b16093df9948ac8a566e4b283cee56192b3f65d5d290a1591cb00f2889d8f",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/ui-redesign-20261016/FDM-0.4.9-ui-redesign-20261016.exe",
+      "bytes": 398573949,
+      "sha256": "26113c7b25e7fd2f1451f09ab06a8f9d361954f77a24898bdb310fb8c0fe5562",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    },
+    {
+      "path": "dist/internal/ui-redesign-20261016/intermediate/before-small-height-fix/FDM-0.4.9-ui-redesign-20261016.exe",
+      "bytes": 398593290,
+      "sha256": "8cee53a0585c6ac782f9d212f7fc4244a4b1206de34951c468c050423ca04f4f",
+      "action": "remove",
+      "reason": "superseded or withdrawn installer; identity and validation evidence retained"
+    }
+  ],
+  "caches": [
+    {
+      "path": ".pytest_cache",
+      "files": 5,
+      "bytes": 736627,
+      "tree_fingerprint": "77fbe351f4b7ffa6b83f85cd3273c70fa590ca5bd2f7121b7dedaefcf113819e",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": ".ruff_cache",
+      "files": 39,
+      "bytes": 12922,
+      "tree_fingerprint": "022cd459a5f85153c3eb420650e3e2ba8288857e1fa248dbd3c59d601fdc823b",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "build/__pycache__",
+      "files": 2,
+      "bytes": 33818,
+      "tree_fingerprint": "274a860beb187a03ebcb3b085b5eba3daaf01e553e7fbecef825d66ee4aca48b",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "build/lib",
+      "files": 106,
+      "bytes": 3903734,
+      "tree_fingerprint": "c12ba129f03c9610ec815fbf99227e0da9d790f2f112f23879a44047226c6e67",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "build/lib.macosx-12.1-arm64-cpython-313",
+      "files": 1,
+      "bytes": 596608,
+      "tree_fingerprint": "4be954d1f25bd073f6b205d5f5375f61badec1c5fb67ccd3219bdef07d8d50dc",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "build/temp.macosx-12.1-arm64-cpython-313",
+      "files": 3,
+      "bytes": 1065808,
+      "tree_fingerprint": "e5673d1d9786a0f90546b404ee429a955a903f75cbfa5b09ea929836be5fd6af",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "scripts/__pycache__",
+      "files": 20,
+      "bytes": 418145,
+      "tree_fingerprint": "6b8d5aa532dbee6d156648a24e694f6265c5032827562a018018b5148365436d",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "scripts/validation/__pycache__",
+      "files": 35,
+      "bytes": 567873,
+      "tree_fingerprint": "e1f573863b59143c26d820a7885ece72373706e96ed703c59958f463a0c8ecd4",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/__pycache__",
+      "files": 39,
+      "bytes": 1795721,
+      "tree_fingerprint": "a4b7ef48d059540da810449e03dafbee7becbd8aedc695989258c988467f3dc0",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/_native/__pycache__",
+      "files": 1,
+      "bytes": 8650,
+      "tree_fingerprint": "d6e95bfa43c4d2d461a5e43a18f35564370cf228708db22651d068342d2ad7ef",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/_vendor/__pycache__",
+      "files": 1,
+      "bytes": 197,
+      "tree_fingerprint": "93e3836f17ba9ca0555f06589ccffc7d15260ddd899462db8982983b67ba3144",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/_vendor/efficient_sam/__pycache__",
+      "files": 7,
+      "bytes": 52845,
+      "tree_fingerprint": "c640ee91511a7ab3ab5f21524c6cc8c66ffea28e7dc0a46a7d258334369274a7",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/live_experiment/__pycache__",
+      "files": 24,
+      "bytes": 451609,
+      "tree_fingerprint": "d34cce30d0dac28abcda744eb3aed722f0d3e9a1d7423f4f089238a761e74d98",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/platform/__pycache__",
+      "files": 5,
+      "bytes": 88039,
+      "tree_fingerprint": "61e8900a3233dc7318484db6bce37d24eb7d5a56e8d74561ac1a8cd9bc8dc53e",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/services/__pycache__",
+      "files": 75,
+      "bytes": 2707789,
+      "tree_fingerprint": "df16b65876c182b123976a719b3039f2502f09d81bf81f16e72300661b9e9f6f",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/ui/__pycache__",
+      "files": 127,
+      "bytes": 9453090,
+      "tree_fingerprint": "6c25da00b8b30788be459d55cc1cce5c36f7c9422c2efa9f844b4fbca7b75332",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "src/fdm/workers/__pycache__",
+      "files": 1,
+      "bytes": 27847,
+      "tree_fingerprint": "f2ea2305b0e9d094c637f969f530dd0dae5e5daf8cec030f283a56d74f6c9caa",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    },
+    {
+      "path": "tests/__pycache__",
+      "files": 428,
+      "bytes": 19884497,
+      "tree_fingerprint": "6c4d74a89e1e600e45dd8fe8818c6cd39dbe995f6bf46f7bd939e32192b8f7bf",
+      "action": "remove",
+      "reason": "regenerable Python/test/build cache"
+    }
+  ],
+  "other_packages": [
+    {
+      "path": "build/package-check/fiber_diameter_measurement-0.3.8-py3-none-any.whl",
+      "bytes": 847147,
+      "sha256": "1c987e061c5bbe9ecf7b67281733f3b3b9e9cf927fcde4a0a1d64ba28db7a95d",
+      "action": "remove",
+      "reason": "obsolete generated package-check output"
+    },
+    {
+      "path": "build/package-check/fiber_diameter_measurement-0.3.8.tar.gz",
+      "bytes": 1118921,
+      "sha256": "58c7db4fcd2d1c7359a4273757ee927fc9c52fa32c9efce96e43e073aadd780c",
+      "action": "remove",
+      "reason": "obsolete generated package-check output"
+    }
+  ],
+  "retain_evidence": true,
+  "virtual_machine_touched": false,
+  "completed_at": "2026-10-20T08:55:45.939352+00:00",
+  "removed_installer_count": 13,
+  "removed_file_count": 934,
+  "removed_bytes": 5226633069,
+  "verification": {
+    "retained_installers_sha256_verified": true,
+    "registered_local_evidence_files_verified": 193,
+    "evidence_bytes_unchanged": true,
+    "final_windows_archive_sha256": "27e42d4aa9ce5b3b2e8894d2755dc690dd154c1f1a1a6f81d5fbbf288dc55f3f",
+    "product_version": "0.4.10",
+    "tests_repeated_for_cleanup": false,
+    "product_change_since_built_snapshot": {
+      "path": "src/fdm/ui/live_measurement_canvas.py",
+      "change": "removed one trailing blank line; AST unchanged",
+      "built_sha256": "b1e7d0d7b9aef5f56004886b39bdd22d2d4501ab7e015db090d98e64d9cfded0",
+      "committed_sha256": "061c529951a1f5f71f308c9c15acf8a1f86a57f149ecc6bcde2e2e2109c099b8"
+    },
+    "historical_build_manifests_rewritten": false
+  }
+}

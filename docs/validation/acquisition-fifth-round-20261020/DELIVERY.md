@@ -48,7 +48,7 @@ Windows 核验进程改造后的源码配对测试见 [完整性能记录](windo
 - 内部 `--exclude-area-models` 配置，保留模板和 Microview 组件；4,818 个安装载荷文件、435 个生产源码文件已核验。源码快照清单 SHA-256 为 `0c6ad5ffd4f8c427883b639f8f2df4d12498112aade9edf9b03fcaeb0b8fb314`。提取包通过 revision 5 自检，实际创建核验子进程并确认退出与共享内存释放。
 - 实际安装 exit 0，普通未提权用户运行 revision 5 自检通过，真实核验子进程的 7 个门禁及退出/共享内存清理通过。见 [安装版自检](windows/final-installed-selfcheck.json)。9 个 UIA 场景及实际 Excel 检查独立通过，完整原生窗口截图见 [相册报告](gallery/README.md)。安装器 SHA-256 已在回传本机后独立复核一致。
 
-此前三份包均保留为调查历史，不作为最终交付：`4211d5222982` 包使用旧核验线程；`f52ea0bef902` 包的相册完整 Windows 外框越界；`e7310fc55185` 包首显边界正确，但系统 UIA 最大化/还原会污染普通窗口尺寸。失败截图、事件追踪、各包身份和限定环境恢复记录保留于 [Windows 报告](windows/README.md)。最终修复的源码已通过与安装版相同的系统 UIA 操作，两种缩放各两轮还原尺寸准确。
+此前三份包不作为最终交付：`4211d5222982` 包使用旧核验线程；`f52ea0bef902` 包的相册完整 Windows 外框越界；`e7310fc55185` 包首显边界正确，但系统 UIA 最大化/还原会污染普通窗口尺寸。2026-10-20 按用户要求清理了这三份本机安装器，构建身份、校验值、失败截图、事件追踪和限定环境恢复记录均保留于 [Windows 报告](windows/README.md)及[清理清单](../artifact-cleanup-20261020.json)。最终修复的源码已通过与安装版相同的系统 UIA 操作，两种缩放各两轮还原尺寸准确。
 
 最终 Windows 证据归档为 [final-windows-evidence.zip](../../../dist/internal/acquisition-fifth-round-20261020/final-windows-evidence.zip)，1,290 项、50,423,038 字节，SHA-256 `27e42d4aa9ce5b3b2e8894d2755dc690dd154c1f1a1a6f81d5fbbf288dc55f3f`。测试安装的固定注册项已限定恢复，原安装四个文件哈希未变，永久 PowerShell 策略未修改。主机相机共享恢复为 on，虚拟机通过正常关机回到原来的 stopped 状态；没有强制停机或整机回滚，见 [最终环境状态](windows/vm-after.json)。
 
