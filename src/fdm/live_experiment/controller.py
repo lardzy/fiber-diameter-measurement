@@ -21,7 +21,7 @@ from .frames import FrameHandle, FrameBudget, FrameBudgetExceeded, PresentedFram
 from .motion import FieldMotionDetector, MotionPreparer, MOTION_REVISION, reduced_gray
 from .evidence import EvidenceStore
 from .feedback import feedback_for_reason
-from .candidate_alignment import CandidateAlignmentMonitor
+from .selection_retention import FieldEndCause, SelectionRetention
 from .evidence_options import measurement_evidence_points
 from .performance import LivePerformanceDiagnostics
 
@@ -96,12 +96,16 @@ class LiveExperimentController(QObject):
     candidatesChanged = Signal(object)
     candidateStateChanged = Signal()
     frameReady = Signal(object)
+    retainedSelectionsChanged = Signal()
     _completionAvailable = Signal()
 
     def __init__(self, session, *, evidence_directory=None, parent=None, manual_service=None,
                  verify_before_present=False):
         super().__init__(parent)
         self.session = session
+        self.selection_retention = SelectionRetention(session, self)
+        self.selection_retention.changed.connect(self.retainedSelectionsChanged.emit)
+        self.changed.connect(self.selection_retention.prune)
         self.budget = FrameBudget()
         self.evidence = EvidenceStore(evidence_directory, budget=self.budget)
         self.calibration: CalibrationSnapshot | None = None
@@ -124,6 +128,8 @@ class LiveExperimentController(QObject):
         self._classification_target = None
         self._classification_generation = 0
         self._measurement_number = 0
+        self._input_events = deque(maxlen=512)
+        self._input_event_count = 0
         self._evidence_records: dict[str, list[str]] = {}
         self.pending_classification: deque[tuple[MeasurementIntent, dict]] = deque()
         self._confirmation = None
@@ -154,21 +160,11 @@ class LiveExperimentController(QObject):
         self.automatic_algorithm = "traditional"
         self._automatic_stable_since = None
         self._automatic_cycle_done = False
+        self._automatic_cycle_id = 0
+        self._automatic_analysis_count = 0
+        self._analysis_events = deque(maxlen=128)
         self._refresh_pending = None
-        self._alignment = CandidateAlignmentMonitor(self.budget, self._request_poll)
         self._candidate_ready_previous = False
-        self._candidate_preview_pending = None
-        self._candidate_preview_lease = None
-        self._candidate_preview_deadline = None
-        self._candidate_preview_backoff_until = 0.
-        self._candidate_preview_timely_checks = 0
-        self._candidate_preview_recovery_since = None
-        self._candidate_preview_fallbacks = 0
-        self._candidate_presentation_events = deque(maxlen=128)
-        self._candidate_pause_started_at = None
-        self._candidate_available_started_at = None
-        self._candidate_max_pause_ms = 0.
-        self._candidate_last_recovery_ms = None
         self._candidate_visibility_previous = None
         self._candidate_visibility_active = False
         self._candidate_visibility_transitions = 0
@@ -181,10 +177,6 @@ class LiveExperimentController(QObject):
         self._preview_arrived_at = None
         self._preview_interval = 1 / 30
         self._preview_intervals = deque(maxlen=16)
-        self._candidate_preview_timer = QTimer(self)
-        self._candidate_preview_timer.setSingleShot(True)
-        self._candidate_preview_timer.setTimerType(Qt.TimerType.PreciseTimer)
-        self._candidate_preview_timer.timeout.connect(self._flush_candidate_preview)
         self._performance = LivePerformanceDiagnostics()
         self.candidate_metrics = self._performance.samples
         self._closed = False
@@ -279,10 +271,31 @@ class LiveExperimentController(QObject):
         token = token or self.presented
         frame = token.frame if token is not None else self.latest_frame
         identity = self._source_identity
+        target = self._classification_target or {}
+        interaction_id = intent_id if intent_id is not None else target.get("id")
         return {"intent_id": intent_id, "field_id": self.field_id, "field_epoch": self.field_epoch,
+                "interaction_id": interaction_id,
+                "measurement_number": target.get("number") if target.get("id") == interaction_id else None,
                 "source_id": frame.source_id if frame is not None else identity[0] if identity else None,
                 "source_generation": frame.generation if frame is not None else identity[1] if identity else None,
                 "frame_id": frame.frame_id if frame is not None else None}
+
+    def trace_input_event(self, event, **details):
+        """Retain only bounded scalar input/task identities for offline diagnosis."""
+        self._input_event_count += 1
+        item = {"event": str(event), "at": time.perf_counter(), "field_epoch": self.field_epoch,
+                "interaction_id": (self._classification_target or {}).get("id")}
+        item.update({key: value for key, value in details.items()
+                     if value is None or isinstance(value, (str, int, float, bool))})
+        self._input_events.append(item)
+
+    def feedback_is_current_interaction(self, feedback):
+        """Feedback ownership is separate from whether a result may enter the ledger."""
+        if feedback.interaction_id is None:
+            return self.draft is None
+        target = self._classification_target
+        return bool(target and feedback.interaction_id == target["id"]
+                    and target.get("state") != "cancelled")
 
     def _context_current(self, token, calibration, operator_id, direction):
         frame = token.frame
@@ -306,9 +319,19 @@ class LiveExperimentController(QObject):
             return
         token = intent.token if intent is not None else context["token"] if context else None
         identity = intent.id if intent is not None else str(context["task_id"]) if context else None
-        event = feedback_for_reason(reason, code=code, severity=severity,
-                                    **self.feedback_context(identity, token=token))
-        self.resultRejected.emit(event.message)
+        feedback_context = self.feedback_context(identity, token=token)
+        feedback_context["interaction_id"] = intent.id if intent is not None else None
+        feedback_context["measurement_number"] = intent.measurement_number if intent is not None else None
+        event = feedback_for_reason(reason, code=code, severity=severity, **feedback_context)
+        owns_interaction = self.feedback_is_current_interaction(event)
+        self.trace_input_event("feedback", task_id=identity, interaction_id=event.interaction_id,
+                               current_interaction=owns_interaction, code=event.code)
+        message = event.message
+        if context is not None:
+            message = f"全图分析失败：{message}"
+        elif not owns_interaction and event.measurement_number is not None:
+            message = f"测量 #{event.measurement_number} 未通过：{message}"
+        self.resultRejected.emit(message)
         # A compatibility subscriber may synchronously navigate away or start
         # another field. Its old result must not cover the new viewport.
         if current() and event.field_epoch == self.field_epoch:
@@ -326,12 +349,7 @@ class LiveExperimentController(QObject):
             self._performance.presented(token.frame, time.perf_counter())
 
     def present_preview_frame(self, frame):
-        """Publish pixels and their verified overlay as one presentation unit.
-
-        The bounded fallback is latched: pixels remain live but the entire
-        candidate overlay stays unavailable until sustained timely recovery.
-        Individual late completions never make it flash for part of a frame.
-        """
+        """Preview is independent of candidates; the existing field detector owns validity."""
         if self._closed:
             return
         now = time.perf_counter()
@@ -341,170 +359,21 @@ class LiveExperimentController(QObject):
                 self._preview_intervals.append(interval)
                 self._preview_interval = sorted(self._preview_intervals)[len(self._preview_intervals) // 2]
         self._preview_arrived_at = now
-        if not self._candidate_preview_guarded() or self.candidates_aligned_for(frame):
-            self._clear_candidate_preview()
-            self._publish_preview(frame)
-            return
-        if self._candidate_preview_backoff_until:
-            self._clear_candidate_preview()
-            self._poll_candidate_alignment()
-            if self._candidate_preview_backoff_until or not self._candidate_preview_guarded():
-                self._publish_preview(frame)
-                return
-            # Polling can recover and atomically publish an earlier checked
-            # frame. Stage this new input normally instead of immediately
-            # covering that verified presentation with unchecked pixels.
-        try:
-            self._candidate_preview_lease = self.budget.replace(self._candidate_preview_lease, frame, preview=True)
-        except FrameBudgetExceeded:
-            self._back_off_candidate_preview(now, reason="frame_budget")
-            self._clear_candidate_preview()
-            self._publish_preview(frame)
-            return
-        self._candidate_preview_pending = frame
-        if self._candidate_preview_deadline is None:
-            self._candidate_preview_deadline = now + self._candidate_preview_wait_budget()
-            self._candidate_preview_timer.start(max(1, math.ceil((self._candidate_preview_deadline - now) * 1000)))
-        self._poll_candidate_alignment()
-        self._flush_candidate_preview()
+        self._publish_preview(frame)
 
     def should_defer_canvas_business_update(self):
-        """A pending live publication will paint business changes within its deadline."""
-        frame = self._candidate_preview_pending
-        return bool(not self._closed and self.draft is None and frame is not None and frame.live
-                    and self._candidate_preview_deadline is not None
-                    and not self._candidate_preview_backoff_until and self._candidate_preview_guarded())
+        return False
 
     def _candidate_preview_guarded(self):
-        return bool(self._automatic_context and self._automatic_context.get("guarded")
-                    and any(c.get("state", "available") in {"available", "confirming"} for c in self.candidates))
-
-    def _candidate_preview_wait_budget(self):
-        return min(.05, self._preview_interval * .85)
-
-    def _back_off_candidate_preview(self, now, *, reason="verification_late"):
-        was_paused = bool(self._candidate_preview_backoff_until)
-        self._candidate_preview_backoff_until = now or 1e-12
-        if not was_paused:
-            self._candidate_preview_fallbacks += 1
-            self._candidate_pause_started_at = now
-            if self._candidate_available_started_at is not None:
-                self._performance.record("candidate_available_ms", (now - self._candidate_available_started_at) * 1000)
-            self._candidate_available_started_at = None
-            self._candidate_presentation_events.append({"at": now, "state": "paused", "reason": reason})
-            self.statusChanged.emit("候选核验中，实时画面继续；核验稳定后恢复点选。")
-            self.candidateStateChanged.emit()
-        # This is a latch, not a renewable two-second timeout.
-        self._candidate_preview_recovery_since = None
-        self._candidate_preview_timely_checks = 0
-
-    def _note_candidate_preview_alignment(self, completed, frame):
-        if not self._candidate_preview_guarded():
-            return
-        now = time.perf_counter()
-        checked = self._alignment.completed_frame
-        submitted_at = self._alignment.completed_submitted_at
-        ready_at = self._alignment.completed_ready_at
-        elapsed = ((ready_at - submitted_at) * 1000 if ready_at is not None and submitted_at is not None
-                   else completed[3].elapsed_ms)
-        self._performance.record("candidate_verification_ready_ms", elapsed)
-        if ready_at is not None:
-            self._performance.record("candidate_verification_gui_wait_ms", (now - ready_at) * 1000)
-        if submitted_at is not None:
-            self._performance.record("candidate_verification_delivery_ms", (now - submitted_at) * 1000)
-        # A result describes its own immutable frame, not whichever input is
-        # newest when Qt consumes it. Being one sequence behind is not failure.
-        timely = (completed[3].valid and elapsed <= self._candidate_preview_wait_budget() * 1000
-                  and checked is not None and self._candidate_frame_fresh(checked, now))
-        if not timely:
-            reason = ("verification_late" if elapsed > self._candidate_preview_wait_budget() * 1000
-                      else "presentation_stale" if checked is not None and not self._candidate_frame_fresh(checked, now)
-                      else "alignment_invalid")
-            self._back_off_candidate_preview(now, reason=reason)
-        elif self._candidate_preview_backoff_until:
-            if self._candidate_preview_recovery_since is None:
-                self._candidate_preview_recovery_since = now
-            self._candidate_preview_timely_checks += 1
-            if (now - self._candidate_preview_recovery_since >= .3
-                    and self._candidate_preview_timely_checks >= 8):
-                self._candidate_preview_backoff_until = 0.
-                self._candidate_preview_timely_checks = 0
-                self._candidate_preview_recovery_since = None
-                if self._candidate_pause_started_at is not None:
-                    duration = (now - self._candidate_pause_started_at) * 1000
-                    self._performance.record("candidate_unavailable_ms", duration)
-                    self._candidate_max_pause_ms = max(self._candidate_max_pause_ms, duration)
-                    self._candidate_last_recovery_ms = duration
-                self._candidate_pause_started_at = None
-                self._candidate_available_started_at = now
-                self._candidate_presentation_events.append({"at": now, "state": "ready", "reason": "timely_recovery"})
-                self._publish_verified_candidate_frame(checked)
-                self.statusChanged.emit("候选已核验，可点选计入或继续手工测量。")
-                self.candidateStateChanged.emit()
-
-    def _candidate_frame_fresh(self, frame, now=None):
-        # Independent of the 0.85-cycle new-frame wait: a completed exact frame
-        # may arrive slightly later through Qt, but never outlive one preview
-        # cycle measured from receipt, nor renew its age on subsequent paints.
-        return (not frame.live or (0 <= (time.perf_counter() if now is None else now) - frame.received_at
-                                 <= self._preview_interval))
-
-    def _publish_verified_candidate_frame(self, frame):
-        """Never let a late completion move the visible stream backwards."""
-        if (frame is None or self._candidate_preview_backoff_until
-                or not self._candidate_frame_fresh(frame)
-                or not self._candidate_frame_aligned(frame)
-                or frame.sequence < self._candidate_last_published_sequence):
-            return False
+        """Whether a current batch has remaining overlay items (diagnostics only)."""
         context = self._automatic_context
-        context["presentation_started"] = True
-        if self._candidate_available_started_at is None:
-            self._candidate_available_started_at = time.perf_counter()
-        self._publish_preview(frame)
-        pending = self._candidate_preview_pending
-        if pending is not None and frame.sequence >= pending.sequence:
-            self._clear_candidate_preview()
-        elif pending is not None:
-            # Progress was made with an exact verified frame. Give the newer
-            # pending frame its own age-bound budget, without extending it on
-            # every arrival or timer tick.
-            self._candidate_preview_deadline = min(time.perf_counter(), pending.received_at) + self._candidate_preview_wait_budget()
-            self._candidate_preview_timer.start(max(1, math.ceil((self._candidate_preview_deadline - time.perf_counter()) * 1000)))
-        return True
+        return bool(context and not context.get("suspended") and self._automatic_current(context)
+                    and any(c.get("state", "available") in {"available", "confirming"} for c in self.candidates))
 
     def _publish_preview(self, frame):
         self._presentation_lease = self.budget.replace(self._presentation_lease, frame, preview=True)
         self._candidate_last_published_sequence = max(self._candidate_last_published_sequence, frame.sequence)
         self.frameReady.emit(frame)
-
-    def _clear_candidate_preview(self):
-        self._candidate_preview_timer.stop()
-        self._candidate_preview_pending = None
-        self._candidate_preview_deadline = None
-        self._release_frame_reference("_candidate_preview_lease")
-
-    def _flush_candidate_preview(self):
-        # Qt may deliver the deadline timer before the queued worker wake. Drain
-        # an already-ready result first; its own receipt age still gates publish.
-        if (not getattr(self, "_flushing_candidate_preview", False) and self._alignment.future is not None
-                and self._alignment.future[0].done()):
-            self._flushing_candidate_preview = True
-            try:
-                self._poll_candidate_alignment()
-            finally:
-                self._flushing_candidate_preview = False
-        frame = self._candidate_preview_pending
-        if frame is None or self._closed:
-            return
-        now = time.perf_counter()
-        guarded = self._candidate_preview_guarded()
-        expired = now >= self._candidate_preview_deadline
-        if not guarded or self.candidates_aligned_for(frame) or expired or self._candidate_preview_backoff_until:
-            if guarded and expired:
-                self._back_off_candidate_preview(now)
-            # Acquire presentation ownership before releasing the pending slot.
-            self._publish_preview(frame)
-            self._clear_candidate_preview()
 
     def unavailable(self, reason: str):
         self._performance.stop()
@@ -513,7 +382,6 @@ class LiveExperimentController(QObject):
         else:
             self.feedbackInvalidated.emit("source_unavailable")
         self.latest_frame = self.presented = None
-        self._clear_candidate_preview()
         self._release_frame_reference("_latest_frame_lease")
         self._release_frame_reference("_presented_frame_lease")
         self._release_frame_reference("_presentation_lease")
@@ -552,13 +420,23 @@ class LiveExperimentController(QObject):
         self.statusChanged.emit(reason)
         self.changed.emit()
 
-    def end_field(self, reason="视场已变化，请重新测量", *, record_end=True):
+    def new_field(self):
+        self.end_field("已开始新视场", cause=FieldEndCause.NEW_FIELD)
+
+    def end_field(self, reason="视场已变化，请重新测量", *, record_end=True,
+                  cause=FieldEndCause.CONTEXT):
+        cause = FieldEndCause(cause)
+        self.selection_retention.end_field(cause)
         if record_end and self.field_id in self.session.fields:
             self.session.update_field(self.field_id, ended_at=datetime.now(timezone.utc).isoformat(), end_reason=reason)
         self.field_epoch += 1
         self.field_id = uuid.uuid4().hex
         self._cancel_unfinished_measurements()
         self.current_records.clear()
+        self._automatic_cycle_done = False
+        self._automatic_cycle_id += 1
+        self._analysis_events.append({"at": time.perf_counter(), "event": "new_cycle",
+                                     "cycle": self._automatic_cycle_id, "reason": reason})
         self._classification_target = None
         self._measurement_number = 0
         self._motion_reset = True
@@ -638,6 +516,8 @@ class LiveExperimentController(QObject):
         self._classification_target = {"id": uuid.uuid4().hex, "number": self._measurement_number, "field_epoch": self.field_epoch,
             "operator_id": self.session.active_operator_id, "direction": self.session.active_direction,
             "state": "draft", "record_id": None, "generation": self._classification_generation}
+        self.trace_input_event("draft_started", measurement_number=self._measurement_number,
+                               x=float(point[0]), y=float(point[1]))
 
     def cancel_draft(self):
         if self.draft is not None and self._classification_target is not None:
@@ -663,6 +543,9 @@ class LiveExperimentController(QObject):
                 or self._draft_context is None or not self._context_current(token, *self._draft_context)):
             raise ValueError("视场已变化，请重新测量。")
         self._validate_point(point, token.frame)
+        if tuple(point) == tuple(start):
+            self.trace_input_event("same_point_ignored", x=float(point[0]), y=float(point[1]))
+            return None
         if self.calibration is None:
             raise ValueError("请先标定。")
         if method not in {"assisted", "free"}:
@@ -685,6 +568,8 @@ class LiveExperimentController(QObject):
             intent.classification_generation = self._classification_generation
         future = self._manual_pool.submit(self._compute, intent)
         self._jobs.append((intent, future))
+        self.trace_input_event("task_submitted", task_id=intent.id, measurement_number=intent.measurement_number,
+                               x=float(point[0]), y=float(point[1]))
         future.add_done_callback(self._request_poll)
         self._submit_motion_if_needed()
         return intent.id
@@ -955,7 +840,7 @@ class LiveExperimentController(QObject):
                 result = future.result()
                 if epoch == self.field_epoch:
                     if not result.stable:
-                        self.end_field("视场已变化，请重新测量")
+                        self.end_field("视场已变化，请重新测量", cause=FieldEndCause.MOTION)
                     else:
                         self._motion_sequence = result.sequence
                         self._stable_count += 1
@@ -972,8 +857,8 @@ class LiveExperimentController(QObject):
             finally:
                 self._release_motion_item(item)
         self._submit_motion_if_needed()
-        # Publish completed verification before synchronous ledger/gallery work.
-        self._poll_candidate_alignment()
+        # Candidate eligibility follows the existing field, never a second pixel comparison.
+        self._update_candidate_state()
         deadline = time.perf_counter() + 0.004
         while self._jobs and self._jobs[0][1].done() and time.perf_counter() < deadline:
             intent, future = self._jobs[0]
@@ -1027,7 +912,7 @@ class LiveExperimentController(QObject):
                 self.session.set_evidence(record_id, dict(entry))
             self.changed.emit()
         self._poll_automatic()
-        self._poll_candidate_alignment()
+        self._update_candidate_state()
         self._schedule_automatic()
 
     def _out_of_range(self, intent, result):
@@ -1196,8 +1081,7 @@ class LiveExperimentController(QObject):
                 self.statusChanged.emit("视场核验较慢，正在暂停新测量并等待本次确认。")
             return
         if request["kind"] == "automatic" and not self.candidate_overlay_ready:
-            # Alignment work is asynchronous and must cover the presented
-            # frame. Keep the same deadline while waiting; never move markers.
+            # Source/field eligibility may have changed during confirmation.
             return
         # Remove the pending request before synchronous UI callbacks run. Its
         # lease remains held until the complete domain transaction has finished.
@@ -1238,10 +1122,18 @@ class LiveExperimentController(QObject):
         context = self._automatic_context
         if not self.automatic_enabled and context and context.get("origin") == "automatic" and not context.get("completed"):
             self.discard_candidates()
+            context = self._automatic_context
         if was_active and not self.automatic_active:
             self.cancel_candidate_submissions()
-            self.discard_candidates()
-            self._reset_candidate_cycle()
+            # Navigation is not a new field. Keep completed geometry/IDs and
+            # the once-per-field flag; source transitions own invalidation.
+            if context and not context.get("completed"):
+                self.discard_candidates()
+            elif context:
+                context["suspended"] = True
+            self._automatic_stable_since = None
+        elif self.automatic_active and context:
+            context["suspended"] = False
         after = (self.automatic_enabled, self.automatic_active, self.automatic_prepared, self.automatic_algorithm)
         if after != before:
             self.candidateStateChanged.emit()
@@ -1255,28 +1147,20 @@ class LiveExperimentController(QObject):
 
     def performance_frame_context(self):
         context = self._performance.frame_context()
+        context["input_trace"] = {"events": list(self._input_events), "total_events": self._input_event_count,
+                                  "capacity": self._input_events.maxlen}
+        context["automatic_cycle"] = {"id": self._automatic_cycle_id,
+            "analyzed": self._automatic_cycle_done, "analysis_count": self._automatic_analysis_count,
+            "batch_id": (self._automatic_context or {}).get("batch_id"), "events": list(self._analysis_events)}
         now = time.perf_counter()
-        pause_ms = ((now - self._candidate_pause_started_at) * 1000
-                    if self._candidate_pause_started_at is not None else None)
         visible_ms = ((now - self._candidate_visible_since) * 1000
                       if self._candidate_visible_since is not None else None)
         hidden_ms = ((now - self._candidate_hidden_since) * 1000
                      if self._candidate_hidden_since is not None else None)
         context["candidate_preview"] = {
-            "fallback_count": self._candidate_preview_fallbacks,
-            "short_wait_budget_ms": self._candidate_preview_wait_budget() * 1000,
-            "publishable_frame_age_ms": self._preview_interval * 1000,
-            "readiness_definition": "Submit to parent worker/IPC readiness; Qt consumption delay is recorded separately.",
-            "worker_runtime": dict(getattr(self._alignment.worker, "runtime", {})),
-            "immediate_mode": bool(self._candidate_preview_backoff_until),
-            "recovery_timely_checks": self._candidate_preview_timely_checks,
-            "state": "paused" if self._candidate_preview_backoff_until else "coherent",
-            "events": list(self._candidate_presentation_events),
-            "ongoing_unavailable_ms": pause_ms,
-            "max_pause_ms": max(self._candidate_max_pause_ms, pause_ms or 0.),
-            "last_recovery_ms": self._candidate_last_recovery_ms,
-            "recovery_healthy_ms": ((now - self._candidate_preview_recovery_since) * 1000
-                                    if self._candidate_preview_recovery_since is not None else None),
+            "mode": "field_lifetime", "independent_alignment_enabled": False,
+            "fallback_count": 0, "immediate_mode": False, "max_pause_ms": 0.,
+            "state": "available" if self.candidate_overlay_ready else "unavailable",
             "painted_visibility": {"visible": self._candidate_visibility_previous if self._candidate_visibility_active else None,
                 "last_observed_visible": self._candidate_visibility_previous,
                 "observation_active": self._candidate_visibility_active,
@@ -1286,7 +1170,10 @@ class LiveExperimentController(QObject):
                 "max_hidden_ms": max(self._candidate_max_hidden_ms, hidden_ms or 0.),
                 "events": list(self._candidate_visibility_events),
                 "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."},
-            "definition": "A missed presentation budget latches all candidate overlays and hit targets off while pixels remain live. Recovery requires at least 300 ms and 8 consecutive timely exact-frame checks. Verified pixels and overlays are then published together; a valid older completion is not mistaken for a new frame."}
+            "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."}
+        context["selection_retention"] = {"seconds": self.selection_retention.duration,
+            "visible_marks": len(self.selection_retention.visible_marks())}
+
         return context
 
     def record_candidate_visibility(self, frame, visible, *, display_enabled=True):
@@ -1309,8 +1196,7 @@ class LiveExperimentController(QObject):
             self._candidate_hidden_since = now if not visible and active else None
             self._candidate_visibility_previous = visible
             reason = ("ready" if visible else "user_hidden" if not display_enabled else
-                      "verification_paused" if self._candidate_preview_backoff_until else
-                      "pending_verification" if active else "no_candidates")
+                      "context_unavailable" if active else "no_candidates")
             context = self._automatic_context
             self._candidate_visibility_events.append({"at": now, "visible": visible, "reason": reason,
                 "frame_id": frame.frame_id if frame is not None else None,
@@ -1352,27 +1238,13 @@ class LiveExperimentController(QObject):
         return self.candidates_aligned_for(self.presented.frame if self.presented else None)
 
     def candidates_aligned_for(self, frame):
-        """Paint validates the frame it is about to show, not its previous token."""
-        if self._candidate_preview_backoff_until:
-            return False
+        """Compatibility name: validity now belongs to the field, not exact pixels."""
         context = self._automatic_context
-        if context and not context.get("presentation_started", True):
+        if not context or context.get("suspended") or frame is None or not self._automatic_current(context):
             return False
-        return self._candidate_frame_aligned(frame)
-
-    def _candidate_frame_aligned(self, frame):
-        """Exact-frame fact, independent of the latched presentation state."""
-        context = self._automatic_context
-        if not context or frame is None or not self._automatic_current(context):
-            return False
-        if not context.get("guarded"):
-            # Older integrations/tests can inject an already-reviewed batch.
-            return True
-        result = self._alignment.result_for(frame)
-        return bool(result and result[3].valid and self._alignment.reference is context["token"].frame
-                    and result[0] == self._source_identity
-                    and result[0] == (frame.source_id, frame.generation, frame.size)
-                    and result[2] == frame.frame_id)
+        source = context["token"].frame
+        return ((frame.source_id, frame.generation, frame.size) ==
+                (source.source_id, source.generation, source.size))
 
     @property
     def candidate_pending_count(self):
@@ -1385,76 +1257,22 @@ class LiveExperimentController(QObject):
                     or self._automatic_context is not None and not self._automatic_context.get("completed", False))
 
     def _reset_candidate_cycle(self):
+        """Reset presentation only; only end_field rearms the automatic cycle."""
         self._suspend_candidate_visibility()
-        if self._candidate_pause_started_at is not None:
-            self._candidate_max_pause_ms = max(self._candidate_max_pause_ms,
-                (time.perf_counter() - self._candidate_pause_started_at) * 1000)
-        self._alignment.reset()
-        self._clear_candidate_preview()
-        self._candidate_preview_backoff_until = 0.
-        self._candidate_preview_timely_checks = 0
-        self._candidate_preview_recovery_since = None
-        self._candidate_pause_started_at = None
-        self._candidate_available_started_at = None
         self._candidate_last_published_sequence = -1
         self._automatic_stable_since = None
-        self._automatic_cycle_done = False
         self._refresh_pending = None
 
-    def _poll_candidate_alignment(self):
-        if self._automatic_context is not None and not self._automatic_context.get("guarded"):
-            return
-        needed = self._automatic_context is not None or (
-            self.automatic_enabled and self.automatic_active and self.automatic_prepared)
-        frame = self.latest_frame
-        if not needed or frame is None:
-            if self._alignment.reference is not None:
-                self._alignment.reset()
-            return
-        if self._alignment.reference is None:
-            try:
-                self._alignment.reset(frame)
-            except FrameBudgetExceeded:
-                return
-        completed = self._alignment.poll(frame)
-        if completed is not None:
-            self.candidate_metrics["alignment_ms"].append(completed[3].elapsed_ms)
-            self._note_candidate_preview_alignment(completed, frame)
-            if completed[3].valid:
-                if self._candidate_preview_guarded() and not self._candidate_preview_backoff_until:
-                    self._publish_verified_candidate_frame(self._alignment.completed_frame)
-                if self.state == "ready" and self._automatic_stable_since is None:
-                    self._automatic_stable_since = time.perf_counter()
-            else:
-                # Candidate geometry has its own lifecycle. Do not end the
-                # business field or erase accepted records on a small drift.
-                had_candidates = bool(self.candidates)
-                if self._automatic_context is not None:
-                    self.discard_candidates()
-                self._automatic_cycle_done = False
-                self._automatic_stable_since = None
-                try:
-                    self._alignment.reset(frame)
-                    if completed[3].reason in {"low_texture", "alignment_error", "frame_shape"}:
-                        # A retry on the identical invalid pixels cannot help.
-                        # Wait for a genuinely new source frame, without a loop.
-                        self._alignment.last_submitted = frame.frame_id
-                except FrameBudgetExceeded:
-                    pass
-                if had_candidates:
-                    self.statusChanged.emit("画面与候选源帧已不一致，旧候选已隐藏；稳定后可重新分析。")
-        if (not frame.live and self._candidate_preview_backoff_until
-                and self._alignment.future is None):
-            # A static image has no next capture tick. Recheck the same exact
-            # pixels only during recovery, then return to once-per-frame work.
-            self._alignment.last_submitted = None
-        if self.state != "ready":
+    def _update_candidate_state(self):
+        if self.state == "ready":
+            if self._automatic_stable_since is None:
+                self._automatic_stable_since = time.perf_counter()
+        else:
             self._automatic_stable_since = None
         ready = self.candidate_overlay_ready
         if ready != self._candidate_ready_previous:
             self._candidate_ready_previous = ready
             self.candidateStateChanged.emit()
-        self._flush_candidate_preview()
 
     def _schedule_automatic(self):
         if self._refresh_pending is not None and not self.candidate_pending_count:
@@ -1471,9 +1289,6 @@ class LiveExperimentController(QObject):
                 or not self.calibration.isotropic or self._automatic_stable_since is None
                 or time.perf_counter() - self._automatic_stable_since < .3
                 or self._jobs or self.draft or self.pending_classification or self._confirmation):
-            return
-        aligned = self._alignment.result_for(self.presented.frame)
-        if not aligned or not aligned[3].valid:
             return
         self._automatic_cycle_done = True
         self.candidate_metrics["stable_wait_ms"].append((time.perf_counter() - self._automatic_stable_since) * 1000)
@@ -1505,21 +1320,20 @@ class LiveExperimentController(QObject):
         lease = self._acquire_intent_frame(token.frame)
         started = time.perf_counter()
         try:
-            self._alignment.reset(token.frame)
             task_id = self._automatic.submit(token.frame.pixels, algorithm=algorithm)
         except Exception:
             self.budget.release(lease)
-            self._alignment.reset()
             raise
         self._automatic_context = {"task_id": task_id, "token": token, "lease": lease,
             "calibration": self.calibration, "algorithm": algorithm,
             "operator_id": self.session.active_operator_id, "direction": self.session.active_direction,
-            "batch_id": uuid.uuid4().hex, "guarded": True, "origin": _origin,
-            "completed": False, "started_at": started, "presentation_started": False}
+            "batch_id": uuid.uuid4().hex, "origin": _origin,
+            "completed": False, "started_at": started}
         self._automatic_cycle_done = True
-        # The analysis frame becomes the immutable alignment reference, even
-        # when the scheduling cycle previously used a slightly earlier frame.
-        self._alignment.poll(self.latest_frame)
+        self._automatic_analysis_count += 1
+        self._analysis_events.append({"at": started, "event": "analysis", "origin": _origin,
+            "cycle": self._automatic_cycle_id, "task_id": task_id,
+            "batch_id": self._automatic_context["batch_id"], "frame_id": token.frame.frame_id})
         self.candidateStateChanged.emit()
         self.statusChanged.emit("正在分析当前视场；实时画面继续更新。")
 
@@ -1564,15 +1378,6 @@ class LiveExperimentController(QObject):
             self.budget.release(self._automatic_context["lease"])
         self._automatic_context = None
         self.candidates = []
-        if self._candidate_pause_started_at is not None:
-            self._candidate_max_pause_ms = max(self._candidate_max_pause_ms,
-                (time.perf_counter() - self._candidate_pause_started_at) * 1000)
-        self._clear_candidate_preview()
-        self._candidate_preview_backoff_until = 0.
-        self._candidate_preview_timely_checks = 0
-        self._candidate_preview_recovery_since = None
-        self._candidate_pause_started_at = None
-        self._candidate_available_started_at = None
         self.candidatesChanged.emit([])
         self.candidateStateChanged.emit()
 
@@ -1589,6 +1394,7 @@ class LiveExperimentController(QObject):
 
     def sync_candidate_records(self):
         """Undo/delete expose a candidate again; redo restores its record link."""
+        self.selection_retention.prune()
         if self.candidate_pending_count:
             raise ValueError("候选正在核验，请等待完成或按 Esc 取消后再撤销。")
         changed = False
@@ -1639,12 +1445,15 @@ class LiveExperimentController(QObject):
         self.candidateStateChanged.emit()
 
     def _release_candidate_request(self, request):
+        changed = False
         for original in request.get("candidates") or ():
             candidate = next((c for c in self.candidates if c.get("candidate_id") == original.get("candidate_id")), None)
             if candidate is not None and candidate.get("state") == "confirming":
                 candidate["state"] = "available"
-        self.candidatesChanged.emit(self.candidates)
-        self.candidateStateChanged.emit()
+                changed = True
+        if changed:
+            self.candidatesChanged.emit(self.candidates)
+            self.candidateStateChanged.emit()
 
     def _advance_candidate_queue(self):
         if self._confirmation is not None or not self._candidate_queue:
@@ -1665,7 +1474,7 @@ class LiveExperimentController(QObject):
         if self.presented is None:
             raise ValueError("正在核验最新视场，请稍后确认。")
         if not self.candidate_overlay_ready:
-            raise ValueError("正在核验候选与当前画面对齐，请稍后点击。")
+            raise ValueError("候选所属视场已失效，请刷新候选。")
         if not selections:
             raise ValueError("请至少勾选一条候选。")
         # Validate the entire selection before mutating the ledger.
@@ -1726,7 +1535,7 @@ class LiveExperimentController(QObject):
                 if index is None or self.possible_duplicate_candidates([index]):
                     raise ValueError("该候选可能与刚入账的记录重复，请在审核页核对后确认。")
         if not self.candidate_overlay_ready:
-            raise ValueError("候选与最新画面尚未完成对齐核验，本次结果未入账。")
+            raise ValueError("候选所属视场已失效，本次结果未入账。")
         evidence_entries = [self._reserve_evidence(intent, result) for intent, result in intents]
         for intent, _ in intents:
             self._measurement_number += 1
@@ -1752,6 +1561,9 @@ class LiveExperimentController(QObject):
                 candidate.update(state="accepted", record_id=record.id)
             if evidence.get("state") == "pending":
                 self._evidence_records.setdefault(evidence.get("evidence_id", context["token"].frame.frame_id), []).append(record.id)
+        for record, (_, result) in zip(records, intents):
+            if result.get("_candidate_point_selection"):
+                self.selection_retention.remember(record)
         # Domain transaction completes before any synchronous UI callback runs.
         self.recordsAccepted.emit(records)
         self.changed.emit()
@@ -1810,7 +1622,6 @@ class LiveExperimentController(QObject):
         # The at-most-one queued motion job owns a frame lease. Let its bounded
         # reduction run so its finally releases that lease even during close.
         self._motion_pool.shutdown(wait=True, cancel_futures=False)
-        self._alignment.close()
         if self._prepare_pool is not None:
             self._prepare_pool.shutdown(wait=True, cancel_futures=False)
         if self._prepare_future is not None:

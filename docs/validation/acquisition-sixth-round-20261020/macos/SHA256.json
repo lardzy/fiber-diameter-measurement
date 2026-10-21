@@ -1,0 +1,22 @@
+{
+  "README.md": "8e946b1a1ade2646cbcd46a37566d7d8f8f897bc8887885b5eb10d8c07d360b8",
+  "clicks100/final.png": "fa2d776106614326eb73583421df8c861ab50c8f6cd453187d84c3fe0fba9797",
+  "clicks100/initial.png": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb",
+  "clicks100/result.json": "f1b9080f173b8ad6c39b121da710ebab0936cd98424317814274f2e56e4d526f",
+  "clicks100/summary.json": "42ed42d1e3a74b5f7f4c5e6a9e3c7d8474c7ee5b56cd0ea7b7c6b66196536a29",
+  "clicks12-video/final.png": "164ea8f95ae069003ceb4e29201d2942325e4e0c9e144f6c525304420bc46618",
+  "clicks12-video/initial.png": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb",
+  "clicks12-video/result.json": "8650440115c0584316e0f317f6e1e6c04d27968d53aa88de11219786bc83fd73",
+  "clicks12-video/workflow.mp4": "56d3081c1e604afd18c98752630d9e83f46d7c49391411fb319cb9ef4af560e0",
+  "performance/baseline.json": "3253d2407bb1a0962482eebf7164f0c1cd82bea50e75e9270a1de926a429bb83",
+  "performance/comparison.json": "f6d77a12499bd96281b763a3f9bfe868d0a85a3bcacca8ee59c1a1548bb804e2",
+  "performance/guard.json": "189608014a1bf9106d1bf07c86d52dce5ce54fdb07e657e000e7d9f42cfe6809",
+  "video-diagnostics/first-timeout/result.json": "abcfc25ef3e231e1f00fd969313ed8da5bcce1473ff360005012e78eea7e8cfd",
+  "video-diagnostics/first-timeout/validation-failure.png": "80d32b26e06f3a60e2f7268a72d15a0d6e92b4b8ef27de70b48d325c39dff8be",
+  "video-diagnostics/pending-paint-rejection/result.json": "a55b2617312e2363b7aa5f407251a0e08ec01d7984a31328e29d5b251472fb86",
+  "video-diagnostics/pending-paint-rejection/validation-failure.png": "1c745204a1b41aacb396146b35bee4f3bf0ef69e2bf413be0d22a38c49203fe0",
+  "video-diagnostics/pre-gate-success/final.png": "164ea8f95ae069003ceb4e29201d2942325e4e0c9e144f6c525304420bc46618",
+  "video-diagnostics/pre-gate-success/initial.png": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb",
+  "video-diagnostics/pre-gate-success/result.json": "9ccb35d66cce1ef2f66c4f7421bfa63a7c904d1f3590bcab60e7f1e95d45b63b",
+  "video-diagnostics/pre-gate-success/workflow.mp4": "cf5819516e44a9afe49c73fbb2d4fb7aea3363c37a1f1b1ab2c86f8090f470e6"
+}

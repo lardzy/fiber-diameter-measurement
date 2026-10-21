@@ -1,0 +1,925 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-20T14:35:40.219474+00:00",
+  "scenario": "latency",
+  "duration": 60,
+  "requested_clicks": 100,
+  "delay_kind": "worker",
+  "delay_ms": 200,
+  "theme": "light",
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "scale": 1,
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "real_camera": false,
+  "source_fingerprints": {
+    "src/fdm/ui/main_window.py": "bb401f328a0a33654839d97cca5b6a335c6b7c10ce716b5b9972c67d9d742fe4",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_experiment_view.py": "3eba942630bd7d64c823ca99d57255095b42648936edc4c320fd4040df460018",
+    "src/fdm/ui/live_measurement_canvas.py": "e1d5c518fca5b3338e07631d9fecd473620bc51f140162d3cf8e6bd952c81465",
+    "src/fdm/ui/live_measurement_annotations.py": "99206f72f56fc8f80368e68c4c9ad1d9b99a0b15ce1aab969962dc2535d6dd34",
+    "src/fdm/ui/trial_assistance.py": "3db8fe0369f8e1ff6f9a01db3902af1f3ebd0380f32dceca73b0e3b95d049e2b",
+    "src/fdm/ui/measurement_evidence_view.py": "a86118aab635648a576afcf0fd341690cb35fbe17e32861959158b7c6ee25c18",
+    "src/fdm/ui/measurement_evidence_gallery.py": "6bc1ad4ce17a18a8fb729ccaf7bae5f6491d5bc0b67e315f3a7a669275f36ae8",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/controller.py": "7e69f8dba50d67f66c14b4eaca227a16c274136e0cf09fb346a2d6b3a0da0ead",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993"
+  },
+  "script_sha256": "66f6a7323621d22713baabd454caf47c4ad7b52c69af01424ed03235ed3a311b",
+  "passed": true,
+  "scope": "Real navigation, analysis process, alignment, UI clicks, ledger and JPEG. Synthetic camera.",
+  "trace": {
+    "analyses": [
+      {
+        "at": 1.490726,
+        "origin": "automatic",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "stage": "setup"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 0.872824,
+        "visible": false,
+        "stage": "setup",
+        "batch": null,
+        "available": 0,
+        "frame": null
+      },
+      {
+        "at": 1.491922,
+        "visible": false,
+        "stage": "setup",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "available": 0,
+        "frame": 18
+      },
+      {
+        "at": 1.661249,
+        "visible": false,
+        "stage": "setup",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "available": 9,
+        "frame": 24
+      },
+      {
+        "at": 1.667935,
+        "visible": true,
+        "stage": "setup",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "available": 9,
+        "frame": 24
+      },
+      {
+        "at": 2.392661,
+        "visible": false,
+        "stage": "latency",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "available": 9,
+        "frame": 43
+      },
+      {
+        "at": 3.286308,
+        "visible": false,
+        "stage": "recovery",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "available": 9,
+        "frame": 71
+      },
+      {
+        "at": 3.756969,
+        "visible": true,
+        "stage": "recovery",
+        "batch": "79aea057696d4412a61ed3bad420a098",
+        "available": 9,
+        "frame": 85
+      }
+    ],
+    "status": [
+      {
+        "at": 0.910609,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 0.917406,
+        "message": "标定已变化"
+      },
+      {
+        "at": 0.970568,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 1.490704,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 1.660694,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 2.391942,
+        "message": "候选核验中，实时画面继续；核验稳定后恢复点选。"
+      },
+      {
+        "at": 3.755931,
+        "message": "候选已核验，可点选计入或继续手工测量。"
+      },
+      {
+        "at": 4.797272,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 4.799185,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "alignments": [
+      {
+        "at": 1.177591,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 5,
+        "stage": "setup"
+      },
+      {
+        "at": 1.185717,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 1.202446,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 10,
+        "stage": "setup"
+      },
+      {
+        "at": 1.23411,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 11,
+        "stage": "setup"
+      },
+      {
+        "at": 1.276256,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 12,
+        "stage": "setup"
+      },
+      {
+        "at": 1.306831,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 13,
+        "stage": "setup"
+      },
+      {
+        "at": 1.338664,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 14,
+        "stage": "setup"
+      },
+      {
+        "at": 1.370668,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 15,
+        "stage": "setup"
+      },
+      {
+        "at": 1.402435,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 16,
+        "stage": "setup"
+      },
+      {
+        "at": 1.434569,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 17,
+        "stage": "setup"
+      },
+      {
+        "at": 1.466796,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 18,
+        "stage": "setup"
+      },
+      {
+        "at": 1.501189,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 18,
+        "stage": "setup"
+      },
+      {
+        "at": 1.509286,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 19,
+        "stage": "setup"
+      },
+      {
+        "at": 1.538077,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 20,
+        "stage": "setup"
+      },
+      {
+        "at": 1.571339,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 21,
+        "stage": "setup"
+      },
+      {
+        "at": 1.603511,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 22,
+        "stage": "setup"
+      },
+      {
+        "at": 1.629675,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 23,
+        "stage": "setup"
+      },
+      {
+        "at": 1.666608,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 24,
+        "stage": "setup"
+      },
+      {
+        "at": 1.69632,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 25,
+        "stage": "setup"
+      },
+      {
+        "at": 1.72821,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 26,
+        "stage": "setup"
+      },
+      {
+        "at": 1.761548,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 27,
+        "stage": "setup"
+      },
+      {
+        "at": 1.795399,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 28,
+        "stage": "setup"
+      },
+      {
+        "at": 1.827469,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 29,
+        "stage": "setup"
+      },
+      {
+        "at": 1.860892,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 30,
+        "stage": "setup"
+      },
+      {
+        "at": 1.893118,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 31,
+        "stage": "setup"
+      },
+      {
+        "at": 1.926713,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 32,
+        "stage": "setup"
+      },
+      {
+        "at": 1.96019,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 33,
+        "stage": "setup"
+      },
+      {
+        "at": 1.99261,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 34,
+        "stage": "setup"
+      },
+      {
+        "at": 2.026032,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 35,
+        "stage": "setup"
+      },
+      {
+        "at": 2.058962,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 36,
+        "stage": "setup"
+      },
+      {
+        "at": 2.092743,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 37,
+        "stage": "setup"
+      },
+      {
+        "at": 2.124665,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 38,
+        "stage": "setup"
+      },
+      {
+        "at": 2.157341,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 39,
+        "stage": "setup"
+      },
+      {
+        "at": 2.190719,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 40,
+        "stage": "setup"
+      },
+      {
+        "at": 2.224067,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 41,
+        "stage": "setup"
+      },
+      {
+        "at": 2.257374,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 42,
+        "stage": "setup"
+      },
+      {
+        "at": 2.578242,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 43,
+        "stage": "latency"
+      },
+      {
+        "at": 2.794732,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 49,
+        "stage": "latency"
+      },
+      {
+        "at": 3.006935,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 56,
+        "stage": "latency"
+      },
+      {
+        "at": 3.21635,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 62,
+        "stage": "latency"
+      },
+      {
+        "at": 3.426665,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 68,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.434524,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 75,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.458402,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 76,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.492686,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 77,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.524765,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 78,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.558207,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 79,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.590785,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 80,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.623633,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 81,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.656849,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 82,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.691051,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 83,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.723669,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 84,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.755828,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 85,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.788483,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 86,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.821895,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 87,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.855557,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 88,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.889339,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 89,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.921752,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 90,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.955667,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 91,
+        "stage": "recovery"
+      },
+      {
+        "at": 3.989064,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 92,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.02045,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 93,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.053114,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 94,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.085988,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 95,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.120141,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 96,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.152461,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 97,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.185982,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 98,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.219164,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 99,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.25137,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 100,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.282978,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 101,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.316501,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 102,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.350132,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 103,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.383978,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 104,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.417347,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 105,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.449506,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 106,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.482955,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 107,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.515284,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 108,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.547266,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 109,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.580712,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 110,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.614172,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 111,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.646883,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 112,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.681121,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 113,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.713949,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 114,
+        "stage": "recovery"
+      },
+      {
+        "at": 4.74805,
+        "valid": true,
+        "reason": "aligned",
+        "sequence": 115,
+        "stage": "recovery"
+      }
+    ],
+    "delays": [
+      {
+        "at": 2.577928,
+        "kind": "worker",
+        "elapsed_ms": 208.20591600204352
+      },
+      {
+        "at": 2.794592,
+        "kind": "worker",
+        "elapsed_ms": 208.3560830069473
+      },
+      {
+        "at": 3.006768,
+        "kind": "worker",
+        "elapsed_ms": 204.28237499436364
+      },
+      {
+        "at": 3.216161,
+        "kind": "worker",
+        "elapsed_ms": 201.21679198928177
+      },
+      {
+        "at": 3.426509,
+        "kind": "worker",
+        "elapsed_ms": 201.83412500773557
+      }
+    ],
+    "actions": [],
+    "samples": []
+  },
+  "initial_candidates": 9,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "latency": {
+    "analysis_count": 1,
+    "batch_preserved": true,
+    "presentation_events": [
+      {
+        "at": 123020.630547708,
+        "state": "paused",
+        "reason": "verification_late"
+      },
+      {
+        "at": 123021.994486166,
+        "state": "ready",
+        "reason": "timely_recovery"
+      }
+    ]
+  },
+  "performance": {
+    "analysis_ms": {
+      "n": 1,
+      "p50": 174.80141700070817,
+      "p95": 174.80141700070817
+    },
+    "alignment_ms": {
+      "n": 82,
+      "p50": 7.721437003056053,
+      "p95": 199.00530064187535
+    },
+    "candidate_verification_ready_ms": {
+      "n": 65,
+      "p50": 8.05400000535883,
+      "p95": 209.9997421988519
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 65,
+      "p50": 0.08149999484885484,
+      "p95": 0.17456659697927535
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 65,
+      "p50": 8.112291994621046,
+      "p95": 210.15182499832008
+    },
+    "candidate_available_ms": {
+      "n": 1,
+      "p50": 725.2628749993164,
+      "p95": 725.2628749993164
+    },
+    "candidate_unavailable_ms": {
+      "n": 1,
+      "p50": 1363.9384580019396,
+      "p95": 1363.9384580019396
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 1,
+      "p50": 305.72416599898133,
+      "p95": 305.72416599898133
+    },
+    "analysis_to_paint_ms": {
+      "n": 1,
+      "p50": 183.773333003046,
+      "p95": 183.773333003046
+    },
+    "ingest_fps": {
+      "n": 113,
+      "p50": 30.251884454834983,
+      "p95": 31.423219737960604
+    },
+    "presented_fps": {
+      "n": 113,
+      "p50": 30.264626318128926,
+      "p95": 31.63305800198881
+    },
+    "frame_age_ms": {
+      "n": 114,
+      "p50": 1.217854005517438,
+      "p95": 9.91795810186886
+    },
+    "analysis_service_total_ms": {
+      "n": 1,
+      "p50": 61.49908300722018,
+      "p95": 61.49908300722018
+    },
+    "analysis_preparation_ms": {
+      "n": 1,
+      "p50": 3.5432500008028,
+      "p95": 3.5432500008028
+    },
+    "analysis_processing_ms": {
+      "n": 1,
+      "p50": 57.95583300641738,
+      "p95": 57.95583300641738
+    },
+    "analysis_shared_memory_ms": {
+      "n": 1,
+      "p50": 0.26204199821222574,
+      "p95": 0.26204199821222574
+    },
+    "analysis_budget_wait_ms": {
+      "n": 1,
+      "p50": 0.021375002688728273,
+      "p95": 0.021375002688728273
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 4.912792006507516,
+      "p95": 4.912792006507516
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 1,
+      "p50": 168.59937499975786,
+      "p95": 168.59937499975786
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 1,
+      "p50": 107.10029199253768,
+      "p95": 107.10029199253768
+    }
+  },
+  "automatic_cycle": {
+    "id": 2,
+    "analyzed": true,
+    "analysis_count": 1,
+    "batch_id": "79aea057696d4412a61ed3bad420a098",
+    "events": [
+      {
+        "at": 123019.149109125,
+        "event": "new_cycle",
+        "cycle": 1,
+        "reason": "类别设置已变化"
+      },
+      {
+        "at": 123019.155908375,
+        "event": "new_cycle",
+        "cycle": 2,
+        "reason": "标定已变化"
+      },
+      {
+        "at": 123019.722806458,
+        "event": "analysis",
+        "origin": "automatic",
+        "cycle": 2,
+        "task_id": "e57823d0f2714838856bb2cbfaf3582d",
+        "batch_id": "79aea057696d4412a61ed3bad420a098",
+        "frame_id": "camera:workflow-validation:0:2:18"
+      }
+    ]
+  },
+  "presentation_events": [
+    {
+      "at": 123020.630547708,
+      "state": "paused",
+      "reason": "verification_late"
+    },
+    {
+      "at": 123021.994486166,
+      "state": "ready",
+      "reason": "timely_recovery"
+    }
+  ],
+  "input_trace": {
+    "events": [],
+    "total_events": 0,
+    "capacity": 512
+  },
+  "accepted_total": 0,
+  "source_changed_during_run": false,
+  "elapsed_seconds": 4.857802
+}

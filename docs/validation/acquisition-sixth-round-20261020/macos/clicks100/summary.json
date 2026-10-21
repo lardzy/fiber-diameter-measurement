@@ -1,0 +1,41 @@
+{
+  "started_at": "2026-10-20T14:47:16.001318+00:00",
+  "scenario": "clicks",
+  "requested_clicks": 100,
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "real_camera": false,
+  "passed": true,
+  "clicks": {
+    "accepted": 100,
+    "batches": 12,
+    "remaining_candidate_hides": [],
+    "records": 100,
+    "saved": 100
+  },
+  "elapsed_seconds": 21.595604,
+  "source_changed_during_run": false,
+  "presentation_events": [],
+  "performance": {
+    "click_to_accept_ms": {
+      "n": 100,
+      "p50": 1.32833299721824,
+      "p95": 3.431466354231816
+    },
+    "analysis_ms": {
+      "n": 12,
+      "p50": 63.80168749456061,
+      "p95": 162.83159360391426
+    },
+    "analysis_to_paint_ms": {
+      "n": 12,
+      "p50": 84.88718749867985,
+      "p95": 176.33822295319976
+    },
+    "frame_age_ms": {
+      "n": 512,
+      "p50": 9.513103992503602,
+      "p95": 11.22695030135219
+    }
+  }
+}

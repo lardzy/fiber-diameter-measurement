@@ -1,0 +1,66 @@
+[
+  {
+    "case": "light-1600x900-1",
+    "passed": true
+  },
+  {
+    "case": "light-1600x900-1.25",
+    "passed": true
+  },
+  {
+    "case": "light-1600x900-1.5",
+    "passed": true
+  },
+  {
+    "case": "light-1366x768-1",
+    "passed": true
+  },
+  {
+    "case": "dark-1600x900-1",
+    "passed": true
+  },
+  {
+    "case": "dark-1600x900-1.25",
+    "passed": true
+  },
+  {
+    "case": "dark-1600x900-1.5",
+    "passed": true
+  },
+  {
+    "case": "dark-1366x768-1",
+    "passed": true
+  },
+  {
+    "case": "navy-1600x900-1",
+    "passed": true
+  },
+  {
+    "case": "navy-1600x900-1.25",
+    "passed": true
+  },
+  {
+    "case": "navy-1600x900-1.5",
+    "passed": true
+  },
+  {
+    "case": "navy-1366x768-1",
+    "passed": true
+  },
+  {
+    "case": "warm-1600x900-1",
+    "passed": true
+  },
+  {
+    "case": "warm-1600x900-1.25",
+    "passed": true
+  },
+  {
+    "case": "warm-1600x900-1.5",
+    "passed": true
+  },
+  {
+    "case": "warm-1366x768-1",
+    "passed": true
+  }
+]

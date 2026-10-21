@@ -1,0 +1,80 @@
+[
+  {
+    "kind": "gui",
+    "delay_ms": 40,
+    "passed": true,
+    "injected_calls": 6,
+    "analyses": 1,
+    "remaining_candidate_hides": [],
+    "independent_alignment_calls": {
+      "poll": 0,
+      "compare": 0
+    },
+    "source_changed_during_run": false
+  },
+  {
+    "kind": "gui",
+    "delay_ms": 80,
+    "passed": true,
+    "injected_calls": 6,
+    "analyses": 1,
+    "remaining_candidate_hides": [],
+    "independent_alignment_calls": {
+      "poll": 0,
+      "compare": 0
+    },
+    "source_changed_during_run": false
+  },
+  {
+    "kind": "gui",
+    "delay_ms": 200,
+    "passed": true,
+    "injected_calls": 6,
+    "analyses": 1,
+    "remaining_candidate_hides": [],
+    "independent_alignment_calls": {
+      "poll": 0,
+      "compare": 0
+    },
+    "source_changed_during_run": false
+  },
+  {
+    "kind": "motion",
+    "delay_ms": 40,
+    "passed": true,
+    "injected_calls": 19,
+    "analyses": 1,
+    "remaining_candidate_hides": [],
+    "independent_alignment_calls": {
+      "poll": 0,
+      "compare": 0
+    },
+    "source_changed_during_run": false
+  },
+  {
+    "kind": "motion",
+    "delay_ms": 80,
+    "passed": true,
+    "injected_calls": 11,
+    "analyses": 1,
+    "remaining_candidate_hides": [],
+    "independent_alignment_calls": {
+      "poll": 0,
+      "compare": 0
+    },
+    "source_changed_during_run": false
+  },
+  {
+    "kind": "motion",
+    "delay_ms": 200,
+    "passed": true,
+    "injected_calls": 5,
+    "analyses": 1,
+    "remaining_candidate_hides": [],
+    "independent_alignment_calls": {
+      "poll": 0,
+      "compare": 0
+    },
+    "source_changed_during_run": false
+  }
+]

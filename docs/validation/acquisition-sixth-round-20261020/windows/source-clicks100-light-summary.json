@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "source_artifact": "windows-source-clicks100-light.json",
+  "source_artifact_sha256": "b19804653bda3eeb15f93264fa22d05b566a720a2bcd4cc2715ba9dd7304fd69",
+  "passed": false,
+  "failed_acceptance": "正常负载下连续点选不造成整组余项隐藏",
+  "classification": "Windows 虚拟机的短时主线程 gen2 GC 与核验实际就绪超预算重叠，触发严格安全暂停。不能将本结果标记为无隐藏验收通过。",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "real_camera": false,
+  "scope": "Real navigation, analysis process, alignment, UI clicks, ledger and JPEG. Synthetic camera.",
+  "instrumentation": {
+    "scope": "Bounded perf_counter method, GC and capture timings; no product or GC-policy changes.",
+    "cprofile_enabled": false,
+    "trace_level": "light",
+    "performance_acceptance": null,
+    "gc_threshold": [
+      700,
+      10,
+      10
+    ],
+    "method_capacity": 8192,
+    "gc_capacity": 512,
+    "slow_gc_capacity": 128
+  },
+  "source_changed_during_run": false,
+  "script_sha256": "a1961d4d44c77570453aaa15dcc85b599bf9ae5adf2f232d823514ed9d2ccc72",
+  "acceptance": {
+    "accepted": 100,
+    "records": 100,
+    "saved": 100,
+    "batches": 12
+  },
+  "capture_recovery_finished_at": 5.003377,
+  "setup_capture_times": [
+    {
+      "at": 4.24674,
+      "end_at": 4.321037,
+      "elapsed_ms": 74.29675000003044,
+      "operation": "initial-width-grab"
+    },
+    {
+      "at": 4.321244,
+      "end_at": 4.33399,
+      "elapsed_ms": 12.745792000714573,
+      "operation": "initial-height-grab"
+    },
+    {
+      "at": 4.334279,
+      "end_at": 4.346497,
+      "elapsed_ms": 12.217084000440082,
+      "operation": "initial-screenshot-grab"
+    },
+    {
+      "at": 4.346505,
+      "end_at": 4.403014,
+      "elapsed_ms": 56.51204200057691,
+      "operation": "initial-png-save"
+    }
+  ],
+  "setup_pause": [
+    {
+      "at": 4.403767,
+      "caller": "_flush_candidate_preview",
+      "reason": "verification_late",
+      "already_paused": false,
+      "pending_sequence": 58,
+      "pending_age_ms": 164.89179099971807,
+      "deadline_overdue_ms": 134.5543159995941,
+      "checked_sequence": 58,
+      "checked_age_ms": 164.89179099971807,
+      "verification_ready_ms": 52.201292000063404,
+      "gui_wait_ms": 110.52083300000959,
+      "future_sequence": null,
+      "future_done": null,
+      "future_submitted_ms": null,
+      "latest_sequence": 58,
+      "last_click_at": null,
+      "recent_gc": [
+        {
+          "at": 0.132091,
+          "end_at": 0.139827,
+          "elapsed_ms": 7.736790999842924,
+          "generation": 2,
+          "main_thread": true,
+          "collected": 0,
+          "uncollectable": 0,
+          "stage": "setup"
+        },
+        {
+          "at": 0.706913,
+          "end_at": 0.72399,
+          "elapsed_ms": 17.076959000405623,
+          "generation": 2,
+          "main_thread": true,
+          "collected": 0,
+          "uncollectable": 0,
+          "stage": "setup"
+        }
+      ],
+      "wait_budget_ms": 28.250600000183113
+    }
+  ],
+  "click_pause": [
+    {
+      "at": 13.193259,
+      "caller": "_flush_candidate_preview",
+      "reason": "verification_late",
+      "already_paused": false,
+      "pending_sequence": 324,
+      "pending_age_ms": 46.13599999993312,
+      "deadline_overdue_ms": 16.52562505023525,
+      "checked_sequence": 324,
+      "checked_age_ms": 46.13599999993312,
+      "verification_ready_ms": 40.91608299950167,
+      "gui_wait_ms": 3.479083999991417,
+      "future_sequence": null,
+      "future_done": null,
+      "future_submitted_ms": null,
+      "latest_sequence": 324,
+      "last_click_at": 13.160151,
+      "recent_gc": [
+        {
+          "at": 0.132091,
+          "end_at": 0.139827,
+          "elapsed_ms": 7.736790999842924,
+          "generation": 2,
+          "main_thread": true,
+          "collected": 0,
+          "uncollectable": 0,
+          "stage": "setup"
+        },
+        {
+          "at": 0.706913,
+          "end_at": 0.72399,
+          "elapsed_ms": 17.076959000405623,
+          "generation": 2,
+          "main_thread": true,
+          "collected": 0,
+          "uncollectable": 0,
+          "stage": "setup"
+        },
+        {
+          "at": 13.162723,
+          "end_at": 13.189004,
+          "elapsed_ms": 26.28104099949269,
+          "generation": 2,
+          "main_thread": true,
+          "collected": 0,
+          "uncollectable": 0,
+          "stage": "clicks"
+        }
+      ],
+      "wait_budget_ms": 27.962166949555467
+    }
+  ],
+  "click_gc": [
+    {
+      "at": 13.162723,
+      "end_at": 13.189004,
+      "elapsed_ms": 26.28104099949269,
+      "generation": 2,
+      "main_thread": true,
+      "collected": 0,
+      "uncollectable": 0,
+      "stage": "clicks"
+    }
+  ],
+  "visibility_loss": {
+    "at": 13.197456,
+    "visible": false,
+    "stage": "clicks",
+    "batch": "6b37b6ec12fc4479993ce5fea0b0b40d",
+    "available": 3,
+    "frame": 324
+  },
+  "visibility_restore": {
+    "at": 13.53295,
+    "visible": true,
+    "stage": "clicks",
+    "batch": "6b37b6ec12fc4479993ce5fea0b0b40d",
+    "available": 3,
+    "frame": 335
+  },
+  "hidden_ms": 335.494,
+  "click_attempts_near_pause": [
+    {
+      "at": 13.033269,
+      "candidate": "6b37b6ec12fc4479993ce5fea0b0b40d:5",
+      "batch": "6b37b6ec12fc4479993ce5fea0b0b40d",
+      "before": 40,
+      "position": [
+        464,
+        341
+      ]
+    },
+    {
+      "at": 13.160151,
+      "candidate": "6b37b6ec12fc4479993ce5fea0b0b40d:6",
+      "batch": "6b37b6ec12fc4479993ce5fea0b0b40d",
+      "before": 41,
+      "position": [
+        366,
+        347
+      ]
+    }
+  ],
+  "click_actions_near_pause": [
+    {
+      "at": 13.033269,
+      "candidate": "6b37b6ec12fc4479993ce5fea0b0b40d:5",
+      "batch": "6b37b6ec12fc4479993ce5fea0b0b40d",
+      "before": 40,
+      "accepted_at": 13.040045,
+      "elapsed_ms": 6.775999999998561
+    },
+    {
+      "at": 13.160151,
+      "candidate": "6b37b6ec12fc4479993ce5fea0b0b40d:6",
+      "batch": "6b37b6ec12fc4479993ce5fea0b0b40d",
+      "before": 41,
+      "accepted_at": 13.192732,
+      "elapsed_ms": 32.58099999999864
+    }
+  ],
+  "performance": {
+    "analysis_ms": {
+      "n": 12,
+      "p50": 248.2550419999825,
+      "p95": 365.38581265008344
+    },
+    "alignment_ms": {
+      "n": 512,
+      "p50": 16.372478999983286,
+      "p95": 20.22231684986764
+    },
+    "candidate_verification_ready_ms": {
+      "n": 439,
+      "p50": 16.836083000271174,
+      "p95": 19.832621199657297
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 439,
+      "p50": 0.16637499993521487,
+      "p95": 2.233341999908588
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 439,
+      "p50": 17.006832999868493,
+      "p95": 21.89074939969941
+    },
+    "candidate_available_ms": {
+      "n": 2,
+      "p50": 741.7814165000891,
+      "p95": 770.9935413499807
+    },
+    "candidate_unavailable_ms": {
+      "n": 2,
+      "p50": 342.33718750010667,
+      "p95": 347.0684690503276
+    },
+    "click_to_accept_ms": {
+      "n": 100,
+      "p50": 2.3605625001437147,
+      "p95": 7.727160750073379
+    },
+    "stable_wait_ms": {
+      "n": 12,
+      "p50": 303.4717290001936,
+      "p95": 314.76515465001285
+    },
+    "analysis_to_paint_ms": {
+      "n": 12,
+      "p50": 260.4469795001023,
+      "p95": 397.2763268999641
+    },
+    "ingest_fps": {
+      "n": 512,
+      "p50": 30.288956531024674,
+      "p95": 32.77986455248933
+    },
+    "presented_fps": {
+      "n": 512,
+      "p50": 30.360224461108174,
+      "p95": 38.49897073440157
+    },
+    "frame_age_ms": {
+      "n": 512,
+      "p50": 19.70610399985162,
+      "p95": 26.407133150269146
+    },
+    "analysis_service_total_ms": {
+      "n": 12,
+      "p50": 242.1567914998377,
+      "p95": 253.00654359994041
+    },
+    "analysis_preparation_ms": {
+      "n": 12,
+      "p50": 1.2323539999670174,
+      "p95": 6.908489700117568
+    },
+    "analysis_processing_ms": {
+      "n": 12,
+      "p50": 240.52270849961133,
+      "p95": 248.19720784967103
+    },
+    "analysis_shared_memory_ms": {
+      "n": 12,
+      "p50": 0.8132709999699728,
+      "p95": 0.9513600496120489
+    },
+    "analysis_budget_wait_ms": {
+      "n": 12,
+      "p50": 0.011458000244601863,
+      "p95": 0.017145650190286684
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 11.675665999973717,
+      "p95": 11.675665999973717
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 12,
+      "p50": 244.05608300003223,
+      "p95": 356.4889729499553
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 12,
+      "p50": 1.967563000107475,
+      "p95": 106.14523994986467
+    }
+  },
+  "diagnostic_record_counts": {
+    "analyses": 12,
+    "visibility": 234,
+    "status": 90,
+    "alignments": 20,
+    "delays": 0,
+    "actions": 100,
+    "samples": 0,
+    "click_attempts": 100,
+    "pointer_events": 0,
+    "gesture_rejections": 0,
+    "candidate_signals": 100,
+    "presentation_attempts": 2,
+    "synchronous_costs": 0,
+    "gc": 3,
+    "slow_gc": 3,
+    "captures": 4
+  },
+  "boundaries": [
+    "轻量运行不含逐方法计时、指针快照、cProfile 或录像；仍记录有限状态变化、点击、异常核验和慢 GC。",
+    "初始截图导致的 setup 暂停已保留，正式点击等待实际恢复后开始，不计入业务阶段唯一余项隐藏。",
+    "本结果支持短时 GC 造成实际调度/就绪超预算，不能据此断言全部机器必然同样暂停或此问题只存在于虚拟机。",
+    "没有修改 GC 阈值、禁用 GC、放宽帧龄/对齐预算或冻结预览。",
+    "100 条记录与证据正确计入和保存，不等于交互无隐藏验收通过。",
+    "真实 Microview 设备未验证；后续候选包如交付，须保留本项未达标结论。"
+  ]
+}

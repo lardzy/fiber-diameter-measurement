@@ -1,0 +1,18 @@
+{
+  "owned_remaining_processes": [],
+  "memory": {
+    "total": 17173250048,
+    "available": 14093692928,
+    "percent": 17.9,
+    "used": 3079557120,
+    "free": 14093692928
+  },
+  "resource_error_windows": [],
+  "vm": {
+    "id": "fd15ab52-26aa-4f99-b76a-19d334bc38ea",
+    "name": "Windows 11",
+    "state": "running",
+    "camera_auto_sharing": "on"
+  },
+  "passed": true
+}

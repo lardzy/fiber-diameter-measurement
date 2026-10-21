@@ -1,0 +1,48 @@
+{
+  "baseline": {
+    "mode": "baseline",
+    "seconds": 30.000293041999612,
+    "sample_frames": 909,
+    "fps": 30.309411398116456,
+    "p50_frame_age_ms": 8.546042001398746,
+    "p95_frame_age_ms": 10.748316400713518,
+    "measurements": 29,
+    "measurement_period_ms": 1000,
+    "source_period_ms": 33,
+    "evidence_options": {
+      "version": 1,
+      "mode": "crop_jpeg",
+      "padding": 64,
+      "minimum_size": 256,
+      "quality": 95,
+      "subsampling": "4:4:4"
+    },
+    "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+    "saved": 29
+  },
+  "candidates": {
+    "mode": "candidates",
+    "seconds": 30.000543083000593,
+    "sample_frames": 901,
+    "fps": 30.044805777796018,
+    "p50_frame_age_ms": 8.044583999435417,
+    "p95_frame_age_ms": 10.551291999945533,
+    "measurements": 29,
+    "measurement_period_ms": 1000,
+    "source_period_ms": 33,
+    "evidence_options": {
+      "version": 1,
+      "mode": "crop_jpeg",
+      "padding": 64,
+      "minimum_size": 256,
+      "quality": 95,
+      "subsampling": "4:4:4"
+    },
+    "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+    "saved": 29
+  },
+  "fps_change_percent": -0.8730147109913267,
+  "p95_age_change_ms": -0.1970244007679849,
+  "fps_gate_pass": true,
+  "age_gate_pass": true
+}

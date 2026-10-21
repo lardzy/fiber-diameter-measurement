@@ -136,18 +136,33 @@ class CandidatesModel(QAbstractTableModel):
 
     def set_candidates(self, candidates, scale, materials=()):
         old_keys = getattr(self, "_candidate_keys", [])
+        keys = [item.get("candidate_id", id(item)) for item in candidates]
+        materials = tuple(materials)
+        # Controller rows are mutated in place as acceptance progresses.
+        # Keep presentation snapshots so a targeted state change is observable,
+        # without invalidating selection, editors or the rest of the batch.
+        rows = [dict(item) for item in candidates]
+        if keys == old_keys:
+            context_changed = self.scale != scale or self.materials != materials
+            changed_rows = [row for row, (before, after) in enumerate(zip(self.candidates, rows))
+                            if context_changed or before != after]
+            self.candidates, self.scale, self.materials = rows, scale, materials
+            for row in changed_rows:
+                self.dataChanged.emit(self.index(row, 0), self.index(row, self.columnCount() - 1))
+            return False
         assignments = {key: self.assignments[i] for i, key in enumerate(old_keys) if i in self.assignments}
         excluded = {key for i, key in enumerate(old_keys) if i in self.excluded}
         confirmations = {key: self.range_confirmations[i] for i, key in enumerate(old_keys) if i in self.range_confirmations}
         self.beginResetModel()
-        self.candidates = list(candidates)
-        self._candidate_keys = [item.get("candidate_id", id(item)) for item in candidates]
+        self.candidates = rows
+        self._candidate_keys = keys
         self.scale = scale
-        self.materials = tuple(materials)
+        self.materials = materials
         self.assignments = {i: assignments[key] for i, key in enumerate(self._candidate_keys) if key in assignments}
         self.excluded = {i for i, key in enumerate(self._candidate_keys) if key in excluded}
         self.range_confirmations = {i: confirmations[key] for i, key in enumerate(self._candidate_keys) if key in confirmations}
         self.endResetModel()
+        return True
 
     def available(self, row):
         return self.candidates[row].get("state", "available") == "available"
@@ -518,6 +533,28 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         presenter = self._records_presenter()
         if presenter is not None:
             presenter.notify_change(self, keys=keys, rebuild=rebuild)
+
+    def _queue_records_notification(self, keys=None):
+        """Leave ledger/dirty state synchronous; merge secondary view work."""
+        if not hasattr(self, "_records_notification_timer"):
+            self._records_notification_keys = set()
+            self._records_notification_all = False
+            self._records_notification_timer = QTimer(self)
+            self._records_notification_timer.setSingleShot(True)
+            self._records_notification_timer.timeout.connect(self._flush_records_notification)
+        if keys is None:
+            self._records_notification_all = True
+        else:
+            self._records_notification_keys.update(map(tuple, keys))
+        if not self._records_notification_timer.isActive():
+            self._records_notification_timer.start(0)
+
+    def _flush_records_notification(self):
+        keys = None if self._records_notification_all else list(self._records_notification_keys)
+        self._records_notification_keys.clear()
+        self._records_notification_all = False
+        if not self._closed:
+            self._notify_records(keys)
 
     def _show_records(self):
         presenter = self._records_presenter()
@@ -1424,7 +1461,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.history_model.append(record.id)
         self.current_table.follow_latest()
         self._record_model_revision = self.session.revision
-        self._notify_records([("measurement", record.id)])
+        self._queue_records_notification([("measurement", record.id)])
 
     def _records_accepted(self, records):
         self.measurement_feedback.dismiss()
@@ -1437,7 +1474,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.current_model.append_many(ids)
         self.history_model.append_many(ids)
         self.current_table.follow_latest()
-        self._notify_records([("measurement", record.id) for record in records])
+        self._queue_records_notification([("measurement", record.id) for record in records])
         self._record_model_revision = self.session.revision
 
     def _candidates_changed(self, candidates):
@@ -1447,12 +1484,11 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         scale = self.controller.calibration.x_um if self.controller.calibration else 1
         operator = self.session.operators.get(self.session.active_operator_id)
         materials = operator.materials[self.session.active_direction] if operator else ()
-        self.candidate_model.set_candidates(candidates, scale, materials)
-        if selected is not None:
+        reset = self.candidate_model.set_candidates(candidates, scale, materials)
+        if reset and selected is not None:
             self._candidate_hovered(selected)
         self.candidate_feedback.setText(f"待审核 {len(candidates)} 条候选；确认接受后才计入试验。" if candidates else "")
         self.candidate_feedback.hide()  # Runtime messages must not move the category list.
-        self.workflow_tabs.setTabText(1, f"审核 {len(candidates)}" if candidates else "审核")
         self._refresh_assistance_state()
         self.canvas.update()
 
@@ -1492,11 +1528,16 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                 self.host.project.mark_extension_changed()
             self._last_dirty_state = state
         self._refresh_persistence_state()
-        self._refresh_sample_summary()
-        self._notify_records()
-        self._check_reminders()
         if hasattr(self, "display_binding"):
             self.display_binding.apply()
+        ui_state = (*state, self.controller.field_epoch)
+        if ui_state == getattr(self, "_last_ui_change_state", None):
+            self.canvas.update()
+            return
+        self._last_ui_change_state = ui_state
+        self._refresh_sample_summary()
+        self._queue_records_notification()
+        self._check_reminders()
         self.canvas.update()
 
     def _refresh_persistence_state(self):
@@ -1771,15 +1812,19 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             return
         if feedback.field_epoch is not None and feedback.field_epoch != self.controller.field_epoch:
             return
+        if not self.controller.feedback_is_current_interaction(feedback):
+            return
         self._latest_value_is_previous = self.latest_value.text() != "— μm"
-        self.measurement_outcome.setText("本次未通过" + (" · 上方为上一条有效测量" if self._latest_value_is_previous else ""))
+        self.measurement_outcome.setText("上一条有效值" if self._latest_value_is_previous else "本次未通过")
+        self.measurement_outcome.setToolTip("本次测量未通过，未计入记录；" + feedback.message +
+            ("；上方为上一条有效测量" if self._latest_value_is_previous else ""))
         self.measurement_feedback.show_feedback(feedback)
 
     def _measurement_feedback_dismissed(self, feedback):
         if feedback is not None and feedback.code == "target_reached":
             self._reminder_feedback_crossings = ()
         if feedback is not None and feedback.severity != "success":
-            self.measurement_outcome.setText("上一条有效测量" if getattr(self, "_latest_value_is_previous", False) else "")
+            self.measurement_outcome.setText("上一条有效值" if getattr(self, "_latest_value_is_previous", False) else "")
 
     def _clear_latest_value(self, *_):
         review = getattr(self, "evidence_review", None)

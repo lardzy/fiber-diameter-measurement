@@ -1,0 +1,703 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T03:05:19.531882+00:00",
+  "phase": "quick",
+  "scenario": "quick",
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "826f5e13134ac83bc64ec98638eccae656a1939385643b519ff890b57eae7aae",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "8136e02e1673c98a976c29e41ece914613cbe355da7310db9aeb4d5cd7eb0335",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_experiment_view.py": "23f780224eebfc0e66249c1ba05ed4a97d315ca73bd403365e92f75527e0fa8a",
+    "src/fdm/ui/trial_assistance.py": "339890459d8902b8645b9c384dc7fd597504a703c56e13f7ba1b88d022116ef7"
+  },
+  "script_sha256": "1c4e106ef4a2c6cab6b39d888e6e2365688f007a7e8e637f156b2d58825864ae",
+  "real_camera": false,
+  "passed": true,
+  "trace": {
+    "analyses": [
+      {
+        "at": 1.224338,
+        "origin": "automatic",
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "stage": "setup"
+      },
+      {
+        "at": 5.319686,
+        "origin": "automatic",
+        "batch": "6d4b0765cca14c229d2b0de56bc54601",
+        "stage": "retention"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 0.812904,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.225315,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.399711,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 1.60798,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 9,
+        "stage": "static"
+      },
+      {
+        "at": 4.58238,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 9,
+        "stage": "clicks"
+      },
+      {
+        "at": 4.58782,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 8,
+        "stage": "clicks"
+      },
+      {
+        "at": 4.662788,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 7,
+        "stage": "clicks"
+      },
+      {
+        "at": 4.737313,
+        "visible": true,
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "available": 6,
+        "stage": "clicks"
+      },
+      {
+        "at": 4.810297,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 5.321456,
+        "visible": true,
+        "batch": "6d4b0765cca14c229d2b0de56bc54601",
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 5.385906,
+        "visible": true,
+        "batch": "6d4b0765cca14c229d2b0de56bc54601",
+        "available": 9,
+        "stage": "retention"
+      }
+    ],
+    "status": [
+      {
+        "at": 0.84955,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 0.855993,
+        "message": "标定已变化"
+      },
+      {
+        "at": 0.909916,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 1.224329,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 1.397964,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 4.580002,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 4.656349,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 4.730187,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 4.802993,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 4.880305,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 4.959424,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 5.017548,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 5.319673,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 5.384681,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 5.848455,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 5.850258,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [
+      {
+        "at": 4.593468,
+        "candidate": "ccd1fdb3dd264d9ea0dba2e5cd47510f:1",
+        "record": "02767bbd122342848b47601d5a1241aa",
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "elapsed_ms": 14.473292016191408
+      },
+      {
+        "at": 4.667409,
+        "candidate": "ccd1fdb3dd264d9ea0dba2e5cd47510f:2",
+        "record": "9199da2999fd436b8a3c5c37290a9120",
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "elapsed_ms": 12.253041990334168
+      },
+      {
+        "at": 4.740907,
+        "candidate": "ccd1fdb3dd264d9ea0dba2e5cd47510f:3",
+        "record": "950c99d474504ea09ee811459e5a9e9c",
+        "batch": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+        "elapsed_ms": 12.27166602620855
+      }
+    ],
+    "delayed": [],
+    "field_changes": [
+      {
+        "at": 0.84947,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 0.855934,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 4.802463,
+        "values": [
+          3,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 4.959183,
+        "values": [
+          4,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 5.850235,
+        "values": [
+          5,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 9,
+  "static": {
+    "seconds": 3.0039545420149807,
+    "analyses": 1,
+    "source_frames": 113
+  },
+  "clicks": {
+    "accepted": 3,
+    "records": 3,
+    "saved": 3
+  },
+  "retention": {
+    "records": [
+      "02767bbd122342848b47601d5a1241aa",
+      "9199da2999fd436b8a3c5c37290a9120",
+      "950c99d474504ea09ee811459e5a9e9c"
+    ],
+    "marks": [
+      {
+        "record_id": "02767bbd122342848b47601d5a1241aa",
+        "start": [
+          721.0,
+          118.0
+        ],
+        "end": [
+          714.0,
+          121.0
+        ],
+        "number": 1,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "9199da2999fd436b8a3c5c37290a9120",
+        "start": [
+          56.0,
+          455.0
+        ],
+        "end": [
+          48.0,
+          458.0
+        ],
+        "number": 2,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "950c99d474504ea09ee811459e5a9e9c",
+        "start": [
+          670.0,
+          237.0
+        ],
+        "end": [
+          660.0,
+          241.0
+        ],
+        "number": 3,
+        "color": "#d60000"
+      }
+    ],
+    "elapsed_seconds": 1.0111529169953428
+  },
+  "remaining_candidate_hides": [],
+  "performance": {
+    "analysis_ms": {
+      "n": 2,
+      "p50": 123.45708299835678,
+      "p95": 176.57410828833235
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 3,
+      "p50": 4.495333007071167,
+      "p95": 4.943608582834713
+    },
+    "stable_wait_ms": {
+      "n": 2,
+      "p50": 302.12599999504164,
+      "p95": 303.13741279242095
+    },
+    "analysis_to_paint_ms": {
+      "n": 2,
+      "p50": 126.58002050011419,
+      "p95": 179.96301425155252
+    },
+    "ingest_fps": {
+      "n": 147,
+      "p50": 30.271955662686555,
+      "p95": 31.333548588846046
+    },
+    "presented_fps": {
+      "n": 147,
+      "p50": 30.217186040921096,
+      "p95": 31.428626877232837
+    },
+    "frame_age_ms": {
+      "n": 148,
+      "p50": 2.804124989779666,
+      "p95": 3.5071001955657266
+    },
+    "analysis_service_total_ms": {
+      "n": 2,
+      "p50": 60.42808351048734,
+      "p95": 61.003670857462566
+    },
+    "analysis_preparation_ms": {
+      "n": 2,
+      "p50": 1.954292005393654,
+      "p95": 3.0279920087195933
+    },
+    "analysis_processing_ms": {
+      "n": 2,
+      "p50": 58.473791505093686,
+      "p95": 60.12307885539485
+    },
+    "analysis_shared_memory_ms": {
+      "n": 2,
+      "p50": 2.641958519234322,
+      "p95": 4.614721167308744
+    },
+    "analysis_budget_wait_ms": {
+      "n": 2,
+      "p50": 0.03814548836089671,
+      "p95": 0.0470514438347891
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 4.407750006066635,
+      "p95": 4.407750006066635
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 2,
+      "p50": 116.83747899951413,
+      "p95": 166.00281039718539
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 2,
+      "p50": 56.40939548902679,
+      "p95": 106.15031423367327
+    }
+  },
+  "context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": false,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 148,
+      "span_seconds": 4.934882708010264,
+      "first_sequence": 2,
+      "last_sequence": 149,
+      "window_fps": 29.7879420237062
+    },
+    "presented": {
+      "frames": 148,
+      "span_seconds": 4.932054290984524,
+      "first_sequence": 2,
+      "last_sequence": 149,
+      "window_fps": 29.805024707190768
+    },
+    "input_trace": {
+      "events": [
+        {
+          "event": "press",
+          "at": 139722.86848025,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "04f81f91952349e58a66f6c026db9038",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:1"
+        },
+        {
+          "event": "release",
+          "at": 139722.868509375,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "04f81f91952349e58a66f6c026db9038",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 139722.868943333,
+          "field_epoch": 2,
+          "interaction_id": "2c5a73a425244abf984352d7ff3d8d95",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "04f81f91952349e58a66f6c026db9038",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:1"
+        },
+        {
+          "event": "press",
+          "at": 139722.944620875,
+          "field_epoch": 2,
+          "interaction_id": "2c5a73a425244abf984352d7ff3d8d95",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "a3743557216c4a03a16016a7887ce0a9",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:2"
+        },
+        {
+          "event": "release",
+          "at": 139722.94464775,
+          "field_epoch": 2,
+          "interaction_id": "2c5a73a425244abf984352d7ff3d8d95",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "a3743557216c4a03a16016a7887ce0a9",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 139722.945251333,
+          "field_epoch": 2,
+          "interaction_id": "4793d62c3c6a4b4fac5cdfef4a9604f0",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "a3743557216c4a03a16016a7887ce0a9",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:2"
+        },
+        {
+          "event": "press",
+          "at": 139723.018140416,
+          "field_epoch": 2,
+          "interaction_id": "4793d62c3c6a4b4fac5cdfef4a9604f0",
+          "button": 1,
+          "buttons": 1,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "2772fcb2a35c45989ea3b9efc3614cd4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:3"
+        },
+        {
+          "event": "release",
+          "at": 139723.018174333,
+          "field_epoch": 2,
+          "interaction_id": "4793d62c3c6a4b4fac5cdfef4a9604f0",
+          "button": 1,
+          "buttons": 0,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "2772fcb2a35c45989ea3b9efc3614cd4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 139723.018874708,
+          "field_epoch": 2,
+          "interaction_id": "08ff82b1659f444ea2b75c4d889a1b5d",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "2772fcb2a35c45989ea3b9efc3614cd4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "ccd1fdb3dd264d9ea0dba2e5cd47510f:3"
+        }
+      ],
+      "total_events": 9,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 4,
+      "analyzed": true,
+      "analysis_count": 2,
+      "batch_id": "6d4b0765cca14c229d2b0de56bc54601",
+      "events": [
+        {
+          "at": 139719.138651916,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 139719.145143125,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 139719.503062583,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "d03c5df252044e57bce40b746cffcc6c",
+          "batch_id": "ccd1fdb3dd264d9ea0dba2e5cd47510f",
+          "frame_id": "camera:workflow-validation:0:2:12"
+        },
+        {
+          "at": 139723.091452708,
+          "event": "new_cycle",
+          "cycle": 3,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 139723.248297333,
+          "event": "new_cycle",
+          "cycle": 4,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 139723.60789075,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 4,
+          "task_id": "79d3af623bab45f3b5f4eda6e0796b94",
+          "batch_id": "6d4b0765cca14c229d2b0de56bc54601",
+          "frame_id": "camera:workflow-validation:0:2:134"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "available",
+      "painted_visibility": {
+        "visible": true,
+        "last_observed_visible": true,
+        "observation_active": true,
+        "transition_count": 3,
+        "current_visible_ms": 426.6119170060847,
+        "current_hidden_ms": null,
+        "max_visible_ms": 3402.496999973664,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 139719.158459708,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 139719.688949708,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:18",
+            "batch_id": "ccd1fdb3dd264d9ea0dba2e5cd47510f"
+          },
+          {
+            "at": 139723.099543375,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:119",
+            "batch_id": null
+          },
+          {
+            "at": 139723.675148833,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:136",
+            "batch_id": "6d4b0765cca14c229d2b0de56bc54601"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "accepted_total": 3,
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 5.891798
+}

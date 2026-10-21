@@ -1,0 +1,4 @@
+{
+  "valid_comparison_baseline": false,
+  "reason": "Parent reported simultaneous cleanup of Windows validation PowerShell holding about 47GB private commit / 12GB RSS; memory release changes host conditions. Preserve as diagnostic run, rerun paired sampling after cleanup."
+}

@@ -26,3 +26,10 @@ docs/validation/acquisition-fourth-round-20261019/**/*.txt -text -whitespace
 docs/validation/acquisition-fifth-round-20261020/**/*.json -text -whitespace
 docs/validation/acquisition-fifth-round-20261020/**/*.log -text -whitespace
 docs/validation/acquisition-fifth-round-20261020/**/*.txt -text -whitespace
+# Sixth/seventh-round captured results retain their original Windows bytes.
+docs/validation/acquisition-sixth-round-20261020/**/*.json -text -whitespace
+docs/validation/acquisition-sixth-round-20261020/**/*.log -text -whitespace
+docs/validation/acquisition-sixth-round-20261020/**/*.txt -text -whitespace
+docs/validation/acquisition-seventh-round-20261021/**/*.json -text -whitespace
+docs/validation/acquisition-seventh-round-20261021/**/*.log -text -whitespace
+docs/validation/acquisition-seventh-round-20261021/**/*.txt -text -whitespace

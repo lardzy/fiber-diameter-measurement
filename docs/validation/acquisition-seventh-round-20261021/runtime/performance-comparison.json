@@ -1,0 +1,52 @@
+{
+  "scope": "Current 0.4.10 frozen build: manual-free baseline versus automatic candidate workflow, 768x576 33ms source, 1Hz accepted measurements, JPEG95. Does not compare previous version or validate real Microview.",
+  "baseline": {
+    "mode": "baseline",
+    "seconds": 30.00094470899785,
+    "sample_frames": 909,
+    "fps": 30.30115114422343,
+    "p50_frame_age_ms": 3.133958001853898,
+    "p95_frame_age_ms": 4.333816398866475,
+    "measurements": 29,
+    "measurement_period_ms": 1000,
+    "source_period_ms": 33,
+    "evidence_options": {
+      "version": 1,
+      "mode": "crop_jpeg",
+      "padding": 64,
+      "minimum_size": 256,
+      "quality": 95,
+      "subsampling": "4:4:4"
+    },
+    "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+    "saved": 29
+  },
+  "candidates": {
+    "mode": "candidates",
+    "seconds": 30.00594600001932,
+    "sample_frames": 909,
+    "fps": 30.301308637776316,
+    "p50_frame_age_ms": 2.8542919899336994,
+    "p95_frame_age_ms": 3.6848160205408926,
+    "measurements": 29,
+    "measurement_period_ms": 1000,
+    "source_period_ms": 33,
+    "evidence_options": {
+      "version": 1,
+      "mode": "crop_jpeg",
+      "padding": 64,
+      "minimum_size": 256,
+      "quality": 95,
+      "subsampling": "4:4:4"
+    },
+    "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+    "saved": 29
+  },
+  "source_same": true,
+  "scripts_same": true,
+  "fps_drop_percent": -0.0005197609560691999,
+  "p95_age_increase_ms": -0.649000378325582,
+  "frame_budget_ms": 33,
+  "external_load": "Full pytest / visual and VM testing ended; VM resource recovery confirmed then 15-second idle interval before paired samples. baseline-01 excluded as resource-transition diagnostic.",
+  "passed": true
+}

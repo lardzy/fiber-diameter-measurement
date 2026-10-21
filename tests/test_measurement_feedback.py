@@ -100,6 +100,33 @@ def test_compatibility_callback_cannot_place_old_feedback_on_a_new_field(control
     assert not structured
 
 
+def test_late_failure_keeps_task_identity_and_does_not_claim_new_interaction(controller):
+    structured, compatible = [], []
+    controller.measurementFeedback.connect(structured.append)
+    controller.resultRejected.connect(compatible.append)
+    intent, future = queue(controller)
+    controller.start((60, 60))
+    current_draft = controller.draft
+    future.set_result({"status": "rejected", "reason": "endpoints_not_background"})
+    controller.poll()
+    assert controller.draft is current_draft
+    assert len(structured) == 1
+    assert structured[0].interaction_id == intent.id
+    assert structured[0].measurement_number == 1
+    assert not controller.feedback_is_current_interaction(structured[0])
+    assert compatible[0].startswith("测量 #1 未通过")
+    trace = controller.performance_frame_context()["input_trace"]["events"]
+    assert any(item["event"] == "feedback" and item["task_id"] == intent.id
+               and item["current_interaction"] is False for item in trace)
+
+
+def test_zero_length_finish_preserves_first_point_and_does_not_submit(controller):
+    controller.start((10, 10))
+    draft = controller.draft
+    assert controller.finish((10, 10), "wool") is None
+    assert controller.draft is draft and not controller._jobs
+
+
 def test_unknown_worker_details_are_localized_without_hiding_diagnostics(controller):
     events = []
     controller.measurementFeedback.connect(events.append)
@@ -168,6 +195,20 @@ def test_automatic_feedback_requires_current_task_and_context(controller, scenar
         assert not controller.candidates and not controller.session.measurements
         controller.poll()
         assert not events and controller._automatic_context is context
+
+
+def test_late_automatic_failure_cannot_own_active_manual_draft(controller):
+    events, messages = [], []
+    controller.measurementFeedback.connect(events.append)
+    controller.resultRejected.connect(messages.append)
+    automatic_context(controller, {"task_id": "analysis-7",
+        "result": {"status": "failed", "reason": "worker_crashed", "candidates": []}})
+    controller.start((30, 30))
+    draft = controller.draft
+    controller.poll()
+    assert controller.draft is draft
+    assert len(events) == 1 and not controller.feedback_is_current_interaction(events[0])
+    assert messages[0].startswith("全图分析失败")
 
 
 @pytest.mark.parametrize("change", ["field", "source", "unavailable", "cancel"])

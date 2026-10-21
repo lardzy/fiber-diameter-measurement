@@ -1,0 +1,692 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T04:11:25.715736+00:00",
+  "phase": "full",
+  "scenario": "retention",
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "826f5e13134ac83bc64ec98638eccae656a1939385643b519ff890b57eae7aae",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "8136e02e1673c98a976c29e41ece914613cbe355da7310db9aeb4d5cd7eb0335",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_experiment_view.py": "23f780224eebfc0e66249c1ba05ed4a97d315ca73bd403365e92f75527e0fa8a",
+    "src/fdm/ui/trial_assistance.py": "339890459d8902b8645b9c384dc7fd597504a703c56e13f7ba1b88d022116ef7"
+  },
+  "script_sha256": "bcac5b996f1a048964bacd54774a53976cf6c3d7e1d24f5543eac3c1bb5f041d",
+  "real_camera": false,
+  "passed": true,
+  "trace": {
+    "analyses": [
+      {
+        "at": 1.150271,
+        "origin": "automatic",
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "stage": "setup"
+      },
+      {
+        "at": 2.490992,
+        "origin": "automatic",
+        "batch": "24efb99ae5114b5d9650fb9b09bf3edd",
+        "stage": "retention"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 0.733,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.151939,
+        "visible": true,
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.326626,
+        "visible": true,
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "available": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 1.757658,
+        "visible": true,
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "available": 8,
+        "stage": "clicks"
+      },
+      {
+        "at": 1.822861,
+        "visible": true,
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "available": 7,
+        "stage": "clicks"
+      },
+      {
+        "at": 1.895683,
+        "visible": true,
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "available": 6,
+        "stage": "clicks"
+      },
+      {
+        "at": 1.972619,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 2.492426,
+        "visible": true,
+        "batch": "24efb99ae5114b5d9650fb9b09bf3edd",
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 2.573649,
+        "visible": true,
+        "batch": "24efb99ae5114b5d9650fb9b09bf3edd",
+        "available": 9,
+        "stage": "retention"
+      }
+    ],
+    "status": [
+      {
+        "at": 0.766469,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 0.772442,
+        "message": "标定已变化"
+      },
+      {
+        "at": 0.823733,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 1.150259,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 1.325544,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 1.816689,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 1.890809,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 1.965324,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 2.052654,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 2.139505,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 2.189279,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 2.490981,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 2.572759,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 3.31409,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 3.316005,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [
+      {
+        "at": 1.755498,
+        "candidate": "cff46f4b963f4f78a9c5932007902547:1",
+        "record": "5d06dd1e1f2c4d3786ff13e558f35fcc",
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "elapsed_ms": 3.696375002618879
+      },
+      {
+        "at": 1.828429,
+        "candidate": "cff46f4b963f4f78a9c5932007902547:2",
+        "record": "288f516729cb45ac947b6196cab3a623",
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "elapsed_ms": 12.49537500552833
+      },
+      {
+        "at": 1.902274,
+        "candidate": "cff46f4b963f4f78a9c5932007902547:3",
+        "record": "54857dcd93ed4747860f548416d69202",
+        "batch": "cff46f4b963f4f78a9c5932007902547",
+        "elapsed_ms": 12.463207996916026
+      }
+    ],
+    "delayed": [],
+    "field_changes": [
+      {
+        "at": 0.766402,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 0.772386,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 1.964994,
+        "values": [
+          3,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 2.139349,
+        "values": [
+          4,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 3.315979,
+        "values": [
+          5,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 9,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "clicks": {
+    "accepted": 3,
+    "records": 3,
+    "saved": 3
+  },
+  "retention": {
+    "records": [
+      "288f516729cb45ac947b6196cab3a623",
+      "54857dcd93ed4747860f548416d69202",
+      "5d06dd1e1f2c4d3786ff13e558f35fcc"
+    ],
+    "marks": [
+      {
+        "record_id": "5d06dd1e1f2c4d3786ff13e558f35fcc",
+        "start": [
+          721.0,
+          118.0
+        ],
+        "end": [
+          714.0,
+          121.0
+        ],
+        "number": 1,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "288f516729cb45ac947b6196cab3a623",
+        "start": [
+          56.0,
+          455.0
+        ],
+        "end": [
+          48.0,
+          458.0
+        ],
+        "number": 2,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "54857dcd93ed4747860f548416d69202",
+        "start": [
+          670.0,
+          237.0
+        ],
+        "end": [
+          660.0,
+          241.0
+        ],
+        "number": 3,
+        "color": "#d60000"
+      }
+    ],
+    "elapsed_seconds": 1.0041683329909574
+  },
+  "remaining_candidate_hides": [],
+  "performance": {
+    "analysis_ms": {
+      "n": 2,
+      "p50": 137.13452049705666,
+      "p95": 187.34861425618874
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 3,
+      "p50": 3.1351250072475523,
+      "p95": 3.8397125026676804
+    },
+    "stable_wait_ms": {
+      "n": 2,
+      "p50": 303.2856874924619,
+      "p95": 305.80229404149577
+    },
+    "analysis_to_paint_ms": {
+      "n": 2,
+      "p50": 139.6733744913945,
+      "p95": 189.95967433875194
+    },
+    "ingest_fps": {
+      "n": 65,
+      "p50": 30.276996692529266,
+      "p95": 61.054572277684805
+    },
+    "presented_fps": {
+      "n": 65,
+      "p50": 30.189134945479328,
+      "p95": 61.33261402853907
+    },
+    "frame_age_ms": {
+      "n": 66,
+      "p50": 1.2718954967567697,
+      "p95": 3.19333349034423
+    },
+    "analysis_service_total_ms": {
+      "n": 2,
+      "p50": 66.4047915051924,
+      "p95": 76.26687946176389
+    },
+    "analysis_preparation_ms": {
+      "n": 2,
+      "p50": 1.7882710235426202,
+      "p95": 2.8262518215342425
+    },
+    "analysis_processing_ms": {
+      "n": 2,
+      "p50": 64.61652048164979,
+      "p95": 75.5165892362129
+    },
+    "analysis_shared_memory_ms": {
+      "n": 2,
+      "p50": 4.449020998436026,
+      "p95": 8.016339303867426
+    },
+    "analysis_budget_wait_ms": {
+      "n": 2,
+      "p50": 0.15366649313364178,
+      "p95": 0.24374163331231102
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 8.638750005047768,
+      "p95": 8.638750005047768
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 2,
+      "p50": 125.47179200919345,
+      "p95": 167.80036700947676
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 2,
+      "p50": 59.067000504001044,
+      "p95": 111.25766346085584
+    }
+  },
+  "context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": false,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 66,
+      "span_seconds": 2.1663664580264594,
+      "first_sequence": 2,
+      "last_sequence": 67,
+      "window_fps": 30.004157311046267
+    },
+    "presented": {
+      "frames": 66,
+      "span_seconds": 2.1631479580246378,
+      "first_sequence": 2,
+      "last_sequence": 67,
+      "window_fps": 30.04879983307164
+    },
+    "input_trace": {
+      "events": [
+        {
+          "event": "press",
+          "at": 143686.20295825,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "96036b3b4b6b4b4ba429bd81cae3884f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:1"
+        },
+        {
+          "event": "release",
+          "at": 143686.203003,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "96036b3b4b6b4b4ba429bd81cae3884f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 143686.203625958,
+          "field_epoch": 2,
+          "interaction_id": "fe27024a6c8345848c0d001701ebb7a7",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "96036b3b4b6b4b4ba429bd81cae3884f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:1"
+        },
+        {
+          "event": "press",
+          "at": 143686.266973166,
+          "field_epoch": 2,
+          "interaction_id": "fe27024a6c8345848c0d001701ebb7a7",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "52dfab667bd248e3b67bfcd7f34ef798",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:2"
+        },
+        {
+          "event": "release",
+          "at": 143686.266997916,
+          "field_epoch": 2,
+          "interaction_id": "fe27024a6c8345848c0d001701ebb7a7",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "52dfab667bd248e3b67bfcd7f34ef798",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 143686.267351208,
+          "field_epoch": 2,
+          "interaction_id": "33c89b480a1c46178bf0d448272ee30d",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "52dfab667bd248e3b67bfcd7f34ef798",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:2"
+        },
+        {
+          "event": "press",
+          "at": 143686.340827833,
+          "field_epoch": 2,
+          "interaction_id": "33c89b480a1c46178bf0d448272ee30d",
+          "button": 1,
+          "buttons": 1,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "530f607a05b243c493eaaab204173c1a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:3"
+        },
+        {
+          "event": "release",
+          "at": 143686.34085175,
+          "field_epoch": 2,
+          "interaction_id": "33c89b480a1c46178bf0d448272ee30d",
+          "button": 1,
+          "buttons": 0,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "530f607a05b243c493eaaab204173c1a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 143686.341334041,
+          "field_epoch": 2,
+          "interaction_id": "f386ad7c803e4d0690b71552d6ae1f47",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "530f607a05b243c493eaaab204173c1a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "cff46f4b963f4f78a9c5932007902547:3"
+        }
+      ],
+      "total_events": 9,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 4,
+      "analyzed": true,
+      "analysis_count": 2,
+      "batch_id": "24efb99ae5114b5d9650fb9b09bf3edd",
+      "events": [
+        {
+          "at": 143685.217218166,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 143685.223222458,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 143685.581950625,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "16f18dc25a904f8ca578569d8f354eb9",
+          "batch_id": "cff46f4b963f4f78a9c5932007902547",
+          "frame_id": "camera:workflow-validation:0:2:13"
+        },
+        {
+          "at": 143686.415722333,
+          "event": "new_cycle",
+          "cycle": 3,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 143686.59012475,
+          "event": "new_cycle",
+          "cycle": 4,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 143686.940722875,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 4,
+          "task_id": "15e8984a5ac7421ea45ef7eac9b3c4ff",
+          "batch_id": "24efb99ae5114b5d9650fb9b09bf3edd",
+          "frame_id": "camera:workflow-validation:0:2:53"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "available",
+      "painted_visibility": {
+        "visible": true,
+        "last_observed_visible": true,
+        "observation_active": true,
+        "transition_count": 3,
+        "current_visible_ms": 394.9849169875961,
+        "current_hidden_ms": null,
+        "max_visible_ms": 638.228582974989,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 143685.234306958,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 143685.7774905,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:19",
+            "batch_id": "cff46f4b963f4f78a9c5932007902547"
+          },
+          {
+            "at": 143686.423487416,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:37",
+            "batch_id": null
+          },
+          {
+            "at": 143687.024516708,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:55",
+            "batch_id": "24efb99ae5114b5d9650fb9b09bf3edd"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "accepted_total": 3,
+  "video": {
+    "frames": 14,
+    "fps": 8,
+    "kind": "Qt grabs; diagnostic overhead",
+    "exit_code": 0,
+    "errors": [],
+    "stderr": ""
+  },
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 3.365978
+}

@@ -1,0 +1,114 @@
+[
+  {
+    "case": "light-1600x900-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 9
+  },
+  {
+    "case": "light-1600x900-125",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 4
+  },
+  {
+    "case": "light-1600x900-150",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 1
+  },
+  {
+    "case": "light-1366x768-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 5
+  },
+  {
+    "case": "dark-1600x900-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 9
+  },
+  {
+    "case": "dark-1600x900-125",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 4
+  },
+  {
+    "case": "dark-1600x900-150",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 1
+  },
+  {
+    "case": "dark-1366x768-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 5
+  },
+  {
+    "case": "navy-1600x900-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 9
+  },
+  {
+    "case": "navy-1600x900-125",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 4
+  },
+  {
+    "case": "navy-1600x900-150",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 1
+  },
+  {
+    "case": "navy-1366x768-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 5
+  },
+  {
+    "case": "warm-1600x900-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 9
+  },
+  {
+    "case": "warm-1600x900-125",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 4
+  },
+  {
+    "case": "warm-1600x900-150",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 1
+  },
+  {
+    "case": "warm-1366x768-100",
+    "exit_code": 0,
+    "passed": true,
+    "error": null,
+    "categories": 5
+  }
+]

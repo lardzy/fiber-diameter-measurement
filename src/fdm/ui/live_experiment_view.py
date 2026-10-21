@@ -140,6 +140,14 @@ def apply_trial_theme(view):
         #trialSidebar QPushButton:checked, #trialHeader QPushButton:checked {{ background: {select}; border-color: {colors.accent}; color: {ink}; font-weight: 600; }}
         #trialSidebar QPushButton:disabled {{ color: {muted}; }}
         #trialSidebar QToolButton {{ min-height: 20px; padding: 0; }}
+        #trialSidebar QToolButton#trialEvidence {{ min-height: 20px; max-height: 20px; padding: 0 12px 0 0;
+            border: 1px solid {border}; border-radius: 4px; background: {surface}; color: {ink}; }}
+        #trialSidebar QToolButton#trialEvidence:hover {{ background: {select}; border-color: {colors.accent}; }}
+        #trialSidebar QToolButton#trialEvidence:pressed {{ background: {select}; border-color: {colors.accent}; }}
+        #trialSidebar QToolButton#trialEvidence:focus {{ border-color: {colors.accent}; }}
+        #trialSidebar QToolButton#trialEvidence::menu-button {{ width: 11px; border-left: 1px solid {border};
+            border-top-right-radius: 3px; border-bottom-right-radius: 3px; }}
+        #trialSidebar QToolButton#trialEvidence::menu-button:hover {{ background: {select}; }}
         #trialSidebar QComboBox, #trialHeader QComboBox {{ min-height: 30px; border: 1px solid {border}; border-radius: 4px; padding-left: 7px; }}
         #acquisitionTrial #trialSubtitle, #acquisitionTrial #trialHint, #acquisitionTrial #trialColumnHeader {{ color: {muted}; font-size: 9pt; }}
         #acquisitionTrial #trialLastValue {{ font-size: 16pt; font-weight: 600; }}
@@ -152,6 +160,9 @@ def apply_trial_theme(view):
     if style != getattr(view, "_trial_theme_style", None):
         view._trial_theme_style = style
         view.setStyleSheet(style)
+        if hasattr(view, "evidence_button"):
+            from fdm.ui.icons import themed_icon
+            view.evidence_button.setIcon(themed_icon("open_images"))
 
 
 def build_trial_view(v):
@@ -362,7 +373,7 @@ def build_trial_view(v):
     v.measure_mode.setMinimumWidth(110)
     v.measure_mode.setMaximumWidth(140)
     tools.addWidget(v.measure_mode)
-    button("新视场", v.controller.end_field, tools, "next_field")
+    button("新视场", v.controller.new_field, tools, "next_field")
     v.trial_tools_button = QToolButton(operations)
     v.trial_tools_button.setIcon(themed_icon("settings"))
     v.trial_tools_button.setAccessibleName("试验工具与设置")

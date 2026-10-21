@@ -1,0 +1,117 @@
+{
+  "scope": "Windows VM, synthetic camera, real Qt navigation and analysis. Failed visibility runs retained; no relaxed threshold.",
+  "runs": [
+    {
+      "file": "windows-source-clicks100-failed.json",
+      "sha256": "70f075380892545ef9de6ad09a7dfa392c8e4cb00f64fdcecfb4a516aca910e1",
+      "script_sha256": "8f16c7e6c5ded602a4ad9528df48e39cb2cea64e21334bc09c42ecf8c7a91960",
+      "passed": false,
+      "accepted": 100,
+      "saved": 100,
+      "batches": 12,
+      "remaining_candidate_hides": [
+        {
+          "at": 4.429851,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "58ebbcf9f39d4c6191889d3e22c595f5",
+          "available": 8,
+          "frame": 58
+        },
+        {
+          "at": 12.850623,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "55e9d6112a53447ea320b3c8803b65ff",
+          "available": 3,
+          "frame": 313
+        },
+        {
+          "at": 18.272278,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "e39a333a8cfb4d9c8010d698141f5f03",
+          "available": 6,
+          "frame": 478
+        }
+      ],
+      "source_changed_during_run": false
+    },
+    {
+      "file": "windows-source-clicks100-diagnostic.json",
+      "sha256": "5cac1412cc4f282ba05230090b8efa75b547723d16889044f7404326f83e689d",
+      "script_sha256": "eabc5a8e7a8cd6deadafd155f851060120846a3666cf5df163ddb098c690a3a5",
+      "passed": false,
+      "accepted": 100,
+      "saved": 100,
+      "batches": 12,
+      "remaining_candidate_hides": [
+        {
+          "at": 4.453825,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "84f287ec1634429d9d70a8796259e6f7",
+          "available": 8,
+          "frame": 57
+        },
+        {
+          "at": 12.864388,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "a616e32f7bec4524ae615dfe406678cd",
+          "available": 3,
+          "frame": 312
+        }
+      ],
+      "source_changed_during_run": false
+    },
+    {
+      "file": "windows-source-clicks100-profile.json",
+      "sha256": "2ea782a66ede3dc8988f74663fde63a6014576e253fc7677f105c97f6a42870b",
+      "script_sha256": "2f10282d6e356e8460244a88b69600bbb17330cf322ddfc72b8157fe059e13b9",
+      "passed": false,
+      "accepted": 100,
+      "saved": 100,
+      "batches": 12,
+      "remaining_candidate_hides": [
+        {
+          "at": 4.45497,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "2aa1bb4500a745a18fcc0aaa4e852abe",
+          "available": 8,
+          "frame": 57
+        },
+        {
+          "at": 12.696818,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "4b6ffdaec2b7480e806f881fdb503354",
+          "available": 4,
+          "frame": 306
+        }
+      ],
+      "source_changed_during_run": false
+    },
+    {
+      "file": "windows-source-clicks100-profile-gc.json",
+      "sha256": "5851cc21209473e7bec7a68f3d0a0a12f7bf67f15324db82bd6fafa81459d0b3",
+      "script_sha256": "24340e1b665dd4982918abfe2348d0ada19446396495611f5ee9bdd22ebf3172",
+      "passed": false,
+      "accepted": 100,
+      "saved": 100,
+      "batches": 12,
+      "remaining_candidate_hides": [
+        {
+          "at": 12.746932,
+          "visible": false,
+          "stage": "clicks",
+          "batch": "f6d742ac73d7455b805bd20ba9d21cce",
+          "available": 5,
+          "frame": 311
+        }
+      ],
+      "source_changed_during_run": false
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "windows_root": "C:\\tmp\\fdm-cu-live-sixth-round-20261020",
+  "adapters": [
+    {
+      "source": "scripts/validation/fifth_round_remote.py",
+      "source_sha256": "477c49f2ab157dbd75e2e20f7386e3345f53e0e1ab4a4b3ea340aa6e693c88e1",
+      "path": "scripts/validation/sixth_round_remote.py",
+      "sha256": "45ba7c537d10045687ae4ed15a607679b1ffc590b41da1a38131272732f081bb",
+      "size": 3966
+    },
+    {
+      "source": "scripts/validation/sync_acquisition_fifth_round_windows.py",
+      "source_sha256": "e639d82c15b4c8b566b98ca19edaecb49d26b8fdb741b70a5a2d358608bd0e8e",
+      "path": "scripts/validation/sync_acquisition_sixth_round_windows.py",
+      "sha256": "456f673735518a79d1b9ad3bff1f1715c2fe56ee20271ccad9a27bc82ad293d9",
+      "size": 1123
+    },
+    {
+      "source": "scripts/validation/build_acquisition_fifth_round.ps1",
+      "source_sha256": "f162b0296e2916a9e3d4142dc45ad3b0ca04015b96347c822d36eeda92cbb6e0",
+      "path": "scripts/validation/build_acquisition_sixth_round.ps1",
+      "sha256": "eab315a7ab5d652af5627da69e57bb569a5a4af385f950135a7d6b53e12ebae9",
+      "size": 4334
+    },
+    {
+      "source": "scripts/validation/verify_fifth_round_installer.py",
+      "source_sha256": "3989079ed7b6c7761a238ce9e71e878c7e670de697cb249b5a71a1d2ad4dbdda",
+      "path": "scripts/validation/verify_sixth_round_installer.py",
+      "sha256": "3ee3a4a5242e5b168636083e34f892d86e181fa4e820491140892ff19293f1b8",
+      "size": 6798
+    },
+    {
+      "source": "scripts/validation/verify_fifth_round_installed_selfcheck.py",
+      "source_sha256": "035d40a6140e0e3e819a882ac36f875eb554e53eb9e7d920aa39008c0db53815",
+      "path": "scripts/validation/verify_sixth_round_installed_selfcheck.py",
+      "sha256": "ee511bc140b40380118dd9b2c45b6a98c4fd35d16e93325426c72c0aba638ad9",
+      "size": 3082
+    },
+    {
+      "source": "scripts/validation/manage_acquisition_fifth_round_installation.ps1",
+      "source_sha256": "9b03b0c8833b0bfa1e61f85b5dbfa858c81f8be47d75a9fcf79b8ff1f690bf77",
+      "path": "scripts/validation/manage_acquisition_sixth_round_installation.ps1",
+      "sha256": "a26751621ae9aea0b5fb43a43817b2aec85cc3b183df6932f9e1e5f1412024ee",
+      "size": 6832
+    },
+    {
+      "source": "scripts/validation/install_acquisition_fifth_round.ps1",
+      "source_sha256": "3cb07ddc87cf738010fb8fdd58b280d41fe387cace53fdb3432d448ee676765c",
+      "path": "scripts/validation/install_acquisition_sixth_round.ps1",
+      "sha256": "cb17a7b164b97a459ca17158d1aa57e21d705cf438bc09ecab84a473010fb712",
+      "size": 2445
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_environment.ps1",
+      "source_sha256": "b4e5e52212e70a16ad1b7f4cb5e728c24f9c4c7d28bd7eaac34c9a3d0aa5b016",
+      "path": "scripts/validation/probe_acquisition_sixth_round_environment.ps1",
+      "sha256": "75b4b5df7c0dda9995a2f13f1a10d922b4748e03f4e27e91360804130c6237b2",
+      "size": 2185
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_explorer.ps1",
+      "source_sha256": "fcc3c8b2ad1b52aa563916b6125e812eb17c159df30e2bf098dd16a31c94adb9",
+      "path": "scripts/validation/probe_acquisition_sixth_round_explorer.ps1",
+      "sha256": "304656d10401b72109e09a14f2c719d88c7a8d622651a4265429f0a164f1d6c1",
+      "size": 4090
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_frozen.ps1",
+      "source_sha256": "a216b8941c607e623104cc6cc27226276d039909167701dbfd7356f2cfe6c37e",
+      "path": "scripts/validation/probe_acquisition_sixth_round_frozen.ps1",
+      "sha256": "2bfc31a24a8b421e13c24052b7733647c8aa58c668bc25f7ee2146ad3d101e19",
+      "size": 28771
+    },
+    {
+      "source": "scripts/validation/verify_acquisition_fifth_round_excel.ps1",
+      "source_sha256": "7b9888b8c71e055a3f2be9fe72d2fc7585932fe86909b8baa79b0793a0c6a660",
+      "path": "scripts/validation/verify_acquisition_sixth_round_excel.ps1",
+      "sha256": "7bb9ebcc7362f26d7df56e468621063deaa5d3cfa5744667dbeee03dc0e88c01",
+      "size": 4904
+    },
+    {
+      "source": "scripts/validation/run_acquisition_fifth_round_frozen.py",
+      "source_sha256": "dc3d32786847dbd403fed81728674b92ab8aabba851c40e576f12c7e6f9e7eca",
+      "path": "scripts/validation/run_acquisition_sixth_round_frozen.py",
+      "sha256": "66ad57f0526336b0598ce8a7a1e339dc6ae40f23bdccc5d163c0dfd73e3ad891",
+      "size": 7163
+    },
+    {
+      "source": "scripts/validation/receive_acquisition_fifth_round_artifact.py",
+      "source_sha256": "b5cdff0c3439828f181ec272fb16a5b5ecc03ea45b0a880eb0bc2c0385075212",
+      "path": "scripts/validation/receive_acquisition_sixth_round_artifact.py",
+      "sha256": "3961a847d672ff4d80c8d1777b15bb13cfba8dd3637400c6addd891289bf6e71",
+      "size": 3469
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/scripts/validation/sixth_round_windows.py", line 133, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/scripts/validation/sixth_round_windows.py", line 109, in main
+    print(remote.run_powershell(args.vm, args.code_file.read_text(encoding='utf-8-sig'), timeout=args.timeout).stdout)
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/scripts/validation/sixth_round_remote.py", line 36, in run_powershell
+  File "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/scripts/validation/sixth_round_remote.py", line 25, in short_powershell
+RuntimeError: Windows command failed (1):
+
+����λ�� ��:5 �ַ�: 22
++ $env:PYTHONPATH=$root\src;$root\validation_vendor
++                      ~~~~
+����ʽ������а�������ı�ǡ�\src����
+����λ�� ��:5 �ַ�: 32
++ $env:PYTHONPATH=$root\src;$root\validation_vendor
++                                ~~~~~~~~~~~~~~~~~~
+����ʽ������а�������ı�ǡ�\validation_vendor����
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+

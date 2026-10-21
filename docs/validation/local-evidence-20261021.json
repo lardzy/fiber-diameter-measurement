@@ -1,0 +1,553 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-21T04:25:51.288680+00:00",
+  "scope": [
+    "docs/validation/acquisition-sixth-round-20261020",
+    "docs/validation/acquisition-seventh-round-20261021"
+  ],
+  "retention": "Generated media and raw UIA/build artifacts retained locally; source, results and failure reports tracked. Installers are separately retained under ignored dist/.",
+  "file_count": 108,
+  "bytes": 18280457,
+  "files": [
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/clicks100/final.png",
+      "bytes": 199195,
+      "sha256": "fa2d776106614326eb73583421df8c861ab50c8f6cd453187d84c3fe0fba9797"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/clicks100/initial.png",
+      "bytes": 197115,
+      "sha256": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/clicks12-video/final.png",
+      "bytes": 199763,
+      "sha256": "164ea8f95ae069003ceb4e29201d2942325e4e0c9e144f6c525304420bc46618"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/clicks12-video/initial.png",
+      "bytes": 197115,
+      "sha256": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/clicks12-video/workflow.mp4",
+      "bytes": 265494,
+      "sha256": "56d3081c1e604afd18c98752630d9e83f46d7c49391411fb319cb9ef4af560e0"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/video-diagnostics/first-timeout/validation-failure.png",
+      "bytes": 194522,
+      "sha256": "80d32b26e06f3a60e2f7268a72d15a0d6e92b4b8ef27de70b48d325c39dff8be"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/video-diagnostics/pending-paint-rejection/validation-failure.png",
+      "bytes": 194064,
+      "sha256": "1c745204a1b41aacb396146b35bee4f3bf0ef69e2bf413be0d22a38c49203fe0"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/video-diagnostics/pre-gate-success/final.png",
+      "bytes": 199763,
+      "sha256": "164ea8f95ae069003ceb4e29201d2942325e4e0c9e144f6c525304420bc46618"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/video-diagnostics/pre-gate-success/initial.png",
+      "bytes": 197115,
+      "sha256": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/macos/video-diagnostics/pre-gate-success/workflow.mp4",
+      "bytes": 259598,
+      "sha256": "cf5819516e44a9afe49c73fbb2d4fb7aea3363c37a1f1b1ab2c86f8090f470e6"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-off-1000-unpressed-moves.png",
+      "bytes": 203087,
+      "sha256": "00306dbfa462e89f0828a03f5ded00249fa18d70d85f31929778709a50163e1c"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-off-first-point.png",
+      "bytes": 200966,
+      "sha256": "218610002d8b90668426624d3cce432257a7d9c145c410bde21cc4ff58fe0fb3"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-off-held-drag-accepted.png",
+      "bytes": 207663,
+      "sha256": "54384bb795490f1e2af5b17c3243078cb3e3ab11c6a5e3b8e8452521464f8872"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-off-old-failure-new-draft.png",
+      "bytes": 215437,
+      "sha256": "b0f8a0cf6553902b528f3bd630593eb922492c801815ad8d64c518ad77711d70"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-on-1000-unpressed-moves.png",
+      "bytes": 219974,
+      "sha256": "28675741cd5d56dbd5cecdb87fd8aa4cda10d8e8f145c8e5c0595f6edd42271f"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-on-first-point.png",
+      "bytes": 221276,
+      "sha256": "377469126064339bff7a902eaabd4e209d09a3dfd96257cd95664152a4b6f6c6"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-on-held-drag-accepted.png",
+      "bytes": 218455,
+      "sha256": "97783631059a1063dd47d9375c8b19bd494732e589de8d3ce7317fdc6cbbc9a5"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/auto-on-old-failure-new-draft.png",
+      "bytes": 226349,
+      "sha256": "b8d6de94633c6f3f0a3cd34497131661f610344b16741263dc91a352100e7d1f"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/manual-input/manual-input-qt-offscreen.mp4",
+      "bytes": 429304,
+      "sha256": "74dc50c1b71eb54eca9b6bdcc892a0de26a67681fa1817690661d971ff83552f"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/runtime/alignment-paused.png",
+      "bytes": 212515,
+      "sha256": "810e1ec2fb1546e52c604b35acae68e5b49f651d927fbb589836a56c1cf8ed58"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/runtime/final.png",
+      "bytes": 197115,
+      "sha256": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/runtime/initial.png",
+      "bytes": 197115,
+      "sha256": "ef127b5e128e26ce646804cb5fd464bc5b3f792478c5647622e6fdb8307c59fb"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/dark-1600x900-1.5-album-button.png",
+      "bytes": 1249,
+      "sha256": "d096a012b9e3710785a0bd21b25f62119ddef4285b9820530328ed6b1d84c5c9"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/dark-1600x900-1.5-trial.png",
+      "bytes": 246971,
+      "sha256": "171ce0a4c5b90fbc2605dcae5b8f98c8529c9cf248b3c80e3a1e6f38c7e6a60d"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/light-1600x900-1-album-button.png",
+      "bytes": 819,
+      "sha256": "93d25fef2b6812fbe3b1c601ff47adb29fb50d18927e08738c7d81b8e51d6db7"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/light-1600x900-1-trial.png",
+      "bytes": 207552,
+      "sha256": "2193805ab4d02f927d636fde37fb39f588a931b3bb734ac90a6423e43a1adad0"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/navy-1366x768-1-album-button.png",
+      "bytes": 815,
+      "sha256": "c863aca22b20eaaf9e83bcc798e99cb1ddbe301115f2c4d03a7e8a033c93aaf0"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/navy-1366x768-1-trial.png",
+      "bytes": 195629,
+      "sha256": "304a29b6ebcab3986fcaeebe2a68ebd7e810b75f2f2c0c4e11a30d49f45b002d"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/warm-1600x900-1.25-album-button.png",
+      "bytes": 1186,
+      "sha256": "82bd3511a8e005d58c92e3a980393353fd370805d42082b7341681be4fa0f84b"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/visual/screenshots/warm-1600x900-1.25-trial.png",
+      "bytes": 236025,
+      "sha256": "ae7a50f327be63141e1be9f18ea91f6db3d61d13d6ceb903fa78dbd230805a17"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/windows/screenshots/03-content.png",
+      "bytes": 82596,
+      "sha256": "e5b20948d579e446d172b678c820dbd0ceddaf8804445b2944c9697bf91147b1"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/windows/screenshots/03a-advanced-storage-options.png",
+      "bytes": 140104,
+      "sha256": "531a99a851d9d4a5869f3287fbf8ec30a84a8f1c6ca6c3f2c08184b971460598"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/windows/screenshots/04a-evidence-album-window-native.png",
+      "bytes": 73266,
+      "sha256": "98d3f6aaaae01f5bad4d840a88ca10db5fe663fa5ee98845845ca58d46461ace"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/windows/screenshots/04b-evidence-album-window-maximized-native.png",
+      "bytes": 127351,
+      "sha256": "9d0674fbcda62d90b687ef091b7caff88edc111135fc61518ab80eb086a180c6"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/windows/screenshots/04c-evidence-review.png",
+      "bytes": 164480,
+      "sha256": "2645d18c35b08210afc3b2c8bdf37abb5cd3eed156ff4c5fcd61dbc95724dfea"
+    },
+    {
+      "path": "docs/validation/acquisition-sixth-round-20261020/windows/source-clicks-diagnostics.zip",
+      "bytes": 457505,
+      "sha256": "3db4a583a29a0e85e2892de97cfa5b6a4784f7e4b3641015d2226657008cc41f"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/quick/candidate-menu.png",
+      "bytes": 10199,
+      "sha256": "f2a5817387704e680072fa9a2d429f77c94a6d3b2d9ca2ac851a29c10985e51c"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/quick/light1600-retained.png",
+      "bytes": 210236,
+      "sha256": "a9fb7591d5ea78172b837cd400f2da78ea726e4e4235158a4603e8d8ef134ece"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/click100-final.png",
+      "bytes": 205756,
+      "sha256": "2efc4294b6202b6b84c1274c8200b5640819b23924c563d1434db3d99ae0152b"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/motion-retained-markers.png",
+      "bytes": 202002,
+      "sha256": "e71ed356fbc084b506fab62decc17dbed52f59b1a2328fd03984af501a13b08d"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/quick-initial.png",
+      "bytes": 197880,
+      "sha256": "e0a99ece5c3002238857e26ea15d93d8e7e677b5f0c7c952b845ddc10380575d"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/quick-retained-markers.png",
+      "bytes": 191424,
+      "sha256": "016fae17de638094f7760b767bd53fe2c9fcb3ca1215d1eeee3c6fb854b49c8e"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/retention-video-expired.png",
+      "bytes": 332152,
+      "sha256": "6e2ed044e16578efbdbe5acec12f95c3c4a6d7efdb751f1a8791b86928461255"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/retention-video-markers.png",
+      "bytes": 191424,
+      "sha256": "016fae17de638094f7760b767bd53fe2c9fcb3ca1215d1eeee3c6fb854b49c8e"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/selection-retention-short.mp4",
+      "bytes": 197276,
+      "sha256": "16876f2d8ab97300ed8fb5611adb398b3d33c5a2d3b13d2632795115a833c3f4"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/runtime/selection-retention.mp4",
+      "bytes": 238896,
+      "sha256": "5ee2bfafeef0c7a9c80a502894ab2e6447b08e6500858a6ed2b164606b710f59"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1366x768-100/candidate-menu.png",
+      "bytes": 10353,
+      "sha256": "b240443a71d4af32bb2f54fab8ee68c74d25929feaa91a1a9dda5f9b7902af6e"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1366x768-100/candidates.png",
+      "bytes": 200218,
+      "sha256": "b13e37eb345474429b15de1a886f553bb19b20180c28f3be96941f9a4c3d9494"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1366x768-100/retained-draft.png",
+      "bytes": 197996,
+      "sha256": "f3595cddd56c451340ff63936995c2fa3bd904ae337b4a2d2f86a9279949167f"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-100/candidate-menu.png",
+      "bytes": 10353,
+      "sha256": "b240443a71d4af32bb2f54fab8ee68c74d25929feaa91a1a9dda5f9b7902af6e"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-100/candidates.png",
+      "bytes": 212962,
+      "sha256": "b9434c90160a13fc8df9f12beafb4cef217a34111546e0f12cee367bebf1ef12"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-100/retained-draft.png",
+      "bytes": 210804,
+      "sha256": "e4ce3e34fc9e85ff4f092cc06593c16c73183f73e4a3550bf6eb6e3280eee89f"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-125/candidate-menu.png",
+      "bytes": 13916,
+      "sha256": "7b4ad597b9951ce8aae131f8b2add30fdf4bd1f56080e36f534f7139260202a3"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-125/candidates.png",
+      "bytes": 243187,
+      "sha256": "66a61efe58a0fc8cd1a37125c03f13af9631e532f0159658c3a555acc45f1d93"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-125/retained-draft.png",
+      "bytes": 240192,
+      "sha256": "303197a90ced90abcccc58452e8b21a96200daf324042f111a1f7070cbdc1f09"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-150/candidate-menu.png",
+      "bytes": 17070,
+      "sha256": "9fd78c58e53baa6fda2befecfcaea577632b0624c37198b4790c45a8d99d6b97"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-150/candidates.png",
+      "bytes": 256202,
+      "sha256": "5645677c1dc59fc890843f416d160aa20eba51fd3519ca21e242dd34d2a77160"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-150/retained-draft.png",
+      "bytes": 252689,
+      "sha256": "864db214c4ab2fc8e347893a121dbaa9d03f4a5e0f96c0dbf1d61deef9e7106f"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/dark-1600x900-150/scroll-bottom.png",
+      "bytes": 249189,
+      "sha256": "23703bba54f92db214751136fc66af118b526268187185eb7489d920ffa7433d"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1366x768-100/candidate-menu.png",
+      "bytes": 10227,
+      "sha256": "547747d0b679965bd654788d92a74e7d0e63243e019564a386663ea6d6585001"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1366x768-100/candidates.png",
+      "bytes": 200046,
+      "sha256": "8d94159a6f3289bb7c282059834ea43949ab4d28fbab6eec7186ac96f27a4e3c"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1366x768-100/retained-draft.png",
+      "bytes": 197896,
+      "sha256": "2f2bde267b9fa2bab3e0e097034ca5a0073b0aea6391d8af02cc8513abc19aaf"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-100/candidate-menu.png",
+      "bytes": 10227,
+      "sha256": "547747d0b679965bd654788d92a74e7d0e63243e019564a386663ea6d6585001"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-100/candidates.png",
+      "bytes": 212946,
+      "sha256": "e3cd24eb481de6b679fee0461f198b6eb31a72d6a9966262c09d9da7d53fe8d2"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-100/retained-draft.png",
+      "bytes": 210806,
+      "sha256": "649f8a06325f1a8ec1e11008fa24055fdfaefc5995a0a88b61c71633563e62fb"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-125/candidate-menu.png",
+      "bytes": 13787,
+      "sha256": "9efc9a7e173f7a51773a053524e4c1aa9ad2f1bee81e8e8138f3f77b41f2357c"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-125/candidates.png",
+      "bytes": 242459,
+      "sha256": "375f8b502a32d2dac64fdcbeeed8ce42d135ecaf4b149279dc78e49a3cb0052d"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-125/retained-draft.png",
+      "bytes": 239440,
+      "sha256": "fbd89bc3b78b8c75a3a83aaa9c494448fa0a16377b4fdc1f2fcd1f04108c8bef"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-150/candidate-menu.png",
+      "bytes": 16943,
+      "sha256": "0732d0b6d98e98be9924babae968082a7c69a5ee7792d432762ae36baeca2e06"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-150/candidates.png",
+      "bytes": 254526,
+      "sha256": "dcba46fadadf4f0c458ad29f5e3ee3fd6332f562d5a31bf060dddafd33586c05"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-150/retained-draft.png",
+      "bytes": 251018,
+      "sha256": "e882331cc1d321d206783dd18fff276a8733c86f123720cc01c9ee157df8b0d5"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/light-1600x900-150/scroll-bottom.png",
+      "bytes": 248054,
+      "sha256": "76f3e62d90efc7176f35ea96a486fda2bcae577e707db00ec28ed5a00231be62"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1366x768-100/candidate-menu.png",
+      "bytes": 10458,
+      "sha256": "97b7404e9d84b8d45405997957c5cc1a150b7a62df39d84dc6fd834497c4363f"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1366x768-100/candidates.png",
+      "bytes": 200897,
+      "sha256": "7b764216a6b9a6978d9d1a5df068d3a3c0ff2390aec287b60ef35d76a05fbd50"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1366x768-100/retained-draft.png",
+      "bytes": 198680,
+      "sha256": "7b6b041bfc1ad1456693f51f85f4a8299103e6810cd904a3eb488b6e2d191e76"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-100/candidate-menu.png",
+      "bytes": 10458,
+      "sha256": "97b7404e9d84b8d45405997957c5cc1a150b7a62df39d84dc6fd834497c4363f"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-100/candidates.png",
+      "bytes": 213815,
+      "sha256": "3fdb69e27c57cf33774f4a99c43dace2d31dcf44fe84a14496dd5fe6d05729d5"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-100/retained-draft.png",
+      "bytes": 211705,
+      "sha256": "292b60212b8ccb33324be0729abb920b7b29f1b76effe4aa175d744fbb1a1176"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-125/candidate-menu.png",
+      "bytes": 13952,
+      "sha256": "14da7c3ea781a0877c50c734a1135599438621d8c4161c69f52519168c8a62d4"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-125/candidates.png",
+      "bytes": 244812,
+      "sha256": "7e20a63bcfcd57c44d9bde972d6da7cc2d05caa0c7028ad98e30c73bbdb67582"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-125/retained-draft.png",
+      "bytes": 241977,
+      "sha256": "c22bebb974de5294281c46bd6a4a52ef7f289f1aca765aa4f1f6602936a72176"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-150/candidate-menu.png",
+      "bytes": 17155,
+      "sha256": "4393df918e1646413f5c1a48373c827defc4a4fa55136a105b87d75e1ca9d10c"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-150/candidates.png",
+      "bytes": 257307,
+      "sha256": "079703d63c05f3b2b8e81893974350f41d6797379f057076adf080401884c363"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-150/retained-draft.png",
+      "bytes": 253875,
+      "sha256": "9887e7710116ee24d2aaaff29cda2a51da151f0075554a314465588df83bb3ad"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/navy-1600x900-150/scroll-bottom.png",
+      "bytes": 250305,
+      "sha256": "0863e7938ebecc99b7e87fdb2f5e5c9000599e523bcf3c6f787ac286251efbdc"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1366x768-100/candidate-menu.png",
+      "bytes": 10403,
+      "sha256": "7eb9ae83f49955ec2b0036d1fcb689a5e0805ec3dc675c2b007bc95867ee408a"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1366x768-100/candidates.png",
+      "bytes": 200296,
+      "sha256": "a682c5a3b2febd97a7edb122be194df09a68487e61347a691700dae7439443fa"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1366x768-100/retained-draft.png",
+      "bytes": 198033,
+      "sha256": "64f308c72df7898f379887f7ad0af49cb291657866dd22a268e78d01f8292ac0"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-100/candidate-menu.png",
+      "bytes": 10403,
+      "sha256": "7eb9ae83f49955ec2b0036d1fcb689a5e0805ec3dc675c2b007bc95867ee408a"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-100/candidates.png",
+      "bytes": 213212,
+      "sha256": "105438853c45142bfb739c08dffe02f1fe0a81fb09e69004b752d244f0858cce"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-100/retained-draft.png",
+      "bytes": 211155,
+      "sha256": "1b2cbc8fea269afbd586eb5e6fb6f45adb82c4536a4b9108ea5c5408173bc26e"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-125/candidate-menu.png",
+      "bytes": 14029,
+      "sha256": "43c1cd35233d2ede4d6498e4ea36be0971f4138841ab01a33a0d4b7e0ce2465b"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-125/candidates.png",
+      "bytes": 243570,
+      "sha256": "b09f8c9431b498742bd292447ee91a248575f992bdf18e92ca1c009e9f52a6f9"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-125/retained-draft.png",
+      "bytes": 240682,
+      "sha256": "ef29140b9074a25453761fc0ab6693ce12e6acb75a22c8d06088b87b825a4b18"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-150/candidate-menu.png",
+      "bytes": 17176,
+      "sha256": "3071323fd98d2a4e15fa49dd86595521b9e440be4b8d2696f36fb1dc8db5e311"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-150/candidates.png",
+      "bytes": 256085,
+      "sha256": "d45a5fd450daecc9aa2942b89f0ffde2b93e7396dfd35481fcfaf438c7097e2c"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-150/retained-draft.png",
+      "bytes": 252605,
+      "sha256": "545a750b97c7ef43475ad5812c37956aee038efbad0e7064bc02cb3418ac420e"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/visual/warm-1600x900-150/scroll-bottom.png",
+      "bytes": 249196,
+      "sha256": "54b394a899eea6ccd8f983ef95bc4dc88db890982905bf5537dcd02d4a58c7e7"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/dark-content.png",
+      "bytes": 80806,
+      "sha256": "b9268c3d6a5dc84a457876da60aa6cee3ed1c3e6a9954d615e98601914e0f4e0"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/light-125-album-resource-error-preserved.png",
+      "bytes": 117150,
+      "sha256": "7a2e01335612b4a3f403ca164c8a9ef93856276ec90f01ef538c31de615064b5"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/light-125-album.png",
+      "bytes": 100484,
+      "sha256": "29c46eb91e0b2a5dc13238a61b276dc3e3416832016f4148e17a354b82287dd7"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/light-125-content-resource-error-preserved.png",
+      "bytes": 116666,
+      "sha256": "e75e37f9d2a9bfbd694df9c6b47d526c18b77ad4ebe7eded94b5d95b80a5eaca"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/light-125-content.png",
+      "bytes": 95756,
+      "sha256": "b6d23b6ce136257d0334d87fc814f99860cdd2c749035d69d4b7c4fb1dd2d3b3"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/light-content.png",
+      "bytes": 82638,
+      "sha256": "832ec2aef19c57b6692f82a862558be223a752686d527f53c3d3dcd315d2fbd7"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/menus-stable.png",
+      "bytes": 148670,
+      "sha256": "6505cb3987a7e318c02f9f76584febedfd79470f7616cc247384e88765f2cda6"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/navy-content.png",
+      "bytes": 81225,
+      "sha256": "cc9f58e17c17851fd41e6c9b151da84a64d4ad71b7dfa7b1eb57a3d9eef7b046"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/retained-markers.png",
+      "bytes": 144482,
+      "sha256": "949448c680207ca86950616f2ddd34eb1fdff7f173bbb662b6ab28b2df16ee11"
+    },
+    {
+      "path": "docs/validation/acquisition-seventh-round-20261021/windows/screenshots/warm-content.png",
+      "bytes": 81040,
+      "sha256": "54f340a5b5924348364fff4b3cadfea451c80f8dfeebf342d1f1604786f5d111"
+    }
+  ]
+}

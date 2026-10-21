@@ -1,0 +1,405 @@
+{
+  "theme": "navy",
+  "requested_physical": [
+    1366,
+    768
+  ],
+  "scale": 1.0,
+  "requested_logical": [
+    1366,
+    768
+  ],
+  "platform": "macOS / Qt offscreen",
+  "scope": "Real navigation, actual canvas picks and New Field button; synthetic camera, seeded candidate geometry. No real algorithm or Windows/Microview acceptance.",
+  "checks": {
+    "stable_before_input": {
+      "passed": true,
+      "details": "ready"
+    },
+    "canvas_picks_accepted": {
+      "passed": true,
+      "details": null
+    },
+    "partial_accept_keeps_candidate": {
+      "passed": true,
+      "details": null
+    },
+    "save_candidates": {
+      "passed": true,
+      "details": null
+    },
+    "two_picks_retained": {
+      "passed": true,
+      "details": null
+    },
+    "new_field_stable": {
+      "passed": true,
+      "details": "ready"
+    },
+    "retention_survives_new_frames": {
+      "passed": true,
+      "details": null
+    },
+    "retained_not_candidate_hit": {
+      "passed": true,
+      "details": null
+    },
+    "retained_click_starts_manual": {
+      "passed": true,
+      "details": null
+    },
+    "hover_does_not_finish_manual": {
+      "passed": true,
+      "details": null
+    },
+    "retained_has_no_hover": {
+      "passed": true,
+      "details": null
+    },
+    "retained_labels_avoid_draft": {
+      "passed": true,
+      "details": null
+    },
+    "retained_geometry_under_draft": {
+      "passed": true,
+      "details": null
+    },
+    "save_retained-draft": {
+      "passed": true,
+      "details": null
+    },
+    "save_visible": {
+      "passed": true,
+      "details": {
+        "rect": [
+          1139,
+          655,
+          65,
+          32
+        ],
+        "visible": true,
+        "text": "保存",
+        "accessible_name": "保存项目",
+        "icon_available": true
+      }
+    },
+    "save_icon": {
+      "passed": true,
+      "details": {
+        "rect": [
+          1139,
+          655,
+          65,
+          32
+        ],
+        "visible": true,
+        "text": "保存",
+        "accessible_name": "保存项目",
+        "icon_available": true
+      }
+    },
+    "excel_visible": {
+      "passed": true,
+      "details": {
+        "rect": [
+          1207,
+          655,
+          136,
+          32
+        ],
+        "visible": true,
+        "text": "导出 Excel 报告",
+        "accessible_name": "导出 Excel 报告",
+        "icon_available": true
+      }
+    },
+    "excel_icon": {
+      "passed": true,
+      "details": {
+        "rect": [
+          1207,
+          655,
+          136,
+          32
+        ],
+        "visible": true,
+        "text": "导出 Excel 报告",
+        "accessible_name": "导出 Excel 报告",
+        "icon_available": true
+      }
+    },
+    "album_visible": {
+      "passed": true,
+      "details": {
+        "rect": [
+          1068,
+          300,
+          40,
+          22
+        ],
+        "visible": true,
+        "text": "",
+        "accessible_name": "证据相册及存档设置",
+        "icon_available": true
+      }
+    },
+    "album_icon": {
+      "passed": true,
+      "details": {
+        "rect": [
+          1068,
+          300,
+          40,
+          22
+        ],
+        "visible": true,
+        "text": "",
+        "accessible_name": "证据相册及存档设置",
+        "icon_available": true
+      }
+    },
+    "candidate_display_visible": {
+      "passed": true,
+      "details": {
+        "rect": [
+          193,
+          117,
+          71,
+          38
+        ],
+        "visible": true,
+        "text": "候选 0",
+        "accessible_name": "候选显示与不透明度",
+        "icon_available": false
+      }
+    },
+    "album_icon_only": {
+      "passed": true,
+      "details": null
+    },
+    "navigation_fixed": {
+      "passed": true,
+      "details": null
+    },
+    "escape_cancels_only_draft": {
+      "passed": true,
+      "details": null
+    },
+    "last_category_scroll_reachable": {
+      "passed": true,
+      "details": null
+    },
+    "scroll_preserves_save_excel": {
+      "passed": true,
+      "details": null
+    },
+    "save_candidate-menu": {
+      "passed": true,
+      "details": null
+    },
+    "menu_opened": {
+      "passed": true,
+      "details": null
+    },
+    "duration_control_unclipped": {
+      "passed": true,
+      "details": null
+    },
+    "no_unexpected_windows": {
+      "passed": true,
+      "details": []
+    },
+    "no_modal_messages": {
+      "passed": true,
+      "details": []
+    },
+    "no_slot_errors": {
+      "passed": true,
+      "details": []
+    },
+    "marks_not_project_fields": {
+      "passed": true,
+      "details": null
+    }
+  },
+  "screenshots": [
+    {
+      "file": "candidates.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "device_pixel_ratio": 1.0
+    },
+    {
+      "file": "retained-draft.png",
+      "raster": [
+        1366,
+        768
+      ],
+      "device_pixel_ratio": 1.0
+    },
+    {
+      "file": "candidate-menu.png",
+      "raster": [
+        290,
+        139
+      ],
+      "device_pixel_ratio": 1.0
+    }
+  ],
+  "overlay": {
+    "marks": [
+      {
+        "record_id": "34fe51e4695645b9bc0a8fd8a32796d9",
+        "start": [
+          243.0,
+          200.0
+        ],
+        "end": [
+          257.0,
+          200.0
+        ],
+        "number": 1,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "6502afaeb2694ca8ae9788c6eb565e12",
+        "start": [
+          343.0,
+          200.0
+        ],
+        "end": [
+          357.0,
+          200.0
+        ],
+        "number": 2,
+        "color": "#d60000"
+      }
+    ],
+    "protected_segments": [
+      [
+        [
+          305.0,
+          200.0
+        ],
+        [
+          405.0,
+          200.0
+        ]
+      ]
+    ],
+    "labels": {
+      "retained:34fe51e4695645b9bc0a8fd8a32796d9": [
+        292.5,
+        161.0,
+        25.0,
+        21.0
+      ],
+      "retained:6502afaeb2694ca8ae9788c6eb565e12": [
+        391.5,
+        161.0,
+        27.0,
+        21.0
+      ]
+    }
+  },
+  "controls": {
+    "save": {
+      "rect": [
+        1139,
+        655,
+        65,
+        32
+      ],
+      "visible": true,
+      "text": "保存",
+      "accessible_name": "保存项目",
+      "icon_available": true
+    },
+    "excel": {
+      "rect": [
+        1207,
+        655,
+        136,
+        32
+      ],
+      "visible": true,
+      "text": "导出 Excel 报告",
+      "accessible_name": "导出 Excel 报告",
+      "icon_available": true
+    },
+    "album": {
+      "rect": [
+        1068,
+        300,
+        40,
+        22
+      ],
+      "visible": true,
+      "text": "",
+      "accessible_name": "证据相册及存档设置",
+      "icon_available": true
+    },
+    "candidate_display": {
+      "rect": [
+        193,
+        117,
+        71,
+        38
+      ],
+      "visible": true,
+      "text": "候选 0",
+      "accessible_name": "候选显示与不透明度",
+      "icon_available": false
+    }
+  },
+  "font": {
+    "requested_family": null,
+    "requested_point_size": null,
+    "requested_family_installed": null,
+    "resolved_family": ".AppleSystemUIFont",
+    "point_size": 9.0,
+    "pixel_size": 12,
+    "height": 15,
+    "line_spacing": 15,
+    "chinese_sample": "样品编号含量试验",
+    "chinese_sample_width": 97,
+    "native_windows": false
+  },
+  "actual_logical": [
+    1366,
+    768
+  ],
+  "actual_dpr": 1.0,
+  "fully_visible_categories": 5,
+  "menu": {
+    "size": [
+      290,
+      139
+    ],
+    "duration": 10.0,
+    "spin_visible": true
+  },
+  "window_events": [
+    {
+      "class": "QMenu",
+      "name": "",
+      "title": "",
+      "size": [
+        290,
+        139
+      ],
+      "qt_class": "QMenu",
+      "window_type": 9,
+      "parent_class": "QToolButton"
+    }
+  ],
+  "passed": true,
+  "source_sha256": {
+    "src/fdm/ui/live_measurement_canvas.py": "8136e02e1673c98a976c29e41ece914613cbe355da7310db9aeb4d5cd7eb0335",
+    "src/fdm/ui/trial_assistance.py": "339890459d8902b8645b9c384dc7fd597504a703c56e13f7ba1b88d022116ef7",
+    "src/fdm/live_experiment/controller.py": "826f5e13134ac83bc64ec98638eccae656a1939385643b519ff890b57eae7aae",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e"
+  }
+}

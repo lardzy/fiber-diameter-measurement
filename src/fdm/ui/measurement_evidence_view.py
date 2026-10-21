@@ -321,14 +321,15 @@ class EvidenceReviewController(QObject):
         self._save_timer.start()
         self.refresh()
 
-    def accepted(self, record):
+    def accepted(self, record, *, refresh=True):
         if self._closed or record is None:
             return
         self.latest_record_id = record.id
         if self.preferences["follow"]:
             self.record_id = record.id
         # Merely accepting a record never opens an unsolicited review window.
-        self.refresh()
+        if refresh:
+            self.refresh()
 
     @staticmethod
     def _details(record):

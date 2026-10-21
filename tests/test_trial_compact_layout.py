@@ -70,7 +70,7 @@ def test_scrolling_categories_and_receiving_feedback_keeps_tools_in_place(tmp_pa
         workflow.settle()
         assert "本次未通过" in page.measurement_outcome.text()
         assert before == [geometry(control, harness.window) for control in controls]
-        assert page.measurement_outcome.toolTip() == page.measurement_outcome.text()
+        assert "未识别到完整的纤维两侧边缘" in page.measurement_outcome.toolTip()
 
 
 def test_quantity_summary_does_not_repeat_category_rows(tmp_path):

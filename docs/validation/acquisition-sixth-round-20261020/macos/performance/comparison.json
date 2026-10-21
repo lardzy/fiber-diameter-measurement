@@ -1,0 +1,100 @@
+{
+  "baseline_fps": 30.303615806903508,
+  "guard_fps": 30.30450731861184,
+  "fps_drop_percent": -0.002941931794584091,
+  "baseline_p95_frame_age_ms": 2.8146150958491485,
+  "guard_p95_frame_age_ms": 10.747650551638799,
+  "p95_age_increase_ms": 7.93303545578965,
+  "frame_budget_ms": 32.999362398601576,
+  "guard_hidden_paints": 0,
+  "guard_presentation_events": [
+    {
+      "at": 123614.801964916,
+      "state": "paused",
+      "reason": "verification_late"
+    },
+    {
+      "at": 123615.276553,
+      "state": "ready",
+      "reason": "timely_recovery"
+    }
+  ],
+  "guard_visibility": {
+    "visible": null,
+    "last_observed_visible": true,
+    "observation_active": false,
+    "transition_count": 1,
+    "current_visible_ms": null,
+    "current_hidden_ms": null,
+    "max_visible_ms": 31859.044791999622,
+    "max_hidden_ms": 528.6613749922253,
+    "events": [
+      {
+        "at": 123614.443692166,
+        "visible": false,
+        "reason": "no_candidates",
+        "frame_id": "benchmark-synthetic:0:1",
+        "batch_id": null
+      },
+      {
+        "at": 123615.278364958,
+        "visible": true,
+        "reason": "ready",
+        "frame_id": "benchmark-synthetic:0:26",
+        "batch_id": "4bc828dcb5754324b0e618f5941ac9a0"
+      }
+    ],
+    "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+  },
+  "accepted": [
+    30,
+    29
+  ],
+  "saved": [
+    30,
+    29
+  ],
+  "remaining_budget_bytes": [
+    0,
+    0
+  ],
+  "gallery_passed": [
+    true,
+    true
+  ],
+  "parameters": {
+    "duration_seconds": 30,
+    "recovery_seconds": 3,
+    "frame_ms": 33,
+    "measure_ms": 1000,
+    "sample_ms": 0,
+    "gallery": true,
+    "evidence": "crop_jpeg"
+  },
+  "excluded": "baseline-overlap-excluded overlapped the tail of Windows VM pytest and is excluded from final comparison.",
+  "source_sha256": {
+    "src/fdm/live_experiment/controller.py": "7e69f8dba50d67f66c14b4eaca227a16c274136e0cf09fb346a2d6b3a0da0ead",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/ui/live_measurement_canvas.py": "e1d5c518fca5b3338e07631d9fecd473620bc51f140162d3cf8e6bd952c81465",
+    "src/fdm/ui/measurement_evidence_gallery.py": "6bc1ad4ce17a18a8fb729ccaf7bae5f6491d5bc0b67e315f3a7a669275f36ae8"
+  },
+  "performance_passed": true,
+  "visibility_passed": true,
+  "first_visible_at": 123615.278364958,
+  "startup_events": [
+    {
+      "at": 123614.801964916,
+      "state": "paused",
+      "reason": "verification_late"
+    },
+    {
+      "at": 123615.276553,
+      "state": "ready",
+      "reason": "timely_recovery"
+    }
+  ],
+  "post_first_visible_events": [],
+  "post_first_visible_hides": [],
+  "visibility_scope": "Startup initially has no visible candidate. Acceptance evaluates after first actual visible paint, including load and recovery; startup pause/recovery retained separately."
+}

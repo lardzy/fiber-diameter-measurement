@@ -1,0 +1,952 @@
+{
+  "scope": "synthetic frames; fixed analysis fixture; actual Qt/alignment/acceptance/JPEG; not camera or algorithm acceptance",
+  "mode": "baseline",
+  "qt_platform": "offscreen",
+  "frame_size": [
+    768,
+    576
+  ],
+  "frame_interval_ms": 33,
+  "measure_interval_ms": 1000,
+  "sample_interval_ms": 0,
+  "preview_policy": "production",
+  "display_context": {
+    "process_id": 88233,
+    "qt_scale_factor": null,
+    "device_pixel_ratio": 1.0,
+    "logical_canvas_size": [
+      768,
+      576
+    ],
+    "logical_dpi": 96.0,
+    "physical_dpi": 100.0
+  },
+  "windows_memory_at_load_end": {
+    "available": false,
+    "reason": "Windows working-set probe only"
+  },
+  "opencv_threads": 18,
+  "warmup_seconds": 1.5,
+  "frames": 864,
+  "fps": 30.303615806903508,
+  "paint_count": 913,
+  "hidden_paints": 913,
+  "paint_duration_ms": {
+    "n": 913,
+    "p50": 1.2779999960912392,
+    "p95": 2.483950206078589
+  },
+  "ready_sample_fraction": null,
+  "p95_frame_age_ms": 2.8146150958491485,
+  "accepted": 30,
+  "saved": 30,
+  "jpeg_bytes": 871601,
+  "peak_budget_bytes": 4210688,
+  "remaining_budget_bytes": 0,
+  "metrics": {
+    "analysis_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_to_paint_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "ingest_fps": {
+      "n": 512,
+      "p50": 30.255526377188996,
+      "p95": 31.58657095637417
+    },
+    "presented_fps": {
+      "n": 512,
+      "p50": 30.291728533824724,
+      "p95": 32.05526348204139
+    },
+    "frame_age_ms": {
+      "n": 512,
+      "p50": 2.2354169996106066,
+      "p95": 3.0202812537027057
+    },
+    "analysis_service_total_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_preparation_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_processing_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_shared_memory_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_budget_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_process_start_call_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    }
+  },
+  "metrics_schema": {
+    "version": 1,
+    "sample_limit_per_metric": 512,
+    "percentiles": "Linear interpolation over retained samples; n=0 yields null, not zero.",
+    "clock": "Qt/controller use parent perf_counter. FrameHandle receipt uses the same OS counter (Microview native QPC). Worker timings use same-process durations only, with no cross-process timestamp subtraction.",
+    "frame_scope": "Most recent admitted source/generation and capture run; retained after stop, reset at next run. Analysis metrics span this workspace lifetime.",
+    "fps": "P50/P95 use instantaneous inverse intervals; frame_sampling.window_fps uses (retained_frames-1)/elapsed_span. Neither is camera sensor FPS.",
+    "limitations": [
+      "No sensor exposure timestamp",
+      "No isolated Qt paint CPU measurement",
+      "Child startup and IPC overhead are combined, not individually measured",
+      "Synthetic and real-device runs require separate baseline comparison"
+    ],
+    "metrics": {
+      "analysis_ms": {
+        "unit": "ms",
+        "definition": "Controller submission to result consumption; includes scheduling, process startup, shared memory, service, IPC and Qt polling."
+      },
+      "alignment_ms": {
+        "unit": "ms",
+        "definition": "Independent fixed-reference alignment function wall time; excludes executor queue wait."
+      },
+      "candidate_verification_ready_ms": {
+        "unit": "ms",
+        "definition": "Alignment submission to parent worker result readiness; includes serial queue, process/IPC and algorithm, excludes Qt consumption."
+      },
+      "candidate_verification_gui_wait_ms": {
+        "unit": "ms",
+        "definition": "Parent result readiness to GUI consumption, separately measured from verification work."
+      },
+      "candidate_verification_delivery_ms": {
+        "unit": "ms",
+        "definition": "Alignment submission to GUI consumption, including executor and Qt scheduling; measured for the actual checked frame."
+      },
+      "candidate_available_ms": {
+        "unit": "ms",
+        "definition": "Completed continuous candidate presentation interval before a latched pause; excludes unfinished intervals."
+      },
+      "candidate_unavailable_ms": {
+        "unit": "ms",
+        "definition": "Completed latched candidate pause until sustained timely recovery; live image presentation continues."
+      },
+      "click_to_accept_ms": {
+        "unit": "ms",
+        "definition": "Candidate intent creation to ledger insertion; includes queued clicks and motion/alignment verification, excludes subsequent UI painting."
+      },
+      "stable_wait_ms": {
+        "unit": "ms",
+        "definition": "Additional automatic-analysis stable interval after global readiness and first successful independent alignment; excludes earlier field settling."
+      },
+      "analysis_to_paint_ms": {
+        "unit": "ms",
+        "definition": "Controller submission to first paint containing candidates; includes analysis and presentation delay, not isolated paint CPU time."
+      },
+      "ingest_fps": {
+        "unit": "frames/s",
+        "definition": "Reciprocal intervals between distinct live frames admitted by the controller, using parent perf_counter; upstream mailbox drops are not counted."
+      },
+      "presented_fps": {
+        "unit": "frames/s",
+        "definition": "Reciprocal intervals between distinct live frames completing Qt paint; repeated paints of one frame are excluded."
+      },
+      "frame_age_ms": {
+        "unit": "ms",
+        "definition": "First completed Qt paint minus FrameHandle.received_at on the OS performance-counter timeline. Microview uses SDK callback buffer-copy completion (QPC); other adapters use application receipt. NOT sensor exposure age."
+      },
+      "analysis_service_total_ms": {
+        "unit": "ms",
+        "definition": "Child analyze_frame total wall time, including input preparation and native analysis."
+      },
+      "analysis_preparation_ms": {
+        "unit": "ms",
+        "definition": "Child analyze_frame input validation/native loading/pixel preparation before native invocation."
+      },
+      "analysis_processing_ms": {
+        "unit": "ms",
+        "definition": "Service total minus preparation; native invocation and result wrapping, not an isolated native kernel benchmark."
+      },
+      "analysis_shared_memory_ms": {
+        "unit": "ms",
+        "definition": "Parent shared-memory allocation and source-pixel copy."
+      },
+      "analysis_budget_wait_ms": {
+        "unit": "ms",
+        "definition": "Parent wait for the shared heavy-compute permit after pixel copy; excludes process startup."
+      },
+      "analysis_process_start_call_ms": {
+        "unit": "ms",
+        "definition": "Cold starts only: parent Pipe/Event/process.start call. Does not include all child imports or readiness."
+      },
+      "analysis_dispatch_to_receive_ms": {
+        "unit": "ms",
+        "definition": "Parent command-send start to reader recv completion/deserialization; includes child startup/imports, service, IPC and scheduling."
+      },
+      "analysis_startup_transport_overhead_ms": {
+        "unit": "ms",
+        "definition": "Dispatch-to-receive minus child service total: combined startup/imports, shared-memory attachment, IPC/serialization and scheduling; these components are NOT independently separated. Unavailable for a missing service duration or negative duration difference, never clamped to zero."
+      }
+    }
+  },
+  "frame_sampling": {
+    "source": {
+      "source_id": "benchmark-synthetic",
+      "generation": 0,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": true,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 512,
+      "span_seconds": 16.86350420799863,
+      "first_sequence": 490,
+      "last_sequence": 1001,
+      "window_fps": 30.30212426179041
+    },
+    "presented": {
+      "frames": 512,
+      "span_seconds": 16.864016459003324,
+      "first_sequence": 490,
+      "last_sequence": 1001,
+      "window_fps": 30.30120382307789
+    },
+    "input_trace": {
+      "events": [
+        {
+          "event": "draft_started",
+          "at": 123571.080548958,
+          "field_epoch": 1,
+          "interaction_id": "7e9745bbcd574be9b0f9078ec8cf4142",
+          "measurement_number": 1,
+          "x": 40.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123571.080724375,
+          "field_epoch": 1,
+          "interaction_id": "7e9745bbcd574be9b0f9078ec8cf4142",
+          "task_id": "7e9745bbcd574be9b0f9078ec8cf4142",
+          "measurement_number": 1,
+          "x": 40.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123572.079206666,
+          "field_epoch": 1,
+          "interaction_id": "156fe800d04643d1bbeaf7c7e1d7200b",
+          "measurement_number": 2,
+          "x": 64.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123572.079308083,
+          "field_epoch": 1,
+          "interaction_id": "156fe800d04643d1bbeaf7c7e1d7200b",
+          "task_id": "156fe800d04643d1bbeaf7c7e1d7200b",
+          "measurement_number": 2,
+          "x": 64.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123573.07916175,
+          "field_epoch": 1,
+          "interaction_id": "072e2c0d037b484e8002d3d0a84ec465",
+          "measurement_number": 3,
+          "x": 88.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123573.079195,
+          "field_epoch": 1,
+          "interaction_id": "072e2c0d037b484e8002d3d0a84ec465",
+          "task_id": "072e2c0d037b484e8002d3d0a84ec465",
+          "measurement_number": 3,
+          "x": 88.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123574.078940875,
+          "field_epoch": 1,
+          "interaction_id": "8f822421f4ea4345b9ea4525cf223eb2",
+          "measurement_number": 4,
+          "x": 112.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123574.079053833,
+          "field_epoch": 1,
+          "interaction_id": "8f822421f4ea4345b9ea4525cf223eb2",
+          "task_id": "8f822421f4ea4345b9ea4525cf223eb2",
+          "measurement_number": 4,
+          "x": 112.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123575.078202916,
+          "field_epoch": 1,
+          "interaction_id": "334ce177d6c34abeb7862f66ca0572d2",
+          "measurement_number": 5,
+          "x": 136.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123575.078313958,
+          "field_epoch": 1,
+          "interaction_id": "334ce177d6c34abeb7862f66ca0572d2",
+          "task_id": "334ce177d6c34abeb7862f66ca0572d2",
+          "measurement_number": 5,
+          "x": 136.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123576.079021,
+          "field_epoch": 1,
+          "interaction_id": "49a4bffe85ae43ada8d0582e8c72942e",
+          "measurement_number": 6,
+          "x": 160.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123576.079134,
+          "field_epoch": 1,
+          "interaction_id": "49a4bffe85ae43ada8d0582e8c72942e",
+          "task_id": "49a4bffe85ae43ada8d0582e8c72942e",
+          "measurement_number": 6,
+          "x": 160.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123577.078130625,
+          "field_epoch": 1,
+          "interaction_id": "f36fa4e769994870bb0e1052eb107ce9",
+          "measurement_number": 7,
+          "x": 184.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123577.078221333,
+          "field_epoch": 1,
+          "interaction_id": "f36fa4e769994870bb0e1052eb107ce9",
+          "task_id": "f36fa4e769994870bb0e1052eb107ce9",
+          "measurement_number": 7,
+          "x": 184.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123578.0795435,
+          "field_epoch": 1,
+          "interaction_id": "eb59c7f20b5444b381502e0b42f4684f",
+          "measurement_number": 8,
+          "x": 208.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123578.079583708,
+          "field_epoch": 1,
+          "interaction_id": "eb59c7f20b5444b381502e0b42f4684f",
+          "task_id": "eb59c7f20b5444b381502e0b42f4684f",
+          "measurement_number": 8,
+          "x": 208.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123579.07878875,
+          "field_epoch": 1,
+          "interaction_id": "7b34e575356643a8a68fbef4b37f960e",
+          "measurement_number": 9,
+          "x": 232.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123579.078906416,
+          "field_epoch": 1,
+          "interaction_id": "7b34e575356643a8a68fbef4b37f960e",
+          "task_id": "7b34e575356643a8a68fbef4b37f960e",
+          "measurement_number": 9,
+          "x": 232.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123580.079095958,
+          "field_epoch": 1,
+          "interaction_id": "1bb6679a5fb34bc8bd3de55afad305dd",
+          "measurement_number": 10,
+          "x": 256.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123580.079168083,
+          "field_epoch": 1,
+          "interaction_id": "1bb6679a5fb34bc8bd3de55afad305dd",
+          "task_id": "1bb6679a5fb34bc8bd3de55afad305dd",
+          "measurement_number": 10,
+          "x": 256.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123581.080078375,
+          "field_epoch": 1,
+          "interaction_id": "9d6dba5f861f45cbb9f82e745090138d",
+          "measurement_number": 11,
+          "x": 280.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123581.080185375,
+          "field_epoch": 1,
+          "interaction_id": "9d6dba5f861f45cbb9f82e745090138d",
+          "task_id": "9d6dba5f861f45cbb9f82e745090138d",
+          "measurement_number": 11,
+          "x": 280.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123582.079593916,
+          "field_epoch": 1,
+          "interaction_id": "8b7c170a26564618bb36adcda9f83862",
+          "measurement_number": 12,
+          "x": 304.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123582.079704833,
+          "field_epoch": 1,
+          "interaction_id": "8b7c170a26564618bb36adcda9f83862",
+          "task_id": "8b7c170a26564618bb36adcda9f83862",
+          "measurement_number": 12,
+          "x": 304.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123583.078943208,
+          "field_epoch": 1,
+          "interaction_id": "69b913f321434c8b89373b97c922c688",
+          "measurement_number": 13,
+          "x": 328.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123583.079072666,
+          "field_epoch": 1,
+          "interaction_id": "69b913f321434c8b89373b97c922c688",
+          "task_id": "69b913f321434c8b89373b97c922c688",
+          "measurement_number": 13,
+          "x": 328.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123584.07914875,
+          "field_epoch": 1,
+          "interaction_id": "d4d0ae6e1e844524a535e66d06e43a0c",
+          "measurement_number": 14,
+          "x": 352.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123584.07921375,
+          "field_epoch": 1,
+          "interaction_id": "d4d0ae6e1e844524a535e66d06e43a0c",
+          "task_id": "d4d0ae6e1e844524a535e66d06e43a0c",
+          "measurement_number": 14,
+          "x": 352.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123585.080471583,
+          "field_epoch": 1,
+          "interaction_id": "f3ab9e0b2a614248afd027f37ab6f76a",
+          "measurement_number": 15,
+          "x": 376.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123585.080561375,
+          "field_epoch": 1,
+          "interaction_id": "f3ab9e0b2a614248afd027f37ab6f76a",
+          "task_id": "f3ab9e0b2a614248afd027f37ab6f76a",
+          "measurement_number": 15,
+          "x": 376.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123586.079149625,
+          "field_epoch": 1,
+          "interaction_id": "ec82d39f25b6407daa7a8032563f0b1c",
+          "measurement_number": 16,
+          "x": 400.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123586.079248916,
+          "field_epoch": 1,
+          "interaction_id": "ec82d39f25b6407daa7a8032563f0b1c",
+          "task_id": "ec82d39f25b6407daa7a8032563f0b1c",
+          "measurement_number": 16,
+          "x": 400.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123587.078819333,
+          "field_epoch": 1,
+          "interaction_id": "937631633e8e4f2289dc940cdb8593d0",
+          "measurement_number": 17,
+          "x": 424.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123587.078888083,
+          "field_epoch": 1,
+          "interaction_id": "937631633e8e4f2289dc940cdb8593d0",
+          "task_id": "937631633e8e4f2289dc940cdb8593d0",
+          "measurement_number": 17,
+          "x": 424.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123588.079050083,
+          "field_epoch": 1,
+          "interaction_id": "1b15e9733c6643f6b5617f8b1b1d7fd2",
+          "measurement_number": 18,
+          "x": 448.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123588.079121833,
+          "field_epoch": 1,
+          "interaction_id": "1b15e9733c6643f6b5617f8b1b1d7fd2",
+          "task_id": "1b15e9733c6643f6b5617f8b1b1d7fd2",
+          "measurement_number": 18,
+          "x": 448.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123589.079191041,
+          "field_epoch": 1,
+          "interaction_id": "f652dd7833424333a8a95d47f320c10c",
+          "measurement_number": 19,
+          "x": 472.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123589.079420791,
+          "field_epoch": 1,
+          "interaction_id": "f652dd7833424333a8a95d47f320c10c",
+          "task_id": "f652dd7833424333a8a95d47f320c10c",
+          "measurement_number": 19,
+          "x": 472.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123590.078960708,
+          "field_epoch": 1,
+          "interaction_id": "c996e3e781a140a8b8bc1d218b27d2ce",
+          "measurement_number": 20,
+          "x": 496.0,
+          "y": 350.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123590.079025208,
+          "field_epoch": 1,
+          "interaction_id": "c996e3e781a140a8b8bc1d218b27d2ce",
+          "task_id": "c996e3e781a140a8b8bc1d218b27d2ce",
+          "measurement_number": 20,
+          "x": 496.0,
+          "y": 370.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123591.079524458,
+          "field_epoch": 1,
+          "interaction_id": "7b0dfcd6537b47c28da6ca04ff40a351",
+          "measurement_number": 21,
+          "x": 40.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123591.079633416,
+          "field_epoch": 1,
+          "interaction_id": "7b0dfcd6537b47c28da6ca04ff40a351",
+          "task_id": "7b0dfcd6537b47c28da6ca04ff40a351",
+          "measurement_number": 21,
+          "x": 40.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123592.079053708,
+          "field_epoch": 1,
+          "interaction_id": "9f4d9fc5341140aebf92a3169c1f37a1",
+          "measurement_number": 22,
+          "x": 64.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123592.079156916,
+          "field_epoch": 1,
+          "interaction_id": "9f4d9fc5341140aebf92a3169c1f37a1",
+          "task_id": "9f4d9fc5341140aebf92a3169c1f37a1",
+          "measurement_number": 22,
+          "x": 64.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123593.079434041,
+          "field_epoch": 1,
+          "interaction_id": "186339bc495b4ae6917e95ddb9f84385",
+          "measurement_number": 23,
+          "x": 88.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123593.079540333,
+          "field_epoch": 1,
+          "interaction_id": "186339bc495b4ae6917e95ddb9f84385",
+          "task_id": "186339bc495b4ae6917e95ddb9f84385",
+          "measurement_number": 23,
+          "x": 88.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123594.079225125,
+          "field_epoch": 1,
+          "interaction_id": "28a4e9709d4140b28263e90518906149",
+          "measurement_number": 24,
+          "x": 112.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123594.079327,
+          "field_epoch": 1,
+          "interaction_id": "28a4e9709d4140b28263e90518906149",
+          "task_id": "28a4e9709d4140b28263e90518906149",
+          "measurement_number": 24,
+          "x": 112.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123595.08005575,
+          "field_epoch": 1,
+          "interaction_id": "54fc01b238164dbf9687ba637bbe2272",
+          "measurement_number": 25,
+          "x": 136.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123595.0801585,
+          "field_epoch": 1,
+          "interaction_id": "54fc01b238164dbf9687ba637bbe2272",
+          "task_id": "54fc01b238164dbf9687ba637bbe2272",
+          "measurement_number": 25,
+          "x": 136.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123596.07903725,
+          "field_epoch": 1,
+          "interaction_id": "d092d25bceea4978bdf897da324a41db",
+          "measurement_number": 26,
+          "x": 160.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123596.079151541,
+          "field_epoch": 1,
+          "interaction_id": "d092d25bceea4978bdf897da324a41db",
+          "task_id": "d092d25bceea4978bdf897da324a41db",
+          "measurement_number": 26,
+          "x": 160.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123597.078543291,
+          "field_epoch": 1,
+          "interaction_id": "fd30ae3783684827bfaa5242547c8c20",
+          "measurement_number": 27,
+          "x": 184.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123597.078665125,
+          "field_epoch": 1,
+          "interaction_id": "fd30ae3783684827bfaa5242547c8c20",
+          "task_id": "fd30ae3783684827bfaa5242547c8c20",
+          "measurement_number": 27,
+          "x": 184.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123598.079903916,
+          "field_epoch": 1,
+          "interaction_id": "e611df129b914380be7278ed8ef95fe5",
+          "measurement_number": 28,
+          "x": 208.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123598.080010416,
+          "field_epoch": 1,
+          "interaction_id": "e611df129b914380be7278ed8ef95fe5",
+          "task_id": "e611df129b914380be7278ed8ef95fe5",
+          "measurement_number": 28,
+          "x": 208.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123599.07934575,
+          "field_epoch": 1,
+          "interaction_id": "083e438d02214ef1b74062ddd4dda6f6",
+          "measurement_number": 29,
+          "x": 232.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123599.079453625,
+          "field_epoch": 1,
+          "interaction_id": "083e438d02214ef1b74062ddd4dda6f6",
+          "task_id": "083e438d02214ef1b74062ddd4dda6f6",
+          "measurement_number": 29,
+          "x": 232.0,
+          "y": 395.0
+        },
+        {
+          "event": "draft_started",
+          "at": 123600.080556875,
+          "field_epoch": 1,
+          "interaction_id": "539936d7fb524f5cbf3f1f8fc4c9d4fc",
+          "measurement_number": 30,
+          "x": 256.0,
+          "y": 375.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 123600.080619708,
+          "field_epoch": 1,
+          "interaction_id": "539936d7fb524f5cbf3f1f8fc4c9d4fc",
+          "task_id": "539936d7fb524f5cbf3f1f8fc4c9d4fc",
+          "measurement_number": 30,
+          "x": 256.0,
+          "y": 395.0
+        }
+      ],
+      "total_events": 60,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 2,
+      "analyzed": false,
+      "analysis_count": 0,
+      "batch_id": null,
+      "events": [
+        {
+          "at": 123569.858899791,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 123603.138515,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "试验工作区已关闭"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "fallback_count": 0,
+      "short_wait_budget_ms": 28.220637509366497,
+      "publishable_frame_age_ms": 33.20075001101941,
+      "readiness_definition": "Submit to parent worker/IPC readiness; Qt consumption delay is recorded separately.",
+      "worker_runtime": {},
+      "immediate_mode": false,
+      "recovery_timely_checks": 0,
+      "state": "coherent",
+      "events": [],
+      "ongoing_unavailable_ms": null,
+      "max_pause_ms": 0.0,
+      "last_recovery_ms": null,
+      "recovery_healthy_ms": null,
+      "painted_visibility": {
+        "visible": null,
+        "last_observed_visible": false,
+        "observation_active": false,
+        "transition_count": 0,
+        "current_visible_ms": null,
+        "current_hidden_ms": null,
+        "max_visible_ms": 0.0,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 123570.113002458,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "benchmark-synthetic:0:1",
+            "batch_id": null
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "A missed presentation budget latches all candidate overlays and hit targets off while pixels remain live. Recovery requires at least 300 ms and 8 consecutive timely exact-frame checks. Verified pixels and overlays are then published together; a valid older completion is not mistaken for a new frame."
+    }
+  },
+  "measurement_errors": [],
+  "gallery": {
+    "visible_at_event_loop_exit": false,
+    "visible_refreshes": 390,
+    "hidden_refreshes": 0,
+    "visibility_note": "QApplication.quit closes windows before app.exec returns; running visibility is counted by refreshes.",
+    "decoded": 30,
+    "records": 30,
+    "peak_memory_bytes": 3403584,
+    "limit_bytes": 67108864,
+    "remaining_memory_bytes": 0,
+    "passed": true
+  },
+  "post_load_recovery": {
+    "requested_seconds": 3.0,
+    "started_at_perf_counter": 123600.135621958,
+    "observed_seconds": 2.978546250000363,
+    "start": {
+      "at": 123600.135621958,
+      "accepted": 30,
+      "saved": 30,
+      "measurement_attempts": 30
+    },
+    "accepted_at_end": 30,
+    "saved_at_end": 30,
+    "measurement_attempts_at_end": 30,
+    "paint_count": 91,
+    "hidden_paints": 91,
+    "first_visible_after_ms": null,
+    "visibility_transitions": [],
+    "last_second_continuously_visible": false,
+    "definition": "New measurement timer stopped; source frames, pending acceptance, JPEG writes and gallery remain active. Load FPS/P95 above exclude this tail; original continuous-visibility acceptance is not relaxed."
+  },
+  "source_sha256": {
+    "src/fdm/live_experiment/controller.py": "7e69f8dba50d67f66c14b4eaca227a16c274136e0cf09fb346a2d6b3a0da0ead",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/ui/live_measurement_canvas.py": "e1d5c518fca5b3338e07631d9fecd473620bc51f140162d3cf8e6bd952c81465",
+    "src/fdm/ui/measurement_evidence_gallery.py": "6bc1ad4ce17a18a8fb729ccaf7bae5f6491d5bc0b67e315f3a7a669275f36ae8"
+  }
+}

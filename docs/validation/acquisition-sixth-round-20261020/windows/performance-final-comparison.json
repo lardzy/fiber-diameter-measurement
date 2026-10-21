@@ -1,0 +1,12 @@
+{
+  "baseline_fps": 30.263605548979573,
+  "guard_fps": 30.30261484849213,
+  "fps_drop_percent": -0.1288983873696846,
+  "baseline_p95_age_ms": 9.142375000010361,
+  "guard_p95_age_ms": 19.095508299960784,
+  "p95_age_increase_ms": 9.953133299950423,
+  "frame_budget_ms": 33,
+  "source_fingerprint_in_benchmark_json": false,
+  "source_provenance": "Unchanged isolated Windows checkout; production files verified against source manifest after build. Benchmark snapshot predates JSON fingerprint addition.",
+  "passed": true
+}

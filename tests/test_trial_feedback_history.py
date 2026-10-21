@@ -115,6 +115,20 @@ def test_edit_selected_record_refreshes_value_and_invalidates_rejection(page, mo
     assert not page.measurement_feedback.isVisible()
 
 
+@pytest.mark.parametrize("has_previous", [False, True])
+def test_rejection_labels_retained_value_without_claiming_it_is_current_result(page, has_previous):
+    if has_previous:
+        accept(page, 19)
+    page.controller.measurementFeedback.emit(feedback_for_reason(
+        "no_complete_crossing", **page.controller.feedback_context()))
+    assert page.measurement_outcome.text() == ("上一条有效值" if has_previous else "本次未通过")
+    assert page.latest_value.text() == ("19.000 μm" if has_previous else "— μm")
+    assert "本次测量未通过，未计入记录" in page.measurement_outcome.toolTip()
+    assert "未识别到完整的纤维两侧边缘" in page.measurement_outcome.toolTip()
+    assert page.measurement_feedback.isVisible()
+    assert "本次测量未通过" in page.measurement_feedback.title_label.text()
+
+
 @pytest.mark.parametrize("change", ["decrease_count", "increase_count", "target", "rename"])
 def test_changed_goal_snapshot_dismisses_card_without_forgetting_delivery(page, change):
     page._count_material("wool", 3)

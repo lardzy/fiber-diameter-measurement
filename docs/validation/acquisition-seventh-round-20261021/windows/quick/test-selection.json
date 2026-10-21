@@ -1,0 +1,6 @@
+﻿[
+    "tests/test_round7_selection_retention.py",
+    "tests/test_round7_canvas.py",
+    "tests/test_round6_manual_start.py",
+    "tests/test_live_experiment_motion_pipeline.py"
+]

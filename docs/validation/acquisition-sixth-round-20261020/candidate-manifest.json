@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-20T17:00:29.149550+00:00",
+  "version": "0.4.10",
+  "build_id": "862b9fc24cf248af817271cb159fbbbb",
+  "delivery_kind": "offline-validation-candidate",
+  "profile": "internal --exclude-area-models",
+  "source_commit": "unknown",
+  "source_git_baseline": "6278af2bb86f70f880332bfa84342a6436783813",
+  "source_snapshot_sha256": "c5b8c12297537a4eaa9ba5a5914261337ab2c1ac4d7ed0e11e8464f66a5ddb39",
+  "all_acceptance_passed": false,
+  "known_unmet_requirements": [
+    {
+      "id": "windows_continuous_candidate_no_hide",
+      "status": "failed",
+      "description": "100 accepted / 100 JPEG, one approximately335ms safe pause caused by full GC and true verification over-budget; no thresholds loosened."
+    },
+    {
+      "id": "microview_hardware",
+      "status": "not_tested"
+    }
+  ],
+  "checks": {
+    "extracted_payload_files": 4818,
+    "production_source_files": 435,
+    "installed_selfcheck": true,
+    "installed_selfcheck_elevated": false,
+    "explorer_start": true,
+    "native_uia_groups_passed": 9,
+    "windows_source_tests": {
+      "passed": 911,
+      "subtests": 50
+    },
+    "windows_publication_final_tests": 7,
+    "source_cycle60": true,
+    "windows_paired_fps_age": true,
+    "strict_windows_no_hide": false,
+    "registry_original_restored": true,
+    "vm_original_restored": true
+  },
+  "files": [
+    {
+      "path": "CANDIDATE_README.md",
+      "bytes": 1369,
+      "sha256": "6601c277d86106165381112f3f179c497d7b243e1c27723f1ae7b3438940f512"
+    },
+    {
+      "path": "FDM-0.4.10-round6-862b9fc24cf2.exe",
+      "bytes": 398835901,
+      "sha256": "7227c9d6709e81f854c0aca26e3f3d867f4326acce310cf56a67f1d9abda5a7b"
+    },
+    {
+      "path": "OFFLINE_MICROVIEW_CHECKLIST.md",
+      "bytes": 4677,
+      "sha256": "379e8ed1719478652fce21fb2e35f806b1f654f2c3b5b1924e96b98aa02c19e9"
+    },
+    {
+      "path": "installer-identity.json",
+      "bytes": 1002,
+      "sha256": "54e578d64a4fce2088167b144f39af81ebad133629247131dc07b17e5149d8ee"
+    },
+    {
+      "path": "release-manifest.json",
+      "bytes": 818542,
+      "sha256": "c00612609ec4e5da069974c1cee4309e87843fff82530af784b5f39facf9675a"
+    },
+    {
+      "path": "source-manifest.json",
+      "bytes": 772392,
+      "sha256": "c5b8c12297537a4eaa9ba5a5914261337ab2c1ac4d7ed0e11e8464f66a5ddb39"
+    },
+    {
+      "path": "windows-validation-evidence.zip",
+      "bytes": 15686243,
+      "sha256": "18fea4cbf6cfff05b126fae479f81a965a4c31e0911a9259c1e9e5d6d9db830a"
+    }
+  ],
+  "artifact_root": "dist/internal/acquisition-sixth-round-20261020"
+}

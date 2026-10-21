@@ -1,0 +1,9 @@
+{
+  "recorded_at": "2026-10-20T17:00:29.006791+00:00",
+  "name": "Windows 11",
+  "uuid": "fd15ab52-26aa-4f99-b76a-19d334bc38ea",
+  "state": "stopped",
+  "camera_sharing": "on",
+  "restored_original_state": true,
+  "graceful_stop": true
+}

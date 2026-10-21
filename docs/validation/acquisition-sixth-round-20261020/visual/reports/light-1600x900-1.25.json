@@ -1,0 +1,55 @@
+{
+  "theme": "light",
+  "physical_client": [
+    1600,
+    900
+  ],
+  "logical_client": [
+    1280,
+    720
+  ],
+  "scale": 1.25,
+  "platform": "offscreen",
+  "passed": true,
+  "limitations": [
+    "Synthetic camera and seeded category configuration.",
+    "Actual navigation and mouse button/menu actions.",
+    "Qt scale factor is not physical monitor migration."
+  ],
+  "visible_categories": 4,
+  "button_size": [
+    40,
+    22
+  ],
+  "menu_rectangle": [
+    28,
+    0,
+    12,
+    22
+  ],
+  "category_rectangle": [
+    0,
+    0,
+    406,
+    164
+  ],
+  "outcome_width": 135,
+  "dpr": 1.25,
+  "font": {
+    "requested_family": null,
+    "requested_point_size": null,
+    "requested_family_installed": null,
+    "resolved_family": ".AppleSystemUIFont",
+    "point_size": 9.0,
+    "pixel_size": 12,
+    "height": 15,
+    "line_spacing": 15,
+    "chinese_sample": "样品编号含量试验",
+    "chinese_sample_width": 97,
+    "native_windows": false
+  },
+  "source_fingerprints": {
+    "src/fdm/ui/trial_assistance.py": "3db8fe0369f8e1ff6f9a01db3902af1f3ebd0380f32dceca73b0e3b95d049e2b",
+    "src/fdm/ui/live_experiment_view.py": "3eba942630bd7d64c823ca99d57255095b42648936edc4c320fd4040df460018"
+  }
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "path": "src/fdm/live_experiment/motion.py",
+    "sha256": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "unchanged_from_HEAD": true
+  },
+  {
+    "path": "src/fdm/live_experiment/candidate_alignment.py",
+    "sha256": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "unchanged_from_HEAD": true
+  },
+  {
+    "path": "src/fdm/live_experiment/candidate_alignment_worker.py",
+    "sha256": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "unchanged_from_HEAD": true
+  }
+]

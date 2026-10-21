@@ -3,13 +3,21 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QEventLoop, QPoint, Qt, QTimer
+from PySide6.QtCore import QEvent, QEventLoop, QPoint, QPointF, Qt, QTimer
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QTabWidget, QWidget
 
 from fdm.live_experiment.frames import FrameBudget, FrameHandle
 from test_live_measurement_candidate_canvas import add_candidates, canvas, pointer
 from test_live_experiment_content_workspace import workspace
+
+
+def mouse_move(view, position, *, held=True):
+    event = QMouseEvent(QEvent.Type.MouseMove, QPointF(position), QPointF(view.mapToGlobal(position)),
+        Qt.MouseButton.NoButton, Qt.MouseButton.LeftButton if held else Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier)
+    QApplication.sendEvent(view, event)
 
 
 def manual_routes(view):
@@ -66,7 +74,7 @@ def test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame(
     canvas.repaint()
     assert canvas.controller.presented.frame is not original.frame
     end = (start[0] + 45, start[1] + 30)
-    QTest.mouseMove(canvas, pointer(canvas, end))
+    mouse_move(canvas, pointer(canvas, end))
     QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, end))
     assert len(observed.starts) == 1
     assert observed.starts[0][0] == tuple(map(float, start))
@@ -267,6 +275,7 @@ def test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting
     candidates(workspace)
     source = workspace.controller.presented.frame
     QTest.mousePress(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 30, 40))
+    mouse_move(workspace.canvas, point(workspace, 60, 80))
     QTest.mouseRelease(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 60, 80))
     _await_records(workspace, 1)
     record = next(iter(workspace.session.measurements.values()))
@@ -278,21 +287,23 @@ def test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting
 
 
 @pytest.mark.parametrize("start", [(30, 40), (220, 180)])
-def test_workspace_refresh_after_drag_starts_cancels_the_pointer_intent(workspace, start):
+def test_workspace_refresh_after_drag_starts_preserves_the_manual_intent(workspace, start):
     from test_trial_assistance_ui import candidates, point
     workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
     workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
     candidates(workspace)
     end = (start[0] + 30, start[1] + 20)
     QTest.mousePress(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, *start))
-    QTest.mouseMove(workspace.canvas, point(workspace, *end))
+    mouse_move(workspace.canvas, point(workspace, *end))
     QApplication.processEvents()
-    assert workspace.controller.draft is not None
+    draft = workspace.controller.draft
+    assert draft is not None
     workspace.controller.discard_candidates()
-    assert workspace.controller.draft is None
+    assert workspace.controller.draft is draft
     QTest.mouseRelease(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, *end))
-    workspace.controller.poll()
-    assert not workspace.session.measurements
+    _await_records(workspace, 1)
+    record = next(iter(workspace.session.measurements.values()))
+    assert record.endpoints == (tuple(map(float, start)), tuple(map(float, end)))
     assert not workspace.controller._jobs
     assert not workspace.controller._pointer_frames
 
@@ -301,7 +312,7 @@ def test_same_batch_state_change_does_not_cancel_a_manual_drag(canvas):
     observed = manual_routes(canvas)
     add_candidates(canvas)
     QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
-    QTest.mouseMove(canvas, pointer(canvas, (260, 230)))
+    mouse_move(canvas, pointer(canvas, (260, 230)))
     QApplication.processEvents()
     assert canvas.controller.draft is not None
     # A completion callback changes an unrelated candidate in this batch. A
@@ -313,3 +324,102 @@ def test_same_batch_state_change_does_not_cancel_a_manual_drag(canvas):
     QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (260, 230)))
     assert observed.finishes == [(260., 230.)]
     assert not observed.candidates and canvas.controller.budget.used_bytes == 0
+
+
+def test_offset_release_without_held_move_is_only_first_point(canvas):
+    observed = manual_routes(canvas)
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (145, 130)))
+    assert len(observed.starts) == 1
+    assert observed.starts[0][0] == (100., 100.)
+    assert not observed.finishes
+    assert canvas.controller.draft[1] == (100., 100.)
+
+
+def test_first_point_and_one_thousand_unpressed_moves_never_submit(canvas):
+    observed = manual_routes(canvas)
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+    for index in range(1000):
+        mouse_move(canvas, pointer(canvas, (120 + index % 40, 120)), held=False)
+    assert len(observed.starts) == 1 and not observed.finishes
+    assert canvas.controller.draft[1] == (100., 100.)
+
+
+def test_unpressed_move_cancels_stale_press_instead_of_starting_a_drag(canvas):
+    observed = manual_routes(canvas)
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+    mouse_move(canvas, pointer(canvas, (145, 130)), held=False)
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (145, 130)))
+    assert not observed.starts and not observed.finishes
+    assert canvas._pointer_gesture is None and canvas.controller.budget.used_bytes == 0
+
+
+@pytest.mark.parametrize("event_type", [QEvent.Type.UngrabMouse, QEvent.Type.FocusOut,
+                                       QEvent.Type.WindowDeactivate])
+def test_lost_press_preserves_established_first_point_and_ignores_late_release(canvas, event_type):
+    observed = manual_routes(canvas)
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+    draft = canvas.controller.draft
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (140, 120)))
+    QApplication.sendEvent(canvas, QEvent(event_type))
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (150, 130)))
+    assert canvas.controller.draft is draft
+    assert not observed.finishes and canvas.controller.budget.used_bytes == 0
+
+
+def test_repeated_same_point_and_double_click_do_not_submit_zero_length(canvas):
+    observed = manual_routes(canvas)
+    position = pointer(canvas, (100, 100))
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=position)
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=position)
+    QTest.mouseDClick(canvas, Qt.MouseButton.LeftButton, pos=position)
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=position)
+    assert len(observed.starts) == 1 and not observed.finishes
+    assert canvas.controller.draft[1] == (100., 100.)
+
+
+@pytest.mark.parametrize("automatic", [False, True])
+@pytest.mark.parametrize("mode", ["mixed", "manual"])
+def test_late_failed_task_cannot_cover_new_first_point_in_workspace(workspace, monkeypatch, automatic, mode):
+    from concurrent.futures import Future
+    from test_trial_assistance_ui import point
+    controller = workspace.controller
+    controller._timer.stop()
+    workspace.input_mode.setCurrentIndex(workspace.input_mode.findData(mode))
+    workspace.gesture.setCurrentIndex(0)
+    controller.automatic_enabled = automatic
+    monkeypatch.setattr(controller._manual_pool, "submit", lambda *_: Future())
+    QTest.mouseClick(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 30, 30))
+    QTest.mouseClick(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 60, 30))
+    intent, future = controller._jobs[-1]
+    QTest.mouseClick(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 120, 100))
+    draft = controller.draft
+    assert draft is not None
+    before = workspace.measurement_outcome.text()
+    future.set_result({"status": "rejected", "reason": "endpoints_not_background"})
+    controller.poll()
+    assert controller.draft is draft
+    assert not workspace.measurement_feedback.isVisible()
+    assert workspace.measurement_outcome.text() == before
+    assert workspace.statusBar().currentMessage().startswith("测量 #1 未通过")
+    trace = controller.performance_frame_context()["input_trace"]
+    submits = [item for item in trace["events"] if item["event"] == "task_submitted"]
+    assert len(submits) == 1 and submits[0]["task_id"] == intent.id
+
+
+def test_input_trace_is_bounded_and_links_pointer_to_task(workspace):
+    from test_trial_assistance_ui import point
+    workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
+    workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
+    for index in range(600):
+        mouse_move(workspace.canvas, point(workspace, 100 + index % 30, 100), held=False)
+    QTest.mouseClick(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 30, 30))
+    QTest.mouseClick(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 60, 30))
+    _await_records(workspace, 1)
+    trace = workspace.controller.performance_frame_context()["input_trace"]
+    assert trace["capacity"] == len(trace["events"]) == 512
+    assert trace["total_events"] > 600
+    finish = next(item for item in trace["events"] if item["event"] == "manual_finish")
+    task = next(item for item in trace["events"] if item["event"] == "task_submitted")
+    assert finish["submit_reason"] == "second_point"
+    assert finish["pointer_id"] and finish["interaction_id"] == task["task_id"]

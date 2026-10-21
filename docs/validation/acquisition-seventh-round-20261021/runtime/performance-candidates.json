@@ -1,0 +1,2378 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T03:54:53.312343+00:00",
+  "phase": "full",
+  "scenario": "performance",
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "826f5e13134ac83bc64ec98638eccae656a1939385643b519ff890b57eae7aae",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "8136e02e1673c98a976c29e41ece914613cbe355da7310db9aeb4d5cd7eb0335",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_experiment_view.py": "23f780224eebfc0e66249c1ba05ed4a97d315ca73bd403365e92f75527e0fa8a",
+    "src/fdm/ui/trial_assistance.py": "339890459d8902b8645b9c384dc7fd597504a703c56e13f7ba1b88d022116ef7"
+  },
+  "script_sha256": "a3b7889c9efa337b47800bafb505cc7c5538635481062f944992d786d91a3e72",
+  "real_camera": false,
+  "passed": true,
+  "trace": {
+    "analyses": [
+      {
+        "at": 1.180253,
+        "origin": "automatic",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "stage": "setup"
+      },
+      {
+        "at": 12.903528,
+        "origin": "automatic",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "stage": "performance"
+      },
+      {
+        "at": 21.903125,
+        "origin": "automatic",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "stage": "performance"
+      },
+      {
+        "at": 30.890847,
+        "origin": "automatic",
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "stage": "performance"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 0.758284,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.18157,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.356612,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 2.547618,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 9,
+        "stage": "performance"
+      },
+      {
+        "at": 3.541057,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 8,
+        "stage": "performance"
+      },
+      {
+        "at": 4.541659,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 7,
+        "stage": "performance"
+      },
+      {
+        "at": 5.542627,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 6,
+        "stage": "performance"
+      },
+      {
+        "at": 6.540817,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 5,
+        "stage": "performance"
+      },
+      {
+        "at": 7.546386,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 4,
+        "stage": "performance"
+      },
+      {
+        "at": 8.536447,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 3,
+        "stage": "performance"
+      },
+      {
+        "at": 9.544417,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 2,
+        "stage": "performance"
+      },
+      {
+        "at": 10.535953,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 1,
+        "stage": "performance"
+      },
+      {
+        "at": 11.548062,
+        "visible": true,
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 12.53283,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 12.905164,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 12.98561,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 9,
+        "stage": "performance"
+      },
+      {
+        "at": 13.002629,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 8,
+        "stage": "performance"
+      },
+      {
+        "at": 13.538064,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 7,
+        "stage": "performance"
+      },
+      {
+        "at": 14.539368,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 6,
+        "stage": "performance"
+      },
+      {
+        "at": 15.534692,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 5,
+        "stage": "performance"
+      },
+      {
+        "at": 16.548117,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 4,
+        "stage": "performance"
+      },
+      {
+        "at": 17.543866,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 3,
+        "stage": "performance"
+      },
+      {
+        "at": 18.539592,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 2,
+        "stage": "performance"
+      },
+      {
+        "at": 19.544617,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 1,
+        "stage": "performance"
+      },
+      {
+        "at": 20.547431,
+        "visible": true,
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 21.537337,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 21.904202,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 21.978425,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 9,
+        "stage": "performance"
+      },
+      {
+        "at": 21.98249,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 8,
+        "stage": "performance"
+      },
+      {
+        "at": 22.546852,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 7,
+        "stage": "performance"
+      },
+      {
+        "at": 23.533495,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 6,
+        "stage": "performance"
+      },
+      {
+        "at": 24.54194,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 5,
+        "stage": "performance"
+      },
+      {
+        "at": 25.532659,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 4,
+        "stage": "performance"
+      },
+      {
+        "at": 26.545463,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 3,
+        "stage": "performance"
+      },
+      {
+        "at": 27.582784,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 2,
+        "stage": "performance"
+      },
+      {
+        "at": 28.540906,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 1,
+        "stage": "performance"
+      },
+      {
+        "at": 29.541839,
+        "visible": true,
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 30.537398,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 30.892154,
+        "visible": true,
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "available": 0,
+        "stage": "performance"
+      },
+      {
+        "at": 30.971956,
+        "visible": true,
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "available": 9,
+        "stage": "performance"
+      },
+      {
+        "at": 30.983555,
+        "visible": true,
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "available": 8,
+        "stage": "performance"
+      },
+      {
+        "at": 31.542024,
+        "visible": true,
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "available": 7,
+        "stage": "performance"
+      }
+    ],
+    "status": [
+      {
+        "at": 0.791688,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 0.797507,
+        "message": "标定已变化"
+      },
+      {
+        "at": 0.849005,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 1.180242,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 1.355436,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 4.531704,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 6.530739,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 7.536116,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 9.534428,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 11.535198,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 12.530151,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 12.601946,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 12.903517,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 12.984374,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 12.997496,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 14.52971,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 16.535606,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 17.533957,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 18.533934,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 19.535203,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 20.537611,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 21.535007,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 21.602157,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 21.903118,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 21.977234,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 22.535374,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 24.53166,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 25.528026,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 26.534669,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 27.533446,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 29.530781,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 30.535225,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 30.588282,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 30.89084,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 30.970874,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 30.978744,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 31.53396,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 32.586051,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 32.587841,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [
+      {
+        "at": 3.537755,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:1",
+        "record": "1b4bfc7766944ad085c6246730644bbe",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 6.322166998870671
+      },
+      {
+        "at": 4.54397,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:2",
+        "record": "8956cc9da4fe46049e70824e51ec5cbc",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 14.24666601815261
+      },
+      {
+        "at": 5.539684,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:3",
+        "record": "a449b30dc1424f839af56882f3c567e2",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 6.536083004903048
+      },
+      {
+        "at": 6.547025,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:4",
+        "record": "34d4699cbe10478eb6d120a3cfd33f63",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 18.95404199603945
+      },
+      {
+        "at": 7.549322,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:5",
+        "record": "6bf5148509f54522a0de43a7452b084f",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 15.315374999772757
+      },
+      {
+        "at": 8.533748,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:6",
+        "record": "e0e90eafd8a74ee6aee010b7ae015ca5",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 5.048958002589643
+      },
+      {
+        "at": 9.551392,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:7",
+        "record": "d74916e9170d4a45b3ff187036fc79cb",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 19.76095899590291
+      },
+      {
+        "at": 10.533437,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:8",
+        "record": "b3c69fc62c0c4b7eb96e7c4c104b6c13",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 5.6631669867783785
+      },
+      {
+        "at": 11.5505,
+        "candidate": "c49075a3ab634cc0988eb64bd1725c53:9",
+        "record": "93e0cc95ed7d497c94fe66b6ee594fe9",
+        "batch": "c49075a3ab634cc0988eb64bd1725c53",
+        "elapsed_ms": 17.87624999997206
+      },
+      {
+        "at": 13.008176,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:1",
+        "record": "5d43a1a3f17441829f1ae314411628e4",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 11.249792005401105
+      },
+      {
+        "at": 13.535273,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:2",
+        "record": "c3c5978c07914eadbc7c0767e59e6fe3",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 4.650999995646998
+      },
+      {
+        "at": 14.54064,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:3",
+        "record": "63f4dd80baf64d62bf7ee7b15ff2df65",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 12.131333991419524
+      },
+      {
+        "at": 15.533444,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:4",
+        "record": "23c4031d1a734104874cfb284a2f2999",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 2.6974580250680447
+      },
+      {
+        "at": 16.551979,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:5",
+        "record": "b296083e3db44373bf9961aab0381986",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 19.589916977565736
+      },
+      {
+        "at": 17.546061,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:6",
+        "record": "7d2037800ab94b529238b8619270aace",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 14.744959014933556
+      },
+      {
+        "at": 18.545429,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:7",
+        "record": "bdfd8f4c9ed44e379fd3188cadd561c1",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 12.565624987473711
+      },
+      {
+        "at": 19.549502,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:8",
+        "record": "4dafff0ec8ff4a27beefc1d1b0dd9d0d",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 17.50124999671243
+      },
+      {
+        "at": 20.550238,
+        "candidate": "c91a3c85afe349af84c510bddd23c6db:9",
+        "record": "fc1c908316744eabac909bdf29ba8189",
+        "batch": "c91a3c85afe349af84c510bddd23c6db",
+        "elapsed_ms": 14.914792001945898
+      },
+      {
+        "at": 21.980892,
+        "candidate": "d1dbb32f6015426286216d4379957faa:1",
+        "record": "b0498b563b994aeab6b50f13b8a86a77",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 1.718166982755065
+      },
+      {
+        "at": 22.552748,
+        "candidate": "d1dbb32f6015426286216d4379957faa:2",
+        "record": "e342e0cddbd34f48bab4b62c01e91b25",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 19.449709012405947
+      },
+      {
+        "at": 23.53207,
+        "candidate": "d1dbb32f6015426286216d4379957faa:3",
+        "record": "0e8e4325750d4d548ce8c72c7231ef18",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 2.7992499817628413
+      },
+      {
+        "at": 24.544345,
+        "candidate": "d1dbb32f6015426286216d4379957faa:4",
+        "record": "570161360e3f48abb0762e190acc9861",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 14.755167008843273
+      },
+      {
+        "at": 25.53919,
+        "candidate": "d1dbb32f6015426286216d4379957faa:5",
+        "record": "30fb0be82b4c4a54a31f94e1d8210c74",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 12.067333998857066
+      },
+      {
+        "at": 26.549486,
+        "candidate": "d1dbb32f6015426286216d4379957faa:6",
+        "record": "2d281b318688448f8fcdda9538b56135",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 17.61295899632387
+      },
+      {
+        "at": 27.586156,
+        "candidate": "d1dbb32f6015426286216d4379957faa:7",
+        "record": "a55788eba8b6498289999a5d7769d68b",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 55.60462499852292
+      },
+      {
+        "at": 28.538636,
+        "candidate": "d1dbb32f6015426286216d4379957faa:8",
+        "record": "0d336d83f3a34145833a527d08bc65b0",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 6.500166986370459
+      },
+      {
+        "at": 29.547713,
+        "candidate": "d1dbb32f6015426286216d4379957faa:9",
+        "record": "3e2b34b969384029aad9b7edd3bed166",
+        "batch": "d1dbb32f6015426286216d4379957faa",
+        "elapsed_ms": 19.244249997427687
+      },
+      {
+        "at": 30.990673,
+        "candidate": "19f20d8bf07a4713b62cb2afcc0d51c5:1",
+        "record": "a6376661beca47299cbef0b974016bb5",
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "elapsed_ms": 12.491417001001537
+      },
+      {
+        "at": 31.545847,
+        "candidate": "19f20d8bf07a4713b62cb2afcc0d51c5:2",
+        "record": "6d447758ef7a441d8c0e4c3d97cb6a77",
+        "batch": "19f20d8bf07a4713b62cb2afcc0d51c5",
+        "elapsed_ms": 13.30362501903437
+      }
+    ],
+    "delayed": [],
+    "field_changes": [
+      {
+        "at": 0.791624,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 0.797455,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 12.529354,
+        "values": [
+          3,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 21.534139,
+        "values": [
+          4,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 30.534548,
+        "values": [
+          5,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 32.587818,
+        "values": [
+          6,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 9,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "startup_performance": {
+    "analysis_ms": {
+      "n": 1,
+      "p50": 197.5666249927599,
+      "p95": 197.5666249927599
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 1,
+      "p50": 305.6221670121886,
+      "p95": 305.6221670121886
+    },
+    "analysis_to_paint_ms": {
+      "n": 1,
+      "p50": 200.5429169803392,
+      "p95": 200.5429169803392
+    },
+    "ingest_fps": {
+      "n": 21,
+      "p50": 30.053984783266493,
+      "p95": 40.87235337898672
+    },
+    "presented_fps": {
+      "n": 21,
+      "p50": 30.141590143398293,
+      "p95": 40.69797015859497
+    },
+    "frame_age_ms": {
+      "n": 22,
+      "p50": 1.0692920041037723,
+      "p95": 1.968845543160569
+    },
+    "analysis_service_total_ms": {
+      "n": 1,
+      "p50": 56.36929199681617,
+      "p95": 56.36929199681617
+    },
+    "analysis_preparation_ms": {
+      "n": 1,
+      "p50": 3.1481249898206443,
+      "p95": 3.1481249898206443
+    },
+    "analysis_processing_ms": {
+      "n": 1,
+      "p50": 53.22116700699553,
+      "p95": 53.22116700699553
+    },
+    "analysis_shared_memory_ms": {
+      "n": 1,
+      "p50": 13.118584000039846,
+      "p95": 13.118584000039846
+    },
+    "analysis_budget_wait_ms": {
+      "n": 1,
+      "p50": 0.11966598685830832,
+      "p95": 0.11966598685830832
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 9.472458012169227,
+      "p95": 9.472458012169227
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 1,
+      "p50": 173.46120902220719,
+      "p95": 173.46120902220719
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 1,
+      "p50": 117.09191702539101,
+      "p95": 117.09191702539101
+    }
+  },
+  "performance_load": {
+    "mode": "candidates",
+    "seconds": 30.00594600001932,
+    "sample_frames": 909,
+    "fps": 30.301308637776316,
+    "p50_frame_age_ms": 2.8542919899336994,
+    "p95_frame_age_ms": 3.6848160205408926,
+    "measurements": 29,
+    "measurement_period_ms": 1000,
+    "source_period_ms": 33,
+    "evidence_options": {
+      "version": 1,
+      "mode": "crop_jpeg",
+      "padding": 64,
+      "minimum_size": 256,
+      "quality": 95,
+      "subsampling": "4:4:4"
+    },
+    "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+    "saved": 29
+  },
+  "remaining_candidate_hides": [],
+  "performance": {
+    "analysis_ms": {
+      "n": 4,
+      "p50": 79.7539585037157,
+      "p95": 179.9763499962864
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 29,
+      "p50": 5.585583014180884,
+      "p95": 7.797742186812682
+    },
+    "stable_wait_ms": {
+      "n": 4,
+      "p50": 301.10189600964077,
+      "p95": 305.0420481595211
+    },
+    "analysis_to_paint_ms": {
+      "n": 4,
+      "p50": 82.49145849549677,
+      "p95": 182.93132323306048
+    },
+    "ingest_fps": {
+      "n": 512,
+      "p50": 30.26575260592007,
+      "p95": 31.555867883521685
+    },
+    "presented_fps": {
+      "n": 512,
+      "p50": 30.290428359410583,
+      "p95": 31.8811008917133
+    },
+    "frame_age_ms": {
+      "n": 512,
+      "p50": 2.7774375048466027,
+      "p95": 3.6707250110339373
+    },
+    "analysis_service_total_ms": {
+      "n": 4,
+      "p50": 70.23654151998926,
+      "p95": 76.86798560171155
+    },
+    "analysis_preparation_ms": {
+      "n": 4,
+      "p50": 0.674854003591463,
+      "p95": 2.802737541787791
+    },
+    "analysis_processing_ms": {
+      "n": 4,
+      "p50": 69.7370415145997,
+      "p95": 76.07364999857964
+    },
+    "analysis_shared_memory_ms": {
+      "n": 4,
+      "p50": 0.38781200419180095,
+      "p95": 11.220796301495279
+    },
+    "analysis_budget_wait_ms": {
+      "n": 4,
+      "p50": 0.023687491193413734,
+      "p95": 0.10730358771979806
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 9.472458012169227,
+      "p95": 9.472458012169227
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 4,
+      "p50": 76.14952050789725,
+      "p95": 159.28499012225072
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 4,
+      "p50": 1.1270414979662746,
+      "p95": 99.72225437522862
+    }
+  },
+  "context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": false,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 512,
+      "span_seconds": 16.86382858399884,
+      "first_sequence": 451,
+      "last_sequence": 962,
+      "window_fps": 30.301541399967732
+    },
+    "presented": {
+      "frames": 512,
+      "span_seconds": 16.86477262500557,
+      "first_sequence": 451,
+      "last_sequence": 962,
+      "window_fps": 30.299845207657
+    },
+    "input_trace": {
+      "events": [
+        {
+          "event": "press",
+          "at": 142695.586766625,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "6a4a0da08bfd411bb3fb3f381407deb4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:1"
+        },
+        {
+          "event": "release",
+          "at": 142695.586852875,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "6a4a0da08bfd411bb3fb3f381407deb4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142695.588131541,
+          "field_epoch": 2,
+          "interaction_id": "90692c68a0f34d288f3194453fbd97c3",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "6a4a0da08bfd411bb3fb3f381407deb4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:1"
+        },
+        {
+          "event": "press",
+          "at": 142696.584749916,
+          "field_epoch": 2,
+          "interaction_id": "90692c68a0f34d288f3194453fbd97c3",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "cd9d4a97740b4cc79ccff952d56c2486",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:2"
+        },
+        {
+          "event": "release",
+          "at": 142696.584793041,
+          "field_epoch": 2,
+          "interaction_id": "90692c68a0f34d288f3194453fbd97c3",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "cd9d4a97740b4cc79ccff952d56c2486",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142696.585927375,
+          "field_epoch": 2,
+          "interaction_id": "a07aa193bf544b008c4fb2bc8dcb3f28",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "cd9d4a97740b4cc79ccff952d56c2486",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:2"
+        },
+        {
+          "event": "press",
+          "at": 142697.588256333,
+          "field_epoch": 2,
+          "interaction_id": "a07aa193bf544b008c4fb2bc8dcb3f28",
+          "button": 1,
+          "buttons": 1,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "f8829903582c43df89e5de03e7f15568",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:3"
+        },
+        {
+          "event": "release",
+          "at": 142697.588324625,
+          "field_epoch": 2,
+          "interaction_id": "a07aa193bf544b008c4fb2bc8dcb3f28",
+          "button": 1,
+          "buttons": 0,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "f8829903582c43df89e5de03e7f15568",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142697.589757125,
+          "field_epoch": 2,
+          "interaction_id": "a9f926b9f1694e3eabed3df593ec311e",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "f8829903582c43df89e5de03e7f15568",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:3"
+        },
+        {
+          "event": "press",
+          "at": 142698.583181875,
+          "field_epoch": 2,
+          "interaction_id": "a9f926b9f1694e3eabed3df593ec311e",
+          "button": 1,
+          "buttons": 1,
+          "x": 286.0,
+          "y": 396.0,
+          "pointer_id": "67bc0676c74b4be4a4c7708452a77112",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:4"
+        },
+        {
+          "event": "release",
+          "at": 142698.583249208,
+          "field_epoch": 2,
+          "interaction_id": "a9f926b9f1694e3eabed3df593ec311e",
+          "button": 1,
+          "buttons": 0,
+          "x": 286.0,
+          "y": 396.0,
+          "pointer_id": "67bc0676c74b4be4a4c7708452a77112",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:4"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142698.584767583,
+          "field_epoch": 2,
+          "interaction_id": "d570ff47ddaa4e3aad426c3d33ac7f52",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "67bc0676c74b4be4a4c7708452a77112",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:4"
+        },
+        {
+          "event": "press",
+          "at": 142699.58906275,
+          "field_epoch": 2,
+          "interaction_id": "d570ff47ddaa4e3aad426c3d33ac7f52",
+          "button": 1,
+          "buttons": 1,
+          "x": 464.0,
+          "y": 341.0,
+          "pointer_id": "4d2e001185a64ff294e4d246c0ce319a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:5"
+        },
+        {
+          "event": "release",
+          "at": 142699.589106,
+          "field_epoch": 2,
+          "interaction_id": "d570ff47ddaa4e3aad426c3d33ac7f52",
+          "button": 1,
+          "buttons": 0,
+          "x": 464.0,
+          "y": 341.0,
+          "pointer_id": "4d2e001185a64ff294e4d246c0ce319a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:5"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142699.590106583,
+          "field_epoch": 2,
+          "interaction_id": "043a1ed26a68490498eb5a8f6ac78cd2",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "4d2e001185a64ff294e4d246c0ce319a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:5"
+        },
+        {
+          "event": "press",
+          "at": 142700.583700875,
+          "field_epoch": 2,
+          "interaction_id": "043a1ed26a68490498eb5a8f6ac78cd2",
+          "button": 1,
+          "buttons": 1,
+          "x": 366.0,
+          "y": 347.0,
+          "pointer_id": "cb1bacded43a4a4fb074b95d090f374a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:6"
+        },
+        {
+          "event": "release",
+          "at": 142700.583740166,
+          "field_epoch": 2,
+          "interaction_id": "043a1ed26a68490498eb5a8f6ac78cd2",
+          "button": 1,
+          "buttons": 0,
+          "x": 366.0,
+          "y": 347.0,
+          "pointer_id": "cb1bacded43a4a4fb074b95d090f374a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:6"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142700.584756833,
+          "field_epoch": 2,
+          "interaction_id": "1651f0529a734dc29bd1e657b6fa62f3",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "cb1bacded43a4a4fb074b95d090f374a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:6"
+        },
+        {
+          "event": "press",
+          "at": 142701.586711875,
+          "field_epoch": 2,
+          "interaction_id": "1651f0529a734dc29bd1e657b6fa62f3",
+          "button": 1,
+          "buttons": 1,
+          "x": 776.0,
+          "y": 373.0,
+          "pointer_id": "60a4ac9b4b3644edaca92fd2b3420f2a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:7"
+        },
+        {
+          "event": "release",
+          "at": 142701.586769166,
+          "field_epoch": 2,
+          "interaction_id": "1651f0529a734dc29bd1e657b6fa62f3",
+          "button": 1,
+          "buttons": 0,
+          "x": 776.0,
+          "y": 373.0,
+          "pointer_id": "60a4ac9b4b3644edaca92fd2b3420f2a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:7"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142701.588651208,
+          "field_epoch": 2,
+          "interaction_id": "03822bd1e67f47658718aef270c2d2b8",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "60a4ac9b4b3644edaca92fd2b3420f2a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:7"
+        },
+        {
+          "event": "press",
+          "at": 142702.582792875,
+          "field_epoch": 2,
+          "interaction_id": "03822bd1e67f47658718aef270c2d2b8",
+          "button": 1,
+          "buttons": 1,
+          "x": 662.0,
+          "y": 336.0,
+          "pointer_id": "93764683e1414bb1b6149ae1973b3260",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:8"
+        },
+        {
+          "event": "release",
+          "at": 142702.582836,
+          "field_epoch": 2,
+          "interaction_id": "03822bd1e67f47658718aef270c2d2b8",
+          "button": 1,
+          "buttons": 0,
+          "x": 662.0,
+          "y": 336.0,
+          "pointer_id": "93764683e1414bb1b6149ae1973b3260",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:8"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142702.58395375,
+          "field_epoch": 2,
+          "interaction_id": "fc9e25baa1ce467ca9090ff6ae511d7c",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "93764683e1414bb1b6149ae1973b3260",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:8"
+        },
+        {
+          "event": "press",
+          "at": 142703.587657875,
+          "field_epoch": 2,
+          "interaction_id": "fc9e25baa1ce467ca9090ff6ae511d7c",
+          "button": 1,
+          "buttons": 1,
+          "x": 570.0,
+          "y": 356.0,
+          "pointer_id": "61e1acd021d54ad5b372f4e8c760b3bc",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:9"
+        },
+        {
+          "event": "release",
+          "at": 142703.587714375,
+          "field_epoch": 2,
+          "interaction_id": "fc9e25baa1ce467ca9090ff6ae511d7c",
+          "button": 1,
+          "buttons": 0,
+          "x": 570.0,
+          "y": 356.0,
+          "pointer_id": "61e1acd021d54ad5b372f4e8c760b3bc",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:9"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142703.589423666,
+          "field_epoch": 2,
+          "interaction_id": "b95ab0b46f7a49d7ac8751af149d26a3",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "61e1acd021d54ad5b372f4e8c760b3bc",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c49075a3ab634cc0988eb64bd1725c53:9"
+        },
+        {
+          "event": "press",
+          "at": 142705.051780958,
+          "field_epoch": 3,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "33f83190d8df4cff87973120d58dcfa0",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:1"
+        },
+        {
+          "event": "release",
+          "at": 142705.051798333,
+          "field_epoch": 3,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "33f83190d8df4cff87973120d58dcfa0",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142705.052110791,
+          "field_epoch": 3,
+          "interaction_id": "a780235c7de945f6b18953e1172a7b94",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "33f83190d8df4cff87973120d58dcfa0",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:1"
+        },
+        {
+          "event": "press",
+          "at": 142705.585724666,
+          "field_epoch": 3,
+          "interaction_id": "a780235c7de945f6b18953e1172a7b94",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "b4b6edd9abd542ea806f211845cf4b7c",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:2"
+        },
+        {
+          "event": "release",
+          "at": 142705.585792958,
+          "field_epoch": 3,
+          "interaction_id": "a780235c7de945f6b18953e1172a7b94",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "b4b6edd9abd542ea806f211845cf4b7c",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142705.58673475,
+          "field_epoch": 3,
+          "interaction_id": "36f6fe312dca466cbff44d7702cf687d",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "b4b6edd9abd542ea806f211845cf4b7c",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:2"
+        },
+        {
+          "event": "press",
+          "at": 142706.583430958,
+          "field_epoch": 3,
+          "interaction_id": "36f6fe312dca466cbff44d7702cf687d",
+          "button": 1,
+          "buttons": 1,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "ccaee42ebb5546009d4156186a9597f7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:3"
+        },
+        {
+          "event": "release",
+          "at": 142706.583455125,
+          "field_epoch": 3,
+          "interaction_id": "36f6fe312dca466cbff44d7702cf687d",
+          "button": 1,
+          "buttons": 0,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "ccaee42ebb5546009d4156186a9597f7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142706.583970291,
+          "field_epoch": 3,
+          "interaction_id": "1b5c6ff039754f37b8912d5ef10ca381",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "ccaee42ebb5546009d4156186a9597f7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:3"
+        },
+        {
+          "event": "press",
+          "at": 142707.585669125,
+          "field_epoch": 3,
+          "interaction_id": "1b5c6ff039754f37b8912d5ef10ca381",
+          "button": 1,
+          "buttons": 1,
+          "x": 286.0,
+          "y": 396.0,
+          "pointer_id": "9a99ec9a27344622a5fab8757a91462f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:4"
+        },
+        {
+          "event": "release",
+          "at": 142707.585690458,
+          "field_epoch": 3,
+          "interaction_id": "1b5c6ff039754f37b8912d5ef10ca381",
+          "button": 1,
+          "buttons": 0,
+          "x": 286.0,
+          "y": 396.0,
+          "pointer_id": "9a99ec9a27344622a5fab8757a91462f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:4"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142707.586152333,
+          "field_epoch": 3,
+          "interaction_id": "26825b4f75f8476c8119cad1632fc59a",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "9a99ec9a27344622a5fab8757a91462f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:4"
+        },
+        {
+          "event": "press",
+          "at": 142708.5875105,
+          "field_epoch": 3,
+          "interaction_id": "26825b4f75f8476c8119cad1632fc59a",
+          "button": 1,
+          "buttons": 1,
+          "x": 464.0,
+          "y": 341.0,
+          "pointer_id": "abe3796055f34426ad08595a61752ab4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:5"
+        },
+        {
+          "event": "release",
+          "at": 142708.587577583,
+          "field_epoch": 3,
+          "interaction_id": "26825b4f75f8476c8119cad1632fc59a",
+          "button": 1,
+          "buttons": 0,
+          "x": 464.0,
+          "y": 341.0,
+          "pointer_id": "abe3796055f34426ad08595a61752ab4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:5"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142708.589217708,
+          "field_epoch": 3,
+          "interaction_id": "45e229e5aa9b42d8b4ab9180bf47e93d",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "abe3796055f34426ad08595a61752ab4",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:5"
+        },
+        {
+          "event": "press",
+          "at": 142709.586446416,
+          "field_epoch": 3,
+          "interaction_id": "45e229e5aa9b42d8b4ab9180bf47e93d",
+          "button": 1,
+          "buttons": 1,
+          "x": 366.0,
+          "y": 347.0,
+          "pointer_id": "b68e2e2f0972434ea27ac22ed9e0dd8a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:6"
+        },
+        {
+          "event": "release",
+          "at": 142709.586515791,
+          "field_epoch": 3,
+          "interaction_id": "45e229e5aa9b42d8b4ab9180bf47e93d",
+          "button": 1,
+          "buttons": 0,
+          "x": 366.0,
+          "y": 347.0,
+          "pointer_id": "b68e2e2f0972434ea27ac22ed9e0dd8a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:6"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142709.5882705,
+          "field_epoch": 3,
+          "interaction_id": "b4fe2b2c6b8644f1882b151ed0bd9c7a",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "b68e2e2f0972434ea27ac22ed9e0dd8a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:6"
+        },
+        {
+          "event": "press",
+          "at": 142710.587754458,
+          "field_epoch": 3,
+          "interaction_id": "b4fe2b2c6b8644f1882b151ed0bd9c7a",
+          "button": 1,
+          "buttons": 1,
+          "x": 776.0,
+          "y": 373.0,
+          "pointer_id": "da028c4b7b1a4bc69996c4b7dee10583",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:7"
+        },
+        {
+          "event": "release",
+          "at": 142710.5877825,
+          "field_epoch": 3,
+          "interaction_id": "b4fe2b2c6b8644f1882b151ed0bd9c7a",
+          "button": 1,
+          "buttons": 0,
+          "x": 776.0,
+          "y": 373.0,
+          "pointer_id": "da028c4b7b1a4bc69996c4b7dee10583",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:7"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142710.588415458,
+          "field_epoch": 3,
+          "interaction_id": "eadfe893d9f34c1a96a11a973ffd74a5",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "da028c4b7b1a4bc69996c4b7dee10583",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:7"
+        },
+        {
+          "event": "press",
+          "at": 142711.587190708,
+          "field_epoch": 3,
+          "interaction_id": "eadfe893d9f34c1a96a11a973ffd74a5",
+          "button": 1,
+          "buttons": 1,
+          "x": 662.0,
+          "y": 336.0,
+          "pointer_id": "a5defe3e4c1b40b18429e79ffd284431",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:8"
+        },
+        {
+          "event": "release",
+          "at": 142711.587259666,
+          "field_epoch": 3,
+          "interaction_id": "eadfe893d9f34c1a96a11a973ffd74a5",
+          "button": 1,
+          "buttons": 0,
+          "x": 662.0,
+          "y": 336.0,
+          "pointer_id": "a5defe3e4c1b40b18429e79ffd284431",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:8"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142711.589137166,
+          "field_epoch": 3,
+          "interaction_id": "06d719e6d7ba4ace930587e6da0b6668",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "a5defe3e4c1b40b18429e79ffd284431",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:8"
+        },
+        {
+          "event": "press",
+          "at": 142712.590305708,
+          "field_epoch": 3,
+          "interaction_id": "06d719e6d7ba4ace930587e6da0b6668",
+          "button": 1,
+          "buttons": 1,
+          "x": 570.0,
+          "y": 356.0,
+          "pointer_id": "fb993c11075741f9ad92111257c6cf5a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:9"
+        },
+        {
+          "event": "release",
+          "at": 142712.59034625,
+          "field_epoch": 3,
+          "interaction_id": "06d719e6d7ba4ace930587e6da0b6668",
+          "button": 1,
+          "buttons": 0,
+          "x": 570.0,
+          "y": 356.0,
+          "pointer_id": "fb993c11075741f9ad92111257c6cf5a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:9"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142712.591830083,
+          "field_epoch": 3,
+          "interaction_id": "cb4776a1fb03415aa22fa714af7ca290",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "fb993c11075741f9ad92111257c6cf5a",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "c91a3c85afe349af84c510bddd23c6db:9"
+        },
+        {
+          "event": "press",
+          "at": 142714.0340145,
+          "field_epoch": 4,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "a45469edb008447594bf64d9d8dc69c7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:1"
+        },
+        {
+          "event": "release",
+          "at": 142714.034031666,
+          "field_epoch": 4,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "a45469edb008447594bf64d9d8dc69c7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142714.034333375,
+          "field_epoch": 4,
+          "interaction_id": "dddef6f6937e4da6a80afba928b82a58",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "a45469edb008447594bf64d9d8dc69c7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:1"
+        },
+        {
+          "event": "press",
+          "at": 142714.588409291,
+          "field_epoch": 4,
+          "interaction_id": "dddef6f6937e4da6a80afba928b82a58",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "52bd72b78bf340dab9c6b0fe3aee94cc",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:2"
+        },
+        {
+          "event": "release",
+          "at": 142714.588475541,
+          "field_epoch": 4,
+          "interaction_id": "dddef6f6937e4da6a80afba928b82a58",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "52bd72b78bf340dab9c6b0fe3aee94cc",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142714.589396708,
+          "field_epoch": 4,
+          "interaction_id": "06beaa16ed7246549cea76fc8a01221d",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "52bd72b78bf340dab9c6b0fe3aee94cc",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:2"
+        },
+        {
+          "event": "press",
+          "at": 142715.584160541,
+          "field_epoch": 4,
+          "interaction_id": "06beaa16ed7246549cea76fc8a01221d",
+          "button": 1,
+          "buttons": 1,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "eff593c14ba64de695fb3099f2ac4ec9",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:3"
+        },
+        {
+          "event": "release",
+          "at": 142715.584183291,
+          "field_epoch": 4,
+          "interaction_id": "06beaa16ed7246549cea76fc8a01221d",
+          "button": 1,
+          "buttons": 0,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "eff593c14ba64de695fb3099f2ac4ec9",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142715.584720583,
+          "field_epoch": 4,
+          "interaction_id": "235517dbbd8e45d88eb0a807b8e46777",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "eff593c14ba64de695fb3099f2ac4ec9",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:3"
+        },
+        {
+          "event": "press",
+          "at": 142716.584684875,
+          "field_epoch": 4,
+          "interaction_id": "235517dbbd8e45d88eb0a807b8e46777",
+          "button": 1,
+          "buttons": 1,
+          "x": 286.0,
+          "y": 396.0,
+          "pointer_id": "cd3d885af125482c8f8fde7e446e6dfb",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:4"
+        },
+        {
+          "event": "release",
+          "at": 142716.584750125,
+          "field_epoch": 4,
+          "interaction_id": "235517dbbd8e45d88eb0a807b8e46777",
+          "button": 1,
+          "buttons": 0,
+          "x": 286.0,
+          "y": 396.0,
+          "pointer_id": "cd3d885af125482c8f8fde7e446e6dfb",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:4"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142716.585900333,
+          "field_epoch": 4,
+          "interaction_id": "b6582f7f34c4451aa5f5c524016939cd",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "cd3d885af125482c8f8fde7e446e6dfb",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:4"
+        },
+        {
+          "event": "press",
+          "at": 142717.5819775,
+          "field_epoch": 4,
+          "interaction_id": "b6582f7f34c4451aa5f5c524016939cd",
+          "button": 1,
+          "buttons": 1,
+          "x": 464.0,
+          "y": 341.0,
+          "pointer_id": "c295fdac98d94e81a98515264011c6fe",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:5"
+        },
+        {
+          "event": "release",
+          "at": 142717.581995,
+          "field_epoch": 4,
+          "interaction_id": "b6582f7f34c4451aa5f5c524016939cd",
+          "button": 1,
+          "buttons": 0,
+          "x": 464.0,
+          "y": 341.0,
+          "pointer_id": "c295fdac98d94e81a98515264011c6fe",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:5"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142717.5824535,
+          "field_epoch": 4,
+          "interaction_id": "322ea0e6a8c644ddb08219bf3fd34fc6",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "c295fdac98d94e81a98515264011c6fe",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:5"
+        },
+        {
+          "event": "press",
+          "at": 142718.586978625,
+          "field_epoch": 4,
+          "interaction_id": "322ea0e6a8c644ddb08219bf3fd34fc6",
+          "button": 1,
+          "buttons": 1,
+          "x": 366.0,
+          "y": 347.0,
+          "pointer_id": "144127c80de545a09eed86e8b0879587",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:6"
+        },
+        {
+          "event": "release",
+          "at": 142718.587044541,
+          "field_epoch": 4,
+          "interaction_id": "322ea0e6a8c644ddb08219bf3fd34fc6",
+          "button": 1,
+          "buttons": 0,
+          "x": 366.0,
+          "y": 347.0,
+          "pointer_id": "144127c80de545a09eed86e8b0879587",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:6"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142718.588770166,
+          "field_epoch": 4,
+          "interaction_id": "3fd8257da3884cf38df8ec0d7bb2fd8e",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "144127c80de545a09eed86e8b0879587",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:6"
+        },
+        {
+          "event": "press",
+          "at": 142719.58566325,
+          "field_epoch": 4,
+          "interaction_id": "3fd8257da3884cf38df8ec0d7bb2fd8e",
+          "button": 1,
+          "buttons": 1,
+          "x": 776.0,
+          "y": 373.0,
+          "pointer_id": "f12306a50515453eb22f66c3ff045bca",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:7"
+        },
+        {
+          "event": "release",
+          "at": 142719.585730125,
+          "field_epoch": 4,
+          "interaction_id": "3fd8257da3884cf38df8ec0d7bb2fd8e",
+          "button": 1,
+          "buttons": 0,
+          "x": 776.0,
+          "y": 373.0,
+          "pointer_id": "f12306a50515453eb22f66c3ff045bca",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:7"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142719.587535833,
+          "field_epoch": 4,
+          "interaction_id": "e9ca5fae21db41a9b45320db6656e2e7",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "f12306a50515453eb22f66c3ff045bca",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:7"
+        },
+        {
+          "event": "press",
+          "at": 142720.587190958,
+          "field_epoch": 4,
+          "interaction_id": "e9ca5fae21db41a9b45320db6656e2e7",
+          "button": 1,
+          "buttons": 1,
+          "x": 662.0,
+          "y": 336.0,
+          "pointer_id": "814a878e13de4eefa0413f832be75de7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:8"
+        },
+        {
+          "event": "release",
+          "at": 142720.587249166,
+          "field_epoch": 4,
+          "interaction_id": "e9ca5fae21db41a9b45320db6656e2e7",
+          "button": 1,
+          "buttons": 0,
+          "x": 662.0,
+          "y": 336.0,
+          "pointer_id": "814a878e13de4eefa0413f832be75de7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:8"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142720.588836,
+          "field_epoch": 4,
+          "interaction_id": "dec1501e61ea4f1b9d4a250d729fd8c8",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "814a878e13de4eefa0413f832be75de7",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:8"
+        },
+        {
+          "event": "press",
+          "at": 142721.583484041,
+          "field_epoch": 4,
+          "interaction_id": "dec1501e61ea4f1b9d4a250d729fd8c8",
+          "button": 1,
+          "buttons": 1,
+          "x": 570.0,
+          "y": 356.0,
+          "pointer_id": "166d1e56e84d4e0fa0c697242cb75527",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:9"
+        },
+        {
+          "event": "release",
+          "at": 142721.583532083,
+          "field_epoch": 4,
+          "interaction_id": "dec1501e61ea4f1b9d4a250d729fd8c8",
+          "button": 1,
+          "buttons": 0,
+          "x": 570.0,
+          "y": 356.0,
+          "pointer_id": "166d1e56e84d4e0fa0c697242cb75527",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:9"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142721.584954291,
+          "field_epoch": 4,
+          "interaction_id": "1f4c9d4ae13547259fabed63c9046761",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "166d1e56e84d4e0fa0c697242cb75527",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "d1dbb32f6015426286216d4379957faa:9"
+        },
+        {
+          "event": "press",
+          "at": 142723.033033375,
+          "field_epoch": 5,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "02b870bda7554d6181c035c198141890",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "19f20d8bf07a4713b62cb2afcc0d51c5:1"
+        },
+        {
+          "event": "release",
+          "at": 142723.033050416,
+          "field_epoch": 5,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "02b870bda7554d6181c035c198141890",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "19f20d8bf07a4713b62cb2afcc0d51c5:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142723.033369625,
+          "field_epoch": 5,
+          "interaction_id": "d1b93674b0384249a1068abbf4a3d91d",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "02b870bda7554d6181c035c198141890",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "19f20d8bf07a4713b62cb2afcc0d51c5:1"
+        },
+        {
+          "event": "press",
+          "at": 142723.587594541,
+          "field_epoch": 5,
+          "interaction_id": "d1b93674b0384249a1068abbf4a3d91d",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "683779a449eb4acc9dda5b085760e68d",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "19f20d8bf07a4713b62cb2afcc0d51c5:2"
+        },
+        {
+          "event": "release",
+          "at": 142723.587630625,
+          "field_epoch": 5,
+          "interaction_id": "d1b93674b0384249a1068abbf4a3d91d",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "683779a449eb4acc9dda5b085760e68d",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "19f20d8bf07a4713b62cb2afcc0d51c5:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 142723.588193916,
+          "field_epoch": 5,
+          "interaction_id": "6cbbe269b29a45a8a095ec2959a72fb2",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "683779a449eb4acc9dda5b085760e68d",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "19f20d8bf07a4713b62cb2afcc0d51c5:2"
+        }
+      ],
+      "total_events": 87,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 5,
+      "analyzed": true,
+      "analysis_count": 4,
+      "batch_id": "19f20d8bf07a4713b62cb2afcc0d51c5",
+      "events": [
+        {
+          "at": 142692.846297833,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 142692.852143666,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 142693.210792416,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "55d35ac3b52d485fa2c7ac263a325881",
+          "batch_id": "c49075a3ab634cc0988eb64bd1725c53",
+          "frame_id": "camera:workflow-validation:0:2:13"
+        },
+        {
+          "at": 142704.583626833,
+          "event": "new_cycle",
+          "cycle": 3,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 142704.957201916,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 3,
+          "task_id": "f0ecf251d872488eb1572f8225aa59e9",
+          "batch_id": "c91a3c85afe349af84c510bddd23c6db",
+          "frame_id": "camera:workflow-validation:0:2:367"
+        },
+        {
+          "at": 142713.588406166,
+          "event": "new_cycle",
+          "cycle": 4,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 142713.957206083,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 4,
+          "task_id": "c0e797ac5cd4464fb2e8b0d3808170ff",
+          "batch_id": "d1dbb32f6015426286216d4379957faa",
+          "frame_id": "camera:workflow-validation:0:2:640"
+        },
+        {
+          "at": 142722.5889225,
+          "event": "new_cycle",
+          "cycle": 5,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 142722.944831208,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 5,
+          "task_id": "8a1d2a3b6a8b4b3aa5c643eb2ed0caea",
+          "batch_id": "19f20d8bf07a4713b62cb2afcc0d51c5",
+          "frame_id": "camera:workflow-validation:0:2:912"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "available",
+      "painted_visibility": {
+        "visible": true,
+        "last_observed_visible": true,
+        "observation_active": true,
+        "transition_count": 7,
+        "current_visible_ms": 1574.191041989252,
+        "current_hidden_ms": null,
+        "max_visible_ms": 10191.439083020668,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 142692.863632208,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 142693.411328208,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:19",
+            "batch_id": "c49075a3ab634cc0988eb64bd1725c53"
+          },
+          {
+            "at": 142703.602767291,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:326",
+            "batch_id": "c49075a3ab634cc0988eb64bd1725c53"
+          },
+          {
+            "at": 142705.040322458,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:370",
+            "batch_id": "c91a3c85afe349af84c510bddd23c6db"
+          },
+          {
+            "at": 142712.602134916,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:599",
+            "batch_id": "c91a3c85afe349af84c510bddd23c6db"
+          },
+          {
+            "at": 142714.033143708,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:642",
+            "batch_id": "d1dbb32f6015426286216d4379957faa"
+          },
+          {
+            "at": 142721.596541083,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:871",
+            "batch_id": "d1dbb32f6015426286216d4379957faa"
+          },
+          {
+            "at": 142723.026675708,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:915",
+            "batch_id": "19f20d8bf07a4713b62cb2afcc0d51c5"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "accepted_total": 29,
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 32.628685
+}

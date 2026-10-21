@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "executable": "C:\\tmp\\fdm-cu-live-sixth-round-20261020\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "build_id": "862b9fc24cf248af817271cb159fbbbb",
+  "executable_sha256": "6a78e3554fff9c9ee16c2baf116bfa036f24a4350e53ea028023aed4cf00a9f1",
+  "installed_application": true,
+  "elevated": false,
+  "caller": "B1EA\\lishuyang",
+  "encoding": "cp936",
+  "candidate_alignment_worker": {
+    "child_process": true,
+    "closed": true,
+    "drift": true,
+    "noisy": true,
+    "ok": true,
+    "reference_reset": true,
+    "same": true,
+    "worker_runtime": {
+      "opencv_threads": 4,
+      "pid": 8416
+    }
+  },
+  "hardware_capture_tested": false,
+  "finished_at": "2026-10-20T16:35:19.526577+00:00"
+}

@@ -63,8 +63,8 @@ def test_preferences_do_not_edit_trial_and_are_persisted(workspace):
     workspace.algorithm.setCurrentIndex(1)
     workspace._persist_view_preferences()
     saved = json.loads(workspace._view_preferences_path.read_text())["assistance"]
-    assert saved == {"version": 2, "automatic": True, "algorithm": "multiscale", "visible": False,
-                     "opacity": 37, "input_mode": "candidate", "manual_algorithm": "assisted"}
+    assert saved == {"version": 3, "automatic": True, "algorithm": "multiscale", "visible": False,
+                     "opacity": 37, "input_mode": "candidate", "manual_algorithm": "assisted", "retention_seconds": 1.0}
     assert workspace.session.revision == revision
     workspace._apply_assistance_preferences({})
     assert not workspace.auto_analysis.isChecked()
@@ -243,7 +243,8 @@ def test_storage_mode_is_business_configuration_and_survives_sync(workspace):
     assert workspace.session.effective_evidence_options["mode"] == "crop_jpeg"
     assert workspace.evidence_storage.currentData() == "crop_jpeg"
     assert "局部" in workspace.evidence_button.toolTip()
-    assert workspace.evidence_button.text() == "证据相册"
+    assert workspace.evidence_button.text() == ""
+    assert not workspace.evidence_button.icon().isNull()
 
 
 def test_current_value_opens_last_evidence_after_field_moves(workspace, monkeypatch):
@@ -354,6 +355,9 @@ def test_empty_analysis_keeps_last_measurement_outcome_and_does_not_show_card(wo
     workspace._record_accepted(record)
     before = workspace.latest_value.text(), workspace.measurement_outcome.text()
     revision = workspace.session.revision
+    if origin == 'automatic':
+        # A running automatic task requires the user's switch to remain on.
+        workspace.auto_analysis.setChecked(True)
     automatic_context(workspace.controller, {'task_id': 'analysis-7',
         'result': {'status': 'empty', 'candidates': [], 'diagnostics': {}}})
     workspace.controller._automatic_context['origin'] = origin

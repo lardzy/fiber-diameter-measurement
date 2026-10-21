@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "source_script_sha256": "de0a11f005afadf925ee77ceacce2576dfa4fa41bd62fbef013ecb2fc746a5c4",
+  "scenario": "clicks100",
+  "completed_accepts": 9,
+  "candidate_hides_with_remaining": 0,
+  "error": "StopIteration in click_one after next_field returned before new candidates existed",
+  "scope": "Diagnostic harness wait condition; no product modification",
+  "replacement_result_pending": false,
+  "replacement_result": "full-functional-retry/clicks/result.json",
+  "replacement_script_sha256": "58f1da676059e10f2bde8074158e66c639a1136fd0afb884dd5316988591e9b9",
+  "replacement_accepted": 100,
+  "original_failure_preserved": true
+}

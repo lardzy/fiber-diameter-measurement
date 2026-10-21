@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "status": "environment-pressure-observed-resolved",
+  "scope": "Owned validation PowerShell; no product files or VM memory/pagefile configuration changed",
+  "pid": 10508,
+  "created_utc": "2026-10-21T03:08:07.438321+00:00",
+  "command": [
+    "powershell",
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "C:\\tmp\\fdm-cu-live-seventh-round-20261021\\build\\seventh-round\\runner-command-ce3bff432dc243fc8a508c45cb3f665a.ps1"
+  ],
+  "observed_private_bytes": 47019810816,
+  "observed_rss_bytes": 12470747136,
+  "observed_guest_available_bytes": 367276032,
+  "observed_guest_total_bytes": 17173250048,
+  "source": "Read-only psutil process identity and memory query via prlctl; values preserved from tool output",
+  "failed_group": "records-light-1600x900-scale125",
+  "failure": "Verification Save-Snapshot Drawing.Bitmap invalid argument and OutOfMemory; subsequent PowerShell CLR load HRESULT 0x800705AF",
+  "product_state": "Twelve evidence cards found; owned application process was cleaned by existing probe finally clause",
+  "cleanup_attempt": "Identity-guarded terminate was prepared, but PID was already absent when executed; no terminate sent",
+  "after_pid_exists": false,
+  "after_memory": {
+    "total": 17173250048,
+    "available": 14342762496,
+    "percent": 16.5,
+    "used": 2830487552,
+    "free": 14342762496
+  },
+  "cause_boundary": "Process identity is proven; exact runner body was already removed before retrieval, so the particular helper statement causing growth is not established.",
+  "retry_pending": false,
+  "functional_retry": "frozen-gui/20261021-035800Z-7c050f6f/summary.json",
+  "visual_retry": "frozen-gui/20261021-041308Z-3ab15513/summary.json",
+  "visual_review": "Final retry unobstructed; initial retry screenshots retained with resource-error-preserved suffix",
+  "system_error_dialog_acknowledgements": 2,
+  "system_process_terminated": false,
+  "final_environment": "final-environment.json"
+}

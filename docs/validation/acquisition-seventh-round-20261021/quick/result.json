@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "scope": "Actual navigation and canvas clicks; seeded candidate geometry for visual fixture; synthetic camera, not algorithm acceptance.",
+  "retained": [
+    {
+      "record_id": "9da874a12bb44cd6b3497ec3a4240acb",
+      "start": [
+        243.0,
+        200.0
+      ],
+      "end": [
+        257.0,
+        200.0
+      ],
+      "number": 1,
+      "color": "#d60000"
+    },
+    {
+      "record_id": "3f7f819c8ea84951a715c431559b73fc",
+      "start": [
+        343.0,
+        200.0
+      ],
+      "end": [
+        357.0,
+        200.0
+      ],
+      "number": 2,
+      "color": "#d60000"
+    }
+  ],
+  "setting": 1.0,
+  "slot_errors": []
+}

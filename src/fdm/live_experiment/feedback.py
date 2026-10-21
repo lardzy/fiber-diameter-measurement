@@ -48,6 +48,8 @@ class MeasurementFeedback:
     message: str
     severity: FeedbackSeverity = "warning"
     intent_id: str | None = None
+    interaction_id: str | None = None
+    measurement_number: int | None = None
     field_id: str | None = None
     field_epoch: int | None = None
     source_id: str | None = None

@@ -1,0 +1,12 @@
+[
+  {
+    "path": "dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-4391f019bca8.exe",
+    "sha256": "7f5bd6f03900dd61586e2ee9ba35f82720fce6eb910da6d40a5b3ceaac1c89a1",
+    "unchanged": true
+  },
+  {
+    "path": "dist/internal/acquisition-fourth-round-20261019/FDM-0.4.10-round4-bd7168a57807.exe",
+    "sha256": "1b1b7a01a32d5f077488113e96e97a535fc33539dad530e978644f9420e50546",
+    "unchanged": true
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "version": "0.4.10",
+  "baseline_commit": "6278af2bb86f70f880332bfa84342a6436783813",
+  "final_source_sha256": {
+    "src/fdm/live_experiment/controller.py": "7e69f8dba50d67f66c14b4eaca227a16c274136e0cf09fb346a2d6b3a0da0ead",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/ui/live_experiment_view.py": "3eba942630bd7d64c823ca99d57255095b42648936edc4c320fd4040df460018",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_measurement_canvas.py": "e1d5c518fca5b3338e07631d9fecd473620bc51f140162d3cf8e6bd952c81465",
+    "src/fdm/ui/measurement_evidence_view.py": "a86118aab635648a576afcf0fd341690cb35fbe17e32861959158b7c6ee25c18",
+    "src/fdm/ui/trial_assistance.py": "3db8fe0369f8e1ff6f9a01db3902af1f3ebd0380f32dceca73b0e3b95d049e2b",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/version.py": "c80ea8ecad508c9b13858d9045ec43105b990b13b6d7085d2b4fe32780359ea6"
+  },
+  "full_sandbox": {
+    "passed": 5534,
+    "failed": 35,
+    "skipped": 13,
+    "subtests_passed": 1653,
+    "seconds": 786.95
+  },
+  "ipc_rerun": {
+    "passed": 33,
+    "seconds": 5.18
+  },
+  "final_focused": {
+    "passed": 410,
+    "seconds": 44.23
+  },
+  "failure_resolution": "33 IPC/shared-memory environment failures passed with required OS permissions; two obsolete synchronous secondary-presentation assertions updated to the approved next-event-turn contract, with immediate-open, rebind and close coverage."
+}

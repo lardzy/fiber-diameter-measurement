@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T03:59:42.193924+00:00",
+  "phase": "full",
+  "scenario": "menus",
+  "runtime": "Windows-11-10.0.26200-SP0",
+  "platform": "windows",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "826f5e13134ac83bc64ec98638eccae656a1939385643b519ff890b57eae7aae",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "8136e02e1673c98a976c29e41ece914613cbe355da7310db9aeb4d5cd7eb0335",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_experiment_view.py": "23f780224eebfc0e66249c1ba05ed4a97d315ca73bd403365e92f75527e0fa8a",
+    "src/fdm/ui/trial_assistance.py": "339890459d8902b8645b9c384dc7fd597504a703c56e13f7ba1b88d022116ef7"
+  },
+  "script_sha256": "58f1da676059e10f2bde8074158e66c639a1136fd0afb884dd5316988591e9b9",
+  "real_camera": false,
+  "passed": false,
+  "trace": {
+    "analyses": [
+      {
+        "at": 2.698405,
+        "origin": "automatic",
+        "batch": "e48d9fa1873e41c59bb305cdd828964c",
+        "stage": "setup"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 2.09505,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 2.704561,
+        "visible": true,
+        "batch": "e48d9fa1873e41c59bb305cdd828964c",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 3.286077,
+        "visible": true,
+        "batch": "e48d9fa1873e41c59bb305cdd828964c",
+        "available": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 3.468567,
+        "visible": true,
+        "batch": "e48d9fa1873e41c59bb305cdd828964c",
+        "available": 9,
+        "stage": "menus"
+      }
+    ],
+    "status": [
+      {
+        "at": 2.283512,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 2.307278,
+        "message": "标定已变化"
+      },
+      {
+        "at": 2.356829,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 2.698376,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 3.210279,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 3.789516,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 3.794911,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [],
+    "delayed": [],
+    "field_changes": [
+      {
+        "at": 2.283221,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 2.307108,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 3.794838,
+        "values": [
+          3,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 9,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "error": "Traceback (most recent call last):\n  File \"C:\\tmp\\fdm-cu-live-seventh-round-20261021\\scripts\\validation\\validate_acquisition_seventh_round_full_58f1da676059.py\", line 462, in main\n    assert QApplication.activePopupWidget() is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+  "slot_errors": [],
+  "modal_messages": [],
+  "failure_context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": true,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 39,
+      "span_seconds": 1.4556730419990345,
+      "first_sequence": 2,
+      "last_sequence": 40,
+      "window_fps": 26.104763160150082
+    },
+    "presented": {
+      "frames": 39,
+      "span_seconds": 1.4367252080010076,
+      "first_sequence": 2,
+      "last_sequence": 40,
+      "window_fps": 26.449038263114648
+    },
+    "input_trace": {
+      "events": [],
+      "total_events": 0,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 3,
+      "analyzed": false,
+      "analysis_count": 1,
+      "batch_id": null,
+      "events": [
+        {
+          "at": 8388.009985458,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 8388.033912958,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 8388.391061958,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "b9c25d76942642ac949b6f50dd7cd03d",
+          "batch_id": "e48d9fa1873e41c59bb305cdd828964c",
+          "frame_id": "camera:workflow-validation:0:2:12"
+        },
+        {
+          "at": 8389.521677708,
+          "event": "new_cycle",
+          "cycle": 3,
+          "reason": "试验工作区已关闭"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "unavailable",
+      "painted_visibility": {
+        "visible": null,
+        "last_observed_visible": true,
+        "observation_active": false,
+        "transition_count": 1,
+        "current_visible_ms": null,
+        "current_hidden_ms": null,
+        "max_visible_ms": 502.844874999937,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 8387.98635225,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 8389.013029958,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:28",
+            "batch_id": "e48d9fa1873e41c59bb305cdd828964c"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 3.930709
+}

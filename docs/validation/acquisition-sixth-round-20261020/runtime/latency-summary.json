@@ -1,0 +1,83 @@
+[
+  {
+    "case": "macos-latency-gui-40",
+    "passed": true,
+    "source_changed": false,
+    "analysis_count": 1,
+    "events": [],
+    "injections": 6
+  },
+  {
+    "case": "macos-latency-gui-80",
+    "passed": true,
+    "source_changed": false,
+    "analysis_count": 1,
+    "events": [],
+    "injections": 6
+  },
+  {
+    "case": "macos-latency-gui-200",
+    "passed": true,
+    "source_changed": false,
+    "analysis_count": 1,
+    "events": [],
+    "injections": 6
+  },
+  {
+    "case": "macos-latency-worker-40",
+    "passed": true,
+    "source_changed": false,
+    "analysis_count": 1,
+    "events": [
+      {
+        "at": 123010.519536833,
+        "state": "paused",
+        "reason": "verification_late"
+      },
+      {
+        "at": 123011.751967791,
+        "state": "ready",
+        "reason": "timely_recovery"
+      }
+    ],
+    "injections": 17
+  },
+  {
+    "case": "macos-latency-worker-80",
+    "passed": true,
+    "source_changed": false,
+    "analysis_count": 1,
+    "events": [
+      {
+        "at": 123015.55798325,
+        "state": "paused",
+        "reason": "verification_late"
+      },
+      {
+        "at": 123016.789917708,
+        "state": "ready",
+        "reason": "timely_recovery"
+      }
+    ],
+    "injections": 10
+  },
+  {
+    "case": "macos-latency-worker-200",
+    "passed": true,
+    "source_changed": false,
+    "analysis_count": 1,
+    "events": [
+      {
+        "at": 123020.630547708,
+        "state": "paused",
+        "reason": "verification_late"
+      },
+      {
+        "at": 123021.994486166,
+        "state": "ready",
+        "reason": "timely_recovery"
+      }
+    ],
+    "injections": 5
+  }
+]

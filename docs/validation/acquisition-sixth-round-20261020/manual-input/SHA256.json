@@ -1,0 +1,46 @@
+{
+  "README.md": {
+    "bytes": 2454,
+    "sha256": "ca8e6aeee00517a5ad35d89631a3a7c4c09266185f65e4eae369f84250a26475"
+  },
+  "auto-off-1000-unpressed-moves.png": {
+    "bytes": 203087,
+    "sha256": "00306dbfa462e89f0828a03f5ded00249fa18d70d85f31929778709a50163e1c"
+  },
+  "auto-off-first-point.png": {
+    "bytes": 200966,
+    "sha256": "218610002d8b90668426624d3cce432257a7d9c145c410bde21cc4ff58fe0fb3"
+  },
+  "auto-off-held-drag-accepted.png": {
+    "bytes": 207663,
+    "sha256": "54384bb795490f1e2af5b17c3243078cb3e3ab11c6a5e3b8e8452521464f8872"
+  },
+  "auto-off-old-failure-new-draft.png": {
+    "bytes": 215437,
+    "sha256": "b0f8a0cf6553902b528f3bd630593eb922492c801815ad8d64c518ad77711d70"
+  },
+  "auto-on-1000-unpressed-moves.png": {
+    "bytes": 219974,
+    "sha256": "28675741cd5d56dbd5cecdb87fd8aa4cda10d8e8f145c8e5c0595f6edd42271f"
+  },
+  "auto-on-first-point.png": {
+    "bytes": 221276,
+    "sha256": "377469126064339bff7a902eaabd4e209d09a3dfd96257cd95664152a4b6f6c6"
+  },
+  "auto-on-held-drag-accepted.png": {
+    "bytes": 218455,
+    "sha256": "97783631059a1063dd47d9375c8b19bd494732e589de8d3ce7317fdc6cbbc9a5"
+  },
+  "auto-on-old-failure-new-draft.png": {
+    "bytes": 226349,
+    "sha256": "b8d6de94633c6f3f0a3cd34497131661f610344b16741263dc91a352100e7d1f"
+  },
+  "manual-input-qt-offscreen.mp4": {
+    "bytes": 429304,
+    "sha256": "74dc50c1b71eb54eca9b6bdcc892a0de26a67681fa1817690661d971ff83552f"
+  },
+  "manual-input.json": {
+    "bytes": 1034622,
+    "sha256": "602783ff5919074dde711a1abac07803cae47650d7cd42e5e03e303063d1ab87"
+  }
+}

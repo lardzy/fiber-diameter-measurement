@@ -1,0 +1,384 @@
+......................................................................................................................................... [  2%]
+........................................................................ [  3%]
+.............................................................FFF. [  4%]
+FF................................................................. [  6%]
+....................................................................... [  7%]
+............................ [  7%]
+FFFF.................................................................... [  9%]
+.................... [  9%]
+...................................................................................................................................... [ 11%]
+........................................................................ [ 13%]
+.............................................................. [ 14%]
+.................................................... [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+...............F...............F.F.FF............................ [ 21%]
+.................................F...................................... [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+.............................................................................................................................ss.......... [ 33%]
+........................................................................ [ 34%]
+................................................... [ 35%]
+........................................................................ [ 36%]
+.................................................................................................. [ 38%]
+............................................... [ 39%]
+.................................................................. [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+.........................................FFFFF.......................... [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+...........FF...........................F.....F......................... [ 60%]
+...................................................................... [ 62%]
+........................................................................ [ 63%]
+.......................................................sssssssssss...... [ 64%]
+...................................................... [ 65%]
+........................................................................ [ 67%]
+................................................................................................................................................................................ [ 70%]
+........................................................................ [ 71%]
+........................................................................ [ 72%]
+...................................................................... [ 74%]
+........................................................... [ 75%]
+........................FF..F...............F..................... [ 76%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+.................................................................F...... [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+........................................................................ [ 86%]
+...................................................................... [ 87%]
+............................ [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+.................................................................... [ 92%]
+........................................................................ [ 93%]
+............................................................ [ 94%]
+........................................................................ [ 95%]
+..................................................................................................................FFFFFF...... [ 98%]
+........................................................................ [ 99%]
+...................................                                      [100%]
+=================================== FAILURES ===================================
+_ ApplicationLaunchTests.test_ownership_lock_prevents_second_server_when_primary_pipe_is_unavailable _
+tests/test_application_launch.py:234: in test_ownership_lock_prevents_second_server_when_primary_pipe_is_unavailable
+    self.assertTrue(primary_result.primary, primary_result.error)
+E   AssertionError: False is not true : 无法连接到已运行的软件实例，也无法建立本机通信服务。
+E   
+E   服务名：fdm-t-1ae5246fc2134f85
+E   错误：QLocalServer::listen: Unknown error 1
+_ ApplicationLaunchTests.test_primary_buffers_fragmented_ipc_message_until_newline _
+tests/test_application_launch.py:252: in test_primary_buffers_fragmented_ipc_message_until_newline
+    self.assertTrue(primary_result.primary, primary_result.error)
+E   AssertionError: False is not true : 无法连接到已运行的软件实例，也无法建立本机通信服务。
+E   
+E   服务名：fdm-t-619b732d3ce14c59
+E   错误：QLocalServer::listen: Unknown error 1
+_ ApplicationLaunchTests.test_repeated_close_defers_child_destruction_to_coordinator_owner _
+tests/test_application_launch.py:294: in test_repeated_close_defers_child_destruction_to_coordinator_owner
+    self.assertTrue(result.primary, result.error)
+E   AssertionError: False is not true : 无法连接到已运行的软件实例，也无法建立本机通信服务。
+E   
+E   服务名：fdm-t-880aa62fa85148a4
+E   错误：QLocalServer::listen: Unknown error 1
+__ ApplicationLaunchTests.test_secondary_instance_forwards_request_to_primary __
+tests/test_application_launch.py:161: in test_secondary_instance_forwards_request_to_primary
+    self.assertTrue(primary_result.primary, primary_result.error)
+E   AssertionError: False is not true : 无法连接到已运行的软件实例，也无法建立本机通信服务。
+E   
+E   服务名：fdm-t-9dabfe5d87c64ba4
+E   错误：QLocalServer::listen: Unknown error 1
+___ ApplicationLaunchTests.test_secondary_without_paths_requests_activation ____
+tests/test_application_launch.py:193: in test_secondary_without_paths_requests_activation
+    self.assertTrue(primary_result.primary, primary_result.error)
+E   AssertionError: False is not true : 无法连接到已运行的软件实例，也无法建立本机通信服务。
+E   
+E   服务名：fdm-t-896ac9b63f3c49c3
+E   错误：QLocalServer::listen: Unknown error 1
+__________ test_real_worker_self_check_valid_drift_reset_and_cleanup ___________
+tests/test_candidate_alignment_worker.py:32: in test_real_worker_self_check_valid_drift_reset_and_cleanup
+    result = run_alignment_worker_self_check()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/live_experiment/candidate_alignment_worker.py:249: in run_alignment_worker_self_check
+    expected, actual = compare_candidate_frames(ref, current), worker.compare(ref, current)
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/live_experiment/candidate_alignment_worker.py:161: in compare
+    self.reference_segment = shared_memory.SharedMemory(create=True, size=reference.nbytes)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_5e82cc77'
+__ test_lazy_process_reuses_buffers_and_restarts_after_its_own_child_crashes ___
+tests/test_candidate_alignment_worker.py:43: in test_lazy_process_reuses_buffers_and_restarts_after_its_own_child_crashes
+    assert worker.compare(source, source).valid
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/live_experiment/candidate_alignment_worker.py:161: in compare
+    self.reference_segment = shared_memory.SharedMemory(create=True, size=reference.nbytes)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_3c9b0ba8'
+_ test_worker_does_not_retain_parent_pixels_after_monitor_leases_are_released __
+tests/test_candidate_alignment_worker.py:71: in test_worker_does_not_retain_parent_pixels_after_monitor_leases_are_released
+    worker.compare(source, source)
+src/fdm/live_experiment/candidate_alignment_worker.py:161: in compare
+    self.reference_segment = shared_memory.SharedMemory(create=True, size=reference.nbytes)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_f427a490'
+______ test_ipc_timeout_reaps_only_owned_child_and_unlinks_shared_inputs _______
+tests/test_candidate_alignment_worker.py:91: in test_ipc_timeout_reaps_only_owned_child_and_unlinks_shared_inputs
+    worker.compare(source, source)
+src/fdm/live_experiment/candidate_alignment_worker.py:161: in compare
+    self.reference_segment = shared_memory.SharedMemory(create=True, size=reference.nbytes)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_20fafe91'
+____ ComputeBudgetTests.test_actual_automatic_waits_without_starting_child _____
+tests/test_cu_automatic_compute_budget.py:87: in test_actual_automatic_waits_without_starting_child
+    identifier = worker.submit(image)
+                 ^^^^^^^^^^^^^^^^^^^^
+src/fdm/services/cu_automatic_worker.py:193: in submit
+    segment = shared_memory.SharedMemory(create=True, size=source.nbytes)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_fd2a9329'
+_____________ CuAutomaticWorkerTests.test_busy_cancel_and_recovery _____________
+tests/test_cu_automatic_worker.py:73: in test_busy_cancel_and_recovery
+    identifier = worker.submit(frame())
+                 ^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/services/cu_automatic_worker.py:193: in submit
+    segment = shared_memory.SharedMemory(create=True, size=source.nbytes)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_bf43cacd'
+_____ CuAutomaticWorkerTests.test_crash_is_explicit_and_next_job_rebuilds ______
+tests/test_cu_automatic_worker.py:94: in test_crash_is_explicit_and_next_job_rebuilds
+    worker.submit(frame())
+src/fdm/services/cu_automatic_worker.py:193: in submit
+    segment = shared_memory.SharedMemory(create=True, size=source.nbytes)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_4bac666c'
+_ CuAutomaticWorkerTests.test_real_spawn_reuses_process_and_releases_shared_frame _
+tests/test_cu_automatic_worker.py:33: in test_real_spawn_reuses_process_and_releases_shared_frame
+    identifier = worker.submit(frame(), algorithm)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/fdm/services/cu_automatic_worker.py:193: in submit
+    segment = shared_memory.SharedMemory(create=True, size=source.nbytes)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_94bffb9d'
+___ CuAutomaticWorkerTests.test_watchdog_kills_without_polling_and_recovers ____
+tests/test_cu_automatic_worker.py:84: in test_watchdog_kills_without_polling_and_recovers
+    worker.submit(frame())
+src/fdm/services/cu_automatic_worker.py:193: in submit
+    segment = shared_memory.SharedMemory(create=True, size=source.nbytes)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_79b6c408'
+_______ test_alignment_probe_uses_real_child_process_and_retains_runtime _______
+tests/test_cu_live_self_check.py:74: in test_alignment_probe_uses_real_child_process_and_retains_runtime
+    assert checks == {name: True for name in ALIGNMENT_CASES}, details
+E   AssertionError: {'error': "PermissionError: [Errno 1] Operation not permitted: '/psm_dd0465dc'", 'ok': False}
+E   assert {'candidate_a...': False, ...} == {'candidate_a...y': True, ...}
+E     
+E     Differing items:
+E     {'candidate_alignment_worker': False} != {'candidate_alignment_worker': True}
+E     {'candidate_alignment_noisy': False} != {'candidate_alignment_noisy': True}
+E     {'candidate_alignment_drift': False} != {'candidate_alignment_drift': True}
+E     {'candidate_alignment_same': False} != {'candidate_alignment_same': True}
+E     {'candidate_alignment_closed': False} != {'candidate_alignment_closed': True}...
+E     
+E     ...Full output truncated (3 lines hidden), use '-vv' to show
+__________ test_receiver_owns_pixels_before_reuse_and_rejects_replay ___________
+tests/test_live_experiment_sources.py:141: in test_receiver_owns_pixels_before_reuse_and_rejects_replay
+    memory = shared_memory.SharedMemory(create=True, size=12)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_4e96bb15'
+______ test_receiver_drops_only_proven_superseded_slot_once_before_decode ______
+tests/test_live_experiment_sources.py:166: in test_receiver_drops_only_proven_superseded_slot_once_before_decode
+    memory = shared_memory.SharedMemory(create=True, size=24)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_2e01a9bb'
+______ test_receiver_rejects_marker_overlap_misalignment_or_truncation[8] ______
+tests/test_live_experiment_sources.py:191: in test_receiver_rejects_marker_overlap_misalignment_or_truncation
+    memory = shared_memory.SharedMemory(create=True, size=24)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_5503171d'
+_____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[13] ______
+tests/test_live_experiment_sources.py:191: in test_receiver_rejects_marker_overlap_misalignment_or_truncation
+    memory = shared_memory.SharedMemory(create=True, size=24)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_6cf4b9b4'
+_____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[end] _____
+tests/test_live_experiment_sources.py:191: in test_receiver_rejects_marker_overlap_misalignment_or_truncation
+    memory = shared_memory.SharedMemory(create=True, size=24)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: in __init__
+    self._fd = _posixshmem.shm_open(
+E   PermissionError: [Errno 1] Operation not permitted: '/psm_9a7c432e'
+_ test_hidden_publication_keeps_models_current_and_follows_latest_on_show[False] _
+tests/test_live_record_publication.py:57: in test_hidden_publication_keeps_models_current_and_follows_latest_on_show
+    assert presenter.model.keys == [("measurement", key) for key in ids]
+E   AssertionError: assert [] == [('measuremen...ede1c5'), ...]
+E     
+E     Right contains 60 more items, first extra item: ('measurement', 'f62519f6e6e54581b42a0acd7c3e6f5e')
+E     Use -v to get more diff
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_hidden_publication_keeps_models_current_and_follows_latest_on_show[True] _
+tests/test_live_record_publication.py:57: in test_hidden_publication_keeps_models_current_and_follows_latest_on_show
+    assert presenter.model.keys == [("measurement", key) for key in ids]
+E   AssertionError: assert [] == [('measuremen...0280f3'), ...]
+E     
+E     Right contains 60 more items, first extra item: ('measurement', '4307b6a76df14a37b97f9b426ed6ead7')
+E     Use -v to get more diff
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_release_check_gates_magic_feature_and_reports_probe_failure[True-False] _
+tests/test_magic_roi_performance.py:433: in test_release_check_gates_magic_feature_and_reports_probe_failure
+    assert report['ok'] is not failure
+E   assert False is not False
+_______________ test_packaging_enforces_real_magic_probe[valid] ________________
+tests/test_magic_roi_performance.py:478: in test_packaging_enforces_real_magic_probe
+    assert errors == ([] if state == 'valid' else ['packaged self-check did not pass the magic segmentation ROI/cache probe'])
+E   AssertionError: assert ['packaged se...rement probe'] == []
+E     
+E     Left contains one more item: 'packaged self-check did not pass the live measurement probe'
+E     Use -v to get more diff
+_ ReleaseSelfCheckTests.test_app_self_check_json_includes_real_windowed_render_results _
+tests/test_release_self_check.py:712: in test_app_self_check_json_includes_real_windowed_render_results
+    self.assertEqual(result, 0, payload["errors"])
+E   AssertionError: 1 != 0 : ['live measurement self-check returned a failure']
+----------------------------- Captured stderr call -----------------------------
+qt.qpa.fonts: Populating font family aliases took 20 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost. 
+_ ReleaseSelfCheckTests.test_app_self_check_json_returns_machine_readable_result_without_starting_ui _
+tests/test_release_self_check.py:685: in test_app_self_check_json_returns_machine_readable_result_without_starting_ui
+    self.assertEqual(result, 0)
+E   AssertionError: 1 != 0
+__ ReleaseSelfCheckTests.test_core_profile_runs_declared_image_feature_gates ___
+tests/test_release_self_check.py:485: in test_core_profile_runs_declared_image_feature_gates
+    self.assertTrue(report["ok"], report["errors"])
+E   AssertionError: False is not true : ['live measurement self-check returned a failure']
+_ ReleaseSelfCheckTests.test_self_check_passes_for_intact_release_and_ignores_installer_extras _
+tests/test_release_self_check.py:446: in test_self_check_passes_for_intact_release_and_ignores_installer_extras
+    self.assertTrue(report["ok"], report["errors"])
+E   AssertionError: False is not true : ['live measurement self-check returned a failure']
+______________ test_single_instance_elects_a_qlocalserver_primary ______________
+tests/test_screenshot_agent.py:247: in test_single_instance_elects_a_qlocalserver_primary
+    assert result.primary and not result.forwarded
+E   AssertionError: assert (False)
+E    +  where False = AgentStartResult(primary=False, forwarded=False, response=None, error='无法建立截图工具本机服务：QLocalServer::listen: Unknown error 1').primary
+__________ test_watermark_release_probe_and_build_gate[font_database] __________
+tests/test_watermark.py:405: in test_watermark_release_probe_and_build_gate
+    assert bool(errors) is not valid
+E   AssertionError: assert True is not True
+E    +  where True = bool(['packaged self-check did not pass the live measurement probe'])
+______ test_watermark_release_probe_and_build_gate[preferences_roundtrip] ______
+tests/test_watermark.py:405: in test_watermark_release_probe_and_build_gate
+    assert bool(errors) is not valid
+E   AssertionError: assert True is not True
+E    +  where True = bool(['packaged self-check did not pass the live measurement probe'])
+_____________ test_watermark_release_probe_and_build_gate[text@1] ______________
+tests/test_watermark.py:405: in test_watermark_release_probe_and_build_gate
+    assert bool(errors) is not valid
+E   AssertionError: assert True is not True
+E    +  where True = bool(['packaged self-check did not pass the live measurement probe'])
+_____________ test_watermark_release_probe_and_build_gate[tile@2] ______________
+tests/test_watermark.py:405: in test_watermark_release_probe_and_build_gate
+    assert bool(errors) is not valid
+E   AssertionError: assert True is not True
+E    +  where True = bool(['packaged self-check did not pass the live measurement probe'])
+________ test_watermark_release_probe_and_build_gate[datetime_text@1.5] ________
+tests/test_watermark.py:405: in test_watermark_release_probe_and_build_gate
+    assert bool(errors) is not valid
+E   AssertionError: assert True is not True
+E    +  where True = bool(['packaged self-check did not pass the live measurement probe'])
+_________ test_watermark_release_probe_and_build_gate[datetime_logo@2] _________
+tests/test_watermark.py:405: in test_watermark_release_probe_and_build_gate
+    assert bool(errors) is not valid
+E   AssertionError: assert True is not True
+E    +  where True = bool(['packaged self-check did not pass the live measurement probe'])
+=============================== warnings summary ===============================
+tests/test_length_units.py::test_mixed_units_survive_csv_excel_scale_export_and_stay_separate_in_statistics
+  /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/openpyxl/styles/stylesheet.py:237: UserWarning: Workbook contains no default style, apply openpyxl's default
+    warn("Workbook contains no default style, apply openpyxl's default")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_application_launch.py::ApplicationLaunchTests::test_ownership_lock_prevents_second_server_when_primary_pipe_is_unavailable
+FAILED tests/test_application_launch.py::ApplicationLaunchTests::test_primary_buffers_fragmented_ipc_message_until_newline
+FAILED tests/test_application_launch.py::ApplicationLaunchTests::test_repeated_close_defers_child_destruction_to_coordinator_owner
+FAILED tests/test_application_launch.py::ApplicationLaunchTests::test_secondary_instance_forwards_request_to_primary
+FAILED tests/test_application_launch.py::ApplicationLaunchTests::test_secondary_without_paths_requests_activation
+FAILED tests/test_candidate_alignment_worker.py::test_real_worker_self_check_valid_drift_reset_and_cleanup
+FAILED tests/test_candidate_alignment_worker.py::test_lazy_process_reuses_buffers_and_restarts_after_its_own_child_crashes
+FAILED tests/test_candidate_alignment_worker.py::test_worker_does_not_retain_parent_pixels_after_monitor_leases_are_released
+FAILED tests/test_candidate_alignment_worker.py::test_ipc_timeout_reaps_only_owned_child_and_unlinks_shared_inputs
+FAILED tests/test_cu_automatic_compute_budget.py::ComputeBudgetTests::test_actual_automatic_waits_without_starting_child
+FAILED tests/test_cu_automatic_worker.py::CuAutomaticWorkerTests::test_busy_cancel_and_recovery
+FAILED tests/test_cu_automatic_worker.py::CuAutomaticWorkerTests::test_crash_is_explicit_and_next_job_rebuilds
+FAILED tests/test_cu_automatic_worker.py::CuAutomaticWorkerTests::test_real_spawn_reuses_process_and_releases_shared_frame
+FAILED tests/test_cu_automatic_worker.py::CuAutomaticWorkerTests::test_watchdog_kills_without_polling_and_recovers
+FAILED tests/test_cu_live_self_check.py::test_alignment_probe_uses_real_child_process_and_retains_runtime
+FAILED tests/test_live_experiment_sources.py::test_receiver_owns_pixels_before_reuse_and_rejects_replay
+FAILED tests/test_live_experiment_sources.py::test_receiver_drops_only_proven_superseded_slot_once_before_decode
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[8]
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[13]
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[end]
+FAILED tests/test_live_record_publication.py::test_hidden_publication_keeps_models_current_and_follows_latest_on_show[False]
+FAILED tests/test_live_record_publication.py::test_hidden_publication_keeps_models_current_and_follows_latest_on_show[True]
+FAILED tests/test_magic_roi_performance.py::test_release_check_gates_magic_feature_and_reports_probe_failure[True-False]
+FAILED tests/test_magic_roi_performance.py::test_packaging_enforces_real_magic_probe[valid]
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_app_self_check_json_includes_real_windowed_render_results
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_app_self_check_json_returns_machine_readable_result_without_starting_ui
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_core_profile_runs_declared_image_feature_gates
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_self_check_passes_for_intact_release_and_ignores_installer_extras
+FAILED tests/test_screenshot_agent.py::test_single_instance_elects_a_qlocalserver_primary
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[font_database]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[preferences_roundtrip]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[text@1]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[tile@2]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[datetime_text@1.5]
+FAILED tests/test_watermark.py::test_watermark_release_probe_and_build_gate[datetime_logo@2]
+35 failed, 5534 passed, 13 skipped, 1 warning, 1653 subtests passed in 786.95s (0:13:06)

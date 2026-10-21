@@ -1,4 +1,8 @@
-"""Candidate acceptance, fixed-reference safety and once-per-cycle scheduling."""
+"""Field-owned candidate acceptance plus standalone alignment utility regression.
+
+The independent alignment utility is kept covered for offline consumers, but
+its former live-preview deadline and recovery policies were removed in round 7.
+"""
 from concurrent.futures import Future
 from dataclasses import replace
 from types import SimpleNamespace
@@ -51,7 +55,6 @@ def controller(tmp_path):
     session.add_operator("A")
     session.set_materials(default_materials())
     result = LiveExperimentController(session, evidence_directory=tmp_path)
-    result._alignment.worker = LocalAlignmentWorker()
     result._timer.stop()
     result.set_calibration(CalibrationSnapshot(1, 1))
     present(result, frame())
@@ -71,21 +74,7 @@ def batch(controller, count=3, guarded=False):
     controller.candidates = [{"width_px": 20, "start": [10 + i * 10, 30], "end": [10 + i * 10, 50]}
                              for i in range(count)]
     controller._ensure_candidate_ids()
-    if guarded:
-        controller._alignment.reset(token.frame)
-        wait_alignment(controller)
     return [c["candidate_id"] for c in controller.candidates]
-
-
-def wait_alignment(controller):
-    end = time.perf_counter() + 3
-    while time.perf_counter() < end:
-        controller._poll_candidate_alignment()
-        result = controller._alignment.result
-        if result and result[1] == controller.latest_frame.sequence:
-            return result
-        time.sleep(.002)
-    pytest.fail("alignment did not complete")
 
 
 def test_fixed_reference_rejects_slow_cumulative_drift_without_modifying_source():
@@ -266,34 +255,6 @@ def test_out_of_range_click_is_not_accepted_or_marked_pending(controller):
     assert controller.candidates[0]["state"] == "available"
 
 
-def test_alignment_loss_hides_candidates_preserves_accepted_field_and_count(controller):
-    ids = batch(controller, guarded=True)
-    assert controller.candidate_overlay_ready
-    controller.submit_candidate(ids[0], "wool")
-    field_id, records = controller.field_id, list(controller.current_records)
-    present(controller, frame(2, np.roll(texture(), 3, 1)))
-    assert not controller.candidate_overlay_ready
-    deadline = time.perf_counter() + 3
-    while controller._automatic_context is not None and time.perf_counter() < deadline:
-        controller._poll_candidate_alignment()
-        time.sleep(.002)
-    assert not controller.candidates and not controller.candidate_overlay_ready
-    assert controller.field_id == field_id and controller.current_records == records
-    assert len(controller.session.measurements) == 1
-
-
-def test_new_display_frame_blocks_click_until_independently_aligned(controller):
-    ids = batch(controller, guarded=True)
-    present(controller, frame(2))
-    assert not controller.candidate_overlay_ready
-    with pytest.raises(ValueError, match="对齐"):
-        controller.submit_candidate(ids[0], "wool")
-    wait_alignment(controller)
-    assert controller.candidate_overlay_ready
-    controller.submit_candidate(ids[0], "wool")
-    assert len(controller.session.measurements) == 1
-
-
 def test_automatic_defaults_off_and_runs_only_once_after_stable_cycle(controller, monkeypatch):
     assert not controller.automatic_enabled
     controller._motion_future = (controller.field_epoch, Future())
@@ -305,16 +266,22 @@ def test_automatic_defaults_off_and_runs_only_once_after_stable_cycle(controller
     controller._schedule_automatic()
     assert not calls
     controller.configure_automatic(enabled=True, algorithm="multiscale")
-    wait_alignment(controller)
+    controller._update_candidate_state()
     controller._schedule_automatic()
     assert not calls
     controller._automatic_stable_since -= .31
     controller._schedule_automatic()
     controller._schedule_automatic()
     assert calls == [("multiscale", {"_origin": "automatic"})]
-    # Fixed-source drift rearms a candidate cycle without touching business data.
+    # Pixel changes alone cannot rearm the business field's cycle.
     present(controller, frame(3, np.roll(texture(), 4, 1), live=True))
-    wait_alignment(controller)
+    controller._update_candidate_state()
+    controller._schedule_automatic()
+    assert len(calls) == 1
+    controller.end_field("explicit next field")
+    present(controller, frame(4, live=True))
+    controller.state = "ready"
+    controller._update_candidate_state()
     controller._automatic_stable_since -= .31
     controller._schedule_automatic()
     assert len(calls) == 2
@@ -324,7 +291,7 @@ def test_automatic_does_not_run_for_static_source_even_if_ui_is_active(controlle
     calls = []
     monkeypatch.setattr(controller, "analyze", lambda *args, **kw: calls.append(args))
     controller.configure_automatic(enabled=True, active=True, prepared=True)
-    wait_alignment(controller)
+    controller._update_candidate_state()
     controller._automatic_stable_since -= 1
     controller._schedule_automatic()
     assert not calls
@@ -389,33 +356,6 @@ def test_monitor_discards_obsolete_work_after_reference_reset_and_releases_budge
     assert budget.used_bytes == 0
 
 
-def test_paint_gate_covers_next_canvas_frame_before_presented_token_changes(controller):
-    batch(controller, guarded=True)
-    assert controller.candidate_overlay_ready
-    next_frame = frame(2)
-    # Canvas still has the old presented token while drawing its next frame.
-    assert not controller.candidates_aligned_for(next_frame)
-    assert not controller.candidates_aligned_for(replace(next_frame, source_id="different"))
-
-
-def test_newer_alignment_does_not_certify_skipped_intermediate_frame(controller):
-    batch(controller, guarded=True)
-    first = controller.presented.frame
-    skipped = frame(2, np.roll(texture(), 8, 1))
-    present(controller, frame(3))
-    wait_alignment(controller)
-    assert controller.candidates_aligned_for(first)
-    assert controller.candidate_overlay_ready
-    assert not controller.candidates_aligned_for(skipped)
-    # The same sequence from a reopened source is a different frame identity.
-    assert not controller.candidates_aligned_for(replace(controller.presented.frame, generation=1))
-    for sequence in range(4, 13):
-        present(controller, frame(sequence))
-        wait_alignment(controller)
-    assert len(controller._alignment._results) == 8
-    assert not controller.candidates_aligned_for(first)
-
-
 def test_offline_frame_metrics_follow_actual_admission_and_first_presentation(controller):
     first = frame(2, live=True)
     present(controller, first)
@@ -456,30 +396,6 @@ def test_old_analysis_response_cannot_restore_replaced_batch(controller):
     assert controller.candidate_metrics["analysis_ms"]
 
 
-def test_alignment_admission_failure_does_not_start_analysis_or_leak_frames(controller):
-    source_bytes = controller.budget.used_bytes
-    controller.budget.limit_bytes = source_bytes - 1
-    from fdm.live_experiment.frames import FrameBudgetExceeded
-    with pytest.raises(FrameBudgetExceeded):
-        controller.analyze()
-    assert controller._automatic_context is None
-    assert controller.budget.used_bytes == source_bytes
-
-
-def test_low_texture_does_not_busy_loop_same_static_frame(controller):
-    present(controller, frame(2, np.full((240, 320), 128, np.uint8)))
-    controller.configure_automatic(enabled=True, active=True, prepared=True)
-    controller._poll_candidate_alignment()
-    controller._alignment.future[0].result(timeout=3)
-    controller._poll_candidate_alignment()
-    generation = controller._alignment.generation
-    for _ in range(10):
-        controller._poll_candidate_alignment()
-    assert controller._alignment.future is None
-    assert controller._alignment.generation == generation
-    assert controller._automatic_stable_since is None
-
-
 def test_monitor_never_queues_intermediate_frames(monkeypatch):
     from threading import Event
     from fdm.live_experiment import candidate_alignment as module
@@ -513,161 +429,6 @@ def test_monitor_never_queues_intermediate_frames(monkeypatch):
         release.set()
         monitor.close()
     assert budget.used_bytes == 0
-
-
-def test_preview_waits_for_alignment_without_hiding_verified_overlay(controller):
-    batch(controller, guarded=True)
-    delivered = []
-    def paint(value):
-        delivered.append(value)
-        controller.mark_presented(PresentedFrameToken(value, controller.field_epoch, 0, 1., (0., 0.)))
-    controller.frameReady.connect(paint)
-    next_frame = frame(2)
-    controller.receive_frame(next_frame)
-    controller.present_preview_frame(next_frame)
-    assert not delivered
-    assert controller.candidate_overlay_ready  # Existing displayed frame remains verified.
-    assert controller._candidate_preview_lease is not None
-    wait_alignment(controller)
-    assert delivered == [next_frame]
-    assert controller.candidate_overlay_ready
-    assert controller._candidate_preview_lease is None
-
-
-def test_slow_alignment_falls_back_to_live_pixels_without_clickable_overlay(controller, monkeypatch):
-    ids = batch(controller, guarded=True)
-    delivered = []
-    def paint(value):
-        delivered.append(value)
-        controller.mark_presented(PresentedFrameToken(value, controller.field_epoch, 0, 1., (0., 0.)))
-    controller.frameReady.connect(paint)
-    real_poll = controller._alignment.poll
-    monkeypatch.setattr(controller._alignment, "poll", lambda frame: None)
-    next_frame = frame(2)
-    controller.receive_frame(next_frame)
-    controller.present_preview_frame(next_frame)
-    assert not delivered
-    controller._candidate_preview_deadline = time.perf_counter() - .01
-    controller._flush_candidate_preview()
-    assert delivered == [next_frame]
-    assert not controller.candidate_overlay_ready
-    assert controller._candidate_preview_lease is None
-    assert controller._candidate_preview_fallbacks == 1
-    # One late check must not make every following frame wait again. Capture
-    # keeps advancing while an unavailable worker cannot certify any new frame.
-    for sequence in range(3, 14):
-        latest = frame(sequence)
-        controller.receive_frame(latest)
-        controller.present_preview_frame(latest)
-        assert delivered[-1] is latest
-        assert controller._candidate_preview_pending is None
-        assert not controller.candidates_aligned_for(latest)
-        with pytest.raises(ValueError, match="正在核验候选"):
-            controller.submit_candidate(ids[0], "wool")
-    assert len(controller.session.measurements) == 0
-    # One timely completion must not flash the overlay back on. Recovery needs
-    # a sustained run, including on static images without another capture tick.
-    monkeypatch.setattr(controller._alignment, "poll", real_poll)
-    wait_alignment(controller)
-    assert not controller.candidate_overlay_ready
-    limit = time.perf_counter() + 3
-    while controller._candidate_preview_backoff_until and time.perf_counter() < limit:
-        controller._poll_candidate_alignment()
-        time.sleep(.01)
-    assert controller.candidate_overlay_ready
-    controller.submit_candidate(ids[0], "wool")
-    assert len(controller.session.measurements) == 1
-
-
-def test_preview_backoff_recovers_only_after_time_and_consecutive_timely_checks(controller, monkeypatch):
-    from fdm.live_experiment.candidate_alignment import AlignmentResult
-    from fdm.live_experiment import controller as module
-    batch(controller, guarded=True)
-    current = controller.latest_frame
-    identity = (current.source_id, current.generation, current.size)
-    clock = [100.]
-    monkeypatch.setattr(module.time, "perf_counter", lambda: clock[0])
-    controller._back_off_candidate_preview(clock[0])
-    timely = (identity, current.sequence, current.frame_id, AlignmentResult(True, "aligned", elapsed_ms=1.))
-    controller._alignment.completed_submitted_at = clock[0] - .001
-    controller._alignment.completed_ready_at = clock[0]
-    for _ in range(8):
-        controller._note_candidate_preview_alignment(timely, current)
-    assert controller._candidate_preview_backoff_until
-    # Eight checks do not satisfy the 300 ms recovery interval. A slow check
-    # resets the healthy run, but cannot make individual frames visible.
-    clock[0] = 100.2
-    controller._alignment.completed_submitted_at = clock[0] - .08
-    controller._alignment.completed_ready_at = clock[0]
-    controller._note_candidate_preview_alignment(timely, current)
-    assert controller._candidate_preview_timely_checks == 0
-    assert not controller.candidate_overlay_ready
-    for i in range(8):
-        clock[0] = 100.3 + i * .04
-        controller._alignment.completed_submitted_at = clock[0] - .001
-        controller._alignment.completed_ready_at = clock[0]
-        controller._note_candidate_preview_alignment(timely, current)
-    assert controller._candidate_preview_backoff_until
-    clock[0] = 100.63
-    controller._alignment.completed_submitted_at = clock[0] - .001
-    controller._alignment.completed_ready_at = clock[0]
-    controller._note_candidate_preview_alignment(timely, current)
-    assert controller._candidate_preview_backoff_until == 0.
-    assert controller.performance_frame_context()["candidate_preview"]["fallback_count"] == 1
-
-
-def test_valid_completion_for_previous_input_publishes_its_own_exact_frame(controller):
-    batch(controller, guarded=True)
-    delivered = []
-    controller.frameReady.connect(delivered.append)
-    checked, newest = frame(2), frame(3)
-    controller.receive_frame(checked)
-    controller._alignment.poll(checked)
-    controller._alignment.future[0].result(timeout=3)
-    # Qt receives a newer capture before it consumes the valid result. This
-    # must not be counted as failure, nor certify the unchecked newer image.
-    controller.receive_frame(newest)
-    controller._poll_candidate_alignment()
-    assert delivered[-1] is checked
-    assert controller._candidate_preview_backoff_until == 0
-    assert controller.candidates_aligned_for(checked)
-    assert not controller.candidates_aligned_for(newest)
-    assert controller._automatic_context is not None and len(controller.candidates) == 3
-
-
-def test_arrival_triggered_recovery_never_overwrites_checked_pixels_with_unchecked_input(controller, monkeypatch):
-    from fdm.live_experiment.candidate_alignment import AlignmentResult
-    batch(controller, guarded=True)
-    checked, newest = frame(2), frame(3)
-    identity = (checked.source_id, checked.generation, checked.size)
-    controller._alignment._results.append((identity, checked.sequence, checked.frame_id,
-                                          AlignmentResult(True, "aligned", elapsed_ms=1.)))
-    controller.receive_frame(newest)
-    controller._back_off_candidate_preview(time.perf_counter())
-    delivered = []
-    controller.frameReady.connect(delivered.append)
-    def recover():
-        if controller._candidate_preview_backoff_until:
-            controller._candidate_preview_backoff_until = 0.
-            controller._publish_verified_candidate_frame(checked)
-    monkeypatch.setattr(controller, "_poll_candidate_alignment", recover)
-    controller.present_preview_frame(newest)
-    assert delivered == [checked]
-    assert controller._candidate_preview_pending is newest
-    assert controller.candidates_aligned_for(checked)
-    assert not controller.candidates_aligned_for(newest)
-
-
-def test_paused_gate_cannot_flash_on_individual_verified_frames(controller):
-    ids = batch(controller, guarded=True)
-    controller._back_off_candidate_preview(time.perf_counter())
-    assert controller._candidate_frame_aligned(controller.presented.frame)
-    for _ in range(20):
-        assert not controller.candidates_aligned_for(controller.presented.frame)
-        assert not controller.candidate_overlay_ready
-        with pytest.raises(ValueError, match="核验候选"):
-            controller.submit_candidate(ids[0], "wool")
-    assert controller.session.measurements == {}
 
 
 def test_completed_alignment_owns_pixels_until_consumed_or_reset():
@@ -827,63 +588,137 @@ def test_paint_metric_is_once_per_batch_and_diagnostics_are_bounded_scalars(cont
     assert metric["n"] == 1 and metric["p50"] >= 0 and metric["p50"] == metric["p95"]
 
 
-def test_result_readiness_gui_delay_and_publishable_age_are_separate(controller, monkeypatch):
-    from fdm.live_experiment.candidate_alignment import AlignmentResult
-    from fdm.live_experiment import controller as module
+def test_hide_show_preserves_completed_cycle_and_batch(controller):
+    controller.configure_automatic(enabled=True, active=True, prepared=True)
+    ids = batch(controller, guarded=True)
+    context = controller._automatic_context
+    controller._automatic_cycle_done = True
+    controller.configure_automatic(active=False)
+    assert controller._automatic_cycle_done
+    assert controller._automatic_context is context
+    assert [c["candidate_id"] for c in controller.candidates] == ids
+    assert not controller.candidate_overlay_ready
+    controller.configure_automatic(active=True)
+    assert controller._automatic_cycle_done
+    assert controller._automatic_context is context
+
+
+def test_pending_cancel_does_not_rearm_automatic_cycle(controller):
+    controller._automatic_cycle_done = True
+    controller.cancel_pending_measurements()
+    assert controller._automatic_cycle_done
+
+
+def test_acceptance_emits_one_notification_per_state_change(controller):
+    ids = batch(controller)
+    states = []
+    controller.candidatesChanged.connect(lambda values: states.append(tuple(c["state"] for c in values)))
+    controller.submit_candidate(ids[0], "wool")
+    assert states == [("confirming", "available", "available"), ("accepted", "available", "available")]
+
+
+def test_live_controller_never_constructs_independent_alignment_worker(tmp_path, monkeypatch):
+    from fdm.live_experiment.candidate_alignment import CandidateAlignmentMonitor
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Live controller must not create independent alignment")
+    monkeypatch.setattr(CandidateAlignmentMonitor, "__init__", forbidden)
+    session = ExperimentSession(save_images=False)
+    session.add_operator("A")
+    value = LiveExperimentController(session, evidence_directory=tmp_path)
+    try:
+        assert not hasattr(value, "_alignment")
+        present(value, frame())
+        value.configure_automatic(enabled=True, active=True, prepared=True)
+        value._update_candidate_state()
+    finally:
+        value.close()
+    assert value.budget.used_bytes == 0
+
+
+def test_same_field_candidate_survives_every_new_preview_without_pixel_comparison(controller):
+    ids = batch(controller, guarded=True)
+    context = controller._automatic_context
+    controller._automatic_cycle_done = True
+    controller.candidates[1]["material_id"] = "cashmere"
+    for sequence, pixels in enumerate((texture(), np.roll(texture(), 4, 1),
+            cv2.GaussianBlur(texture(), (21, 21), 5), texture()), 2):
+        # This fixture controls the business field, so the test proves that
+        # candidate validity no longer has a second independent pixel gate.
+        present(controller, frame(sequence, pixels))
+        controller._update_candidate_state()
+        assert controller.candidate_overlay_ready
+        assert controller._automatic_context is context
+        assert [candidate["candidate_id"] for candidate in controller.candidates] == ids
+        assert controller.candidates[1]["material_id"] == "cashmere"
+        assert controller._automatic_cycle_done
+    controller.submit_candidate(ids[0], "wool")
+    assert len(controller.session.measurements) == 1
+    assert controller.candidate_overlay_ready
+
+
+def test_same_context_frame_is_clickable_before_next_presentation_token(controller):
     batch(controller, guarded=True)
-    checked = replace(controller.latest_frame, live=True, received_at=100.)
-    identity = (checked.source_id, checked.generation, checked.size)
-    completed = (identity, checked.sequence, checked.frame_id, AlignmentResult(True, "aligned", elapsed_ms=19.))
-    controller._alignment.completed_frame = checked
-    controller._alignment.completed_submitted_at = 100.
-    controller._alignment.completed_ready_at = 100.020
-    controller._preview_interval = 1 / 30
-    monkeypatch.setattr(module.time, "perf_counter", lambda: 100.031)
-    controller._note_candidate_preview_alignment(completed, checked)
-    assert controller._candidate_preview_backoff_until == 0
-    assert controller._candidate_preview_wait_budget() == pytest.approx(.85 / 30)
-    metrics = controller.performance_diagnostics()
-    assert metrics["candidate_verification_ready_ms"]["p50"] >= 0
-    assert controller._performance.samples["candidate_verification_ready_ms"][-1] == pytest.approx(20.)
-    assert controller._performance.samples["candidate_verification_gui_wait_ms"][-1] == pytest.approx(11.)
-    # A finished check never grants unbounded reuse of its source pixels.
-    monkeypatch.setattr(module.time, "perf_counter", lambda: 100.034)
-    controller._note_candidate_preview_alignment(completed, checked)
-    assert controller._candidate_preview_backoff_until
-    assert controller._candidate_presentation_events[-1]["reason"] == "presentation_stale"
+    upcoming = frame(2)
+    assert controller.candidates_aligned_for(upcoming)
+    assert not controller.candidates_aligned_for(replace(upcoming, source_id="different"))
+    assert not controller.candidates_aligned_for(replace(upcoming, generation=1))
+    assert not controller.candidates_aligned_for(replace(upcoming, pixels=np.zeros((10, 10), np.uint8)))
 
 
-def test_deadline_first_consumes_already_finished_exact_frame(controller, monkeypatch):
+def test_global_field_change_cancels_pending_candidate_and_starts_new_cycle(controller):
+    from fdm.live_experiment.selection_retention import FieldEndCause
+    ids = batch(controller)
+    controller._automatic_cycle_done = True
+    controller._motion_future = (controller.field_epoch, Future())
+    present(controller, frame(2, live=True))
+    controller.state = "ready"
+    controller._motion_sequence = 0
+    controller.submit_candidate(ids[0], "wool")
+    assert controller.candidate_pending_count == 1
+    before = controller.field_epoch
+    controller.end_field("motion", cause=FieldEndCause.MOTION)
+    assert controller.field_epoch == before + 1
+    assert not controller.candidates and controller._automatic_context is None
+    assert not controller.candidate_pending_count and not controller.session.measurements
+    assert not controller._automatic_cycle_done
+
+
+def test_pending_candidate_waits_only_for_global_motion_without_hiding_remainder(controller):
+    ids = batch(controller)
+    controller._motion_future = (controller.field_epoch, Future())
+    present(controller, frame(2, live=True))
+    controller.state = "ready"
+    controller._motion_sequence = 0
+    controller.submit_candidate(ids[0], "wool")
+    assert controller.candidate_pending_count == 1
+    assert controller.candidate_overlay_ready
+    assert controller.candidates[0]["state"] == "confirming"
+    assert all(item["state"] == "available" for item in controller.candidates[1:])
+    controller._motion_sequence = 2
+    controller._poll_confirmation()
+    assert len(controller.session.measurements) == 1
+    assert controller.candidate_overlay_ready
+
+
+def test_preview_publishes_immediately_with_field_candidate_context(controller):
     batch(controller, guarded=True)
     delivered = []
     controller.frameReady.connect(delivered.append)
-    current = frame(2)
-    controller.receive_frame(current)
-    real_poll = controller._poll_candidate_alignment
-    monkeypatch.setattr(controller, "_poll_candidate_alignment", lambda: None)
-    controller.present_preview_frame(current)
-    controller._alignment.poll(current)
-    controller._alignment.future[0].result(3)
-    controller._candidate_preview_deadline = time.perf_counter() - .01
-    monkeypatch.setattr(controller, "_poll_candidate_alignment", real_poll)
-    controller._flush_candidate_preview()
-    assert delivered == [current]
-    assert controller._candidate_preview_pending is None
-    assert controller._candidate_preview_backoff_until == 0
-    assert controller._candidate_frame_aligned(current)
+    for sequence in range(2, 8):
+        current = frame(sequence)
+        controller.receive_frame(current)
+        controller.present_preview_frame(current)
+        assert delivered[-1] is current
+        assert controller.candidates_aligned_for(current)
+        assert not controller.should_defer_canvas_business_update()
 
 
-def test_business_redraw_is_deferred_only_for_guarded_live_pending_publication(controller):
-    batch(controller, guarded=True)
-    assert not controller.should_defer_canvas_business_update()
-    controller._candidate_preview_pending = replace(frame(2), live=True)
-    controller._candidate_preview_deadline = time.perf_counter() + .02
-    assert controller.should_defer_canvas_business_update()
-    controller.draft = ((1, 1),)
-    assert not controller.should_defer_canvas_business_update()
-    controller.draft = None
-    controller._candidate_preview_backoff_until = time.perf_counter()
-    assert not controller.should_defer_canvas_business_update()
-    controller._candidate_preview_backoff_until = 0
-    controller._candidate_preview_pending = frame(2)
-    assert not controller.should_defer_canvas_business_update()
+def test_analysis_start_failure_releases_its_frame_without_changing_batch(controller):
+    def fail(*args, **kwargs):
+        raise RuntimeError("deliberate analyzer launch failure")
+    controller._automatic = SimpleNamespace(submit=fail, cancel=lambda: None, close=lambda: None, poll=lambda: [])
+    before = controller.budget.used_bytes
+    with pytest.raises(RuntimeError, match="deliberate"):
+        controller.analyze()
+    assert controller._automatic_context is None
+    assert controller.budget.used_bytes == before

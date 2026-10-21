@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import json
+import math
 
-from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtCore import QItemSelectionModel, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QCursor
 from PySide6.QtWidgets import (
     QAbstractItemView, QFileDialog, QHBoxLayout, QLabel, QMenu, QSlider,
-    QToolButton, QWidget, QWidgetAction, QCheckBox, QSizePolicy,
+    QToolButton, QWidget, QWidgetAction, QCheckBox, QSizePolicy, QDoubleSpinBox,
 )
 
 
@@ -78,6 +79,23 @@ class TrialAssistanceMixin:
         slider_action = QWidgetAction(self.candidate_display_menu)
         slider_action.setDefaultWidget(opacity_panel)
         self.candidate_display_menu.addAction(slider_action)
+        retention_panel = QWidget(self.candidate_display_menu)
+        retention_row = QHBoxLayout(retention_panel)
+        retention_row.addWidget(QLabel("换场后保留已点选标记", retention_panel))
+        self.selection_retention_seconds = QDoubleSpinBox(retention_panel)
+        self.selection_retention_seconds.setObjectName("trialSelectionRetentionSeconds")
+        self.selection_retention_seconds.setAccessibleName("换场后保留已点选标记")
+        self.selection_retention_seconds.setRange(0., 10.)
+        self.selection_retention_seconds.setDecimals(1)
+        self.selection_retention_seconds.setSingleStep(.1)
+        self.selection_retention_seconds.setSuffix(" 秒")
+        self.selection_retention_seconds.setSpecialValueText("关闭")
+        self.selection_retention_seconds.setValue(1.)
+        self.selection_retention_seconds.setToolTip("仅保留画布点选且成功计入的标记；修改时长影响之后的换场，关闭会立即清除。")
+        retention_row.addWidget(self.selection_retention_seconds)
+        retention_action = QWidgetAction(self.candidate_display_menu)
+        retention_action.setDefaultWidget(retention_panel)
+        self.candidate_display_menu.addAction(retention_action)
         self.candidate_display_button.setMenu(self.candidate_display_menu)
         row.insertWidget(2, self.candidate_display_button)
         row.insertStretch(3, 1)
@@ -85,7 +103,10 @@ class TrialAssistanceMixin:
         self.evidence_button.setObjectName("trialEvidence")
         self.evidence_button.setAccessibleName("证据相册及存档设置")
         self.evidence_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-        self.evidence_button.setFixedHeight(18)
+        self.evidence_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.evidence_button.setIcon(themed_icon("open_images"))
+        self.evidence_button.setIconSize(QSize(16, 16))
+        self.evidence_button.setFixedSize(40, 22)
         self.evidence_button.clicked.connect(lambda: self._guard(self._show_evidence_gallery))
         evidence_menu = QMenu(self.evidence_button)
         evidence_menu.addAction("查看上一条测量证据", lambda: self._guard(self._show_latest_evidence))
@@ -129,14 +150,15 @@ class TrialAssistanceMixin:
         self.candidate_model.dataChanged.connect(lambda *_: self.canvas.update())
         self.candidate_model.exclusionChanged.connect(self._candidate_excluded)
         self.controller.candidateStateChanged.connect(self._refresh_assistance_state)
-        self.controller.recordAccepted.connect(self.evidence_review.accepted)
-        self.controller.recordsAccepted.connect(lambda records: self.evidence_review.accepted(records[-1]) if records else None)
+        self.controller.recordAccepted.connect(self._evidence_record_accepted)
+        self.controller.recordsAccepted.connect(lambda records: self._evidence_record_accepted(records[-1]) if records else None)
         self.measure_mode.currentIndexChanged.connect(self._candidate_mode_changed)
         self.input_mode.currentIndexChanged.connect(self._candidate_mode_changed)
         self.auto_analysis.toggled.connect(self._assistance_preferences_changed)
         self.algorithm.currentIndexChanged.connect(self._assistance_preferences_changed)
         self.show_candidates_action.toggled.connect(self._assistance_preferences_changed)
         self.candidate_opacity.valueChanged.connect(self._assistance_preferences_changed)
+        self.selection_retention_seconds.valueChanged.connect(self._assistance_preferences_changed)
         try:
             preferences = json.loads(self._view_preferences_path.read_text(encoding="utf-8")).get("assistance", {})
         except (OSError, ValueError, TypeError, AttributeError):
@@ -149,10 +171,11 @@ class TrialAssistanceMixin:
         self._refresh_assistance_state()
 
     def _assistance_preferences(self):
-        return {"version": 2, "automatic": self.auto_analysis.isChecked(),
+        return {"version": 3, "automatic": self.auto_analysis.isChecked(),
                 "algorithm": self.algorithm.currentData(), "visible": self.show_candidates_action.isChecked(),
                 "opacity": self.candidate_opacity.value(), "input_mode": self.input_mode.currentData(),
-                "manual_algorithm": self.measure_mode.currentData()}
+                "manual_algorithm": self.measure_mode.currentData(),
+                "retention_seconds": self.selection_retention_seconds.value()}
 
     def _apply_assistance_preferences(self, preferences):
         loading, self._assistance_loading = self._assistance_loading, True
@@ -164,10 +187,17 @@ class TrialAssistanceMixin:
             except (TypeError, ValueError, OverflowError):
                 opacity = 60
             self.candidate_opacity.setValue(max(20, min(100, opacity)))
+            try:
+                retention = float(preferences.get("retention_seconds", 1.))
+                if not math.isfinite(retention):
+                    retention = 1.
+            except (TypeError, ValueError, OverflowError):
+                retention = 1.
+            self.selection_retention_seconds.setValue(max(0., min(10., retention)))
             self.algorithm.setCurrentIndex(max(0, self.algorithm.findData(preferences.get("algorithm", "traditional"))))
             # V1 combined the manual algorithm with candidate-only input. The
             # upgrade opts into mixed input without changing the manual algorithm.
-            modern = preferences.get("version") == 2
+            modern = preferences.get("version") in (2, 3)
             manual = preferences.get("manual_algorithm", "assisted") if modern else preferences.get("input_mode", "assisted")
             interaction = preferences.get("input_mode", "mixed") if modern else "mixed"
             self.measure_mode.setCurrentIndex(max(0, self.measure_mode.findData(manual)))
@@ -178,6 +208,7 @@ class TrialAssistanceMixin:
 
     def _apply_assistance_controls(self):
         self.canvas.set_candidate_presentation(self.show_candidates_action.isChecked(), self.candidate_opacity.value())
+        self.controller.selection_retention.set_duration(self.selection_retention_seconds.value())
         interaction = self.input_mode.currentData()
         picking = interaction == "candidate"
         self.canvas.set_input_mode(interaction)
@@ -231,7 +262,7 @@ class TrialAssistanceMixin:
         running = bool(context and not context.get("completed", False))
         available = sum(item.get("state", "available") == "available" for item in controller.candidates)
         pending = controller.candidate_pending_count
-        key = (running, available, pending, controller.candidate_overlay_ready, self.session.revision,
+        key = (running, available, pending, controller.candidate_overlay_ready,
                bool(frame), controller.state, bool(controller.calibration),
                self.session.effective_evidence_options["mode"])
         if key != self._assistance_state_key:
@@ -242,10 +273,28 @@ class TrialAssistanceMixin:
             self.candidate_display_button.setText(f"候选 {available}")
             self.workflow_tabs.setTabText(1, f"审核 {available}" if available else "审核")
             mode = self.session.effective_evidence_options["mode"]
-            self.evidence_button.setText("证据相册")
             self.evidence_button.setToolTip("浏览当前试验全部操作者的图片；箭头查看上一条、固定小窗或选择存档模式。" + {"disabled": "当前不保存测量图片。", "crop_jpeg": "当前保存局部 JPEG，质量 95；有透明信息时使用 PNG。", "full_png": "当前保存完整无损 PNG。"}[mode])
             for name, action in self.evidence_mode_actions.items():
                 action.setChecked(name == mode)
+        self._queue_evidence_refresh()
+
+    def _evidence_record_accepted(self, record):
+        # The latest-evidence action is immediately usable. Decoding and
+        # repainting the optional review/gallery leave the acceptance path.
+        self.evidence_review.accepted(record, refresh=False)
+        self._queue_evidence_refresh()
+
+    def _queue_evidence_refresh(self):
+        if not hasattr(self, "_evidence_refresh_timer"):
+            self._evidence_refresh_timer = QTimer(self)
+            self._evidence_refresh_timer.setSingleShot(True)
+            self._evidence_refresh_timer.timeout.connect(self._flush_evidence_refresh)
+        if not self._evidence_refresh_timer.isActive():
+            self._evidence_refresh_timer.start(0)
+
+    def _flush_evidence_refresh(self):
+        if self._closed:
+            return
         self.evidence_review.refresh()
         gallery = getattr(self.host, "_evidence_gallery", None)
         if gallery is not None and gallery.workspace is self:

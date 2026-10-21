@@ -1,0 +1,401 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T04:03:06.120654+00:00",
+  "phase": "full",
+  "scenario": "latency",
+  "runtime": "Windows-11-10.0.26200-SP0",
+  "platform": "windows",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "826f5e13134ac83bc64ec98638eccae656a1939385643b519ff890b57eae7aae",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "8136e02e1673c98a976c29e41ece914613cbe355da7310db9aeb4d5cd7eb0335",
+    "src/fdm/ui/live_experiment_workspace.py": "c44216299a1a28a72629c29273e178793961f90aec7eabc056f71487826a3217",
+    "src/fdm/ui/live_experiment_view.py": "23f780224eebfc0e66249c1ba05ed4a97d315ca73bd403365e92f75527e0fa8a",
+    "src/fdm/ui/trial_assistance.py": "339890459d8902b8645b9c384dc7fd597504a703c56e13f7ba1b88d022116ef7"
+  },
+  "script_sha256": "14214ace7da3cde22474eaee1368974124b7dc79d358e92a65b8d64bcd81edef",
+  "real_camera": false,
+  "passed": true,
+  "trace": {
+    "analyses": [
+      {
+        "at": 2.717291,
+        "origin": "automatic",
+        "batch": "1958c08389d249ee91b14799f4500491",
+        "stage": "setup"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 2.096508,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 2.72191,
+        "visible": true,
+        "batch": "1958c08389d249ee91b14799f4500491",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 3.221761,
+        "visible": true,
+        "batch": "1958c08389d249ee91b14799f4500491",
+        "available": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 3.464176,
+        "visible": true,
+        "batch": "1958c08389d249ee91b14799f4500491",
+        "available": 9,
+        "stage": "latency"
+      }
+    ],
+    "status": [
+      {
+        "at": 2.294762,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 2.319335,
+        "message": "标定已变化"
+      },
+      {
+        "at": 2.370796,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 2.717267,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 3.219223,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 5.035787,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 5.041731,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [],
+    "delayed": [
+      {
+        "at": 3.696384,
+        "kind": "global-motion",
+        "pipeline": "direct",
+        "elapsed_ms": 200.90983400041296
+      },
+      {
+        "at": 3.900549,
+        "kind": "global-motion",
+        "pipeline": "direct",
+        "elapsed_ms": 200.47112500105868
+      },
+      {
+        "at": 4.110597,
+        "kind": "global-motion",
+        "pipeline": "direct",
+        "elapsed_ms": 204.49637499950768
+      },
+      {
+        "at": 4.318798,
+        "kind": "global-motion",
+        "pipeline": "direct",
+        "elapsed_ms": 206.1458339994715
+      },
+      {
+        "at": 4.520986,
+        "kind": "global-motion",
+        "pipeline": "direct",
+        "elapsed_ms": 200.39854199967522
+      }
+    ],
+    "field_changes": [
+      {
+        "at": 2.294561,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 2.319167,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 5.041654,
+        "values": [
+          3,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 9,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "latency": {
+    "kind": "motion",
+    "delay_ms": 200,
+    "batch_preserved": true
+  },
+  "remaining_candidate_hides": [],
+  "performance": {
+    "analysis_ms": {
+      "n": 1,
+      "p50": 526.4590419992601,
+      "p95": 526.4590419992601
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "stable_wait_ms": {
+      "n": 1,
+      "p50": 310.9649160014669,
+      "p95": 310.9649160014669
+    },
+    "analysis_to_paint_ms": {
+      "n": 1,
+      "p50": 533.7232500005484,
+      "p95": 533.7232500005484
+    },
+    "ingest_fps": {
+      "n": 74,
+      "p50": 30.120597997716743,
+      "p95": 37.501382989631004
+    },
+    "presented_fps": {
+      "n": 74,
+      "p50": 29.71914452373927,
+      "p95": 37.24882799262161
+    },
+    "frame_age_ms": {
+      "n": 75,
+      "p50": 5.820708000101149,
+      "p95": 10.087587300768064
+    },
+    "analysis_service_total_ms": {
+      "n": 1,
+      "p50": 236.00845799956005,
+      "p95": 236.00845799956005
+    },
+    "analysis_preparation_ms": {
+      "n": 1,
+      "p50": 4.770207999172271,
+      "p95": 4.770207999172271
+    },
+    "analysis_processing_ms": {
+      "n": 1,
+      "p50": 231.23825000038778,
+      "p95": 231.23825000038778
+    },
+    "analysis_shared_memory_ms": {
+      "n": 1,
+      "p50": 2.065582999421167,
+      "p95": 2.065582999421167
+    },
+    "analysis_budget_wait_ms": {
+      "n": 1,
+      "p50": 0.03404199924261775,
+      "p95": 0.03404199924261775
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 25.485000000116997,
+      "p95": 25.485000000116997
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 1,
+      "p50": 498.1752090006921,
+      "p95": 498.1752090006921
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 1,
+      "p50": 262.16675100113207,
+      "p95": 262.16675100113207
+    }
+  },
+  "context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": false,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 75,
+      "span_seconds": 2.6733298749986716,
+      "first_sequence": 2,
+      "last_sequence": 76,
+      "window_fps": 27.68083381405999
+    },
+    "presented": {
+      "frames": 75,
+      "span_seconds": 2.658895874999871,
+      "first_sequence": 2,
+      "last_sequence": 76,
+      "window_fps": 27.83110113328661
+    },
+    "input_trace": {
+      "events": [],
+      "total_events": 0,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 2,
+      "analyzed": true,
+      "analysis_count": 1,
+      "batch_id": "1958c08389d249ee91b14799f4500491",
+      "events": [
+        {
+          "at": 8591.943119583,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 8591.967805875,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 8592.336864166,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "b51447a32b064240a20bf9fcef62f9e7",
+          "batch_id": "1958c08389d249ee91b14799f4500491",
+          "frame_id": "camera:workflow-validation:0:2:12"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "available",
+      "painted_visibility": {
+        "visible": true,
+        "last_observed_visible": true,
+        "observation_active": true,
+        "transition_count": 1,
+        "current_visible_ms": 1714.8508749996836,
+        "current_hidden_ms": null,
+        "max_visible_ms": 1714.8508749996836,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 8591.918364875,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 8592.870571333,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:28",
+            "batch_id": "1958c08389d249ee91b14799f4500491"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "accepted_total": 0,
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 5.167578
+}
