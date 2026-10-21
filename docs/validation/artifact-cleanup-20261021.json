@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "fix_commit": "a9c0359d0de49fc56aef2563d03407548181b3b2",
+  "keep_installer": {
+    "path": "dist/internal/explicit-manual-gestures-20261021/FDM-0.4.10-explicit-gestures-2527fbdb485c.exe",
+    "sha256": "fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833",
+    "build_id": "2527fbdb485c4d419ffb7c8ccf42a5c8"
+  },
+  "remove": [
+    {
+      "path": "dist/internal/acquisition-fourth-round-20261019/FDM-0.4.10-round4-bd7168a57807.exe",
+      "kind": "obsolete_installer",
+      "files": 1,
+      "bytes": 398773132,
+      "allocated_bytes": 398774272,
+      "symlinks": 0,
+      "sha256": "1b1b7a01a32d5f077488113e96e97a535fc33539dad530e978644f9420e50546",
+      "removed": true
+    },
+    {
+      "path": "dist/internal/acquisition-fifth-round-20261020/FDM-0.4.10-round5-4391f019bca8.exe",
+      "kind": "obsolete_installer",
+      "files": 1,
+      "bytes": 398839390,
+      "allocated_bytes": 398839808,
+      "symlinks": 0,
+      "sha256": "7f5bd6f03900dd61586e2ee9ba35f82720fce6eb910da6d40a5b3ceaac1c89a1",
+      "removed": true
+    },
+    {
+      "path": "dist/internal/acquisition-sixth-round-20261020/FDM-0.4.10-round6-862b9fc24cf2.exe",
+      "kind": "obsolete_installer",
+      "files": 1,
+      "bytes": 398835901,
+      "allocated_bytes": 398839808,
+      "symlinks": 0,
+      "sha256": "7227c9d6709e81f854c0aca26e3f3d867f4326acce310cf56a67f1d9abda5a7b",
+      "removed": true
+    },
+    {
+      "path": "dist/internal/acquisition-seventh-round-20261021/FDM-0.4.10-round7-0b4a03782cd9.exe",
+      "kind": "obsolete_installer",
+      "files": 1,
+      "bytes": 398842744,
+      "allocated_bytes": 406847488,
+      "symlinks": 0,
+      "sha256": "3298883840527ba419a2c32dfb3db1fab11923078e6f5c5d81862799c52dce59",
+      "removed": true
+    },
+    {
+      "path": "dist/internal/mixed-presented-frame-fix-20261021/FDM-0.4.10-mixed-frame-fix-5bdd8be20cdb.exe",
+      "kind": "obsolete_installer",
+      "files": 1,
+      "bytes": 398846679,
+      "allocated_bytes": 398848000,
+      "symlinks": 0,
+      "sha256": "6d36be1b4bba5b0ecfad3febb4c58ddacfc35f30b692060587ec9d2c4d49d5c1",
+      "removed": true
+    },
+    {
+      "path": ".tmp/magic-roi-frozen/build",
+      "kind": "reproducible_build",
+      "files": 15,
+      "bytes": 80275266,
+      "allocated_bytes": 80306176,
+      "symlinks": 0,
+      "removed": true
+    },
+    {
+      "path": ".tmp/magic-roi-frozen/dist",
+      "kind": "reproducible_build",
+      "files": 1062,
+      "bytes": 435165350,
+      "allocated_bytes": 437342208,
+      "symlinks": 160,
+      "removed": true
+    },
+    {
+      "path": ".tmp/qt-stability/qt-current",
+      "kind": "reproducible_build",
+      "files": 4511,
+      "bytes": 1224425597,
+      "allocated_bytes": 1266454528,
+      "symlinks": 0,
+      "removed": true
+    },
+    {
+      "path": "build/native-code-review/source/build",
+      "kind": "reproducible_build",
+      "files": 396,
+      "bytes": 15131616,
+      "allocated_bytes": 15986688,
+      "symlinks": 0,
+      "removed": true
+    },
+    {
+      "path": "build/native-kernel-migration/package-source/build",
+      "kind": "reproducible_build",
+      "files": 197,
+      "bytes": 7304999,
+      "allocated_bytes": 7725056,
+      "symlinks": 0,
+      "removed": true
+    },
+    {
+      "path": "build/native-kernel-migration/frozen-work",
+      "kind": "reproducible_build",
+      "files": 15,
+      "bytes": 15725136,
+      "allocated_bytes": 15757312,
+      "symlinks": 0,
+      "removed": true
+    },
+    {
+      "path": "build/native-kernel-migration/frozen-dist",
+      "kind": "reproducible_build",
+      "files": 102,
+      "bytes": 32027692,
+      "allocated_bytes": 32264192,
+      "symlinks": 0,
+      "removed": true
+    },
+    {
+      "path": "build/native-kernel-migration/native-dist",
+      "kind": "reproducible_build",
+      "files": 2,
+      "bytes": 3246056,
+      "allocated_bytes": 3248128,
+      "symlinks": 0,
+      "removed": true
+    }
+  ],
+  "preserve": [
+    "validation evidence, screenshots and videos",
+    "source workspaces and .git backups",
+    "reference software and user sample images",
+    "registered installations and project virtual environment"
+  ],
+  "completed": true,
+  "deleted_files": 6305,
+  "deleted_bytes": 3807439558,
+  "deleted_allocated_bytes": 3861233664,
+  "diagnostics_preserved": {
+    "path": ".tmp/artifact-cleanup-20261021/pyinstaller-diagnostics.zip",
+    "archive_bytes": 476767,
+    "files": [
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/Analysis-00.toc",
+        "bytes": 678178,
+        "sha256": "64e491dee6394d92df2d3b5cff64e05ff144ad4b8878b0cb9c55b98f0003bc08"
+      },
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/PKG-00.toc",
+        "bytes": 3049,
+        "sha256": "5b76e6839c39014ec112be34987f4196dcd6a23fc9b7ef969a2adebb7b98b4b1"
+      },
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/warn-frozen_probe.txt",
+        "bytes": 92245,
+        "sha256": "14265a144b706b859f09055bf8a894d9bd9a0856d53c534835291dad530eaf5a"
+      },
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/PYZ-00.toc",
+        "bytes": 492497,
+        "sha256": "0575ebadf3a90c8f4f4fa93cebbae1d9f365aa1c82fbfe6054a36f444a6a9e67"
+      },
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/EXE-00.toc",
+        "bytes": 3272,
+        "sha256": "163e56fd42ece8d6872e8d9beb1752a0bf60c87ecc9b0ab45861a549e286e74f"
+      },
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/xref-frozen_probe.html",
+        "bytes": 4719389,
+        "sha256": "b6d127d1f00a3a787d491c05e13c001441e670d2923c284f6315a58dd13efd1e"
+      },
+      {
+        "path": ".tmp/magic-roi-frozen/build/frozen_probe/COLLECT-00.toc",
+        "bytes": 156810,
+        "sha256": "a2e48aece8634c68818b6e04875031b0f74795e4a15d69c8e59a7a421a6f0b9d"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/Analysis-00.toc",
+        "bytes": 83185,
+        "sha256": "6fc39cac203559e950225667d2a6de7b7bbf2cf1724dfba4a5b6d18d76106c0d"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/PKG-00.toc",
+        "bytes": 2585,
+        "sha256": "40f3f98779e5271cfc3aa27011047a58d8c0caf9653284a1d6453080e8ec23ed"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/warn-fdm_native_probe.txt",
+        "bytes": 27704,
+        "sha256": "77d9919dfb71607c61e0401c514721121370b4cf2be118df302fd22ccb8e6408"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/PYZ-00.toc",
+        "bytes": 49574,
+        "sha256": "d1db12c78f74d6b0a644f6d248579e3e289cd057d5e3fb7298b4c99ddfcbdb5a"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/EXE-00.toc",
+        "bytes": 2823,
+        "sha256": "b6b9160fd66d2c85ff7100bb5d144aa7309d49e85a3b5bcb9687caf01f2cf711"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/xref-fdm_native_probe.html",
+        "bytes": 733108,
+        "sha256": "e71655a1db8d8475a60e169af67748d7d4e8821b3f4a063fbd91e31d4c169810"
+      },
+      {
+        "path": "build/native-kernel-migration/frozen-work/fdm_native_probe/COLLECT-00.toc",
+        "bytes": 17631,
+        "sha256": "0224c814556af8c395398bfb2f0a2faeebc5e62f5dbbd4767fe71ffba4204196"
+      }
+    ]
+  },
+  "filesystem_free_before": 206848000000,
+  "filesystem_free_after": 209715200000,
+  "latest_installer_rehashed": true,
+  "existing_evidence_recheck": {
+    "matched": 727,
+    "issues": [],
+    "catalogs": [
+      "local-evidence-20261017.json",
+      "local-evidence-20261020.json",
+      "local-evidence-20261021.json"
+    ]
+  }
+}

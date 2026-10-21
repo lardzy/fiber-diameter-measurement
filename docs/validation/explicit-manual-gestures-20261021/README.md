@@ -80,7 +80,7 @@ Windows 虚拟机定向回归 **146 passed**（27.98 秒），包含完整 39 �
 - 大小：398,846,891 字节
 - SHA256：`fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833`
 - 版本保持 0.4.10，内部 `--exclude-area-models` 构建，保留 Microview 和内部报告模板。
-- 上一轮 `5bdd8be20cdb` 与第七轮 `0b4a03782cd9` 回退包保持原哈希；Windows 原安装注册已恢复，新候选安装在隔离目录。
+- 交付时保留上一轮 `5bdd8be20cdb` 与第七轮 `0b4a03782cd9` 回退包；用户确认问题解决后，按要求清理旧安装包，当前保留本轮 `2527fbdb485c`。历史身份不改写，现存产物见 [清理清单](../artifact-cleanup-20261021.json)。Windows 原安装注册已恢复，新候选安装在隔离目录。
 - 冻结的 296 项产品文件已核对，五个修改文件见 [源文件指纹](source-freeze.json)。
 
 详见 [Windows 验证记录](windows/README.md)和[离线实机步骤](windows/OFFLINE_TEST.md)。Windows 安装启动证据与源代码模拟运行证据分别保存；Microview 实体相机及现场两点输入尚待实测，未标为通过。
