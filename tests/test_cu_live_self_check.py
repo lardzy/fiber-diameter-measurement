@@ -15,10 +15,10 @@ ALIGNMENT_CASES = ("candidate_alignment_worker", "candidate_alignment_same",
 
 
 def complete_report():
-    names = ("manual_native", "traditional_native", "multiscale_native", "content_formula",
+    names = ("manual_native", "traditional_native", "multiscale_native", "optical_adaptive", "optical_empty", "optical_worker", "content_formula",
              "field_motion", "field_preparation", "project_roundtrip", "microview_bridge_import", "microview_bridge_build", "microview_bridge_transport",
              *CONFIGURATION_CASES, *EVIDENCE_CASES, *ALIGNMENT_CASES)
-    return {"ok": True, "revision": 5, "cases": {name: True for name in names}}
+    return {"ok": True, "revision": 6, "cases": {name: True for name in names}}
 
 
 def test_field_preparation_probe_runs_native_moments_and_ordered_decisions():
@@ -39,7 +39,7 @@ def test_evidence_probe_runs_real_writer_save_and_history_rebase():
     assert probe._evidence_persistence_probe() == {name: True for name in EVIDENCE_CASES}
 
 
-@pytest.mark.parametrize("name", ("field_preparation", *CONFIGURATION_CASES, *EVIDENCE_CASES,
+@pytest.mark.parametrize("name", ("field_preparation", "optical_adaptive", "optical_empty", "optical_worker", *CONFIGURATION_CASES, *EVIDENCE_CASES,
                                  *ALIGNMENT_CASES))
 @pytest.mark.parametrize("failure", ["missing", "false"])
 def test_release_gate_requires_each_actual_configuration_and_evidence_case(name, failure):
@@ -51,7 +51,7 @@ def test_release_gate_requires_each_actual_configuration_and_evidence_case(name,
     assert not probe.cu_live_probe_passed(report)
 
 
-@pytest.mark.parametrize("revision", [1, 2, 3, 4])
+@pytest.mark.parametrize("revision", [1, 2, 3, 4, 5])
 def test_previous_probe_revision_cannot_validate_alignment_worker_release(revision):
     report = complete_report()
     report["revision"] = revision
@@ -123,7 +123,7 @@ def test_live_report_keeps_child_diagnostics_and_fails_on_alignment_failure(monk
                "worker_runtime": {"pid": 12345, "opencv_threads": 2}}
     monkeypatch.setattr(worker, "run_alignment_worker_self_check", lambda: details)
     report = probe.run_cu_live_self_check(validate_capture=False)
-    assert report["revision"] == 5
+    assert report["revision"] == 6
     assert report["ok"] is False
     assert report["candidate_alignment_worker"] is details
     assert all(report["cases"][name] is False for name in ALIGNMENT_CASES)

@@ -1,0 +1,21 @@
+{
+  "scope": "macOS source tests; isolated data; not real Microview",
+  "groups": [
+    {
+      "group": "final-quick",
+      "summary": "382 passed, 50 subtests passed in 11.97s",
+      "log": ".tmp/optical-adaptive-20261021/final-quick.log"
+    },
+    {
+      "group": "ui-final",
+      "summary": "137 passed in 5.82s",
+      "log": ".tmp/optical-adaptive-20261021/ui-final.log"
+    },
+    {
+      "group": "business",
+      "summary": "171 passed, 2 skipped in 9.64s",
+      "log": ".tmp/optical-adaptive-20261021/business-regression.log"
+    }
+  ],
+  "version": "0.4.10"
+}

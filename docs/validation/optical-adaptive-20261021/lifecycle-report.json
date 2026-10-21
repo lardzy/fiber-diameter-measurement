@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-21T10:07:31.900158+00:00",
+  "application_version": "0.4.10",
+  "algorithm": "optical_adaptive",
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "Qt offscreen on macOS, source checkout",
+  "real_camera": false,
+  "windows_native_menu_acceptance": false,
+  "all_scenarios_passed": true,
+  "performance_gates_passed": true,
+  "script_sha256": "7cd1244ac43569fc4fd615b38a767dedd6d464e11ec501c79b841a106202deb8",
+  "same_script_hash_all_runs": true,
+  "same_script_recorded_source_fingerprints_all_runs": true,
+  "script_recorded_source_files": 31,
+  "script_recorded_source_fingerprint_sha256": "7a2f7957e5608d0a9c73efe0db50e160ba461b428ad5f6ec2345b5dbf7bcb770",
+  "runs": [
+    {
+      "name": "cycle60",
+      "passed": true,
+      "started_at": "2026-10-21T10:01:33.431715+00:00",
+      "elapsed_seconds": 64.244127,
+      "command": ".venv/bin/python scripts/validation/validate_acquisition_seventh_round.py --algorithm optical_adaptive --phase full --scenario cycle --duration 60 --output .tmp/optical-adaptive-20261021/lifecycle-cycle60-20261021",
+      "result_path": ".tmp/optical-adaptive-20261021/lifecycle-cycle60-20261021/result.json",
+      "result_sha256": "e0bde6703473d893e393649d8c1570988a255d6dd94a20b4075740f3ca901066",
+      "analysis_count": 2,
+      "accepted_total": 3,
+      "remaining_candidate_hides": 0,
+      "independent_alignment_calls": {
+        "poll": 0,
+        "compare": 0
+      },
+      "source_changed_during_run": false,
+      "static": {
+        "seconds": 60.001768249989254,
+        "analyses": 1,
+        "source_frames": 1850
+      },
+      "cycle": {
+        "actual_motion_additional_analyses": 1
+      },
+      "stable_focus_change": {
+        "batch_preserved": true,
+        "analyses": 1,
+        "tested_ramp_steps": 12
+      },
+      "actual_motion": {
+        "previous_epoch": 2,
+        "changed_epoch": 3,
+        "detector_reason": "translation",
+        "at": 63.158453,
+        "retained_ids": [
+          "3381c37c3523437f91ece0c817062a09",
+          "a3cf4a7cd7ae475e8b21f9bac2a39d8f",
+          "b2216d7e51494e5a96c36779d11168de"
+        ]
+      },
+      "diagnostic_latency_ms": {
+        "click_to_accept_ms": {
+          "n": 3,
+          "p50": 3.46866698237136,
+          "p95": 4.068403600831516
+        },
+        "frame_age_ms": {
+          "n": 512,
+          "p50": 4.144646009081043,
+          "p95": 5.020899843657389
+        },
+        "analysis_ms": {
+          "n": 2,
+          "p50": 281.97927049768623,
+          "p95": 456.2610642504296
+        }
+      }
+    },
+    {
+      "name": "clicks100",
+      "passed": true,
+      "started_at": "2026-10-21T10:03:03.338923+00:00",
+      "elapsed_seconds": 14.488213,
+      "command": ".venv/bin/python scripts/validation/validate_acquisition_seventh_round.py --algorithm optical_adaptive --phase full --scenario clicks --clicks 100 --output .tmp/optical-adaptive-20261021/lifecycle-clicks100-20261021",
+      "result_path": ".tmp/optical-adaptive-20261021/lifecycle-clicks100-20261021/result.json",
+      "result_sha256": "d3bad363c19b27dfad1d419b6599cf640d25b8bdaae75c302566642c9f1591bd",
+      "analysis_count": 13,
+      "accepted_total": 100,
+      "remaining_candidate_hides": 0,
+      "independent_alignment_calls": {
+        "poll": 0,
+        "compare": 0
+      },
+      "source_changed_during_run": false,
+      "clicks": {
+        "accepted": 100,
+        "records": 100,
+        "saved": 100
+      },
+      "diagnostic_latency_ms": {
+        "click_to_accept_ms": {
+          "n": 100,
+          "p50": 3.519354504533112,
+          "p95": 5.158883641706777
+        },
+        "frame_age_ms": {
+          "n": 408,
+          "p50": 1.9679584947880358,
+          "p95": 3.4841204949771045
+        },
+        "analysis_ms": {
+          "n": 13,
+          "p50": 72.80908297980204,
+          "p95": 199.81785838608587
+        }
+      }
+    },
+    {
+      "name": "menus100",
+      "passed": true,
+      "started_at": "2026-10-21T10:03:47.050641+00:00",
+      "elapsed_seconds": 13.041478,
+      "command": ".venv/bin/python scripts/validation/validate_acquisition_seventh_round.py --algorithm optical_adaptive --phase full --scenario menus --output .tmp/optical-adaptive-20261021/lifecycle-menus100-20261021",
+      "result_path": ".tmp/optical-adaptive-20261021/lifecycle-menus100-20261021/result.json",
+      "result_sha256": "dcd36e2275f3bf2e46c6af44cff6816767d04c33a203e55fb7f68f21e12dba1a",
+      "analysis_count": 1,
+      "accepted_total": 0,
+      "remaining_candidate_hides": 0,
+      "independent_alignment_calls": {
+        "poll": 0,
+        "compare": 0
+      },
+      "source_changed_during_run": false,
+      "menus": {
+        "count": 100,
+        "batch_preserved": true,
+        "analyses": 1
+      },
+      "diagnostic_latency_ms": {
+        "click_to_accept_ms": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "frame_age_ms": {
+          "n": 367,
+          "p50": 3.787624998949468,
+          "p95": 5.059729403001256
+        },
+        "analysis_ms": {
+          "n": 1,
+          "p50": 366.03658300009556,
+          "p95": 366.03658300009556
+        }
+      }
+    },
+    {
+      "name": "performance-baseline30",
+      "passed": true,
+      "started_at": "2026-10-21T10:04:30.328346+00:00",
+      "elapsed_seconds": 32.281163,
+      "command": ".venv/bin/python scripts/validation/validate_acquisition_seventh_round.py --algorithm optical_adaptive --phase full --scenario performance --duration 30 --performance-mode baseline --output .tmp/optical-adaptive-20261021/lifecycle-performance-baseline30-20261021",
+      "result_path": ".tmp/optical-adaptive-20261021/lifecycle-performance-baseline30-20261021/result.json",
+      "result_sha256": "95962ae0b20d4d00392eb03afc7db370924882ad9d3a817b09e255447d67f48f",
+      "analysis_count": 0,
+      "accepted_total": 29,
+      "remaining_candidate_hides": 0,
+      "independent_alignment_calls": {
+        "poll": 0,
+        "compare": 0
+      },
+      "source_changed_during_run": false,
+      "performance_load": {
+        "mode": "baseline",
+        "seconds": 30.000125958002172,
+        "sample_frames": 909,
+        "fps": 30.299919102796796,
+        "p50_frame_age_ms": 3.098791989032179,
+        "p95_frame_age_ms": 4.17789181228727,
+        "measurements": 29,
+        "measurement_period_ms": 1000,
+        "source_period_ms": 33,
+        "evidence_options": {
+          "version": 1,
+          "mode": "crop_jpeg",
+          "padding": 64,
+          "minimum_size": 256,
+          "quality": 95,
+          "subsampling": "4:4:4"
+        },
+        "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+        "saved": 29
+      },
+      "diagnostic_latency_ms": {
+        "click_to_accept_ms": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "frame_age_ms": {
+          "n": 512,
+          "p50": 3.461666507064365,
+          "p95": 4.339810600504279
+        },
+        "analysis_ms": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        }
+      }
+    },
+    {
+      "name": "performance-candidates30",
+      "passed": true,
+      "started_at": "2026-10-21T10:05:28.785959+00:00",
+      "elapsed_seconds": 32.961289,
+      "command": ".venv/bin/python scripts/validation/validate_acquisition_seventh_round.py --algorithm optical_adaptive --phase full --scenario performance --duration 30 --performance-mode candidates --output .tmp/optical-adaptive-20261021/lifecycle-performance-candidates30-20261021",
+      "result_path": ".tmp/optical-adaptive-20261021/lifecycle-performance-candidates30-20261021/result.json",
+      "result_sha256": "a91660836fbdc633bf08b976b6ef743365010790f81641374891bce903c331d0",
+      "analysis_count": 4,
+      "accepted_total": 29,
+      "remaining_candidate_hides": 0,
+      "independent_alignment_calls": {
+        "poll": 0,
+        "compare": 0
+      },
+      "source_changed_during_run": false,
+      "performance_load": {
+        "mode": "candidates",
+        "seconds": 30.004121874982957,
+        "sample_frames": 909,
+        "fps": 30.30468503048705,
+        "p50_frame_age_ms": 3.5968750016763806,
+        "p95_frame_age_ms": 4.6290918020531535,
+        "measurements": 29,
+        "measurement_period_ms": 1000,
+        "source_period_ms": 33,
+        "evidence_options": {
+          "version": 1,
+          "mode": "crop_jpeg",
+          "padding": 64,
+          "minimum_size": 256,
+          "quality": 95,
+          "subsampling": "4:4:4"
+        },
+        "comparison_scope": "Current build baseline manual-free vs automatic candidate workflow; synthetic camera.",
+        "saved": 29
+      },
+      "diagnostic_latency_ms": {
+        "click_to_accept_ms": {
+          "n": 29,
+          "p50": 4.728166008135304,
+          "p95": 7.185549812857062
+        },
+        "frame_age_ms": {
+          "n": 512,
+          "p50": 3.672478997032158,
+          "p95": 4.486689397890586
+        },
+        "analysis_ms": {
+          "n": 4,
+          "p50": 75.3716045001056,
+          "p95": 354.68317066406587
+        }
+      }
+    }
+  ],
+  "performance_comparison": {
+    "comparison": "Current frozen source, manual-free baseline versus optical candidate workflow; same synthetic source and local JPEG evidence.",
+    "duration_each_seconds": 30,
+    "source_period_ms": 33,
+    "baseline_fps": 30.299919102796796,
+    "candidates_fps": 30.30468503048705,
+    "fps_drop_percent": -0.01572917628619803,
+    "fps_drop_limit_percent": 5,
+    "fps_gate_passed": true,
+    "baseline_p95_frame_age_ms": 4.17789181228727,
+    "candidates_p95_frame_age_ms": 4.6290918020531535,
+    "p95_frame_age_increase_ms": 0.4511999897658834,
+    "p95_increase_limit_ms": 33,
+    "frame_age_gate_passed": true,
+    "same_measurement_count": true,
+    "same_evidence_options": true,
+    "each_measurements": 29,
+    "each_saved": 29,
+    "not_a_previous_release_comparison": true
+  },
+  "limits": [
+    "Synthetic 768x576 source through real MainWindow navigation, canvas pointer routes, analysis process, field detector, ledger and evidence writer.",
+    "Direct-click test selects uniquely hit candidates that do not need existing duplicate confirmation. Conflicting interpretations are covered by separate integration tests.",
+    "Qt offscreen popup exercise does not certify Windows native menus, installed application behavior, real Microview capture, exposure age or physical measurement accuracy.",
+    "Performance is two sequential 30-second current-build samples with JPEG95 evidence, not a long-run hardware stress test or previous-release benchmark.",
+    "Recorded fingerprints cover the 31 source files selected by the validation script; installer identity is documented separately."
+  ]
+}

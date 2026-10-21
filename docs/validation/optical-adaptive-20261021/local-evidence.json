@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-21T13:46:19.726956+00:00",
+  "retention": "Generated evidence retained locally; only product build copies and reproducible intermediates are cleanup candidates.",
+  "file_count": 32,
+  "bytes": 2730344,
+  "files": [
+    {
+      "path": "docs/validation/optical-adaptive-20261021/border_cut_half_fiber-results.png",
+      "bytes": 4537,
+      "sha256": "2d375128abf582c62af18145c2436fe068318cced67333abc0ba04b47964ff6c"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/crossing_two_fibers-results.png",
+      "bytes": 8917,
+      "sha256": "1315ebdd26f2cd954508ff8ff3bdd5c33f2a3bbf66f7829db756de6c651ca82e"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/curved_solid-results.png",
+      "bytes": 6507,
+      "sha256": "432d051099f1d6258c4184ac2ea7e3cd67ff38125d13c2cb8be9d1f9c92bae7a"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/navigation/initial.png",
+      "bytes": 219400,
+      "sha256": "2bb47874b997634dc0ece08e2a7736c6dbd2c75f26c3589c5a1a584624367441"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/navigation/retained-markers.png",
+      "bytes": 192606,
+      "sha256": "c79c50bc66baf705790176433ff9518bd5d3a2187e2d9b22edd3654a0330ee7d"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/navigation/workflow.mp4",
+      "bytes": 298761,
+      "sha256": "8afa4aeb918f8ee501deb0dce7055be4e58c319e3b3ec47653afdb01a07c70a5"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/nearby_two_real_fibers-results.png",
+      "bytes": 5427,
+      "sha256": "ca61f5954b10073473ce289614527e27a879a6b90b141cc4192010335c7d4241"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-dark-0.png",
+      "bytes": 76653,
+      "sha256": "7c459d292d13d0d05ac1c16d8521e280a48e09e9fe5d425f176ac2ac2313a99b"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-dark-1.png",
+      "bytes": 101457,
+      "sha256": "23573fdd31cc1264370ce8f1f024d741e633b97b1841bf95e2b7a1660f99fc0c"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-light-0.png",
+      "bytes": 76345,
+      "sha256": "9d54de34ba93ace8e76e409fcee884976d291bd64e5540d8f35b8ddbaea356e5"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-light-1.png",
+      "bytes": 101530,
+      "sha256": "be7cf65f8971275a699cf973dc7680b2e404891e6c800eb5d9febdf06bc466ac"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-navy-0.png",
+      "bytes": 76469,
+      "sha256": "f4b702c4e061c0918d63c2b24dc67045e29ccd6c270abd9b26cf5f93622fffdd"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-navy-1.png",
+      "bytes": 101276,
+      "sha256": "c09f69cfefb11c46cf808aad44933be1e144c5239a4ec0ec2243d003bbae2e9e"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-warm-0.png",
+      "bytes": 77118,
+      "sha256": "79b202ac2e850c25262a0f9b403b0ed4f2b19f50de9205a4d07fc703c8b00155"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/ui/optical-warm-1.png",
+      "bytes": 102447,
+      "sha256": "2ea0cc2c65aa03a374f1e709daf959e427a2b673e0fc531039fbecb1615b5daa"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/empty-light-1600x900/20261021-182201-5321f437d77348e29456e85f8ee39083/03-content.png",
+      "bytes": 68159,
+      "sha256": "317c85fa7e92e7ce0bc05a76cbb811530d38a4653ac12b470be96ed96a726dda"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/excel-fixed-entry-light-1600x900/20261021-182611-008d0f451818480f8ae11297147b2cf1/03-content.png",
+      "bytes": 70048,
+      "sha256": "0b7c3d6eb45a36954734ef9d30de0fae9acb8b68050964ff79b59c2933f544e2"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/excel-fixed-entry-light-1600x900/20261021-182611-008d0f451818480f8ae11297147b2cf1/10-excel-success.png",
+      "bytes": 67826,
+      "sha256": "0faa478126ccc41a3ab44387992ccd1fb1674d48a444e441818b7def49df05fd"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-dark-1600x900/20261021-182251-8217665a2dda4ad9bf6d8050ba423f15/03-content.png",
+      "bytes": 80939,
+      "sha256": "c3859986de1ec12628763b3ece6daa4fed5a726021846b5355538d8578f59f36"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-dark-1600x900/20261021-182251-8217665a2dda4ad9bf6d8050ba423f15/04a-evidence-album-window-native.png",
+      "bytes": 68536,
+      "sha256": "4e207c077c28d047b2223395fbb9344d01b9f2c55cdd895ee0f03f2b6efd297d"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1067x600/20261021-182505-923b2cddead04eb88ddee9cc621aed04/03-content.png",
+      "bytes": 55869,
+      "sha256": "3dfda212bb99644695b15b2437e6de7299594f04e31ec1e82cf271c6fa247623"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1067x600/20261021-182505-923b2cddead04eb88ddee9cc621aed04/04a-evidence-album-window-native.png",
+      "bytes": 72660,
+      "sha256": "adbe1a08489a7f5ce57e6b12f98efa7ce8710dfd2257a453be8b42f5b2298a34"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1366x768/20261021-182431-a436fabce3984671a8a3a084561615a0/03-content.png",
+      "bytes": 70628,
+      "sha256": "f371194998ed7286a0dab99c04b05152151ae5c22f19861052470af9f74d9067"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1366x768/20261021-182431-a436fabce3984671a8a3a084561615a0/04a-evidence-album-window-native.png",
+      "bytes": 74867,
+      "sha256": "b5ef45f0d2a1ab669827c6e56e14e0fad05ef3b360680e66c22f6c92a3174708"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1600x900/20261021-182218-d67216f65d894e248ad5ffc6363bc78a/03-content.png",
+      "bytes": 82745,
+      "sha256": "6b544a7331384b05c260cb857c55466101d1e1d2965fae48917d6bac49c3222c"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1600x900/20261021-182218-d67216f65d894e248ad5ffc6363bc78a/04a-evidence-album-window-native.png",
+      "bytes": 70479,
+      "sha256": "29a4a24b68b215204c155df10a47343af39660e9e57246739fbbd6b74156843f"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1600x900-scale125/20261021-182538-66e9d0625fd849868ce3070254c58d75/03-content.png",
+      "bytes": 96089,
+      "sha256": "e9b403d5251ba00c4d36d5b82cd8a7f4a4212b5a8a3b3f64b2db0ac82c59b671"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-light-1600x900-scale125/20261021-182538-66e9d0625fd849868ce3070254c58d75/04a-evidence-album-window-native.png",
+      "bytes": 99292,
+      "sha256": "b46527d2bc84a8779574f086e17179dc12ff5cd85b160eaf91f2669ccd67eb8d"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-navy-1600x900/20261021-182324-18235284a36e48dba57d8374736c833b/03-content.png",
+      "bytes": 81361,
+      "sha256": "6dfa91a8b6aa606d023cbea352b3d71d50aa2fd73ec78ecd692bc2be3a088e4d"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-navy-1600x900/20261021-182324-18235284a36e48dba57d8374736c833b/04a-evidence-album-window-native.png",
+      "bytes": 68702,
+      "sha256": "bc6836541691ecae74c512e2624f08c596b87cadd8d5db7668062adb58b85946"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-warm-1600x900/20261021-182358-ee5fb07f1abd4546bba59dea28835397/03-content.png",
+      "bytes": 81180,
+      "sha256": "459804442c7b88cab23a7d3661ec271493cd08d029826d5aa512fff1668b8682"
+    },
+    {
+      "path": "docs/validation/optical-adaptive-20261021/windows/frozen-gui/20261021-102157Z-2494a9d7/records-warm-1600x900/20261021-182358-ee5fb07f1abd4546bba59dea28835397/04a-evidence-album-window-native.png",
+      "bytes": 71514,
+      "sha256": "7599d72897fece92752e7848929a66b09689639674a68e37a42f5dd30ad8153c"
+    }
+  ]
+}

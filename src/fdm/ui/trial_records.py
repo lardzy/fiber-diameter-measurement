@@ -194,6 +194,9 @@ class TrialTimelineModel(QAbstractTableModel):
             details = [f"记录 ID：{key[1]}", f"视场：{record.field_id or '未知'}", f"时间：{record.created_at}"]
             if key[0] == "count":
                 details += ["补计只改变根数，不产生直径。", record.note]
+            else:
+                from fdm.ui.optical_diagnostics import record_diagnostic_text
+                details.append(record_diagnostic_text(record))
             return "\n".join(filter(None, details))
         if role != Qt.ItemDataRole.DisplayRole:
             return None
@@ -206,9 +209,8 @@ class TrialTimelineModel(QAbstractTableModel):
         except (ValueError, OverflowError, OSError):
             time_text = "时间未知"
         measurement = key[0] == "measurement"
-        method = ({"assisted": "贴边测径", "free": "自由测量", "automatic-traditional": "传统全图",
-                   "automatic-multiscale": "多尺度全图"}.get(record.measurement_method, record.measurement_method)
-                  if measurement else "补计调整")
+        from fdm.services.optical_config import measurement_method_label
+        method = measurement_method_label(record.measurement_method) if measurement else "补计调整"
         evidence = getattr(record, "evidence", None) or {}
         evidence_text = ({"saved": "已保存", "pending": "写入中", "failed": "写入失败"}.get(evidence.get("state"), "无原图")
                          if measurement else "不适用")

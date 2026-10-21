@@ -16,7 +16,8 @@ def main() -> int:
     image[114:126, 40:280] = 40
     rows = []
     with CuAutomaticWorker() as worker:
-        for algorithm, expected in [("traditional", 11.0), ("multiscale", 10.997208727965706)]:
+        for algorithm, expected in [("traditional", 11.0), ("multiscale", 10.997208727965706),
+                                    ("optical_adaptive", 12.0)]:
             identifier = worker.submit(image, algorithm)
             start = time.monotonic()
             response = None
@@ -31,11 +32,11 @@ def main() -> int:
             result = response["result"]
             ok = (response["task_id"] == identifier and response["error"] is None
                   and result["status"] == "ok" and len(result["candidates"]) == 1
-                  and abs(result["candidates"][0]["width_px"] - expected) < 1e-8)
+                  and abs(result["candidates"][0]["width_px"] - expected) < (1 if algorithm == "optical_adaptive" else 1e-8))
             rows.append({"algorithm": algorithm, "ok": ok, "pid": worker._process.pid,
                          "worker_runtime": response.get("worker_runtime"),
                          "elapsed_ms": (time.monotonic() - start) * 1000, "result": result})
-    output = {"ok": all(row["ok"] for row in rows) and rows[0]["pid"] == rows[1]["pid"],
+    output = {"ok": all(row["ok"] for row in rows) and len({row["pid"] for row in rows}) == 1,
               "frozen": bool(getattr(sys, "frozen", False)), "native_build_info": build_info(), "cases": rows}
     data = json.dumps(output, ensure_ascii=False, indent=2, allow_nan=False)
     if len(sys.argv) > 1:

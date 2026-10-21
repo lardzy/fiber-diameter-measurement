@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 
 class TrialAssistanceMixin:
     def _init_assistance(self):
+        from fdm.services.optical_config import ALGORITHM_CHOICES
         from fdm.ui.icons import themed_icon
         from fdm.ui.measurement_evidence_view import EvidenceReviewController
 
@@ -54,12 +55,15 @@ class TrialAssistanceMixin:
         analyze_menu = QMenu(self.analyze_button)
         algorithm_group = QActionGroup(analyze_menu)
         self.algorithm_actions = {}
-        for label, algorithm in (("传统全图", "traditional"), ("多尺度全图", "multiscale")):
+        for label, algorithm in ALGORITHM_CHOICES:
             action = analyze_menu.addAction(label)
             action.setCheckable(True)
             algorithm_group.addAction(action)
             action.triggered.connect(lambda checked=False, name=algorithm: self.algorithm.setCurrentIndex(self.algorithm.findData(name)))
             self.algorithm_actions[algorithm] = action
+        analyze_menu.addSeparator()
+        analyze_menu.addAction("普通光学设置…", self._show_optical_settings)
+        analyze_menu.addAction("光照检查与诊断…", lambda: self._show_optical_settings(diagnostics=True))
         analyze_menu.addSeparator()
         analyze_menu.addAction("取消分析并清除未接受候选", self._cancel_candidate_analysis)
         analyze_menu.addAction("导出离线性能诊断…", self._export_assistance_diagnostics)
@@ -210,11 +214,12 @@ class TrialAssistanceMixin:
         self._refresh_assistance_state()
 
     def _assistance_preferences(self):
-        return {"version": 3, "automatic": self.auto_analysis.isChecked(),
+        return {"version": 4, "automatic": self.auto_analysis.isChecked(),
                 "algorithm": self.algorithm.currentData(), "visible": self.show_candidates_action.isChecked(),
                 "opacity": self.candidate_opacity.value(), "input_mode": self.input_mode.currentData(),
                 "manual_algorithm": self.measure_mode.currentData(),
-                "retention_seconds": self.selection_retention_seconds.value()}
+                "retention_seconds": self.selection_retention_seconds.value(),
+                "optical_analysis": self.controller.optical_analysis_config}
 
     def _apply_assistance_preferences(self, preferences):
         loading, self._assistance_loading = self._assistance_loading, True
@@ -236,11 +241,17 @@ class TrialAssistanceMixin:
             self.algorithm.setCurrentIndex(max(0, self.algorithm.findData(preferences.get("algorithm", "traditional"))))
             # V1 combined the manual algorithm with candidate-only input. The
             # upgrade opts into mixed input without changing the manual algorithm.
-            modern = preferences.get("version") in (2, 3)
+            modern = preferences.get("version") in (2, 3, 4)
             manual = preferences.get("manual_algorithm", "assisted") if modern else preferences.get("input_mode", "assisted")
             interaction = preferences.get("input_mode", "mixed") if modern else "mixed"
             self.measure_mode.setCurrentIndex(max(0, self.measure_mode.findData(manual)))
             self.input_mode.setCurrentIndex(max(0, self.input_mode.findData(interaction)))
+            try:
+                self.controller.configure_optical_analysis(preferences.get("optical_analysis", {}))
+            except (ValueError, TypeError):
+                # A damaged optional optical preference must not reset the
+                # user's already valid algorithm, input mode or gesture.
+                self.controller.configure_optical_analysis({})
             self._apply_assistance_controls()
         finally:
             self._assistance_loading = loading
@@ -283,6 +294,19 @@ class TrialAssistanceMixin:
             self.controller.cancel_candidate_submissions()
             self._assistance_preferences_changed()
 
+    def _show_optical_settings(self, checked=False, *, diagnostics=False):
+        from fdm.ui.optical_settings_dialog import OpticalSettingsDialog
+        dialog = getattr(self, "optical_settings_dialog", None)
+        if dialog is None:
+            dialog = OpticalSettingsDialog(self)
+            self.optical_settings_dialog = dialog
+        elif not dialog.isVisible():
+            dialog.reload_config()
+        dialog.tabs.setCurrentIndex(1 if diagnostics else 0)
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
     def _assistance_preferences_changed(self, *_):
         if self._assistance_loading:
             return
@@ -316,14 +340,16 @@ class TrialAssistanceMixin:
         running = bool(context and not context.get("completed", False))
         available = sum(item.get("state", "available") == "available" for item in controller.candidates)
         pending = controller.candidate_pending_count
+        from fdm.ui.optical_diagnostics import flat_field_status_text
+        optical_status = flat_field_status_text((context or {}).get("diagnostics", {}))
         key = (running, available, pending, controller.candidate_overlay_ready,
                bool(frame), controller.state, bool(controller.calibration),
-               self.session.effective_evidence_options["mode"])
+               self.session.effective_evidence_options["mode"], optical_status)
         if key != self._assistance_state_key:
             self._assistance_state_key = key
             self.analyze_button.setText("分析中…" if running else "刷新候选" if controller.candidates else "全图分析")
             self.analyze_button.setEnabled(bool(frame and controller.calibration and controller.state == "ready"))
-            self.analyze_button.setToolTip("重新分析固定源帧，替换未接受候选；已接受记录保留。" + (f" 正在核验 {pending} 条，刷新将在核验后执行。" if pending else ""))
+            self.analyze_button.setToolTip("重新分析固定源帧，替换未接受候选；已接受记录保留。" + (f" 正在核验 {pending} 条，刷新将在核验后执行。" if pending else "") + ("\n" + optical_status if optical_status else ""))
             self.candidate_display_button.setText(f"候选 {available}")
             self.workflow_tabs.setTabText(1, f"审核 {available}" if available else "审核")
             mode = self.session.effective_evidence_options["mode"]
@@ -410,11 +436,16 @@ class TrialAssistanceMixin:
         menu.popup(QCursor.pos())
 
     def _candidate_hovered(self, candidate_id):
-        if self._candidate_linking or candidate_id is None:
+        from fdm.ui.optical_diagnostics import candidate_diagnostic_text
+        if candidate_id is None:
+            self.canvas.setToolTip("")
+            return
+        if self._candidate_linking:
             return
         row = self._candidate_index(candidate_id)
         if row is None:
             return
+        self.canvas.setToolTip(candidate_diagnostic_text(self.controller.candidates[row]))
         self._candidate_linking = True
         try:
             index = self.candidate_model.index(row, 1)

@@ -158,6 +158,7 @@ class LiveExperimentController(QObject):
         self.automatic_active = False
         self.automatic_prepared = False
         self.automatic_algorithm = "traditional"
+        self._optical_analysis_config = {}
         self._automatic_stable_since = None
         self._automatic_cycle_done = False
         self._automatic_cycle_id = 0
@@ -1113,7 +1114,8 @@ class LiveExperimentController(QObject):
         before = (self.automatic_enabled, self.automatic_active, self.automatic_prepared, self.automatic_algorithm)
         was_active = self.automatic_active
         if algorithm is not None:
-            if algorithm not in {"traditional", "multiscale"}:
+            from fdm.services.optical_config import ALGORITHM_IDS
+            if algorithm not in ALGORITHM_IDS:
                 raise ValueError("未知的全图分析算法。")
             self.automatic_algorithm = algorithm
         if enabled is not None:
@@ -1140,6 +1142,23 @@ class LiveExperimentController(QObject):
         after = (self.automatic_enabled, self.automatic_active, self.automatic_prepared, self.automatic_algorithm)
         if after != before:
             self.candidateStateChanged.emit()
+
+    @property
+    def optical_analysis_config(self):
+        from fdm.services.optical_config import OpticalAnalysisConfig
+        return OpticalAnalysisConfig.from_dict(
+            self._optical_analysis_config, algorithm="optical_adaptive").to_dict()
+
+    def configure_optical_analysis(self, config):
+        """Preferences affect the next task, never an existing batch or draft."""
+        from fdm.services.optical_config import OpticalAnalysisConfig
+        self._optical_analysis_config = OpticalAnalysisConfig.from_dict(
+            config, algorithm="optical_adaptive").to_dict()
+
+    def optical_reference_context(self):
+        from fdm.services.optical_flat_field import reference_context
+        frame = self.presented.frame if self.presented is not None else self.latest_frame
+        return reference_context(frame, self.calibration) if frame is not None else None
 
     def performance_diagnostics(self):
         """Bounded scalar timings, suitable for offline diagnostic export."""
@@ -1308,7 +1327,8 @@ class LiveExperimentController(QObject):
         if not self.calibration.isotropic:
             raise ValueError("全图测径需要等比例标定。")
         algorithm = algorithm or self.automatic_algorithm
-        if algorithm not in {"traditional", "multiscale"}:
+        from fdm.services.optical_config import ALGORITHM_IDS, OpticalAnalysisConfig
+        if algorithm not in ALGORITHM_IDS:
             raise ValueError("未知的全图分析算法。")
         if self.candidate_pending_count:
             self._refresh_pending = algorithm
@@ -1320,15 +1340,24 @@ class LiveExperimentController(QObject):
         if self._automatic is None:
             self._automatic = CuAutomaticWorker()
         token = self.presented
-        lease = self._acquire_intent_frame(token.frame)
         started = time.perf_counter()
+        config = OpticalAnalysisConfig.from_dict(
+            self._optical_analysis_config if algorithm == "optical_adaptive" else {},
+            algorithm=algorithm).to_dict()
+        if algorithm == "optical_adaptive":
+            from fdm.services.optical_flat_field import reference_context
+            config["reference_context"] = reference_context(token.frame, self.calibration)
+        lease = self._acquire_intent_frame(token.frame)
         try:
-            task_id = self._automatic.submit(token.frame.pixels, algorithm=algorithm)
+            # Legacy jobs retain their original call/parameter contract.
+            kwargs = {"config": config} if algorithm == "optical_adaptive" else {}
+            task_id = self._automatic.submit(token.frame.pixels, algorithm=algorithm, **kwargs)
         except Exception:
             self.budget.release(lease)
             raise
         self._automatic_context = {"task_id": task_id, "token": token, "lease": lease,
             "calibration": self.calibration, "algorithm": algorithm,
+            "analysis_config": deepcopy(config),
             "operator_id": self.session.active_operator_id, "direction": self.session.active_direction,
             "batch_id": uuid.uuid4().hex, "origin": _origin,
             "completed": False, "started_at": started}
@@ -1504,7 +1533,8 @@ class LiveExperimentController(QObject):
             self._validate_point(result["start"], context["token"].frame)
             self._validate_point(result["end"], context["token"].frame)
             revision = context.get("diagnostics", {}).get("revision", 1)
-            result["revision"] = f"cu-automatic-{context['algorithm']}-v{revision}"
+            result["revision"] = (f"optical-adaptive-v{revision}" if context["algorithm"] == "optical_adaptive"
+                                  else f"cu-automatic-{context['algorithm']}-v{revision}")
             intent = MeasurementIntent(uuid.uuid4().hex, context["token"], tuple(result["start"]),
                 tuple(result["end"]), context["calibration"], context["operator_id"],
                 context["direction"], material, "automatic-" + context["algorithm"],
@@ -1549,6 +1579,16 @@ class LiveExperimentController(QObject):
             entry["provenance"]["candidate_ordinal"] = original["ordinal"]
             entry["provenance"]["candidate_batch_id"] = context.get("batch_id")
             entry["provenance"]["analysis_latency_ms"] = context.get("latency_ms")
+            if context["algorithm"] == "optical_adaptive":
+                entry["provenance"]["analysis_config"] = deepcopy(context.get("analysis_config", {}))
+                entry["provenance"]["analysis_diagnostics"] = deepcopy(context.get("diagnostics", {}))
+                entry["provenance"]["candidate_diagnostics"] = deepcopy(original.get("diagnostics", {}))
+                entry["provenance"]["candidate_diagnostics"].update({
+                    key: deepcopy(original[key]) for key in ("structure", "warning_codes", "quality_features")
+                    if key in original})
+                entry["provenance"]["conflict_group_id"] = original.get("conflict_group_id")
+                entry["provenance"]["hypothesis_id"] = original.get("hypothesis_id")
+                entry["provenance"]["conflicts_with"] = deepcopy(original.get("conflicts_with", []))
         records = self.session.add_measurements_batch(entries, provenance={
             "source_frame": context["token"].frame.frame_id, "algorithm": context["algorithm"],
             "field_id": self.field_id, "diagnostics": context.get("diagnostics", {}),
@@ -1588,8 +1628,21 @@ class LiveExperimentController(QObject):
         context = self._automatic_context
         if not context:
             return duplicates
+        accepted_hypotheses = {
+            record.provenance.get("hypothesis_id")
+            for record_id in self.current_records
+            if (record := self.session.measurements.get(record_id)) is not None
+            and record.provenance.get("candidate_batch_id") == context.get("batch_id")
+            and record.provenance.get("hypothesis_id")
+        }
+        # The existing review confirmation also covers mutually exclusive
+        # interpretations selected together, before any record has been added.
+        selected_hypotheses = {self.candidates[index].get("hypothesis_id") for index in indices}
         for index in indices:
             candidate = self.candidates[index]
+            if (accepted_hypotheses | selected_hypotheses).intersection(candidate.get("conflicts_with", ())):
+                duplicates.append(index)
+                continue
             a, b = candidate["start"], candidate["end"]
             center = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
             cell = (math.floor(center[0] / 8), math.floor(center[1] / 8))

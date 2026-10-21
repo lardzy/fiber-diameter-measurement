@@ -5,7 +5,7 @@ import math
 import sys
 
 
-CU_LIVE_PROBE_REVISION = 5
+CU_LIVE_PROBE_REVISION = 6
 
 _ALIGNMENT_WORKER_CASES = {
     "ok": "candidate_alignment_worker",
@@ -16,6 +16,37 @@ _ALIGNMENT_WORKER_CASES = {
     "closed": "candidate_alignment_closed",
     "child_process": "candidate_alignment_child_process",
 }
+
+
+def _optical_worker_probe():
+    """Verify the packaged optical imports through the actual spawn dispatcher."""
+    import os
+    import time
+    import numpy as np
+    from fdm.services.cu_automatic_worker import CuAutomaticWorker
+    pixels = np.full((160, 240), 220, np.uint8)
+    pixels[70:90, 30:210] = 195
+    try:
+        with CuAutomaticWorker() as worker:
+            task = worker.submit(pixels, "optical_adaptive", config={"imaging_mode": "mixed"})
+            deadline = time.monotonic() + 32
+            while time.monotonic() < deadline:
+                responses = worker.poll()
+                if responses:
+                    response = responses[0]
+                    result = response.get("result") or {}
+                    candidates = result.get("candidates") or []
+                    pid = worker._process.pid if worker._process is not None else None
+                    return {"ok": bool(response.get("task_id") == task and not response.get("error")
+                        and result.get("status") == "ok" and len(candidates) == 1
+                        and abs(candidates[0]["width_px"] - 20) <= 1
+                        and pid is not None and pid != os.getpid()),
+                        "worker_pid": pid, "child_process": pid is not None and pid != os.getpid(),
+                        "response": response}
+                time.sleep(.005)
+        return {"ok": False, "error": "optical worker timed out"}
+    except Exception as exc:
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
 def _candidate_alignment_worker_probe():
@@ -235,6 +266,8 @@ def run_cu_live_self_check(*, validate_capture=True):
     manual = measure_manual(image, (160, 90), (160, 150))
     traditional = analyze_frame(image, "traditional")
     multiscale = analyze_frame(image, "multiscale")
+    optical = analyze_frame(image, "optical_adaptive")
+    optical_empty = analyze_frame(np.full_like(image, 220), "optical_adaptive")
     session = ExperimentSession(save_images=False)
     session.add_operator("probe")
     session.set_materials(default_materials())
@@ -251,6 +284,9 @@ def run_cu_live_self_check(*, validate_capture=True):
         "manual_native": manual["status"] == "ok" and math.isclose(manual["width_px"], 11.0, abs_tol=1e-10),
         "traditional_native": traditional["status"] == "ok" and len(traditional["candidates"]) == 1 and math.isclose(traditional["candidates"][0]["width_px"], 11.0, abs_tol=1e-10),
         "multiscale_native": multiscale["status"] == "ok" and math.isclose(multiscale["candidates"][0]["width_px"], 10.997208727965706, abs_tol=1e-8),
+        "optical_adaptive": (optical["status"] == "ok" and len(optical["candidates"]) == 1
+                             and abs(optical["candidates"][0]["width_px"] - 12.0) <= 1),
+        "optical_empty": optical_empty["status"] == "empty" and not optical_empty["candidates"],
         "content_formula": math.isclose(wool["content"], 85.33239059467755, abs_tol=1e-10),
         "field_motion": detector.compare(first).stable and not detector.compare(second).stable,
         "field_preparation": _field_preparation_probe(),
@@ -260,6 +296,8 @@ def run_cu_live_self_check(*, validate_capture=True):
     cases.update(_evidence_persistence_probe())
     alignment_cases, alignment_report = _candidate_alignment_worker_probe()
     cases.update(alignment_cases)
+    optical_worker = _optical_worker_probe()
+    cases["optical_worker"] = optical_worker.get("ok") is True
     if sys.platform == "win32" and validate_capture:
         from fdm._native import _microview
         from fdm.services.microview_transport import bridge_build_matches
@@ -270,11 +308,12 @@ def run_cu_live_self_check(*, validate_capture=True):
         cases["microview_bridge_build"] = bridge_build_matches(capture_info, kernel_info)
     return {"ok": all(cases.values()), "revision": CU_LIVE_PROBE_REVISION, "cases": cases,
             "candidate_alignment_worker": alignment_report,
+            "optical_worker": optical_worker,
             "native_build_info": dict(native.build_info()), "hardware_capture_tested": False}
 
 
 def cu_live_probe_passed(report):
-    required = {"manual_native", "traditional_native", "multiscale_native", "content_formula",
+    required = {"manual_native", "traditional_native", "multiscale_native", "optical_adaptive", "optical_empty", "optical_worker", "content_formula",
                 "field_motion", "field_preparation", "project_roundtrip", "content_deferred_rebuild",
                 "content_width_undo", "content_width_redo", "evidence_png_gray",
                 "evidence_png_bgr", "evidence_png_bgra", "evidence_leases_released",

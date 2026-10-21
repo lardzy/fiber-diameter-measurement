@@ -56,8 +56,8 @@ class BuildWindowsOnedirTests(unittest.TestCase):
 
     @staticmethod
     def _cu_live_report():
-        return {"ok": True, "revision": 5, "cases": {name: True for name in (
-            "manual_native", "traditional_native", "multiscale_native", "content_formula",
+        return {"ok": True, "revision": 6, "cases": {name: True for name in (
+            "manual_native", "traditional_native", "multiscale_native", "optical_adaptive", "optical_empty", "optical_worker", "content_formula",
             "field_motion", "field_preparation", "project_roundtrip", "microview_bridge_import",
             "microview_bridge_build", "microview_bridge_transport",
             "content_deferred_rebuild", "content_width_undo", "content_width_redo",

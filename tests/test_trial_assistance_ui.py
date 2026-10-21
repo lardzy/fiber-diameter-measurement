@@ -63,8 +63,9 @@ def test_preferences_do_not_edit_trial_and_are_persisted(workspace):
     workspace.algorithm.setCurrentIndex(1)
     workspace._persist_view_preferences()
     saved = json.loads(workspace._view_preferences_path.read_text())["assistance"]
-    assert saved == {"version": 3, "automatic": True, "algorithm": "multiscale", "visible": False,
-                     "opacity": 37, "input_mode": "candidate", "manual_algorithm": "assisted", "retention_seconds": 1.0}
+    assert saved == {"version": 4, "automatic": True, "algorithm": "multiscale", "visible": False,
+                     "opacity": 37, "input_mode": "candidate", "manual_algorithm": "assisted", "retention_seconds": 1.0,
+                     "optical_analysis": workspace.controller.optical_analysis_config}
     assert workspace.session.revision == revision
     workspace._apply_assistance_preferences({})
     assert not workspace.auto_analysis.isChecked()

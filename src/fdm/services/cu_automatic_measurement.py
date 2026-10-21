@@ -30,6 +30,7 @@ def analyze_frame(
     memory_budget: int = DEFAULT_MEMORY_BUDGET,
     *,
     preset: str = "fiber1",
+    config: dict | None = None,
     _debug: bool = False,
 ) -> dict:
     """Analyze one immutable frame; preserve native result order and topology.
@@ -40,8 +41,13 @@ def analyze_frame(
     input and a missing/stale native extension are explicit exceptions.
     """
     started = perf_counter()
-    if algorithm not in {"traditional", "multiscale"}:
-        raise ValueError("全图算法必须为 traditional 或 multiscale。")
+    from fdm.services.optical_config import ALGORITHM_IDS
+    if algorithm not in ALGORITHM_IDS:
+        raise ValueError("未知的全图分析算法。")
+    if algorithm == "optical_adaptive":
+        from fdm.services.optical_automatic import analyze_optical_frame
+        return analyze_optical_frame(image, config=config, checkpoint=checkpoint,
+                                     max_candidates=max_candidates, memory_budget=memory_budget)
     if preset not in {"fiber0", "fiber1", "constructor"}:
         raise ValueError("传统测径参数必须为 fiber0、fiber1 或 constructor。")
     if isinstance(max_candidates, bool) or not isinstance(max_candidates, int) or not 1 <= max_candidates <= 1_000_000:

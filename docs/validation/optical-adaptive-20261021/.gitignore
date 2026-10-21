@@ -1,0 +1,7 @@
+# Generated media stay local; reports and source identities are tracked.
+# Inventory: local-evidence.json
+*.png
+*.mp4
+*.exe
+*.zip
+__pycache__/

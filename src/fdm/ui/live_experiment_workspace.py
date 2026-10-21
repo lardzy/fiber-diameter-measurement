@@ -87,8 +87,8 @@ class ExperimentRecordsModel(QAbstractTableModel):
                          if m.id == record.material_id), record.material_id) if operator else record.material_id
         evidence = getattr(record, "evidence", None) or {}
         state = {"saved": "已保存", "pending": "写入中", "failed": "写入失败", "disabled": "无原图"}.get(evidence.get("state"), "无原图")
-        method = {"assisted": "贴边测径", "free": "自由测量", "automatic-traditional": "传统全图",
-                  "automatic-multiscale": "多尺度全图"}.get(record.measurement_method, record.measurement_method)
+        from fdm.services.optical_config import measurement_method_label
+        method = measurement_method_label(record.measurement_method)
         return (str(index.row() + 1), operator.name if operator else record.operator_id, material, f"{record.diameter_um:.4f}",
                 "经向" if record.direction == "warp" else "纬向", method, state)[index.column()]
 
@@ -232,10 +232,15 @@ class CandidatesModel(QAbstractTableModel):
         if index.column() == 3 and role in (Qt.ItemDataRole.EditRole, Qt.ItemDataRole.UserRole):
             return self.material_id(index.row())
         if index.column() == 2 and role == Qt.ItemDataRole.ToolTipRole:
+            from fdm.ui.optical_diagnostics import candidate_diagnostic_text
             original = self.candidates[index.row()]["width_px"] * self.scale
             record = self.accepted_record(index.row())
-            return (f"原候选测值 {original:.4f} μm；当前记录 {record.diameter_um:.4f} μm。修订不会改变原始测量几何。"
-                    if record is not None else f"候选测值 {original:.4f} μm，尚未入账。")
+            value = (f"原候选测值 {original:.4f} μm；当前记录 {record.diameter_um:.4f} μm。修订不会改变原始测量几何。"
+                     if record is not None else f"候选测值 {original:.4f} μm，尚未入账。")
+            return "\n".join(filter(None, (value, candidate_diagnostic_text(self.candidates[index.row()]))))
+        if role == Qt.ItemDataRole.ToolTipRole:
+            from fdm.ui.optical_diagnostics import candidate_diagnostic_text
+            return candidate_diagnostic_text(self.candidates[index.row()]) or None
         if role == Qt.ItemDataRole.DisplayRole:
             material = self.assigned_material(index.row())
             original = self.candidates[index.row()]["width_px"] * self.scale
@@ -601,6 +606,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def hideEvent(self, event):
         self.controller.configure_automatic(active=False)
+        optical_dialog = getattr(self, "optical_settings_dialog", None)
+        if optical_dialog is not None:
+            optical_dialog.close()
         if hasattr(self, "evidence_review"):
             self.evidence_review.suspend()
         gallery = getattr(self.host, "_evidence_gallery", None)
@@ -1523,7 +1531,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             raise ValueError("请核对表中越限候选的直径和范围，勾选确认保留，或改类／取消接受。")
         duplicates = self.controller.possible_duplicate_candidates([index for index, _ in selections])
         if duplicates and QMessageBox.question(self, "核对可能重复的候选",
-                f"有 {len(duplicates)} 条候选的位置和宽度接近本视场已接受记录。请核对是否为同一根纤维；仍然全部入账？",
+                f"有 {len(duplicates)} 条候选可能与当前选择或已接受记录代表同一根纤维。请核对边缘配对及位置；仍然全部入账？",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return
@@ -2061,6 +2069,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._view_preferences_timer.stop()
         self.display_binding.close()
         self.settings_dialog.close()
+        optical_dialog = getattr(self, "optical_settings_dialog", None)
+        if optical_dialog is not None:
+            optical_dialog.close()
         self.report_panel.close()
         self.evidence_review.close()
         gallery = getattr(self.host, "_evidence_gallery", None)

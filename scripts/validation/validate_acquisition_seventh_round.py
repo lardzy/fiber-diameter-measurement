@@ -33,6 +33,7 @@ def fingerprints():
     paths += [ROOT / 'src/fdm/ui' / name for name in (
         'live_measurement_canvas.py', 'live_experiment_workspace.py',
         'live_experiment_view.py', 'trial_assistance.py')]
+    paths += sorted((ROOT / 'src/fdm/services').glob('optical_*.py'))
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in paths}
 
@@ -40,6 +41,7 @@ def fingerprints():
 def arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--phase', choices=('quick', 'full'), default='quick')
+    parser.add_argument('--algorithm', choices=('traditional', 'multiscale', 'optical_adaptive'), default='traditional')
     parser.add_argument('--scenario', choices=('quick', 'cycle', 'clicks', 'menus', 'latency', 'retention', 'performance'), default='quick')
     parser.add_argument('--performance-mode', choices=('baseline', 'candidates'), default='candidates')
     parser.add_argument('--duration', type=float)
@@ -90,6 +92,7 @@ def main(args):
     trace = dict(analyses=[], visibility=[], status=[], actions=[], delayed=[], field_changes=[], retention=[])
     report = dict(schema_version=1, started_at=datetime.now(timezone.utc).isoformat(),
         phase=args.phase, scenario=args.scenario, runtime=platform.platform(), platform=args.platform,
+        algorithm=args.algorithm,
         theme=args.theme, scale=args.scale, requested_client_raster=physical,
         source_fingerprints=fingerprints(), script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         real_camera=False, passed=False, trace=trace,
@@ -229,6 +232,13 @@ def main(args):
             wait(lambda: c.state == 'ready' and page.analyze_button.isEnabled(), 'prepared')
             assert page.input_mode.currentData() == 'mixed'
             assert not page.auto_analysis.isChecked()
+            if args.algorithm != page.algorithm.currentData():
+                menu = page.analyze_button.menu()
+                menu.popup(page.analyze_button.mapToGlobal(page.analyze_button.rect().bottomLeft()))
+                pause(40)
+                action = page.algorithm_actions[args.algorithm]
+                QTest.mouseClick(menu, Qt.MouseButton.LeftButton, pos=menu.actionGeometry(action).center())
+                assert page.algorithm.currentData() == args.algorithm
             baseline = args.scenario == 'performance' and args.performance_mode == 'baseline'
             if not baseline:
                 QTest.mouseClick(page.auto_analysis, Qt.MouseButton.LeftButton,
@@ -302,13 +312,30 @@ def main(args):
                 return dict(previous_epoch=previous_epoch, changed_epoch=c.field_epoch,
                             detector_reason=result.reason, at=now())
 
+            def direct_click_target():
+                # The optical pipeline deliberately preserves mutually exclusive
+                # interpretations. This exercise measures direct acceptance, so
+                # choose a visible, uniquely hit proposal that does not require
+                # the existing duplicate review. Separate tests cover that review.
+                scale, offset = page.canvas._transform()
+                for index, value in enumerate(c.candidates):
+                    if value.get('state') != 'available' or c.possible_duplicate_candidates([index]):
+                        continue
+                    center = tuple((a+b)/2 for a, b in zip(value['start'], value['end']))
+                    point = QPoint(round(center[0]*scale+offset[0]), round(center[1]*scale+offset[1]))
+                    if page.canvas.candidate_hits(point) == [value['candidate_id']]:
+                        return value, point
+                return None
+
             def click_one():
-                item = next(value for value in c.candidates if value.get('state') == 'available')
+                target = direct_click_target()
+                if target is None:
+                    next_field()
+                    target = direct_click_target()
+                assert target is not None, 'At least one unambiguous direct-click target is required'
+                item, point = target
                 ids = [value['candidate_id'] for value in c.candidates]
                 current_batch = c._automatic_context['batch_id']
-                scale, offset = page.canvas._transform()
-                center = tuple((a+b)/2 for a, b in zip(item['start'], item['end']))
-                point = QPoint(round(center[0]*scale+offset[0]), round(center[1]*scale+offset[1]))
                 page.image_scroll.ensureVisible(point.x(), point.y(), 20, 20)
                 wait(lambda: page.canvas._candidates_visible() and c.presented is not None
                      and c.presented.frame is page.canvas.frame, 'actually painted click')

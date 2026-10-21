@@ -629,9 +629,11 @@ def build_trial_view(v):
     advanced.addStretch(1)
     optional, optional_layout = scroll_page(v.settings_tabs, "全图分析", "分析固定的一帧，在画布点选候选，或在审核页批量确认。确认前不计入试验结果。")
     v.algorithm = NoWheelComboBox(optional)
-    v.algorithm.addItem("传统全图", "traditional")
-    v.algorithm.addItem("多尺度全图", "multiscale")
+    from fdm.services.optical_config import ALGORITHM_CHOICES
+    for label, algorithm in ALGORITHM_CHOICES:
+        v.algorithm.addItem(label, algorithm)
     optional_layout.addWidget(v.algorithm)
+    button("普通光学设置与光照检查…", v._show_optical_settings, optional_layout, "settings")
     def analyze():
         v._analyze_candidates()
         v.settings_dialog.close()

@@ -1,0 +1,262 @@
+[
+  {
+    "theme": "light",
+    "tab": 0,
+    "image": "optical-light-0.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": null,
+    "button_text_fits": true
+  },
+  {
+    "theme": "light",
+    "tab": 1,
+    "image": "optical-light-1.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": [
+      9,
+      140,
+      596,
+      245
+    ],
+    "button_text_fits": true
+  },
+  {
+    "theme": "dark",
+    "tab": 0,
+    "image": "optical-dark-0.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": null,
+    "button_text_fits": true
+  },
+  {
+    "theme": "dark",
+    "tab": 1,
+    "image": "optical-dark-1.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": [
+      9,
+      140,
+      596,
+      245
+    ],
+    "button_text_fits": true
+  },
+  {
+    "theme": "navy",
+    "tab": 0,
+    "image": "optical-navy-0.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": null,
+    "button_text_fits": true
+  },
+  {
+    "theme": "navy",
+    "tab": 1,
+    "image": "optical-navy-1.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": [
+      9,
+      140,
+      596,
+      245
+    ],
+    "button_text_fits": true
+  },
+  {
+    "theme": "warm",
+    "tab": 0,
+    "image": "optical-warm-0.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": null,
+    "button_text_fits": true
+  },
+  {
+    "theme": "warm",
+    "tab": 1,
+    "image": "optical-warm-1.png",
+    "dialog": [
+      640,
+      560
+    ],
+    "save_rect": [
+      411,
+      0,
+      79,
+      36
+    ],
+    "refresh_rect": [
+      496,
+      0,
+      122,
+      36
+    ],
+    "view_control_height": 38,
+    "category_scroll_rect": [
+      0,
+      0,
+      406,
+      461
+    ],
+    "diagnostics_rect": [
+      9,
+      140,
+      596,
+      245
+    ],
+    "button_text_fits": true
+  }
+]

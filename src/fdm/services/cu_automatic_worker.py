@@ -8,6 +8,7 @@ all unconfirmed work and rebuilds the process on the next submission.
 from __future__ import annotations
 
 from collections import deque
+from copy import deepcopy
 import multiprocessing as mp
 from multiprocessing import shared_memory
 import os
@@ -172,9 +173,10 @@ class CuAutomaticWorker:
             raise ValueError("自动分析输入必须为 uint8 灰度、BGR 或 BGRA 图像。")
         if min(source.shape[:2]) < 16:
             raise ValueError("自动分析图像宽高至少为 16 像素。")
-        if algorithm not in {"traditional", "multiscale"}:
+        from fdm.services.optical_config import ALGORITHM_IDS
+        if algorithm not in ALGORITHM_IDS:
             raise ValueError("未知的全图分析算法。")
-        allowed = {"max_candidates", "memory_budget", "preset"}
+        allowed = {"max_candidates", "memory_budget", "preset", "config"}
         if set(limits) - allowed:
             raise TypeError(f"不支持的全图分析参数：{sorted(set(limits) - allowed)}")
         budget = limits.get("memory_budget", DEFAULT_MEMORY_BUDGET)
@@ -182,6 +184,9 @@ class CuAutomaticWorker:
             raise ValueError("memory_budget 必须为正整数。")
         if source.nbytes > budget:
             raise MemoryError("automatic_memory_budget")
+        # Pending jobs may wait for the shared compute permit. Own scalar
+        # configuration now, not when a later dispatcher happens to send it.
+        limits = deepcopy(limits)
         with self._lock:
             if self._closed:
                 raise RuntimeError("自动分析工作进程已关闭。")

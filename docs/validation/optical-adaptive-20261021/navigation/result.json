@@ -1,0 +1,719 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T09:59:47.889312+00:00",
+  "phase": "quick",
+  "scenario": "quick",
+  "runtime": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "platform": "offscreen",
+  "algorithm": "optical_adaptive",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "0db5d25c92d938445769af8139f2dbdb7d3f928be7f2dc4b023cf21791b548fa",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "142290124eb829497ffa062b9487a6a9dceaf810853154d24625e15e82c26c43",
+    "src/fdm/ui/live_experiment_workspace.py": "8f00afcdb26a341a764161fa8382dacb971f919b3d5c5b6849b1f827980157ef",
+    "src/fdm/ui/live_experiment_view.py": "35851d5c565978b91d0e5805230c297e9f106265ea9e12ebedb824c41795bcf9",
+    "src/fdm/ui/trial_assistance.py": "b58095b916316eeeaf9156b3409df3ff3c5a10104657fe4f13e1ae2cda74b9f7",
+    "src/fdm/services/optical_automatic.py": "f8a4ad8bb464ff41c002ae8d503bfc79ae2cc8c463659b28c25f269900956a79",
+    "src/fdm/services/optical_config.py": "ac449df27e6bc6f820df93dbc78f42ebae326e9ba0ed755b10796afe3c5aa346",
+    "src/fdm/services/optical_flat_field.py": "372135ca9e33746046d69a7bbb4a9d32ba774fd6741dda95802a25b3c64d54d8"
+  },
+  "script_sha256": "7cd1244ac43569fc4fd615b38a767dedd6d464e11ec501c79b841a106202deb8",
+  "real_camera": false,
+  "passed": true,
+  "trace": {
+    "analyses": [
+      {
+        "at": 1.441406,
+        "origin": "automatic",
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "stage": "setup"
+      },
+      {
+        "at": 6.069092,
+        "origin": "automatic",
+        "batch": "a696f6dfc8fd490b8be9ca5bbc799e1e",
+        "stage": "retention"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 1.012316,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.442629,
+        "visible": true,
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 1.906073,
+        "visible": true,
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "available": 17,
+        "stage": "setup"
+      },
+      {
+        "at": 2.364541,
+        "visible": true,
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "available": 17,
+        "stage": "static"
+      },
+      {
+        "at": 5.362391,
+        "visible": true,
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "available": 16,
+        "stage": "clicks"
+      },
+      {
+        "at": 5.426761,
+        "visible": true,
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "available": 15,
+        "stage": "clicks"
+      },
+      {
+        "at": 5.496001,
+        "visible": true,
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "available": 14,
+        "stage": "clicks"
+      },
+      {
+        "at": 5.560067,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 6.069835,
+        "visible": true,
+        "batch": "a696f6dfc8fd490b8be9ca5bbc799e1e",
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 6.142597,
+        "visible": true,
+        "batch": "a696f6dfc8fd490b8be9ca5bbc799e1e",
+        "available": 17,
+        "stage": "retention"
+      }
+    ],
+    "status": [
+      {
+        "at": 1.046676,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 1.053223,
+        "message": "标定已变化"
+      },
+      {
+        "at": 1.103675,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 1.441375,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 1.903504,
+        "message": "检测到 17 条候选，请赋类后确认。"
+      },
+      {
+        "at": 5.420938,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 5.555613,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 5.637064,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 5.707706,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 5.763014,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 6.069087,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 6.14058,
+        "message": "检测到 17 条候选，请赋类后确认。"
+      },
+      {
+        "at": 6.89721,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 6.898905,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [
+      {
+        "at": 5.359656,
+        "candidate": "8231e83b575a4c508cdf9d19cd09abb9:1",
+        "record": "d7d66b5ff21d4846b9da0a98d8eb07f4",
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "elapsed_ms": 2.735290996497497
+      },
+      {
+        "at": 5.431647,
+        "candidate": "8231e83b575a4c508cdf9d19cd09abb9:3",
+        "record": "9945cc60246e4e2a81241a533183807b",
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "elapsed_ms": 11.151541984872892
+      },
+      {
+        "at": 5.494086,
+        "candidate": "8231e83b575a4c508cdf9d19cd09abb9:5",
+        "record": "ae71020b7b1d412e8e38fda74617b613",
+        "batch": "8231e83b575a4c508cdf9d19cd09abb9",
+        "elapsed_ms": 1.529666013084352
+      }
+    ],
+    "delayed": [],
+    "field_changes": [
+      {
+        "at": 1.046601,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 1.053155,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 5.555409,
+        "values": [
+          3,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 5.707558,
+        "values": [
+          4,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 6.898882,
+        "values": [
+          5,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 17,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "static": {
+    "seconds": 3.0015824580041226,
+    "analyses": 1,
+    "source_frames": 129
+  },
+  "clicks": {
+    "accepted": 3,
+    "records": 3,
+    "saved": 3
+  },
+  "retention": {
+    "records": [
+      "9945cc60246e4e2a81241a533183807b",
+      "ae71020b7b1d412e8e38fda74617b613",
+      "d7d66b5ff21d4846b9da0a98d8eb07f4"
+    ],
+    "marks": [
+      {
+        "record_id": "d7d66b5ff21d4846b9da0a98d8eb07f4",
+        "start": [
+          727.0102634858185,
+          132.8097713927897
+        ],
+        "end": [
+          719.5721569990143,
+          135.76414320777434
+        ],
+        "number": 1,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "9945cc60246e4e2a81241a533183807b",
+        "start": [
+          680.8383777357357,
+          263.6318536308994
+        ],
+        "end": [
+          670.6295157696691,
+          267.69957217407153
+        ],
+        "number": 2,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "ae71020b7b1d412e8e38fda74617b613",
+        "start": [
+          387.2483109600276,
+          283.51109570612
+        ],
+        "end": [
+          292.19082778229006,
+          321.4916772054501
+        ],
+        "number": 3,
+        "color": "#d60000"
+      }
+    ],
+    "elapsed_seconds": 1.0044510000152513
+  },
+  "remaining_candidate_hides": [],
+  "performance": {
+    "analysis_ms": {
+      "n": 2,
+      "p50": 279.3524170119781,
+      "p95": 466.52387981303036
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 3,
+      "p50": 0.9537079895380884,
+      "p95": 3.071745508350432
+    },
+    "stable_wait_ms": {
+      "n": 2,
+      "p50": 305.938083503861,
+      "p95": 306.6961080679903
+    },
+    "analysis_to_paint_ms": {
+      "n": 2,
+      "p50": 282.9754580016015,
+      "p95": 470.66397079761373
+    },
+    "ingest_fps": {
+      "n": 164,
+      "p50": 30.291384310634175,
+      "p95": 36.16207042169427
+    },
+    "presented_fps": {
+      "n": 164,
+      "p50": 30.2998226099427,
+      "p95": 36.302347022677004
+    },
+    "frame_age_ms": {
+      "n": 165,
+      "p50": 1.803958002710715,
+      "p95": 2.8505500056780866
+    },
+    "analysis_service_total_ms": {
+      "n": 2,
+      "p50": 202.19031249871477,
+      "p95": 324.347443447914
+    },
+    "analysis_preparation_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_processing_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "analysis_shared_memory_ms": {
+      "n": 2,
+      "p50": 6.626833492191508,
+      "p95": 12.307746449369006
+    },
+    "analysis_budget_wait_ms": {
+      "n": 2,
+      "p50": 0.09254150791093707,
+      "p95": 0.14789106498938054
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 10.444709012517706,
+      "p95": 10.444709012517706
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 2,
+      "p50": 264.55918699502945,
+      "p95": 442.0467056101188
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 2,
+      "p50": 62.368874496314675,
+      "p95": 117.69926216220483
+    }
+  },
+  "context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": false,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 165,
+      "span_seconds": 5.493202249985188,
+      "first_sequence": 2,
+      "last_sequence": 166,
+      "window_fps": 29.85508134175147
+    },
+    "presented": {
+      "frames": 165,
+      "span_seconds": 5.491394875018159,
+      "first_sequence": 2,
+      "last_sequence": 166,
+      "window_fps": 29.864907502113965
+    },
+    "input_trace": {
+      "events": [
+        {
+          "event": "press",
+          "at": 162939.277981458,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "presented_frame": "camera:workflow-validation:0:2:129",
+          "preview_frame": "camera:workflow-validation:0:2:129",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 904.0,
+          "y": 192.0,
+          "pointer_id": "eb4bd03262474cd3a604788299388026",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:1"
+        },
+        {
+          "event": "release",
+          "at": 162939.278007666,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 904.0,
+          "y": 192.0,
+          "pointer_id": "eb4bd03262474cd3a604788299388026",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 162939.278261625,
+          "field_epoch": 2,
+          "interaction_id": "5571ee3959c94611942e43a46957bf99",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "eb4bd03262474cd3a604788299388026",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:1"
+        },
+        {
+          "event": "press",
+          "at": 162939.341415333,
+          "field_epoch": 2,
+          "interaction_id": "5571ee3959c94611942e43a46957bf99",
+          "presented_frame": "camera:workflow-validation:0:2:131",
+          "preview_frame": "camera:workflow-validation:0:2:131",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 857.0,
+          "y": 324.0,
+          "pointer_id": "02543aa9a31a4ed6add7310b3537e01b",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:3"
+        },
+        {
+          "event": "release",
+          "at": 162939.341432541,
+          "field_epoch": 2,
+          "interaction_id": "5571ee3959c94611942e43a46957bf99",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 857.0,
+          "y": 324.0,
+          "pointer_id": "02543aa9a31a4ed6add7310b3537e01b",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 162939.341608083,
+          "field_epoch": 2,
+          "interaction_id": "e9ae4e4022ae42c19c464f7cc75bf331",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "02543aa9a31a4ed6add7310b3537e01b",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:3"
+        },
+        {
+          "event": "press",
+          "at": 162939.413491041,
+          "field_epoch": 2,
+          "interaction_id": "e9ae4e4022ae42c19c464f7cc75bf331",
+          "presented_frame": "camera:workflow-validation:0:2:133",
+          "preview_frame": "camera:workflow-validation:0:2:133",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 521.0,
+          "y": 361.0,
+          "pointer_id": "8e902bebea684618a80b1bf45c505b5f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:5"
+        },
+        {
+          "event": "release",
+          "at": 162939.41350825,
+          "field_epoch": 2,
+          "interaction_id": "e9ae4e4022ae42c19c464f7cc75bf331",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 521.0,
+          "y": 361.0,
+          "pointer_id": "8e902bebea684618a80b1bf45c505b5f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:5"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 162939.413690583,
+          "field_epoch": 2,
+          "interaction_id": "5df7465053484902b887af96644a6030",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "8e902bebea684618a80b1bf45c505b5f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "8231e83b575a4c508cdf9d19cd09abb9:5"
+        }
+      ],
+      "total_events": 9,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 4,
+      "analyzed": true,
+      "analysis_count": 2,
+      "batch_id": "a696f6dfc8fd490b8be9ca5bbc799e1e",
+      "events": [
+        {
+          "at": 162934.967347041,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 162934.973909125,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 162935.335347791,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "920cf9bd8dde4cfcb40cd704edec682c",
+          "batch_id": "8231e83b575a4c508cdf9d19cd09abb9",
+          "frame_id": "camera:workflow-validation:0:2:12"
+        },
+        {
+          "at": 162939.476090125,
+          "event": "new_cycle",
+          "cycle": 3,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 162939.628283041,
+          "event": "new_cycle",
+          "cycle": 4,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 162939.988965375,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 4,
+          "task_id": "7e8b6265ca5f4cee9ffa2be336862767",
+          "batch_id": "a696f6dfc8fd490b8be9ca5bbc799e1e",
+          "frame_id": "camera:workflow-validation:0:2:151"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "available",
+      "painted_visibility": {
+        "visible": true,
+        "last_observed_visible": true,
+        "observation_active": true,
+        "transition_count": 3,
+        "current_visible_ms": 416.86220801784657,
+        "current_hidden_ms": null,
+        "max_visible_ms": 3649.2355829977896,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 162934.984389916,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 162935.826851958,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:27",
+            "batch_id": "8231e83b575a4c508cdf9d19cd09abb9"
+          },
+          {
+            "at": 162939.48087125,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:135",
+            "batch_id": null
+          },
+          {
+            "at": 162940.06338925,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:153",
+            "batch_id": "a696f6dfc8fd490b8be9ca5bbc799e1e"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "accepted_total": 3,
+  "video": {
+    "frames": 38,
+    "fps": 8,
+    "kind": "Qt grabs; diagnostic overhead",
+    "exit_code": 0,
+    "errors": [],
+    "stderr": ""
+  },
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 6.957621
+}

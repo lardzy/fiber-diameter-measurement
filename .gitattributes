@@ -33,3 +33,6 @@ docs/validation/acquisition-sixth-round-20261020/**/*.txt -text -whitespace
 docs/validation/acquisition-seventh-round-20261021/**/*.json -text -whitespace
 docs/validation/acquisition-seventh-round-20261021/**/*.log -text -whitespace
 docs/validation/acquisition-seventh-round-20261021/**/*.txt -text -whitespace
+# Optical trial evidence keeps original JSON/log bytes used by checksum reports.
+docs/validation/optical-adaptive-20261021/**/*.json -text -whitespace
+docs/validation/optical-adaptive-20261021/**/*.log -text -whitespace

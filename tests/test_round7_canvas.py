@@ -138,7 +138,7 @@ def test_retention_preference_roundtrip_defaults_and_legacy_mode(workspace):
     assert workspace.selection_retention_seconds.value() == 1.
     workspace.selection_retention_seconds.setValue(2.3)
     saved = workspace._assistance_preferences()
-    assert saved["version"] == 3 and saved["retention_seconds"] == 2.3
+    assert saved["version"] == 4 and saved["retention_seconds"] == 2.3
     assert workspace.controller.selection_retention.duration == 2.3
     workspace._apply_assistance_preferences({"version": 2, "input_mode": "manual", "manual_algorithm": "free"})
     assert workspace.input_mode.currentData() == "manual"
