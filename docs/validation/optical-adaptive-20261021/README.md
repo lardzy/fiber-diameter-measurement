@@ -49,3 +49,5 @@ Windows 首次门禁有 7 项测试因测试自身使用系统默认 GBK 读取 
 ## 归档
 
 源码、测试、验证脚本及结构化结果纳入版本控制。截图和[导航／点选录像](navigation/workflow.mp4)保留本地；路径、大小与 SHA256 见 [本地产物清单](local-evidence.json)。安装包继续保存在已忽略的 `dist/internal/` 中，保留本轮试测包和上一版明确手势回退包。
+
+实现提交：`8601955`。产物清理见 [Mac 清单](cleanup-local.json)与 [Windows 清单](cleanup-windows.json)；本机两份交付 EXE 继续保留，Windows 中的一次性安装验证目录和重复构建输出已清理。截图、录像、失败记录、原始证据与开发环境未删除。

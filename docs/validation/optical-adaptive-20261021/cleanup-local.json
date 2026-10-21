@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "finished_at": "2026-10-21T14:37:15.046802+00:00",
+  "product_commit": "8601955acf31e9041b5b6cad820f188d431b097c",
+  "version": "0.4.10",
+  "deleted_files": 537,
+  "deleted_logical_bytes": 31224507,
+  "deleted_allocated_bytes": 32358400,
+  "free_bytes_before": 271974400000,
+  "free_bytes_after": 272384000000,
+  "paths": [
+    {
+      "path": ".pytest_cache",
+      "bytes": 704913,
+      "files": 5,
+      "allocated_bytes": 720896,
+      "removed": true
+    },
+    {
+      "path": "build/native-code-review/wheel-native",
+      "bytes": 1705352,
+      "files": 1,
+      "allocated_bytes": 1708032,
+      "removed": true
+    },
+    {
+      "path": "build/native-code-review/wheel-python",
+      "bytes": 1615826,
+      "files": 1,
+      "allocated_bytes": 1617920,
+      "removed": true
+    },
+    {
+      "path": "build/native-kernel-migration/python-dist",
+      "bytes": 1617889,
+      "files": 1,
+      "allocated_bytes": 1617920,
+      "removed": true
+    },
+    {
+      "path": "build/bdist.macosx-12.1-arm64",
+      "bytes": 0,
+      "files": 0,
+      "allocated_bytes": 0,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/__pycache__",
+      "bytes": 1403170,
+      "files": 34,
+      "allocated_bytes": 1482752,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/ui/__pycache__",
+      "bytes": 6541220,
+      "files": 110,
+      "allocated_bytes": 6762496,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/platform/__pycache__",
+      "bytes": 88219,
+      "files": 5,
+      "allocated_bytes": 102400,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/workers/__pycache__",
+      "bytes": 27907,
+      "files": 1,
+      "allocated_bytes": 28672,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/services/__pycache__",
+      "bytes": 2506368,
+      "files": 66,
+      "allocated_bytes": 2629632,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/live_experiment/__pycache__",
+      "bytes": 432419,
+      "files": 24,
+      "allocated_bytes": 487424,
+      "removed": true
+    },
+    {
+      "path": "src/fdm/_native/__pycache__",
+      "bytes": 8650,
+      "files": 1,
+      "allocated_bytes": 12288,
+      "removed": true
+    },
+    {
+      "path": "tests/__pycache__",
+      "bytes": 14000183,
+      "files": 266,
+      "allocated_bytes": 14569472,
+      "removed": true
+    },
+    {
+      "path": "scripts/__pycache__",
+      "bytes": 176894,
+      "files": 7,
+      "allocated_bytes": 192512,
+      "removed": true
+    },
+    {
+      "path": "scripts/validation/__pycache__",
+      "bytes": 395497,
+      "files": 15,
+      "allocated_bytes": 425984,
+      "removed": true
+    }
+  ],
+  "preserved_installers": [
+    {
+      "path": "dist/internal/optical-adaptive-20261021/FDM-0.4.10-optical-adaptive-daa32894eef7.exe",
+      "sha256": "ee7ec2619ce1252074789305f7ab4d739d5642b461cf08f93c2e89cc99ae9c8c",
+      "verified_after": true
+    },
+    {
+      "path": "dist/internal/explicit-manual-gestures-20261021/FDM-0.4.10-explicit-gestures-2527fbdb485c.exe",
+      "sha256": "fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833",
+      "verified_after": true
+    }
+  ],
+  "retained_evidence_files_verified": 759,
+  "retention": "Preserved all evidence, source snapshots, references, user samples, development environments and Git recovery backups. Only rebuildable caches and obsolete wheel outputs deleted."
+}
