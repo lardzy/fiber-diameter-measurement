@@ -101,17 +101,31 @@ def pointer(canvas, image_point):
 def test_candidate_click_is_explicit_and_manual_mouse_route_is_preserved(canvas):
     add_candidates(canvas)
     canvas.set_input_mode("manual")
-    accepted, pressed, released = [], [], []
+    accepted, starts, finishes = [], [], []
+
+    def start(point, token):
+        starts.append((point, token))
+        canvas.controller.draft = (token, point)
+
+    def finish(point):
+        finishes.append(point)
+        canvas.controller.draft = None
+
     canvas.candidateClicked.connect(accepted.append)
-    canvas.pointPressed.connect(pressed.append)
-    canvas.pointReleased.connect(released.append)
-    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
-    assert not accepted and len(pressed) == len(released) == 1
+    canvas.manualGestureStarted.connect(start)
+    canvas.manualGestureFinished.connect(finish)
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+    assert len(starts) == 1 and starts[0][0] == (215., 200.) and not finishes
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+    assert not accepted and not finishes
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (250, 200)))
+    assert finishes == [(250., 200.)]
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (250, 200)))
     canvas.set_candidate_input_enabled(True)
     QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
     QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (700, 500)))
     assert accepted == ["batch:0"]
-    assert len(pressed) == len(released) == 1
+    assert len(starts) == len(finishes) == 1
 
 
 def test_hidden_invalid_and_confirming_candidates_cannot_be_clicked(canvas):

@@ -1,0 +1,23 @@
+[
+  {
+    "phase": "registration-backup",
+    "started_at": "2026-10-21T07:00:40.368380+00:00",
+    "finished_at": "2026-10-21T07:00:40.919133+00:00",
+    "elapsed_seconds": 0.551,
+    "exit_code": 0
+  },
+  {
+    "phase": "actual-installation",
+    "started_at": "2026-10-21T07:00:40.919884+00:00",
+    "finished_at": "2026-10-21T07:01:14.711524+00:00",
+    "elapsed_seconds": 33.792,
+    "exit_code": 0
+  },
+  {
+    "phase": "ordinary-user-selfcheck",
+    "started_at": "2026-10-21T07:01:14.712039+00:00",
+    "finished_at": "2026-10-21T07:01:37.178582+00:00",
+    "elapsed_seconds": 22.467,
+    "exit_code": 0
+  }
+]

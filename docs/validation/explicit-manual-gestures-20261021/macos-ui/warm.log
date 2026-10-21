@@ -1,0 +1,15 @@
+qt.qpa.fonts: Populating font family aliases took 19 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost.
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support raise()
+This plugin does not support grabbing the keyboard
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+{"passed": true, "physical_scale": 1.0, "logical_size": [1366, 768], "window": [1366, 768], "algorithm_text": "贴边", "algorithm_size": [72, 34], "gesture_size": [66, 25], "tool_group_size": [140, 47], "category_size": [406, 212], "header_size": [490, 38], "scope": "macOS Qt offscreen; synthetic camera; real navigation and menu click; no hardware acceptance"}

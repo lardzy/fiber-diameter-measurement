@@ -1,0 +1,11 @@
+{
+    "build_id":  "2527fbdb485c4d419ffb7c8ccf42a5c8",
+    "whole_vm_rollback":  false,
+    "installer_sha256":  "fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833",
+    "passed":  true,
+    "caller":  "NT AUTHORITY\\SYSTEM",
+    "backup":  "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\build\\seventh-round\\installation-backup\\baseline.json",
+    "arguments":  "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOICONS /TASKS=\"\" /DIR=\"C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\dist\\windows\\installed-candidate\" /LOG=\"C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\build\\seventh-round\\actual-installation.log\"",
+    "exit_code":  0,
+    "installed":  "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\dist\\windows\\installed-candidate"
+}

@@ -1,0 +1,461 @@
+................................................................FF...... [ 45%]
+........F........FFFF..FFFF..........F.F..........................FFF... [ 91%]
+..........F...                                                           [100%]
+=================================== FAILURES ===================================
+_ test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame[start0] _
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b482010) at 0x16de20740>
+start = (215, 200)
+
+    @pytest.mark.parametrize("start", [(215, 200), (100, 100)])
+    def test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame(canvas, start):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        original = canvas.controller.presented
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, start))
+        canvas.set_frame(FrameHandle.snapshot(np.full((576, 768, 3), 181, np.uint8),
+                                             source_id="image", sequence=1, live=False))
+        canvas.repaint()
+        assert canvas.controller.presented.frame is not original.frame
+        end = (start[0] + 45, start[1] + 30)
+        mouse_move(canvas, pointer(canvas, end))
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, end))
+>       assert len(observed.starts) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = namespace(starts=[], finishes=[], candidates=[], errors=[]).starts
+
+tests/test_live_measurement_mixed_canvas.py:79: AssertionError
+_ test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame[start1] _
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b835f30) at 0x16de54300>
+start = (100, 100)
+
+    @pytest.mark.parametrize("start", [(215, 200), (100, 100)])
+    def test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame(canvas, start):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        original = canvas.controller.presented
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, start))
+        canvas.set_frame(FrameHandle.snapshot(np.full((576, 768, 3), 181, np.uint8),
+                                             source_id="image", sequence=1, live=False))
+        canvas.repaint()
+        assert canvas.controller.presented.frame is not original.frame
+        end = (start[0] + 45, start[1] + 30)
+        mouse_move(canvas, pointer(canvas, end))
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, end))
+        assert len(observed.starts) == 1
+        assert observed.starts[0][0] == tuple(map(float, start))
+        assert observed.starts[0][1] is original
+>       assert observed.finishes == [tuple(map(float, end))]
+E       assert [] == [(145.0, 130.0)]
+E
+E         Right contains one more item: (145.0, 130.0)
+E         Use -v to get more diff
+
+tests/test_live_measurement_mixed_canvas.py:82: AssertionError
+________________ test_manual_only_keeps_legacy_gesture_signals _________________
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1682bfff0) at 0x16dfc6340>
+
+    def test_manual_only_keeps_legacy_gesture_signals(canvas):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        canvas.set_input_mode("manual")
+        canvas.set_manual_gesture("drag")
+        pressed, released = [], []
+        canvas.pointPressed.connect(pressed.append)
+        canvas.pointReleased.connect(released.append)
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (245, 230)))
+>       assert pressed == [(215., 200.)] and released == [(245., 230.)]
+E       assert ([] == [(215.0, 200.0)]
+E
+E         Right contains one more item: (215.0, 200.0)
+E         Use -v to get more diff)
+
+tests/test_live_measurement_mixed_canvas.py:217: AssertionError
+_ test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting_candidate _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x168710580>
+
+    def test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting_candidate(workspace):
+        from test_trial_assistance_ui import candidates, point
+        workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
+        workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
+        candidates(workspace)
+        source = workspace.controller.presented.frame
+        QTest.mousePress(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 30, 40))
+        mouse_move(workspace.canvas, point(workspace, 60, 80))
+        QTest.mouseRelease(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, 60, 80))
+>       _await_records(workspace, 1)
+
+tests/test_live_measurement_mixed_canvas.py:311:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x168710580>
+count = 1
+
+    def _await_records(workspace, count):
+        from time import monotonic
+        deadline = monotonic() + 2
+        loop = QEventLoop()
+        while len(workspace.session.measurements) < count and monotonic() < deadline:
+            QTimer.singleShot(10, loop.quit)
+            loop.exec()
+            workspace.controller.poll()
+>       assert len(workspace.session.measurements) == count
+E       assert 0 == 1
+E        +  where 0 = len({})
+E        +    where {} = <fdm.live_experiment.models.ExperimentSession object at 0x16db82490>.measurements
+E        +      where <fdm.live_experiment.models.ExperimentSession object at 0x16db82490> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x168710580>.session
+
+tests/test_live_measurement_mixed_canvas.py:278: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_workspace_refresh_after_drag_starts_preserves_the_manual_intent[start0] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x16debb080>
+start = (30, 40)
+
+    @pytest.mark.parametrize("start", [(30, 40), (220, 180)])
+    def test_workspace_refresh_after_drag_starts_preserves_the_manual_intent(workspace, start):
+        from test_trial_assistance_ui import candidates, point
+        workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
+        workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
+        candidates(workspace)
+        end = (start[0] + 30, start[1] + 20)
+        QTest.mousePress(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, *start))
+        mouse_move(workspace.canvas, point(workspace, *end))
+        QApplication.processEvents()
+        draft = workspace.controller.draft
+>       assert draft is not None
+E       assert None is not None
+
+tests/test_live_measurement_mixed_canvas.py:331: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_workspace_refresh_after_drag_starts_preserves_the_manual_intent[start1] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x16de15380>
+start = (220, 180)
+
+    @pytest.mark.parametrize("start", [(30, 40), (220, 180)])
+    def test_workspace_refresh_after_drag_starts_preserves_the_manual_intent(workspace, start):
+        from test_trial_assistance_ui import candidates, point
+        workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
+        workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
+        candidates(workspace)
+        end = (start[0] + 30, start[1] + 20)
+        QTest.mousePress(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, *start))
+        mouse_move(workspace.canvas, point(workspace, *end))
+        QApplication.processEvents()
+        draft = workspace.controller.draft
+        assert draft is not None
+        workspace.controller.discard_candidates()
+        assert workspace.controller.draft is draft
+        QTest.mouseRelease(workspace.canvas, Qt.MouseButton.LeftButton, pos=point(workspace, *end))
+>       _await_records(workspace, 1)
+
+tests/test_live_measurement_mixed_canvas.py:335:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x16de15380>
+count = 1
+
+    def _await_records(workspace, count):
+        from time import monotonic
+        deadline = monotonic() + 2
+        loop = QEventLoop()
+        while len(workspace.session.measurements) < count and monotonic() < deadline:
+            QTimer.singleShot(10, loop.quit)
+            loop.exec()
+            workspace.controller.poll()
+>       assert len(workspace.session.measurements) == count
+E       assert 0 == 1
+E        +  where 0 = len({})
+E        +    where {} = <fdm.live_experiment.models.ExperimentSession object at 0x16db82710>.measurements
+E        +      where <fdm.live_experiment.models.ExperimentSession object at 0x16db82710> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x168264650, name="acquisitionTrial") at 0x16de15380>.session
+
+tests/test_live_measurement_mixed_canvas.py:278: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+__________ test_same_batch_state_change_does_not_cancel_a_manual_drag __________
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x168264650) at 0x16dfadb40>
+
+    def test_same_batch_state_change_does_not_cancel_a_manual_drag(canvas):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+        mouse_move(canvas, pointer(canvas, (260, 230)))
+        QApplication.processEvents()
+>       assert canvas.controller.draft is not None
+E       assert None is not None
+E        +  where None = <test_live_measurement_candidate_canvas.CanvasController(0x60000014b0c0) at 0x16dfadcc0>.draft
+E        +    where <test_live_measurement_candidate_canvas.CanvasController(0x60000014b0c0) at 0x16dfadcc0> = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x168264650) at 0x16dfadb40>.controller
+
+tests/test_live_measurement_mixed_canvas.py:348: AssertionError
+______ test_unpressed_move_cancels_stale_press_instead_of_starting_a_drag ______
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14bfddbc0) at 0x16e8d8500>
+
+    def test_unpressed_move_cancels_stale_press_instead_of_starting_a_drag(canvas):
+        observed = manual_routes(canvas)
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+        mouse_move(canvas, pointer(canvas, (145, 130)), held=False)
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (145, 130)))
+>       assert not observed.starts and not observed.finishes
+E       AssertionError: assert (not [((100.0, 100.0), PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, received_at=15070...541, pixel_format='BGR', live=False, metadata={}), field_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)))])
+E        +  where [((100.0, 100.0), PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, received_at=15070...541, pixel_format='BGR', live=False, metadata={}), field_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)))] = namespace(starts=[((100.0, 100.0), PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, ...adata={}), field_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)))], finishes=[], candidates=[], errors=[]).starts
+
+tests/test_live_measurement_mixed_canvas.py:384: AssertionError
+_ test_lost_press_preserves_established_first_point_and_ignores_late_release[187] _
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1682bfff0) at 0x16e8c3c80>
+event_type = <Type.UngrabMouse: 187>
+
+    @pytest.mark.parametrize("event_type", [QEvent.Type.UngrabMouse, QEvent.Type.FocusOut,
+                                           QEvent.Type.WindowDeactivate])
+    def test_lost_press_preserves_established_first_point_and_ignores_late_release(canvas, event_type):
+        observed = manual_routes(canvas)
+        QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+        draft = canvas.controller.draft
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (140, 120)))
+        QApplication.sendEvent(canvas, QEvent(event_type))
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (150, 130)))
+>       assert canvas.controller.draft is draft
+E       AssertionError: assert None is (PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, received_at=150709.037012083, pixe...at='BGR', live=False, metadata={}), field_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)), (100.0, 100.0))
+E        +  where None = <test_live_measurement_candidate_canvas.CanvasController(0x60000014ba70) at 0x16e8c1c80>.draft
+E        +    where <test_live_measurement_candidate_canvas.CanvasController(0x60000014ba70) at 0x16e8c1c80> = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1682bfff0) at 0x16e8c3c80>.controller
+
+tests/test_live_measurement_mixed_canvas.py:397: AssertionError
+_ test_lost_press_preserves_established_first_point_and_ignores_late_release[9] _
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b865f90) at 0x16e8cc8c0>
+event_type = <Type.FocusOut: 9>
+
+    @pytest.mark.parametrize("event_type", [QEvent.Type.UngrabMouse, QEvent.Type.FocusOut,
+                                           QEvent.Type.WindowDeactivate])
+    def test_lost_press_preserves_established_first_point_and_ignores_late_release(canvas, event_type):
+        observed = manual_routes(canvas)
+        QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+        draft = canvas.controller.draft
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (140, 120)))
+        QApplication.sendEvent(canvas, QEvent(event_type))
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (150, 130)))
+>       assert canvas.controller.draft is draft
+E       AssertionError: assert None is (PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, received_at=150709.043026916, pixe...at='BGR', live=False, metadata={}), field_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)), (100.0, 100.0))
+E        +  where None = <test_live_measurement_candidate_canvas.CanvasController(0x60000016e8f0) at 0x16e8cfd00>.draft
+E        +    where <test_live_measurement_candidate_canvas.CanvasController(0x60000016e8f0) at 0x16e8cfd00> = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b865f90) at 0x16e8cc8c0>.controller
+
+tests/test_live_measurement_mixed_canvas.py:397: AssertionError
+_ test_lost_press_preserves_established_first_point_and_ignores_late_release[25] _
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b482010) at 0x16e8df900>
+event_type = <Type.WindowDeactivate: 25>
+
+    @pytest.mark.parametrize("event_type", [QEvent.Type.UngrabMouse, QEvent.Type.FocusOut,
+                                           QEvent.Type.WindowDeactivate])
+    def test_lost_press_preserves_established_first_point_and_ignores_late_release(canvas, event_type):
+        observed = manual_routes(canvas)
+        QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+        draft = canvas.controller.draft
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (140, 120)))
+        QApplication.sendEvent(canvas, QEvent(event_type))
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (150, 130)))
+>       assert canvas.controller.draft is draft
+E       AssertionError: assert None is (PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, received_at=150709.049035541, pixe...at='BGR', live=False, metadata={}), field_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)), (100.0, 100.0))
+E        +  where None = <test_live_measurement_candidate_canvas.CanvasController(0x6000001685a0) at 0x16e8df940>.draft
+E        +    where <test_live_measurement_candidate_canvas.CanvasController(0x6000001685a0) at 0x16e8df940> = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b482010) at 0x16e8df900>.controller
+
+tests/test_live_measurement_mixed_canvas.py:397: AssertionError
+____ test_mixed_drag_after_frame_arrival_measures_the_pressed_visible_frame ____
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1682a7480, name="acquisitionTrial") at 0x16df26ec0>
+
+    def test_mixed_drag_after_frame_arrival_measures_the_pressed_visible_frame(workspace):
+        view = workspace
+        controller = view.controller
+        _prepare_live_stripe(view, "mixed")
+        visible = _arrive_without_paint(view)
+        _mouse(view, QEvent.Type.MouseButtonPress, (100, 100), held=True)
+>       assert view.canvas._pointer_gesture is not None
+E       assert None is not None
+E        +  where None = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1682bfff0) at 0x16df1c240>._pointer_gesture
+E        +    where <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1682bfff0) at 0x16df1c240> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1682a7480, name="acquisitionTrial") at 0x16df26ec0>.canvas
+
+tests/test_live_mixed_presented_frame.py:140: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_____ test_candidate_click_is_explicit_and_manual_mouse_route_is_preserved _____
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1682a7480) at 0x16df19ec0>
+
+    def test_candidate_click_is_explicit_and_manual_mouse_route_is_preserved(canvas):
+        add_candidates(canvas)
+        canvas.set_input_mode("manual")
+        accepted, pressed, released = [], [], []
+        canvas.candidateClicked.connect(accepted.append)
+        canvas.pointPressed.connect(pressed.append)
+        canvas.pointReleased.connect(released.append)
+        QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+>       assert not accepted and len(pressed) == len(released) == 1
+E       assert (not [] and 0 == 1)
+E        +  where 0 = len([])
+
+tests/test_live_measurement_candidate_canvas.py:109: AssertionError
+_ test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input[second_press] _
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b4c7930) at 0x16e8154c0>
+phase = 'second_press'
+
+    @pytest.mark.parametrize("phase", ["first_press", "first_point", "second_press", "drag"])
+    def test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input(canvas, phase):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        start, end = pointer(canvas, (100, 100)), pointer(canvas, (150, 130))
+        if phase in {"first_point", "second_press"}:
+            QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=start)
+            if phase == "second_press":
+                QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=end)
+        else:
+            QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=start)
+            if phase == "drag":
+                mouse_move(canvas, end)
+        draft = canvas.controller.draft
+        canvas.controller.candidates[0]["candidate_id"] = "replacement:0"
+        canvas.controller.candidatesChanged.emit(canvas.controller.candidates)
+        assert canvas.controller.draft is draft
+>       assert not observed.finishes
+E       AssertionError: assert not [(150.0, 130.0)]
+E        +  where [(150.0, 130.0)] = namespace(starts=[((100.0, 100.0), PresentedFrameToken(frame=FrameHandle(source_id='image', generation=0, sequence=0, ...ld_epoch=1, display_revision=1, scale=1.0, offset=(16.0, 12.0)))], finishes=[(150.0, 130.0)], candidates=[], errors=[]).finishes
+
+tests/test_round7_canvas.py:73: AssertionError
+__ test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input[drag] ___
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x168264650) at 0x16ec93b40>
+phase = 'drag'
+
+    @pytest.mark.parametrize("phase", ["first_press", "first_point", "second_press", "drag"])
+    def test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input(canvas, phase):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        start, end = pointer(canvas, (100, 100)), pointer(canvas, (150, 130))
+        if phase in {"first_point", "second_press"}:
+            QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=start)
+            if phase == "second_press":
+                QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=end)
+        else:
+            QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=start)
+            if phase == "drag":
+                mouse_move(canvas, end)
+        draft = canvas.controller.draft
+        canvas.controller.candidates[0]["candidate_id"] = "replacement:0"
+        canvas.controller.candidatesChanged.emit(canvas.controller.candidates)
+        assert canvas.controller.draft is draft
+        assert not observed.finishes
+        if phase == "first_point":
+            for _ in range(20):
+                mouse_move(canvas, end, held=False)
+            assert canvas.controller.draft is draft
+            QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=end)
+        else:
+            QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=end if phase != "first_press" else start)
+        if phase == "first_press":
+            assert len(observed.starts) == 1 and not observed.finishes
+        else:
+>           assert observed.finishes == [(150., 130.)]
+E           assert [] == [(150.0, 130.0)]
+E
+E             Right contains one more item: (150.0, 130.0)
+E             Use -v to get more diff
+
+tests/test_round7_canvas.py:84: AssertionError
+____________ test_drag_promoted_on_candidate_survives_batch_refresh ____________
+
+canvas = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x14b837710) at 0x16e868880>
+
+    def test_drag_promoted_on_candidate_survives_batch_refresh(canvas):
+        observed = manual_routes(canvas)
+        add_candidates(canvas)
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+        mouse_move(canvas, pointer(canvas, (260, 230)))
+        draft = canvas.controller.draft
+        canvas.controller.candidates = []
+        canvas.controller.candidatesChanged.emit([])
+        assert canvas.controller.draft is draft
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (260, 230)))
+>       assert observed.finishes == [(260., 230.)] and not observed.candidates
+E       assert ([] == [(260.0, 230.0)]
+E
+E         Right contains one more item: (260.0, 230.0)
+E         Use -v to get more diff)
+
+tests/test_round7_canvas.py:97: AssertionError
+_____ test_rejected_feedback_is_viewport_anchored_and_click_passes_through _____
+
+harness = <second_round_workflow.WorkflowHarness object at 0x16f9bab10>
+
+    def test_rejected_feedback_is_viewport_anchored_and_click_passes_through(harness):
+        harness.enter()
+        page = harness.select(1)
+        page.ruler_choice.setCurrentIndex(1)
+        page.ruler_choice.activated.emit(1)
+        page.display_binding.set_mode("fit")
+        page.input_mode.setCurrentIndex(page.input_mode.findData("manual"))
+        workflow.settle()
+        before = page.session.to_dict()
+        feedback = feedback_for_reason("no_complete_crossing", **page.controller.feedback_context())
+        page.controller.measurementFeedback.emit(feedback)
+        overlay = page.measurement_feedback
+        assert overlay.isVisible()
+        assert "本次未通过" in page.measurement_outcome.text()
+        assert overlay.parentWidget() is page.image_scroll.viewport()
+        assert page.session.to_dict() == before
+        clicked = []
+        page.canvas.pointPressed.connect(clicked.append)
+        # Receive click without initiating an asynchronous measurement in this
+        # presentation test; controller validity/ledger gates have separate tests.
+        page.canvas.pointPressed.disconnect(page._press)
+        QTest.mouseClick(page.canvas, Qt.MouseButton.LeftButton, pos=page.canvas.rect().center())
+>       assert clicked and not overlay.isVisible()
+E       assert ([])
+
+tests/test_acquisition_second_round.py:114: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+--------------------------- Captured stderr teardown ---------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_live_measurement_mixed_canvas.py::test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame[start0]
+FAILED tests/test_live_measurement_mixed_canvas.py::test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame[start1]
+FAILED tests/test_live_measurement_mixed_canvas.py::test_manual_only_keeps_legacy_gesture_signals
+FAILED tests/test_live_measurement_mixed_canvas.py::test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting_candidate
+FAILED tests/test_live_measurement_mixed_canvas.py::test_workspace_refresh_after_drag_starts_preserves_the_manual_intent[start0]
+FAILED tests/test_live_measurement_mixed_canvas.py::test_workspace_refresh_after_drag_starts_preserves_the_manual_intent[start1]
+FAILED tests/test_live_measurement_mixed_canvas.py::test_same_batch_state_change_does_not_cancel_a_manual_drag
+FAILED tests/test_live_measurement_mixed_canvas.py::test_unpressed_move_cancels_stale_press_instead_of_starting_a_drag
+FAILED tests/test_live_measurement_mixed_canvas.py::test_lost_press_preserves_established_first_point_and_ignores_late_release[187]
+FAILED tests/test_live_measurement_mixed_canvas.py::test_lost_press_preserves_established_first_point_and_ignores_late_release[9]
+FAILED tests/test_live_measurement_mixed_canvas.py::test_lost_press_preserves_established_first_point_and_ignores_late_release[25]
+FAILED tests/test_live_mixed_presented_frame.py::test_mixed_drag_after_frame_arrival_measures_the_pressed_visible_frame
+FAILED tests/test_live_measurement_candidate_canvas.py::test_candidate_click_is_explicit_and_manual_mouse_route_is_preserved
+FAILED tests/test_round7_canvas.py::test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input[second_press]
+FAILED tests/test_round7_canvas.py::test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input[drag]
+FAILED tests/test_round7_canvas.py::test_drag_promoted_on_candidate_survives_batch_refresh
+FAILED tests/test_acquisition_second_round.py::test_rejected_feedback_is_viewport_anchored_and_click_passes_through
+17 failed, 141 passed in 18.25s

@@ -16,12 +16,25 @@ class TrialAssistanceMixin:
     def _init_assistance(self):
         from fdm.ui.icons import themed_icon
         from fdm.ui.measurement_evidence_view import EvidenceReviewController
+
+        def find_layout(layout, target):
+            for index in range(layout.count()):
+                item = layout.itemAt(index)
+                if item.layout() is not None:
+                    result = find_layout(item.layout(), target)
+                    if result is not None:
+                        return result
+                elif item.widget() is target:
+                    return layout
+            return None
+
         self.evidence_review = EvidenceReviewController(self)
         self.candidate_model.session = self.session
         self._candidate_linking = False
         self._assistance_loading = True
         self._assistance_state_key = None
-        self.measure_mode.setToolTip("选择手工测径算法。默认同时支持候选点选、两次点击和拖线；高级选项可调整交互模式。")
+        self.measure_mode.setToolTip("手工测径算法：贴边测径自动定位两侧边缘；自由测量使用落点间距离。相邻选择“两点测量”或“按住拖线”。")
+        self.measure_mode.setAccessibleName("手工测径算法")
         row = self.view_controls.layout()
         row.setSpacing(4)
         row.itemAt(0).widget().hide()
@@ -99,6 +112,42 @@ class TrialAssistanceMixin:
         self.candidate_display_button.setMenu(self.candidate_display_menu)
         row.insertWidget(2, self.candidate_display_button)
         row.insertStretch(3, 1)
+        # Share the existing algorithm slot. A separate image-toolbar button
+        # would enlarge narrow windows when the records dock is on the left.
+        # The algorithm combo remains a real visible control; short labels let
+        # the selected gesture stay readable without shrinking fonts.
+        algorithm_layout = find_layout(self.measure_mode.parentWidget().layout(), self.measure_mode)
+        algorithm_index = algorithm_layout.indexOf(self.measure_mode)
+        algorithm_layout.removeWidget(self.measure_mode)
+        self.manual_tool_group = QWidget(self.measure_mode.parentWidget())
+        self.manual_tool_group.setFixedWidth(140)
+        manual_tools = QHBoxLayout(self.manual_tool_group)
+        manual_tools.setContentsMargins(0, 0, 0, 0)
+        manual_tools.setSpacing(2)
+        self.measure_mode.setItemText(0, "贴边")
+        self.measure_mode.setItemText(1, "自由")
+        self.measure_mode.setMinimumWidth(0)
+        self.measure_mode.setMaximumWidth(16777215)
+        self.measure_mode.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        manual_tools.addWidget(self.measure_mode, 1)
+        self.manual_gesture_button = QToolButton(self.manual_tool_group)
+        self.manual_gesture_button.setObjectName("trialManualGesture")
+        self.manual_gesture_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.manual_gesture_button.setFixedWidth(66)
+        self.manual_gesture_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        gesture_menu = QMenu(self.manual_gesture_button)
+        gesture_group = QActionGroup(gesture_menu)
+        self.manual_gesture_actions = {}
+        for index, (label, name) in enumerate((("两点测量", "click"), ("按住拖线", "drag"))):
+            self.gesture.setItemText(index, label)
+            action = gesture_menu.addAction(label)
+            action.setCheckable(True)
+            gesture_group.addAction(action)
+            action.triggered.connect(lambda checked=False, choice=index: self.gesture.setCurrentIndex(choice))
+            self.manual_gesture_actions[name] = action
+        self.manual_gesture_button.setMenu(gesture_menu)
+        manual_tools.addWidget(self.manual_gesture_button)
+        algorithm_layout.insertWidget(algorithm_index, self.manual_tool_group)
         self.evidence_button = QToolButton(self)
         self.evidence_button.setObjectName("trialEvidence")
         self.evidence_button.setAccessibleName("证据相册及存档设置")
@@ -123,17 +172,7 @@ class TrialAssistanceMixin:
         self.evidence_button.setMenu(evidence_menu)
         # Reuse the existing outcome row, rather than consuming category space.
         latest_layout = self.latest_value.parentWidget().layout()
-        def find_layout(layout):
-            for i in range(layout.count()):
-                item = layout.itemAt(i)
-                if item.layout() is not None:
-                    result = find_layout(item.layout())
-                    if result is not None:
-                        return result
-                elif item.widget() is self.measurement_outcome:
-                    return layout
-            return None
-        latest_layout = find_layout(latest_layout)
+        latest_layout = find_layout(latest_layout, self.measurement_outcome)
         latest_layout.removeWidget(self.measurement_outcome)
         outcome = QHBoxLayout()
         outcome.setSpacing(2)
@@ -213,8 +252,23 @@ class TrialAssistanceMixin:
         picking = interaction == "candidate"
         self.canvas.set_input_mode(interaction)
         self.canvas.set_manual_gesture("drag" if self.gesture.currentIndex() else "click")
-        self.gesture.setEnabled(interaction == "manual")
-        self.gesture.setToolTip("混合模式同时支持两点和拖线。" if interaction == "mixed" else "仅手工模式使用此手势。")
+        dragging = bool(self.gesture.currentIndex())
+        gesture_name = "按住拖线" if dragging else "两点测量"
+        help_text = ("按住左键拖过纤维，松开完成；单击不建立手工首点。" if dragging
+                     else "在纤维两侧背景每次按下落一个点；移动和松开不提交测量。")
+        if picking:
+            help_text = "当前为仅候选点选；切换为混合或仅手工测量后可选择手工手势。"
+        elif interaction == "mixed":
+            help_text += "短点击候选仍按当前类别计入；Shift 临时强制手工测量。"
+        self.gesture.setEnabled(not picking)
+        self.gesture.setAccessibleName("手工测量手势")
+        self.gesture.setToolTip(help_text)
+        self.manual_gesture_button.setEnabled(not picking)
+        self.manual_gesture_button.setText("拖线" if dragging else "两点")
+        self.manual_gesture_button.setAccessibleName(f"手工测量手势：{gesture_name}")
+        self.manual_gesture_button.setToolTip(help_text)
+        for name, action in self.manual_gesture_actions.items():
+            action.setChecked(name == ("drag" if dragging else "click"))
         self.classification_mode.setEnabled(not picking)
         self.classification_mode.setToolTip("候选点选始终按点击时的当前类别计入；手工模式保留先选／后选。" if picking else "先选类别用于下一根；后选修改最近测量。")
         self.candidate_opacity_label.setText(f"{self.candidate_opacity.value()}%")

@@ -66,6 +66,7 @@ def test_mixed_two_points_finish_manual_even_when_second_point_hits_candidate(ca
 @pytest.mark.parametrize("start", [(215, 200), (100, 100)])
 def test_mixed_drag_on_candidate_or_empty_space_is_manual_and_keeps_press_frame(canvas, start):
     observed = manual_routes(canvas)
+    canvas.set_manual_gesture("drag")
     add_candidates(canvas)
     original = canvas.controller.presented
     QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, start))
@@ -204,7 +205,7 @@ def test_hiding_candidates_clears_recent_click_interception(canvas):
     assert len(observed.starts) == 1
 
 
-def test_manual_only_keeps_legacy_gesture_signals(canvas):
+def test_manual_only_uses_the_same_explicit_gesture_route_without_legacy_duplicates(canvas):
     observed = manual_routes(canvas)
     add_candidates(canvas)
     canvas.set_input_mode("manual")
@@ -213,9 +214,12 @@ def test_manual_only_keeps_legacy_gesture_signals(canvas):
     canvas.pointPressed.connect(pressed.append)
     canvas.pointReleased.connect(released.append)
     QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
+    assert not observed.starts
+    mouse_move(canvas, pointer(canvas, (245, 230)))
     QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (245, 230)))
-    assert pressed == [(215., 200.)] and released == [(245., 230.)]
-    assert not observed.starts and not observed.candidates
+    assert len(observed.starts) == 1 and observed.starts[0][0] == (215., 200.)
+    assert observed.finishes == [(245., 230.)]
+    assert not pressed and not released and not observed.candidates
 
 
 def test_candidate_only_blank_and_drag_do_not_create_manual_measurement(canvas):
@@ -234,6 +238,37 @@ def test_failed_frame_admission_does_not_create_gesture_or_draft(canvas):
     QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
     assert observed.errors and not observed.starts and canvas._pointer_gesture is None
     assert canvas.controller.budget.used_bytes == 0
+
+
+@pytest.mark.parametrize("change", ["source", "generation", "size", "cleared", "display"])
+def test_pending_context_change_rejects_old_painted_input_before_retaining_frame(canvas, change, monkeypatch):
+    observed = manual_routes(canvas)
+    events = []
+    monkeypatch.setattr(canvas.controller, "trace_input_event",
+                        lambda event, **details: events.append({"event": event, **details}), raising=False)
+    presented = canvas.controller.presented
+    position = pointer(canvas, (100, 100))
+    if change == "cleared":
+        canvas.set_frame(None)
+    elif change == "display":
+        canvas.set_display_mode("percent", 125.)
+    else:
+        canvas.set_frame(FrameHandle.snapshot(
+            np.full((580 if change == "size" else 576, 768, 3), 180, np.uint8),
+            source_id="new-camera" if change == "source" else "image",
+            generation=1 if change == "generation" else 0, sequence=1, live=False))
+    # Queue a real context change without drawing it. Input cannot consume
+    # the stale coordinate/source token even though the old image is visible.
+    assert canvas.controller.presented is presented
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=position)
+    assert canvas._pointer_gesture is None
+    assert canvas.controller.budget.used_bytes == 0
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=position)
+    assert not observed.starts and not observed.finishes and not observed.candidates
+    assert events[0]["event"] == "press_blocked"
+    assert events[0]["event_type"] == "MouseButtonPress"
+    assert events[0]["reason"] == ("no_presented_image" if change == "cleared"
+                                    else "presentation_context_changed")
 
 
 def _await_records(workspace, count):
@@ -271,6 +306,7 @@ def test_workspace_mixed_candidate_then_two_points_preserves_both_workflows(work
 def test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting_candidate(workspace):
     from test_trial_assistance_ui import candidates, point
     workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
+    workspace.gesture.setCurrentIndex(1)
     workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
     candidates(workspace)
     source = workspace.controller.presented.frame
@@ -290,6 +326,7 @@ def test_workspace_mixed_drag_from_candidate_measures_manually_without_accepting
 def test_workspace_refresh_after_drag_starts_preserves_the_manual_intent(workspace, start):
     from test_trial_assistance_ui import candidates, point
     workspace.input_mode.setCurrentIndex(workspace.input_mode.findData("mixed"))
+    workspace.gesture.setCurrentIndex(1)
     workspace.measure_mode.setCurrentIndex(workspace.measure_mode.findData("free"))
     candidates(workspace)
     end = (start[0] + 30, start[1] + 20)
@@ -310,6 +347,7 @@ def test_workspace_refresh_after_drag_starts_preserves_the_manual_intent(workspa
 
 def test_same_batch_state_change_does_not_cancel_a_manual_drag(canvas):
     observed = manual_routes(canvas)
+    canvas.set_manual_gesture("drag")
     add_candidates(canvas)
     QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
     mouse_move(canvas, pointer(canvas, (260, 230)))
@@ -347,6 +385,7 @@ def test_first_point_and_one_thousand_unpressed_moves_never_submit(canvas):
 
 def test_unpressed_move_cancels_stale_press_instead_of_starting_a_drag(canvas):
     observed = manual_routes(canvas)
+    canvas.set_manual_gesture("drag")
     QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
     mouse_move(canvas, pointer(canvas, (145, 130)), held=False)
     QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (145, 130)))
@@ -358,13 +397,27 @@ def test_unpressed_move_cancels_stale_press_instead_of_starting_a_drag(canvas):
                                        QEvent.Type.WindowDeactivate])
 def test_lost_press_preserves_established_first_point_and_ignores_late_release(canvas, event_type):
     observed = manual_routes(canvas)
-    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
     draft = canvas.controller.draft
-    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (140, 120)))
+    assert draft is not None and draft[1] == (100., 100.)
     QApplication.sendEvent(canvas, QEvent(event_type))
     QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (150, 130)))
     assert canvas.controller.draft is draft
     assert not observed.finishes and canvas.controller.budget.used_bytes == 0
+
+
+@pytest.mark.parametrize("event_type", [QEvent.Type.UngrabMouse, QEvent.Type.FocusOut,
+                                       QEvent.Type.WindowDeactivate])
+def test_interruption_after_second_press_cannot_repeat_submission_on_release(canvas, event_type):
+    observed = manual_routes(canvas)
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (100, 100)))
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (140, 120)))
+    assert observed.finishes == [(140., 120.)]
+    assert canvas.controller.draft is None
+    QApplication.sendEvent(canvas, QEvent(event_type))
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (150, 130)))
+    assert len(observed.starts) == 1 and observed.finishes == [(140., 120.)]
+    assert canvas.controller.draft is None and canvas.controller.budget.used_bytes == 0
 
 
 def test_repeated_same_point_and_double_click_do_not_submit_zero_length(canvas):

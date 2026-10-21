@@ -1,0 +1,8 @@
+Captured terminal tail (8 lines), not the complete first-attempt log:
+  File "C:\tmp\fdm-cu-live-mixed-frame-fix-20261021\build\seventh-round\collect-mixed-frame-evidence.py", line 18, in <module>
+    manifest=json.loads((out/'package/source-manifest.json').read_text())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0x95 in position 545963: illegal multibyte sequence

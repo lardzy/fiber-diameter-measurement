@@ -1,0 +1,51 @@
+[
+  {
+    "phase": "native_extensions",
+    "start_utc": "2026-10-21T06:44:14.628679+00:00",
+    "end_utc": "2026-10-21T06:44:33.955323+00:00",
+    "elapsed_seconds": 19.327,
+    "timing_basis": "log creation to status write or final log write"
+  },
+  {
+    "phase": "targeted_pytest",
+    "start_utc": "2026-10-21T06:48:25.227407+00:00",
+    "end_utc": "2026-10-21T06:48:54.035352+00:00",
+    "elapsed_seconds": 28.808,
+    "timing_basis": "log creation to status write or final log write"
+  },
+  {
+    "phase": "source_quick",
+    "start_utc": "2026-10-21T06:48:54.041534+00:00",
+    "end_utc": "2026-10-21T06:49:03.202591+00:00",
+    "elapsed_seconds": 9.161,
+    "timing_basis": "log creation to status write or final log write"
+  },
+  {
+    "phase": "installer_build",
+    "start_utc": "2026-10-21T06:49:03.204597+00:00",
+    "end_utc": "2026-10-21T06:58:56.775541+00:00",
+    "elapsed_seconds": 593.571,
+    "timing_basis": "log creation to status write or final log write"
+  },
+  {
+    "phase": "package_verification",
+    "start_utc": "2026-10-21T06:58:56.777280+00:00",
+    "end_utc": "2026-10-21T06:59:45.054132+00:00",
+    "elapsed_seconds": 48.277,
+    "timing_basis": "log creation to status write or final log write"
+  },
+  {
+    "phase": "ordinary_installed_selfcheck",
+    "start_utc": "2026-10-21T07:01:16.643712+00:00",
+    "end_utc": "2026-10-21T07:01:31.257827+00:00",
+    "elapsed_seconds": 14.614,
+    "timing_basis": "log creation to status write or final log write"
+  },
+  {
+    "phase": "explorer_launch",
+    "start_utc": "2026-10-21T07:01:31.342179+00:00",
+    "end_utc": "2026-10-21T07:01:31.342179+00:00",
+    "elapsed_seconds": 0.0,
+    "timing_basis": "log creation to status write or final log write"
+  }
+]

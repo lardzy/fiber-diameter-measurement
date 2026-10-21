@@ -1,0 +1,107 @@
+F.F.FF                                                                   [100%]
+=================================== FAILURES ===================================
+_______ test_live_two_point_clicks_survive_unpainted_frame[first-mixed] ________
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1311ff840, name="acquisitionTrial") at 0x13440d880>
+mode = 'mixed', gap_at = 'first'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("gap_at", ["first", "second"])
+    def test_live_two_point_clicks_survive_unpainted_frame(workspace, mode, gap_at):
+        view = workspace
+        controller = view.controller
+        _prepare_live_stripe(view, mode)
+        if gap_at == "first":
+            visible = _arrive_without_paint(view)
+        else:
+            visible = controller.presented
+        _click(view, (100, 100))
+>       assert controller.draft is not None, "The first visible-frame click must not disappear"
+E       AssertionError: The first visible-frame click must not disappear
+E       assert None is not None
+E        +  where None = <fdm.live_experiment.controller.LiveExperimentController(0x60000093fd40) at 0x133cd0980>.draft
+
+tests/test_live_mixed_presented_frame.py:106: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+qt.qpa.fonts: Populating font family aliases took 19 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost.
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_______ test_live_two_point_clicks_survive_unpainted_frame[second-mixed] _______
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x134647ff0, name="acquisitionTrial") at 0x13443c600>
+mode = 'mixed', gap_at = 'second'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("gap_at", ["first", "second"])
+    def test_live_two_point_clicks_survive_unpainted_frame(workspace, mode, gap_at):
+        view = workspace
+        controller = view.controller
+        _prepare_live_stripe(view, mode)
+        if gap_at == "first":
+            visible = _arrive_without_paint(view)
+        else:
+            visible = controller.presented
+        _click(view, (100, 100))
+        assert controller.draft is not None, "The first visible-frame click must not disappear"
+        assert controller.draft[0] is visible
+        assert controller.draft[1] == pytest.approx((100, 100))
+        assert not controller._jobs
+        QApplication.processEvents()
+        view.canvas.repaint()
+        if gap_at == "second":
+            _arrive_without_paint(view)
+        _click(view, (180, 100))
+>       assert controller.draft is None, "The second click must finish the existing draft"
+E       AssertionError: The second click must finish the existing draft
+E       assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=11, received_at=147741.7914...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=11, received_at=147741.7914...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x60000095b6b0) at 0x13443c780>.draft
+
+tests/test_live_mixed_presented_frame.py:115: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+____ test_mixed_drag_after_frame_arrival_measures_the_pressed_visible_frame ____
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1346b4c60, name="acquisitionTrial") at 0x13440e0c0>
+
+    def test_mixed_drag_after_frame_arrival_measures_the_pressed_visible_frame(workspace):
+        view = workspace
+        controller = view.controller
+        _prepare_live_stripe(view, "mixed")
+        visible = _arrive_without_paint(view)
+        _mouse(view, QEvent.Type.MouseButtonPress, (100, 100), held=True)
+>       assert view.canvas._pointer_gesture is not None
+E       assert None is not None
+E        +  where None = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1346a7920) at 0x169de1940>._pointer_gesture
+E        +    where <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1346a7920) at 0x169de1940> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1346b4c60, name="acquisitionTrial") at 0x13440e0c0>.canvas
+
+tests/test_live_mixed_presented_frame.py:140: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+____ test_mixed_candidate_click_after_frame_arrival_keeps_other_candidates _____
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1346b4c60, name="acquisitionTrial") at 0x13443ef80>
+
+    def test_mixed_candidate_click_after_frame_arrival_keeps_other_candidates(workspace):
+        view = workspace
+        controller = view.controller
+        _prepare_live_stripe(view, "mixed")
+        ids = candidates(view)
+        visible = _arrive_without_paint(view)
+        _mouse(view, QEvent.Type.MouseButtonPress, (90, 40), held=True)
+>       assert view.canvas._pointer_gesture is not None
+E       assert None is not None
+E        +  where None = <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1346671b0) at 0x16d84cc40>._pointer_gesture
+E        +    where <fdm.ui.live_measurement_canvas.LiveMeasurementCanvas(0x1346671b0) at 0x16d84cc40> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1346b4c60, name="acquisitionTrial") at 0x13443ef80>.canvas
+
+tests/test_live_mixed_presented_frame.py:169: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_live_mixed_presented_frame.py::test_live_two_point_clicks_survive_unpainted_frame[first-mixed]
+FAILED tests/test_live_mixed_presented_frame.py::test_live_two_point_clicks_survive_unpainted_frame[second-mixed]
+FAILED tests/test_live_mixed_presented_frame.py::test_mixed_drag_after_frame_arrival_measures_the_pressed_visible_frame
+FAILED tests/test_live_mixed_presented_frame.py::test_mixed_candidate_click_after_frame_arrival_keeps_other_candidates
+4 failed, 2 passed in 3.68s

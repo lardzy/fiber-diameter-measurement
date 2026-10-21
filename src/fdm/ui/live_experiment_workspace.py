@@ -972,8 +972,15 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self._measurement_guard(lambda: self.controller.start(point, token=token))
 
     def _manual_finish(self, point):
-        if self.controller.draft and self._manual_ready():
-            self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
+        draft = self.controller.draft
+        if draft is not None and tuple(point) != tuple(draft[1]):
+            if self._manual_ready():
+                self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
+            # A rejected second endpoint must not be silently completed by
+            # the next click the user intends as a new measurement's start.
+            if self.controller.draft is draft:
+                self.controller.trace_input_event("draft_cancelled", reason="manual_finish_rejected")
+                self.controller.cancel_draft()
         self.canvas.update()
 
     def _press(self, point):
@@ -1435,6 +1442,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self.controller.cancel_draft()
             if hasattr(self, "auto_analysis"):
                 self._apply_assistance_controls()
+            self._update_operation_help()
 
     def _mode_changed(self, index, persist=True):
         content = index == 0
@@ -1445,11 +1453,15 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                        self.current_class_label):
             widget.setVisible(content)
         self.diameter_summary.setVisible(not content)
-        self.operation_help.setText("两次点击横跨纤维完成测径。Esc 取消草稿；右键选类；Ctrl 切换数字键的选类／补计数模式。"
-            if content else "两次点击横跨纤维完成测径。Esc 取消草稿；已入账记录可在记录页修订、删除或查看原图。")
+        self._update_operation_help()
         if persist:
             self._configure(workspace_options={**getattr(self.session, "workspace_options", {}),
                                               "mode": "content" if content else "diameter"})
+
+    def _update_operation_help(self):
+        hand = "按住左键拖过纤维，松开完成测径。" if self.gesture.currentIndex() else "两次按下左键横跨纤维完成测径，移动和松开不提交。"
+        self.operation_help.setText(hand + ("Esc 取消草稿；右键选类；Ctrl 切换数字键的选类／补计数模式。"
+            if self.mode.currentIndex() == 0 else "Esc 取消草稿；已入账记录可在记录页修订、删除或查看原图。"))
 
     def _record_accepted(self, record):
         self.measurement_feedback.dismiss()

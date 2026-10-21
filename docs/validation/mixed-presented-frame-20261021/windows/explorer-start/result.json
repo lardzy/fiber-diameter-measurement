@@ -1,0 +1,33 @@
+{
+    "schema":  2,
+    "executable":  "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+    "build_id":  "5bdd8be20cdb4647aab36c391b08a781",
+    "launch":  "Explorer -\u003e isolated cmd helper -\u003e installed executable",
+    "helper":  "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\seventh-round\\explorer-start\\launch-isolated.cmd",
+    "helper_sha256":  "6376de5611afc98508fe92a8216809b26be1b05c860844564fe73ede1818dc11",
+    "isolated_profile":  "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\seventh-round\\explorer-start\\profile",
+    "user":  "B1EA\\lishuyang",
+    "elevated":  false,
+    "policy":  "Bypass",
+    "started_at":  "2026-10-21T14:01:04.0332554+08:00",
+    "ok":  true,
+    "hardware_tested":  false,
+    "pid":  6524,
+    "parent_name":  "cmd.exe",
+    "grandparent_name":  "explorer.exe",
+    "title":  "显微测量工作台",
+    "error":  null,
+    "graceful_exit":  true,
+    "forced_cleanup":  false,
+    "main_window_handle":  263498,
+    "screenshot":  "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\seventh-round\\explorer-start\\installed-window.png",
+    "screenshot_sha256":  "e2c9d34422a095f0a31e49b7ddde9aa9e5f13c353a1c0fb20464e6eb90262753",
+    "screenshot_rectangle":  {
+                                 "y":  108,
+                                 "width":  813,
+                                 "height":  536,
+                                 "x":  239
+                             },
+    "exit_code":  0,
+    "finished_at":  "2026-10-21T14:01:09.0131492+08:00"
+}

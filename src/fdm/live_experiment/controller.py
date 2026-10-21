@@ -518,6 +518,9 @@ class LiveExperimentController(QObject):
             "state": "draft", "record_id": None, "generation": self._classification_generation}
         self.trace_input_event("draft_started", measurement_number=self._measurement_number,
                                x=float(point[0]), y=float(point[1]))
+        # A previous task can finish between a drag press and its first held
+        # move. Once a new draft owns the interaction, its old card is stale.
+        self.feedbackInvalidated.emit("manual_started")
 
     def cancel_draft(self):
         if self.draft is not None and self._classification_target is not None:

@@ -1,0 +1,547 @@
+[
+  {
+    "mode": "mixed",
+    "before_intended_second": {
+      "different_frame_objects": true,
+      "identical_pixels": true,
+      "state": "ready",
+      "draft": [
+        100.0,
+        100.0
+      ]
+    },
+    "after_intended_second": {
+      "draft": [
+        100.0,
+        100.0
+      ],
+      "jobs": 0
+    },
+    "after_next_intended_first": {
+      "draft": null,
+      "jobs": 1,
+      "task_start": [
+        100.0,
+        100.0
+      ],
+      "task_end": [
+        80.0,
+        130.0
+      ],
+      "result": {
+        "status": "rejected",
+        "reason": "no_complete_crossing",
+        "width_px": null,
+        "start": [
+          100,
+          100
+        ],
+        "end": [
+          80,
+          130
+        ],
+        "edge_a": [],
+        "edge_b": [],
+        "diagnostics": {
+          "algorithm_revision": "cu-manual-portable-v1",
+          "threshold": 0,
+          "endpoint_mean": 180,
+          "edge_angle_degrees": -1.0,
+          "crossing_angle_degrees": -1.0,
+          "boundary_adjusted": false,
+          "roi": [
+            42,
+            62,
+            97,
+            107
+          ],
+          "processed_pixels": 10379,
+          "removed_small_component_pixels": 0,
+          "input_start": [
+            100,
+            100
+          ],
+          "input_end": [
+            80,
+            130
+          ]
+        },
+        "diameter_um": 0.0
+      },
+      "card": "未识别到完整的纤维两侧边缘。请在纤维两侧背景分别落点，使测量线完整跨过纤维。"
+    },
+    "trace": {
+      "events": [
+        {
+          "event": "press",
+          "at": 147128.225418,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 333.0,
+          "y": 354.0,
+          "pointer_id": "dd240eccc1ef4e68b96a004df68f2edb",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 147128.225494916,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 0,
+          "x": 333.0,
+          "y": 354.0,
+          "pointer_id": "dd240eccc1ef4e68b96a004df68f2edb",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "draft_started",
+          "at": 147128.225638666,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "measurement_number": 1,
+          "x": 100.0,
+          "y": 100.0
+        },
+        {
+          "event": "manual_start",
+          "at": 147128.225650958,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "pointer_id": "dd240eccc1ef4e68b96a004df68f2edb",
+          "kind": "manual",
+          "dragging": true,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press_cancelled",
+          "at": 147128.225660458,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "cancel_draft": true,
+          "reason": "cancelled",
+          "pointer_id": "dd240eccc1ef4e68b96a004df68f2edb",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 147128.228329791,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "button": 1,
+          "buttons": 0,
+          "x": 413.0,
+          "y": 354.0
+        },
+        {
+          "event": "press",
+          "at": 147128.229623041,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "button": 1,
+          "buttons": 1,
+          "x": 313.0,
+          "y": 384.0,
+          "pointer_id": "9958c1589c75498182875e45776b51b4",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 147128.229655958,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "button": 1,
+          "buttons": 0,
+          "x": 313.0,
+          "y": 384.0,
+          "pointer_id": "9958c1589c75498182875e45776b51b4",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "manual_finish",
+          "at": 147128.229675291,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "submit_reason": "second_point",
+          "pointer_id": "9958c1589c75498182875e45776b51b4",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "task_submitted",
+          "at": 147128.2300965,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "task_id": "0c2bf108b28e4378931786c0331d109e",
+          "measurement_number": 1,
+          "x": 80.0,
+          "y": 130.0
+        },
+        {
+          "event": "press_cancelled",
+          "at": 147128.230147375,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "cancel_draft": true,
+          "reason": "cancelled",
+          "pointer_id": "9958c1589c75498182875e45776b51b4",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "feedback",
+          "at": 147128.231257458,
+          "field_epoch": 2,
+          "interaction_id": "0c2bf108b28e4378931786c0331d109e",
+          "task_id": "0c2bf108b28e4378931786c0331d109e",
+          "current_interaction": true,
+          "code": "no_complete_crossing"
+        }
+      ],
+      "total_events": 12,
+      "capacity": 512
+    }
+  },
+  {
+    "mode": "manual",
+    "before_intended_second": {
+      "different_frame_objects": true,
+      "identical_pixels": true,
+      "state": "ready",
+      "draft": [
+        100.0,
+        100.0
+      ]
+    },
+    "after_intended_second": {
+      "draft": null,
+      "jobs": 1,
+      "result": {
+        "status": "ok",
+        "reason": "ok",
+        "width_px": 15.0,
+        "start": [
+          130,
+          100
+        ],
+        "end": [
+          145,
+          100
+        ],
+        "edge_a": [
+          [
+            130,
+            100
+          ],
+          [
+            130,
+            101
+          ],
+          [
+            130,
+            102
+          ],
+          [
+            130,
+            103
+          ],
+          [
+            130,
+            104
+          ],
+          [
+            130,
+            105
+          ],
+          [
+            130,
+            106
+          ],
+          [
+            130,
+            107
+          ],
+          [
+            130,
+            108
+          ],
+          [
+            130,
+            109
+          ],
+          [
+            130,
+            110
+          ],
+          [
+            130,
+            99
+          ],
+          [
+            130,
+            98
+          ],
+          [
+            130,
+            97
+          ],
+          [
+            130,
+            96
+          ],
+          [
+            130,
+            95
+          ],
+          [
+            130,
+            94
+          ],
+          [
+            130,
+            93
+          ],
+          [
+            130,
+            92
+          ],
+          [
+            130,
+            91
+          ],
+          [
+            130,
+            90
+          ]
+        ],
+        "edge_b": [
+          [
+            145,
+            100
+          ],
+          [
+            145,
+            99
+          ],
+          [
+            145,
+            98
+          ],
+          [
+            145,
+            97
+          ],
+          [
+            145,
+            96
+          ],
+          [
+            145,
+            95
+          ],
+          [
+            145,
+            94
+          ],
+          [
+            145,
+            93
+          ],
+          [
+            145,
+            92
+          ],
+          [
+            145,
+            91
+          ],
+          [
+            145,
+            90
+          ],
+          [
+            145,
+            101
+          ],
+          [
+            145,
+            102
+          ],
+          [
+            145,
+            103
+          ],
+          [
+            145,
+            104
+          ],
+          [
+            145,
+            105
+          ],
+          [
+            145,
+            106
+          ],
+          [
+            145,
+            107
+          ],
+          [
+            145,
+            108
+          ],
+          [
+            145,
+            109
+          ],
+          [
+            145,
+            110
+          ]
+        ],
+        "diagnostics": {
+          "algorithm_revision": "cu-manual-portable-v1",
+          "threshold": 0,
+          "endpoint_mean": 180,
+          "edge_angle_degrees": 0.0,
+          "crossing_angle_degrees": 90.0,
+          "boundary_adjusted": false,
+          "roi": [
+            62,
+            62,
+            157,
+            77
+          ],
+          "processed_pixels": 12089,
+          "removed_small_component_pixels": 0,
+          "input_start": [
+            100,
+            100
+          ],
+          "input_end": [
+            180,
+            100
+          ]
+        },
+        "diameter_um": 15.0
+      },
+      "records": 1
+    },
+    "after_next_intended_first": {
+      "draft": [
+        80.0,
+        130.0
+      ],
+      "jobs": 0
+    },
+    "trace": {
+      "events": [
+        {
+          "event": "legacy_press",
+          "at": 147128.705134375,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "button": 1,
+          "buttons": 1,
+          "x": 333.0,
+          "y": 354.0
+        },
+        {
+          "event": "draft_started",
+          "at": 147128.705289666,
+          "field_epoch": 2,
+          "interaction_id": "ec5d2c69387545b59204636176cb9a97",
+          "measurement_number": 1,
+          "x": 100.0,
+          "y": 100.0
+        },
+        {
+          "event": "release",
+          "at": 147128.705359333,
+          "field_epoch": 2,
+          "interaction_id": "ec5d2c69387545b59204636176cb9a97",
+          "button": 1,
+          "buttons": 0,
+          "x": 333.0,
+          "y": 354.0
+        },
+        {
+          "event": "legacy_press",
+          "at": 147128.707921458,
+          "field_epoch": 2,
+          "interaction_id": "ec5d2c69387545b59204636176cb9a97",
+          "button": 1,
+          "buttons": 1,
+          "x": 413.0,
+          "y": 354.0
+        },
+        {
+          "event": "task_submitted",
+          "at": 147128.708205916,
+          "field_epoch": 2,
+          "interaction_id": "ec5d2c69387545b59204636176cb9a97",
+          "task_id": "ec5d2c69387545b59204636176cb9a97",
+          "measurement_number": 1,
+          "x": 180.0,
+          "y": 100.0
+        },
+        {
+          "event": "release",
+          "at": 147128.70833825,
+          "field_epoch": 2,
+          "interaction_id": "ec5d2c69387545b59204636176cb9a97",
+          "button": 1,
+          "buttons": 0,
+          "x": 413.0,
+          "y": 354.0
+        },
+        {
+          "event": "legacy_press",
+          "at": 147128.713979083,
+          "field_epoch": 2,
+          "interaction_id": "ec5d2c69387545b59204636176cb9a97",
+          "button": 1,
+          "buttons": 1,
+          "x": 313.0,
+          "y": 384.0
+        },
+        {
+          "event": "draft_started",
+          "at": 147128.714067458,
+          "field_epoch": 2,
+          "interaction_id": "95bdd74c3109452e9700c295a821d0b6",
+          "measurement_number": 2,
+          "x": 80.0,
+          "y": 130.0
+        },
+        {
+          "event": "release",
+          "at": 147128.714107375,
+          "field_epoch": 2,
+          "interaction_id": "95bdd74c3109452e9700c295a821d0b6",
+          "button": 1,
+          "buttons": 0,
+          "x": 313.0,
+          "y": 384.0
+        }
+      ],
+      "total_events": 9,
+      "capacity": 512
+    }
+  }
+]

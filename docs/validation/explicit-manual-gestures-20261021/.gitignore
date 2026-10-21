@@ -1,0 +1,6 @@
+*.png
+*.mp4
+*.exe
+*.zip
+profile-*/
+__pycache__/

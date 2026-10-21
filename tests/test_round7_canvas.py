@@ -56,6 +56,7 @@ def test_stale_painted_candidate_blocks_before_repaint_but_gone_geometry_is_blan
 @pytest.mark.parametrize("phase", ["first_press", "first_point", "second_press", "drag"])
 def test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input(canvas, phase):
     observed = manual_routes(canvas)
+    canvas.set_manual_gesture("drag" if phase == "drag" else "click")
     add_candidates(canvas)
     start, end = pointer(canvas, (100, 100)), pointer(canvas, (150, 130))
     if phase in {"first_point", "second_press"}:
@@ -67,10 +68,12 @@ def test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input(canvas, 
         if phase == "drag":
             mouse_move(canvas, end)
     draft = canvas.controller.draft
+    finishes_before = list(observed.finishes)
+    assert finishes_before == ([(150., 130.)] if phase == "second_press" else [])
     canvas.controller.candidates[0]["candidate_id"] = "replacement:0"
     canvas.controller.candidatesChanged.emit(canvas.controller.candidates)
     assert canvas.controller.draft is draft
-    assert not observed.finishes
+    assert observed.finishes == finishes_before
     if phase == "first_point":
         for _ in range(20):
             mouse_move(canvas, end, held=False)
@@ -86,6 +89,7 @@ def test_candidate_batch_refresh_cannot_cancel_or_complete_manual_input(canvas, 
 
 def test_drag_promoted_on_candidate_survives_batch_refresh(canvas):
     observed = manual_routes(canvas)
+    canvas.set_manual_gesture("drag")
     add_candidates(canvas)
     QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=pointer(canvas, (215, 200)))
     mouse_move(canvas, pointer(canvas, (260, 230)))

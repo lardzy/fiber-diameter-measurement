@@ -115,6 +115,9 @@ class LiveMeasurementCanvas(QWidget):
     def set_manual_gesture(self, gesture):
         if gesture not in {"click", "drag"}:
             raise ValueError("未知手工测量手势")
+        if gesture != self.manual_gesture:
+            self.cancel_pointer_gesture(reason="manual_gesture_changed")
+            self.gestureCancelled.emit()
         self.manual_gesture = gesture
 
     def cancel_pointer_gesture(self, *, cancel_draft=True, reason="cancelled"):
@@ -549,7 +552,8 @@ class LiveMeasurementCanvas(QWidget):
             return
         gesture = self._pointer_gesture if gesture is None else gesture
         if event is not None:
-            details.update(button=event.button().value, buttons=event.buttons().value,
+            details.update(event_type=event.type().name,
+                           button=event.button().value, buttons=event.buttons().value,
                            x=float(event.position().x()), y=float(event.position().y()))
         if gesture is not None:
             details.update(pointer_id=gesture["pointer_id"], kind=gesture["kind"],
@@ -560,7 +564,20 @@ class LiveMeasurementCanvas(QWidget):
     def _begin_pointer_gesture(self, event):
         self.cancel_pointer_gesture()
         token = self.controller.presented
-        if token is None or token.frame is not self.frame:
+        if token is None or self.frame is None:
+            self._trace_pointer("press_blocked", event, reason="no_presented_image")
+            self._cancel_rejected_second_point()
+            return
+        # set_frame schedules a repaint; until then the user still sees the
+        # previous token. A newer preview in the same context must not swallow
+        # either endpoint. Retain the painted frame and its coordinate map,
+        # while rejecting a source or display change awaiting its first paint.
+        if ((token.frame.source_id, token.frame.generation, token.frame.size) !=
+                (self.frame.source_id, self.frame.generation, self.frame.size)
+                or token.display_revision != self.display_revision):
+            self._trace_pointer("press_blocked", event, reason="presentation_context_changed",
+                                presented_frame=token.frame.frame_id, preview_frame=self.frame.frame_id)
+            self._cancel_rejected_second_point()
             return
         position = QPointF(event.position())
         point = token.image_point(position.x(), position.y())
@@ -568,10 +585,10 @@ class LiveMeasurementCanvas(QWidget):
                         and bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier))
         draft = self.controller.draft
         shapes = self._painted_candidates if self.candidate_visible else ()
-        ids = [] if draft or force_manual else self._hits_in_shapes(position, shapes)
+        ids = [] if draft or force_manual or self.input_mode == "manual" else self._hits_in_shapes(position, shapes)
         states = {item["candidate_id"]: item.get("state", "available")
                   for item in self.controller.candidates if item.get("candidate_id") in ids}
-        if ids and (not self._candidates_visible()
+        if ids and (not self.controller.candidates_aligned_for(token.frame)
                     or self._painted_candidate_batch != self._candidate_batch_identity()
                     or any(states.get(key) not in {"available", "confirming"} for key in ids)):
             self._trace_pointer("press_blocked", event, reason="painted_candidate_unavailable",
@@ -585,17 +602,22 @@ class LiveMeasurementCanvas(QWidget):
             kind = "finish"
         elif ids:
             kind = "candidate" if any(state == "available" for state in states.values()) else "blocked"
-        elif not force_manual and self._recent_candidate_hit(position):
+        elif self.input_mode != "manual" and not force_manual and self._recent_candidate_hit(position):
             kind = "blocked_recent"
         elif self.input_mode == "candidate" and not force_manual:
             return
         else:
             kind = "manual"
         if kind in {"manual", "finish"} and not self._inside(point, token):
+            if kind == "finish":
+                self._trace_pointer("press_blocked", event, reason="second_point_outside_image")
+                self._cancel_rejected_second_point()
             return
         try:
             lease = self.controller.retain_pointer_frame(token)
         except (ValueError, RuntimeError) as exc:
+            self._trace_pointer("press_blocked", event, reason="pointer_frame_rejected", detail=str(exc))
+            self._cancel_rejected_second_point()
             self.gestureRejected.emit(str(exc))
             return
         self._pointer_gesture = {"token": token, "lease": lease, "position": position,
@@ -603,7 +625,32 @@ class LiveMeasurementCanvas(QWidget):
                                  "candidate_shapes": tuple(shape for shape in shapes if shape["candidate_id"] in ids),
                                  "started": False, "draft": draft, "force_manual": force_manual,
                                  "batch": self._candidate_batch_identity(), "pointer_id": uuid.uuid4().hex}
-        self._trace_pointer("press", event)
+        self._trace_pointer("press", event, presented_frame=token.frame.frame_id,
+                            preview_frame=self.frame.frame_id, manual_gesture=self.manual_gesture)
+        if self.manual_gesture == "click" and kind in {"manual", "finish"}:
+            self._apply_manual_click(event)
+
+    def _cancel_rejected_second_point(self):
+        if (self.input_mode != "candidate" and self.manual_gesture == "click"
+                and self.controller.draft is not None):
+            self.gestureCancelled.emit()
+            self.gestureRejected.emit("本次落点未应用，旧起点已取消；请重新选择第一点。")
+
+    def _apply_manual_click(self, event):
+        # Two-point input has exactly one endpoint per press. Preview updates,
+        # held movement and release cannot invent a second endpoint or defer
+        # this one into a later user interaction.
+        gesture = self._pointer_gesture
+        try:
+            if gesture["kind"] == "finish":
+                if tuple(gesture["point"]) != tuple(gesture["draft"][1]):
+                    self._trace_pointer("manual_finish", event, gesture=gesture, submit_reason="second_point")
+                    self.manualGestureFinished.emit(gesture["point"])
+            elif self._start_pointer_manual(gesture):
+                gesture["started"] = False  # The first point survives release.
+        finally:
+            self.cancel_pointer_gesture(cancel_draft=False, reason="two_point_press_consumed")
+            self.update()
 
     def _pointer_current(self, gesture):
         return (self.controller.pointer_token_is_current(gesture["token"])
@@ -628,15 +675,10 @@ class LiveMeasurementCanvas(QWidget):
     def mousePressEvent(self, event):
         self.setFocus()
         if event.button() == Qt.MouseButton.LeftButton:
-            if self.input_mode != "manual":
-                self._suppress_candidate_release = False
-                self._begin_pointer_gesture(event)
-                event.accept()
-                return
-            point = self._point(event)
-            if point:
-                self._trace_pointer("legacy_press", event)
-                self.pointPressed.emit(point)
+            self._suppress_candidate_release = False
+            self._begin_pointer_gesture(event)
+            event.accept()
+            return
         self.update()
 
     def mouseReleaseEvent(self, event):
@@ -646,13 +688,8 @@ class LiveMeasurementCanvas(QWidget):
             self.gestureCancelled.emit()
             self.categoryRequested.emit(event.globalPosition().toPoint())
         elif event.button() == Qt.MouseButton.LeftButton:
-            if self.input_mode != "manual":
-                self._finish_pointer_gesture(event)
-                event.accept()
-                return
-            point = self._point(event)
-            if point:
-                self.pointReleased.emit(point)
+            self._finish_pointer_gesture(event)
+            event.accept()
 
     def _finish_pointer_gesture(self, event):
         if self._suppress_candidate_release:
@@ -666,12 +703,6 @@ class LiveMeasurementCanvas(QWidget):
             if not self._pointer_current(gesture):
                 return
             point = gesture["token"].image_point(event.position().x(), event.position().y())
-            if gesture["kind"] == "finish":
-                if (self.controller.draft is gesture["draft"] and self._inside(point, gesture["token"])
-                        and tuple(point) != tuple(gesture["draft"][1])):
-                    self._trace_pointer("manual_finish", gesture=gesture, submit_reason="second_point")
-                    self.manualGestureFinished.emit(point)
-                return
             # A release coordinate can differ even if no held movement was
             # delivered. Only mouseMoveEvent may promote this press to drag.
             if gesture["started"]:
@@ -681,7 +712,8 @@ class LiveMeasurementCanvas(QWidget):
                     gesture["started"] = False
                 return
             if gesture["kind"] in {"candidate", "blocked"}:
-                if not self._candidates_visible():
+                if (not self.candidate_visible
+                        or not self.controller.candidates_aligned_for(gesture["token"].frame)):
                     return
                 hits = self._hits_in_shapes(event.position(), gesture["candidate_shapes"])
                 hits = [key for key in hits if key in gesture["candidates"]]
@@ -701,10 +733,7 @@ class LiveMeasurementCanvas(QWidget):
                 else:
                     self.candidateAmbiguous.emit(available)
                 return
-            if gesture["kind"] == "manual":
-                if self._start_pointer_manual(gesture):
-                    # A short empty-space click leaves the first point intact.
-                    gesture["started"] = False
+            # A short drag-mode press never creates a hidden first point.
         finally:
             self.cancel_pointer_gesture()
             self.update()
@@ -716,10 +745,14 @@ class LiveMeasurementCanvas(QWidget):
             if (not event.buttons() & Qt.MouseButton.LeftButton
                     or not self._pointer_current(gesture)):
                 self.cancel_pointer_gesture()
-            elif (gesture["kind"] != "finish" and not gesture["started"]
-                    and (self.input_mode == "mixed" or gesture["force_manual"])
+            elif (not gesture["started"]
                     and (event.position() - gesture["position"]).manhattanLength() >= QApplication.startDragDistance()):
-                self._start_pointer_manual(gesture)
+                if self.manual_gesture == "drag" and self.input_mode != "candidate":
+                    self._start_pointer_manual(gesture)
+                else:
+                    # In two-point mode candidate picking is a short click,
+                    # never a drag; returning to the line cannot revive it.
+                    self.cancel_pointer_gesture(reason="not_a_candidate_click")
         self.cursor_point = self._point(event)
         hits = self.candidate_hits(event.position())
         self._set_hovered_candidate(hits[0] if len(hits) == 1 else None)
@@ -753,6 +786,7 @@ class LiveMeasurementCanvas(QWidget):
             event.accept()
         else:
             if (event.button() == Qt.MouseButton.LeftButton and self.input_mode != "manual"
+                    and self.controller.draft is None
                     and not event.modifiers() & Qt.KeyboardModifier.ShiftModifier
                     and self._recent_candidate_hit(event.position())):
                 self.cancel_pointer_gesture()

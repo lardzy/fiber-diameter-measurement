@@ -1,0 +1,32 @@
+{
+  "head": "dc25a4031009a7dd9cdf1646cafa9f089fb746d9",
+  "version": "0.4.10",
+  "product_files": [
+    {
+      "path": "src/fdm/live_experiment/controller.py",
+      "size": 87199,
+      "sha256": "8a86df8f234901a8b9dcb96997b88b0ca9bb4aa6cfd84bbdd271eab039742e32"
+    },
+    {
+      "path": "src/fdm/ui/live_experiment_view.py",
+      "size": 35274,
+      "sha256": "48c91779138558bbc45203b8afccddbb4ffafc211bf67c0a7d0523063f1bbd00"
+    },
+    {
+      "path": "src/fdm/ui/live_experiment_workspace.py",
+      "size": 113944,
+      "sha256": "fe04e2e109aeaa3f75fee1d6681b8597aa0d7581801c8d69e0a715ebd8edebc2"
+    },
+    {
+      "path": "src/fdm/ui/live_measurement_canvas.py",
+      "size": 42711,
+      "sha256": "142290124eb829497ffa062b9487a6a9dceaf810853154d24625e15e82c26c43"
+    },
+    {
+      "path": "src/fdm/ui/trial_assistance.py",
+      "size": 27627,
+      "sha256": "96f2622f99014a30aa954c6024b04678c064394f1101b3d595591bb58ef49210"
+    }
+  ],
+  "all_product_files_verified": 296
+}

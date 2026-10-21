@@ -1,0 +1,1306 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T06:48:54.579710+00:00",
+  "phase": "quick",
+  "scenario": "quick",
+  "runtime": "Windows-11-10.0.26200-SP0",
+  "platform": "windows",
+  "theme": "light",
+  "scale": 1.0,
+  "requested_client_raster": [
+    1600,
+    900
+  ],
+  "source_fingerprints": {
+    "src/fdm/live_experiment/__init__.py": "340dcc51d23f79d9161f4a63449decd39eb5b05d3ab2f63b5e51f599433ff4af",
+    "src/fdm/live_experiment/calibration_store.py": "1043eb9693ba665b25f12b36b10051328c87dea665748de037446fd3e43a2642",
+    "src/fdm/live_experiment/candidate_alignment.py": "9070656b8520ea9ba926fb9d01044ac2fd07245ad7d1016f98ee638c07688e3e",
+    "src/fdm/live_experiment/candidate_alignment_worker.py": "7faee6e85ec13bcfbfe098ceba659f6f48098ed233794487fd2f326a69153ddc",
+    "src/fdm/live_experiment/capture_helper.py": "dd1b6b3de2692e0618f54db2552864cef57316f7bef48a02ea58d05ae82a7e12",
+    "src/fdm/live_experiment/controller.py": "8a86df8f234901a8b9dcb96997b88b0ca9bb4aa6cfd84bbdd271eab039742e32",
+    "src/fdm/live_experiment/evidence.py": "25246b6db1bd99faa29f445d59342404eb0df5dcbad4c58e7790c3036d67960d",
+    "src/fdm/live_experiment/evidence_options.py": "f3888468bc909676f616e0afc09bfafbc286377735608e6fd36eed17314c9baf",
+    "src/fdm/live_experiment/excel_template.py": "e1b54b072783e0f33bf2860fa1770edad906c78bd7418b26af22bd5ba7469b0e",
+    "src/fdm/live_experiment/exports.py": "dceabc4956ddeeaedf981de7d99bc60366ea46cb74b9e5a64ff64b2d286e8c03",
+    "src/fdm/live_experiment/feedback.py": "a7716a9539d110e22f1b9061c4dfd855c07c153d905a191e5eea0d57ab18ad9f",
+    "src/fdm/live_experiment/frames.py": "75fa23843442efc1fa3e61b663c1b82821c8c633280d4a4e39c1003d62ec3d33",
+    "src/fdm/live_experiment/jpeg_evidence.py": "107da5f950a7084eb2b7786765cba682dfd538edb22afa3c23ceda0a2445f288",
+    "src/fdm/live_experiment/models.py": "51e8865fc5ed9531373ff96ab87f342e5c08c279e749f786f6293a991818f993",
+    "src/fdm/live_experiment/motion.py": "8f19e29df7fb1b672d72771577e7dd741b071a7e207190f5f0431267f3248259",
+    "src/fdm/live_experiment/performance.py": "73158fce650e910a0bede070e1cccbc46cfbf37ca5258690e9e3da6a789b3cee",
+    "src/fdm/live_experiment/persistence.py": "71c7d2339381e520c2ae9b018092c11d415feebeb0224edd586f2d9e4e9ff383",
+    "src/fdm/live_experiment/png_stream.py": "0d1fcc4a9fc82f5024d221b28476aa624a51019a414e9fa337da00301efa7550",
+    "src/fdm/live_experiment/presentation.py": "a9cb8bc79a0caed1f427323adccaf51beb6a85fd13ca1fb0862c623c11650b53",
+    "src/fdm/live_experiment/project_assets.py": "42ba416a938cb8213916136a7993a4637ff4857aa663d56653abb72cea4d285b",
+    "src/fdm/live_experiment/reminders.py": "d4cfdfc54f8af7b31ecfa0982c6770dd32b25a473dfdff9a14b4cb54da9d64da",
+    "src/fdm/live_experiment/selection_retention.py": "cc4ef74ebd7b7ea1b78b994b691874535719dd604368e590b835b3a14da2381e",
+    "src/fdm/live_experiment/sources.py": "5e6d9e2adaeb5c29e9786e2a88abefea9109bd0d65981a5e017f73a459c65d16",
+    "src/fdm/live_experiment/statistics.py": "7d876aa560e7903b74235543749e4b3f496f89093406c5fd0f239dc1857fd765",
+    "src/fdm/ui/live_measurement_canvas.py": "142290124eb829497ffa062b9487a6a9dceaf810853154d24625e15e82c26c43",
+    "src/fdm/ui/live_experiment_workspace.py": "fe04e2e109aeaa3f75fee1d6681b8597aa0d7581801c8d69e0a715ebd8edebc2",
+    "src/fdm/ui/live_experiment_view.py": "48c91779138558bbc45203b8afccddbb4ffafc211bf67c0a7d0523063f1bbd00",
+    "src/fdm/ui/trial_assistance.py": "96f2622f99014a30aa954c6024b04678c064394f1101b3d595591bb58ef49210"
+  },
+  "script_sha256": "9497b95d7c669880ae43408c5eb1b2f67016bc9a6b435471d9a70f454fdcc10b",
+  "real_camera": false,
+  "passed": true,
+  "trace": {
+    "analyses": [
+      {
+        "at": 2.825165,
+        "origin": "automatic",
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "stage": "setup"
+      },
+      {
+        "at": 7.380879,
+        "origin": "automatic",
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "stage": "retention"
+      }
+    ],
+    "visibility": [
+      {
+        "at": 2.183445,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 2.827055,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 0,
+        "stage": "setup"
+      },
+      {
+        "at": 3.419913,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 9,
+        "stage": "setup"
+      },
+      {
+        "at": 3.601132,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 9,
+        "stage": "static"
+      },
+      {
+        "at": 6.605207,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 8,
+        "stage": "clicks"
+      },
+      {
+        "at": 6.670605,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 7,
+        "stage": "clicks"
+      },
+      {
+        "at": 6.755543,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 6,
+        "stage": "clicks"
+      },
+      {
+        "at": 6.820649,
+        "visible": true,
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "available": 6,
+        "stage": "retention"
+      },
+      {
+        "at": 6.839576,
+        "visible": false,
+        "batch": null,
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 7.385287,
+        "visible": true,
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "available": 0,
+        "stage": "retention"
+      },
+      {
+        "at": 7.645662,
+        "visible": true,
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "available": 9,
+        "stage": "retention"
+      },
+      {
+        "at": 7.842482,
+        "visible": true,
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "available": 9,
+        "stage": "explicit-manual-gestures"
+      },
+      {
+        "at": 8.091036,
+        "visible": true,
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "available": 8,
+        "stage": "explicit-manual-gestures"
+      },
+      {
+        "at": 8.172905,
+        "visible": true,
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "available": 7,
+        "stage": "explicit-manual-gestures"
+      }
+    ],
+    "status": [
+      {
+        "at": 2.394712,
+        "message": "类别设置已变化"
+      },
+      {
+        "at": 2.419549,
+        "message": "标定已变化"
+      },
+      {
+        "at": 2.476265,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 2.825151,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 3.343699,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 6.741179,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 6.823027,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 6.940661,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 7.020274,
+        "message": "已开始新视场"
+      },
+      {
+        "at": 7.073904,
+        "message": "视场稳定，可以测量"
+      },
+      {
+        "at": 7.380841,
+        "message": "正在分析当前视场；实时画面继续更新。"
+      },
+      {
+        "at": 7.643271,
+        "message": "检测到 9 条候选，请赋类后确认。"
+      },
+      {
+        "at": 8.076689,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 8.161283,
+        "message": "正在核验确认时的视场，核验完成后自动入账。"
+      },
+      {
+        "at": 8.334917,
+        "message": "正在确认关闭或切换项目"
+      },
+      {
+        "at": 8.340739,
+        "message": "试验工作区已关闭"
+      }
+    ],
+    "actions": [
+      {
+        "at": 6.597966,
+        "candidate": "7ec7d424bf734154a0bc865d4b4e1166:1",
+        "record": "f5af9390421e4433ba77d44254eacedc",
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "elapsed_ms": 13.717958001507213
+      },
+      {
+        "at": 6.666794,
+        "candidate": "7ec7d424bf734154a0bc865d4b4e1166:2",
+        "record": "07b62c07f6b341e5874fc6ec157fb4ac",
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "elapsed_ms": 4.982667000149377
+      },
+      {
+        "at": 6.758488,
+        "candidate": "7ec7d424bf734154a0bc865d4b4e1166:3",
+        "record": "7b442fefa4df496186e02b3ca77eb301",
+        "batch": "7ec7d424bf734154a0bc865d4b4e1166",
+        "elapsed_ms": 19.40200000171899
+      },
+      {
+        "at": 8.100579,
+        "candidate": "5cbc39291fbf47f190ab4a44065f0af9:1",
+        "record": "8fde5b2885de44f88292abec2d8ee38a",
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "elapsed_ms": 25.753875001100823
+      },
+      {
+        "at": 8.175138,
+        "candidate": "5cbc39291fbf47f190ab4a44065f0af9:2",
+        "record": "4ae24c3fd385408e97518ea9b294fae5",
+        "batch": "5cbc39291fbf47f190ab4a44065f0af9",
+        "elapsed_ms": 15.228667001792928
+      }
+    ],
+    "delayed": [],
+    "field_changes": [
+      {
+        "at": 2.394546,
+        "values": [
+          1,
+          "类别设置已变化"
+        ]
+      },
+      {
+        "at": 2.41938,
+        "values": [
+          2,
+          "标定已变化"
+        ]
+      },
+      {
+        "at": 6.822302,
+        "values": [
+          3,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 7.020069,
+        "values": [
+          4,
+          "已开始新视场"
+        ]
+      },
+      {
+        "at": 8.34065,
+        "values": [
+          5,
+          "试验工作区已关闭"
+        ]
+      }
+    ],
+    "retention": []
+  },
+  "scope": "Actual navigation, analyzer, global field detector, pointer clicks, ledger and evidence; synthetic camera.",
+  "initial_candidates": 9,
+  "actual_client_raster": [
+    1600,
+    900
+  ],
+  "static": {
+    "seconds": 3.0013187500007916,
+    "analyses": 1,
+    "source_frames": 124
+  },
+  "clicks": {
+    "accepted": 3,
+    "records": 3,
+    "saved": 3
+  },
+  "retention": {
+    "records": [
+      "07b62c07f6b341e5874fc6ec157fb4ac",
+      "7b442fefa4df496186e02b3ca77eb301",
+      "f5af9390421e4433ba77d44254eacedc"
+    ],
+    "marks": [
+      {
+        "record_id": "f5af9390421e4433ba77d44254eacedc",
+        "start": [
+          721.0,
+          118.0
+        ],
+        "end": [
+          714.0,
+          121.0
+        ],
+        "number": 1,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "07b62c07f6b341e5874fc6ec157fb4ac",
+        "start": [
+          56.0,
+          455.0
+        ],
+        "end": [
+          48.0,
+          458.0
+        ],
+        "number": 2,
+        "color": "#d60000"
+      },
+      {
+        "record_id": "7b442fefa4df496186e02b3ca77eb301",
+        "start": [
+          670.0,
+          237.0
+        ],
+        "end": [
+          660.0,
+          241.0
+        ],
+        "number": 3,
+        "color": "#d60000"
+      }
+    ],
+    "elapsed_seconds": 1.0162782500010508
+  },
+  "explicit_gestures": {
+    "events": [
+      {
+        "at": 7.907731,
+        "event": "gesture_selected",
+        "index": 0,
+        "button": "两点"
+      },
+      {
+        "at": 7.939869,
+        "event": "two_point_accepted",
+        "record": "2cd08e2e0d8f41b1af6e9764aa091d7e",
+        "release_and_motion_did_not_submit": true,
+        "source": "ordinary blank-area two-point clicks"
+      },
+      {
+        "at": 7.998327,
+        "event": "gesture_selected",
+        "index": 1,
+        "button": "拖线"
+      },
+      {
+        "at": 8.011233,
+        "event": "drag_accepted",
+        "record": "09130a6785da45ecac368d9a1a65df58",
+        "short_clicks_left_no_draft": true,
+        "switching_cancelled_old_draft": true
+      },
+      {
+        "at": 8.074755,
+        "event": "gesture_selected",
+        "index": 1,
+        "button": "拖线"
+      },
+      {
+        "at": 8.100595,
+        "event": "candidate_accepted",
+        "record": "8fde5b2885de44f88292abec2d8ee38a",
+        "selected_manual_gesture": "drag"
+      },
+      {
+        "at": 8.159854,
+        "event": "gesture_selected",
+        "index": 0,
+        "button": "两点"
+      },
+      {
+        "at": 8.175157,
+        "event": "candidate_accepted",
+        "record": "4ae24c3fd385408e97518ea9b294fae5",
+        "selected_manual_gesture": "click"
+      }
+    ],
+    "simulated_pointer": true,
+    "scope": "Real top-level navigation, live synthetic frames, real analysis and ledger; UI gesture menu and manual free-distance measurement.",
+    "passed": true,
+    "final_records": 7,
+    "no_stray_draft": true,
+    "final_gesture": "click"
+  },
+  "remaining_candidate_hides": [],
+  "performance": {
+    "analysis_ms": {
+      "n": 2,
+      "p50": 402.46552099961264,
+      "p95": 528.2523145995583
+    },
+    "alignment_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_ready_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_gui_wait_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_verification_delivery_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_available_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "candidate_unavailable_ms": {
+      "n": 0,
+      "p50": null,
+      "p95": null
+    },
+    "click_to_accept_ms": {
+      "n": 5,
+      "p50": 6.672041999991052,
+      "p95": 7.72118299792055
+    },
+    "stable_wait_ms": {
+      "n": 2,
+      "p50": 306.780417000482,
+      "p95": 310.728154501885
+    },
+    "analysis_to_paint_ms": {
+      "n": 2,
+      "p50": 445.96343800003524,
+      "p95": 605.1122568995197
+    },
+    "ingest_fps": {
+      "n": 169,
+      "p50": 30.15086710149536,
+      "p95": 37.318332061870535
+    },
+    "presented_fps": {
+      "n": 169,
+      "p50": 30.12112426970137,
+      "p95": 38.23993185060991
+    },
+    "frame_age_ms": {
+      "n": 170,
+      "p50": 7.4445630016271025,
+      "p95": 10.221217150137818
+    },
+    "analysis_service_total_ms": {
+      "n": 2,
+      "p50": 247.5264584991237,
+      "p95": 252.95383334905637
+    },
+    "analysis_preparation_ms": {
+      "n": 2,
+      "p50": 3.945874999772059,
+      "p95": 4.82532530077151
+    },
+    "analysis_processing_ms": {
+      "n": 2,
+      "p50": 243.58058349935163,
+      "p95": 249.88740865028376
+    },
+    "analysis_shared_memory_ms": {
+      "n": 2,
+      "p50": 2.049187000011443,
+      "p95": 2.2415808982259477
+    },
+    "analysis_budget_wait_ms": {
+      "n": 2,
+      "p50": 0.04679199992096983,
+      "p95": 0.060591700093937106
+    },
+    "analysis_process_start_call_ms": {
+      "n": 1,
+      "p50": 25.095166001847247,
+      "p95": 25.095166001847247
+    },
+    "analysis_dispatch_to_receive_ms": {
+      "n": 2,
+      "p50": 381.2912294997659,
+      "p95": 493.73147354999674
+    },
+    "analysis_startup_transport_overhead_ms": {
+      "n": 2,
+      "p50": 133.7647710006422,
+      "p95": 251.63238990080572
+    }
+  },
+  "context": {
+    "source": {
+      "source_id": "camera:workflow-validation:0",
+      "generation": 2,
+      "size": [
+        768,
+        576
+      ]
+    },
+    "live_source": true,
+    "stopped": false,
+    "invalid_frame_age_samples": 0,
+    "ingest": {
+      "frames": 170,
+      "span_seconds": 5.828452334000758,
+      "first_sequence": 2,
+      "last_sequence": 171,
+      "window_fps": 28.995690505029017
+    },
+    "presented": {
+      "frames": 170,
+      "span_seconds": 5.812552374998631,
+      "first_sequence": 2,
+      "last_sequence": 171,
+      "window_fps": 29.0750068295152
+    },
+    "input_trace": {
+      "events": [
+        {
+          "event": "press",
+          "at": 17360.256215333,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "presented_frame": "camera:workflow-validation:0:2:124",
+          "preview_frame": "camera:workflow-validation:0:2:124",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "11ac9e451677407b99cb5261c3dd9cfe",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:1"
+        },
+        {
+          "event": "release",
+          "at": 17360.256409166,
+          "field_epoch": 2,
+          "interaction_id": null,
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "11ac9e451677407b99cb5261c3dd9cfe",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17360.258772541,
+          "field_epoch": 2,
+          "interaction_id": "1fb0fff8a6c1495088bd9eba830cf382",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "11ac9e451677407b99cb5261c3dd9cfe",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:1"
+        },
+        {
+          "event": "press",
+          "at": 17360.332607708,
+          "field_epoch": 2,
+          "interaction_id": "1fb0fff8a6c1495088bd9eba830cf382",
+          "presented_frame": "camera:workflow-validation:0:2:126",
+          "preview_frame": "camera:workflow-validation:0:2:126",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "ee306094fbb74a2dacb54c6931051605",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:2"
+        },
+        {
+          "event": "release",
+          "at": 17360.33267175,
+          "field_epoch": 2,
+          "interaction_id": "1fb0fff8a6c1495088bd9eba830cf382",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "ee306094fbb74a2dacb54c6931051605",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17360.333381125,
+          "field_epoch": 2,
+          "interaction_id": "2ca189e4518b477491c091cc19b8db28",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "ee306094fbb74a2dacb54c6931051605",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:2"
+        },
+        {
+          "event": "press",
+          "at": 17360.409880583,
+          "field_epoch": 2,
+          "interaction_id": "2ca189e4518b477491c091cc19b8db28",
+          "presented_frame": "camera:workflow-validation:0:2:129",
+          "preview_frame": "camera:workflow-validation:0:2:129",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "b2b4864df7274d199347aebcd18bdd56",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:3"
+        },
+        {
+          "event": "release",
+          "at": 17360.409949,
+          "field_epoch": 2,
+          "interaction_id": "2ca189e4518b477491c091cc19b8db28",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 846.0,
+          "y": 297.0,
+          "pointer_id": "b2b4864df7274d199347aebcd18bdd56",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:3"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17360.411164166,
+          "field_epoch": 2,
+          "interaction_id": "cd69677f2f4647468c1b525fb4345a77",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "b2b4864df7274d199347aebcd18bdd56",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "7ec7d424bf734154a0bc865d4b4e1166:3"
+        },
+        {
+          "event": "press",
+          "at": 17361.579268833,
+          "field_epoch": 4,
+          "interaction_id": null,
+          "presented_frame": "camera:workflow-validation:0:2:162",
+          "preview_frame": "camera:workflow-validation:0:2:162",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 261.0,
+          "y": 118.0,
+          "pointer_id": "ef630a3d12e64af6a0c692aa737e633c",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "draft_started",
+          "at": 17361.579411333,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "measurement_number": 1,
+          "x": 80.0,
+          "y": 60.0
+        },
+        {
+          "event": "manual_start",
+          "at": 17361.57944675,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "pointer_id": "ef630a3d12e64af6a0c692aa737e633c",
+          "kind": "manual",
+          "dragging": true,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.579456875,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "cancel_draft": false,
+          "reason": "two_point_press_consumed",
+          "pointer_id": "ef630a3d12e64af6a0c692aa737e633c",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "move",
+          "at": 17361.57999525,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "event_type": "MouseMove",
+          "button": 0,
+          "buttons": 1,
+          "x": 321.0,
+          "y": 118.0
+        },
+        {
+          "event": "release",
+          "at": 17361.580880708,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 321.0,
+          "y": 118.0
+        },
+        {
+          "event": "move",
+          "at": 17361.590473083,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "event_type": "MouseMove",
+          "button": 0,
+          "buttons": 0,
+          "x": 321.0,
+          "y": 118.0
+        },
+        {
+          "event": "press",
+          "at": 17361.593771458,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "presented_frame": "camera:workflow-validation:0:2:163",
+          "preview_frame": "camera:workflow-validation:0:2:163",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 321.0,
+          "y": 118.0,
+          "pointer_id": "5ef62fe9fa774640ac76a7acecee8beb",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "manual_finish",
+          "at": 17361.593793375,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "submit_reason": "second_point",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 321.0,
+          "y": 118.0,
+          "pointer_id": "5ef62fe9fa774640ac76a7acecee8beb",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "task_submitted",
+          "at": 17361.594665291,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "task_id": "906103165b504268850a546d7156e4ed",
+          "measurement_number": 1,
+          "x": 140.0,
+          "y": 60.0
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.594781625,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "cancel_draft": false,
+          "reason": "two_point_press_consumed",
+          "pointer_id": "5ef62fe9fa774640ac76a7acecee8beb",
+          "kind": "finish",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 17361.594948833,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 321.0,
+          "y": 118.0
+        },
+        {
+          "event": "press",
+          "at": 17361.610698416,
+          "field_epoch": 4,
+          "interaction_id": "906103165b504268850a546d7156e4ed",
+          "presented_frame": "camera:workflow-validation:0:2:163",
+          "preview_frame": "camera:workflow-validation:0:2:163",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 261.0,
+          "y": 118.0,
+          "pointer_id": "14dbdf0643a54b6faa4ecf157e7d923f",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "draft_started",
+          "at": 17361.610802583,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "measurement_number": 2,
+          "x": 80.0,
+          "y": 60.0
+        },
+        {
+          "event": "manual_start",
+          "at": 17361.610828083,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "pointer_id": "14dbdf0643a54b6faa4ecf157e7d923f",
+          "kind": "manual",
+          "dragging": true,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.610835083,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "cancel_draft": false,
+          "reason": "two_point_press_consumed",
+          "pointer_id": "14dbdf0643a54b6faa4ecf157e7d923f",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 17361.610943333,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 261.0,
+          "y": 118.0
+        },
+        {
+          "event": "press",
+          "at": 17361.669184458,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "presented_frame": "camera:workflow-validation:0:2:165",
+          "preview_frame": "camera:workflow-validation:0:2:165",
+          "manual_gesture": "drag",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 261.0,
+          "y": 118.0,
+          "pointer_id": "55a874f174b64da3af75104442313efc",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 17361.669238541,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 261.0,
+          "y": 118.0,
+          "pointer_id": "55a874f174b64da3af75104442313efc",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.669263916,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "cancel_draft": true,
+          "reason": "cancelled",
+          "pointer_id": "55a874f174b64da3af75104442313efc",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press",
+          "at": 17361.669500625,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "presented_frame": "camera:workflow-validation:0:2:165",
+          "preview_frame": "camera:workflow-validation:0:2:165",
+          "manual_gesture": "drag",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 321.0,
+          "y": 118.0,
+          "pointer_id": "5da0f809a63a4d53882dabf0935b9dc6",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 17361.669547833,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 321.0,
+          "y": 118.0,
+          "pointer_id": "5da0f809a63a4d53882dabf0935b9dc6",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.66956825,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "cancel_draft": true,
+          "reason": "cancelled",
+          "pointer_id": "5da0f809a63a4d53882dabf0935b9dc6",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press",
+          "at": 17361.669771583,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "presented_frame": "camera:workflow-validation:0:2:165",
+          "preview_frame": "camera:workflow-validation:0:2:165",
+          "manual_gesture": "drag",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 261.0,
+          "y": 118.0,
+          "pointer_id": "213a1aec36664409ab4f07f3a7f16792",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "move",
+          "at": 17361.669837833,
+          "field_epoch": 4,
+          "interaction_id": "dbabef5e45ea47a3b154a3f2262d5b80",
+          "event_type": "MouseMove",
+          "button": 0,
+          "buttons": 1,
+          "x": 321.0,
+          "y": 118.0,
+          "pointer_id": "213a1aec36664409ab4f07f3a7f16792",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "draft_started",
+          "at": 17361.670059208,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "measurement_number": 3,
+          "x": 80.0,
+          "y": 60.0
+        },
+        {
+          "event": "manual_start",
+          "at": 17361.670082041,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "pointer_id": "213a1aec36664409ab4f07f3a7f16792",
+          "kind": "manual",
+          "dragging": true,
+          "candidate_ids": ""
+        },
+        {
+          "event": "release",
+          "at": 17361.670459166,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 321.0,
+          "y": 118.0,
+          "pointer_id": "213a1aec36664409ab4f07f3a7f16792",
+          "kind": "manual",
+          "dragging": true,
+          "candidate_ids": ""
+        },
+        {
+          "event": "manual_finish",
+          "at": 17361.670486166,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "submit_reason": "held_drag",
+          "pointer_id": "213a1aec36664409ab4f07f3a7f16792",
+          "kind": "manual",
+          "dragging": true,
+          "candidate_ids": ""
+        },
+        {
+          "event": "task_submitted",
+          "at": 17361.670590458,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "task_id": "a21c3ced5309451597893d82c1b23814",
+          "measurement_number": 3,
+          "x": 140.0,
+          "y": 60.0
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.670651333,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "cancel_draft": true,
+          "reason": "cancelled",
+          "pointer_id": "213a1aec36664409ab4f07f3a7f16792",
+          "kind": "manual",
+          "dragging": false,
+          "candidate_ids": ""
+        },
+        {
+          "event": "press",
+          "at": 17361.745751458,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "presented_frame": "camera:workflow-validation:0:2:167",
+          "preview_frame": "camera:workflow-validation:0:2:167",
+          "manual_gesture": "drag",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "c09ee29d6f2b4126a9ddacf3152b6567",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "5cbc39291fbf47f190ab4a44065f0af9:1"
+        },
+        {
+          "event": "release",
+          "at": 17361.745808958,
+          "field_epoch": 4,
+          "interaction_id": "a21c3ced5309451597893d82c1b23814",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 898.0,
+          "y": 178.0,
+          "pointer_id": "c09ee29d6f2b4126a9ddacf3152b6567",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "5cbc39291fbf47f190ab4a44065f0af9:1"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.746688333,
+          "field_epoch": 4,
+          "interaction_id": "fb2b1e87892b48758043c6426bb91ea2",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "c09ee29d6f2b4126a9ddacf3152b6567",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "5cbc39291fbf47f190ab4a44065f0af9:1"
+        },
+        {
+          "event": "press",
+          "at": 17361.830774375,
+          "field_epoch": 4,
+          "interaction_id": "fb2b1e87892b48758043c6426bb91ea2",
+          "presented_frame": "camera:workflow-validation:0:2:170",
+          "preview_frame": "camera:workflow-validation:0:2:170",
+          "manual_gesture": "click",
+          "event_type": "MouseButtonPress",
+          "button": 1,
+          "buttons": 1,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "adf78eff37da4d76894508d93f42f88f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "5cbc39291fbf47f190ab4a44065f0af9:2"
+        },
+        {
+          "event": "release",
+          "at": 17361.830824583,
+          "field_epoch": 4,
+          "interaction_id": "fb2b1e87892b48758043c6426bb91ea2",
+          "event_type": "MouseButtonRelease",
+          "button": 1,
+          "buttons": 0,
+          "x": 233.0,
+          "y": 514.0,
+          "pointer_id": "adf78eff37da4d76894508d93f42f88f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "5cbc39291fbf47f190ab4a44065f0af9:2"
+        },
+        {
+          "event": "press_cancelled",
+          "at": 17361.831386958,
+          "field_epoch": 4,
+          "interaction_id": "337c0cf44f15495ebe9d6120fdb89764",
+          "cancel_draft": true,
+          "reason": "candidate_changed",
+          "pointer_id": "adf78eff37da4d76894508d93f42f88f",
+          "kind": "candidate",
+          "dragging": false,
+          "candidate_ids": "5cbc39291fbf47f190ab4a44065f0af9:2"
+        }
+      ],
+      "total_events": 46,
+      "capacity": 512
+    },
+    "automatic_cycle": {
+      "id": 4,
+      "analyzed": true,
+      "analysis_count": 2,
+      "batch_id": "5cbc39291fbf47f190ab4a44065f0af9",
+      "events": [
+        {
+          "at": 17356.064806875,
+          "event": "new_cycle",
+          "cycle": 1,
+          "reason": "类别设置已变化"
+        },
+        {
+          "at": 17356.089666458,
+          "event": "new_cycle",
+          "cycle": 2,
+          "reason": "标定已变化"
+        },
+        {
+          "at": 17356.467584291,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 2,
+          "task_id": "4ec69ad446cf4986bbcc5865ad907129",
+          "batch_id": "7ec7d424bf734154a0bc865d4b4e1166",
+          "frame_id": "camera:workflow-validation:0:2:13"
+        },
+        {
+          "at": 17360.492458708,
+          "event": "new_cycle",
+          "cycle": 3,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 17360.690271541,
+          "event": "new_cycle",
+          "cycle": 4,
+          "reason": "已开始新视场"
+        },
+        {
+          "at": 17361.047004583,
+          "event": "analysis",
+          "origin": "automatic",
+          "cycle": 4,
+          "task_id": "a5294a35e2ca4cebbaf6904da7892507",
+          "batch_id": "5cbc39291fbf47f190ab4a44065f0af9",
+          "frame_id": "camera:workflow-validation:0:2:146"
+        }
+      ]
+    },
+    "candidate_preview": {
+      "mode": "field_lifetime",
+      "independent_alignment_enabled": false,
+      "fallback_count": 0,
+      "immediate_mode": false,
+      "max_pause_ms": 0.0,
+      "state": "available",
+      "painted_visibility": {
+        "visible": true,
+        "last_observed_visible": true,
+        "observation_active": true,
+        "transition_count": 3,
+        "current_visible_ms": 614.1527079998923,
+        "current_hidden_ms": null,
+        "max_visible_ms": 3402.090916999441,
+        "max_hidden_ms": 0.0,
+        "events": [
+          {
+            "at": 17356.040890708,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:2",
+            "batch_id": null
+          },
+          {
+            "at": 17357.090360833,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:29",
+            "batch_id": "7ec7d424bf734154a0bc865d4b4e1166"
+          },
+          {
+            "at": 17360.510047125,
+            "visible": false,
+            "reason": "no_candidates",
+            "frame_id": "camera:workflow-validation:0:2:131",
+            "batch_id": null
+          },
+          {
+            "at": 17361.316122583,
+            "visible": true,
+            "reason": "ready",
+            "frame_id": "camera:workflow-validation:0:2:154",
+            "batch_id": "5cbc39291fbf47f190ab4a44065f0af9"
+          }
+        ],
+        "definition": "Canvas paint completion observations; not sensor time or click success. Hidden-duration tracking excludes user-hidden overlays and absent/unaccepted-empty batches."
+      },
+      "definition": "Candidate eligibility follows source/field/calibration identity; no independent per-frame alignment or timing-driven overlay pause."
+    },
+    "selection_retention": {
+      "seconds": 1.0,
+      "visible_marks": 0
+    }
+  },
+  "accepted_total": 7,
+  "independent_alignment_calls": {
+    "poll": 0,
+    "compare": 0
+  },
+  "source_changed_during_run": false,
+  "elapsed_seconds": 8.468889
+}

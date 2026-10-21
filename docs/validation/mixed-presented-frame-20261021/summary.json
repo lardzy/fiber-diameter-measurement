@@ -1,0 +1,52 @@
+{
+  "version": "0.4.10",
+  "git_base": "dc25a40",
+  "scope": "mixed input in preview-delivery/paint gap",
+  "macos_quick": {
+    "command": ".venv/bin/python -m pytest -q tests/test_live_mixed_presented_frame.py tests/test_live_measurement_mixed_canvas.py tests/test_live_measurement_candidate_canvas.py tests/test_round7_canvas.py tests/test_round7_selection_retention.py",
+    "exit_code": 0,
+    "passed": 100,
+    "seconds": 5.04
+  },
+  "macos_related": {
+    "passed_initially": 293,
+    "sandbox_shm_failures": 5,
+    "passed_shm_retry": 5,
+    "unique_total_including_quick": 398
+  },
+  "files": {
+    "src/fdm/ui/live_measurement_canvas.py": {
+      "sha256": "eb74c4b97dbbc829d4ef2b01e26ad2af6dc483dc98c4fc7d6ce19c6882ab0f07",
+      "bytes": 41480
+    },
+    "tests/test_live_measurement_mixed_canvas.py": {
+      "sha256": "09b6ac30f917b05b7d336a7a1eec88aba652296c2e61f3b1b7b122a056340eb4",
+      "bytes": 22928
+    },
+    "tests/test_live_mixed_presented_frame.py": {
+      "sha256": "43beba62d998925eb47c23090229c3f55da801b8a7659245363fd4119db7582c",
+      "bytes": 7263
+    }
+  },
+  "physical_microview": "not tested",
+  "gesture_rules": "unchanged",
+  "commit_created": false,
+  "windows": {
+    "passed": 77,
+    "seconds": 14.29,
+    "source_navigation_quick": "passed",
+    "package_selfcheck": "passed",
+    "installed_ordinary_user_selfcheck": "passed",
+    "ordinary_user_start": "passed",
+    "registration_restored": true,
+    "visual_startup": "passed on repeat: foreground HWND verified, DPI aware PrintWindow, independent visual review; initial invalid capture retained"
+  },
+  "installer": {
+    "build_id": "5bdd8be20cdb4647aab36c391b08a781",
+    "path": "dist/internal/mixed-presented-frame-fix-20261021/FDM-0.4.10-mixed-frame-fix-5bdd8be20cdb.exe",
+    "bytes": 398846679,
+    "sha256": "6d36be1b4bba5b0ecfad3febb4c58ddacfc35f30b692060587ec9d2c4d49d5c1",
+    "profile": "internal --exclude-area-models",
+    "local_hash_verified": true
+  }
+}

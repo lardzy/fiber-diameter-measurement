@@ -1,0 +1,30 @@
+[
+  {
+    "phase": "collect-evidence",
+    "started_at": "2026-10-21T06:03:15.598009+00:00",
+    "finished_at": "2026-10-21T06:03:17.982395+00:00",
+    "elapsed_seconds": 2.384,
+    "exit_code": 0
+  },
+  {
+    "phase": "receive-screenshot",
+    "started_at": "2026-10-21T06:03:17.982707+00:00",
+    "finished_at": "2026-10-21T06:03:19.120031+00:00",
+    "elapsed_seconds": 1.137,
+    "exit_code": 0
+  },
+  {
+    "phase": "receive-evidence",
+    "started_at": "2026-10-21T06:03:19.120450+00:00",
+    "finished_at": "2026-10-21T06:03:21.607868+00:00",
+    "elapsed_seconds": 2.487,
+    "exit_code": 0
+  },
+  {
+    "phase": "receive-installer",
+    "started_at": "2026-10-21T06:03:21.608355+00:00",
+    "finished_at": "2026-10-21T06:03:24.248024+00:00",
+    "elapsed_seconds": 2.64,
+    "exit_code": 0
+  }
+]

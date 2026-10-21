@@ -1,0 +1,117 @@
+{
+  "windows_root": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021",
+  "adapters": [
+    {
+      "source": "scripts/validation/fifth_round_remote.py",
+      "source_sha256": "477c49f2ab157dbd75e2e20f7386e3345f53e0e1ab4a4b3ea340aa6e693c88e1",
+      "path": "scripts/validation/seventh_round_remote.py",
+      "sha256": "a35964eb90df44ad1ea1c8fd70950855f1d3f5e8849d3535a4cf4c854a0ad67c",
+      "size": 4039,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/sync_acquisition_fifth_round_windows.py",
+      "source_sha256": "e639d82c15b4c8b566b98ca19edaecb49d26b8fdb741b70a5a2d358608bd0e8e",
+      "path": "scripts/validation/sync_acquisition_seventh_round_windows.py",
+      "sha256": "ff3b07dc2a117be9882eea19e216b6800e3ff7da67bd0d2488ffb21cc26cd7ee",
+      "size": 1137,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/build_acquisition_fifth_round.ps1",
+      "source_sha256": "f162b0296e2916a9e3d4142dc45ad3b0ca04015b96347c822d36eeda92cbb6e0",
+      "path": "scripts/validation/build_acquisition_seventh_round.ps1",
+      "sha256": "2af02a642a237bcc79fc4dd3faea432bca7180b501aaab1c4619dc5a1685bddb",
+      "size": 3700,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/verify_fifth_round_installer.py",
+      "source_sha256": "3989079ed7b6c7761a238ce9e71e878c7e670de697cb249b5a71a1d2ad4dbdda",
+      "path": "scripts/validation/verify_seventh_round_installer.py",
+      "sha256": "9d7e0cd919c9b4ad2ba06ea48452624451fbc41a10bbbd843238035edd26f2fe",
+      "size": 6810,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/verify_fifth_round_installed_selfcheck.py",
+      "source_sha256": "035d40a6140e0e3e819a882ac36f875eb554e53eb9e7d920aa39008c0db53815",
+      "path": "scripts/validation/verify_seventh_round_installed_selfcheck.py",
+      "sha256": "1b51df97676366f80eb214350992ec6a0ed85cd0fee7e40e117591eb112a6e36",
+      "size": 3090,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/manage_acquisition_fifth_round_installation.ps1",
+      "source_sha256": "9b03b0c8833b0bfa1e61f85b5dbfa858c81f8be47d75a9fcf79b8ff1f690bf77",
+      "path": "scripts/validation/manage_acquisition_seventh_round_installation.ps1",
+      "sha256": "2d68022e1b4b9d54a04c03db7c1d5b091ea9b4a3e19e689d77748001427c4974",
+      "size": 6840,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/install_acquisition_fifth_round.ps1",
+      "source_sha256": "3cb07ddc87cf738010fb8fdd58b280d41fe387cace53fdb3432d448ee676765c",
+      "path": "scripts/validation/install_acquisition_seventh_round.ps1",
+      "sha256": "36c81954ab0b77cc83ca52a283b04159671c584edd4bcdffbed158a9fa047e46",
+      "size": 2461,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_environment.ps1",
+      "source_sha256": "b4e5e52212e70a16ad1b7f4cb5e728c24f9c4c7d28bd7eaac34c9a3d0aa5b016",
+      "path": "scripts/validation/probe_acquisition_seventh_round_environment.ps1",
+      "sha256": "35ba6ce109e77de4b51f42264a32d05f0bf12c717e1c3a84708aa9e1bc98140a",
+      "size": 2191,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_explorer.ps1",
+      "source_sha256": "fcc3c8b2ad1b52aa563916b6125e812eb17c159df30e2bf098dd16a31c94adb9",
+      "path": "scripts/validation/probe_acquisition_seventh_round_explorer.ps1",
+      "sha256": "b84c1b3b2fc129d527899c53b5f324f2c726940afc73488058c2a80a0c88a639",
+      "size": 4100,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_frozen.ps1",
+      "source_sha256": "a216b8941c607e623104cc6cc27226276d039909167701dbfd7356f2cfe6c37e",
+      "path": "scripts/validation/probe_acquisition_seventh_round_frozen.ps1",
+      "sha256": "48a33f09044f1668134f05524b5cd2236f87b166d0312377b49797486a9568b2",
+      "size": 28827,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/verify_acquisition_fifth_round_excel.ps1",
+      "source_sha256": "7b9888b8c71e055a3f2be9fe72d2fc7585932fe86909b8baa79b0793a0c6a660",
+      "path": "scripts/validation/verify_acquisition_seventh_round_excel.ps1",
+      "sha256": "edd3ceddcd370da8c4ffff5f47e95e5fefff7d92ee28b651cbe5d57d16f03fcc",
+      "size": 4912,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/run_acquisition_fifth_round_frozen.py",
+      "source_sha256": "dc3d32786847dbd403fed81728674b92ab8aabba851c40e576f12c7e6f9e7eca",
+      "path": "scripts/validation/run_acquisition_seventh_round_frozen.py",
+      "sha256": "6fa85d861990aa0622c6fd64c0ef1ffe5e61fbd0e1de296e91a7e262e9313985",
+      "size": 7185,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/receive_acquisition_fifth_round_artifact.py",
+      "source_sha256": "b5cdff0c3439828f181ec272fb16a5b5ecc03ea45b0a880eb0bc2c0385075212",
+      "path": "scripts/validation/receive_acquisition_seventh_round_artifact.py",
+      "sha256": "aeb0a23f8291a0ea6577880eb0a1ee19a011488425add13c9ac96a01275a763f",
+      "size": 3479,
+      "scope_override": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021"
+    },
+    {
+      "source": "scripts/validation/validate_acquisition_seventh_round.py",
+      "source_sha256": "bcac5b996f1a048964bacd54774a53976cf6c3d7e1d24f5543eac3c1bb5f041d",
+      "path": "scripts/validation/validate_explicit_gestures_runtime.py",
+      "sha256": "9497b95d7c669880ae43408c5eb1b2f67016bc9a6b435471d9a70f454fdcc10b",
+      "size": 39754,
+      "adaptation": "Round 7 actual-navigation harness plus explicit manual gesture menu and real manual submissions"
+    }
+  ]
+}

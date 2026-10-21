@@ -1,0 +1,6 @@
+﻿[
+    "tests/test_live_mixed_presented_frame.py",
+    "tests/test_live_measurement_mixed_canvas.py",
+    "tests/test_round7_canvas.py",
+    "tests/test_round6_manual_start.py"
+]

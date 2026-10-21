@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "version": "0.4.10",
+  "build_id": "5bdd8be20cdb4647aab36c391b08a781",
+  "source_git_baseline": "dc25a4031009a7dd9cdf1646cafa9f089fb746d9",
+  "source_snapshot_sha256": "f416ca38b56b732c3ca089c3988ad9753be4ed8498af24a768d5f9d34c5841c6",
+  "installer": "FDM-0.4.10-mixed-frame-fix-5bdd8be20cdb.exe",
+  "sha256": "6d36be1b4bba5b0ecfad3febb4c58ddacfc35f30b692060587ec9d2c4d49d5c1",
+  "bytes": 398846679,
+  "profile": "internal-exclude-area-models",
+  "excluded_components": [
+    "area-models"
+  ],
+  "windows_targeted_tests": {
+    "passed": 77,
+    "seconds": 14.29
+  },
+  "source_quick": true,
+  "payload_verified": true,
+  "ordinary_user_selfcheck": true,
+  "actual_installation": true,
+  "explorer_start": true,
+  "registration_restored": true,
+  "hardware_capture_tested": false,
+  "full_historical_regression_rerun": false,
+  "installed_validation_path": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\dist\\windows\\installed-candidate",
+  "preserved_installation": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\dist\\windows\\installed-candidate-validated",
+  "rollback": {
+    "path": "dist/internal/acquisition-seventh-round-20261021/FDM-0.4.10-round7-0b4a03782cd9.exe",
+    "sha256": "3298883840527ba419a2c32dfb3db1fab11923078e6f5c5d81862799c52dce59"
+  },
+  "evidence": {
+    "file": "windows-validation-evidence.zip",
+    "sha256": "1a51ea0b23ea8bebc6ea345ddd9de18571956351220e94f3b39d573403f23688",
+    "bytes": 452172
+  },
+  "canvas_sha256": "eb74c4b97dbbc829d4ef2b01e26ad2af6dc483dc98c4fc7d6ce19c6882ab0f07",
+  "explorer_visual_verification": true,
+  "initial_screenshot_valid": false,
+  "visual_recheck": {
+    "file": "windows-visual-recheck.zip",
+    "sha256": "bcb50e46ba7f51f5e754fbd77f138a84798c2f7200660b20c596db4b67dcfcd6",
+    "bytes": 137066,
+    "screenshot": "explorer-visual-recheck/installed-window-printwindow.png",
+    "screenshot_sha256": "35cdbd19e24329cf1a2897aa2a54b527b3c3f1692697a624add08fde877c646e",
+    "foreground_verified": true,
+    "reviewed_content": "FDM full main window; no unexpected dialog; version 0.4.10"
+  }
+}

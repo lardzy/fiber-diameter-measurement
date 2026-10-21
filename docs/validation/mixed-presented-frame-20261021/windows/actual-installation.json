@@ -1,0 +1,11 @@
+{
+    "build_id":  "5bdd8be20cdb4647aab36c391b08a781",
+    "whole_vm_rollback":  false,
+    "installer_sha256":  "6d36be1b4bba5b0ecfad3febb4c58ddacfc35f30b692060587ec9d2c4d49d5c1",
+    "passed":  true,
+    "caller":  "NT AUTHORITY\\SYSTEM",
+    "backup":  "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\seventh-round\\installation-backup\\baseline.json",
+    "arguments":  "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOICONS /TASKS=\"\" /DIR=\"C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\dist\\windows\\installed-candidate\" /LOG=\"C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\seventh-round\\actual-installation.log\"",
+    "exit_code":  0,
+    "installed":  "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\dist\\windows\\installed-candidate"
+}

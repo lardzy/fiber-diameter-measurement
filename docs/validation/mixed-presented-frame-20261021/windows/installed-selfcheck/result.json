@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "executable": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\dist\\windows\\installed-candidate\\FiberDiameterMeasurement.exe",
+  "build_id": "5bdd8be20cdb4647aab36c391b08a781",
+  "executable_sha256": "ccf818c2964119a8e6ef2ede2c408b4353aab4e83f761008a388e8978ad09486",
+  "installed_application": true,
+  "elevated": false,
+  "caller": "B1EA\\lishuyang",
+  "encoding": "cp936",
+  "candidate_alignment_worker": {
+    "child_process": true,
+    "closed": true,
+    "drift": true,
+    "noisy": true,
+    "ok": true,
+    "reference_reset": true,
+    "same": true,
+    "worker_runtime": {
+      "opencv_threads": 4,
+      "pid": 7476
+    }
+  },
+  "hardware_capture_tested": false,
+  "finished_at": "2026-10-21T06:01:03.581473+00:00"
+}

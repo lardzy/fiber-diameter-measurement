@@ -1,0 +1,444 @@
+....FF..FFFFFFFF...F..FFF....F.F.F.                                      [100%]
+=================================== FAILURES ===================================
+___ test_two_point_mode_places_only_on_press_never_on_move_or_release[mixed] ___
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1250f8e70, name="acquisitionTrial") at 0x1454ad880>
+mode = 'mixed'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_two_point_mode_places_only_on_press_never_on_move_or_release(workspace, mode):
+        prepare(workspace, mode, "click")
+        controller = workspace.controller
+        mouse(workspace, QEvent.Type.MouseButtonPress, (100, 100), held=True)
+>       assert controller.draft is not None
+E       assert None is not None
+E        +  where None = <fdm.live_experiment.controller.LiveExperimentController(0x6000037e60d0) at 0x1454ac480>.draft
+
+tests/test_live_explicit_manual_gesture.py:86: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+__ test_two_point_mode_places_only_on_press_never_on_move_or_release[manual] ___
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1310bb5b0, name="acquisitionTrial") at 0x127473a40>
+mode = 'manual'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_two_point_mode_places_only_on_press_never_on_move_or_release(workspace, mode):
+        prepare(workspace, mode, "click")
+        controller = workspace.controller
+        mouse(workspace, QEvent.Type.MouseButtonPress, (100, 100), held=True)
+        assert controller.draft is not None
+        draft = controller.draft
+        assert draft[1] == (100., 100.)
+        for index in range(30):
+            mouse(workspace, QEvent.Type.MouseMove, (140 + index, 120), held=True)
+        mouse(workspace, QEvent.Type.MouseButtonRelease, (180, 120))
+        assert controller.draft is draft
+        assert not controller._jobs and not workspace.session.measurements
+        mouse(workspace, QEvent.Type.MouseButtonPress, (180, 100), held=True)
+        assert controller.draft is None
+        assert len(controller._jobs) == 1
+        intent = controller._jobs[0][0]
+        assert intent.start == (100., 100.) and intent.end == (180., 100.)
+        mouse(workspace, QEvent.Type.MouseMove, (220, 130), held=True)
+        mouse(workspace, QEvent.Type.MouseButtonRelease, (220, 130))
+        assert len(controller._jobs) == 1
+        assert controller.draft is None
+        record = wait_record(workspace)
+        assert record.diameter_um == pytest.approx(80)
+        trace = controller.performance_frame_context()["input_trace"]["events"]
+        finish = [item for item in trace if item["event"] == "manual_finish"]
+>       assert len(finish) == 1 and finish[0]["submit_reason"] == "second_point"
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests/test_live_explicit_manual_gesture.py:107: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error0-mixed] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132b20400, name="acquisitionTrial") at 0x14554dbc0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1455686e0>
+mode = 'mixed', error = ValueError('测量条件已变化')
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("error", [ValueError("测量条件已变化"), FrameBudgetExceeded("测量帧预算已满")])
+    def test_rejected_second_point_cannot_be_completed_by_next_intended_first_point(workspace, monkeypatch, mode, error):
+        prepare(workspace, mode, "click")
+        controller = workspace.controller
+        click(workspace, (100, 100))
+        assert controller.draft is not None
+        finish = controller.finish
+
+        def reject(*args, **kwargs):
+            raise error
+
+        monkeypatch.setattr(controller, "finish", reject)
+        click(workspace, (180, 100))
+>       assert controller.draft is None
+E       AssertionError: assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.85047...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.85047...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037e37a0) at 0x14554d040>.draft
+
+tests/test_live_explicit_manual_gesture.py:136: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error0-manual] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x13456b880, name="acquisitionTrial") at 0x145601000>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1455ba890>
+mode = 'manual', error = ValueError('测量条件已变化')
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("error", [ValueError("测量条件已变化"), FrameBudgetExceeded("测量帧预算已满")])
+    def test_rejected_second_point_cannot_be_completed_by_next_intended_first_point(workspace, monkeypatch, mode, error):
+        prepare(workspace, mode, "click")
+        controller = workspace.controller
+        click(workspace, (100, 100))
+        assert controller.draft is not None
+        finish = controller.finish
+
+        def reject(*args, **kwargs):
+            raise error
+
+        monkeypatch.setattr(controller, "finish", reject)
+        click(workspace, (180, 100))
+>       assert controller.draft is None
+E       AssertionError: assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.88545...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.88545...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037285a0) at 0x145600700>.draft
+
+tests/test_live_explicit_manual_gesture.py:136: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error1-mixed] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x13109fad0, name="acquisitionTrial") at 0x145594dc0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145427930>
+mode = 'mixed', error = FrameBudgetExceeded('测量帧预算已满')
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("error", [ValueError("测量条件已变化"), FrameBudgetExceeded("测量帧预算已满")])
+    def test_rejected_second_point_cannot_be_completed_by_next_intended_first_point(workspace, monkeypatch, mode, error):
+        prepare(workspace, mode, "click")
+        controller = workspace.controller
+        click(workspace, (100, 100))
+        assert controller.draft is not None
+        finish = controller.finish
+
+        def reject(*args, **kwargs):
+            raise error
+
+        monkeypatch.setattr(controller, "finish", reject)
+        click(workspace, (180, 100))
+>       assert controller.draft is None
+E       AssertionError: assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.92142...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.92142...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037f90e0) at 0x145594e00>.draft
+
+tests/test_live_explicit_manual_gesture.py:136: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error1-manual] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1310aee70, name="acquisitionTrial") at 0x145545d00>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1455c4ef0>
+mode = 'manual', error = FrameBudgetExceeded('测量帧预算已满')
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("error", [ValueError("测量条件已变化"), FrameBudgetExceeded("测量帧预算已满")])
+    def test_rejected_second_point_cannot_be_completed_by_next_intended_first_point(workspace, monkeypatch, mode, error):
+        prepare(workspace, mode, "click")
+        controller = workspace.controller
+        click(workspace, (100, 100))
+        assert controller.draft is not None
+        finish = controller.finish
+
+        def reject(*args, **kwargs):
+            raise error
+
+        monkeypatch.setattr(controller, "finish", reject)
+        click(workspace, (180, 100))
+>       assert controller.draft is None
+E       AssertionError: assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.97720...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150230.97720...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037da4e0) at 0x14564ccc0>.draft
+
+tests/test_live_explicit_manual_gesture.py:136: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_________ test_drag_mode_short_clicks_never_leave_a_first_point[mixed] _________
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x13458cf10, name="acquisitionTrial") at 0x1455bcf00>
+mode = 'mixed'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_drag_mode_short_clicks_never_leave_a_first_point(workspace, mode):
+        prepare(workspace, mode, "drag")
+        for xy in ((100, 100), (180, 100), (80, 130)):
+            click(workspace, xy)
+>           assert workspace.controller.draft is None
+E           assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.01201...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E            +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.01201...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x60000372e800) at 0x1455bf2c0>.draft
+E            +    where <fdm.live_experiment.controller.LiveExperimentController(0x60000372e800) at 0x1455bf2c0> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x13458cf10, name="acquisitionTrial") at 0x1455bcf00>.controller
+
+tests/test_live_explicit_manual_gesture.py:150: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+________ test_drag_mode_short_clicks_never_leave_a_first_point[manual] _________
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x126e53250, name="acquisitionTrial") at 0x1455bc880>
+mode = 'manual'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_drag_mode_short_clicks_never_leave_a_first_point(workspace, mode):
+        prepare(workspace, mode, "drag")
+        for xy in ((100, 100), (180, 100), (80, 130)):
+            click(workspace, xy)
+>           assert workspace.controller.draft is None
+E           assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.04657...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E            +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.04657...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x600003729040) at 0x1455bef40>.draft
+E            +    where <fdm.live_experiment.controller.LiveExperimentController(0x600003729040) at 0x1455bef40> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x126e53250, name="acquisitionTrial") at 0x1455bc880>.controller
+
+tests/test_live_explicit_manual_gesture.py:150: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+____ test_drag_requires_held_move_not_a_different_release_coordinate[mixed] ____
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x134572da0, name="acquisitionTrial") at 0x1022a2e80>
+mode = 'mixed'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_drag_requires_held_move_not_a_different_release_coordinate(workspace, mode):
+        prepare(workspace, mode, "drag")
+        mouse(workspace, QEvent.Type.MouseButtonPress, (100, 100), held=True)
+        mouse(workspace, QEvent.Type.MouseButtonRelease, (180, 100))
+>       assert workspace.controller.draft is None
+E       assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.08007...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.08007...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (100.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037cecb0) at 0x1022a3140>.draft
+E        +    where <fdm.live_experiment.controller.LiveExperimentController(0x6000037cecb0) at 0x1022a3140> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x134572da0, name="acquisitionTrial") at 0x1022a2e80>.controller
+
+tests/test_live_explicit_manual_gesture.py:165: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+___ test_drag_requires_held_move_not_a_different_release_coordinate[manual] ____
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132ba2fa0, name="acquisitionTrial") at 0x1456f2ac0>
+mode = 'manual'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_drag_requires_held_move_not_a_different_release_coordinate(workspace, mode):
+        prepare(workspace, mode, "drag")
+        mouse(workspace, QEvent.Type.MouseButtonPress, (100, 100), held=True)
+        mouse(workspace, QEvent.Type.MouseButtonRelease, (180, 100))
+        assert workspace.controller.draft is None
+>       assert not workspace.controller._jobs and not workspace.session.measurements
+E       assert (not deque([(MeasurementIntent(id='c1c7806e5d7949cfa1da2fa445d53613', token=PresentedFrameToken(frame=FrameHandle(source_id...uence=None, measurement_number=1, classification_generation=1), <Future at 0x1455b58c0 state=finished returned dict>)]))
+E        +  where deque([(MeasurementIntent(id='c1c7806e5d7949cfa1da2fa445d53613', token=PresentedFrameToken(frame=FrameHandle(source_id...uence=None, measurement_number=1, classification_generation=1), <Future at 0x1455b58c0 state=finished returned dict>)]) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037d3a20) at 0x1456f2c40>._jobs
+E        +    where <fdm.live_experiment.controller.LiveExperimentController(0x6000037d3a20) at 0x1456f2c40> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132ba2fa0, name="acquisitionTrial") at 0x1456f2ac0>.controller
+
+tests/test_live_explicit_manual_gesture.py:166: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+______ test_two_point_candidate_drag_is_cancelled_without_becoming_manual ______
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1442456a0, name="acquisitionTrial") at 0x145798800>
+
+    def test_two_point_candidate_drag_is_cancelled_without_becoming_manual(workspace):
+        prepare(workspace, "mixed", "click")
+        candidates(workspace)
+        drag(workspace, (90, 40), (140, 70))
+        assert workspace.controller.draft is None
+>       assert not workspace.controller._jobs and not workspace.session.measurements
+E       assert (not deque([(MeasurementIntent(id='299b737d9f29484a98a0b4035f5e0a4d', token=PresentedFrameToken(frame=FrameHandle(source_id...uence=None, measurement_number=1, classification_generation=1), <Future at 0x14563e150 state=finished returned dict>)]))
+E        +  where deque([(MeasurementIntent(id='299b737d9f29484a98a0b4035f5e0a4d', token=PresentedFrameToken(frame=FrameHandle(source_id...uence=None, measurement_number=1, classification_generation=1), <Future at 0x14563e150 state=finished returned dict>)]) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037db980) at 0x145798e80>._jobs
+E        +    where <fdm.live_experiment.controller.LiveExperimentController(0x6000037db980) at 0x145798e80> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1442456a0, name="acquisitionTrial") at 0x145798800>.controller
+
+tests/test_live_explicit_manual_gesture.py:199: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_______ test_shift_forces_manual_without_changing_selected_gesture[drag] _______
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132b8c230, name="acquisitionTrial") at 0x102262280>
+gesture = 'drag'
+
+    @pytest.mark.parametrize("gesture", ["click", "drag"])
+    def test_shift_forces_manual_without_changing_selected_gesture(workspace, gesture):
+        prepare(workspace, "mixed", gesture)
+        candidates(workspace)
+        click(workspace, (90, 40), shift=True)
+        assert not workspace.controller._jobs and not workspace.session.measurements
+        if gesture == "click":
+            assert workspace.controller.draft[1] == (90., 40.)
+            click(workspace, (140, 40))
+        else:
+>           assert workspace.controller.draft is None
+E           assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.35023...: 'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (90.0, 40.0)) is None
+E            +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.35023...: 'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (90.0, 40.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x60000372ee40) at 0x102263c80>.draft
+E            +    where <fdm.live_experiment.controller.LiveExperimentController(0x60000372ee40) at 0x102263c80> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132b8c230, name="acquisitionTrial") at 0x102262280>.controller
+
+tests/test_live_explicit_manual_gesture.py:231: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_______ test_changing_manual_gesture_cancels_old_two_point_draft[mixed] ________
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x134572da0, name="acquisitionTrial") at 0x14557e080>
+mode = 'mixed'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_changing_manual_gesture_cancels_old_two_point_draft(workspace, mode):
+        prepare(workspace, mode, "click")
+        click(workspace, (100, 100))
+        assert workspace.controller.draft is not None
+        workspace.gesture.setCurrentIndex(1)
+        assert workspace.canvas.manual_gesture == "drag"
+        assert workspace.controller.draft is None
+        click(workspace, (180, 100))
+>       assert workspace.controller.draft is None
+E       assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.38510...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (180.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.38510...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (180.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x6000037220d0) at 0x14557c940>.draft
+E        +    where <fdm.live_experiment.controller.LiveExperimentController(0x6000037220d0) at 0x14557c940> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x134572da0, name="acquisitionTrial") at 0x14557e080>.controller
+
+tests/test_live_explicit_manual_gesture.py:246: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_______ test_changing_manual_gesture_cancels_old_two_point_draft[manual] _______
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x126e654e0, name="acquisitionTrial") at 0x14572fa00>
+mode = 'manual'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_changing_manual_gesture_cancels_old_two_point_draft(workspace, mode):
+        prepare(workspace, mode, "click")
+        click(workspace, (100, 100))
+        assert workspace.controller.draft is not None
+        workspace.gesture.setCurrentIndex(1)
+        assert workspace.canvas.manual_gesture == "drag"
+        assert workspace.controller.draft is None
+        click(workspace, (180, 100))
+>       assert workspace.controller.draft is None
+E       assert (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.41861...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (180.0, 100.0)) is None
+E        +  where (PresentedFrameToken(frame=FrameHandle(source_id='document:source', generation=1, sequence=0, received_at=150231.41861...'source', 'path': 'sample.png'}), field_epoch=2, display_revision=1, scale=1.0, offset=(233.0, 254.0)), (180.0, 100.0)) = <fdm.live_experiment.controller.LiveExperimentController(0x600003722b70) at 0x145653ac0>.draft
+E        +    where <fdm.live_experiment.controller.LiveExperimentController(0x600003722b70) at 0x145653ac0> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x126e654e0, name="acquisitionTrial") at 0x14572fa00>.controller
+
+tests/test_live_explicit_manual_gesture.py:246: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_old_failure_between_new_press_and_release_cannot_cover_new_first_point[False-mixed] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x125eaf470, name="acquisitionTrial") at 0x166e7df80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1022be4a0>
+mode = 'mixed', automatic = False
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("automatic", [False, True])
+    def test_old_failure_between_new_press_and_release_cannot_cover_new_first_point(workspace, monkeypatch, mode, automatic):
+        prepare(workspace, mode, "click")
+        workspace.auto_analysis.setChecked(automatic)
+        controller = workspace.controller
+        monkeypatch.setattr(controller._manual_pool, "submit", lambda *_: Future())
+        click(workspace, (30, 30))
+        click(workspace, (60, 30))
+        intent, future = controller._jobs[-1]
+        mouse(workspace, QEvent.Type.MouseButtonPress, (120, 100), held=True)
+        before = workspace.measurement_outcome.text()
+        future.set_result({"status": "rejected", "reason": "no_complete_crossing"})
+        controller.poll()
+>       assert not workspace.measurement_feedback.isVisible()
+E       assert not True
+E        +  where True = <built-in method isVisible of MeasurementFeedbackOverlay object at 0x166ec9900>()
+E        +    where <built-in method isVisible of MeasurementFeedbackOverlay object at 0x166ec9900> = <fdm.ui.measurement_feedback_overlay.MeasurementFeedbackOverlay(0x1345404e0, name="measurementFeedbackOverlay") at 0x166ec9900>.isVisible
+E        +      where <fdm.ui.measurement_feedback_overlay.MeasurementFeedbackOverlay(0x1345404e0, name="measurementFeedbackOverlay") at 0x166ec9900> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x125eaf470, name="acquisitionTrial") at 0x166e7df80>.measurement_feedback
+
+tests/test_live_explicit_manual_gesture.py:297: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_ test_old_failure_between_new_press_and_release_cannot_cover_new_first_point[True-mixed] _
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132bbfba0, name="acquisitionTrial") at 0x166e46000>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x166e23d90>
+mode = 'mixed', automatic = True
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    @pytest.mark.parametrize("automatic", [False, True])
+    def test_old_failure_between_new_press_and_release_cannot_cover_new_first_point(workspace, monkeypatch, mode, automatic):
+        prepare(workspace, mode, "click")
+        workspace.auto_analysis.setChecked(automatic)
+        controller = workspace.controller
+        monkeypatch.setattr(controller._manual_pool, "submit", lambda *_: Future())
+        click(workspace, (30, 30))
+        click(workspace, (60, 30))
+        intent, future = controller._jobs[-1]
+        mouse(workspace, QEvent.Type.MouseButtonPress, (120, 100), held=True)
+        before = workspace.measurement_outcome.text()
+        future.set_result({"status": "rejected", "reason": "no_complete_crossing"})
+        controller.poll()
+>       assert not workspace.measurement_feedback.isVisible()
+E       assert not True
+E        +  where True = <built-in method isVisible of MeasurementFeedbackOverlay object at 0x166eb9cc0>()
+E        +    where <built-in method isVisible of MeasurementFeedbackOverlay object at 0x166eb9cc0> = <fdm.ui.measurement_feedback_overlay.MeasurementFeedbackOverlay(0x1345e89a0, name="measurementFeedbackOverlay") at 0x166eb9cc0>.isVisible
+E        +      where <fdm.ui.measurement_feedback_overlay.MeasurementFeedbackOverlay(0x1345e89a0, name="measurementFeedbackOverlay") at 0x166eb9cc0> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132bbfba0, name="acquisitionTrial") at 0x166e46000>.measurement_feedback
+
+tests/test_live_explicit_manual_gesture.py:297: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+__ test_new_drag_start_dismisses_failure_that_arrived_before_held_move[mixed] __
+
+workspace = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132bbfba0, name="acquisitionTrial") at 0x168ec1d80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x168e3d160>
+mode = 'mixed'
+
+    @pytest.mark.parametrize("mode", ["mixed", "manual"])
+    def test_new_drag_start_dismisses_failure_that_arrived_before_held_move(workspace, monkeypatch, mode):
+        prepare(workspace, mode, "drag")
+        controller = workspace.controller
+        monkeypatch.setattr(controller._manual_pool, "submit", lambda *_: Future())
+        drag(workspace, (30, 100), (80, 100))
+        old_intent, old_future = controller._jobs[-1]
+        mouse(workspace, QEvent.Type.MouseButtonPress, (120, 100), held=True)
+        old_future.set_result({"status": "rejected", "reason": "no_complete_crossing"})
+        controller.poll()
+        mouse(workspace, QEvent.Type.MouseMove, (180, 100), held=True)
+        assert controller.draft is not None
+        assert controller.draft[1] == (120., 100.)
+>       assert not workspace.measurement_feedback.isVisible()
+E       assert not True
+E        +  where True = <built-in method isVisible of MeasurementFeedbackOverlay object at 0x168e9a400>()
+E        +    where <built-in method isVisible of MeasurementFeedbackOverlay object at 0x168e9a400> = <fdm.ui.measurement_feedback_overlay.MeasurementFeedbackOverlay(0x168b46090, name="measurementFeedbackOverlay") at 0x168e9a400>.isVisible
+E        +      where <fdm.ui.measurement_feedback_overlay.MeasurementFeedbackOverlay(0x168b46090, name="measurementFeedbackOverlay") at 0x168e9a400> = <fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x132bbfba0, name="acquisitionTrial") at 0x168ec1d80>.measurement_feedback
+
+tests/test_live_explicit_manual_gesture.py:323: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_live_explicit_manual_gesture.py::test_two_point_mode_places_only_on_press_never_on_move_or_release[mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_two_point_mode_places_only_on_press_never_on_move_or_release[manual]
+FAILED tests/test_live_explicit_manual_gesture.py::test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error0-mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error0-manual]
+FAILED tests/test_live_explicit_manual_gesture.py::test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error1-mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_rejected_second_point_cannot_be_completed_by_next_intended_first_point[error1-manual]
+FAILED tests/test_live_explicit_manual_gesture.py::test_drag_mode_short_clicks_never_leave_a_first_point[mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_drag_mode_short_clicks_never_leave_a_first_point[manual]
+FAILED tests/test_live_explicit_manual_gesture.py::test_drag_requires_held_move_not_a_different_release_coordinate[mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_drag_requires_held_move_not_a_different_release_coordinate[manual]
+FAILED tests/test_live_explicit_manual_gesture.py::test_two_point_candidate_drag_is_cancelled_without_becoming_manual
+FAILED tests/test_live_explicit_manual_gesture.py::test_shift_forces_manual_without_changing_selected_gesture[drag]
+FAILED tests/test_live_explicit_manual_gesture.py::test_changing_manual_gesture_cancels_old_two_point_draft[mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_changing_manual_gesture_cancels_old_two_point_draft[manual]
+FAILED tests/test_live_explicit_manual_gesture.py::test_old_failure_between_new_press_and_release_cannot_cover_new_first_point[False-mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_old_failure_between_new_press_and_release_cannot_cover_new_first_point[True-mixed]
+FAILED tests/test_live_explicit_manual_gesture.py::test_new_drag_start_dismisses_failure_that_arrived_before_held_move[mixed]
+17 failed, 18 passed in 3.78s

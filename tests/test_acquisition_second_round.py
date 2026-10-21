@@ -96,7 +96,15 @@ def test_rejected_feedback_is_viewport_anchored_and_click_passes_through(harness
     page.ruler_choice.activated.emit(1)
     page.display_binding.set_mode("fit")
     page.input_mode.setCurrentIndex(page.input_mode.findData("manual"))
+    page.gesture.setCurrentIndex(0)
+    # The explicit input route retains a valid presented frame before emitting
+    # a manual-start signal. Establish readiness through actual capture frames.
+    frame = workflow.synthetic_frame()
+    for _ in range(12):
+        harness.backend.tick(image=frame)
+        QTest.qWait(40)
     workflow.settle()
+    assert page.controller.state == "ready"
     before = page.session.to_dict()
     feedback = feedback_for_reason("no_complete_crossing", **page.controller.feedback_context())
     page.controller.measurementFeedback.emit(feedback)
@@ -106,10 +114,10 @@ def test_rejected_feedback_is_viewport_anchored_and_click_passes_through(harness
     assert overlay.parentWidget() is page.image_scroll.viewport()
     assert page.session.to_dict() == before
     clicked = []
-    page.canvas.pointPressed.connect(clicked.append)
+    page.canvas.manualGestureStarted.connect(lambda point, token: clicked.append((point, token)))
     # Receive click without initiating an asynchronous measurement in this
     # presentation test; controller validity/ledger gates have separate tests.
-    page.canvas.pointPressed.disconnect(page._press)
+    page.canvas.manualGestureStarted.disconnect(page._manual_start)
     QTest.mouseClick(page.canvas, Qt.MouseButton.LeftButton, pos=page.canvas.rect().center())
     assert clicked and not overlay.isVisible()
     page.controller.measurementFeedback.emit(feedback)

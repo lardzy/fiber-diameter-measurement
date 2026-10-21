@@ -1,0 +1,8 @@
+python.exe : QWidget::paintEngine: Should no longer be called
+所在位置 C:\tmp\fdm-cu-live-explicit-gestures-20261021\scripts\validation\build_acquisition_seventh_round.ps1:50 字符: 1
++ & $python scripts/validation/validate_explicit_gestures_runtime.py -- ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (QWidget::paintE...onger be called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+{"passed": true, "output": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\build\\seventh-round\\source-quick", "error": null}

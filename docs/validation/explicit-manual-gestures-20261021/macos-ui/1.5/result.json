@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "physical_scale": 1.5,
+  "logical_size": [
+    1067,
+    600
+  ],
+  "window": [
+    1067,
+    600
+  ],
+  "algorithm_text": "贴边",
+  "algorithm_size": [
+    72,
+    34
+  ],
+  "gesture_size": [
+    66,
+    25
+  ],
+  "tool_group_size": [
+    140,
+    47
+  ],
+  "category_size": [
+    346,
+    70
+  ],
+  "header_size": [
+    356,
+    38
+  ],
+  "scope": "macOS Qt offscreen; synthetic camera; real navigation and menu click; no hardware acceptance"
+}

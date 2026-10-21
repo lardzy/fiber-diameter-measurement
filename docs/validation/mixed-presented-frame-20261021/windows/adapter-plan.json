@@ -1,0 +1,109 @@
+{
+  "windows_root": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021",
+  "adapters": [
+    {
+      "source": "scripts/validation/fifth_round_remote.py",
+      "source_sha256": "477c49f2ab157dbd75e2e20f7386e3345f53e0e1ab4a4b3ea340aa6e693c88e1",
+      "path": "scripts/validation/seventh_round_remote.py",
+      "sha256": "8380e9f44626061c6e7c8ce82a358617c0ee5fed53636be5af294a6c2ef9c996",
+      "size": 4037,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/sync_acquisition_fifth_round_windows.py",
+      "source_sha256": "e639d82c15b4c8b566b98ca19edaecb49d26b8fdb741b70a5a2d358608bd0e8e",
+      "path": "scripts/validation/sync_acquisition_seventh_round_windows.py",
+      "sha256": "254d1b39c660ac2edf14fa92a3875603302e0b286fe79b0abe74cea6630e7926",
+      "size": 1135,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/build_acquisition_fifth_round.ps1",
+      "source_sha256": "f162b0296e2916a9e3d4142dc45ad3b0ca04015b96347c822d36eeda92cbb6e0",
+      "path": "scripts/validation/build_acquisition_seventh_round.ps1",
+      "sha256": "92e5384b325eab486c362eebc1e7b3e1dafd90f20f4242883ba64fa352352001",
+      "size": 3676,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/verify_fifth_round_installer.py",
+      "source_sha256": "3989079ed7b6c7761a238ce9e71e878c7e670de697cb249b5a71a1d2ad4dbdda",
+      "path": "scripts/validation/verify_seventh_round_installer.py",
+      "sha256": "c1adbe42f799dda99a13366721502dcef08e4f8b9bd527b84418872557a2b337",
+      "size": 6808,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/verify_fifth_round_installed_selfcheck.py",
+      "source_sha256": "035d40a6140e0e3e819a882ac36f875eb554e53eb9e7d920aa39008c0db53815",
+      "path": "scripts/validation/verify_seventh_round_installed_selfcheck.py",
+      "sha256": "1b51df97676366f80eb214350992ec6a0ed85cd0fee7e40e117591eb112a6e36",
+      "size": 3090,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/manage_acquisition_fifth_round_installation.ps1",
+      "source_sha256": "9b03b0c8833b0bfa1e61f85b5dbfa858c81f8be47d75a9fcf79b8ff1f690bf77",
+      "path": "scripts/validation/manage_acquisition_seventh_round_installation.ps1",
+      "sha256": "ba436920ad55ff34616678eee0ceb52e89c01e57b642a812a2bee1741547b713",
+      "size": 6838,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/install_acquisition_fifth_round.ps1",
+      "source_sha256": "3cb07ddc87cf738010fb8fdd58b280d41fe387cace53fdb3432d448ee676765c",
+      "path": "scripts/validation/install_acquisition_seventh_round.ps1",
+      "sha256": "83fea820b8d3f13dc76489a8dca9a33418c3a3d4c2af3f257eee6de1302d8e5e",
+      "size": 2459,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_environment.ps1",
+      "source_sha256": "b4e5e52212e70a16ad1b7f4cb5e728c24f9c4c7d28bd7eaac34c9a3d0aa5b016",
+      "path": "scripts/validation/probe_acquisition_seventh_round_environment.ps1",
+      "sha256": "a51027f7adde55ee124af3974d7825ef2490f509e17cd2ca08c386f20cc84c47",
+      "size": 2189,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_explorer.ps1",
+      "source_sha256": "fcc3c8b2ad1b52aa563916b6125e812eb17c159df30e2bf098dd16a31c94adb9",
+      "path": "scripts/validation/probe_acquisition_seventh_round_explorer.ps1",
+      "sha256": "82acf11aadf08ad43b842fa2687140109b6d9282f949d77e2e3c5aae39fea6b3",
+      "size": 4098,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/probe_acquisition_fifth_round_frozen.ps1",
+      "source_sha256": "a216b8941c607e623104cc6cc27226276d039909167701dbfd7356f2cfe6c37e",
+      "path": "scripts/validation/probe_acquisition_seventh_round_frozen.ps1",
+      "sha256": "0c0233517afe9a20942ab5edf3ad657b10ea41ec7d668497771f13addc951ff8",
+      "size": 28823,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/verify_acquisition_fifth_round_excel.ps1",
+      "source_sha256": "7b9888b8c71e055a3f2be9fe72d2fc7585932fe86909b8baa79b0793a0c6a660",
+      "path": "scripts/validation/verify_acquisition_seventh_round_excel.ps1",
+      "sha256": "56c4b13746871e4d49733776b44a8313a64f18e36df285f48de212d4328d0daa",
+      "size": 4910,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/run_acquisition_fifth_round_frozen.py",
+      "source_sha256": "dc3d32786847dbd403fed81728674b92ab8aabba851c40e576f12c7e6f9e7eca",
+      "path": "scripts/validation/run_acquisition_seventh_round_frozen.py",
+      "sha256": "90ea61c3dc07f926bdf7c76b076cb6cef021f23f07b5876dbb35483b7ad7bcc0",
+      "size": 7183,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    },
+    {
+      "source": "scripts/validation/receive_acquisition_fifth_round_artifact.py",
+      "source_sha256": "b5cdff0c3439828f181ec272fb16a5b5ecc03ea45b0a880eb0bc2c0385075212",
+      "path": "scripts/validation/receive_acquisition_seventh_round_artifact.py",
+      "sha256": "bcc3cd65097bca76c27e2fa7fdb4b3decbd6dca2e39458620a41c07898792596",
+      "size": 3477,
+      "scope_override": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021"
+    }
+  ]
+}

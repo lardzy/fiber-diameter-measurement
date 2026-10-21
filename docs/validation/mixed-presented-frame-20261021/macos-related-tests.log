@@ -1,0 +1,227 @@
+........................................................................ [ 24%]
+....................................................................FFFF [ 48%]
+F....................................................................... [ 72%]
+........................................................................ [ 96%]
+..........                                                               [100%]
+=================================== FAILURES ===================================
+__________ test_receiver_owns_pixels_before_reuse_and_rejects_replay ___________
+
+    def test_receiver_owns_pixels_before_reuse_and_rejects_replay():
+>       memory = shared_memory.SharedMemory(create=True, size=12)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:141:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x1603638c0>
+name = '/psm_355bad36', create = True, size = 12
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+
+        self._track = track
+        if _USE_POSIX:
+
+            # POSIX Shared Memory
+
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_355bad36'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+______ test_receiver_drops_only_proven_superseded_slot_once_before_decode ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1606fa660>
+
+    def test_receiver_drops_only_proven_superseded_slot_once_before_decode(monkeypatch):
+        """Parser test; atomic marker writes are separately tested with the real DLL."""
+        import struct
+        from fdm.services import microview_transport
+        reads = []
+        def read_marker(buffer):
+            reads.append(True)
+            return struct.unpack_from("<Q", buffer)[0]
+        monkeypatch.setattr(microview_transport, "load_bridge", lambda: SimpleNamespace(read_latest_marker=read_marker))
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:166:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x1606adf90>
+name = '/psm_0c46cec0', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+
+        self._track = track
+        if _USE_POSIX:
+
+            # POSIX Shared Memory
+
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_0c46cec0'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+______ test_receiver_rejects_marker_overlap_misalignment_or_truncation[8] ______
+
+offset = 8
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:191:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x1606ae0d0>
+name = '/psm_87cd2cdb', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+
+        self._track = track
+        if _USE_POSIX:
+
+            # POSIX Shared Memory
+
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_87cd2cdb'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+_____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[13] ______
+
+offset = 13
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:191:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x160225ba0>
+name = '/psm_3e70e6b1', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+
+        self._track = track
+        if _USE_POSIX:
+
+            # POSIX Shared Memory
+
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_3e70e6b1'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+_____ test_receiver_rejects_marker_overlap_misalignment_or_truncation[end] _____
+
+offset = 'end'
+
+    @pytest.mark.parametrize("offset", [8, 13, "end"])
+    def test_receiver_rejects_marker_overlap_misalignment_or_truncation(offset):
+>       memory = shared_memory.SharedMemory(create=True, size=24)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_experiment_sources.py:191:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[AttributeError("'NoneType' object has no attribute 'startswith'") raised in repr()] SharedMemory object at 0x160226190>
+name = '/psm_7b77dd98', create = True, size = 24
+
+    def __init__(self, name=None, create=False, size=0, *, track=True):
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        if create:
+            self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+
+        self._track = track
+        if _USE_POSIX:
+
+            # POSIX Shared Memory
+
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+>                       self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+E                       PermissionError: [Errno 1] Operation not permitted: '/psm_7b77dd98'
+
+/opt/miniconda3/lib/python3.13/multiprocessing/shared_memory.py:95: PermissionError
+=========================== short test summary info ============================
+FAILED tests/test_live_experiment_sources.py::test_receiver_owns_pixels_before_reuse_and_rejects_replay
+FAILED tests/test_live_experiment_sources.py::test_receiver_drops_only_proven_superseded_slot_once_before_decode
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[8]
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[13]
+FAILED tests/test_live_experiment_sources.py::test_receiver_rejects_marker_overlap_misalignment_or_truncation[end]
+5 failed, 293 passed in 10.44s

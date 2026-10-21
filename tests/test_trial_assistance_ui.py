@@ -295,14 +295,72 @@ def test_legacy_input_preferences_migrate_only_application_choice(workspace, leg
     assert workspace.input_mode.currentData() == 'mixed'
     assert workspace.measure_mode.currentData() == algorithm
     assert workspace.canvas.input_mode == 'mixed'
-    assert not workspace.gesture.isEnabled()
+    assert workspace.gesture.isEnabled()
     assert workspace.session.to_dict() == payload
     for mode in ('manual', 'candidate', 'mixed'):
         preferences = dict(workspace._assistance_preferences(), input_mode=mode)
         workspace._apply_assistance_preferences(preferences)
         assert workspace.canvas.input_mode == mode
-        assert workspace.gesture.isEnabled() == (mode == 'manual')
+        assert workspace.gesture.isEnabled() == (mode != 'candidate')
+        assert workspace.manual_gesture_button.isEnabled() == (mode != 'candidate')
         assert workspace.session.to_dict() == payload
+
+
+def test_visible_manual_gesture_menu_updates_existing_saved_choice_and_undo(workspace):
+    from fdm.live_experiment import ExperimentSession
+    choose_mode(workspace, "mixed")
+    button = workspace.manual_gesture_button
+    assert button.isVisible() and button.isEnabled()
+    assert button.text() == "两点"
+    assert workspace.gesture.itemText(0) == "两点测量"
+    assert workspace.gesture.itemText(1) == "按住拖线"
+    assert workspace.manual_gesture_actions["click"].isChecked()
+    preferences = workspace._assistance_preferences()
+    category_geometry = workspace.category_scroll.geometry()
+    viewport_geometry = workspace.image_scroll.geometry()
+    controls_height = workspace.view_controls.height()
+    menu = button.menu()
+    menu.popup(button.mapToGlobal(button.rect().bottomLeft()))
+    QApplication.processEvents()
+    QTest.mouseClick(menu, Qt.MouseButton.LeftButton,
+                     pos=menu.actionGeometry(workspace.manual_gesture_actions["drag"]).center())
+    QApplication.processEvents()
+    assert workspace.gesture.currentIndex() == 1
+    assert workspace.canvas.manual_gesture == "drag"
+    assert button.text() == "拖线"
+    assert "按住拖线" in button.accessibleName()
+    assert "单击不建立手工首点" in button.toolTip()
+    assert workspace.manual_gesture_actions["drag"].isChecked()
+    assert ExperimentSession.from_dict(workspace.session.to_dict()).workspace_options["gesture"] == "drag"
+    assert workspace._assistance_preferences() == preferences
+    assert workspace.category_scroll.geometry() == category_geometry
+    assert workspace.image_scroll.geometry() == viewport_geometry
+    assert workspace.view_controls.height() == controls_height
+    workspace._history_action("undo")
+    assert workspace.gesture.currentIndex() == 0
+    assert workspace.canvas.manual_gesture == "click"
+    assert button.text() == "两点"
+    assert workspace.manual_gesture_actions["click"].isChecked()
+    workspace._history_action("redo")
+    assert workspace.gesture.currentIndex() == 1
+    assert workspace.canvas.manual_gesture == "drag"
+    assert button.text() == "拖线"
+
+
+def test_advanced_manual_gesture_and_interaction_mode_keep_quick_control_in_sync(workspace):
+    choose_mode(workspace, "manual")
+    workspace.gesture.setCurrentIndex(1)
+    assert workspace.manual_gesture_button.text() == "拖线"
+    choose_mode(workspace, "candidate")
+    assert not workspace.gesture.isEnabled()
+    assert not workspace.manual_gesture_button.isEnabled()
+    assert "仅候选点选" in workspace.manual_gesture_button.toolTip()
+    choose_mode(workspace, "mixed")
+    assert workspace.gesture.isEnabled() and workspace.manual_gesture_button.isEnabled()
+    assert workspace.gesture.currentIndex() == 1
+    assert workspace.canvas.manual_gesture == "drag"
+    assert workspace.manual_gesture_button.text() == "拖线"
+    assert "短点击候选" in workspace.manual_gesture_button.toolTip()
 
 
 def test_advanced_evidence_storage_and_menu_share_undoable_policy(workspace):
