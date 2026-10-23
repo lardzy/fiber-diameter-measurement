@@ -1,0 +1,80 @@
+{
+    "schema_version":  1,
+    "passed":  false,
+    "started_at":  "2026-10-23T06:07:24.8038823Z",
+    "scope":  "Frozen EXE UI smoke; synthetic source; no hardware, installation or performance acceptance",
+    "executable":  "C:\\tmp\\fdm-brightness-release-20261023\\dist\\windows\\installer-payload-2c6f550749f7\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "CE582F3BFB875404B75A621A56D02683FA5AC7F71A09FCDAF9B2573255EEC20A",
+    "slide":  "C:\\tmp\\fdm-brightness-release-20261023\\synthetic.fdmslide",
+    "source_sha256_before":  "8BE4E5C9D4690D82B3F555413DE2D25D6D21C493A30B2155D366DB6AB5DE200A",
+    "source_sha256_after":  "8BE4E5C9D4690D82B3F555413DE2D25D6D21C493A30B2155D366DB6AB5DE200A",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-brightness-release-20261023\\build\\frozen-gui\\20261023-140724-8fb59b2ee89040a48b92fc8414896383",
+    "session_id":  1,
+    "process_id":  11876,
+    "controls":  [
+                     {
+                         "phase":  "initial-0",
+                         "name":  "亮度：0",
+                         "process_id":  11876,
+                         "class":  "SlideBrightnessButton",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.slideBrightnessButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "numeric",
+                         "name":  "切片查看亮度数值",
+                         "process_id":  11876,
+                         "class":  "_BrightnessSpinBox",
+                         "automation_id":  "QApplication.slideBrightnessPopup.slideBrightnessValue",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "bright-60",
+                         "name":  "亮度：60",
+                         "process_id":  11876,
+                         "class":  "SlideBrightnessButton",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.slideBrightnessButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "01-original",
+                          "file":  "01-original.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "74C45BB53B0C31D6308557B510A0C1A5541612A788755B591D2252383BB36C10",
+                          "center_sha256":  "033DA6F7866CD40CDD2C246131636663DA6541B70E12D8E8C1675029F83AEEFC",
+                          "center_mean":  138.27917620137285,
+                          "center_colors":  2459,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "errors":  [
+                   "Cannot identify exactly one owned brightness popup."
+               ],
+    "brightness_60_verified":  true,
+    "reset_0_verified":  false,
+    "center_brighter":  false,
+    "center_restored":  false,
+    "graceful_exit":  true,
+    "exit_code":  0,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "finished_at":  "2026-10-23T06:07:30.7527497Z"
+}

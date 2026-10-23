@@ -1,0 +1,144 @@
+{
+  "installer": "FDM-0.4.11-slide-brightness-487f083d0ba1.exe",
+  "sha256": "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822",
+  "bytes": 399050852,
+  "evidence_sha256": "b0b672f45309fcd99934e435f83b5597d670c4eda8f7c0f1d3672723e8dd6476",
+  "evidence_bytes": 1545300,
+  "files": [
+    {
+      "path": "frozen-gui/20261023-140724-8fb59b2ee89040a48b92fc8414896383/01-original.center.png",
+      "bytes": 17232,
+      "sha256": "033da6f7866cd40cdd2c246131636663da6541b70e12d8e8c1675029f83aeefc"
+    },
+    {
+      "path": "frozen-gui/20261023-140724-8fb59b2ee89040a48b92fc8414896383/01-original.png",
+      "bytes": 362955,
+      "sha256": "74c45bb53b0c31d6308557b510a0c1a5541612a788755b591d2252383bb36c10"
+    },
+    {
+      "path": "frozen-gui/20261023-140724-8fb59b2ee89040a48b92fc8414896383/result.json",
+      "bytes": 4373,
+      "sha256": "b9a7bdb77adbb3f60c4120ee735c164dcc7934ddf604fbb498257f2726e1d20c"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/01-original.center.png",
+      "bytes": 17232,
+      "sha256": "033da6f7866cd40cdd2c246131636663da6541b70e12d8e8c1675029f83aeefc"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/01-original.png",
+      "bytes": 366951,
+      "sha256": "76cc1df402e183814e9a854ca0cc4a96e4f2daa70d70d1b87c67b4a9290bf4a6"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/02-bright-60.center.png",
+      "bytes": 10505,
+      "sha256": "93133f44d57fe2773ae86aa1dbb3b72fe2b7d099a91c06ed5baadb09cdf15874"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/02-bright-60.png",
+      "bytes": 287327,
+      "sha256": "98252c3f02894acb9f6e53187598ee6a68b151cce6e6e9292c9eaf43e3641fcf"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/03-restored-0.center.png",
+      "bytes": 17232,
+      "sha256": "033da6f7866cd40cdd2c246131636663da6541b70e12d8e8c1675029f83aeefc"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/03-restored-0.png",
+      "bytes": 366951,
+      "sha256": "76cc1df402e183814e9a854ca0cc4a96e4f2daa70d70d1b87c67b4a9290bf4a6"
+    },
+    {
+      "path": "frozen-gui/20261023-141342-6cb22f6b8993436ead9b0508a7a524de/result.json",
+      "bytes": 10844,
+      "sha256": "3b1c47293668ecba7239333c939c4fbc66fee29f831e4e1fb56dfc7dee34b3f3"
+    },
+    {
+      "path": "gui.log",
+      "bytes": 4361,
+      "sha256": "6fe3d0bfd3d575b6f8d6cca0ab2415a33f781513f2bf20845c1f7cc891ed7ea9"
+    },
+    {
+      "path": "gui.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "package/extracted-selfcheck.json",
+      "bytes": 37949,
+      "sha256": "5e121f32ba727ed09960a87a54c3d6157faff198022b00c8ac87d33da1e8a050"
+    },
+    {
+      "path": "package/installer-identity.json",
+      "bytes": 2350,
+      "sha256": "aa7dae6c3ac769df434797a9c8eb16a1f3f2aa8f87828b7fcf4355487d21cf12"
+    },
+    {
+      "path": "package/release-manifest.json",
+      "bytes": 818690,
+      "sha256": "78e72aa24b31abbbb9f64733785ca75268a407b705aa9a5115dba1f98606e5bb"
+    },
+    {
+      "path": "package/runs/20261023T060636Z-9f66aa5f/extract.log",
+      "bytes": 293567,
+      "sha256": "ccfac10dc51438290882a9ccd27a58fa88c52cbadf49a5eced2a79b35916c499"
+    },
+    {
+      "path": "package/runs/20261023T060636Z-9f66aa5f/extracted-selfcheck.json",
+      "bytes": 37949,
+      "sha256": "5e121f32ba727ed09960a87a54c3d6157faff198022b00c8ac87d33da1e8a050"
+    },
+    {
+      "path": "package/runs/20261023T060636Z-9f66aa5f/extracted-selfcheck.raw.stdout",
+      "bytes": 21842,
+      "sha256": "248a8291c07a84001db7b8f8a6635de08fedffd328ca817404fce0d941e22696"
+    },
+    {
+      "path": "package/runs/20261023T060636Z-9f66aa5f/installer-identity.json",
+      "bytes": 2350,
+      "sha256": "aa7dae6c3ac769df434797a9c8eb16a1f3f2aa8f87828b7fcf4355487d21cf12"
+    },
+    {
+      "path": "package/runs/20261023T060636Z-9f66aa5f/selfcheck.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "package/source-manifest.json",
+      "bytes": 168212,
+      "sha256": "8bf18bc605f7d95562625e6c8998463cfb77251ba0cf7fa18a4753abfcee41fd"
+    },
+    {
+      "path": "release-build.log",
+      "bytes": 20752,
+      "sha256": "3d620f665d62f2b6e11416da773d574c005bb98ec90d714d750a22ae1c19f718"
+    },
+    {
+      "path": "release-status.json",
+      "bytes": 259,
+      "sha256": "3d713a8b31f478f3ec1357ae50bf00bbb564ea032e8e3707cc3345e61e88af7e"
+    },
+    {
+      "path": "repackage-exit.txt",
+      "bytes": 4,
+      "sha256": "9aca8dfce962538fb8131d73f84cada05e4dc79f5a0d3612c511b1150f3e33e2"
+    },
+    {
+      "path": "repackage.log",
+      "bytes": 762386,
+      "sha256": "ada821924a46324fe9a4ecee0aa4c60634cdfe193086d32a0c85e495d906a6a8"
+    },
+    {
+      "path": "verify.log",
+      "bytes": 2268,
+      "sha256": "983437d68d8e040126fd64f0c8a708a74a6dd177b5534f7cf9faab329d13ae9e"
+    },
+    {
+      "path": "verify.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

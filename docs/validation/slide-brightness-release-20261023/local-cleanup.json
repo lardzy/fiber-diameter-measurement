@@ -1,0 +1,2157 @@
+{
+  "scope": "Reviewed prior installers and rebuildable local build outputs only",
+  "new_installer": "dist/internal/slide-brightness-20261023/FDM-0.4.11-slide-brightness-487f083d0ba1.exe",
+  "new_installer_sha256": "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822",
+  "rows": [
+    {
+      "path": "dist/internal/optical-adaptive-20261021/FDM-0.4.10-optical-adaptive-daa32894eef7.exe",
+      "bytes": 398869275,
+      "files": 1,
+      "sha256": "ee7ec2619ce1252074789305f7ab4d739d5642b461cf08f93c2e89cc99ae9c8c"
+    },
+    {
+      "path": "dist/internal/explicit-manual-gestures-20261021/FDM-0.4.10-explicit-gestures-2527fbdb485c.exe",
+      "bytes": 398846891,
+      "files": 1,
+      "sha256": "fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833"
+    },
+    {
+      "path": "build/native-kernel-migration/installed-native",
+      "bytes": 7660858,
+      "files": 216,
+      "sha256": null
+    },
+    {
+      "path": "build/native-kernel-migration/installed-python",
+      "bytes": 7445862,
+      "files": 216,
+      "sha256": null
+    },
+    {
+      "path": "build/cu-live-optimization/uv-cache",
+      "bytes": 241335,
+      "files": 22,
+      "sha256": null
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/.pytest_cache",
+      "bytes": 295954,
+      "files": 5,
+      "sha256": null
+    },
+    {
+      "path": "build/hotkey-2026-10-14/__pycache__/run_index_baseline.cpython-313.pyc",
+      "bytes": 7575,
+      "files": 1,
+      "sha256": "e9a3d15e264cc9877012371064b6c2a3fc30a582de8c0dd1acc9f511f2345ad8"
+    },
+    {
+      "path": "build/hotkey-2026-10-14/__pycache__/diagnose_hover.cpython-313.pyc",
+      "bytes": 14625,
+      "files": 1,
+      "sha256": "6f236f09d22ab6bb3f6f8f789b86894515402dddd1d92d221d73000c97a731f9"
+    },
+    {
+      "path": "build/native-code-review/source/scripts/__pycache__/build_windows_onedir.cpython-313.pyc",
+      "bytes": 28104,
+      "files": 1,
+      "sha256": "f7dd5deb24efd0f306cf9f3329c93477af193ad3881d0cf1221b637140f879c6"
+    },
+    {
+      "path": "build/native-code-review/source/scripts/__pycache__/build_support.cpython-313.pyc",
+      "bytes": 49064,
+      "files": 1,
+      "sha256": "225cec1c5db93b8abf9df19eb31b084a8a79ed837b059633e56c942df7174c3d"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/__pycache__/release_manifest.cpython-313.pyc",
+      "bytes": 74415,
+      "files": 1,
+      "sha256": "e7f6879790888f9c053e88cf9ddc3c184ae8b4a2d1ee44b51ef8e568696d5638"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/__pycache__/area_worker_protocol.cpython-313.pyc",
+      "bytes": 405,
+      "files": 1,
+      "sha256": "4e8ff9ee34b4f8eb9e5a92f9d05b8b1fc3b035a162c094a7e588cc2509330505"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 350,
+      "files": 1,
+      "sha256": "0aa02e9e74346f4c3d9721a05dbb3aa09c879d1625e81399b26aaaa792996440"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/__pycache__/version.cpython-313.pyc",
+      "bytes": 315,
+      "files": 1,
+      "sha256": "240e4c87f6b4f839637bbb0c234f039706f430e651726f177ad178460e6317b2"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/services/__pycache__/native_kernels_self_check.cpython-313.pyc",
+      "bytes": 6043,
+      "files": 1,
+      "sha256": "f1ea78b495845e98e3a14bcb2113526cc553bca61d4620aa2ed9445f188e1b30"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/services/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 293,
+      "files": 1,
+      "sha256": "ddfae17cae931b419f6bb18c47c75f25ddb3cd6c8d46a048f5d649be323b1cae"
+    },
+    {
+      "path": "build/native-code-review/source/src/fdm/_native/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 7724,
+      "files": 1,
+      "sha256": "937510f48d7cdd2e374821b3f960435b6027b6d86eaa98bd0de46631da0dd38b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_training_dataset_integration.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 28832,
+      "files": 1,
+      "sha256": "4400e66b1b759381ece64d2ed314f7e8766489a1d1ebc6f9ca5e050d7bd359ba"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_history_state_stamps.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 55753,
+      "files": 1,
+      "sha256": "91faa9a54290d18fe19e668d6753ce47b03e3bb15d2f2ce5ac2670d094802d39"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_parameter_data.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 6813,
+      "files": 1,
+      "sha256": "ce05aea27f7d743ab9a6e5e7ece4722df38cd3015c3b5f62610f9c7e9c5cdc35"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_roi_capture.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 42692,
+      "files": 1,
+      "sha256": "172181d53c70a46846a9c444dc1c8797011984814fcd07a53f74917b1cd941de"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_export_options_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 51517,
+      "files": 1,
+      "sha256": "5e6300b507b7355e0c6a2a17985c757dff5266b4b6414d16713f5bc4c6e4a35f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_advanced_analysis_registry.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14589,
+      "files": 1,
+      "sha256": "6114c0deb4764f40deef9b5ec1d922ad29708675fbc8b6141b642a95283a0807"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_output.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 37479,
+      "files": 1,
+      "sha256": "add811587687e85a329114b3c8f4614a974f705012dfda5a3d61cf689c802b0b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_roi_manager.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 21734,
+      "files": 1,
+      "sha256": "6eafa2173607368f7e006ff2a23f651223223ae3ecb8b7dc96c3e5bae8a61d4c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_construction_geometry.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 269488,
+      "files": 1,
+      "sha256": "d35d63566fcf5dfebc8a0fa1f89211e4305641ebf3e5014d332bf2bca63c8841"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_parameter_audit.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 25916,
+      "files": 1,
+      "sha256": "ce4240de868adc71ab6ab2afcd84844060e8216cd62d0278c86d86a487a0f6b8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_construction_spatial_index.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 63461,
+      "files": 1,
+      "sha256": "d380ee3a73c0098dae6db936e7a6a1bf0531566cb10855be66fecb4fea7d5388"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_project_io_copy_on_write.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 10852,
+      "files": 1,
+      "sha256": "b654caf1b423d37ecd296387f5483bd3f240c492135422550ca3cb89da7df12f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_segmentation_engines.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 16370,
+      "files": 1,
+      "sha256": "fc87b3d43652ecec8063da724eb923f282f1a1d0c64fb1f9d352f56668f0f6da"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_parameters_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 49959,
+      "files": 1,
+      "sha256": "754d7cd35b05cd3fbf3c3ed4730379a2ecc12c04be777daf1ee9a74978f9d01b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_benchmark.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 34370,
+      "files": 1,
+      "sha256": "3ce7992f22b28eb6f636409db8c1c1b40ce6404b251111ff7a8ac54a58c2a064"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_agent.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 154393,
+      "files": 1,
+      "sha256": "e235c5e72b4c2049a51dedc0c6247db56347cdaa09d7e96917e80b5fc5757566"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_project_analysis_asset_save.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14964,
+      "files": 1,
+      "sha256": "125b6d7e2efce7753a4a805878c45f9082748ee79d132d8b18a1c3f058dd0bcf"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_windows_screen_capture.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 41049,
+      "files": 1,
+      "sha256": "73857b0aad9dc4c4043a3ce18b6eacf1d47d2a5ba7caa09ab55a25382e388623"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_measurement_results_model.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 27623,
+      "files": 1,
+      "sha256": "b2f6bd4503b19b4daaaadeddc48bf8ea42e6fbaf023b5766ced06052af993dc9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screen_label_sprite_cache.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 36752,
+      "files": 1,
+      "sha256": "7b9164b67abdff592d0012fb49aa85a9a1172ad792a1627097c01e6f17b60c26"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_reference_instance_propagation.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 9779,
+      "files": 1,
+      "sha256": "77ae44dc4a47cb706e07995c34e29baf92f2eae70d4d90d1e367a348fdca49b1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_overlay_accuracy_matrix.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 45810,
+      "files": 1,
+      "sha256": "a244274e4ed0cde1afa417908f5d9ae2f60faac7ee3ebb529193f30623a9890a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_construction_export.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 33249,
+      "files": 1,
+      "sha256": "9a919ec2acd23c6c8745021439fb607fad26718845331d6bb3ed42edcfd1af6b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_p0_project_interaction.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 15151,
+      "files": 1,
+      "sha256": "11eac64e75de0e43d795670cb760d40e13092b83736ef509fb15b2b42d3ffacf"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_view_transform.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 19416,
+      "files": 1,
+      "sha256": "c22135d88b6b6120bffbe6e3fb910ba11229af4011060fd1375b6cf7120c5df8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_analysis_services.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 24919,
+      "files": 1,
+      "sha256": "cccf19e8f6a4d7ed1c976078f9cd47fd21a94a74cdeafd8bb93023a9dca9bc35"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_main_window_view_experience.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 47033,
+      "files": 1,
+      "sha256": "5b840eebaad0b5940c9dcc7be827bbe6039299ca3c47e4e6b9087d0b5be989b2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_profiles.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 20511,
+      "files": 1,
+      "sha256": "202dc50f7aecff38f1cdf28acfc163e47654d71c9b260f48f78fe8383d19a0f2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_geometry.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 6633,
+      "files": 1,
+      "sha256": "78befb07acc5e047a3006a23cf4161e71bdaf121e1e4a93013ad603a0b3eb8cb"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_batch_controller.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 13684,
+      "files": 1,
+      "sha256": "c211177a676eb610de5d81e3534fcfebe481bd94af48ae1b5fb61ad4c3d9cd29"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_render_pipeline.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 54612,
+      "files": 1,
+      "sha256": "6052ccb634157ec8ddede9c1c148d823cc8ae8ca49b30a77107810e45cd59cfd"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_digital_slide_compression_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14793,
+      "files": 1,
+      "sha256": "9ea8240f4d122f10390d6fc460a9f9d03c3d9c8cedd6ed027ee417a43fb47e76"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_group_manager.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 7587,
+      "files": 1,
+      "sha256": "10baf134651ea27dbd22e9aa664986bfed9164f7fbdbcd3ce5ae42bd24b7e98b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_parameter_widgets.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 59241,
+      "files": 1,
+      "sha256": "a02bc20edb6da26dc5d22bc4b62a013ace7cf9f5e2088ed0c686d77e5338b076"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_build_support.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 37583,
+      "files": 1,
+      "sha256": "f6b3d169a65ac1dbdb85c3379f804cf6c850cba518da4005a5f65dd3396371f0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_parameter_workbench_integration.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 40633,
+      "files": 1,
+      "sha256": "3461a399caa4912edb12a3603935d574435da6b0996269862e3a59da4c1d1ed9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_construction_operations.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 108258,
+      "files": 1,
+      "sha256": "3c4da0007b1ed9184e2a3035e5355673411e2da3e898101f99e3a9719486debb"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_statistics_distribution_widget.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 24963,
+      "files": 1,
+      "sha256": "89176956194f92f8ad3a505eb9706101b9f299bcb711d7429355c52aa35ad95e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_project_analysis_persistence.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 27064,
+      "files": 1,
+      "sha256": "4cdb4aa6c4141638737e430b87d4fcaea2c1fc081aee9c16ef81a25a01f7e327"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_windows_global_hotkey.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 16526,
+      "files": 1,
+      "sha256": "9bb45523c5ebbeebbb4b3829fd68de74ff1f010343ffe2b66c1a2697a07a57e4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_main_window_image_processing.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 44118,
+      "files": 1,
+      "sha256": "1a95b6ee206733cbdc5560955828197e38a929fa405ff041127946e04643b8a1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_ui_canvas_and_export.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 741423,
+      "files": 1,
+      "sha256": "ec3035bc36341d749a9af3b078028da9e2a4b84efddd1d75a93080e30107a18a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_measurement_statistics.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 26765,
+      "files": 1,
+      "sha256": "95ea80b75df63776ca1f307185a17e9df6d047e9b6176756790de1841b57e5f7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_preview_analysis.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 51848,
+      "files": 1,
+      "sha256": "e074e6edd6c4ac3e10424cbac4301abb2a76c5108c8fa3d061df7d4a6ec6c8fb"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_cancellation.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 2795,
+      "files": 1,
+      "sha256": "71a2e7e07babc14c406396853fe9580d3bbdf09f1cc9bbbc5cfdee763365f616"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_main_window_analysis_batch.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 45737,
+      "files": 1,
+      "sha256": "b388caf872cc9441d9acedaa642fd5c573281007215b21b7ad7e577fd2e39364"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_cu5_preview_locator.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 35954,
+      "files": 1,
+      "sha256": "f7c952c9efbca5f9836dfba8b5cf7e696eddce8eaac359c2acc8c1756b0c0f8c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_main_window_analysis_integration.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 58852,
+      "files": 1,
+      "sha256": "f5e9426ba11943527fcd5c057b8d6c17555b1db9457377c69cc30097354f21f0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_segmentation_source.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 17253,
+      "files": 1,
+      "sha256": "5556184e966b7afef2c50e32cd65fca4663909cac12033aefceaa29ddb7d3ddd"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_main_window.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 38821,
+      "files": 1,
+      "sha256": "eb97b2c823467f955a5084baeff44f87787f0d478f8bf18dcd6418c2069086b7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_windows_autostart.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 11222,
+      "files": 1,
+      "sha256": "077ac0ab26902e31f056f77cb4ca4b6ec3361f4e40435d9886ebb46a12647be1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_area_inference.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 55662,
+      "files": 1,
+      "sha256": "f9b12243b683a4e350713d5ce2d3d08f5643d94eaeccb62c9cb7a2d2f2882856"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_processing_workbench.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 107150,
+      "files": 1,
+      "sha256": "09e2095736ea6e7adb0220db1672fd05aa0624f96e71ad16c6a14abf8817e5cc"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_windows_window_locator.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 24171,
+      "files": 1,
+      "sha256": "46251dfe9ea4263674571bed3333532434161e20ae318ffcb0f0a00f146a68b6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_digital_slide.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 135191,
+      "files": 1,
+      "sha256": "2b38155f77d2a303a91a3faa904a5376321792a85a68ab8905fd67b5af832f7c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_digital_slide_overlay_lifecycle.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 40493,
+      "files": 1,
+      "sha256": "271cee19ebe2c81ed49c4c840159401e92fa7bdc47cefe176b73d9d26c30962a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_background_task_controllers.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 44254,
+      "files": 1,
+      "sha256": "0d72c7dac35968c6f9ab518b9625926cf1ab4192fcf1d65f0ed73a2845ec78f3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_lifecycle.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 17054,
+      "files": 1,
+      "sha256": "d3670e2995dcc57196abac27e1b4aa307b75b47d058c6e6a81e3b74593dce2d0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_recipe_presets.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 10552,
+      "files": 1,
+      "sha256": "57d16be3a203cdd02be28c73dbe513c2652a523d544358c7bee0797b7c354c20"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_application_launch.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 21939,
+      "files": 1,
+      "sha256": "403972cdad026f4bceec0fae20d43df7a61fe586a490acf1464d7a7439026e47"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_object_appearance.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 62946,
+      "files": 1,
+      "sha256": "7131326bff54ebebc8b5d29815457682b6c2cff05bee5dece481e918cbe2237e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_protocol.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14736,
+      "files": 1,
+      "sha256": "0f51be7006f89315b94ea285ecc862840a932c037e742de1a62e18c1262dd4c2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_batch.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 53393,
+      "files": 1,
+      "sha256": "50cd3635af0fa279f8171df718ecb098f5bd17d81beae97155478784a6e5e14d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_digital_slide_browse_renderer.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 264120,
+      "files": 1,
+      "sha256": "304d3049f99d8b455ed10d48223eb370eba0fee9acbb75d7e24586887f1f8796"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_visual_settings_signature.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 11683,
+      "files": 1,
+      "sha256": "ba46e7652cc8549ac8050ea549af90f3f57193dd499ea949daa35e9ab1ceea7a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_release_self_check.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 29165,
+      "files": 1,
+      "sha256": "be425832e07a2e145911fed9b1af5bb9bd6aa448048b7b4fee47ae982c7c044e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_hotkey_compatibility.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 18032,
+      "files": 1,
+      "sha256": "fd1a5fd7b0b6f01ceeb2bdde8fe35583c9ac815830a78c05bc4d4ad5a60f53ac"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_main_window_display_adjustment.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14884,
+      "files": 1,
+      "sha256": "e102976b1fc14387b9f0434301f50409ce90062c2587b25ccb24f35708571cea"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_construction_visual_regression.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 15985,
+      "files": 1,
+      "sha256": "b71db924e8870a55b495e4f13160c5e037d787bc800b5e1db5302371a0ed40dd"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_results_center.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 28950,
+      "files": 1,
+      "sha256": "8dc8a5c40ca09ba12c30019dad3e1a24f17d581943421a14a814909ba638b4e3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_advanced_image_analysis.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 38402,
+      "files": 1,
+      "sha256": "62d2a29ea56ca829471c88db40a3f7351baee5b5d4825d61810dd6263dd13cd9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_history_and_sidecar.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 11433,
+      "files": 1,
+      "sha256": "2d009edccd97472e5a7a21d016ae536a4398918c27679cf999aeb4980b8e16f1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_export.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 45361,
+      "files": 1,
+      "sha256": "f36900a5c3059a05260e31b3719c519b243594eef7d27d263b5d8e68f9ed640f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_project_export_controllers.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 73607,
+      "files": 1,
+      "sha256": "63307aa5427c9524ce0a5997100fb936fede3884a83b438a148d8817df99aa1e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_view_zoom_control.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 5143,
+      "files": 1,
+      "sha256": "edc4bcc14b99e1b892a21badefc5cb040d712152cbe8a07f55b26197333c7033"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_fullscreen_controller.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 12158,
+      "files": 1,
+      "sha256": "673341f4754fa3a386eaa7d17d440631450db45961251e4f709beaf50c740704"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_runtime_logging.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 13905,
+      "files": 1,
+      "sha256": "2b27bddbd09f60446aa941d4e7e1882d57dafb553dbaf1eef6c501d7e82f5bc3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_digital_slide_configuration.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 152978,
+      "files": 1,
+      "sha256": "8e1f1baa874b22581bf62a318723b8e0fba217d1fb95e21fe31de8691e0553f6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_raster_export.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 23761,
+      "files": 1,
+      "sha256": "0132824b59a5e7ebe75344574a705bf0b7164c022678fa4c54d303239afc8883"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_segmentation_engine_settings.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 7023,
+      "files": 1,
+      "sha256": "fb6133cb85b44b2d0f519fe27459741fe7447351a1ac64d27792fede08ff8bef"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_build_windows_onedir.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 27611,
+      "files": 1,
+      "sha256": "b05c2e72c6d067db8c3795f73e8f6b2809568e18196f24d28cfbc404a88e07d3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_construction_persistence.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 94481,
+      "files": 1,
+      "sha256": "f9f78706a053f59d4af1b04424362da190e31c0bf2e9aba6fe23e56cd3724737"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_associated_file_open.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 19984,
+      "files": 1,
+      "sha256": "16b7f8f74211f40019d4e4e9ddd7a074581ccbc040eeb77a6d0ea2f7d3411deb"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_advanced_analysis_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 10766,
+      "files": 1,
+      "sha256": "f29762e30c134df3a089a3f6cabaf494eabed4c9894f48385147ed868f30d596"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_annotation_overlay.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 127438,
+      "files": 1,
+      "sha256": "56fa756abaa949efc43fa5b6990413318d8f6a10128c129eb829aa46c5b7af12"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_ui_fullscreen_assets.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 4828,
+      "files": 1,
+      "sha256": "0c6dc99e0885fa89a124d87dd4e11039f43430b017db9b8f5326b4d2c308db0a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_prompt_segmentation.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 57058,
+      "files": 1,
+      "sha256": "c8de7d8eeb3b887079bc4529313892b08941510eeb307502cf56c5f10b3f0989"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_segmentation_coordinates.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 26433,
+      "files": 1,
+      "sha256": "7763b8ec2b8cfbcf64f8bbf9b36bf7a050ce7d9f723052036fad136ebceb3b5a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_processing_models.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 26519,
+      "files": 1,
+      "sha256": "b0ccc69eb2edabffe311d0f424eeb0ab14b2ebd9c37cacaa053f0eab8617b734"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_tool_strategies.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 9682,
+      "files": 1,
+      "sha256": "e568432b830b9d3d3e3dc4cfe9bf0f642e9e341bb6fd400955894beb2a806209"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_overlay_cache.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 78713,
+      "files": 1,
+      "sha256": "366a1a6fcf2663f4a4de55d95f0af1bb0ccede502d15a0ab711d7255f52044a9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_threshold_adjustment_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 10589,
+      "files": 1,
+      "sha256": "991583817922aa54333c90740d2674d74c5331349d096e57aa77289a17b447fe"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_analysis_controller.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 59715,
+      "files": 1,
+      "sha256": "e99bec948c1d6f53e639197a66384cebd6a409dda15d2cbff5ae0e89d7ae1aeb"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_editor.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 38777,
+      "files": 1,
+      "sha256": "8a628229241f233df33bf9b81c76fec659b2b192acddbe119c599ded9c9327f9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_ui_split_tool_button.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 8245,
+      "files": 1,
+      "sha256": "96c4b2aeb90bffcaef177344464fe309e92e72a4fc453438ba7349e732fb0b68"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_object_snap_service.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 89756,
+      "files": 1,
+      "sha256": "dd6b0ccab1614d4a2af274b95ff13512f38fd973932232d9d2584e7d2b54002d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_main_window_image_batch.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 22260,
+      "files": 1,
+      "sha256": "3f6d03e06b2ca499655e3ce8a7aef9f422b1c8017e67bc09069bd2ebfd339e6e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_display_adjustment_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 21976,
+      "files": 1,
+      "sha256": "94e6ea23868170c697813a984e9b0ac6323d37faa0da16918cba35e797d3d6b6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_navigator.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 16414,
+      "files": 1,
+      "sha256": "0e1bbd67533d9679dae14bd355840e1b8c9ceee3caace1119609d01bdca63a6d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_area_handle_cache.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 16805,
+      "files": 1,
+      "sha256": "eff772766bd4089e21286967bf15251050cc5466dc1ad1d79c6c443cff575b2c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_overlay_editor.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 47220,
+      "files": 1,
+      "sha256": "a8472fee9489518607985c0ab18d61a1f82d5cdcc76c642626529c1799581584"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_raster_derivation_dialogs.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 53167,
+      "files": 1,
+      "sha256": "c8ad0494bddea22d2db8ab3dadfaaf6532a039658fbc0547599fb5cb3e11b2d8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_interaction_invalidation.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 56381,
+      "files": 1,
+      "sha256": "34012b6428265c68f70f15112f481bc5e0938a010e6881e29a2f4900a884adf0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_tubeness_chain.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 7679,
+      "files": 1,
+      "sha256": "502e00638bbe150751bc1e56307012ab836b2687ae06fc5d87240701dcfb8d88"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_raster_derivation.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 52372,
+      "files": 1,
+      "sha256": "07f480f7890fdf6d5c4cde02d88382d6540fdb8ffa2cd7ad9d821cf40d6be9a3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_settings_page.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14008,
+      "files": 1,
+      "sha256": "49bd607e7526105a3282632d33a5d578c09b72e48514c618aa0efcf717adb46a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_agent_client.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 31984,
+      "files": 1,
+      "sha256": "19c6515d755d74e77f8c29bdc9fd529c78e038466027650b1bf2ec397d157ee3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_batch_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 18344,
+      "files": 1,
+      "sha256": "bd10e0ee23cf0d4b48cac1e5f7d0e206848264b486a47aa0e4a3530d7f21cce8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_thread_task_manager.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 10982,
+      "files": 1,
+      "sha256": "3d7fa5511b9d66057451e570743c0cbe7589d4890d85ad0bb4d1ddfa5956ba4b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_raster_io.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 153802,
+      "files": 1,
+      "sha256": "32a3e2b23c700f4f375fdeb8680512db12dddfba8112897a2ad6b7229c85a3df"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_capture_and_cu_scale.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 62653,
+      "files": 1,
+      "sha256": "34edea22de961e78bd32addc06c6cdda6aa789dd4ddffc0ca46eca1bd1976270"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_capture.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 74585,
+      "files": 1,
+      "sha256": "07a4ac2ede2c857202548f6a777377aa3d2745218166e79bf5f48f399f87eaf8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_artifacts.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 57993,
+      "files": 1,
+      "sha256": "175f43a3d03d55026414a136d23a97f7fd49dda16f0f030424d9fef0f4f757fc"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_build_windows_installer.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 30268,
+      "files": 1,
+      "sha256": "3e69cd716fab1734570ddb4071104e75eeb805ce7baebe72270e9d90d32839a0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_models_project_io.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 120624,
+      "files": 1,
+      "sha256": "3a8f14a8995a880ae22646436cc1b03ef88115f541b471d9b0fc4ccc96dde663"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_area_derived_geometry.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 114525,
+      "files": 1,
+      "sha256": "e9cc4967609a4573c3869f88dcd8d78b7228da0e13b26178874d826534963fd9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_ui_snapshot.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 10435,
+      "files": 1,
+      "sha256": "42167397b30b29226ddc5971ad6369fd845233cba7221bd6890e52468524fad7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_processing_tiled.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 32580,
+      "files": 1,
+      "sha256": "0a5356be6038596eabefad3ea9c982c4d3d457fbcdc7bf010a8d5c315a1cff70"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_processing_services.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 121973,
+      "files": 1,
+      "sha256": "ae4076293ea628d0887799161cb157c2b0ffd67117f1d2161aa84dff0836fe42"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_dataset_export.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 37096,
+      "files": 1,
+      "sha256": "7f6fbe469d7087513681329a60cda00ee11318b1c9103fe5078fd7b9e243a6f2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_project_roi.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 32399,
+      "files": 1,
+      "sha256": "0b6c4911b2d9c58cd4ff17a50ef3c258e02e3f18cb71d7e045d6272c47b1cc9a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_asset_io.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 24577,
+      "files": 1,
+      "sha256": "ae50cc962363fda7c42a518f01dc0e1671f338db917e8d4cac986e0e71f65a4b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_overlay_state_regressions.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 22894,
+      "files": 1,
+      "sha256": "dcc3a2ef36528a425c500a8efa96a115e65ff4fe338879cd82a55efb4d2a5f83"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_batch_ui.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 29782,
+      "files": 1,
+      "sha256": "0d274d8e62341444055a38f17ef06d2018b43c3294860422940b19e5888e5c88"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_construction_integration.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 237871,
+      "files": 1,
+      "sha256": "a055ee4f6b6769bd78f4842a5fe2f0aa0f5e1b24b853274de3d8b07f0859e404"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_atomic_io.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 26407,
+      "files": 1,
+      "sha256": "f69d6e5557cfc8686285697b5e528758346bd673828b09c91037adc5f4f57145"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_dataset_export_dialog.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 6382,
+      "files": 1,
+      "sha256": "12bf996838953ab267834ea9ec16fb1b1774b064456ce30bebf7d7b4759704f0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_analysis_batch_export.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 57670,
+      "files": 1,
+      "sha256": "561428f4827a67ff2b796f4b11d720bfe247e443354424f4d5cb6be2ab0452a4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_canvas_drag_performance.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 25099,
+      "files": 1,
+      "sha256": "badc7085653c0830febadd8452d7c4e6f8512c0c77b2ab3f279216077fc8fea4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_image_batch.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 38513,
+      "files": 1,
+      "sha256": "8907c529ab3ea24bd3d482533159931c0acd9b550c185ea33ed654c9c765b7db"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_professional_workspace.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 70337,
+      "files": 1,
+      "sha256": "27977639c4abe336d7795d1f8e94ec5cdabd76a106477d0cb09a276961cdc4ac"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_settings_dialog_navigation.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 26881,
+      "files": 1,
+      "sha256": "0bf5e6bb2a57f3e1b0656d5831e0e9674ded6776d45d6513db2085fda652dfb3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_screenshot_settings.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 48007,
+      "files": 1,
+      "sha256": "1fbaeb3d7a1b603543c1fbd1f5c1f0005e59e8af0ab6858ed9bc965aaa99c480"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_fiber_quick_geometry.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 12767,
+      "files": 1,
+      "sha256": "05fe51b80e41f226d5fb2f30b0c42fc1b2a6356d2038c1079cd62b5fc5f325a8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_construction_widgets.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 197791,
+      "files": 1,
+      "sha256": "5cc51b0b597d6851ab0c62307b47e1ce47779b69c669cdcdc744f71977e262a7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_raster_and_snap.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 14060,
+      "files": 1,
+      "sha256": "b759052698c54f0a372ddbef205e9036a149ed6a9a1af6cc594910032f2d6e6c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/tests/__pycache__/test_export_service.cpython-313-pytest-9.0.2.pyc",
+      "bytes": 99028,
+      "files": 1,
+      "sha256": "d424a6bb18ce9a023b0f74dd3ab97f69001ba02432548630f85454cb00db8afa"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/scripts/__pycache__/build_windows_installer.cpython-313.pyc",
+      "bytes": 15109,
+      "files": 1,
+      "sha256": "5d5002fd5366132ba3c5fb51e5bfaa602a3cad7928d41fb6d435d870d7981763"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/scripts/__pycache__/build_windows_onedir.cpython-313.pyc",
+      "bytes": 17084,
+      "files": 1,
+      "sha256": "a33594d1dfa952625bc66346a60fc771442302ec1007dab5d973cc33ac55f267"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/scripts/__pycache__/build_support.cpython-313.pyc",
+      "bytes": 49037,
+      "files": 1,
+      "sha256": "a14a682a8610384dac48c05d99b21779caa4a943aca023967d291989222f77ac"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/display_adjustment_dialog.cpython-313.pyc",
+      "bytes": 55592,
+      "files": 1,
+      "sha256": "1d9ee3a101dcd9cf60fe0e4932d95682da31bdcdaa80fe4af1773c09a52a1743"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/area_handle_cache.cpython-313.pyc",
+      "bytes": 11492,
+      "files": 1,
+      "sha256": "13f57646e5c8a6039dcddb2e91c5069483b21f8d3257e8893449d92ef3433ce1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/analysis_results_center.cpython-313.pyc",
+      "bytes": 110644,
+      "files": 1,
+      "sha256": "fbbf27cb46686c8a790ba479a6d0d0ac7bceaa8e7baed61a029e6d9d47ea1927"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/screen_label_sprite_cache.cpython-313.pyc",
+      "bytes": 14181,
+      "files": 1,
+      "sha256": "6be42d7f0f6c923c555f54a7c2d56a511a23db5c0c45918162f3493597b65e5a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/screenshot_editor.cpython-313.pyc",
+      "bytes": 157735,
+      "files": 1,
+      "sha256": "37e93c75bb12f7e02c2358b428625b4fc8511f6dcf4ea7da1de0c49b4b094b65"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/canvas_navigator.cpython-313.pyc",
+      "bytes": 24216,
+      "files": 1,
+      "sha256": "347e64250906b6cab6243177b77bd84158dc7f5f09e644a19eb5a6047548f878"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/theme.cpython-313.pyc",
+      "bytes": 12983,
+      "files": 1,
+      "sha256": "97e07c49269764046370f397bd40d5aca2f8fcf126bcdc1c0a6e3ca0e8c0f75c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/measurement_results_model.cpython-313.pyc",
+      "bytes": 32550,
+      "files": 1,
+      "sha256": "06fe2280c2a9e89390d6fbbd63e857b4389c2bf5fedd9a345af057b4618c7a30"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/roi_manager.cpython-313.pyc",
+      "bytes": 53586,
+      "files": 1,
+      "sha256": "d16f803a7a555689a72ddfd01264aa25dfe4aadf52f22b44bc6437c5aec0b930"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/area_inference_worker.cpython-313.pyc",
+      "bytes": 8903,
+      "files": 1,
+      "sha256": "c9de7c4a979f0db432722aa1bfeeb18d6570f79aed5dde71f884580847000308"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/view_transform.cpython-313.pyc",
+      "bytes": 1979,
+      "files": 1,
+      "sha256": "3ba6f1a17cdc2d0f04b400ed5b33afbb52b8e9aa8422bf45c6b59a7dd561aa9a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/analysis_profile_controls.cpython-313.pyc",
+      "bytes": 14986,
+      "files": 1,
+      "sha256": "e5b03cdfb4e03a1ec6ce2e07025b75e837164ec3e150f2035c645c0e16a284c0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/reference_instance_worker.cpython-313.pyc",
+      "bytes": 6964,
+      "files": 1,
+      "sha256": "c28d633559d814e16885e34a451f9c1598bcb5d8f3515033b0da89f0eb10981d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_loader.cpython-313.pyc",
+      "bytes": 9481,
+      "files": 1,
+      "sha256": "96f24be26612bddf4b6fc0a6f18afb93d6f9e3b7efff435d36cc4051688316bf"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/view_zoom_control.cpython-313.pyc",
+      "bytes": 7424,
+      "files": 1,
+      "sha256": "67bd71a95db782b92a1fa7c1fdb0c48f6bbef9f7a2a84fb7d90ed87c03840b21"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/canvas.cpython-313.pyc",
+      "bytes": 468298,
+      "files": 1,
+      "sha256": "5ad1ca2274824ab72e2b82655d8b3bd57435d015f6d2e8008c8f803a384b3ef3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_parameter_widgets.cpython-313.pyc",
+      "bytes": 177111,
+      "files": 1,
+      "sha256": "6dffb89559bfdec2ae78e2119dbbcf927ecebf8cdda4f9872fa9bc404f225365"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/background_task_controller.cpython-313.pyc",
+      "bytes": 35825,
+      "files": 1,
+      "sha256": "88470ee1741865136b9883bbb92fdbaee73a8672fb7d76968596ff8343f31245"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/canvas_overlay_cache.cpython-313.pyc",
+      "bytes": 53294,
+      "files": 1,
+      "sha256": "357ec3c33c46f475bcf7a6fef01fead6b1dfe7e4e7cf1d8dbcf32d0023cef343"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/digital_slide_calibration.cpython-313.pyc",
+      "bytes": 89451,
+      "files": 1,
+      "sha256": "b02aa42481e3fa0e20de9769494e21c1a559a87cfbf7abe86d361a2fb72c9832"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/screenshot_overlay.cpython-313.pyc",
+      "bytes": 21627,
+      "files": 1,
+      "sha256": "9f5b6a01d819fb13a586a942d3767a2b19cad7777fc8f35fd810925599773c36"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/screenshot_annotation_overlay.cpython-313.pyc",
+      "bytes": 120567,
+      "files": 1,
+      "sha256": "c7426d08aaedfabb837af1e11b175304f94c4b3cf1b1da8f0e00dd14fd7d0931"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/object_inspector.cpython-313.pyc",
+      "bytes": 65616,
+      "files": 1,
+      "sha256": "6729eb98c8f9853472facfdbe17d81087e9d6cbf43593e754629c81c4e7b2ad6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_parameter_data.cpython-313.pyc",
+      "bytes": 11724,
+      "files": 1,
+      "sha256": "e06c72e7f19c579cc56a9dd3368c649c16241ed739d381cf68635724b508af85"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/raster_export_dialog.cpython-313.pyc",
+      "bytes": 17914,
+      "files": 1,
+      "sha256": "dc84254ffc19a29b756626cf69f42abd38a1e8ff3f4695d0426c2082b6b2c3ca"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/analysis_batch_controller.cpython-313.pyc",
+      "bytes": 11209,
+      "files": 1,
+      "sha256": "340a9a3576a0d7814f4eedca32fe11b5b91335e673247e8d633c10d19f6197d9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_batch_controller.cpython-313.pyc",
+      "bytes": 13953,
+      "files": 1,
+      "sha256": "1a226e6ca9b9fc00f3d727a4ad11f65b8553199e55294e42bb1903ea2bfa5bd6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/dialogs.cpython-313.pyc",
+      "bytes": 269415,
+      "files": 1,
+      "sha256": "e7c219d36f6c56325d38af5f7708b09d28c36577ec647c7cdcbfc6c4a41242cc"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/canvas_tool_strategies.cpython-313.pyc",
+      "bytes": 7777,
+      "files": 1,
+      "sha256": "2d8db5914ca59bff8c5326978417a21e3647045268b4c4a8aa401d0fef00ad8d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_batch_dialog.cpython-313.pyc",
+      "bytes": 49749,
+      "files": 1,
+      "sha256": "4af67b123a9103dc5e40f5980953f397ad0e77ff31d319b9c3f0afd67003395f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_analysis_controller.cpython-313.pyc",
+      "bytes": 130825,
+      "files": 1,
+      "sha256": "a1508ecd1453a7011cef51a934ccf2629f47b9502d8b4cbd7284493ae84b6373"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/widgets.cpython-313.pyc",
+      "bytes": 94116,
+      "files": 1,
+      "sha256": "11e2842d0beeca784827072089e3c9d9de2056a9d5ea9dcd1d109d4febfa2ae7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/workspace.cpython-313.pyc",
+      "bytes": 27377,
+      "files": 1,
+      "sha256": "6fa1b8112178b051778b7cf63da4d534c32a7e7785746167fa00141417b81919"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/main_window.cpython-313.pyc",
+      "bytes": 1424466,
+      "files": 1,
+      "sha256": "b80cbea175ef928ab2da5b63fb42672806b514248085f83a7e76a865ef7de7f4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/export_controller.cpython-313.pyc",
+      "bytes": 15158,
+      "files": 1,
+      "sha256": "bc94d23c159aca548c2aa205efa7ebe8d6a30d3c7d335fbe10f6ea21c9ab7575"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/measurement_records.cpython-313.pyc",
+      "bytes": 40802,
+      "files": 1,
+      "sha256": "824e0aa306a082c2f10bfd47d2eba970e46c5d058f83c7064db787a22f9a2f96"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/rendering.cpython-313.pyc",
+      "bytes": 103621,
+      "files": 1,
+      "sha256": "864f50857bb23a5e0414299f29c01f4d71c79899a92b2fc932b2450847638650"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/segmentation_engine_settings.cpython-313.pyc",
+      "bytes": 21206,
+      "files": 1,
+      "sha256": "d935445ce95ed49afd0c3c8135d76c715fa40dc8372978c56abbd7da4b25a8e8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/fullscreen.cpython-313.pyc",
+      "bytes": 15945,
+      "files": 1,
+      "sha256": "4d726aec247fb51f357bbc03a803e380bab24e8009120e3da07839c1f6b54fc1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/screenshot_settings_page.cpython-313.pyc",
+      "bytes": 32451,
+      "files": 1,
+      "sha256": "02c1fb7d3a110c70e7229668b619caddc27ca77d2f1a25e4096457752721e000"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/dataset_export_dialog.cpython-313.pyc",
+      "bytes": 22800,
+      "files": 1,
+      "sha256": "c58c91ffb4551ee42737383e003153d2de0e59d2565cb3789e1a6aba54302c2f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/prompt_segmentation_worker.cpython-313.pyc",
+      "bytes": 8601,
+      "files": 1,
+      "sha256": "26523a28e90d1acc1f8f63d19276a1dfe139b59acaaf069f5e2d69a282be7e27"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/associated_file_controller.cpython-313.pyc",
+      "bytes": 15023,
+      "files": 1,
+      "sha256": "dffa6026765c5aaaaccc91f0d3822d10635306757dfa4e3541951fa20354cbd4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/threshold_adjustment_dialog.cpython-313.pyc",
+      "bytes": 27097,
+      "files": 1,
+      "sha256": "ce16d547a776ec6f6625f26c827ce259c1a1e612e5bc335b0ec6695840a2ff14"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_information_dialog.cpython-313.pyc",
+      "bytes": 9691,
+      "files": 1,
+      "sha256": "18b4722b21e495cde0ff4a75cd4d4e45f14fca3b2e1c0a899ef18eb46a4fe495"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/analysis_parameters_dialog.cpython-313.pyc",
+      "bytes": 59655,
+      "files": 1,
+      "sha256": "31296057625e0d01834d844a067d964e78302313ed9835f6fc1f8b05d6d9e357"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/preview_analysis_worker.cpython-313.pyc",
+      "bytes": 12297,
+      "files": 1,
+      "sha256": "429925da8f9b28b4801463192068bf90083096aa9ce0b08436ed2ff2eaf65e01"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/digital_slide_canvas.cpython-313.pyc",
+      "bytes": 153219,
+      "files": 1,
+      "sha256": "8673393d499e9ca0460475991bf00fcbd483fdb39b226097e8907c35f61f1ed3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/construction_widgets.cpython-313.pyc",
+      "bytes": 39589,
+      "files": 1,
+      "sha256": "e96e6ba7a485a7a6b29c5f488323a2a7aa9e035894939125841d3023de2cffb8"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/preview_analysis_dialog.cpython-313.pyc",
+      "bytes": 17466,
+      "files": 1,
+      "sha256": "e044767047b164e8bf552f5e56840c6e988d354955749116c7d19885d1529c0f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/image_processing_workbench.cpython-313.pyc",
+      "bytes": 297568,
+      "files": 1,
+      "sha256": "484d7c20c4cbd08a592063b959279338e3e527b4b145980f80c07cf4ecaea251"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/microview_preview_host.cpython-313.pyc",
+      "bytes": 4611,
+      "files": 1,
+      "sha256": "4b12422a09f5235ded97edf42d801a88d774eff101825251f826ff2493d3323a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/construction_rendering.cpython-313.pyc",
+      "bytes": 15751,
+      "files": 1,
+      "sha256": "660acc3ffc489f36ca9c16c894ed57a343f61e2a69813925ae2d378055b78a74"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/analysis_batch_dialog.cpython-313.pyc",
+      "bytes": 21902,
+      "files": 1,
+      "sha256": "845acb4c43b5761e96307df835fe3b471d9f7897bd3d23dafc6499bbdf553461"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 273,
+      "files": 1,
+      "sha256": "c08b76bd7b6431dcb32b2bbebc313360d36539c6c72b7abe18afaf7dfab0db52"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/preview_analysis_task_controller.cpython-313.pyc",
+      "bytes": 18063,
+      "files": 1,
+      "sha256": "58d4226591fbc7c92b34636229b5a19cbf46d104ac27bf8f9c22779f9ff9c5e1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/raster_derivation_dialogs.cpython-313.pyc",
+      "bytes": 33240,
+      "files": 1,
+      "sha256": "9eb8c738bbfba6d687b7efa90918a54a7299ef3895bfd82a98e8a1962b42afa1"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/icons.cpython-313.pyc",
+      "bytes": 48422,
+      "files": 1,
+      "sha256": "40aad8ba68c42510ea94a422b30a7300e29c553473c6be313f7d8ffe03e463e5"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/project_session_controller.cpython-313.pyc",
+      "bytes": 65008,
+      "files": 1,
+      "sha256": "338597beedcef7bebf0f00b81df6f452325a7f34bb13bb7e7447b1f13806e3ec"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/statistics_distribution.cpython-313.pyc",
+      "bytes": 78985,
+      "files": 1,
+      "sha256": "d1040134d3167d8d223ce79556436867ab0ddeffdb0286c32a68740643ac970f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/thread_task_manager.cpython-313.pyc",
+      "bytes": 14723,
+      "files": 1,
+      "sha256": "c926887f246a01176037f6b81339d513f150d7bc7c55db5ecbfd3cdeb47fd020"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/fiber_quick_geometry_worker.cpython-313.pyc",
+      "bytes": 6243,
+      "files": 1,
+      "sha256": "3fdadd4b6789f0b9ccf534437d61ee766f2ba1e50a4f7e05a78e21fa75aa4873"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/advanced_analysis_dialog.cpython-313.pyc",
+      "bytes": 38484,
+      "files": 1,
+      "sha256": "852e1c72a2551cd4fbd216835f730c8a7d94bf6214dee39c6821b0c1f3517e55"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/ui/__pycache__/statistics_widgets.cpython-313.pyc",
+      "bytes": 29665,
+      "files": 1,
+      "sha256": "4740bc6b2657541b87e8016437838c6d55fdb9dac3409e7a434acd9e32de8685"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/platform/__pycache__/windows_screen_capture.cpython-313.pyc",
+      "bytes": 33928,
+      "files": 1,
+      "sha256": "8c1a22d3b354dc384f8c22094ea6cc72056feb5b595a53097604b71019bbc2c6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/platform/__pycache__/windows_global_hotkey.cpython-313.pyc",
+      "bytes": 12576,
+      "files": 1,
+      "sha256": "01bda99333beaff6d33729b58e052a105405ce11bf0b87bdc278893fa02024f6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/platform/__pycache__/windows_autostart.cpython-313.pyc",
+      "bytes": 8883,
+      "files": 1,
+      "sha256": "671bfb167edba3692d922eb62d88bf7ea60b92cb2f1214c869901e9b2850ade4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/platform/__pycache__/windows_window_locator.cpython-313.pyc",
+      "bytes": 27769,
+      "files": 1,
+      "sha256": "5767c8116a6ffa68bb7e703f7546d57911f782d34b5d4965fda39e03c7d4edba"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/platform/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 491,
+      "files": 1,
+      "sha256": "52a21baec899b6be3bd62ee84c22e9ee2e789055ea7a45fdf7507770959b5317"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/release_manifest.cpython-313.pyc",
+      "bytes": 63850,
+      "files": 1,
+      "sha256": "0b3bed117d0806cdcbca000393762f8d647797b5513b2ea3ed7bd3c83b2ac4c2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/image_parameter_audit.cpython-313.pyc",
+      "bytes": 29180,
+      "files": 1,
+      "sha256": "8a06cfac9d6b42390e45f41340500428efb60f10d2221bf38e6a5dee62c60f71"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/area_worker_protocol.cpython-313.pyc",
+      "bytes": 412,
+      "files": 1,
+      "sha256": "04794107e8a76198a3a9d63dbc457be8e2ee37885cc7d1c6398a98f7c8810e38"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/cancellation.cpython-313.pyc",
+      "bytes": 3097,
+      "files": 1,
+      "sha256": "fd60463456f1aafb94928d4f01b09eb18134604d3e22e2f1da820a8f79b25931"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/screenshot_protocol.cpython-313.pyc",
+      "bytes": 16854,
+      "files": 1,
+      "sha256": "4d559f21c145cdff16e94370e14d3c2144c62175d10889febf430f7f845234e2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/application_launch.cpython-313.pyc",
+      "bytes": 21759,
+      "files": 1,
+      "sha256": "0cf17702b2e5320d4e073884d40315b3e46780a4c64b1f8df5e9eaa62b8b4f3e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/area_display.cpython-313.pyc",
+      "bytes": 70409,
+      "files": 1,
+      "sha256": "b96dbf772a446d3e322a1f7cc8bbac209327b881b1ffd6a4b3aecb9de1bd15d9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/atomic_io.cpython-313.pyc",
+      "bytes": 6728,
+      "files": 1,
+      "sha256": "b1245f6bc6a9c60e4c59954a5a7353b0fa97ca289c4c98cd828d3d4e55309bb3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/ui_snapshot.cpython-313.pyc",
+      "bytes": 36741,
+      "files": 1,
+      "sha256": "e87d0ad40f61e26fee91cc35489f3bf4d5991d68e7b6ee3cccdabf38d6f3b421"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/runtime_logging.cpython-313.pyc",
+      "bytes": 8385,
+      "files": 1,
+      "sha256": "9ca24fa5ce1dcd85cdd76820bd7aaa4e576a0ce220c33c012a2c598887de930a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/lifecycle.cpython-313.pyc",
+      "bytes": 3311,
+      "files": 1,
+      "sha256": "d4d8265f74daaa18cd390f3aaaefa793d313d229a5df10179a3dcbeb4f338148"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/image_processing_models.cpython-313.pyc",
+      "bytes": 66909,
+      "files": 1,
+      "sha256": "df8a1bcc9e6c8ef3ace40929b0edf13f518e8c006dd9642d7918195c699187a0"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/history.cpython-313.pyc",
+      "bytes": 52632,
+      "files": 1,
+      "sha256": "7d345ab36ffae57363e90e9c9b5c0704ed72f61776d5c25eb2b9c821a9b64c91"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/settings.cpython-313.pyc",
+      "bytes": 118285,
+      "files": 1,
+      "sha256": "43d6f61a2c12cb9edf80109edb8a12df82cec0ac4b65f91850f04e442eddfc79"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/project_roi.cpython-313.pyc",
+      "bytes": 45166,
+      "files": 1,
+      "sha256": "53ad94f498ecfedf47dff12b9a65f13a989f12cae4f29744651fb028fa71e553"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/construction_spatial_index.cpython-313.pyc",
+      "bytes": 23003,
+      "files": 1,
+      "sha256": "8e6cd53e6f67e48bb21b9149ffa4a3ae2d1e9e7520735c8fdc94c5f8cee97c51"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/analysis_artifacts.cpython-313.pyc",
+      "bytes": 70337,
+      "files": 1,
+      "sha256": "828ceaa82edabd257386ec41c79207c5e13745c001492484fb17771458f922a2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/construction_document.cpython-313.pyc",
+      "bytes": 24845,
+      "files": 1,
+      "sha256": "6159e67cc514b3060f850f16877dc5ad146a8eb46a4bbd927302ce4547634bb9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/models.cpython-313.pyc",
+      "bytes": 147154,
+      "files": 1,
+      "sha256": "327d0b65537038425252c31e436503759278c7b5285406aa292b1ef88bef0395"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/screenshot_agent.cpython-313.pyc",
+      "bytes": 94767,
+      "files": 1,
+      "sha256": "9b8cd170c76235d28bb42673bbe6917dcc2e656a92e6731937691af5ecb3371d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/app.cpython-313.pyc",
+      "bytes": 11240,
+      "files": 1,
+      "sha256": "871c2ab8b932e0569cbb150697d3547d0533e1a0acce06b572a882665bf653b6"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/canvas_benchmark.cpython-313.pyc",
+      "bytes": 115586,
+      "files": 1,
+      "sha256": "71c25b45bd1a97d116ebf569ab8c9e2c34d4a50ab5f3d0d53901791b12d7cdb5"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/construction_geometry.cpython-313.pyc",
+      "bytes": 163073,
+      "files": 1,
+      "sha256": "2ac4743ea917127395df4d5a0e9e39f1651c56875eb7f32fdd8b280072ff7cd9"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/raster.cpython-313.pyc",
+      "bytes": 18620,
+      "files": 1,
+      "sha256": "a53e2da61b6d6b9927ee45e14c910c8cf4c92813f28c67cbc8620548e4d6378c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 357,
+      "files": 1,
+      "sha256": "5743c5caa3e992f51e3388a5e09ac7fb53054578f8615faa54596e6615e5253f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/version.cpython-313.pyc",
+      "bytes": 322,
+      "files": 1,
+      "sha256": "0bf9d781fa1ee1e22440015a033c5aaeb03a23d743d8320fba709a1a9bfbc1a3"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/project_io.cpython-313.pyc",
+      "bytes": 24731,
+      "files": 1,
+      "sha256": "45589c0cbc5ba0b88bd2d4ca053290e5f4416efedbdc15a7a0186245dc9f2514"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/geometry.cpython-313.pyc",
+      "bytes": 27355,
+      "files": 1,
+      "sha256": "964321842c3c9384da80d4605f7efaa620ae836fdda9453c3c6e4402f42799f5"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/__pycache__/screenshot_settings.cpython-313.pyc",
+      "bytes": 36634,
+      "files": 1,
+      "sha256": "805e5d7592cb1704ab9d09faf36cedc15f7a6888f25bb1404126268c3d7d6d73"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/workers/__pycache__/area_worker.cpython-313.pyc",
+      "bytes": 27946,
+      "files": 1,
+      "sha256": "91b7bbf0cf02cd64d097d8295bc773513905dc2568f0b864420c85fb2f3c00c7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/image_recipe_presets.cpython-313.pyc",
+      "bytes": 16860,
+      "files": 1,
+      "sha256": "db7aa8c81c0233dc99374052e532efc18ae10258134170b30f30a9087cd14434"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/analysis_batch.cpython-313.pyc",
+      "bytes": 53447,
+      "files": 1,
+      "sha256": "43ccc068c7b3afc69df1601a4602190d40dd20fb0fd8e068edacbc0111bafaa7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/prompt_segmentation.cpython-313.pyc",
+      "bytes": 110267,
+      "files": 1,
+      "sha256": "dbbbebbd941fdc150c89cca3a04f32f2ec63bd948a54304d97cc875ec9e2c39c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/segmentation_engines.cpython-313.pyc",
+      "bytes": 17386,
+      "files": 1,
+      "sha256": "a879df4cea3031175e5dff9f65ce8e1a9bbf7129de6aa2d86aeeee2fa2c91572"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/export_service.cpython-313.pyc",
+      "bytes": 65915,
+      "files": 1,
+      "sha256": "a3820cd33fae3b2a189e7e7c38c574487b7b3461a44a6751c690ae05d0802eb7"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/advanced_image_analysis.cpython-313.pyc",
+      "bytes": 117705,
+      "files": 1,
+      "sha256": "02462bb7f2147aab59fc6d3add23b2d2ef3627a99cb04b67157e163300eed2d4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/cu5_preview_locator.cpython-313.pyc",
+      "bytes": 35959,
+      "files": 1,
+      "sha256": "fac6bdf618bf094665b25688d283bed930241c0ea6ee1917f532b405f4ba1aaf"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/fiber_quick_geometry.cpython-313.pyc",
+      "bytes": 42552,
+      "files": 1,
+      "sha256": "2ed21505014e8abc3a254ee3353072d6708319a6fa07b9fcf9ea4964fdeb8725"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/capture.cpython-313.pyc",
+      "bytes": 123900,
+      "files": 1,
+      "sha256": "03c0172ce9217a23d4d953119442e2814c54319c136615cbb368acf80c428d32"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/digital_slide_store.cpython-313.pyc",
+      "bytes": 64667,
+      "files": 1,
+      "sha256": "8a8985ca8b879d09829cf9342420a107fcd079d661ae7b8ea98524d5ca81913a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/dataset_export.cpython-313.pyc",
+      "bytes": 50987,
+      "files": 1,
+      "sha256": "46ed74ea63af1fc084595876c99f54a00b607c830db98a25612bea9d7c4d28da"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/tubeness_chain.cpython-313.pyc",
+      "bytes": 8163,
+      "files": 1,
+      "sha256": "737fbab2eadf638d1063dfa0e6123c96e047db6b8b0f94e65da8b20f2de6e868"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/digital_slide_calibration.cpython-313.pyc",
+      "bytes": 18167,
+      "files": 1,
+      "sha256": "8de7e2c3268f2fc828e3e198926ab020ecfd8cfec016932786fcdfde812c9453"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/reference_instance_propagation.cpython-313.pyc",
+      "bytes": 27820,
+      "files": 1,
+      "sha256": "7ddb8d178c27e39ec6363c5f1a8f7895a2d552a70ff50c0f4927439a7247c70f"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/group_manager.cpython-313.pyc",
+      "bytes": 19035,
+      "files": 1,
+      "sha256": "c95f6d079377541321f524cd74917696edf9b139500f0ad25b6f9b82527c2d7c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/image_processing.cpython-313.pyc",
+      "bytes": 322690,
+      "files": 1,
+      "sha256": "36d4da962a1b5b98933c0d021df42a99096e8c9572f1b3e6da7b4f752ee27c6c"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/screenshot_agent_client.cpython-313.pyc",
+      "bytes": 18421,
+      "files": 1,
+      "sha256": "9705b0551a9479957062bf49fcf45f2eab969dbe5412ef09f7123c75d9967f0b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/screenshot_capture.cpython-313.pyc",
+      "bytes": 63666,
+      "files": 1,
+      "sha256": "199a14e013d4e377fc91e4c77fae1796d1b5bee1fb0f504613e6097bccc59357"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/analysis_asset_io.cpython-313.pyc",
+      "bytes": 21077,
+      "files": 1,
+      "sha256": "8f6d7f922a4f35d8e210b20328d7ee91465efd1b8ec5346fbe068f6d60b23bbb"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/digital_slide_cache.cpython-313.pyc",
+      "bytes": 30787,
+      "files": 1,
+      "sha256": "0a88e5dd5d0c43b986f9f9d2594421195ef99f7d8c9a09b50c78d03ff452158b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/raster_io.cpython-313.pyc",
+      "bytes": 55445,
+      "files": 1,
+      "sha256": "3272c93f841eaf107ec1663fbdb7be0b048f9e43e94144379fc11a22cf5a615e"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/image_analysis.cpython-313.pyc",
+      "bytes": 111466,
+      "files": 1,
+      "sha256": "b758cd324c357d08ea24e1fa55739fae4495a0531280698745f32d5bac270216"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/analysis_profiles.cpython-313.pyc",
+      "bytes": 33969,
+      "files": 1,
+      "sha256": "0b793e65cd5a5adcf5341b279a98fcab15f4affaef5ec7ff17219efce2de69c4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/screenshot_output.cpython-313.pyc",
+      "bytes": 15351,
+      "files": 1,
+      "sha256": "d599c2d161d7304d0ef2181e772e7423470f87d84503c0d3e24689c3a9ccfe38"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/image_batch.cpython-313.pyc",
+      "bytes": 52527,
+      "files": 1,
+      "sha256": "04d8e36d31640416bed08cd763b4f5cb9a6a5cde8c293f724f4dcebacb6cd2a2"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/advanced_analysis_registry.cpython-313.pyc",
+      "bytes": 29592,
+      "files": 1,
+      "sha256": "0276c824718c15e20285361aae1e816c2e22da2516f9ab29051dd7cf12b56227"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/area_inference.cpython-313.pyc",
+      "bytes": 43142,
+      "files": 1,
+      "sha256": "d9678e6c81225c5ac81761584afdece5be9754817d75b8eca77a2327a96edc3d"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/object_snap_service.cpython-313.pyc",
+      "bytes": 61038,
+      "files": 1,
+      "sha256": "a2bfa8ccfec669019a96423ca31064f2e5902f8cc41dbccd2f8d4794f896467b"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/preview_analysis.cpython-313.pyc",
+      "bytes": 96797,
+      "files": 1,
+      "sha256": "acc297df8ea8b119a504339ada2675b9e9176120f088c11644b1c69f91fa99ea"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/digital_slide_renderer.cpython-313.pyc",
+      "bytes": 76355,
+      "files": 1,
+      "sha256": "512af340a3e98335c4be5744ef79a5fe52e06d85fee4eb0ad178fee586054aa4"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/motion_control.cpython-313.pyc",
+      "bytes": 14712,
+      "files": 1,
+      "sha256": "70809c3748863e8cdbe5ab47dddcbe12eb9d33f26a8006c91c5e28c2136167ae"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/measurement_statistics.cpython-313.pyc",
+      "bytes": 35590,
+      "files": 1,
+      "sha256": "dc3cac66f1bff3235335bf89f8b9bd924f2b2b73239b6b2c499e68838ebfe177"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/sidecar_io.cpython-313.pyc",
+      "bytes": 7140,
+      "files": 1,
+      "sha256": "6ad5b703b5b4085e37aa6b663188ad22d50331d72dcd0edcb12d04cb8fd89d47"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/raw_record_export.cpython-313.pyc",
+      "bytes": 54463,
+      "files": 1,
+      "sha256": "28cc98357ea45d9d3c8e6f6b51648453645d331fb918b3f4bf59f80c8c50628a"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/image_information.cpython-313.pyc",
+      "bytes": 6122,
+      "files": 1,
+      "sha256": "04e65705411b60cf15dd5ea8d5f994452f0a42a84b43c9b74f533e8bb9b89561"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 300,
+      "files": 1,
+      "sha256": "21e059c0415975a31c62d5699bb9e6f54669c19baa2356a007cae9ac1d894524"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/snap_service.cpython-313.pyc",
+      "bytes": 30238,
+      "files": 1,
+      "sha256": "e1ba9b434463bc7fadd1a39406be24d9d15892d3501d01d8506f8a4db9679073"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/construction_operations.cpython-313.pyc",
+      "bytes": 31561,
+      "files": 1,
+      "sha256": "f85ecb8931be8ccd5e63e221f5f6b25c79c27dc53246250fa8be7d1404c6c089"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/raster_derivation.cpython-313.pyc",
+      "bytes": 34914,
+      "files": 1,
+      "sha256": "d402877b12f2daedea1c6a685e56c24fd21c343eaf12bf06f342eb66a4d23c18"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/raster_export.cpython-313.pyc",
+      "bytes": 34859,
+      "files": 1,
+      "sha256": "cc79a8385ad3821d92823e8cb6cc97b64542546dda9f3664a695e039d3e0c465"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/cu_scale_io.cpython-313.pyc",
+      "bytes": 3308,
+      "files": 1,
+      "sha256": "7bd2759033f79d5b9c9a15647c44cfc7baa809f458b8a6ec998b0dd06b500983"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/analysis_export.cpython-313.pyc",
+      "bytes": 67831,
+      "files": 1,
+      "sha256": "c8ea63110e4b7a3eb18f1d03013d7b88babba01c76e54c92be6353a7684c2669"
+    },
+    {
+      "path": "build/ui-modernization-review/baseline/src/fdm/services/__pycache__/segmentation_source.cpython-313.pyc",
+      "bytes": 14327,
+      "files": 1,
+      "sha256": "60a12e5ff2af113681700f5a6e6ecf5d574058badf66f4ff0ea48f1a489efd61"
+    },
+    {
+      "path": "build/cu-live-optimization/codec-probe/macos/zlib_ng/__pycache__/_version.cpython-313.pyc",
+      "bytes": 851,
+      "files": 1,
+      "sha256": "4d58d1d7c4539646f0033043d54b4b712f2d89032d778fa33bc1fec3202fd8da"
+    },
+    {
+      "path": "build/cu-live-optimization/codec-probe/macos/zlib_ng/__pycache__/__init__.cpython-313.pyc",
+      "bytes": 297,
+      "files": 1,
+      "sha256": "56cea96900768cd8d2d7c3a8b5717128aa675e8668380aee25871770f9468274"
+    },
+    {
+      "path": "build/cu-live-optimization/reference/__pycache__/png_stream_r4.cpython-313.pyc",
+      "bytes": 8364,
+      "files": 1,
+      "sha256": "3e1580bc6087b88e3422557cfe81309644c94ac384f222650e2f113c502707a1"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-3aa2ba39ac79400ebf394bd434bcbcd1.zip",
+      "bytes": 528,
+      "files": 1,
+      "sha256": "a78e200b7d907c7f2bfab8f42924a45f49709d00348f8248d9640e2abe80e749"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-60d9601aa8f741b89ce1a4a1bf918f0b.zip",
+      "bytes": 1290,
+      "files": 1,
+      "sha256": "0ec51f41af7c6e98991c29ad2e16239a973998413dbb10c2372c03dceb77157b"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-8c8976ad0f35484aa6629baf6ae7114b.zip",
+      "bytes": 2442,
+      "files": 1,
+      "sha256": "0d981ae56d1b42f35852593e42faebec5bd5d29985949dc578568cef63d0b082"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-9cb31a1b88244f3ea8d7917da43eb19f.zip",
+      "bytes": 6076,
+      "files": 1,
+      "sha256": "fe0dc577169e94bed74cb2cc4bf137a411b82e0ae0b8b189746dc48686e8655f"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-bd961de33fdb45ee8c7d00459186ef9f.zip",
+      "bytes": 1290,
+      "files": 1,
+      "sha256": "5a56cc72691898907deaf7dd861be03b016257fc788be36cb035980c7ba4bd3a"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-b9e93a863b5c4700aad8667cb3b97692.zip",
+      "bytes": 427,
+      "files": 1,
+      "sha256": "7a6e0e3bedd9e1e78e6fb0f708d004daf00d0508758159e9a11cf64978c48db3"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-65d9e75b3f5743e0a7cba7a9205f1fbb.zip",
+      "bytes": 431,
+      "files": 1,
+      "sha256": "c7b4ea0c9afdb8b47d8d95ae00652f0c6268bc0e5797c438bc41472a21161b84"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-960b138530b34b9484221fe7cded00c1.zip",
+      "bytes": 431,
+      "files": 1,
+      "sha256": "2456213c37922e98d4d715c5459fb319b5082d1187e58dec44925878cda2295a"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-400094b9d2eb4a369d055fb5d9a4ba02.zip",
+      "bytes": 441,
+      "files": 1,
+      "sha256": "a9844c4a19c8ca1d6f7ecbfa7b9b64aed329b322c3dff2a105ff7223bd195413"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-6f0416fcce834dc89412063f1a70bd24.zip",
+      "bytes": 462,
+      "files": 1,
+      "sha256": "2f8337451c72ae5c1592ec584ade6c6a14d5253612f4923f5fff9be359476307"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-d9615b23c22e4f19a79367d6a702843c.zip",
+      "bytes": 437,
+      "files": 1,
+      "sha256": "3fd8fbe1a0363dfcddccee53505fcce10bca23181be176fec5572eeb3f397d24"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-f80948e712434133b1cff3a3e00acff3.zip",
+      "bytes": 655,
+      "files": 1,
+      "sha256": "f0e0f965d4c4a7e7cd928299f750570e6165ac847cbbf118be47167eb3dd36e1"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-64c8522fa5a24aa1bcc94110dfe27479.zip",
+      "bytes": 441,
+      "files": 1,
+      "sha256": "255c734298f4ab192ea8f855549ca137c64f766735e6062374636ef08b8c0f5e"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-5b4525b28f614298b5d2fa5db104fa8b.zip",
+      "bytes": 444,
+      "files": 1,
+      "sha256": "db9d529e41f544a6bfdd393425ea456801e43a86e81f7b833c0d71719c7e5cd2"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-59a05e76da384e0b84187ef901e2f2ba.zip",
+      "bytes": 486,
+      "files": 1,
+      "sha256": "dc59981beca6b1b89e9904e79c7d1b5a5420b141794ac4835331f17fa5719714"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-b58eb971990a4325a04812d6bfb6aa4c.zip",
+      "bytes": 476,
+      "files": 1,
+      "sha256": "8c72afd6cbe4b7df250825b82c5f53dfcc4c6b879f39d9951cca7c4117448ce6"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-4b56bc996e564379819c57958e281847.zip",
+      "bytes": 841,
+      "files": 1,
+      "sha256": "e1aaa2d342ce7ccc3ec4abbe17f75c0bf27cdd97da8c40ebdc1d1dabe13ce5ee"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-c9cb995b564b4727b15d6711399df5ea.zip",
+      "bytes": 556,
+      "files": 1,
+      "sha256": "00f07cc36aedaeeac74a9d66e9020fa981f26b2a64a64dca6c4aa8aecc3dc021"
+    },
+    {
+      "path": "build/cu-live-windows-final-r2/transfer-175608b6dee24d8bb51cfd1048a20c11.zip",
+      "bytes": 836,
+      "files": 1,
+      "sha256": "6920df12c80a2dd79123d5195e836e4891d75104a35f748ad024bce38d77e0bd"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-b84dc0c379a044029254ed06ccaf2e85.zip",
+      "bytes": 556,
+      "files": 1,
+      "sha256": "1fa9088ba2a04cf137c2628e2549b5775911c5787bd4e918c438f68c27811123"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-e922410c45cc49068c1edfbade909818.zip",
+      "bytes": 441,
+      "files": 1,
+      "sha256": "8585c167e586ef4a62caedd0e1e90c012a053e46e8e591e35e9f237025bc0612"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-8895978a2cd745bba8c5891a71eb3615.zip",
+      "bytes": 6076,
+      "files": 1,
+      "sha256": "58bb40fa65067ad89d6ba7824e7d9bf5a4a9a81ec9f66e6b292b2779a72546f5"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-5da42d548c314a0c992956066ecc1013.zip",
+      "bytes": 1331,
+      "files": 1,
+      "sha256": "f0ea4dc65e99ebcd75d8b870ead1154a2f8fded314f4ec23975348399655d4ae"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-4fc11f0cec2e49f9bd0709d000edc31a.zip",
+      "bytes": 431,
+      "files": 1,
+      "sha256": "92526ba777459e297c96eb35d2a898c23e06d55a04832efcea29b7081324b2a3"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-ce401726d1264ed8b9a524ea4c75820a.zip",
+      "bytes": 841,
+      "files": 1,
+      "sha256": "e0a30495efb36a8c33115535515c62c862b05e53e4c3c5294eeb9c286e18106c"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-2943c8f1b06c4170925bf4bf36e8e70c.zip",
+      "bytes": 437,
+      "files": 1,
+      "sha256": "21a13f7ae78ea190c9039a374ac8792a34ba85fa94c10d224c67b20c71dc2f78"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-c58f0fb6f9cf4c7a8fb25dc853aef9e8.zip",
+      "bytes": 476,
+      "files": 1,
+      "sha256": "9e21be09de2ae3822ee75b0ddaeff74877ec68c48d72d08f5689bae6e28f1c47"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-b4b1ae5464d34bfeac9b1b1db6626bf6.zip",
+      "bytes": 445,
+      "files": 1,
+      "sha256": "4ce53cb079fb72ea89e0ebf5d73085e394f11372ab2d4c20d301e018a71a7b69"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-89302d4592454c67ade0bf947946f12d.zip",
+      "bytes": 486,
+      "files": 1,
+      "sha256": "4ad2c1bd12090b9d6ff7b4ca79f498d01e6158813c1bb1fc3f3999058490ff02"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-ac3f1bde9e2b4249b56f7cac256d4b74.zip",
+      "bytes": 2442,
+      "files": 1,
+      "sha256": "f812f08194b2da783a78d9f350490ca06fe46dc6b4694bfa904c77c20520fc90"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-7e17ba5f5a06496ba3278f6ba9c2d589.zip",
+      "bytes": 528,
+      "files": 1,
+      "sha256": "082c907a161e0b2586cbc9dcd182ab4c7706b53f5e07da169689ee4ee041a1a8"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-01456e996b64449f9bf9ca6c8b376693.zip",
+      "bytes": 441,
+      "files": 1,
+      "sha256": "88f29c5cc89596d1cdee02e681c9bb524693e3aadce6eae8c22dc75c214d8260"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-dd37d28ad97645fe8c7523f7ed9f1ff8.zip",
+      "bytes": 712,
+      "files": 1,
+      "sha256": "d5cf41003b238a2d860c5daea70090cb32c235fa571915f8bb683aacce104042"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-24f3e8dc48bf49e2a92c3f54e0ab4a74.zip",
+      "bytes": 444,
+      "files": 1,
+      "sha256": "7f98f7725c851f5e3109a4310cf68e414b6969bd10460412ef3b786bcfddd19e"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-d8c414401cba44a390b98ba233c6c240.zip",
+      "bytes": 427,
+      "files": 1,
+      "sha256": "f1c9272e5d1d7a8e744c8202524bb5b27dc30abfe402b1a45013288e0f4952f3"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-4e7b0b62c21741438db0bc711f57dc7c.zip",
+      "bytes": 462,
+      "files": 1,
+      "sha256": "121b85cddc340fa56842dce81f1bcf3dbdcf6b3f3ab667ef68c618094a0428f2"
+    },
+    {
+      "path": "build/cu-live-windows-final-r3/transfer-3d03c66ac7254a2c84af668ee105dd9b.zip",
+      "bytes": 1331,
+      "files": 1,
+      "sha256": "4614d63c047c8d698cd200ebc4bf77293c2430fa955f285ee91b3365be24303d"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-ac7e032a91cb4328ac94f1a253a09652.zip",
+      "bytes": 462,
+      "files": 1,
+      "sha256": "65ff9318adec9681e9367d1f5722aa14f01f4208d236cc37a130285812e6ca8b"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-aed20f8debed4291bd27149ae646f1e9.zip",
+      "bytes": 441,
+      "files": 1,
+      "sha256": "4983098d78044139d1e9d210e88a302c011ebc56f84e68ca271122e9e6357756"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-6da75447efb44f5f896ff6861ff70d20.zip",
+      "bytes": 557,
+      "files": 1,
+      "sha256": "cc003f44c0eeae0aa017e5b6fe28ae35a630853fb62a2449acb508a4bc5a605d"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-c446f861cb874f9e99748ac37b616fd7.zip",
+      "bytes": 487,
+      "files": 1,
+      "sha256": "d934b5db540ec48242b78030ed4a0f41de352e9e734b4ca69fc9c0c6a0fa72e3"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-9eadd324faaa4c918f09731fb602612a.zip",
+      "bytes": 441,
+      "files": 1,
+      "sha256": "fdadd0c0aec6465dc1db738e06f253c991250381da706bc3ae6206224e3088fc"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-974ceab0c89b40b188d8fe29ca1e0bbb.zip",
+      "bytes": 431,
+      "files": 1,
+      "sha256": "4119f0018c42a6f4cf95f45d16ad6d6107db03a2def997a757a29944f362509e"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-e4c9f49eb048461dab6832ab643646c3.zip",
+      "bytes": 1331,
+      "files": 1,
+      "sha256": "80e394c626f0307ef05e588effdbc1d2f5f9441a0d8778614a945b62a2a672ef"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-8624793389404a88bdac547a4f93333e.zip",
+      "bytes": 553,
+      "files": 1,
+      "sha256": "03d1b18ecf55ea141014cba3e39b54928d5b6e734364716ff095a0852b4ca552"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-23f098d2202c4095bd9724a3626b236e.zip",
+      "bytes": 437,
+      "files": 1,
+      "sha256": "e3d63170bf84eb208d09667953431e073b6a04ce9c5467df71213903202fdfa9"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-c579c67775b2491d915f8afc8f0a4b82.zip",
+      "bytes": 487,
+      "files": 1,
+      "sha256": "fc0defcc3a349cf5fdcfc8b19b7608e86b23649a2a3be53fc065e717ee029f14"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-2fe6357591834734a0dcbb5638ed477a.zip",
+      "bytes": 1331,
+      "files": 1,
+      "sha256": "b37453de59266d36a8eed7af128a64af3e52297b73a2e747404ebabf523b6286"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-2d5e8aae4d844da48852b8420aafc4cf.zip",
+      "bytes": 427,
+      "files": 1,
+      "sha256": "98df810bf4387611cce6b22fbdd47a74fb4ee1621e29a21bf0a29a411dd6e6f5"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-e8f0512d8a7d488cbc69c130ccf99a50.zip",
+      "bytes": 444,
+      "files": 1,
+      "sha256": "a0c06b21597fe9071d6cbafd5c2d3ab7f21adec176ceb3f3de33189033213f85"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-403bfd265a9d429dbcf944a724850fa5.zip",
+      "bytes": 476,
+      "files": 1,
+      "sha256": "3c2732a0edf49155bd211edc237c3d30e9006cce5e4c3c7b71f718829642d6c5"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-0a2bd2113d564e0fb98a3e9d80d71aa8.zip",
+      "bytes": 445,
+      "files": 1,
+      "sha256": "ca6b196ff2c66d6c94ee66d3996f95f121c609b43fd3504f0babe9346ed42a49"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-3fd736acdec142d5befeaf5827b3699d.zip",
+      "bytes": 624,
+      "files": 1,
+      "sha256": "cfc5ebf5f944bf177c9f453ea511829adcc6828df35120ad5f947fa5c1f055f1"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-ba861479ffe046e6b5d1a4f4d66f18e8.zip",
+      "bytes": 6075,
+      "files": 1,
+      "sha256": "6bb16249bad9430c4701aa1a16b57ff99635b77c178ca3dd3aee19a0ecad40f2"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-c6ac2cc3f9044b3aa878c7f622de9eed.zip",
+      "bytes": 2443,
+      "files": 1,
+      "sha256": "bf0feb4781804ecb5d749ff33478d059a0d45bedafd9f1dd35ab706a3a84a0b1"
+    },
+    {
+      "path": "build/cu-live-windows-final-r4/transfer-2af07422da9e4decba8b194aef142988.zip",
+      "bytes": 841,
+      "files": 1,
+      "sha256": "bc94e8dd75b2df1e9ac25255f24463c91f7dcd6d20f4da0a375ebbed2fbbbd16"
+    }
+  ],
+  "total_bytes": 829038458,
+  "deleted": true
+}

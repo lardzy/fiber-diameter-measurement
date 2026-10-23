@@ -1,0 +1,182 @@
+{
+    "schema_version":  1,
+    "passed":  true,
+    "started_at":  "2026-10-23T06:13:42.9378653Z",
+    "scope":  "Frozen EXE UI smoke; synthetic source; no hardware, installation or performance acceptance",
+    "executable":  "C:\\tmp\\fdm-brightness-release-20261023\\dist\\windows\\installer-payload-2c6f550749f7\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "CE582F3BFB875404B75A621A56D02683FA5AC7F71A09FCDAF9B2573255EEC20A",
+    "slide":  "C:\\tmp\\fdm-brightness-release-20261023\\synthetic.fdmslide",
+    "source_sha256_before":  "8BE4E5C9D4690D82B3F555413DE2D25D6D21C493A30B2155D366DB6AB5DE200A",
+    "source_sha256_after":  "8BE4E5C9D4690D82B3F555413DE2D25D6D21C493A30B2155D366DB6AB5DE200A",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-brightness-release-20261023\\build\\frozen-gui\\20261023-141342-6cb22f6b8993436ead9b0508a7a524de",
+    "session_id":  1,
+    "process_id":  1288,
+    "controls":  [
+                     {
+                         "phase":  "initial-0",
+                         "name":  "亮度：0",
+                         "process_id":  1288,
+                         "class":  "SlideBrightnessButton",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.slideBrightnessButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "numeric",
+                         "name":  "切片查看亮度数值",
+                         "process_id":  1288,
+                         "class":  "_BrightnessSpinBox",
+                         "automation_id":  "QApplication.slideBrightnessPopup.slideBrightnessValue",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "bright-60",
+                         "name":  "亮度：60",
+                         "process_id":  1288,
+                         "class":  "SlideBrightnessButton",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.slideBrightnessButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "reset-action",
+                         "name":  "恢复原始亮度",
+                         "process_id":  1288,
+                         "class":  "QPushButton",
+                         "automation_id":  "QApplication.slideBrightnessPopup.QPushButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "restored-0",
+                         "name":  "亮度：0",
+                         "process_id":  1288,
+                         "class":  "SlideBrightnessButton",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.slideBrightnessButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "01-original",
+                          "file":  "01-original.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "76CC1DF402E183814E9A854CA0CC4A96E4F2DAA70D70D1B87C67B4A9290BF4A6",
+                          "center_sha256":  "033DA6F7866CD40CDD2C246131636663DA6541B70E12D8E8C1675029F83AEEFC",
+                          "center_mean":  138.27917620137285,
+                          "center_colors":  2459,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "02-bright-60",
+                          "file":  "02-bright-60.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "98252C3F02894ACB9F6E53187598EE6A68B151CCE6E6E9292C9EAF43E3641FCF",
+                          "center_sha256":  "93133F44D57FE2773AE86AA1DBB3B72FE2B7D099A91C06ED5BAADB09CDF15874",
+                          "center_mean":  192.82456140350885,
+                          "center_colors":  1517,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "03-restored-0",
+                          "file":  "03-restored-0.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "76CC1DF402E183814E9A854CA0CC4A96E4F2DAA70D70D1B87C67B4A9290BF4A6",
+                          "center_sha256":  "033DA6F7866CD40CDD2C246131636663DA6541B70E12D8E8C1675029F83AEEFC",
+                          "center_mean":  138.27917620137285,
+                          "center_colors":  2459,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+                             {
+                                 "utc":  "2026-10-23T06:13:48.1037119Z",
+                                 "candidates":  [
+                                                    {
+                                                        "handle":  1966536,
+                                                        "owner":  0,
+                                                        "process_id":  1288,
+                                                        "class":  "SlideBrightnessPopup",
+                                                        "name":  "Fiber Diameter Measurement",
+                                                        "automation_id":  "QApplication.slideBrightnessPopup",
+                                                        "has_reset":  true,
+                                                        "popup_identity":  true,
+                                                        "error":  null
+                                                    },
+                                                    {
+                                                        "handle":  3670164,
+                                                        "owner":  0,
+                                                        "process_id":  1288,
+                                                        "class":  "SysShadow",
+                                                        "name":  "",
+                                                        "automation_id":  "",
+                                                        "has_reset":  false,
+                                                        "popup_identity":  false,
+                                                        "error":  null
+                                                    }
+                                                ]
+                             },
+                             {
+                                 "utc":  "2026-10-23T06:13:48.8919961Z",
+                                 "candidates":  [
+                                                    {
+                                                        "handle":  2032072,
+                                                        "owner":  0,
+                                                        "process_id":  1288,
+                                                        "class":  "SlideBrightnessPopup",
+                                                        "name":  "Fiber Diameter Measurement",
+                                                        "automation_id":  "QApplication.slideBrightnessPopup",
+                                                        "has_reset":  true,
+                                                        "popup_identity":  true,
+                                                        "error":  null
+                                                    },
+                                                    {
+                                                        "handle":  3735700,
+                                                        "owner":  0,
+                                                        "process_id":  1288,
+                                                        "class":  "SysShadow",
+                                                        "name":  "",
+                                                        "automation_id":  "",
+                                                        "has_reset":  false,
+                                                        "popup_identity":  false,
+                                                        "error":  null
+                                                    }
+                                                ]
+                             }
+                         ],
+    "errors":  [
+
+               ],
+    "brightness_60_verified":  true,
+    "reset_0_verified":  true,
+    "center_brighter":  true,
+    "center_restored":  true,
+    "graceful_exit":  true,
+    "exit_code":  0,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "finished_at":  "2026-10-23T06:13:49.7641001Z"
+}

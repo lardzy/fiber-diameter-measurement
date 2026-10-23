@@ -1,0 +1,11 @@
+﻿{
+    "root":  "C:\\tmp\\fdm-brightness-release-20261023",
+    "files":  10780,
+    "bytes":  3165270154,
+    "deleted":  true,
+    "final_installer":  "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/slide-brightness-20261023/FDM-0.4.11-slide-brightness-487f083d0ba1.exe",
+    "sha256":  "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822",
+    "evidence_sha256":  "b0b672f45309fcd99934e435f83b5597d670c4eda8f7c0f1d3672723e8dd6476",
+    "reason":  "Own temporary source copy, compiler work files, onedir, extracted validation payload, and duplicate installer after archiving verified evidence",
+    "utc":  "2026-10-23T06:21:51.3669560Z"
+}

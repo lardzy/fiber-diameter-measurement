@@ -1,0 +1,19 @@
+{
+  "deleted": true,
+  "total_bytes": 579692884,
+  "rows": [
+    {
+      "path": "/Users/lishuyang/Downloads/fdm-brightness-release-transfer-20261023",
+      "files": 32,
+      "bytes": 490481533
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/brightness-release-20261023",
+      "files": 18,
+      "bytes": 89211351
+    }
+  ],
+  "retained_installer": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/slide-brightness-20261023/FDM-0.4.11-slide-brightness-487f083d0ba1.exe",
+  "sha256": "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822",
+  "evidence_files_verified": 27
+}

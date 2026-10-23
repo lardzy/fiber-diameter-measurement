@@ -1,0 +1,7 @@
+﻿{
+    "started":  "2026-10-23T05:48:10.3561779Z",
+    "finished":  "2026-10-23T05:59:41.7584370Z",
+    "exit_code":  -1,
+    "root":  "C:\\tmp\\fdm-brightness-release-20261023",
+    "error":  "149 INFO: PyInstaller: 6.19.0, contrib hooks: 2026.3"
+}

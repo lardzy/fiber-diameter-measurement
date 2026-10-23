@@ -1,0 +1,285 @@
+{
+  "deleted": true,
+  "total_bytes": 805243864,
+  "rows": [
+    {
+      "path": "C:\\tmp\\fdm-artifact-997f7787dfcf45dc828e10e4fb743528.zip",
+      "bytes": 398230549,
+      "sha256": "e1128827e4c650be38f1d6f4a8e082ab6ca932e845274ddc73195ad730a61126",
+      "reason": "Old single-installer transfer archive; historical installer identity confirmed"
+    },
+    {
+      "path": "C:\\tmp\\fdm-artifact-dc47187d3d06498aa348ce45bd7aa7eb.zip",
+      "bytes": 398213059,
+      "sha256": "763578595883e3c903bce789b6c975f113b013edc3eb9a92da4086ae038699eb",
+      "reason": "Old single-installer transfer archive; historical installer identity confirmed"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\lib.win-amd64-cpython-312",
+      "bytes": 633856,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "cdb0611a90ee233819f78233640f2a32dfd76fe105e1130d27e29a60af290319",
+          "bytes": 419840
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_windows_capture.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-20261015\\src\\fdm\\_native\\_windows_capture.cp312-win_amd64.pyd",
+          "sha256": "2a8115357a5e3e3f5c4473bc523dd92c17f752a54bd2044c669efc59764d423b",
+          "bytes": 214016
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-eighth-round-20261021\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-eighth-round-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-eighth-round-20261021\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "b4353d831d04738f3ae3d9db97a3ff9e576824358314155138fd34319f5f1d32",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-eighth-round-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-eighth-round-20261021\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "5dd0a122c0a205cdef408b3b04adbc4bb93347a6facd2e9abcbe0c22121f4b2a",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "76ca5c9dec542507e8e73aa2d49bbdc0f746c8fcc628b5faad1f8fa2c38823f2",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-explicit-gestures-20261021\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "8043c91d749a2112a34129116d63e3a26789bef393160d6c397b5130a23f32bb",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "8e9aff5a247539696986a34e21b863b2bae059c91b29003cdf7f683cd397a165",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-fifth-round-20261020\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "840f55dc51446dc69276e560d35ac95543ec99c07c025e9b2d0756425cfbad7a",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "05863085c59913d22f3c4bea1b9c7ecb4939f4245627f05c53ad9792d4e4492d",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-fourth-round-20261019\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "dd4adac0684bdf7888e6af6f6af2059c452c5f79e0b58bd02e0c64851001887b",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "f3c4f59a12ae03ee742c3aa25fac3c73f7248a884898fa962532a04322eb0ddc",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-microview-return-20261015\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "25118ef78a6f655ecbb7b3a57571e7e48f478272d0f565d4a4aeb041b259fe7d",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "bf74af663eb53f436404560e0ba06eeb2b3f222479871b0bd25597fd0a2765be",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-mixed-frame-fix-20261021\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "98c5c1601ddc244cf54be7f671e5529a559cc861d8c4a9cbba715deb8d807f6a",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\lib.win-amd64-cpython-312",
+      "bytes": 634880,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "1bbb069c604b6681aaa95533c33f5a4c0ddf63f72b0e06287fe0010d4d1217b8",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_windows_capture.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\src\\fdm\\_native\\_windows_capture.cp312-win_amd64.pyd",
+          "sha256": "b45e503d9953e7070169bc67d512c5086dfbbb25a79734f3ce4a284fc6bbe18b",
+          "bytes": 214016
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-rebuild-20261015\\build\\lib.win-amd64-cpython-312",
+      "bytes": 615424,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-rebuild-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-rebuild-20261015\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "c834c1a74f089a39af317e049891c58749c8e3350d9e12afabf4d68680173115",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-rebuild-20261015\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-rebuild-20261015\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "c98a808e1a24c7da848682dea5f91db75aa6d20bf4bc3e195d1f43e12e5e19e9",
+          "bytes": 194560
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "d0f360d2711d218bb0bdf45fbd35a0371cd6aac978fcbf7ac50ca455e1dbb4c4",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-second-round-20261017\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-second-round-20261017\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "9877f684508a63f506bfdb7eab6c3ad95af0edaff27f3e10b6b7ceb7dc27c48d",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-seventh-round-20261021\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-seventh-round-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-seventh-round-20261021\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "4f09169983c8ad46a9d222e641bfc550846684b45066aa91066f1dceda6ed20d",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-seventh-round-20261021\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-seventh-round-20261021\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "f8846894de9e97abc6dd3abdefd65a6898b016580631858889705348861d5bbe",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-sixth-round-20261020\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-sixth-round-20261020\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-sixth-round-20261020\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "e707f9528bff7094b5e0a5c1ca2a62b63b663109a0a47f426905fe34b104bace",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-sixth-round-20261020\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-sixth-round-20261020\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "892b1b20602cc10c5c6f9efd43bd9923d60996ec47d04ee3a0df708fab1ea6ac",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-third-round-20261019\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "930d5ca979a3099fa4f4dc0d2f7e6ea68b5f07fbea8695edfbddb1b81d1f73a7",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-third-round-20261019\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-third-round-20261019\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "86e622238260bbd68e0169e72b457e78929829480e99bd45f282c8bcf3fa2a84",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\lib.win-amd64-cpython-312",
+      "bytes": 628736,
+      "duplicates": [
+        {
+          "path": "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\src\\fdm\\_native\\_kernels.cp312-win_amd64.pyd",
+          "sha256": "4f6fc7ea596e2aa5cc6e4288ec6769ee601238d3708c2765a939174febf1eeab",
+          "bytes": 420864
+        },
+        {
+          "path": "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\build\\lib.win-amd64-cpython-312\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "preserved": "C:\\tmp\\fdm-cu-live-ui-redesign-20261016\\src\\fdm\\_native\\_microview.cp312-win_amd64.pyd",
+          "sha256": "c8d1397adbf293222823388b4a7979cfb88db21fd55efba4c87ecc5bcb52f00f",
+          "bytes": 207872
+        }
+      ],
+      "reason": "Native build duplicates byte-identical to preserved source-tree binaries"
+    }
+  ],
+  "new_installer_sha256": "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822"
+}
