@@ -1,0 +1,49 @@
+{
+  "rule": "Fixed three repeats plus original; no samples excluded; no product or threshold changes",
+  "runs": [
+    {
+      "path": "windows-r6/out/1920x1080-1.5-dark/result.json",
+      "passed": false,
+      "interval_p95": 50.661693750021186,
+      "response_p95": 25.09581699996488,
+      "single_p95": 44.59672899997713,
+      "failures": [
+        "continuous_ui_response_targets"
+      ]
+    },
+    {
+      "path": "windows-r6-repeat/out-repeat/trial-1/result.json",
+      "passed": true,
+      "interval_p95": 44.30544560004819,
+      "response_p95": 23.598489150094792,
+      "single_p95": 50.456333000056475,
+      "failures": []
+    },
+    {
+      "path": "windows-r6-repeat/out-repeat/trial-2/result.json",
+      "passed": false,
+      "interval_p95": 50.682441199796806,
+      "response_p95": 20.228812399909653,
+      "single_p95": 50.13045800001237,
+      "failures": [
+        "continuous_ui_response_targets"
+      ]
+    },
+    {
+      "path": "windows-r6-repeat/out-repeat/trial-3/result.json",
+      "passed": true,
+      "interval_p95": 45.570700199778,
+      "response_p95": 23.75332895023803,
+      "single_p95": 49.40327150006851,
+      "failures": []
+    }
+  ],
+  "sample_counts": {
+    "interval": 109,
+    "response": 113,
+    "single": 124
+  },
+  "pooled_interval_p95_ms": 48.46703319981315,
+  "pooled_response_p95_ms": 24.194816600083865,
+  "pooled_single_p95_ms": 49.940196500187994
+}

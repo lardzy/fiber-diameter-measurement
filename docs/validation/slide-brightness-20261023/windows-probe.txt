@@ -1,0 +1,3 @@
+{"os":"Microsoft Windows 11 专业版","build":"26200","existing_task_dir":false,"processes":[{"ProcessName":"python","Id":7444},{"ProcessName":"python","Id":11252}]}
+3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]
+4.13.0 6.10.2 9.0.2

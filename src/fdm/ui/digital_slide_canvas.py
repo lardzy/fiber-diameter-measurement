@@ -44,6 +44,7 @@ from fdm.ui.canvas import (
 )
 from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
 from fdm.ui.theme import canvas_notice_colors
+from fdm.ui.slide_brightness import SlideBrightnessCache
 from fdm.ui.view_transform import CanvasZoomMode
 
 
@@ -102,6 +103,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     shiftNavigationEnabledChanged = Signal(bool)
     viewportBufferFailed = Signal(str)
     overviewImageChanged = Signal(QImage)
+    displayBrightnessChanged = Signal(int)
     pixelWorkAvailabilityChanged = Signal(bool, str)
     browseNoticeRequested = Signal(str)
     boundaryFeedbackChanged = Signal(str)
@@ -110,6 +112,8 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self._display_brightness = 0
+        self._brightness_cache = SlideBrightnessCache()
         self._slide_store: DigitalSlideStore | None = None
         self._slide_manifest: DigitalSlideManifest | None = None
         self._viewport_origin = Point(0.0, 0.0)
@@ -222,6 +226,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         source_stat: tuple[int, int] | None = None,
         source_identity: str | Path | None = None,
     ) -> None:
+        self._reset_display_brightness()
         self._clear_boundary_feedback()
         self._render_source_stat = source_stat
         self._render_source_identity_override = str(source_identity) if source_identity is not None else None
@@ -369,6 +374,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
+        self._reset_display_brightness()
         self._clear_boundary_feedback()
         self._deferred_slide_document = None
         self._smooth_nav_keys.clear()
@@ -408,6 +414,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def hideEvent(self, event) -> None:
         """Cancel navigation/buffer work when another document tab takes over."""
 
+        self._brightness_cache.clear()
         self._clear_boundary_feedback()
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
@@ -432,10 +439,12 @@ class DigitalSlideCanvas(DocumentCanvas):
     def showEvent(self, event) -> None:
         deferred = getattr(self, "_deferred_slide_document", None)
         if deferred is not None:
+            brightness = self._display_brightness
             self.set_slide_document(
                 *deferred, source_stat=self._render_source_stat,
                 source_identity=self._render_source_identity_override,
             )
+            self.set_display_brightness(brightness)
         super().showEvent(event)
         self._allow_viewport_buffer_retry()
         if self._initial_fit_pending:
@@ -452,6 +461,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.update()
 
     def clear_document(self) -> None:
+        self._reset_display_brightness()
         self._clear_boundary_feedback()
         super().clear_document()
 
@@ -1817,7 +1827,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._overview_image = frame.image
             self._overview_focus_index = target_focus
             self._overview_failed_focuses.discard(target_focus)
-            self.overviewImageChanged.emit(frame.image)
+            self.overviewImageChanged.emit(self.overview_image())
             self.update()
             return
         if frame.purpose == "preview":
@@ -2074,8 +2084,36 @@ class DigitalSlideCanvas(DocumentCanvas):
     def shift_navigation_enabled(self) -> bool:
         return self._shift_navigation_enabled
 
+    @property
+    def display_brightness(self) -> int:
+        return self._display_brightness
+
+    def set_display_brightness(self, value: int) -> None:
+        value = max(-100, min(100, int(value)))
+        if value == self._display_brightness:
+            return
+        self._display_brightness = value
+        self._brightness_cache.clear()
+        self.displayBrightnessChanged.emit(value)
+        self.overviewImageChanged.emit(self.overview_image())
+        # A pending popup edit can be flushed just after its tab was hidden.
+        # The navigator owns its snapshot; hidden canvases retain no derived
+        # brightness cache even in that ordering.
+        if not self.isVisible():
+            self._brightness_cache.clear()
+        self.update()
+
+    def _reset_display_brightness(self) -> None:
+        changed = self._display_brightness != 0
+        self._display_brightness = 0
+        self._brightness_cache.clear()
+        if changed:
+            self.displayBrightnessChanged.emit(0)
+
     def overview_image(self) -> QImage:
-        return QImage(self._overview_image)
+        return QImage(self._brightness_cache.mapped_image(
+            self._overview_image, self._display_brightness,
+        ))
 
     def set_overview_enabled(self, enabled: bool) -> None:
         enabled = bool(enabled)
@@ -2107,7 +2145,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._overview_cache.move_to_end(new_target)
             self._overview_image = cached
             self._overview_focus_index = new_target
-            self.overviewImageChanged.emit(cached)
+            self.overviewImageChanged.emit(self.overview_image())
             return
         self._overview_image = QImage()
         self._overview_focus_index = -1
@@ -2405,7 +2443,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 self._overview_cache.move_to_end(overview_focus_index)
                 self._overview_image = cached
                 self._overview_focus_index = overview_focus_index
-                self.overviewImageChanged.emit(cached)
+                self.overviewImageChanged.emit(self.overview_image())
             elif (
                 not self._overview_pending
                 and overview_focus_index not in self._overview_failed_focuses
@@ -2418,7 +2456,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._overview_cache.move_to_end(overview_focus_index)
             self._overview_image = cached
             self._overview_focus_index = overview_focus_index
-            self.overviewImageChanged.emit(cached)
+            self.overviewImageChanged.emit(self.overview_image())
             return
         if overview_focus_index in self._overview_failed_focuses:
             self._overview_image = QImage()
@@ -2492,6 +2530,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                              and self._scale_overlay_preview.is_visible(self._document))
         return (
             super()._overlay_background_signature(),
+            self._display_brightness,
             scale_visible,
             self._native_frame_key if scale_visible else None,
             self._focus_index,
@@ -2542,6 +2581,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
         target = QRectF()
 
+        def draw_image(destination: QRectF, image: QImage) -> None:
+            self._brightness_cache.draw_image(
+                painter, destination, image, self._display_brightness, content,
+            )
+
         def draw_frame(
             frame: DigitalSlideRenderFrame | None,
             *,
@@ -2568,7 +2612,17 @@ class DigitalSlideCanvas(DocumentCanvas):
             )
             if not frame_target.intersects(content):
                 return
-            if coverage_only:
+            if frame.quality == "placeholder":
+                painter.drawImage(frame_target, frame.image)
+                target = frame_target
+                return
+            if coverage_only or (self._display_brightness and not frame.complete):
+                if not coverage_only:
+                    # Progressive frames contain synthetic backing pixels in
+                    # undecoded regions. Preserve those colors and apply the
+                    # display curve only where the renderer reports imagery.
+                    painter.drawImage(frame_target, frame.image)
+                    target = frame_target
                 coverage_region = QRegion()
                 for left, top, coverage_width, coverage_height in frame.coverage_rects:
                     coverage_top_left = self.image_to_widget(Point(left, top))
@@ -2589,10 +2643,10 @@ class DigitalSlideCanvas(DocumentCanvas):
                     return
                 painter.save()
                 painter.setClipRegion(coverage_region, Qt.ClipOperation.IntersectClip)
-                painter.drawImage(frame_target, frame.image)
+                draw_image(frame_target, frame.image)
                 painter.restore()
             else:
-                painter.drawImage(frame_target, frame.image)
+                draw_image(frame_target, frame.image)
             target = frame_target
 
         # A discontinuous navigation step keeps the previous screen
@@ -2606,7 +2660,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             and self._navigation_transition_target is not None
             and self._navigation_transition_target.intersects(content)
         ):
-            painter.drawImage(
+            draw_image(
                 self._navigation_transition_target,
                 self._navigation_transition_image,
             )
@@ -2635,7 +2689,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 native.height() * self._zoom,
             )
             if transition_target.intersects(content):
-                painter.drawImage(
+                draw_image(
                     transition_target,
                     self._focus_transition_image,
                 )
@@ -2663,14 +2717,14 @@ class DigitalSlideCanvas(DocumentCanvas):
             and preview.focus_index == self._focus_index
             and preview.quality != "placeholder"
         ):
-            painter.drawImage(full_target, preview.image)
+            draw_image(full_target, preview.image)
             target = full_target
         elif (
             (large_area or not sharp_visual_active)
             and not self._overview_image.isNull()
             and self._overview_focus_index == self._focus_index
         ):
-            painter.drawImage(full_target, self._overview_image)
+            draw_image(full_target, self._overview_image)
             target = full_target
 
         # The current coarse frame fills newly exposed source regions first.
@@ -3372,7 +3426,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             if self._overview_focus_index != focus_index:
                 self._overview_image = cached
                 self._overview_focus_index = focus_index
-                self.overviewImageChanged.emit(cached)
+                self.overviewImageChanged.emit(self.overview_image())
             return
         if focus_index in self._overview_failed_focuses:
             return

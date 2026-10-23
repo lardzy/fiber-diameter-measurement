@@ -36,3 +36,10 @@ docs/validation/acquisition-seventh-round-20261021/**/*.txt -text -whitespace
 # Optical trial evidence keeps original JSON/log bytes used by checksum reports.
 docs/validation/optical-adaptive-20261021/**/*.json -text -whitespace
 docs/validation/optical-adaptive-20261021/**/*.log -text -whitespace
+# Brightness verification retains original Windows bytes for checksum checks.
+docs/validation/slide-brightness-20261023/**/*.json -text -whitespace
+docs/validation/slide-brightness-20261023/**/*.log -text -whitespace
+docs/validation/slide-brightness-20261023/**/*.xml -text -whitespace
+docs/validation/slide-brightness-release-20261023/**/*.json -text -whitespace
+docs/validation/slide-brightness-release-20261023/**/*.log -text -whitespace
+docs/validation/slide-brightness-20261023/**/*.txt -text -whitespace

@@ -75,6 +75,7 @@ from shiboken6 import isValid as is_qobject_valid
 
 from fdm.services.device_image_io import DEVICE_SUFFIXES
 from fdm.ui.device_import_dialog import DeviceImportDialog, LoadedDeviceChannel
+from fdm.ui.slide_brightness_control import SlideBrightnessButton, SlideBrightnessPopup
 from fdm import __version__
 from fdm.analysis_artifacts import (
     AnalysisArtifact,
@@ -1815,6 +1816,7 @@ class MainWindow(QMainWindow):
         ] = {}
         self._display_adjustment_dialog: DisplayAdjustmentDialog | None = None
         self._display_adjustment_document_id: str | None = None
+        self._slide_brightness_popup: SlideBrightnessPopup | None = None
         self._image_information_dialog: ImageInformationDialog | None = None
         self._threshold_adjustment_dialog: ThresholdAdjustmentDialog | None = None
         self._threshold_adjustment_document_id: str | None = None
@@ -2761,6 +2763,14 @@ class MainWindow(QMainWindow):
             self.fit_current_digital_slide_native_viewport
         )
 
+        self.digital_slide_brightness_action = QAction("切片查看亮度…", self)
+        self.digital_slide_brightness_action.setToolTip(
+            "仅调整当前切片的查看亮度，导出保持原亮度。"
+        )
+        self.digital_slide_brightness_action.triggered.connect(
+            self._open_slide_brightness_popup
+        )
+
         self.actual_size_action = QAction("原始像素", self)
         self.actual_size_action.setIcon(themed_icon("actual_size", color="#E7ECEF"))
         self.actual_size_action.setToolTip(
@@ -3494,6 +3504,7 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.digital_slide_native_fit_action)
+        view_menu.addAction(self.digital_slide_brightness_action)
         view_menu.addAction(self.actual_size_action)
         view_menu.addAction(self.fullscreen_measurement_action)
         view_menu.addAction(self.digital_slide_smooth_navigation_action)
@@ -5070,6 +5081,16 @@ class MainWindow(QMainWindow):
         self._screen_labels_button.setMenu(self._screen_label_menu)
         self._screen_labels_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         view_controls_layout.addWidget(self._screen_labels_button)
+        self._slide_brightness_button = SlideBrightnessButton(view_controls)
+        self._slide_brightness_button.setObjectName("slideBrightnessButton")
+        self._slide_brightness_button.setText("亮度：0")
+        self._slide_brightness_button.setToolTip(
+            self.digital_slide_brightness_action.toolTip()
+        )
+        self._slide_brightness_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._slide_brightness_button.clicked.connect(self._open_slide_brightness_popup)
+        self._slide_brightness_button.hide()
+        view_controls_layout.addWidget(self._slide_brightness_button)
         for action in (
             self.fit_action,
             self.digital_slide_native_fit_action,
@@ -6104,6 +6125,7 @@ class MainWindow(QMainWindow):
             self._mode_actions["freehand_area"]: "截面面积 圈选",
             self.export_template_action: "原始记录 报表 导出模板",
             self.export_overlay_action: "叠加图 结果图片 导出图片",
+            self.digital_slide_brightness_action: "亮度 gamma 变亮 变暗 数字切片 显示",
         }
         def visit(menu, path):
             for action in menu.actions():
@@ -6913,6 +6935,63 @@ class MainWindow(QMainWindow):
             "已生成 RGB 派生图片；三个灰度来源均保持不变。",
             6000,
         )
+
+    def _sync_slide_brightness_controls(self) -> None:
+        canvas = self.current_canvas()
+        enabled = isinstance(canvas, DigitalSlideCanvas) and not self._preview_active
+        self.digital_slide_brightness_action.setVisible(enabled)
+        self.digital_slide_brightness_action.setEnabled(enabled)
+        self._slide_brightness_button.setVisible(enabled)
+        self._slide_brightness_button.setEnabled(enabled)
+        value = canvas.display_brightness if enabled else 0
+        self._slide_brightness_button.setText(f"亮度：{value}")
+        popup = self._slide_brightness_popup
+        if popup is not None:
+            if not enabled or popup.canvas is not canvas:
+                self._close_slide_brightness_popup()
+            elif popup.spin_box.value() != value and not popup.has_pending_edit:
+                popup.sync_value(value)
+
+    def _open_slide_brightness_popup(self) -> None:
+        canvas = self.current_canvas()
+        if not isinstance(canvas, DigitalSlideCanvas) or self._preview_active:
+            return
+        popup = self._slide_brightness_popup
+        if popup is not None and popup.canvas is canvas and popup.isVisible():
+            self._close_slide_brightness_popup()
+            return
+        self._close_slide_brightness_popup()
+        popup = SlideBrightnessPopup(canvas, self)
+        self._slide_brightness_popup = popup
+        popup.closed.connect(lambda: self._slide_brightness_popup_closed(popup))
+        popup.adjustSize()
+        anchor = self._slide_brightness_button
+        position = (
+            anchor.mapToGlobal(QPoint(0, anchor.height()))
+            if anchor.isVisible()
+            else canvas.mapToGlobal(canvas.rect().center())
+        )
+        screen = QGuiApplication.screenAt(position) or self.screen()
+        if screen is not None:
+            bounds = screen.availableGeometry()
+            position.setX(max(bounds.left(), min(position.x(), bounds.right() - popup.width() + 1)))
+            position.setY(max(bounds.top(), min(position.y(), bounds.bottom() - popup.height() + 1)))
+        popup.move(position)
+        popup.show()
+        popup.slider.setFocus(Qt.FocusReason.PopupFocusReason)
+
+    def _slide_brightness_popup_closed(self, popup: SlideBrightnessPopup) -> None:
+        if self._slide_brightness_popup is popup:
+            self._slide_brightness_popup = None
+        popup.deleteLater()
+        self._focus_current_canvas()
+
+    def _close_slide_brightness_popup(self) -> None:
+        popup = self._slide_brightness_popup
+        if popup is not None:
+            self._slide_brightness_popup = None
+            popup.flush()
+            popup.close()
 
     def _open_display_adjustment_dialog(self) -> None:
         self._close_threshold_adjustment_dialog()
@@ -20718,6 +20797,9 @@ class MainWindow(QMainWindow):
                 self._on_digital_slide_focus_changed(document_id, focus_index)
             )
         )
+        canvas.displayBrightnessChanged.connect(
+            lambda _value: self._sync_slide_brightness_controls()
+        )
         canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
         canvas.shiftNavigationEnabledChanged.connect(
             self._on_digital_slide_shift_navigation_changed
@@ -24260,6 +24342,7 @@ class MainWindow(QMainWindow):
             self._image_information_dialog = None
         self._close_threshold_adjustment_dialog()
         self._close_display_adjustment_dialog()
+        self._close_slide_brightness_popup()
         if not self._close_image_processing_workbench(wait=True):
             raise RuntimeError("图像处理任务尚未安全退出，工作区重置已阻止。")
         if not self._close_image_batch_dialog(wait=True):
@@ -24343,6 +24426,9 @@ class MainWindow(QMainWindow):
             return
         if self._display_adjustment_document_id == document_id:
             self._close_display_adjustment_dialog()
+        popup = self._slide_brightness_popup
+        if popup is not None and popup.canvas is self._canvases.get(document_id):
+            self._close_slide_brightness_popup()
         if (
             self._image_processing_source_context is not None
             and self._image_processing_source_context.document_id == document_id
@@ -24926,6 +25012,9 @@ class MainWindow(QMainWindow):
         return total_removed
 
     def _on_tab_changed(self, index: int) -> None:
+        popup = self._slide_brightness_popup
+        if popup is not None and popup.canvas is not self.current_canvas():
+            self._close_slide_brightness_popup()
         if index < 0:
             return
         self.image_list.setCurrentRow(index)
@@ -27217,6 +27306,7 @@ class MainWindow(QMainWindow):
         self.digital_slide_clear_render_cache_action.setEnabled(
             isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
         )
+        self._sync_slide_brightness_controls()
         self.actual_size_action.setEnabled(has_document and not preview_active)
         fullscreen_active = bool(
             self._fullscreen_controller is not None
@@ -29367,6 +29457,7 @@ class MainWindow(QMainWindow):
             return
         self._close_threshold_adjustment_dialog()
         self._close_display_adjustment_dialog()
+        self._close_slide_brightness_popup()
         if not self._close_image_batch_dialog(wait=True):
             event.ignore()
             return

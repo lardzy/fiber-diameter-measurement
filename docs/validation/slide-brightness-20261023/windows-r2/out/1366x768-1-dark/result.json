@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "passed": false,
+  "scope": "Synthetic Qt widget rendering; no hardware or physical monitor acceptance",
+  "version": "0.4.10",
+  "system": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+  "opencv": "4.13.0",
+  "qt": "6.10.2",
+  "platform": "windows",
+  "theme": "dark",
+  "requested_physical_size": [
+    1366,
+    768
+  ],
+  "requested_scale": 1.0,
+  "scenarios": [],
+  "boundaries": [],
+  "screenshots": [
+    {
+      "name": "native-original",
+      "file": "native-original.png",
+      "size": [
+        1028,
+        738
+      ],
+      "sha256": "36fcc656cc4cad010d37d4b549984940d558f8c569589f90135740fb67f7d6c9"
+    }
+  ],
+  "performance": {},
+  "actual_logical_size": [
+    1028,
+    738
+  ],
+  "actual_dpr": 1.0,
+  "native_viewport_size": [
+    1024,
+    768
+  ],
+  "synthetic_source_sha256_before": "7bf65a0f3e288143300abf3d7e213b342674bbf45b4bf33ecec7980dfa8e1923",
+  "exception": "AssertionError('Qt/renderer wait timed out')",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\tmp\\fdm-slide-brightness-20261023\\r2\\scripts\\validate_slide_brightness.py\", line 207, in main\n    settle(lambda: len(paint_samples) > count, timeout=5, minimum=0)\n  File \"C:\\tmp\\fdm-slide-brightness-20261023\\r2\\scripts\\validate_slide_brightness.py\", line 90, in settle\n    raise AssertionError(\"Qt/renderer wait timed out\")\nAssertionError: Qt/renderer wait timed out\n",
+  "failures": [
+    "AssertionError('Qt/renderer wait timed out')"
+  ],
+  "source_files": {
+    "src\\fdm\\ui\\digital_slide_canvas.py": "ba8ef13ce1f39a94a890d32c0253c67b158c4e734a0f9a40f11a25a0356a1340",
+    "src\\fdm\\ui\\main_window.py": "cf9ce6fce95c4d8f58b4f8b2362cbf6f19c6d2efa3bcf963de3aefe6b0f1a3ae",
+    "scripts\\validate_slide_brightness.py": "2821474277811f199626c65856ae6d119947c6dfc71e4fa62c60081a969cb46d"
+  }
+}

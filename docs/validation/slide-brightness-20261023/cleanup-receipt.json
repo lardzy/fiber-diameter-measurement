@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-23T03:50:19.0703297Z",
+  "guest_path_absent": true,
+  "guest_bytes_removed": 358620324,
+  "guest_path": "C:\\tmp\\fdm-slide-brightness-20261023",
+  "host_transfer_bytes_removed": 111200784,
+  "host_transfer_path": "/Users/lishuyang/Downloads/fdm-slide-brightness-transfer-20261023",
+  "host_transfer_path_absent": true,
+  "vm_state": "NAME                             STATUS\nKali Linux 2025.2 ARM64          stopped\nWindows 11                       running"
+}

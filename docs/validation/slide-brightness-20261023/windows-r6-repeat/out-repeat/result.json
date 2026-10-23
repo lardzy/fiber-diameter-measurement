@@ -1,0 +1,17 @@
+{
+    "results":  [
+                    {
+                        "exit_code":  1,
+                        "trial":  1
+                    },
+                    {
+                        "exit_code":  1,
+                        "trial":  2
+                    },
+                    {
+                        "exit_code":  0,
+                        "trial":  3
+                    }
+                ],
+    "fixed_trial_count":  3
+}

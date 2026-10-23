@@ -1,5 +1,6 @@
 from dataclasses import replace
 import math
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -375,7 +376,7 @@ def test_batch_auto_per_image_and_fixed_preflight_lists_every_failure(window):
     selection.scale_overlay = replace(spec, length_mode="custom", length=1e8)
     with pytest.raises(ValueError) as error:
         window._prepare_scale_export(selection, docs, {})
-    assert all(doc.path.split("/")[-1] in str(error.value) for doc in docs)
+    assert all(Path(doc.path).name in str(error.value) for doc in docs)
     assert "尚未标定" in str(error.value) and "超出" in str(error.value)
 
 
