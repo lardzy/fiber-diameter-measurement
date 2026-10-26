@@ -651,6 +651,21 @@ def _draw_direction(dx: float, dy: float) -> Callable[[QPainter, QColor, QRectF]
     return draw
 
 
+def _draw_display_adjustments(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    """A sun remains legible at toolbar size and at fractional display scales."""
+    center = rect.center()
+    painter.setPen(_pen(color, 1.6))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawEllipse(center, 3.0, 3.0)
+    for index in range(8):
+        angle = index * math.pi / 4
+        dx, dy = math.cos(angle), math.sin(angle)
+        painter.drawLine(
+            QPointF(center.x() + 5.2 * dx, center.y() + 5.2 * dy),
+            QPointF(center.x() + 7.2 * dx, center.y() + 7.2 * dy),
+        )
+
+
 def _draw_more(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.setPen(Qt.PenStyle.NoPen)
     painter.setBrush(color)
@@ -660,6 +675,7 @@ def _draw_more(painter: QPainter, color: QColor, rect: QRectF) -> None:
 
 _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "more": _draw_more,
+    "display_adjustments": _draw_display_adjustments,
     "select": _draw_select,
     "manual": _draw_manual,
     "continuous_manual": _draw_continuous_manual,

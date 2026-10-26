@@ -1,4 +1,4 @@
-"""Byte-bounded, paint-only gamma mapping for digital slide images."""
+"""Byte-bounded, paint-only exposure and gamma mapping for slide images."""
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -25,6 +25,31 @@ def brightness_lut(value: int) -> np.ndarray:
     return lut
 
 
+@lru_cache(maxsize=256)
+def display_adjustments_lut(value: int, exposure_tenths: int = 0) -> np.ndarray:
+    """Compose sRGB viewing exposure and legacy gamma with one quantization.
+
+    The display raster is already eight-bit RGB, not sensor-linear data. Treat
+    its components as sRGB for this viewing compensation, without changing its
+    color-space tag or introducing a separate color-management pipeline.
+    """
+    value = max(-100, min(100, int(value)))
+    exposure_tenths = max(-40, min(40, int(exposure_tenths)))
+    if exposure_tenths == 0:
+        # Avoid numerical round-trip differences from the existing gamma LUT.
+        return brightness_lut(value)
+    encoded = np.arange(256, dtype=np.float64) / 255.0
+    linear = np.where(encoded <= 0.04045, encoded / 12.92,
+                      ((encoded + 0.055) / 1.055) ** 2.4)
+    linear = np.clip(linear * 2.0 ** (exposure_tenths / 10.0), 0.0, 1.0)
+    encoded = np.where(linear <= 0.0031308, linear * 12.92,
+                       1.055 * linear ** (1.0 / 2.4) - 0.055)
+    gamma = 2.0 ** (value / 50.0)
+    lut = np.rint(255.0 * encoded ** (1.0 / gamma)).astype(np.uint8)
+    lut.flags.writeable = False
+    return lut
+
+
 class SlideBrightnessCache:
     def __init__(self, max_bytes: int = DISPLAY_BRIGHTNESS_CACHE_BYTES) -> None:
         self.max_bytes = max(0, int(max_bytes))
@@ -35,17 +60,20 @@ class SlideBrightnessCache:
         self._images.clear()
         self.bytes_used = 0
 
-    def mapped_image(self, image: QImage, value: int, source_rect: QRect | None = None) -> QImage:
+    def mapped_image(self, image: QImage, value: int, source_rect: QRect | None = None,
+                     *, exposure_tenths: int = 0) -> QImage:
         value = max(-100, min(100, int(value)))
+        exposure_tenths = max(-40, min(40, int(exposure_tenths)))
         if image.isNull():
             return image
         rect = image.rect() if source_rect is None else source_rect.intersected(image.rect())
         if rect.isEmpty():
             return QImage()
         # No pixel copy, conversion, or cache allocation on the default path.
-        if value == 0:
+        if value == 0 and exposure_tenths == 0:
             return image if rect == image.rect() else image.copy(rect)
-        key = (image.cacheKey(), value, rect.x(), rect.y(), rect.width(), rect.height())
+        key = (image.cacheKey(), value, exposure_tenths,
+               rect.x(), rect.y(), rect.width(), rect.height())
         cached = self._images.get(key)
         if cached is not None:
             self._images.move_to_end(key)
@@ -79,7 +107,7 @@ class SlideBrightnessCache:
             (mapped.height(), mapped.width(), channels), dtype=np.uint8,
             buffer=mapped.bits(), strides=(mapped.bytesPerLine(), channels, 1),
         )
-        lut = brightness_lut(value)
+        lut = display_adjustments_lut(value, exposure_tenths)
         if channels == 4:
             # RGB32/ARGB32 byte order on the supported little-endian hosts is
             # B,G,R,A; RGBA8888 is R,G,B,A. Both preserve alpha in byte three.
@@ -98,13 +126,15 @@ class SlideBrightnessCache:
         return QImage(mapped)
 
     def draw_image(self, painter: QPainter, target: QRectF, image: QImage,
-                   value: int, visible: QRectF) -> None:
-        if value == 0 or image.isNull():
+                   value: int, visible: QRectF, *, exposure_tenths: int = 0) -> None:
+        if (value == 0 and exposure_tenths == 0) or image.isNull():
             painter.drawImage(target, image)
             return
         # Four bytes per output pixel also bounds fallback format conversion.
         if image.width() * image.height() * 4 <= self.max_bytes:
-            painter.drawImage(target, self.mapped_image(image, value))
+            painter.drawImage(target, self.mapped_image(
+                image, value, exposure_tenths=exposure_tenths,
+            ))
             return
         clipped = target.intersected(visible)
         if clipped.isEmpty() or target.isEmpty():
@@ -127,5 +157,7 @@ class SlideBrightnessCache:
                 # One source pixel of halo keeps smooth interpolation at tile
                 # boundaries identical to the uncropped source.
                 painter.setClipRect(destination(core), Qt.ClipOperation.IntersectClip)
-                painter.drawImage(destination(roi), self.mapped_image(image, value, roi))
+                painter.drawImage(destination(roi), self.mapped_image(
+                    image, value, roi, exposure_tenths=exposure_tenths,
+                ))
                 painter.restore()

@@ -26,15 +26,27 @@ from fdm.ui.slide_brightness_control import SlideBrightnessButton, SlideBrightne
 
 class _Canvas(QWidget):
     displayBrightnessChanged = Signal(int)
+    displayAdjustmentsChanged = Signal(int, int)
 
     def __init__(self) -> None:
         super().__init__()
         self.display_brightness = 0
+        self.display_exposure_tenths = 0
         self.document_id = "original"
 
+    @property
+    def display_adjustments(self) -> tuple[int, int]:
+        return self.display_brightness, self.display_exposure_tenths
+
+    def set_display_adjustments(self, value: int, exposure: int) -> None:
+        previous = self.display_brightness
+        self.display_brightness, self.display_exposure_tenths = value, exposure
+        if previous != value:
+            self.displayBrightnessChanged.emit(value)
+        self.displayAdjustmentsChanged.emit(value, exposure)
+
     def set_display_brightness(self, value: int) -> None:
-        self.display_brightness = value
-        self.displayBrightnessChanged.emit(value)
+        self.set_display_adjustments(value, self.display_exposure_tenths)
 
 
 class SlideBrightnessPopupTests(unittest.TestCase):
@@ -88,15 +100,15 @@ class SlideBrightnessPopupTests(unittest.TestCase):
 
     def test_batches_keep_cadence_from_application_including_processing_time(self) -> None:
         now = [10_000_000_000]
-        apply = self.canvas.set_display_brightness
+        apply = self.canvas.set_display_adjustments
 
-        def apply_with_work(value: int) -> None:
-            apply(value)
+        def apply_with_work(value: int, exposure: int) -> None:
+            apply(value, exposure)
             now[0] += 15_000_000  # Simulate display work without wall-clock sleeps.
 
         with (
             patch("fdm.ui.slide_brightness_control.monotonic_ns", side_effect=lambda: now[0]),
-            patch.object(self.canvas, "set_display_brightness", side_effect=apply_with_work),
+            patch.object(self.canvas, "set_display_adjustments", side_effect=apply_with_work),
             patch.object(self.popup._timer, "start", wraps=self.popup._timer.start) as schedule,
         ):
             self.popup.slider.setValue(10)
@@ -157,47 +169,26 @@ class SlideBrightnessPopupTests(unittest.TestCase):
         self.assertEqual(self.popup.spin_box.value(), 0)
         self.assertEqual(self.canvas.display_brightness, 0)
 
-    def test_button_reserves_range_and_tracks_font_and_style_changes(self) -> None:
+    def test_icon_text_button_tracks_font_and_style_without_numeric_geometry(self) -> None:
         button = SlideBrightnessButton(self.canvas)
-        reference = QToolButton(self.canvas)
-        reference.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.assertEqual(button.text(), "亮度/曝光")
+        self.assertFalse(button.icon().isNull())
+        self.assertEqual(button.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         widths = []
         for point_size in (9, 14, 18):
             font = QFont(button.font())
             font.setPointSize(point_size)
             button.setFont(font)
-            reference.setFont(font)
-            expected_size = button.sizeHint()
-            widths.append(expected_size.width())
-            for value in range(-100, 101):
-                text = f"亮度：{value}"
-                button.setText(text)
-                reference.setText(text)
-                self.assertEqual(button.sizeHint(), expected_size)
-                self.assertEqual(button.minimumSizeHint(), expected_size)
-                self.assertGreaterEqual(expected_size.width(), reference.sizeHint().width())
-                self.assertGreaterEqual(expected_size.height(), reference.sizeHint().height())
+            expected = button.sizeHint()
+            widths.append(expected.width())
+            for value, ev in ((0, 0), (100, 40), (-100, -40), (1, -1)):
+                button.setToolTip(f"亮度：{value}；曝光：{ev / 10:+.1f} EV")
+                self.assertEqual(button.sizeHint(), expected)
+                self.assertEqual(button.text(), "亮度/曝光")
         self.assertLess(widths[0], widths[-1])
         before_style = button.sizeHint()
         button.setStyleSheet("QToolButton { padding: 12px 24px; border: 2px solid red; }")
         self.assertGreater(button.sizeHint().width(), before_style.width())
-
-    def test_button_text_updates_reuse_size_without_remeasuring_font(self) -> None:
-        button = SlideBrightnessButton(self.canvas)
-        expected = button.sizeHint()
-        with patch.object(button, "fontMetrics", side_effect=AssertionError("remeasured unchanged font")):
-            for value in range(-100, 101):
-                button.setText(f"亮度：{value}")
-                self.assertEqual(button.sizeHint(), expected)
-                self.assertEqual(button.minimumSizeHint(), expected)
-            # A caller may modify the returned QSize without corrupting cache.
-            hint = button.sizeHint()
-            hint.setWidth(1)
-            self.assertEqual(button.sizeHint(), expected)
-        with patch.object(button, "fontMetrics", wraps=button.fontMetrics) as metrics:
-            QApplication.sendEvent(button, QEvent(QEvent.Type.DevicePixelRatioChange))
-            self.assertEqual(button.sizeHint(), expected)
-            self.assertGreater(metrics.call_count, 0)
 
 
 class SlideBrightnessWindowTests(unittest.TestCase):
@@ -208,7 +199,7 @@ class SlideBrightnessWindowTests(unittest.TestCase):
     def setUp(self) -> None:
         self.load_patch = patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings())
         self.save_patch = patch("fdm.ui.main_window.AppSettingsIO.save")
-        self.load_patch.start()
+        self.load_mock = self.load_patch.start()
         self.save_mock = self.save_patch.start()
         self.addCleanup(self.load_patch.stop)
         self.addCleanup(self.save_patch.stop)
@@ -251,10 +242,10 @@ class SlideBrightnessWindowTests(unittest.TestCase):
         self.assertEqual(first_canvas.display_brightness, 65)
         self.assertEqual(second_canvas.display_brightness, 0)
         self.assertIsNone(self.window._slide_brightness_popup)
-        self.assertEqual(self.window._slide_brightness_button.text(), "亮度：0")
+        self.assertEqual(self.window._slide_brightness_button.text(), "亮度/曝光")
         second_canvas.set_display_brightness(-25)
         self.window._set_current_document(first.id)
-        self.assertEqual(self.window._slide_brightness_button.text(), "亮度：65")
+        self.assertEqual(self.window._slide_brightness_button.text(), "亮度/曝光")
         self.assertEqual(first.to_dict(), before)
         self.assertEqual((first.dirty_flags.session_dirty, first.dirty_flags.calibration_dirty), dirty)
         self.save_mock.assert_not_called()
@@ -269,6 +260,9 @@ class SlideBrightnessWindowTests(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         self.assertIn("视图", entries[0][1])
         self.assertIn("gamma", entries[0][2])
+        self.assertIn("亮度", entries[0][2])
+        self.assertIn("曝光", entries[0][2])
+        self.assertIn("EV", entries[0][2])
         action.trigger()
         popup = self.window._slide_brightness_popup
         popup.slider.setValue(50)
@@ -280,7 +274,7 @@ class SlideBrightnessWindowTests(unittest.TestCase):
         self.window._add_digital_slide_document_from_path(path, document=None)
         self.app.processEvents()
         self.assertEqual(self.window.current_canvas().display_brightness, 0)
-        self.assertEqual(self.window._slide_brightness_button.text(), "亮度：0")
+        self.assertEqual(self.window._slide_brightness_button.text(), "亮度/曝光")
 
     def test_ordinary_image_hides_slide_entry_and_keeps_display_adjustment(self) -> None:
         _, canvas, _ = self._slide("retained")
@@ -322,6 +316,149 @@ class SlideBrightnessWindowTests(unittest.TestCase):
         self.assertEqual(canvas.display_brightness, 1)
         self.assertTrue(self.window._fullscreen_controller.is_active)
 
+    def test_remember_only_commits_user_edits_and_initializes_new_slides(self) -> None:
+        first, a, _ = self._slide("remember-a")
+        second, b, _ = self._slide("remember-b")
+        self.window._set_current_document(first.id)
+        before = first.to_dict()
+        dirty = (first.dirty_flags.session_dirty, first.dirty_flags.calibration_dirty)
+        self.window.digital_slide_brightness_action.trigger()
+        popup = self.window._slide_brightness_popup
+        self.assertFalse(popup.remember_checkbox.isChecked())
+        self.save_mock.reset_mock()
+        popup.slider.setValue(45)
+        popup.exposure_slider.setValue(12)
+        popup.flush()
+        self.assertEqual(a.display_adjustments, (45, 12))
+        self.save_mock.assert_not_called()
+        popup.remember_checkbox.click()
+        self.assertEqual(self.save_mock.call_count, 1)
+        self.assertEqual(b.display_adjustments, (0, 0))
+        popup.slider.setValue(55)
+        popup.exposure_slider.setValue(-7)
+        popup.flush()
+        self.assertEqual(self.save_mock.call_count, 1)
+        popup.exposure_slider.sliderReleased.emit()
+        self.assertEqual(self.save_mock.call_count, 2)
+        remembered = self.save_mock.call_args.args[0]
+        self.assertTrue(remembered.digital_slide_remember_view_adjustments)
+        self.assertEqual((remembered.digital_slide_view_brightness,
+                          remembered.digital_slide_view_exposure_tenths), (55, -7))
+        popup.close()
+        self.assertEqual(self.save_mock.call_count, 2)
+        self.window._set_current_document(second.id)
+        self.window.digital_slide_brightness_action.trigger()
+        self.window._slide_brightness_popup.close()
+        self.assertEqual(self.save_mock.call_count, 2)  # Visiting an older tab is not an edit.
+        _, c, _ = self._slide("remember-c")
+        self.assertEqual(c.display_adjustments, (55, -7))
+        self.assertEqual(a.display_adjustments, (55, -7))
+        self.assertEqual(b.display_adjustments, (0, 0))
+        self.assertEqual(first.to_dict(), before)
+        self.assertEqual((first.dirty_flags.session_dirty, first.dirty_flags.calibration_dirty), dirty)
+
+    def test_remember_close_flushes_original_tab_and_restarts_from_saved_values(self) -> None:
+        first, a, path = self._slide("restart-a")
+        second, b, _ = self._slide("restart-b")
+        self.window._set_current_document(first.id)
+        self.window.digital_slide_brightness_action.trigger()
+        popup = self.window._slide_brightness_popup
+        popup.remember_checkbox.click()
+        self.save_mock.reset_mock()
+        popup.slider.setValue(-30)
+        popup.exposure_spin_box.setValue(1.3)
+        self.window._set_current_document(second.id)
+        self.assertEqual(a.display_adjustments, (-30, 13))
+        self.assertEqual(b.display_adjustments, (0, 0))
+        self.assertEqual(self.save_mock.call_count, 1)
+        restored = AppSettings.from_dict(self.save_mock.call_args.args[0].to_dict())
+        self.window._reset_workspace()
+        self.window.close()
+        self.app.processEvents()
+        self.load_mock.return_value = restored
+        self.window = MainWindow()
+        self.window._preview_active = True  # Hidden/deferred initial mount must retain the defaults.
+        self.window._add_digital_slide_document_from_path(path, document=None)
+        canvas = next(c for c in self.window._canvases.values() if isinstance(c, DigitalSlideCanvas))
+        self.assertEqual(canvas.display_adjustments, (-30, 13))
+        self.window._preview_active = False
+        self.window.show()
+        self.app.processEvents()
+        self.assertEqual(canvas.display_adjustments, (-30, 13))
+        self.window._sync_slide_brightness_controls()
+        self.window.digital_slide_brightness_action.trigger()
+        self.assertTrue(self.window._slide_brightness_popup.remember_checkbox.isChecked())
+
+    def test_reset_and_uncheck_have_distinct_memory_effects(self) -> None:
+        _, canvas, _ = self._slide("memory-reset")
+        self.window.digital_slide_brightness_action.trigger()
+        popup = self.window._slide_brightness_popup
+        popup.remember_checkbox.click()
+        popup.slider.setValue(60)
+        popup.exposure_slider.setValue(20)
+        popup.commit()
+        popup.reset_button.click()
+        self.assertEqual(canvas.display_adjustments, (0, 0))
+        self.assertTrue(popup.remember_checkbox.isChecked())
+        saved = self.save_mock.call_args.args[0]
+        self.assertEqual((saved.digital_slide_view_brightness, saved.digital_slide_view_exposure_tenths), (0, 0))
+        popup.slider.setValue(70)
+        popup.exposure_slider.setValue(-15)
+        self.save_mock.reset_mock()
+        popup.remember_checkbox.click()  # Flush current effect but save only the disabled defaults.
+        self.assertEqual(canvas.display_adjustments, (70, -15))
+        self.assertFalse(popup.remember_checkbox.isChecked())
+        self.assertEqual(self.save_mock.call_count, 1)
+        saved = self.save_mock.call_args.args[0]
+        self.assertFalse(saved.digital_slide_remember_view_adjustments)
+        self.assertEqual((saved.digital_slide_view_brightness, saved.digital_slide_view_exposure_tenths), (0, 0))
+        _, fresh, _ = self._slide("memory-disabled-new")
+        self.assertEqual(fresh.display_adjustments, (0, 0))
+        self.assertEqual(canvas.display_adjustments, (70, -15))
+
+    def test_persistence_failure_keeps_current_view_and_previous_saved_defaults(self) -> None:
+        _, canvas, _ = self._slide("memory-failure")
+        self.window.digital_slide_brightness_action.trigger()
+        popup = self.window._slide_brightness_popup
+        popup.slider.setValue(35)
+        popup.exposure_slider.setValue(8)
+        self.save_mock.side_effect = OSError("read-only profile")
+        popup.remember_checkbox.click()
+        self.assertEqual(canvas.display_adjustments, (35, 8))
+        self.assertFalse(popup.remember_checkbox.isChecked())
+        self.assertFalse(self.window._app_settings.digital_slide_remember_view_adjustments)
+        self.assertIn("未能记住", self.window.statusBar().currentMessage())
+        self.save_mock.side_effect = None
+        popup.remember_checkbox.click()
+        self.save_mock.side_effect = OSError("disk full")
+        popup.exposure_slider.setValue(-10)
+        popup.commit()
+        self.assertEqual(canvas.display_adjustments, (35, -10))
+        self.assertEqual(self.window._app_settings.digital_slide_view_exposure_tenths, 8)
+        self.assertTrue(popup.remember_checkbox.isChecked())
+        self.save_mock.side_effect = None
+        _, fresh, _ = self._slide("after-failure")
+        self.assertEqual(fresh.display_adjustments, (35, 8))
+
+    def test_exit_reports_failed_final_save_before_window_disappears(self) -> None:
+        self._slide("close-save-failure")
+        self.window.digital_slide_brightness_action.trigger()
+        popup = self.window._slide_brightness_popup
+        popup.remember_checkbox.click()
+        popup.slider.setValue(42)
+        popup.exposure_slider.setValue(7)
+        self.save_mock.side_effect = OSError("disk full on exit")
+        visible_at_warning = []
+        with patch("fdm.ui.main_window.QMessageBox.warning", side_effect=lambda *_: (
+            visible_at_warning.append(self.window.isVisible())
+        )) as warning:
+            self.assertTrue(self.window.close())
+        warning.assert_called_once()
+        self.assertEqual(visible_at_warning, [True])
+        self.assertIn("disk full on exit", warning.call_args.args[2])
+        self.assertEqual(self.window._app_settings.digital_slide_view_brightness, 0)
+        self.save_mock.side_effect = None
+
     def test_narrow_window_brightness_keeps_canvas_and_view_after_layout_events(self) -> None:
         _, canvas, _ = self._slide("narrow-layout")
         canvas.set_view_zoom(4.0)
@@ -350,7 +487,7 @@ class SlideBrightnessWindowTests(unittest.TestCase):
             self.window.resize(width, 900)
             baseline = settle()
             for value in (1, 10, 100, -1, -10, -100, 0):
-                canvas.set_display_brightness(value)
+                canvas.set_display_adjustments(value, value // 3)
                 self.assertEqual(settle(), baseline, f"width={width}, brightness={value}")
 
 

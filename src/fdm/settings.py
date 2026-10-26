@@ -865,6 +865,9 @@ class AppSettings:
     digital_slide_dynamic_focus_overview_enabled: bool = True
     digital_slide_smooth_navigation_enabled: bool = True
     digital_slide_shift_navigation_enabled: bool = False
+    digital_slide_remember_view_adjustments: bool = False
+    digital_slide_view_brightness: int = 0
+    digital_slide_view_exposure_tenths: int = 0
     digital_slide_render_cache_gib: int = 2
     digital_slide_profiles: list[DigitalSlideAcquisitionProfile] = field(default_factory=list)
     digital_slide_active_profile_id: str = ""
@@ -1051,6 +1054,15 @@ class AppSettings:
         normalized.digital_slide_shift_navigation_enabled = bool(
             self.digital_slide_shift_navigation_enabled
         )
+        normalized.digital_slide_remember_view_adjustments = (
+            self.digital_slide_remember_view_adjustments is True
+        )
+        normalized.digital_slide_view_brightness = self._normalize_int_range(
+            self.digital_slide_view_brightness, default=0, minimum=-100, maximum=100,
+        ) if normalized.digital_slide_remember_view_adjustments else 0
+        normalized.digital_slide_view_exposure_tenths = self._normalize_int_range(
+            self.digital_slide_view_exposure_tenths, default=0, minimum=-40, maximum=40,
+        ) if normalized.digital_slide_remember_view_adjustments else 0
         normalized.digital_slide_render_cache_gib = self._normalize_int_range(
             self.digital_slide_render_cache_gib,
             default=2,
@@ -1467,7 +1479,7 @@ class AppSettings:
     def _normalize_int_range(value: int | float | str | None, *, default: int, minimum: int, maximum: int) -> int:
         try:
             numeric = int(round(float(value)))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             numeric = int(default)
         return max(int(minimum), min(int(maximum), numeric))
 
@@ -1639,6 +1651,9 @@ class AppSettings:
             "digital_slide_dynamic_focus_overview_enabled": normalized.digital_slide_dynamic_focus_overview_enabled,
             "digital_slide_smooth_navigation_enabled": normalized.digital_slide_smooth_navigation_enabled,
             "digital_slide_shift_navigation_enabled": normalized.digital_slide_shift_navigation_enabled,
+            "digital_slide_remember_view_adjustments": normalized.digital_slide_remember_view_adjustments,
+            "digital_slide_view_brightness": normalized.digital_slide_view_brightness,
+            "digital_slide_view_exposure_tenths": normalized.digital_slide_view_exposure_tenths,
             "digital_slide_render_cache_gib": normalized.digital_slide_render_cache_gib,
             "digital_slide_profiles": [
                 profile.to_dict()
@@ -2114,6 +2129,15 @@ class AppSettings:
                 settings.digital_slide_shift_navigation_enabled,
             )
         )
+        settings.digital_slide_remember_view_adjustments = (
+            payload.get("digital_slide_remember_view_adjustments") is True
+        )
+        settings.digital_slide_view_brightness = cls._normalize_int_range(
+            payload.get("digital_slide_view_brightness"), default=0, minimum=-100, maximum=100,
+        ) if settings.digital_slide_remember_view_adjustments else 0
+        settings.digital_slide_view_exposure_tenths = cls._normalize_int_range(
+            payload.get("digital_slide_view_exposure_tenths"), default=0, minimum=-40, maximum=40,
+        ) if settings.digital_slide_remember_view_adjustments else 0
         settings.digital_slide_render_cache_gib = cls._normalize_int_range(
             payload.get(
                 "digital_slide_render_cache_gib",

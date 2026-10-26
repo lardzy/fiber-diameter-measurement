@@ -1,0 +1,1 @@
+{"adjustment_mode": "combined", "passed": true, "performance_passed": true, "first_response_ms": 22.135791999971843, "p95_ms": 19.07141700030479, "slider_p95_ms": 46.738874500078964, "continuous_p95_ms": 22.201125000719912, "continuous_update_interval_p95_ms": 36.80947270095203, "failures": [], "output": "C:\\tmp\\fdm-slide-adjustments-20261026\\r2-repeat-4k\\out\\trial-3"}

@@ -1,0 +1,2 @@
+QWidget::paintEngine: Should no longer be called
+qt.qpa.window: QWindowsWindow::setDarkBorderToWindow: Unable to set light window border.

@@ -2763,9 +2763,10 @@ class MainWindow(QMainWindow):
             self.fit_current_digital_slide_native_viewport
         )
 
-        self.digital_slide_brightness_action = QAction("切片查看亮度…", self)
+        self.digital_slide_brightness_action = QAction("切片亮度/曝光…", self)
+        self.digital_slide_brightness_action.setIcon(themed_icon("display_adjustments"))
         self.digital_slide_brightness_action.setToolTip(
-            "仅调整当前切片的查看亮度，导出保持原亮度。"
+            "调节当前切片的亮度和查看曝光；原图、测量与导出保持不变。"
         )
         self.digital_slide_brightness_action.triggered.connect(
             self._open_slide_brightness_popup
@@ -5083,7 +5084,6 @@ class MainWindow(QMainWindow):
         view_controls_layout.addWidget(self._screen_labels_button)
         self._slide_brightness_button = SlideBrightnessButton(view_controls)
         self._slide_brightness_button.setObjectName("slideBrightnessButton")
-        self._slide_brightness_button.setText("亮度：0")
         self._slide_brightness_button.setToolTip(
             self.digital_slide_brightness_action.toolTip()
         )
@@ -6125,7 +6125,7 @@ class MainWindow(QMainWindow):
             self._mode_actions["freehand_area"]: "截面面积 圈选",
             self.export_template_action: "原始记录 报表 导出模板",
             self.export_overlay_action: "叠加图 结果图片 导出图片",
-            self.digital_slide_brightness_action: "亮度 gamma 变亮 变暗 数字切片 显示",
+            self.digital_slide_brightness_action: "亮度 gamma 曝光 EV 记住 变亮 变暗 数字切片 显示",
         }
         def visit(menu, path):
             for action in menu.actions():
@@ -6943,14 +6943,80 @@ class MainWindow(QMainWindow):
         self.digital_slide_brightness_action.setEnabled(enabled)
         self._slide_brightness_button.setVisible(enabled)
         self._slide_brightness_button.setEnabled(enabled)
-        value = canvas.display_brightness if enabled else 0
-        self._slide_brightness_button.setText(f"亮度：{value}")
+        brightness, exposure = canvas.display_adjustments if enabled else (0, 0)
+        tip = (
+            f"亮度：{brightness}；曝光补偿：{exposure / 10:+.1f} EV\n"
+            "仅影响当前切片的查看；原图、测量与导出保持不变。"
+        )
+        self._slide_brightness_button.setToolTip(tip)
+        self._slide_brightness_button.setAccessibleDescription(tip)
         popup = self._slide_brightness_popup
         if popup is not None:
             if not enabled or popup.canvas is not canvas:
                 self._close_slide_brightness_popup()
-            elif popup.spin_box.value() != value and not popup.has_pending_edit:
-                popup.sync_value(value)
+            elif (
+                (popup.spin_box.value(), popup.exposure_slider.value()) != (brightness, exposure)
+                and not popup.has_pending_edit
+            ):
+                popup.sync_adjustments(brightness, exposure)
+
+    def _save_slide_display_defaults(
+        self, popup: SlideBrightnessPopup, *, remember: bool,
+        brightness: int, exposure_tenths: int,
+    ) -> None:
+        # The popup's binding survives a tab change. Never read the active tab
+        # here: a final edit on the departing slide still belongs to that slide.
+        if popup.canvas is None:
+            return
+        values = (bool(remember), int(brightness) if remember else 0,
+                  int(exposure_tenths) if remember else 0)
+        previous = (
+            self._app_settings.digital_slide_remember_view_adjustments,
+            self._app_settings.digital_slide_view_brightness,
+            self._app_settings.digital_slide_view_exposure_tenths,
+        )
+        if values == previous:
+            popup.sync_remember(values[0])
+            popup.set_persistence_error("")
+            return
+        candidate = self._app_settings.normalized_copy()
+        (candidate.digital_slide_remember_view_adjustments,
+         candidate.digital_slide_view_brightness,
+         candidate.digital_slide_view_exposure_tenths) = values
+        candidate = candidate.normalized_copy()
+        try:
+            AppSettingsIO.save(candidate)
+        except OSError as exc:
+            # Do not leave failed values in memory for another unrelated
+            # settings save (or a newly opened slide) to accidentally adopt.
+            popup.sync_remember(previous[0])
+            message = f"未能记住设置，当前查看效果仍有效：{exc}"
+            popup.set_persistence_error(message)
+            self.statusBar().showMessage(message, 10000)
+            return
+        self._app_settings.digital_slide_remember_view_adjustments = values[0]
+        self._app_settings.digital_slide_view_brightness = candidate.digital_slide_view_brightness
+        self._app_settings.digital_slide_view_exposure_tenths = candidate.digital_slide_view_exposure_tenths
+        self._app_settings.digital_slide_profiles = copy.deepcopy(candidate.digital_slide_profiles)
+        self._app_settings.digital_slide_active_profile_id = candidate.digital_slide_active_profile_id
+        popup.sync_remember(values[0])
+        popup.set_persistence_error("")
+
+    def _commit_slide_display_adjustments(
+        self, popup: SlideBrightnessPopup, brightness: int, exposure_tenths: int,
+    ) -> None:
+        if self._app_settings.digital_slide_remember_view_adjustments:
+            self._save_slide_display_defaults(
+                popup, remember=True, brightness=brightness, exposure_tenths=exposure_tenths,
+            )
+
+    def _toggle_remember_slide_display(self, popup: SlideBrightnessPopup, remember: bool) -> None:
+        canvas = popup.canvas
+        if canvas is not None:
+            self._save_slide_display_defaults(
+                popup, remember=remember, brightness=canvas.display_brightness,
+                exposure_tenths=canvas.display_exposure_tenths,
+            )
 
     def _open_slide_brightness_popup(self) -> None:
         canvas = self.current_canvas()
@@ -6961,8 +7027,14 @@ class MainWindow(QMainWindow):
             self._close_slide_brightness_popup()
             return
         self._close_slide_brightness_popup()
-        popup = SlideBrightnessPopup(canvas, self)
+        popup = SlideBrightnessPopup(
+            canvas, self, remember=self._app_settings.digital_slide_remember_view_adjustments,
+        )
         self._slide_brightness_popup = popup
+        popup.adjustmentsCommitted.connect(
+            lambda brightness, exposure: self._commit_slide_display_adjustments(popup, brightness, exposure)
+        )
+        popup.rememberToggled.connect(lambda enabled: self._toggle_remember_slide_display(popup, enabled))
         popup.closed.connect(lambda: self._slide_brightness_popup_closed(popup))
         popup.adjustSize()
         anchor = self._slide_brightness_button
@@ -6986,12 +7058,16 @@ class MainWindow(QMainWindow):
         popup.deleteLater()
         self._focus_current_canvas()
 
-    def _close_slide_brightness_popup(self) -> None:
+    def _close_slide_brightness_popup(self, *, warn_on_persistence_error: bool = False) -> None:
         popup = self._slide_brightness_popup
         if popup is not None:
             self._slide_brightness_popup = None
-            popup.flush()
+            popup.commit()
+            message = popup.persistence_error_label.text()
             popup.close()
+            if warn_on_persistence_error and message:
+                # A status-bar message would disappear as the application exits.
+                QMessageBox.warning(self, "未能记住显示设置", message)
 
     def _open_display_adjustment_dialog(self) -> None:
         self._close_threshold_adjustment_dialog()
@@ -14607,6 +14683,8 @@ class MainWindow(QMainWindow):
             return
         self._app_settings.theme_mode = apply_application_theme(app, self._app_settings.theme_mode)
         refresh_widget_theme(self)
+        if hasattr(self, "digital_slide_brightness_action"):
+            self.digital_slide_brightness_action.setIcon(themed_icon("display_adjustments"))
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -20757,6 +20835,11 @@ class MainWindow(QMainWindow):
             return
         operation_phase("canvas.settings_and_signals")
         canvas.set_settings(self._app_settings)
+        if self._app_settings.digital_slide_remember_view_adjustments:
+            canvas.set_display_adjustments(
+                self._app_settings.digital_slide_view_brightness,
+                self._app_settings.digital_slide_view_exposure_tenths,
+            )
         canvas.set_tool_mode(
             self._tool_mode,
             overlay_kind=self._overlay_tool_kind,
@@ -20797,8 +20880,8 @@ class MainWindow(QMainWindow):
                 self._on_digital_slide_focus_changed(document_id, focus_index)
             )
         )
-        canvas.displayBrightnessChanged.connect(
-            lambda _value: self._sync_slide_brightness_controls()
+        canvas.displayAdjustmentsChanged.connect(
+            lambda _brightness, _exposure: self._sync_slide_brightness_controls()
         )
         canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
         canvas.shiftNavigationEnabledChanged.connect(
@@ -29457,7 +29540,7 @@ class MainWindow(QMainWindow):
             return
         self._close_threshold_adjustment_dialog()
         self._close_display_adjustment_dialog()
-        self._close_slide_brightness_popup()
+        self._close_slide_brightness_popup(warn_on_persistence_error=True)
         if not self._close_image_batch_dialog(wait=True):
             event.ignore()
             return

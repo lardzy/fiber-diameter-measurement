@@ -92,8 +92,9 @@ def slide_window(tmp_path, monkeypatch, desktop_application):
         window.close()
 
 
-@pytest.mark.parametrize("brightness", [-100, -45, 40, 100, 0])
-def test_brightness_preserves_file_model_processing_and_segmentation(slide_window, desktop_application, brightness):
+@pytest.mark.parametrize("brightness,exposure", [(-100, 0), (-45, 0), (40, 0), (100, 0),
+    (0, 0), (0, -40), (0, 10), (0, 40), (37, -15), (-20, 25)])
+def test_brightness_preserves_file_model_processing_and_segmentation(slide_window, desktop_application, brightness, exposure):
     window, canvas, doc, path, source_hash = slide_window
     before = deepcopy(doc.to_dict())
     snapshot = deepcopy(doc.snapshot_state())
@@ -108,7 +109,7 @@ def test_brightness_preserves_file_model_processing_and_segmentation(slide_windo
             origin_px=canvas.viewport_origin(), width=160, height=120, focus_index=canvas.focus_index())
 
     segment_before = segmentation()
-    canvas.set_display_brightness(brightness)
+    canvas.set_display_adjustments(brightness, exposure)
     # Attribute this invariant to the setter itself, before a later native
     # resize/initial-fit event can legitimately create a new view generation.
     assert canvas._view_generation == generation
@@ -131,10 +132,10 @@ def test_native_exports_ignore_view_brightness(slide_window, tmp_path, measureme
     context = ExportRenderContext(document_id=doc.id, render_mode=ExportImageRenderMode.CURRENT_VIEWPORT,
         focus_index=2, origin_x=160, origin_y=120, viewport_width=160, viewport_height=120)
     images = []
-    for value in (0, -100, 100, 37):
-        canvas.set_display_brightness(value)
+    for value, exposure in ((0, 0), (-100, 0), (100, 0), (37, 0), (0, -40), (0, 40), (37, -15)):
+        canvas.set_display_adjustments(value, exposure)
         canvas.grab()
-        output = tmp_path / f"export-{value}.png"
+        output = tmp_path / f"export-{value}-{exposure}.png"
         window._render_overlay_image(doc, output, include_measurements=measurements, include_scale=scale,
             include_annotations=measurements, render_mode=ExportImageRenderMode.CURRENT_VIEWPORT, render_context=context)
         images.append(QImage(str(output)))
@@ -144,21 +145,22 @@ def test_native_exports_ignore_view_brightness(slide_window, tmp_path, measureme
 
 def test_brightness_survives_focus_and_navigation_without_polluting_storage(slide_window, desktop_application):
     window, canvas, doc, path, source_hash = slide_window
-    canvas.set_display_brightness(63)
+    canvas.set_display_adjustments(63, -15)
     for focus in (4, 0, 3, 2):
         canvas.set_focus_index(focus)
         _settle(desktop_application, canvas.pixel_work_enabled)
-        assert canvas.display_brightness == 63
+        assert canvas.display_adjustments == (63, -15)
         assert canvas._image.pixelColor(20, 20).red() == 25 + focus * 20
     for dx, dy in ((160, 0), (-40, 0), (0, 30), (0, -30), (-120, 0)):
         canvas.move_viewport_by(dx, dy)
         _settle(desktop_application, canvas.pixel_work_enabled)
-        assert canvas.display_brightness == 63
+        assert canvas.display_adjustments == (63, -15)
     canvas.fit_to_view()
     desktop_application.processEvents()
-    assert canvas.display_brightness == 63
+    assert canvas.display_adjustments == (63, -15)
     canvas.fit_native_viewport()
     _settle(desktop_application, canvas.pixel_work_enabled)
-    assert canvas.display_brightness == 63
+    assert canvas.display_adjustments == (63, -15)
     assert "display_brightness" not in str(doc.to_dict())
+    assert "display_exposure" not in str(doc.to_dict())
     assert hashlib.sha256(path.read_bytes()).hexdigest() == source_hash

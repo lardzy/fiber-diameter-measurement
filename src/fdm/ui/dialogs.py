@@ -2360,6 +2360,9 @@ class SettingsDialog(QDialog):
             digital_slide_render_cache_gib=self._digital_slide_render_cache_spin.value(),
             digital_slide_smooth_navigation_enabled=self._initial_settings.digital_slide_smooth_navigation_enabled,
             digital_slide_shift_navigation_enabled=self._initial_settings.digital_slide_shift_navigation_enabled,
+            digital_slide_remember_view_adjustments=self._initial_settings.digital_slide_remember_view_adjustments,
+            digital_slide_view_brightness=self._initial_settings.digital_slide_view_brightness,
+            digital_slide_view_exposure_tenths=self._initial_settings.digital_slide_view_exposure_tenths,
             digital_slide_profiles=[
                 DigitalSlideAcquisitionProfile(
                     profile_id=profile.profile_id,

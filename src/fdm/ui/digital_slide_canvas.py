@@ -104,6 +104,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     viewportBufferFailed = Signal(str)
     overviewImageChanged = Signal(QImage)
     displayBrightnessChanged = Signal(int)
+    displayAdjustmentsChanged = Signal(int, int)
     pixelWorkAvailabilityChanged = Signal(bool, str)
     browseNoticeRequested = Signal(str)
     boundaryFeedbackChanged = Signal(str)
@@ -113,6 +114,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._display_brightness = 0
+        self._display_exposure_tenths = 0
         self._brightness_cache = SlideBrightnessCache()
         self._slide_store: DigitalSlideStore | None = None
         self._slide_manifest: DigitalSlideManifest | None = None
@@ -226,7 +228,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         source_stat: tuple[int, int] | None = None,
         source_identity: str | Path | None = None,
     ) -> None:
-        self._reset_display_brightness()
+        self._reset_display_adjustments()
         self._clear_boundary_feedback()
         self._render_source_stat = source_stat
         self._render_source_identity_override = str(source_identity) if source_identity is not None else None
@@ -374,7 +376,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
-        self._reset_display_brightness()
+        self._reset_display_adjustments()
         self._clear_boundary_feedback()
         self._deferred_slide_document = None
         self._smooth_nav_keys.clear()
@@ -439,12 +441,12 @@ class DigitalSlideCanvas(DocumentCanvas):
     def showEvent(self, event) -> None:
         deferred = getattr(self, "_deferred_slide_document", None)
         if deferred is not None:
-            brightness = self._display_brightness
+            adjustments = self.display_adjustments
             self.set_slide_document(
                 *deferred, source_stat=self._render_source_stat,
                 source_identity=self._render_source_identity_override,
             )
-            self.set_display_brightness(brightness)
+            self.set_display_adjustments(*adjustments)
         super().showEvent(event)
         self._allow_viewport_buffer_retry()
         if self._initial_fit_pending:
@@ -461,7 +463,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.update()
 
     def clear_document(self) -> None:
-        self._reset_display_brightness()
+        self._reset_display_adjustments()
         self._clear_boundary_feedback()
         super().clear_document()
 
@@ -2088,13 +2090,29 @@ class DigitalSlideCanvas(DocumentCanvas):
     def display_brightness(self) -> int:
         return self._display_brightness
 
+    @property
+    def display_exposure_tenths(self) -> int:
+        return self._display_exposure_tenths
+
+    @property
+    def display_adjustments(self) -> tuple[int, int]:
+        return self._display_brightness, self._display_exposure_tenths
+
     def set_display_brightness(self, value: int) -> None:
-        value = max(-100, min(100, int(value)))
-        if value == self._display_brightness:
+        self.set_display_adjustments(value, self._display_exposure_tenths)
+
+    def set_display_adjustments(self, brightness: int, exposure_tenths: int) -> None:
+        brightness = max(-100, min(100, int(brightness)))
+        exposure_tenths = max(-40, min(40, int(exposure_tenths)))
+        if (brightness, exposure_tenths) == self.display_adjustments:
             return
-        self._display_brightness = value
+        brightness_changed = brightness != self._display_brightness
+        self._display_brightness = brightness
+        self._display_exposure_tenths = exposure_tenths
         self._brightness_cache.clear()
-        self.displayBrightnessChanged.emit(value)
+        if brightness_changed:
+            self.displayBrightnessChanged.emit(brightness)
+        self.displayAdjustmentsChanged.emit(brightness, exposure_tenths)
         self.overviewImageChanged.emit(self.overview_image())
         # A pending popup edit can be flushed just after its tab was hidden.
         # The navigator owns its snapshot; hidden canvases retain no derived
@@ -2103,16 +2121,21 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._brightness_cache.clear()
         self.update()
 
-    def _reset_display_brightness(self) -> None:
-        changed = self._display_brightness != 0
+    def _reset_display_adjustments(self) -> None:
+        brightness_changed = self._display_brightness != 0
+        changed = self.display_adjustments != (0, 0)
         self._display_brightness = 0
+        self._display_exposure_tenths = 0
         self._brightness_cache.clear()
-        if changed:
+        if brightness_changed:
             self.displayBrightnessChanged.emit(0)
+        if changed:
+            self.displayAdjustmentsChanged.emit(0, 0)
 
     def overview_image(self) -> QImage:
         return QImage(self._brightness_cache.mapped_image(
             self._overview_image, self._display_brightness,
+            exposure_tenths=self._display_exposure_tenths,
         ))
 
     def set_overview_enabled(self, enabled: bool) -> None:
@@ -2531,6 +2554,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         return (
             super()._overlay_background_signature(),
             self._display_brightness,
+            self._display_exposure_tenths,
             scale_visible,
             self._native_frame_key if scale_visible else None,
             self._focus_index,
@@ -2584,6 +2608,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         def draw_image(destination: QRectF, image: QImage) -> None:
             self._brightness_cache.draw_image(
                 painter, destination, image, self._display_brightness, content,
+                exposure_tenths=self._display_exposure_tenths,
             )
 
         def draw_frame(
@@ -2616,7 +2641,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 painter.drawImage(frame_target, frame.image)
                 target = frame_target
                 return
-            if coverage_only or (self._display_brightness and not frame.complete):
+            if coverage_only or (self.display_adjustments != (0, 0) and not frame.complete):
                 if not coverage_only:
                     # Progressive frames contain synthetic backing pixels in
                     # undecoded regions. Preserve those colors and apply the

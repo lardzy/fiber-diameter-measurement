@@ -1,0 +1,39 @@
+{
+    "source_matches":  [
+                           {
+                               "sha256":  "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b",
+                               "path":  "native/cu_automatic.cpp"
+                           },
+                           {
+                               "sha256":  "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+                               "path":  "native/cu_automatic.hpp"
+                           },
+                           {
+                               "sha256":  "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+                               "path":  "native/cu_manual.cpp"
+                           },
+                           {
+                               "sha256":  "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+                               "path":  "native/cu_manual.hpp"
+                           },
+                           {
+                               "sha256":  "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+                               "path":  "native/kernels.cpp"
+                           },
+                           {
+                               "sha256":  "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+                               "path":  "native/microview_bridge.cpp"
+                           }
+                       ],
+    "extensions":  [
+                       {
+                           "sha256":  "b4353d831d04738f3ae3d9db97a3ff9e576824358314155138fd34319f5f1d32",
+                           "name":  "_kernels.cp312-win_amd64.pyd"
+                       },
+                       {
+                           "sha256":  "5dd0a122c0a205cdef408b3b04adbc4bb93347a6facd2e9abcbe0c22121f4b2a",
+                           "name":  "_microview.cp312-win_amd64.pyd"
+                       }
+                   ],
+    "source":  "C:\\tmp\\fdm-cu-live-eighth-round-20261021"
+}

@@ -1,0 +1,82 @@
+{
+    "status":  "passed",
+    "utc":  "2026-10-26T08:47:55.7785020Z",
+    "results":  [
+                    {
+                        "exit_code":  0,
+                        "name":  "pytest"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "brightness-1366x768-1-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "brightness-1366x768-1-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "brightness-1920x1080-1.5-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "brightness-1920x1080-1.5-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "brightness-3840x2160-2-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "brightness-3840x2160-2-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "exposure-1366x768-1-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "exposure-1366x768-1-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "exposure-1920x1080-1.5-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "exposure-1920x1080-1.5-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "exposure-3840x2160-2-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "exposure-3840x2160-2-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "combined-1366x768-1-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "combined-1366x768-1-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "combined-1920x1080-1.5-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "combined-1920x1080-1.5-dark"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "combined-3840x2160-2-light"
+                    },
+                    {
+                        "exit_code":  0,
+                        "name":  "combined-3840x2160-2-dark"
+                    }
+                ]
+}

@@ -1,0 +1,51 @@
+{
+  "base_head": "9f51a46cbd86d3eaed4300adc28bc072fcd6b7f2",
+  "product_source_matches_current_checkout": true,
+  "source_file_count": 579,
+  "tests_mac": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "490",
+    "time": "32.584",
+    "timestamp": "2026-10-26T16:47:29.251134+08:00",
+    "hostname": "lard-1.local"
+  },
+  "tests_windows": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "490",
+    "time": "85.593",
+    "timestamp": "2026-10-26T16:48:04.182208+08:00",
+    "hostname": "B1EA"
+  },
+  "final_ui_functional_pass_count": 16,
+  "final_ui_case_count": 18,
+  "final_performance_pass_count": 18,
+  "repeat_pass_count": 6,
+  "repeat_case_count": 6,
+  "retained_initial_ui_failures": [
+    {
+      "case": "brightness-1920x1080-1.5-dark",
+      "failures": [
+        "popup_is_visible"
+      ]
+    },
+    {
+      "case": "combined-3840x2160-2-light",
+      "failures": [
+        "popup_is_visible"
+      ]
+    }
+  ],
+  "raw_slide_hashes_match": true,
+  "source_hashes_match": true,
+  "transfer_and_screenshot_hashes_match": true,
+  "requested_screenshot_sizes_and_dpr_match": true,
+  "installer_built": false,
+  "git_committed": false,
+  "scope": "Windows 11 VM source validation and synthetic Qt widgets; no physical 4K display, real device, installer, or Windows 10 acceptance"
+}

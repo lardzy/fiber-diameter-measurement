@@ -1,0 +1,18 @@
+{
+    "source_root":  "C:\\tmp\\fdm-slide-adjustments-20261026\\r2",
+    "results":  [
+                    {
+                        "exit_code":  0,
+                        "trial":  1
+                    },
+                    {
+                        "exit_code":  0,
+                        "trial":  2
+                    },
+                    {
+                        "exit_code":  0,
+                        "trial":  3
+                    }
+                ],
+    "fixed_trial_count":  3
+}

@@ -828,7 +828,10 @@ class ScaleOverlayPreviewController(QObject):
                 self._native_status[canvas] = status
                 self._refresh_timer.start()
             message = "等待当前焦层原始像素…" if pending else (
-                "导出预览 · 原始亮度" if getattr(canvas, "display_brightness", 0)
+                "导出预览 · 原始显示" if (
+                    getattr(canvas, "display_brightness", 0)
+                    or getattr(canvas, "display_exposure_tenths", 0)
+                )
                 else "原始视窗导出范围"
             )
             painter.drawText(

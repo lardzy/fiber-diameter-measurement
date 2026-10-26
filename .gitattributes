@@ -45,3 +45,5 @@ docs/validation/slide-brightness-release-20261023/**/*.log -text -whitespace
 docs/validation/slide-brightness-20261023/**/*.txt -text -whitespace
 # Preserve the complete release evidence bundle byte-for-byte.
 docs/validation/slide-brightness-release-20261023/** -text -whitespace
+# Preserve brightness/exposure validation evidence and its recorded hashes.
+docs/validation/slide-adjustments-20261026/** -text -whitespace

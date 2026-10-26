@@ -1,0 +1,1 @@
+{"adjustment_mode": "exposure", "passed": true, "performance_passed": true, "first_response_ms": 13.952499999504653, "p95_ms": 9.85716699869954, "slider_p95_ms": 48.87970900017535, "continuous_p95_ms": 19.505756099260893, "continuous_update_interval_p95_ms": 44.88087479985551, "failures": [], "output": "C:\\tmp\\fdm-slide-adjustments-20261026\\r2\\out\\exposure-1366x768-1-light"}

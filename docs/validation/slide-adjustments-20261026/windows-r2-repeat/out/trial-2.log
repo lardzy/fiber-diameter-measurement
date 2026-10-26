@@ -1,0 +1,1 @@
+{"adjustment_mode": "brightness", "passed": true, "performance_passed": true, "first_response_ms": 10.351083001296502, "p95_ms": 5.439833999844268, "slider_p95_ms": 41.5606039996419, "continuous_p95_ms": 15.166187999966496, "continuous_update_interval_p95_ms": 41.183443750105646, "failures": [], "output": "C:\\tmp\\fdm-slide-adjustments-20261026\\r2-repeat\\out\\trial-2"}

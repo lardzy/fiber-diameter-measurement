@@ -1,0 +1,1 @@
+{"adjustment_mode": "combined", "passed": true, "performance_passed": true, "first_response_ms": 9.603833999790368, "p95_ms": 4.572209001707961, "slider_p95_ms": 43.002729000363615, "continuous_p95_ms": 14.770266548748616, "continuous_update_interval_p95_ms": 42.46760819987685, "failures": [], "output": "C:\\tmp\\fdm-slide-adjustments-20261026\\r1\\out\\combined-1366x768-1-dark"}

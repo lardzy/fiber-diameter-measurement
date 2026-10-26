@@ -1,0 +1,387 @@
+[
+    {
+        "path":  "source-manifest.json",
+        "sha256":  "48292df0e1aac3a50b5ce80aa50f91b0f3dfafb375347cf7ba63857f6166ac52",
+        "bytes":  98888
+    },
+    {
+        "path":  "result.json",
+        "sha256":  "d3f55847f0aa18abc937e1e0ff3dffb0b6c5d6a2870d43198c8cbaac279dbb7d",
+        "bytes":  517
+    },
+    {
+        "path":  "progress.txt",
+        "sha256":  "088e3c4b2da5c905ff3a5978c0a29ce18d9863a9bd5fdb8f2045210aa1425e8c",
+        "bytes":  36
+    },
+    {
+        "path":  "run-windows.ps1",
+        "sha256":  "70b6c9b9ec003b8b3e945eaa6a301c32f60874aaaf7f9b3fd90a6f9c58ebcc27",
+        "bytes":  1743
+    },
+    {
+        "path":  "native-reuse.json",
+        "sha256":  "80a1e6b071f3baefa9683344bbacc3c92441232bb16b386798e49afd6f223cfb",
+        "bytes":  2046
+    },
+    {
+        "path":  "out\\trial-2.stderr.log",
+        "sha256":  "e0e8bfe352c80a287959ad8f8fca1f1a6993949c5e4e407f82cb3a091c92b5f6",
+        "bytes":  49
+    },
+    {
+        "path":  "out\\trial-1.log",
+        "sha256":  "9c8efd505730374bc78ad75880a299e66abebbb9baa38497e5ff52beff04c7e0",
+        "bytes":  375
+    },
+    {
+        "path":  "out\\trial-2.log",
+        "sha256":  "d7eb8fe333d4dc9e060d34b4c38153289c756253832fea0a5a06ea279fce30f6",
+        "bytes":  376
+    },
+    {
+        "path":  "out\\trial-3.log",
+        "sha256":  "c0eed67fec366db1a152623f2c80550f87ef3166371c9671644ff55aa51fe4db",
+        "bytes":  374
+    },
+    {
+        "path":  "out\\trial-3.stderr.log",
+        "sha256":  "e0e8bfe352c80a287959ad8f8fca1f1a6993949c5e4e407f82cb3a091c92b5f6",
+        "bytes":  49
+    },
+    {
+        "path":  "out\\trial-1.stderr.log",
+        "sha256":  "e0e8bfe352c80a287959ad8f8fca1f1a6993949c5e4e407f82cb3a091c92b5f6",
+        "bytes":  49
+    },
+    {
+        "path":  "out\\trial-3\\export-raw-70.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-3\\export-raw-0.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-3\\result.json",
+        "sha256":  "ffb6491456f9c31f9c43321bc14547a593fd564af7d424a738b4ca211785e536",
+        "bytes":  72495
+    },
+    {
+        "path":  "out\\trial-3\\settings.json",
+        "sha256":  "7f74d70fa81b465dbe9e1a07b195f095bc0d0c6837528c0ec3f0cbac902ccf3f",
+        "bytes":  8711
+    },
+    {
+        "path":  "out\\trial-3\\adjustments-popup-remembered.png",
+        "sha256":  "d35ca015d3f0058426f361e750da84de9e281d6bbf447532e13c0f071cadfb4b",
+        "bytes":  20558
+    },
+    {
+        "path":  "out\\trial-3\\native-darkened.png",
+        "sha256":  "690a72c1c27c1fcfb887fa531de6c5f2d277c1df9861aef78e54952b7ffbe427",
+        "bytes":  264755
+    },
+    {
+        "path":  "out\\trial-3\\adjustments-popup-reset.png",
+        "sha256":  "976dd5137d085888c97b8b9359f0434f60b3c518233da4721adbe5b3f6cfb9d8",
+        "bytes":  20393
+    },
+    {
+        "path":  "out\\trial-3\\export-scale-70.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-3\\export-annotations-0.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-3\\brightness-popup-window.png",
+        "sha256":  "4623ca8b52b215ffe308951c86e34c27b0ba8de8cf73642fd6677a9ee41fe12a",
+        "bytes":  250970
+    },
+    {
+        "path":  "out\\trial-3\\export-scale--70.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-3\\remember-disabled-current-view.png",
+        "sha256":  "c398df6890b7b2910b4986f43804384e29e81e363d4d89ef3ac8e42d9a56f416",
+        "bytes":  245385
+    },
+    {
+        "path":  "out\\trial-3\\native-bright.png",
+        "sha256":  "6d6d11b0d4ea5f8e5f5447e4de080d4490d82929983e17248390b3bc212f5071",
+        "bytes":  247755
+    },
+    {
+        "path":  "out\\trial-3\\overview-bright.png",
+        "sha256":  "de74390d8196702919189df8ce006cee15d27651dca32033e0388ba679fe06ba",
+        "bytes":  363393
+    },
+    {
+        "path":  "out\\trial-3\\export-raw--70.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-3\\workspace-layouts.json",
+        "sha256":  "23450d9e29dd0efa9bceb760e336cdd4cfd2b6db55d613cd92ac61f7b4e8efee",
+        "bytes":  554
+    },
+    {
+        "path":  "out\\trial-3\\scale-export-preview-original-brightness.png",
+        "sha256":  "450dc080f847483d8cd3f00eec847a8b4603cbd2938ffc8766652a98704a91cb",
+        "bytes":  256480
+    },
+    {
+        "path":  "out\\trial-3\\brightness-popup.png",
+        "sha256":  "b23c039d9790d29127b8b6219bd52c9d87e431d40cf8000631b7ebde958b96a8",
+        "bytes":  20328
+    },
+    {
+        "path":  "out\\trial-3\\export-scale-0.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-3\\export-annotations--70.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-3\\export-annotations-70.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-3\\native-original.png",
+        "sha256":  "51e0f44e87c366aa6a83a9060880d91f381c8e27cc0d232021a743f2c1ca5a05",
+        "bytes":  250822
+    },
+    {
+        "path":  "out\\trial-2\\export-raw-70.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-2\\export-raw-0.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-2\\result.json",
+        "sha256":  "211561d329fd2da9369725f3f243d46a82c0fbd3f1c29a4d26ff3fd48cb4458f",
+        "bytes":  72025
+    },
+    {
+        "path":  "out\\trial-2\\settings.json",
+        "sha256":  "891ce98458dd603580973988555de6f76054a975fbdc0c61823bb1d3695763f4",
+        "bytes":  8711
+    },
+    {
+        "path":  "out\\trial-2\\adjustments-popup-remembered.png",
+        "sha256":  "d35ca015d3f0058426f361e750da84de9e281d6bbf447532e13c0f071cadfb4b",
+        "bytes":  20558
+    },
+    {
+        "path":  "out\\trial-2\\native-darkened.png",
+        "sha256":  "690a72c1c27c1fcfb887fa531de6c5f2d277c1df9861aef78e54952b7ffbe427",
+        "bytes":  264755
+    },
+    {
+        "path":  "out\\trial-2\\adjustments-popup-reset.png",
+        "sha256":  "976dd5137d085888c97b8b9359f0434f60b3c518233da4721adbe5b3f6cfb9d8",
+        "bytes":  20393
+    },
+    {
+        "path":  "out\\trial-2\\export-scale-70.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-2\\export-annotations-0.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-2\\brightness-popup-window.png",
+        "sha256":  "4623ca8b52b215ffe308951c86e34c27b0ba8de8cf73642fd6677a9ee41fe12a",
+        "bytes":  250970
+    },
+    {
+        "path":  "out\\trial-2\\export-scale--70.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-2\\remember-disabled-current-view.png",
+        "sha256":  "c398df6890b7b2910b4986f43804384e29e81e363d4d89ef3ac8e42d9a56f416",
+        "bytes":  245385
+    },
+    {
+        "path":  "out\\trial-2\\native-bright.png",
+        "sha256":  "6d6d11b0d4ea5f8e5f5447e4de080d4490d82929983e17248390b3bc212f5071",
+        "bytes":  247755
+    },
+    {
+        "path":  "out\\trial-2\\overview-bright.png",
+        "sha256":  "de74390d8196702919189df8ce006cee15d27651dca32033e0388ba679fe06ba",
+        "bytes":  363393
+    },
+    {
+        "path":  "out\\trial-2\\export-raw--70.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-2\\workspace-layouts.json",
+        "sha256":  "23450d9e29dd0efa9bceb760e336cdd4cfd2b6db55d613cd92ac61f7b4e8efee",
+        "bytes":  554
+    },
+    {
+        "path":  "out\\trial-2\\scale-export-preview-original-brightness.png",
+        "sha256":  "450dc080f847483d8cd3f00eec847a8b4603cbd2938ffc8766652a98704a91cb",
+        "bytes":  256480
+    },
+    {
+        "path":  "out\\trial-2\\brightness-popup.png",
+        "sha256":  "b23c039d9790d29127b8b6219bd52c9d87e431d40cf8000631b7ebde958b96a8",
+        "bytes":  20328
+    },
+    {
+        "path":  "out\\trial-2\\export-scale-0.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-2\\export-annotations--70.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-2\\export-annotations-70.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-2\\native-original.png",
+        "sha256":  "51e0f44e87c366aa6a83a9060880d91f381c8e27cc0d232021a743f2c1ca5a05",
+        "bytes":  250822
+    },
+    {
+        "path":  "out\\trial-1\\export-raw-70.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-1\\export-raw-0.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-1\\result.json",
+        "sha256":  "31beeb86612dca9083e0fd1e852593c41543b8b9b6a5e4e2ea628f8b0c32a63b",
+        "bytes":  72685
+    },
+    {
+        "path":  "out\\trial-1\\settings.json",
+        "sha256":  "880526f16873b5e6eb483b322addbcd5a1516bf58c1edf283eba75972c377f01",
+        "bytes":  8711
+    },
+    {
+        "path":  "out\\trial-1\\adjustments-popup-remembered.png",
+        "sha256":  "d35ca015d3f0058426f361e750da84de9e281d6bbf447532e13c0f071cadfb4b",
+        "bytes":  20558
+    },
+    {
+        "path":  "out\\trial-1\\native-darkened.png",
+        "sha256":  "690a72c1c27c1fcfb887fa531de6c5f2d277c1df9861aef78e54952b7ffbe427",
+        "bytes":  264755
+    },
+    {
+        "path":  "out\\trial-1\\adjustments-popup-reset.png",
+        "sha256":  "976dd5137d085888c97b8b9359f0434f60b3c518233da4721adbe5b3f6cfb9d8",
+        "bytes":  20393
+    },
+    {
+        "path":  "out\\trial-1\\export-scale-70.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-1\\export-annotations-0.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-1\\brightness-popup-window.png",
+        "sha256":  "4623ca8b52b215ffe308951c86e34c27b0ba8de8cf73642fd6677a9ee41fe12a",
+        "bytes":  250970
+    },
+    {
+        "path":  "out\\trial-1\\export-scale--70.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-1\\remember-disabled-current-view.png",
+        "sha256":  "c398df6890b7b2910b4986f43804384e29e81e363d4d89ef3ac8e42d9a56f416",
+        "bytes":  245385
+    },
+    {
+        "path":  "out\\trial-1\\native-bright.png",
+        "sha256":  "6d6d11b0d4ea5f8e5f5447e4de080d4490d82929983e17248390b3bc212f5071",
+        "bytes":  247755
+    },
+    {
+        "path":  "out\\trial-1\\overview-bright.png",
+        "sha256":  "de74390d8196702919189df8ce006cee15d27651dca32033e0388ba679fe06ba",
+        "bytes":  363393
+    },
+    {
+        "path":  "out\\trial-1\\export-raw--70.png",
+        "sha256":  "829f0637a60bc0a8b1454a0a4ae092e7d005645acdddae5a0f3bd610bbb8fb2c",
+        "bytes":  45526
+    },
+    {
+        "path":  "out\\trial-1\\workspace-layouts.json",
+        "sha256":  "23450d9e29dd0efa9bceb760e336cdd4cfd2b6db55d613cd92ac61f7b4e8efee",
+        "bytes":  554
+    },
+    {
+        "path":  "out\\trial-1\\scale-export-preview-original-brightness.png",
+        "sha256":  "450dc080f847483d8cd3f00eec847a8b4603cbd2938ffc8766652a98704a91cb",
+        "bytes":  256480
+    },
+    {
+        "path":  "out\\trial-1\\brightness-popup.png",
+        "sha256":  "b23c039d9790d29127b8b6219bd52c9d87e431d40cf8000631b7ebde958b96a8",
+        "bytes":  20328
+    },
+    {
+        "path":  "out\\trial-1\\export-scale-0.png",
+        "sha256":  "9b6741158f231eb629010409947111dc2bb6af904236152b89e40ec61105bad5",
+        "bytes":  55886
+    },
+    {
+        "path":  "out\\trial-1\\export-annotations--70.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-1\\export-annotations-70.png",
+        "sha256":  "804ca4868244bcdb51df65ab04c764b8739818528e7b1cb778fa9b38d7d9bcbd",
+        "bytes":  54051
+    },
+    {
+        "path":  "out\\trial-1\\native-original.png",
+        "sha256":  "51e0f44e87c366aa6a83a9060880d91f381c8e27cc0d232021a743f2c1ca5a05",
+        "bytes":  250822
+    }
+]

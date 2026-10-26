@@ -1,0 +1,3 @@
+QWidget::paintEngine: Should no longer be called
+qt.qpa.window: QWindowsWindow::setDarkBorderToWindow: Unable to set light window border.
+QWindowsWindow::setGeometry: Unable to set geometry 3840x2160+14+58 (frame: 3866x2231+1+0) on QWidgetWindow/"MainWindowClassWindow" on "Parallels Vu". Resulting geometry: 2586x1603+14+58 (frame: 2612x1674+1+0) margins: 13, 58, 13, 13 minimum size: 579x296 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1184, y=663)))
