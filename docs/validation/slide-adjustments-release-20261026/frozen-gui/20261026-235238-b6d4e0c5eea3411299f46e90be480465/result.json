@@ -1,0 +1,213 @@
+{
+    "schema_version":  2,
+    "passed":  false,
+    "started_at":  "2026-10-26T15:52:39.0079523Z",
+    "scope":  "Frozen EXE UI smoke; synthetic source; no hardware, installation or performance acceptance",
+    "executable":  "C:\\tmp\\fdm-slide-adjustments-release-20261026\\dist\\windows\\installer-payload-ac9e231c358b\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "3C286FDC2BA628B84CBD8FC522A4C482146D1D0A90580831E6E5B1550E44CB63",
+    "slide":  "C:\\tmp\\fdm-slide-adjustments-release-20261026\\synthetic.fdmslide",
+    "source_sha256_before":  "73A0CCA293C12145BE8B23D6D1CE8BF6F1A87A923297BB1488E70BB91293186B",
+    "source_sha256_after":  "73A0CCA293C12145BE8B23D6D1CE8BF6F1A87A923297BB1488E70BB91293186B",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-slide-adjustments-release-20261026\\build\\frozen-gui\\20261026-235238-b6d4e0c5eea3411299f46e90be480465",
+    "session_id":  1,
+    "process_id":  7784,
+    "controls":  [
+                     {
+                         "phase":  "entry",
+                         "name":  "切片亮度与曝光",
+                         "process_id":  4476,
+                         "class":  "SlideBrightnessButton",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.slideBrightnessButton",
+                         "control_type":  "ControlType.Button",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "01-original",
+                          "file":  "01-original.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "13CF46CEAF1B7247B31D064AB7FEC6A7CDF62DD710D5148813917EF8E02C545C",
+                          "center_sha256":  "033DA6F7866CD40CDD2C246131636663DA6541B70E12D8E8C1675029F83AEEFC",
+                          "center_mean":  138.27917620137285,
+                          "center_colors":  2459,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "02-exposure-plus-1",
+                          "file":  "02-exposure-plus-1.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "99932FBF97354F976C0340021DBA429DCB3E15D21E21FB7942237DC2DAB0D08A",
+                          "center_sha256":  "8C142D47C777C1C221B76488169B3DDC291FC869D77D46C4E235E31AAB196189",
+                          "center_mean":  189.26201372997696,
+                          "center_colors":  2464,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "03-combined-remembered",
+                          "file":  "03-combined-remembered.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "EC1C0A9E9A372D431501EF426E3250B18107AEDF6454CAFA26CCFF71D0DDC49E",
+                          "center_sha256":  "C7216390D2CBF276C23212848B25C10543B655A9E3874DB7877FC0E97B9F1077",
+                          "center_mean":  223.21510297482865,
+                          "center_colors":  2154,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "04-restarted-remembered",
+                          "file":  "04-restarted-remembered.png",
+                          "width":  1366,
+                          "height":  850,
+                          "sha256":  "82CAD5E304E16EEDEDAEA218AD6E388BB14E2141AF75566EA25958B1B6F9E3FA",
+                          "center_sha256":  "C7216390D2CBF276C23212848B25C10543B655A9E3874DB7877FC0E97B9F1077",
+                          "center_mean":  223.21510297482865,
+                          "center_colors":  2154,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+                             {
+                                 "utc":  "2026-10-26T15:52:46.3045256Z",
+                                 "candidates":  [
+                                                    {
+                                                        "handle":  721894,
+                                                        "owner":  0,
+                                                        "process_id":  4476,
+                                                        "class":  "SlideBrightnessPopup",
+                                                        "name":  "Fiber Diameter Measurement",
+                                                        "automation_id":  "QApplication.slideBrightnessPopup",
+                                                        "has_reset":  true,
+                                                        "popup_identity":  true,
+                                                        "error":  null
+                                                    },
+                                                    {
+                                                        "handle":  131556,
+                                                        "owner":  0,
+                                                        "process_id":  4476,
+                                                        "class":  "SysShadow",
+                                                        "name":  "",
+                                                        "automation_id":  "",
+                                                        "has_reset":  false,
+                                                        "popup_identity":  false,
+                                                        "error":  null
+                                                    }
+                                                ]
+                             },
+                             {
+                                 "utc":  "2026-10-26T15:52:47.2326997Z",
+                                 "candidates":  [
+                                                    {
+                                                        "handle":  787430,
+                                                        "owner":  0,
+                                                        "process_id":  4476,
+                                                        "class":  "SlideBrightnessPopup",
+                                                        "name":  "Fiber Diameter Measurement",
+                                                        "automation_id":  "QApplication.slideBrightnessPopup",
+                                                        "has_reset":  true,
+                                                        "popup_identity":  true,
+                                                        "error":  null
+                                                    },
+                                                    {
+                                                        "handle":  197092,
+                                                        "owner":  0,
+                                                        "process_id":  4476,
+                                                        "class":  "SysShadow",
+                                                        "name":  "",
+                                                        "automation_id":  "",
+                                                        "has_reset":  false,
+                                                        "popup_identity":  false,
+                                                        "error":  null
+                                                    }
+                                                ]
+                             },
+                             {
+                                 "utc":  "2026-10-26T15:52:51.9579018Z",
+                                 "candidates":  [
+                                                    {
+                                                        "handle":  852966,
+                                                        "owner":  0,
+                                                        "process_id":  7784,
+                                                        "class":  "SlideBrightnessPopup",
+                                                        "name":  "Fiber Diameter Measurement",
+                                                        "automation_id":  "QApplication.slideBrightnessPopup",
+                                                        "has_reset":  true,
+                                                        "popup_identity":  true,
+                                                        "error":  null
+                                                    },
+                                                    {
+                                                        "handle":  262628,
+                                                        "owner":  0,
+                                                        "process_id":  7784,
+                                                        "class":  "SysShadow",
+                                                        "name":  "",
+                                                        "automation_id":  "",
+                                                        "has_reset":  false,
+                                                        "popup_identity":  false,
+                                                        "error":  null
+                                                    }
+                                                ]
+                             }
+                         ],
+    "errors":  [
+                   "Unexpected pair: 40 / 1.3"
+               ],
+    "graceful_exit":  true,
+    "exit_code":  0,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "pairs":  [
+                  {
+                      "brightness":  0,
+                      "exposure":  0,
+                      "utc":  "2026-10-26T15:52:46.0401483Z"
+                  },
+                  {
+                      "brightness":  0,
+                      "exposure":  1,
+                      "utc":  "2026-10-26T15:52:46.2845638Z"
+                  },
+                  {
+                      "brightness":  40,
+                      "exposure":  1.3,
+                      "utc":  "2026-10-26T15:52:47.1665561Z"
+                  },
+                  {
+                      "brightness":  40,
+                      "exposure":  1.3,
+                      "utc":  "2026-10-26T15:52:51.9420663Z"
+                  }
+              ],
+    "settings_checks":  [
+                            {
+                                "remember":  true,
+                                "brightness":  40,
+                                "exposure_tenths":  13
+                            }
+                        ],
+    "process_ids":  [
+                        4476,
+                        7784
+                    ],
+    "exits":  [
+                  {
+                      "code":  0,
+                      "pid":  4476
+                  },
+                  {
+                      "code":  0,
+                      "pid":  7784
+                  }
+              ],
+    "exposure_verified":  true,
+    "remember_restart_verified":  true,
+    "uncheck_restart_verified":  false,
+    "reset_remember_verified":  false,
+    "finished_at":  "2026-10-26T15:52:52.9145539Z"
+}

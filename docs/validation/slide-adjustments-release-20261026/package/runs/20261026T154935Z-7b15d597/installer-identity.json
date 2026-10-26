@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "version": "0.4.12",
+  "installer": "C:\\tmp\\fdm-slide-adjustments-release-20261026\\dist\\installer\\fiber-diameter-measurement-setup-0.4.12-no-area-models.exe",
+  "sha256": "ac9e231c358b2662ff47ed33fce15a53e3748999b7fa35fefae3d58cc41acae5",
+  "bytes": 399126277,
+  "extractor_sha256": "1c8453c198dd3fe7947f3705e59d2294ddce3dfa9f96a737e94449b119f44181",
+  "run_directory": "C:\\tmp\\fdm-slide-adjustments-release-20261026\\build\\package\\runs\\20261026T154935Z-7b15d597",
+  "actual_installation_tested": false,
+  "hardware_capture_tested": false,
+  "registry_or_file_associations_modified": false,
+  "errors": [],
+  "source_snapshot_sha256": "0879de9ad72f594889bf4247f82e4995412a3de569d55f58d42719d745944bd8",
+  "source_git_baseline": "4417873881085c289e9f1e329b36904d85c77861",
+  "production_sources_verified": 443,
+  "payload": "C:\\tmp\\fdm-slide-adjustments-release-20261026\\dist\\windows\\installer-payload-ac9e231c358b\\{app}",
+  "provenance_mode": "hashed-source-snapshot-without-git",
+  "manifest_source_dirty": true,
+  "manifest_source_dirty_entries": [
+    "git status unavailable"
+  ],
+  "build_id": "7b6bef153c0f43718d385aedee2bb86c",
+  "source_commit": "unknown",
+  "release_manifest_sha256": "01a4475292b2099073cc06941ee3077c51aaf2c34428481dabee0ba80c0a4ede",
+  "files_verified": 4819,
+  "internal_templates_verified": [
+    "runtime/content-templates/-面积法-定量试验原始记录-新系统.xls",
+    "runtime/content-templates/sheet.xlt",
+    "runtime/content-templates/副本-面积法-定量试验原始记录-新系统.xlsm"
+  ],
+  "camera_sha256": {
+    "runtime/camera/microview/x64/MVAPI.dll": "1d22ce270ea4aa37fb1073943a707c82f44f255164e480e1877d606b531933ea",
+    "runtime/camera/microview/x64/saa7130.dll": "cbb60864f7c2526ce32515132bc04b89eb2c5e177ec5af62804e8b68e7cb6315"
+  },
+  "excluded_components": [
+    "area-models"
+  ],
+  "selfcheck_exit_code": 0,
+  "selfcheck_encoding": "cp936",
+  "selfcheck_environment": "C:\\tmp\\fdm-slide-adjustments-release-20261026\\build\\package\\runs\\20261026T154935Z-7b15d597\\isolated-config",
+  "alignment_worker_verified": true,
+  "alignment_worker_runtime": {
+    "opencv_threads": 4,
+    "pid": 11516
+  },
+  "optical_worker_verified": true,
+  "optical_worker_pid": 7136,
+  "finished_at_utc": "2026-10-26T15:50:27.080831+00:00"
+}

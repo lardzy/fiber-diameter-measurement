@@ -1,0 +1,105 @@
+..................................... [ 14%]
+..............................FF..F...............F..... [ 36%]
+........................................................................ [ 63%]
+........................................................................ [ 91%]
+.....................                                                    [100%]
+=================================== FAILURES ===================================
+_ ReleaseSelfCheckTests.test_app_self_check_json_includes_real_windowed_render_results _
+
+self = <test_release_self_check.ReleaseSelfCheckTests testMethod=test_app_self_check_json_includes_real_windowed_render_results>
+
+    def test_app_self_check_json_includes_real_windowed_render_results(self) -> None:
+        manifest = {
+            "ok": True,
+            "errors": [],
+            "warnings": [],
+            "profile": "core",
+            "features": ["measurement"],
+            "dependency_versions": {},
+        }
+        output = StringIO()
+        with (
+            patch(
+                "fdm.release_manifest.verify_release_manifest", return_value=manifest
+            ),
+            patch(
+                "fdm.release_manifest._validate_pe_executable", return_value=(True, "")
+            ),
+            patch.dict(os.environ, {"FDM_SELF_CHECK_EXECUTE": "1"}),
+            redirect_stdout(output),
+        ):
+            result = app.main(["fdm", "--self-check", "--json"])
+    
+        payload = json.loads(output.getvalue())
+>       self.assertEqual(result, 0, payload["errors"])
+E       AssertionError: 1 != 0 : ['live measurement self-check returned a failure', 'overlay renderer self-check failed: overlay probe worker did not stop']
+
+tests/test_release_self_check.py:712: AssertionError
+----------------------------- Captured stderr call -----------------------------
+qt.qpa.fonts: Populating font family aliases took 18 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost. 
+_ ReleaseSelfCheckTests.test_app_self_check_json_returns_machine_readable_result_without_starting_ui _
+
+self = <test_release_self_check.ReleaseSelfCheckTests testMethod=test_app_self_check_json_returns_machine_readable_result_without_starting_ui>
+
+    def test_app_self_check_json_returns_machine_readable_result_without_starting_ui(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir))
+            output = StringIO()
+    
+            with (
+                patch.dict(os.environ, {"FDM_SELF_CHECK_ROOT": str(app_dir)}),
+                patch(
+                    "fdm.release_manifest._probe_tifffile_precision",
+                    return_value=_successful_tifffile_probe(),
+                ),
+                redirect_stdout(output),
+            ):
+                result = app.main(["fdm", "--self-check", "--json"])
+    
+            payload = json.loads(output.getvalue())
+>           self.assertEqual(result, 0)
+E           AssertionError: 1 != 0
+
+tests/test_release_self_check.py:685: AssertionError
+__ ReleaseSelfCheckTests.test_core_profile_runs_declared_image_feature_gates ___
+
+self = <test_release_self_check.ReleaseSelfCheckTests testMethod=test_core_profile_runs_declared_image_feature_gates>
+
+    def test_core_profile_runs_declared_image_feature_gates(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir), profile="core")
+            with patch(
+                "fdm.release_manifest._probe_tifffile_precision",
+                return_value=_successful_tifffile_probe(),
+            ):
+                report = run_release_self_check(app_dir)
+    
+>       self.assertTrue(report["ok"], report["errors"])
+E       AssertionError: False is not true : ['live measurement self-check returned a failure']
+
+tests/test_release_self_check.py:485: AssertionError
+_ ReleaseSelfCheckTests.test_self_check_passes_for_intact_release_and_ignores_installer_extras _
+
+self = <test_release_self_check.ReleaseSelfCheckTests testMethod=test_self_check_passes_for_intact_release_and_ignores_installer_extras>
+
+    def test_self_check_passes_for_intact_release_and_ignores_installer_extras(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir))
+            (app_dir / "unins000.exe").write_bytes(b"installer-added file")
+    
+            with patch(
+                "fdm.release_manifest._probe_tifffile_precision",
+                return_value=_successful_tifffile_probe(),
+            ):
+                report = run_release_self_check(app_dir)
+    
+>           self.assertTrue(report["ok"], report["errors"])
+E           AssertionError: False is not true : ['live measurement self-check returned a failure']
+
+tests/test_release_self_check.py:446: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_app_self_check_json_includes_real_windowed_render_results
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_app_self_check_json_returns_machine_readable_result_without_starting_ui
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_core_profile_runs_declared_image_feature_gates
+FAILED tests/test_release_self_check.py::ReleaseSelfCheckTests::test_self_check_passes_for_intact_release_and_ignores_installer_extras
+4 failed, 254 passed, 123 subtests passed in 16.07s

@@ -1,0 +1,11 @@
+{
+    "root":  "C:\\tmp\\fdm-slide-adjustments-release-20261026",
+    "files":  10797,
+    "bytes":  3168491655,
+    "deleted":  true,
+    "retained_installer":  "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/slide-adjustments-20261026/FDM-0.4.12-slide-adjustments-7b6bef153c0f.exe",
+    "sha256":  "ac9e231c358b2662ff47ed33fce15a53e3748999b7fa35fefae3d58cc41acae5",
+    "evidence_sha256":  "c2b705e38a790c4ac31848549442ffddf37257493d8bd0a974329b88a9e344d2",
+    "reason":  "Own temporary source, native build work, onedir, extracted payload and duplicate installer after verified archival",
+    "utc":  "2026-10-26T15:59:48.1063659Z"
+}

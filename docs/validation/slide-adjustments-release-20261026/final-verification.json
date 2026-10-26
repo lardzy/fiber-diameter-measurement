@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "source_commit": "4417873881085c289e9f1e329b36904d85c77861",
+  "version": "0.4.12",
+  "build_id": "7b6bef153c0f43718d385aedee2bb86c",
+  "installer": {
+    "verified": true,
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/slide-adjustments-20261026/FDM-0.4.12-slide-adjustments-7b6bef153c0f.exe",
+    "bytes": 399126277,
+    "sha256": "ac9e231c358b2662ff47ed33fce15a53e3748999b7fa35fefae3d58cc41acae5"
+  },
+  "rollback_preserved": {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/slide-brightness-20261023/FDM-0.4.11-slide-brightness-487f083d0ba1.exe",
+    "bytes": 399050852,
+    "sha256": "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822",
+    "retained_as": "previous test package for rollback"
+  },
+  "extracted_files_verified": 4819,
+  "production_sources_match_current_checkout": 443,
+  "frozen_gui_result": "frozen-gui/20261026-235600-534f90517e2a42b7b9e4b4792430eca0/result.json",
+  "frozen_gui_passed": true,
+  "source_slide_unchanged": true,
+  "normal_process_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "windows_temporary_cleanup": true,
+  "host_temporary_cleanup": true,
+  "total_temporary_bytes_removed": 3746015276,
+  "actual_installation_or_upgrade_tested": false,
+  "real_hardware_tested": false,
+  "pushed": false
+}

@@ -1,0 +1,23 @@
+{
+  "deleted": true,
+  "rows": [
+    {
+      "path": "/Users/lishuyang/Downloads/fdm-slide-adjustments-release-transfer-20261026",
+      "bytes": 490064804,
+      "files": 15
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/slide-adjustments-release-20261026",
+      "bytes": 87458817,
+      "files": 13
+    }
+  ],
+  "bytes": 577523621,
+  "retained_installer": {
+    "verified": true,
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/slide-adjustments-20261026/FDM-0.4.12-slide-adjustments-7b6bef153c0f.exe",
+    "bytes": 399126277,
+    "sha256": "ac9e231c358b2662ff47ed33fce15a53e3748999b7fa35fefae3d58cc41acae5"
+  },
+  "reason": "Own transfer and rebuildable scratch directories; installer and evidence archived and verified"
+}
