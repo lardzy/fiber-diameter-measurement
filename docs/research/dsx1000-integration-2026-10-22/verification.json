@@ -1,0 +1,640 @@
+{
+  "verified_at_utc": "2026-10-22T18:27:13.004235+00:00",
+  "scope": "Static artifacts only; not runtime, hardware, deployment or performance acceptance.",
+  "status": "passed",
+  "errors": [],
+  "json_files_parsed": 74,
+  "relative_document_links_checked": 206,
+  "unique_retained_evidence_records": 541,
+  "document_referenced_evidence_ids": 340,
+  "archives": [
+    {
+      "path": "acquisition/raw/OlybAcquisitionDomain.dll.members.json.gz",
+      "kind": "evidence_record",
+      "records": 1,
+      "compressed_bytes": 346793,
+      "compressed_sha256": "b59ab18e042f8629212dfae11561dfcf80e1db05b14eeca89ce2ddcc2054e17f",
+      "uncompressed_bytes": 4613813,
+      "uncompressed_sha256": "148078037c4354beaa54ad14ff2d6338ae67fa6b1e2e51e4df412ba767016cdb"
+    },
+    {
+      "path": "acquisition/raw/OlybCameraDomain.dll.members.json.gz",
+      "kind": "evidence_record",
+      "records": 1,
+      "compressed_bytes": 196077,
+      "compressed_sha256": "d4ee3116754a5293f975d262230d5bb8d3744f9ff871f52de75ca782bb4fd55f",
+      "uncompressed_bytes": 2932000,
+      "uncompressed_sha256": "233ecf32b42f3b51016398262c120f157f5da2e2473402ca0c265619be8de891"
+    },
+    {
+      "path": "acquisition/raw/OlybScenarioDefinition.dll.members.json.gz",
+      "kind": "evidence_record",
+      "records": 1,
+      "compressed_bytes": 640457,
+      "compressed_sha256": "9a46f99e02d94ffb400fd53930186feac4da233a923e654eee742666037010e3",
+      "uncompressed_bytes": 7963482,
+      "uncompressed_sha256": "d83862ef3b82c3567786c4af9976660c16cad39e746e0c96bd827cda61bd49ba"
+    },
+    {
+      "path": "acquisition/raw/OlydCamera.dll.members.json.gz",
+      "kind": "evidence_record",
+      "records": 1,
+      "compressed_bytes": 263018,
+      "compressed_sha256": "e48d573ae07954cfd0ddf504b46ae6637b84336b9f91cfb07e1dae44c2f12b72",
+      "uncompressed_bytes": 3153927,
+      "uncompressed_sha256": "78f4306bf6040acd9a8d28c1afcead35b8dde88efd7ae9a1e882a3494554b631"
+    },
+    {
+      "path": "acquisition/raw/OlyiExtendFocusImageSGSharp64.dll.members.json.gz",
+      "kind": "evidence_record",
+      "records": 1,
+      "compressed_bytes": 50651,
+      "compressed_sha256": "fc5b22b8b3da6a1d1819649d6e838ba17833dba4d8ae69f2918e4215dc258a7c",
+      "uncompressed_bytes": 585967,
+      "uncompressed_sha256": "ff2270558c096b41d55ced16dcf0a5ef26db6a6ac3183d6337a5304bb07bac5c"
+    },
+    {
+      "path": "acquisition/rea-evidence-bundle.json.gz",
+      "kind": "evidence_bundle",
+      "records": 9,
+      "compressed_bytes": 32838,
+      "compressed_sha256": "c97797db3578136977edaff2e97992f2ccce7201ce95c16633240b15a6150117",
+      "uncompressed_bytes": 602268,
+      "uncompressed_sha256": "0f7ba0d71f2728c8dd14ad5dcbdfe77c22a6da8cf5a597cb131adbd1b7e8fc40"
+    },
+    {
+      "path": "algorithms-2026-10-23/efi-3d/managed-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 2,
+      "compressed_bytes": 55138,
+      "compressed_sha256": "e9e99b2415db881ab2a2703da2f2ab3efceb3c075eba0a2310c0a1bb2132977b",
+      "uncompressed_bytes": 660084,
+      "uncompressed_sha256": "61f0e900ae1ab2530157c8f736d99cb0aaf62225c7e47afe33d3af5ef88579f3"
+    },
+    {
+      "path": "algorithms-2026-10-23/efi-3d/sg64-analysis-snapshot.json.gz",
+      "kind": "analysis_snapshot",
+      "records": 66,
+      "compressed_bytes": 74936,
+      "compressed_sha256": "bd37a6f8eb7baeefc19c556abb7107fbbf458b09fbbb156f0b93e1a16fdf1dcc",
+      "uncompressed_bytes": 612273,
+      "uncompressed_sha256": "4a8242138dbb876d948c04335bb6d3c0ee3f8a2ccb911b87184f2397b29fa244"
+    },
+    {
+      "path": "algorithms-2026-10-23/efi-3d/sg64-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 56,
+      "compressed_bytes": 209097,
+      "compressed_sha256": "450f7d0e5d2b6bc45c58515c273e0230be88c988f946b1265a81cbfd04c6b173",
+      "uncompressed_bytes": 2834984,
+      "uncompressed_sha256": "9481ffce65d5e3b3c257281b3997d10dfa72c71968d75b78d68715fe1589b085"
+    },
+    {
+      "path": "algorithms-2026-10-23/efi-3d/sg64-followup-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 66,
+      "compressed_bytes": 74872,
+      "compressed_sha256": "5f13b5926406d5dcabd1c64e234033fb5c379ec2d3e327c241fd297377e9d7a3",
+      "uncompressed_bytes": 610299,
+      "uncompressed_sha256": "0e1cb2fd23ab1cea5fe82636511eda91c9869fb4b23e66ec5ae41252c3f9cfc2"
+    },
+    {
+      "path": "algorithms-2026-10-23/efi-3d/sgmv-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 13,
+      "compressed_bytes": 9508,
+      "compressed_sha256": "a2cd543a5cf28bdf6c5a6cfd74b5e596844099c2c5c1c8f21aece2a13f93bdb3",
+      "uncompressed_bytes": 86642,
+      "uncompressed_sha256": "e9d92adf1473dd4d7a234839c0d8a3ab541968682a2b45a588f0855816677996"
+    },
+    {
+      "path": "algorithms-2026-10-23/height-contract/managed-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 24,
+      "compressed_bytes": 2571074,
+      "compressed_sha256": "e01d90eb8d5c6bab3297ecc5d10be64f0cb56d75a4bc76e2ede62cb3a1c13f49",
+      "uncompressed_bytes": 39803836,
+      "uncompressed_sha256": "06a6518b2bb46644c44f5fbb219f0e1c4951579d353be18a017b25c4af4cd50c"
+    },
+    {
+      "path": "algorithms-2026-10-23/rendering/managed-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 20,
+      "compressed_bytes": 2080428,
+      "compressed_sha256": "14d9677db948281798e21cb2f40359aa6d3ef9837d0613a97d3533bee868acd7",
+      "uncompressed_bytes": 32672943,
+      "uncompressed_sha256": "533e2ad049fdace6c502a069f569cef4d6d884f2ef65c3ce4d87ca65460ba59a"
+    },
+    {
+      "path": "algorithms-2026-10-23/stabilization/efi-loader-e11-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 8,
+      "compressed_bytes": 7308,
+      "compressed_sha256": "0db0d3c89e1e8fb0f796c3c4fddbcb5fa8375304f62a8c7e96ff5d940c1dfc34",
+      "uncompressed_bytes": 56259,
+      "uncompressed_sha256": "83c2b62a53e91d9a4ab53f460c5ceaf20ffc9a85723e4e9e8011e0589f2fb609"
+    },
+    {
+      "path": "algorithms-2026-10-23/stabilization/hdr/hamal-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 53,
+      "compressed_bytes": 190603,
+      "compressed_sha256": "2adce9d45c46db4af3f3101913dbf4d5d7e92c2361a72770a51a2f984787182a",
+      "uncompressed_bytes": 2079793,
+      "uncompressed_sha256": "cf62e08532ac9338648d1e15ab568c5734dc9d61ad97064d16315926f1d25a87"
+    },
+    {
+      "path": "algorithms-2026-10-23/stabilization/phase-correlation-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 25,
+      "compressed_bytes": 2097069,
+      "compressed_sha256": "bcac93a51c115d82a3fa6802dfd7d1a202c714fbd67e20e1871268d430b1b027",
+      "uncompressed_bytes": 27051976,
+      "uncompressed_sha256": "f972e91280c24e5686e27a381a348befb8060b02eecd9b25165556b145ccedaa"
+    },
+    {
+      "path": "algorithms-2026-10-23/stabilization/solver-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 24,
+      "compressed_bytes": 2960366,
+      "compressed_sha256": "bf769aa74cd3329f9612189ac6510c941c068c4b9826e5a9e8261fad56bb747e",
+      "uncompressed_bytes": 38212346,
+      "uncompressed_sha256": "63114bd14ef64cbe1deb649519204c64486b9018972f34961a559d46086543d2"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/appnative-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 8,
+      "compressed_bytes": 18750,
+      "compressed_sha256": "a223aee5d7c6b76486c2e765b7e449b8f35f8f01ba1b4075a92b35d7e01bc734",
+      "uncompressed_bytes": 184859,
+      "uncompressed_sha256": "280fe1db50cb39860642f8ccc4b37a153c3928c420afb272bc33df33c58245e7"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/appnative-extra-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 18,
+      "compressed_bytes": 38086,
+      "compressed_sha256": "b03be4a72adf54215a4c24d3910bc10db4175791eb78e2fddea51d2f75a1e535",
+      "uncompressed_bytes": 303201,
+      "uncompressed_sha256": "9298de5c9c830760c88b62e6c21b74163a7718b312ddb5fd869823d82ddc4fc0"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/appnative-weights-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 2,
+      "compressed_bytes": 2399,
+      "compressed_sha256": "36c234b543fc392c5a5972c5683e4af79bc30a4ab4a12bbfced403dd66f324e4",
+      "uncompressed_bytes": 10894,
+      "uncompressed_sha256": "16ebfa92835db0b34c8841f69d7146d689dcba016cbd78297ab30e8624ce790d"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/composite-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 27,
+      "compressed_bytes": 60731,
+      "compressed_sha256": "9b5bb3297e6d113f0b5d6408c6d6c5dcb43eb12c578a86aaafd1ebe7cb170e79",
+      "uncompressed_bytes": 541698,
+      "uncompressed_sha256": "5fc91751dad0f4c93a9a4444dca19fcc40d747edceec9156156650d472377fe8"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/fusion-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 13,
+      "compressed_bytes": 25679,
+      "compressed_sha256": "1b18dc20fca4a99f14a81152b1ce9b48a49b61bd10ac35138868ec83b21452ef",
+      "uncompressed_bytes": 224975,
+      "uncompressed_sha256": "53eb2ce9c3d1732f60c51627d026611081d8e3cf785eaca38fd7a3830811a7fb"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/fusion-extra-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 2,
+      "compressed_bytes": 2311,
+      "compressed_sha256": "6f583537e53202a31cf43597898439b811b3833bd91695de679524833857d25c",
+      "uncompressed_bytes": 9830,
+      "uncompressed_sha256": "44d0ee9b1a4894c1620ea52bf60e3db086d7c9082f83ce032a71b37d7e20a951"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/managed-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 14,
+      "compressed_bytes": 303246,
+      "compressed_sha256": "777b583ace836fa43441ae0716d66d3e42ecd9c9c6122e0b11fccfc7d679fbe4",
+      "uncompressed_bytes": 4214006,
+      "uncompressed_sha256": "46ab1d2a257aa7ae16646c53b3ec325f1f5cd0b929a541444b32231dbfb82fbe"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/matching-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 23,
+      "compressed_bytes": 324266,
+      "compressed_sha256": "7843102884b1d2c72fb66e8b72b1f1d622c1aae30b7e49eab859a4d0bdc84ba6",
+      "uncompressed_bytes": 4337868,
+      "uncompressed_sha256": "74efe7b907f968edaf78822970a6c8b5865d684defb255eed7d355a394537bfa"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/matching-extra-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 1,
+      "compressed_bytes": 2886,
+      "compressed_sha256": "2b097f327876d257d45b65177cc96cb98046bcd1285cd29ae661ca5ea7bada26",
+      "uncompressed_bytes": 8326,
+      "uncompressed_sha256": "3cc4f71b7993a6bfc18cc44f071e72c9958b0531bb37e0639229bcc94759cc3c"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/nmv-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 8,
+      "compressed_bytes": 15710,
+      "compressed_sha256": "06020783f407fc15901afa7eac72e11e8210a4979932d30916eb0f6aba42493d",
+      "uncompressed_bytes": 121980,
+      "uncompressed_sha256": "36b7fe3e52dd0a969fadf45422e8e8651f02a92a12dc74ecd9265ad6f81ce099"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/ols-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 48,
+      "compressed_bytes": 105230,
+      "compressed_sha256": "2480924ff5bb33d96a95800bfee64f813cf23d8efb042c769129624995b10c8c",
+      "uncompressed_bytes": 1052560,
+      "uncompressed_sha256": "f042f369baf526b07d04cb9b1f7a92b9cb2798d7389abfb00287373bc8b4a62f"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/ols-extra-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 25,
+      "compressed_bytes": 22578,
+      "compressed_sha256": "2109c0dc17c608096eb3a3891e059e195981a2072652dc8c9395d8a386573d7c",
+      "uncompressed_bytes": 191440,
+      "uncompressed_sha256": "add6ac97174bc7d329f71d888ef02dbe6383b181518668d70a7910e01ebebf53"
+    },
+    {
+      "path": "algorithms-2026-10-23/stitching/route-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 9,
+      "compressed_bytes": 10161,
+      "compressed_sha256": "2a067c645d1bd888881fb1ffc11eb2a2bc07398eb105a18bd085c987dcd64990",
+      "uncompressed_bytes": 83061,
+      "uncompressed_sha256": "14e68d7deb9f4d3851af618589062b3381de4286745394f20b9c51a6c628ebdd"
+    },
+    {
+      "path": "algorithms-2026-10-23/surface/managed-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 8,
+      "compressed_bytes": 695287,
+      "compressed_sha256": "b930c4e7ef0671cbd452f317bfa31343f7088a10ea6770cb3ed3de4e782575c8",
+      "uncompressed_bytes": 10032511,
+      "uncompressed_sha256": "df3229fe5c28661b02ed121016c5dadc098bf1e1fa24589ee8a4ff69282169b2"
+    },
+    {
+      "path": "deep-analysis/rea-evidence-bundle.json.gz",
+      "kind": "evidence_bundle",
+      "records": 12,
+      "compressed_bytes": 1888423,
+      "compressed_sha256": "8bbac5c45dfae60ab182b98035c576c82cc3621b956c91518911042e950fdcf2",
+      "uncompressed_bytes": 27758687,
+      "uncompressed_sha256": "61c69a98c3752b4fb9879d6790974f6a4954b9f835b849575a76f64e9426085c"
+    },
+    {
+      "path": "entrypoints/rea-evidence-bundle.json.gz",
+      "kind": "evidence_bundle",
+      "records": 37,
+      "compressed_bytes": 4300352,
+      "compressed_sha256": "6836f980c5aeb08cbb680f4ce06670c8dff7b83c28550047d352df516cf76988",
+      "uncompressed_bytes": 58739705,
+      "uncompressed_sha256": "3a889a6e05123974c688212d2032e8020df3b33ac7545b933292b6c0ebc9d60e"
+    },
+    {
+      "path": "identity/rea-evidence-bundle.json.gz",
+      "kind": "evidence_bundle",
+      "records": 11,
+      "compressed_bytes": 148976,
+      "compressed_sha256": "c3d92401667aa95891cc80a391c080c354f00376bba82ab4301fe44c22641715",
+      "uncompressed_bytes": 925356,
+      "uncompressed_sha256": "30ca948ede62a67286c20a62faa551d1b501de3da8d78bda932c33d64b7d4a76"
+    },
+    {
+      "path": "motion/rea-evidence.json.gz",
+      "kind": "evidence_bundle",
+      "records": 31,
+      "compressed_bytes": 5642931,
+      "compressed_sha256": "46252af99d27ec6b381cebb19d9b444f9eb9c4bc882d7f7ee79e0a18bf2a3436",
+      "uncompressed_bytes": 76100534,
+      "uncompressed_sha256": "a40d73321260385df33f28a1d86d033ab5fd37099ca6e3c8d80a09e07847430b"
+    }
+  ],
+  "vendor_source_identities_rechecked": [
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CommonUtility.dll",
+      "sha256": "ddb3f38f49ea249509acd5c605e957fd9f1ba1c8149e3ba712be432de48fa3f7",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/DSX-BSW-APP.exe",
+      "sha256": "345544ec1a3feceb4cf8e50f7d8e07ce4a7298453d33bd791e30a48a78e505a4",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/ImageProcessingWrapper.dll",
+      "sha256": "0bac697fb85805b24d20362a0bc03f56989c03c3cebef74a2c54caf1a056ea63",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/LoadSaveModule.dll",
+      "sha256": "ddc6de1658d9c79047a5cccabd3c5c1efb58d09382aa0d470e1675837078fa7e",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageExporter.exe",
+      "sha256": "b5215aa9d54da8e2139470e54e2c9e666b6676592640250cc3a80c9469ff687e",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycAcquisitionContainer.dll",
+      "sha256": "d466121f92f19d77a5346136635da3a3fb3b32ef45f6fd5bd813aee3e68eca03",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageControl.dll",
+      "sha256": "82180eddd2ab0ef88cd744b7e9af26162356d932c2037ed2dd3d7f8018ab07fa",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageList.dll",
+      "sha256": "d810da9ba32ac0a19e2e967c49e519b184635fb36d6952852ecbb8830b5840e0",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageStitching.dll",
+      "sha256": "da2e80910020af290e40d766ec5ec4a09b0fa632ef2950958e27d6e1e8c797b8",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycLogin.dll",
+      "sha256": "60648ccc528529d4928771f9d5cb235aa538564202b2582fa72b342ca04c4974",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycSurfaceCorrectionFilter.dll",
+      "sha256": "af324fc21fdf0999526e36169e38ec31c04a959609ee5f70e190b64c2d25b817",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycThreeDSettings.dll",
+      "sha256": "d11b387c65be8ccb7b1cfcbcbc13a47ec9e803f1f5654ced733be2feff5d9084",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlysDataStoreService.dll",
+      "sha256": "677b02270d54a6c210ba30a3949e188e0994b18388e04f84dc2d7ea3bf63286c",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlysViewHelpers.dll",
+      "sha256": "d12ac365f4cd6c1bf602c186f0a0db625bed656375b59e26538662d9fd7a0f09",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyAntiHalation.exe",
+      "sha256": "c5a7b2cef4b4fa7a683f07b776ef7ce026c4806ccfe8b739921d9ca6cf0832a1",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+      "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll",
+      "sha256": "ee667ccabc2398a65f01377a124281663f65004b5085c38668aefcad7e86db7e",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/DSX-BSW-CTRL.exe",
+      "sha256": "99927e1185bcb7fee71d3ed6a497637600e7b9dfe459825e1429746c853aa7aa",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyImageStitching.exe",
+      "sha256": "87f1910bce9e275aaca3b0de4c0141eeaf455c98281e4caceeb0504e850752d4",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybAcquisitionDomain.dll",
+      "sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybBusinessObject.dll",
+      "sha256": "414a588d2343d6c84b2a52006fd17978f485585d4bea50cf8cd7ab64efb968f2",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybCameraDomain.dll",
+      "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybImageProcessDomain.dll",
+      "sha256": "03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+      "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMicroscopeDomain.dll",
+      "sha256": "7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybProcessJoinDomain.dll",
+      "sha256": "0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybScenarioDefinition.dll",
+      "sha256": "3adada8987b382a8fd4397690fc39cccc7ab06128db86fceccfc400d315cfd98",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybStageDomain.dll",
+      "sha256": "2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlycSdkCore.dll",
+      "sha256": "5903e108d1e65494b2bcd5959d9634cad1fba3b1359e0ba559653f5ee387d8e1",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydCamera.dll",
+      "sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydDevice.dll",
+      "sha256": "5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydDeviceControl.dll",
+      "sha256": "b3b8ef0270606b2af3605b527e8d3b8e968085860424e77a3572cc152365141a",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydMicroscope.dll",
+      "sha256": "f3d42e588a5ea19570db681ec1886b05da8e7a69d858ff04d6698d58a654d810",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydPort.dll",
+      "sha256": "5f1c56f28a6f5c6a0ca5a0dc1918133bc4404b13fd5aa186fa909ed9e9ce804b",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydStage.dll",
+      "sha256": "2b81ecb535e5e9f8b96b2dfdf7e871a2a9310ffbf3d59e36fdb8300130ff6194",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll",
+      "sha256": "45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImage64.dll",
+      "sha256": "0cc45691720b295dfd8c4c984935cb0cc5aa539b1dae088a1ddb35878a4c9975",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll",
+      "sha256": "0baac6955622d2cfa7155664162820a19ff737217485a4c182a0c74c11527a8c",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlymAsyncSocket.dll",
+      "sha256": "5e90594310b01392a700a30a7763980943317559f0fe7240f8dc5ba1d6d05bd8",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlymRdkData.dll",
+      "sha256": "f7967dd314463b582c3419e90f1b83268b249d3213a5eb3ad04a5b09b62a398e",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlypInterProcessCommon.dll",
+      "sha256": "649cd7647d8dc4de4cbe619b2a1e0f9e028576a74f70d3ed45c0baf278396803",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlypInterProcessCommunication.dll",
+      "sha256": "c7078c1d780a88773edbbf75fd2fe988615af13f9031ce78c2765a93c4443047",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll",
+      "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainManager.dll",
+      "sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuImageDisplay.dll",
+      "sha256": "037fb816adaa7f326a23ca3c338c1377cfa06fde1f855b53a1a95ea590b9f065",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+      "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuRdkMicroscopeControl.dll",
+      "sha256": "842a81dbb38f2a1e73528d1c07fbff5a3f5e9351ef7d4b6fbc6a99d9c46dabb3",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+      "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll",
+      "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245",
+      "matches_evidence": true
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiUtility.dll",
+      "sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c",
+      "matches_evidence": true
+    }
+  ],
+  "fdm_source_hashes_rechecked": 7,
+  "product_diff_paths": [],
+  "inventory": {
+    "files": 3037,
+    "whole_file_hashes": 530,
+    "note": "Inventory hashes were built during analysis; this verification rehashes evidence subjects, not all backup files."
+  },
+  "vendor_execution": false,
+  "device_commands_sent": false,
+  "hardware_tests_run": false,
+  "performance_measurements_taken": false
+}

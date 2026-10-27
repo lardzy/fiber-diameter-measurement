@@ -1,0 +1,40 @@
+﻿{
+    "schema":  1,
+    "timestamp_utc":  "2026-10-22T13:40:27.1794864Z",
+    "os":  "Microsoft Windows NT 10.0.26200.0",
+    "runtime":  "4.0.30319.42000",
+    "compiler":  "C:\\WINDOWS\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+    "compiler_version":  "4.8.9221.0 built by: NET481REL1LAST_25H2",
+    "target":  "x64 / .NET Framework 4.8 / C#5",
+    "reference_pack_48":  false,
+    "reference_policy":  "Uses existing framework assemblies when v4.8 targeting pack is absent; source restricted to .NET 4.8 APIs. Win10 1909 not tested.",
+    "exe_sha256":  "9989357d63a33a50f822e1a707df1c47d46d4268a6a323bbded0898f891b81e7",
+    "sources":  [
+                    {
+                        "name":  "AssemblyInfo.cs",
+                        "sha256":  "99d2ce1a7de423a90933b4516ff825ad0793ee10e588d7c2fadacd9892d3c1a0"
+                    },
+                    {
+                        "name":  "CoreSelfTests.cs",
+                        "sha256":  "7de23de07759dda38756e48fb324e8bb9d23a422ec8c7c715dd2574563689889"
+                    },
+                    {
+                        "name":  "EvidenceCore.cs",
+                        "sha256":  "7a8140c3474d341774429161d5570b8a0f89c318efc4f32ebf2c56fde4a82144"
+                    },
+                    {
+                        "name":  "Program.cs",
+                        "sha256":  "ff0c7651a76cdf2ef64ea6b78f2538c146b6b48f852746645f4975eac2076fe3"
+                    },
+                    {
+                        "name":  "RdkClient.cs",
+                        "sha256":  "ed12bcbed05fbee4b1b633cfe0226949762b4d2bd7aae9ce18e800f086d2b488"
+                    },
+                    {
+                        "name":  "RdkSelfTests.cs",
+                        "sha256":  "3e593ba9e55f0b4f8e7f35b3405c50d6a847d9b6904b1bb36197d269c079bddf"
+                    }
+                ],
+    "vendor_code_executed":  false,
+    "fdm_installation_modified":  false
+}

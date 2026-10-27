@@ -1,0 +1,1373 @@
+{
+  "bundle": "hamal-evidence.json.gz",
+  "records": [
+    {
+      "evidence_id": "ev_09368777195f2aa665adced0801a6bdb86fa91bd98a9cc2b8003b839a08513a8",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyAntiHalation.exe"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "c5a7b2cef4b4fa7a683f07b776ef7ce026c4806ccfe8b739921d9ca6cf0832a1"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyAntiHalation.exe",
+        "name": "OlyAntiHalation.exe"
+      },
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_0beee85f2e13ad98c04e4f9222662504ffde8e3870bb9968e13ee6a61c87a775",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001b10"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_1068a2449982f243613568e4dd689f27f92bfbc503d9fc17e495fca7a5ee3265",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180009ca0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_12f4996b91d57ebc6cd62cc9a154943858df28088d971ef66aaac1ebe6785368",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000aed0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_22054630b65979110a572ba17ae460f540549681abb1fe004820f83266c4d549",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001f30"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_234979406b657494c894ff95da2717e7a9266c898a2d9a34105816e88bd78267",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004200"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_2412843d3f07882f5711bacd7a02a261db8cb108e8af8bdda57aa02d0b8b89a8",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000d100"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_2d5ef5526b7e564ae2668168171bed241478b5ae23285e6252856e553f43f9af",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000cdf0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_310fdb65f3b673c33d21caa2ab9189ec1546b7243617bc26be3b8419e61a7798",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800065f0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_3266da6551cef6164c1b8722f6794f3f5d78ae2ccde398adefb0c6362c0e9763",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004910"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_38c0d3b9eceef37ece6857aad4712e43cf694faefdc14efc03722cb631c1bbfe",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000c920"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_39ab63f3fb4b3f69cc6cc1a985288fb25f3ba7c5c92f9e837b102c8287e751c2",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800033a0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_3dffc4b59085317a3c95803112438c900335cac6c6fceb8beb76eeac2d329359",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180011920",
+        "length": 660
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_446eef3200d7411a48acccc3b40977d1313fb79cc2a3255be23c492345456a65",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000c040"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_46aafe3cf9b48987db579a35a1fcaee1a7d24b0b8d472e9f2d8906f2d399d859",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180010600",
+        "length": 2178
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_488185337a9eaded9580b87bea4dc457e857aeda3fd0878175da86073befa8d5",
+      "operation": "search_procedures",
+      "parameters": {
+        "case_sensitive": false,
+        "mode": "regex",
+        "pattern": "OlyHamal|Apical|Halation|Process"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Regex mode uses Java Pattern semantics. Matcher or compiler stack exhaustion returns a resource constraint without closing the session; literal mode avoids regex recursion and returns complete matching values.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_4bf95baca06f7ed2580717fd5f7a030b7af21b9f2a5da6309aafb2b00c051371",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004130"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_4f47271bd667cde54bf525458da840b3a8420b87140a0f81282821b482c2ff47",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000c2d0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_4f948285a3111b73ac30a5001a7a7084054037ce72aed771c45ba4a9c5990150",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180006f80"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_51b80c38f42489d98855207e921350b9125ab4e4be72f3f78f30309dd1a0d475",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000afc0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_53b51dafdd35dbd7c52960dd7d294581fec63ac273e69a13091b54ffdeca66a3",
+      "operation": "inspect_managed_native_boundaries",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "ee667ccabc2398a65f01377a124281663f65004b5085c38668aefcad7e86db7e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll",
+        "name": "OlyiAntiHalationWrapper64.dll"
+      },
+      "limitations": [
+        "P/Invoke rows prove managed import declarations only; this inspection does not verify that a native library, export, thunk, or provider-qualified function exists.",
+        "Managed metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "ReadyToRun, NativeAOT, C++/CLI, and IL2CPP native semantics require separately selected native-provider evidence; this tool does not translate managed tokens into native addresses."
+      ]
+    },
+    {
+      "evidence_id": "ev_5b2b77c58758e9d659b46c527eef615fc079d55ff7130b33d7b0fb2053ae7351",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_ca952e910b1bd40a71994de244b1f3302d45fa27134a724849e81bc5f6b9adcc",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "ee667ccabc2398a65f01377a124281663f65004b5085c38668aefcad7e86db7e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll",
+        "name": "OlyiAntiHalationWrapper64.dll"
+      },
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_5b4f5bb183a9201ab3ff53ab86639ba4a2e4d18d1cfb08111a8af6d96293febf",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000d350"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_5ed816492b816cd3213ce3b14775b36a937bf6a38faf668c37ce767b3b45d9b0",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180014f90",
+        "length": 80
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_5f2a6ca4ad0d1c930c6f09745f467efd8f2326baa1405ad071fa339a97a88dc8",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000b3e0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_6b8691c7443d9fe074060788264b609883928cb2efddaedb07f832370b9fa58a",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180011bc0",
+        "length": 660
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_72d0985aa18df11abdcd14ed46610cca5cb43f69a05a4785a8203f639e091aef",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800024e0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_72d2b2d155adc2f67ce49493d33a83b4a101058f5d3b390da948ede931568198",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000b940"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_76e267bb62e4d0d24e7f18f227e042d614a7cad042345c8e8f9e83941b56d0b5",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180003190"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_772fecd108a000e6b9d7437a783d2711a2bc351d1c0a6b00cc1c15540a08954b",
+      "operation": "list_names",
+      "parameters": {},
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "The symbol inventory includes memory and external symbols, including dynamic symbols, but excludes variable and no-address namespace records.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_7c5c769b43c0dcee0c304ffef04c16b0dcd5d957393cd26956a533dae7883812",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800025e0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_7cf0afc26f9b99ec6e029c0b2c06cbc1e187e23a09fbf5fd6fa05900fe1ef3de",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001bd0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_80d438b84b2311c215f041eb32d8336831bd47070a453591d724677dd75f43d5",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001d30"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_80e51ed49cc8f2f11026b1d9ba87f1aa525dbe153fccc9411c0eb5e5af32c3f3",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001ad0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_8466e68820612e0b3fd609ed7d582b2c57cb6667dc3dbf35274da031e51d331b",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004d30"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_852fa445074e812e4fc3970321716931937107d27b692bb36fa8598996c3ae76",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000b7a0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_872e226af9694ea5483ba8dc41e37cad0ba70928fc0561737b850b8e86bc10e1",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002a70"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_89221436098104809e766163e9b59d750c659177c915d42a66a745b342ee303f",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180011680",
+        "length": 660
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_9d96e9ae03da2df4ebf4f729402168e9282783d38112fd8ddbdaecdc7935e093",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180003fe0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_a051414c1d83a259fa15f3448a5e0778fef227c0ef5235a5378887c78ac5e48c",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_09368777195f2aa665adced0801a6bdb86fa91bd98a9cc2b8003b839a08513a8",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "c5a7b2cef4b4fa7a683f07b776ef7ce026c4806ccfe8b739921d9ca6cf0832a1"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyAntiHalation.exe",
+        "name": "OlyAntiHalation.exe"
+      },
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_be175cf6d47a220e4a669381e66a8949084265df80b43ea80fe0456f3bf0743f",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180014800",
+        "length": 520
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_c4c68c2461f4a773ff500404b73aea8c86f1abf8867e9103480047deef5e66a6",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000ba60"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_c5bca8ad7947475a368a3e1856953575658d8b442d056d46a97b586f7a6a7703",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000b200"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_c5ff996316077e91a6a75d0c80eefa07c718c6bbe99a6b25b3f25395cf9c8b41",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000bdc0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_ca952e910b1bd40a71994de244b1f3302d45fa27134a724849e81bc5f6b9adcc",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "ee667ccabc2398a65f01377a124281663f65004b5085c38668aefcad7e86db7e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll",
+        "name": "OlyiAntiHalationWrapper64.dll"
+      },
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_ccfd9e2f3025f2c8bb65d5a35023e13261b3b0d15aabb841ba553d2b4781c3d9",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000c3f0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_d1ba695a405126a81732ae99be74b46be8c855a4165ff9efb6a8fd1de28e045c",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180003230"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_e6e88de875a64cd0fd6c8415fafc7d442bc58cc0f012bce500891eb2723637fa",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001810"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_e890d2f3b891ce5cc6ae879c667de03f5ac00eebdd7d41215a3736a940d91866",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800017a0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_e9281ddcfcf96e6c7cf0837babf7ddba5c5c77d9642fe556f4c0d71991dd983b",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180015550",
+        "length": 48
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_f0af6669c996429503026abf6b3c6c7744da1f53f0b5ca64f47b057dd6fa9f5e",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000bcb0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_f3246d9a1e8670d236fe3555c409b317f75b6682eac86d0f714a034d381030f1",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x18000c9e0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_f62059232aa366bb55540ca3a0c2bd415716316083e5a0364eb851dfc4b2e1f9",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800019f0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+        "name": "OlyHamal64.dll"
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyHamal64.pdb (GUID d600e549-e53e-4b5b-88f6-62f3406a7bf4, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    }
+  ],
+  "count": 53,
+  "uncompressed_sha256": "cf62e08532ac9338648d1e15ab568c5734dc9d61ad97064d16315926f1d25a87",
+  "sha256": "2adce9d45c46db4af3f3101913dbf4d5d7e92c2361a72770a51a2f984787182a"
+}

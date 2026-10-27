@@ -1,0 +1,43 @@
+EVIDENCE ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94 SHA256 f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD 0x060012fe Olympus.LI.Triumph.Application.ViewModel.Stage set_UpdateMovePositionXY IL_SHA256 65d426cfbc88b7080a3d85c893b0a6b6ab4b93497a6c71637c642a71eec64906 DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldarg.0        
+0003: ldarg.1        
+0004: call          0x0600133e Olympus.LI.Triumph.Application.ViewModel.Stage._GetDisplayStagePotion
+0009: call          0x060012ef Olympus.LI.Triumph.Application.ViewModel.Stage.set_StagePositionXY
+000e: nop            
+000f: ret            
+
+METHOD 0x06001323 Olympus.LI.Triumph.Application.ViewModel.Stage _UpdateMovePositionXY IL_SHA256 3e3e55b09c5e3a37531f74b31559c44698e5b7e20cf0206be8a094c7dc559a1a DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: call          0x0a000245 Olympus.LI.Triumph.Application.UiData.UiResultData.get_StageData
+0007: callvirt      0x0a0010da Olympus.LI.Triumph.Application.UiData.StageResultData.get_MovePositionXY
+000c: call          0x060012fe Olympus.LI.Triumph.Application.ViewModel.Stage.set_UpdateMovePositionXY
+0011: nop            
+0012: ret            
+
+METHOD 0x06005101 Olympus.LI.Triumph.Application.ViewModel.Focus get_RawZCurrentPos IL_SHA256 506e6e80cb4f44c6947e8beb6276095023e673f5d9a22c158f3fc0211a874d3a DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldfld         0x04000834 Olympus.LI.Triumph.Application.ViewModel.Focus._ui32ZCurrentPos
+0007: stloc.0        
+0008: br.s          10 
+000a: ldloc.0        
+000b: ret            
+
+METHOD 0x0600515f Olympus.LI.Triumph.Application.ViewModel.Focus set_UpdateZCurrentPos IL_SHA256 99f403d0e8b5ce7ebbf84b6a2b3391fa20ed606cee11e18ad49cbf994df46eda DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldarg.1        
+0003: stfld         0x04000834 Olympus.LI.Triumph.Application.ViewModel.Focus._ui32ZCurrentPos
+0008: ldarg.0        
+0009: ldarg.0        
+000a: ldfld         0x04000820 Olympus.LI.Triumph.Application.ViewModel.Focus._strPropNameZCurrentPos
+000f: ldarg.0        
+0010: ldfld         0x04000834 Olympus.LI.Triumph.Application.ViewModel.Focus._ui32ZCurrentPos
+0015: call          0x2b00000f Olympus.LI.Triumph.Application.ViewModel.UiControllerBase._OnPropertyChanged
+001a: nop            
+001b: ret            

@@ -1,0 +1,39 @@
+Evidence: ev_f42f155403a20ff906cbd2173d00f510154708108c485c8044d2795a1564a751
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+undefined8 * FUN_140152ce0(undefined8 *param_1)
+
+{
+  FUN_14014ae30(param_1);
+  *param_1 = MultilayerImageStitching::vftable;
+  param_1[0x93] = 1;
+  param_1[0x97] = 0xf;
+  param_1[0x96] = 0;
+  *(undefined1 *)(param_1 + 0x94) = 0;
+  param_1[0x9a] = 0;
+  param_1[0x9b] = 0xf;
+  *(undefined1 *)(param_1 + 0x98) = 0;
+  param_1[0x9e] = 0;
+  param_1[0x9f] = 0xf;
+  *(undefined1 *)(param_1 + 0x9c) = 0;
+  param_1[0xa2] = 0;
+  param_1[0xa3] = 0xf;
+  *(undefined1 *)(param_1 + 0xa0) = 0;
+  param_1[0xa4] = 0;
+  param_1[0xa5] = 0;
+  param_1[0xa6] = 0;
+  param_1[0xa7] = 0;
+  param_1[0xa8] = 0;
+  param_1[0xa9] = 0;
+  param_1[0xaa] = 0;
+  param_1[0xab] = 0;
+  param_1[0xac] = 0;
+  param_1[0xad] = 0;
+  param_1[0xae] = 0;
+  param_1[0xaf] = 0;
+  param_1[0xb0] = 0;
+  return param_1;
+}
+

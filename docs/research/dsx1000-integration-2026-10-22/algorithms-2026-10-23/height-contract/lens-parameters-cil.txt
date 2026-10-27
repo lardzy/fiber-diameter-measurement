@@ -1,0 +1,62 @@
+EVIDENCE ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d SHA256 1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b
+
+METHOD 0x06000a1e Olympus.LI.Triumph.Workflow.MemoryDatabase.LensOpticalParamMaster .cctor IL_SHA256 d71730539ff949eccf934025d5d5589430e666104cbd6fc6b5a36e647a00d1da DECODE_ISSUE null
+0000: ldc.r8        550 
+0009: stsfld        0x040003b6 Olympus.LI.Triumph.Workflow.MemoryDatabase.LensOpticalParamMaster.OPTICAL_LENS_WAVE_LENGTH
+000e: ret            
+
+METHOD 0x06000bef Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper GetLensNA IL_SHA256 dfaee52016a1c765ed00e509d67bd40ea3454b61a7b0969565f0b80d2c9a4c91 DECODE_ISSUE null
+0000: call          0x06000caa Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_LensOpticalParamMasterDao
+0005: ldc.i4.2       
+0006: newarr        0x01000001 
+000b: stloc.1        
+000c: ldloc.1        
+000d: ldc.i4.0       
+000e: ldarg.0        
+000f: box           0x010000fc 
+0014: stelem.ref     
+0015: ldloc.1        
+0016: ldc.i4.1       
+0017: ldarg.1        
+0018: box           0x010000fd 
+001d: stelem.ref     
+001e: ldloc.1        
+001f: callvirt      0x0a0003de Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Find
+0024: stloc.0        
+0025: ldloc.0        
+0026: brtrue.s      75 
+0028: ldstr         0x7000484b "LensOpticalParamMaster is null. Find(lensId = {0}, zoomRatio = {1}"
+002d: ldarga.s      0 
+002f: call          0x0a00013d System.Int32.ToString
+0034: ldarga.s      1 
+0036: call          0x0a0000c8 System.Double.ToString
+003b: call          0x0a000072 System.String.Format
+0040: call          0x0a00007f Olympus.Mis.Core.Logging.Logger.ErrorLog
+0045: newobj        0x0a0000be Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowDaoException..ctor
+004a: throw          
+004b: ldloc.0        
+004c: callvirt      0x06000a19 Olympus.LI.Triumph.Workflow.MemoryDatabase.LensOpticalParamMaster.get_Na
+0051: ret            
+
+METHOD 0x06000bf7 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper GetZoomMagnification IL_SHA256 0a76ee9ec731d3b62d2511a05d90887fca87210e4aeacdfb69d407c3772aed50 DECODE_ISSUE null
+0000: call          0x06000ca5 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZoomMagnificationDao
+0005: callvirt      0x0a0003e0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+000a: stloc.0        
+000b: ldloc.0        
+000c: ret            
+
+METHOD 0x06000bf9 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper GetLensMaster IL_SHA256 44c9d5dbdd6dbad44a82d42ac57e42216adbe123a7f4f13534c19020ec3f0047 DECODE_ISSUE null
+0000: call          0x06000ca9 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_LensMasterDao
+0005: ldc.i4.1       
+0006: newarr        0x01000001 
+000b: stloc.1        
+000c: ldloc.1        
+000d: ldc.i4.0       
+000e: call          0x06000bfb Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCurrentLens
+0013: box           0x010000fc 
+0018: stelem.ref     
+0019: ldloc.1        
+001a: callvirt      0x0a0003e2 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Find
+001f: stloc.0        
+0020: ldloc.0        
+0021: ret            

@@ -1,0 +1,3351 @@
+[
+  {
+    "selection_only": true,
+    "evidence_id": "ev_4566a595099128c86f22718a13c0b5abcd7f38afca9a976715f034e16e099a8c",
+    "artifact": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+      "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6",
+      "byte_length": 41472,
+      "format": "pe"
+    },
+    "module": {
+      "name": "OlyuUiCalculator.dll",
+      "generation": 0,
+      "mvid": "5514a0e7-0c2d-4b6d-8f6f-1af575714d3a",
+      "enc_id": null,
+      "enc_base_id": null,
+      "token": "0x00000001",
+      "row_offset": 14312
+    },
+    "coverage": {
+      "state": "complete",
+      "issues": []
+    },
+    "methods": [
+      {
+        "token": "0x06000002",
+        "row_offset": 15184,
+        "declaring_type_token": "0x02000003",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator",
+        "name": "ConvertZPosToUMForDisp",
+        "rva": 8280,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 5,
+          "raw_sha256": "5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a",
+          "resolved_sha256": "5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "i4",
+          "parameter_types": [
+            "u4",
+            "u4"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "tiny",
+          "rva": 8280,
+          "file_offset": 600,
+          "max_stack": 8,
+          "init_locals": false,
+          "local_var_sig_token": null,
+          "il_size": 16,
+          "il_sha256": "4a36cd856891462587864dccd444c4dc90e1da6e119ac31b2e76f65e444e93ca",
+          "normalized_il_sha256": "ee1ce5e0ae2af80f720964dba5fe29c89a122d8875b2cce2672578120e8dc808",
+          "instruction_count": 8,
+          "decoded_instruction_count": 8,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 1,
+            "ldarg.1": 1,
+            "call": 1,
+            "conv.r8": 1,
+            "ldsfld": 1,
+            "mul": 1,
+            "conv.i4": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000003"
+            },
+            {
+              "il_offset": 7,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 8,
+              "opcode": "ldsfld",
+              "operand_kind": "field",
+              "operand": "0x04000001"
+            },
+            {
+              "il_offset": 13,
+              "opcode": "mul",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 14,
+              "opcode": "conv.i4",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 15,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000003",
+        "row_offset": 15198,
+        "declaring_type_token": "0x02000003",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator",
+        "name": "ConvertZPosForDisp",
+        "rva": 8297,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 5,
+          "raw_sha256": "5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a",
+          "resolved_sha256": "5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "i4",
+          "parameter_types": [
+            "u4",
+            "u4"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "tiny",
+          "rva": 8297,
+          "file_offset": 617,
+          "max_stack": 8,
+          "init_locals": false,
+          "local_var_sig_token": null,
+          "il_size": 6,
+          "il_sha256": "598fffdda1c4265519032443bb35b48a5c70710fde7a4c194bd56f4f3cd80ea8",
+          "normalized_il_sha256": "836a4d2cc36b986e60f86beb2709fd1588ae37d0277783a5573f485714372634",
+          "instruction_count": 6,
+          "decoded_instruction_count": 6,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.1": 1,
+            "ldc.i4.2": 1,
+            "div": 1,
+            "ldarg.0": 1,
+            "sub": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "ldc.i4.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "div",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 3,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 4,
+              "opcode": "sub",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 5,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000006",
+        "row_offset": 15240,
+        "declaring_type_token": "0x02000003",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator",
+        "name": ".cctor",
+        "rva": 8330,
+        "impl_flags": 0,
+        "flags": 6289,
+        "signature": {
+          "raw_length": 3,
+          "raw_sha256": "cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568",
+          "resolved_sha256": "cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 0,
+          "return_type": "void",
+          "parameter_types": [],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "tiny",
+          "rva": 8330,
+          "file_offset": 650,
+          "max_stack": 8,
+          "init_locals": false,
+          "local_var_sig_token": null,
+          "il_size": 29,
+          "il_sha256": "fb0ca479ede1de86aeed50c0b7a7f88b3c8fe7f7bbacba74496b235d4ec1ae57",
+          "normalized_il_sha256": "f030636d6d55609d9507cc4915a549ce10674dcb1fe9ef59e0c2f607ecd43c97",
+          "instruction_count": 5,
+          "decoded_instruction_count": 5,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldc.r8": 2,
+            "stsfld": 2,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldc.r8",
+              "operand_kind": "constant",
+              "operand": "0.001"
+            },
+            {
+              "il_offset": 9,
+              "opcode": "stsfld",
+              "operand_kind": "field",
+              "operand": "0x04000001"
+            },
+            {
+              "il_offset": 14,
+              "opcode": "ldc.r8",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 23,
+              "opcode": "stsfld",
+              "operand_kind": "field",
+              "operand": "0x04000002"
+            },
+            {
+              "il_offset": 28,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000083",
+        "row_offset": 16990,
+        "declaring_type_token": "0x0200000b",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate",
+        "name": "SubtractForInt32",
+        "rva": 17336,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 5,
+          "raw_sha256": "d8e6ac56db05a388e5930a577acd67f9774c608c445ba1d11f52d14e15d437cd",
+          "resolved_sha256": "d8e6ac56db05a388e5930a577acd67f9774c608c445ba1d11f52d14e15d437cd",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "i4",
+          "parameter_types": [
+            "i4",
+            "i4"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "tiny",
+          "rva": 17336,
+          "file_offset": 9656,
+          "max_stack": 8,
+          "init_locals": false,
+          "local_var_sig_token": null,
+          "il_size": 4,
+          "il_sha256": "a75552aabf0891d3b10b216d82f125f95fa2e7d995760a6958c03c2a5c37a029",
+          "normalized_il_sha256": "e2d7925bf4a70d46fed8d90a5cfe9245b57e2ce845c90c214690cf67c8c4fdbd",
+          "instruction_count": 4,
+          "decoded_instruction_count": 4,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 1,
+            "ldarg.1": 1,
+            "sub": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "sub",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 3,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      }
+    ],
+    "references": [],
+    "fields": [
+      {
+        "token": "0x04000001",
+        "row_offset": 15026,
+        "declaring_type_token": "0x02000003",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator",
+        "name": "_dblNM_TO_UM",
+        "flags": 49,
+        "signature": {
+          "raw_length": 2,
+          "raw_sha256": "42cf92d66156bb4e2ebb162770b3b6c2200971c459257cb398e5a516577e20dd",
+          "resolved_sha256": "42cf92d66156bb4e2ebb162770b3b6c2200971c459257cb398e5a516577e20dd",
+          "kind": "field",
+          "parse_status": "decoded",
+          "calling_convention": "field",
+          "generic_parameter_count": null,
+          "parameter_count": null,
+          "return_type": null,
+          "parameter_types": [],
+          "field_type": "r8",
+          "issue": null
+        }
+      },
+      {
+        "token": "0x04000002",
+        "row_offset": 15032,
+        "declaring_type_token": "0x02000003",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator",
+        "name": "_dblUM_TO_NM",
+        "flags": 49,
+        "signature": {
+          "raw_length": 2,
+          "raw_sha256": "42cf92d66156bb4e2ebb162770b3b6c2200971c459257cb398e5a516577e20dd",
+          "resolved_sha256": "42cf92d66156bb4e2ebb162770b3b6c2200971c459257cb398e5a516577e20dd",
+          "kind": "field",
+          "parse_status": "decoded",
+          "calling_convention": "field",
+          "generic_parameter_count": null,
+          "parameter_count": null,
+          "return_type": null,
+          "parameter_types": [],
+          "field_type": "r8",
+          "issue": null
+        }
+      }
+    ],
+    "user_strings": [],
+    "call_edges": [
+      {
+        "caller_token": "0x06000002",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator.ConvertZPosToUMForDisp",
+        "opcode": "call",
+        "target_token": "0x06000003",
+        "target_kind": "method-def",
+        "target_name": "ConvertZPosForDisp",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator"
+      }
+    ]
+  },
+  {
+    "selection_only": true,
+    "evidence_id": "ev_855f51c173d088e2d3819fc4f1397ad027a52731108f639331e3ebd35228f1e1",
+    "artifact": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiUtility.dll",
+      "sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c",
+      "byte_length": 95744,
+      "format": "pe"
+    },
+    "module": {
+      "name": "OlyuUiUtility.dll",
+      "generation": 0,
+      "mvid": "79b86c12-2352-4d32-a5f1-1dcf4850f9d1",
+      "enc_id": null,
+      "enc_base_id": null,
+      "token": "0x00000001",
+      "row_offset": 33872
+    },
+    "coverage": {
+      "state": "complete",
+      "issues": []
+    },
+    "methods": [
+      {
+        "token": "0x060000f2",
+        "row_offset": 39790,
+        "declaring_type_token": "0x02000012",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter",
+        "name": "ConvertUnitOfLength",
+        "rva": 34444,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 10,
+          "raw_sha256": "729b3f60cb77f7a7affbb99e1a02c6beda31c5340791eedeed3713e80b1e2caa",
+          "resolved_sha256": "dc97827d4e777568baa8acc184c207b8cc478bc3d23c57ca35b7faf1c099ac2f",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 3,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8",
+            "valuetype:561",
+            "valuetype:561"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 34444,
+          "file_offset": 26764,
+          "max_stack": 2,
+          "init_locals": true,
+          "local_var_sig_token": "0x1100008c",
+          "il_size": 103,
+          "il_sha256": "6efe1237388157e142e197a7406d7b52c511509313938f09f8609adc335a4eab",
+          "normalized_il_sha256": "e3a0fc73d02ecb20fe3157d66c7b672f9cd89ae7f3a42191a5dc9aff3182ca68",
+          "instruction_count": 40,
+          "decoded_instruction_count": 40,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.2": 1,
+            "stloc.1": 1,
+            "ldloc.1": 1,
+            "switch": 1,
+            "br.s": 7,
+            "ldarg.0": 7,
+            "ldarg.1": 6,
+            "call": 7,
+            "stloc.0": 7,
+            "ldloc.0": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 3,
+              "opcode": "switch",
+              "operand_kind": "switch",
+              "operand": "6"
+            },
+            {
+              "il_offset": 32,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "94"
+            },
+            {
+              "il_offset": 34,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 35,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 36,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000115"
+            },
+            {
+              "il_offset": 41,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 42,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "101"
+            },
+            {
+              "il_offset": 44,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 45,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 46,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000116"
+            },
+            {
+              "il_offset": 51,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 52,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "101"
+            },
+            {
+              "il_offset": 54,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 55,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 56,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000117"
+            },
+            {
+              "il_offset": 61,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 62,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "101"
+            },
+            {
+              "il_offset": 64,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 65,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 66,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000118"
+            },
+            {
+              "il_offset": 71,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 72,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "101"
+            },
+            {
+              "il_offset": 74,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 75,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 76,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000119"
+            },
+            {
+              "il_offset": 81,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 82,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "101"
+            },
+            {
+              "il_offset": 84,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 85,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 86,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0600011a"
+            },
+            {
+              "il_offset": 91,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 92,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "101"
+            },
+            {
+              "il_offset": 94,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 95,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00025e"
+            },
+            {
+              "il_offset": 100,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 101,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 102,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x060000f3",
+        "row_offset": 39804,
+        "declaring_type_token": "0x02000012",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter",
+        "name": "ConvertUnitOfLength",
+        "rva": 34559,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 10,
+          "raw_sha256": "35bbfb6eec64fefb6296c892ac5c20dd2b78c1ef274b3512cdd9fabc97cb2f65",
+          "resolved_sha256": "984a5221f96f3d64b6966c3a415ea63bc036db51e2bcb49c71812cdc04203a0a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 3,
+          "return_type": "r8",
+          "parameter_types": [
+            "i4",
+            "valuetype:561",
+            "valuetype:561"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "tiny",
+          "rva": 34559,
+          "file_offset": 26879,
+          "max_stack": 8,
+          "init_locals": false,
+          "local_var_sig_token": null,
+          "il_size": 14,
+          "il_sha256": "8c66a658c4bffd9504db3fb33286722547a6680c85fa8711811871377e5468ea",
+          "normalized_il_sha256": "0af0cbc745f5fdd58c99b72549cb3c6f1179964268f23e9a812640789217c6da",
+          "instruction_count": 6,
+          "decoded_instruction_count": 6,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 1,
+            "call": 2,
+            "ldarg.1": 1,
+            "ldarg.2": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00025f"
+            },
+            {
+              "il_offset": 6,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 7,
+              "opcode": "ldarg.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 8,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x060000f2"
+            },
+            {
+              "il_offset": 13,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x060000f7",
+        "row_offset": 39860,
+        "declaring_type_token": "0x02000012",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter",
+        "name": "ConvertUnitOfLength",
+        "rva": 34620,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 14,
+          "raw_sha256": "e55b0ffbcd32815b552a8c44b5718c88974d1c17723ce0049bba735d30d6f364",
+          "resolved_sha256": "8ad491a11430641aced72a5d0c9da8ca31a69523d25bbfb6adb1a01173f50a33",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 5,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8",
+            "valuetype:561",
+            "valuetype:561",
+            "i4",
+            "valuetype:565"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 34620,
+          "file_offset": 26940,
+          "max_stack": 3,
+          "init_locals": true,
+          "local_var_sig_token": "0x1100008c",
+          "il_size": 72,
+          "il_sha256": "6fe07c3b1bc801683bc3af03f9d9e33a709a4e8cdf2d5cbd4a2d439b6aacb3da",
+          "normalized_il_sha256": "5dc76e8e71986cb953d16ff33cbd393ea0b4bb4ae19efb7eaf45f9ba015efd2d",
+          "instruction_count": 29,
+          "decoded_instruction_count": 29,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 1,
+            "ldarg.1": 1,
+            "ldarg.2": 2,
+            "call": 2,
+            "stloc.0": 1,
+            "stloc.1": 1,
+            "ldloc.1": 1,
+            "switch": 1,
+            "br.s": 3,
+            "ldarg.3": 4,
+            "ldc.i4.3": 1,
+            "add": 3,
+            "starg.s": 3,
+            "ldc.i4.1": 1,
+            "ldc.i4.4": 1,
+            "ldloc.0": 1,
+            "ldarg.s": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "ldarg.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 3,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x060000f2"
+            },
+            {
+              "il_offset": 8,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 9,
+              "opcode": "ldarg.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 10,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 11,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 12,
+              "opcode": "switch",
+              "operand_kind": "switch",
+              "operand": "6"
+            },
+            {
+              "il_offset": 41,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "62"
+            },
+            {
+              "il_offset": 43,
+              "opcode": "ldarg.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 44,
+              "opcode": "ldc.i4.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 45,
+              "opcode": "add",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 46,
+              "opcode": "starg.s",
+              "operand_kind": "variable",
+              "operand": "3"
+            },
+            {
+              "il_offset": 48,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "62"
+            },
+            {
+              "il_offset": 50,
+              "opcode": "ldarg.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 51,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 52,
+              "opcode": "add",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 53,
+              "opcode": "starg.s",
+              "operand_kind": "variable",
+              "operand": "3"
+            },
+            {
+              "il_offset": 55,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "62"
+            },
+            {
+              "il_offset": 57,
+              "opcode": "ldarg.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 58,
+              "opcode": "ldc.i4.4",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 59,
+              "opcode": "add",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 60,
+              "opcode": "starg.s",
+              "operand_kind": "variable",
+              "operand": "3"
+            },
+            {
+              "il_offset": 62,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 63,
+              "opcode": "ldarg.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 64,
+              "opcode": "ldarg.s",
+              "operand_kind": "variable",
+              "operand": "4"
+            },
+            {
+              "il_offset": 66,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x06000114"
+            },
+            {
+              "il_offset": 71,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000114",
+        "row_offset": 40266,
+        "declaring_type_token": "0x02000012",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter",
+        "name": "RoundValue",
+        "rva": 35656,
+        "impl_flags": 0,
+        "flags": 150,
+        "signature": {
+          "raw_length": 8,
+          "raw_sha256": "2053d4df507eba2d9134a71a59e20da113f2cb7e08330cd79764766a9516224e",
+          "resolved_sha256": "8e46e760c0c182548ba56c08808600af0cfa90be8c8aa2a79e80165f7cb7e7e0",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 3,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8",
+            "i4",
+            "valuetype:565"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 35656,
+          "file_offset": 27976,
+          "max_stack": 2,
+          "init_locals": true,
+          "local_var_sig_token": "0x11000093",
+          "il_size": 117,
+          "il_sha256": "19d74ede560a060bc3588f90d145e71dc958819205d3099ca832303e54db06d2",
+          "normalized_il_sha256": "d8245a5f22ead8d4ac0f8edbd8bd72c94efc3318356cbaefad45b38292f21dc5",
+          "instruction_count": 66,
+          "decoded_instruction_count": 66,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldc.r8": 1,
+            "stloc.0": 5,
+            "ldc.i4.1": 3,
+            "stloc.1": 2,
+            "ldc.i4.0": 2,
+            "stloc.2": 2,
+            "br.s": 5,
+            "ldloc.1": 9,
+            "ldc.i4.s": 1,
+            "mul": 5,
+            "ldloc.2": 2,
+            "add": 1,
+            "ldarg.1": 1,
+            "blt.s": 1,
+            "ldarg.2": 1,
+            "stloc.3": 1,
+            "ldloc.3": 1,
+            "switch": 1,
+            "ldarg.0": 4,
+            "conv.r8": 8,
+            "call": 4,
+            "div": 4,
+            "ldloc.0": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldc.r8",
+              "operand_kind": "constant",
+              "operand": "0"
+            },
+            {
+              "il_offset": 9,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 10,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 11,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 12,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 13,
+              "opcode": "stloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 14,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "25"
+            },
+            {
+              "il_offset": 16,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 17,
+              "opcode": "ldc.i4.s",
+              "operand_kind": "constant",
+              "operand": "10"
+            },
+            {
+              "il_offset": 19,
+              "opcode": "mul",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 20,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 21,
+              "opcode": "ldloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 22,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 23,
+              "opcode": "add",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 24,
+              "opcode": "stloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 25,
+              "opcode": "ldloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 26,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 27,
+              "opcode": "blt.s",
+              "operand_kind": "branch",
+              "operand": "16"
+            },
+            {
+              "il_offset": 29,
+              "opcode": "ldarg.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 30,
+              "opcode": "stloc.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 31,
+              "opcode": "ldloc.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 32,
+              "opcode": "switch",
+              "operand_kind": "switch",
+              "operand": "4"
+            },
+            {
+              "il_offset": 53,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "115"
+            },
+            {
+              "il_offset": 55,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 56,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 57,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 58,
+              "opcode": "mul",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 59,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000266"
+            },
+            {
+              "il_offset": 64,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 65,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 66,
+              "opcode": "div",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 67,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 68,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "115"
+            },
+            {
+              "il_offset": 70,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 71,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 72,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 73,
+              "opcode": "mul",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 74,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000267"
+            },
+            {
+              "il_offset": 79,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 80,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 81,
+              "opcode": "div",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 82,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 83,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "115"
+            },
+            {
+              "il_offset": 85,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 86,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 87,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 88,
+              "opcode": "mul",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 89,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 90,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000088"
+            },
+            {
+              "il_offset": 95,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 96,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 97,
+              "opcode": "div",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 98,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 99,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "115"
+            },
+            {
+              "il_offset": 101,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 102,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 103,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 104,
+              "opcode": "mul",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 105,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 106,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000088"
+            },
+            {
+              "il_offset": 111,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 112,
+              "opcode": "conv.r8",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 113,
+              "opcode": "div",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 114,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 115,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 116,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000115",
+        "row_offset": 40280,
+        "declaring_type_token": "0x02000012",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter",
+        "name": "_ToUM",
+        "rva": 35788,
+        "impl_flags": 0,
+        "flags": 145,
+        "signature": {
+          "raw_length": 7,
+          "raw_sha256": "5b3c91ddcea985fca991c68ac5e9d2771e6a8c3a156ab6c60d7b1b97e10ee6c5",
+          "resolved_sha256": "392eeca35416c8136ff8ea30b2a785921039be77abf4250421f51226409b2210",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8",
+            "valuetype:561"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 35788,
+          "file_offset": 28108,
+          "max_stack": 6,
+          "init_locals": true,
+          "local_var_sig_token": "0x11000094",
+          "il_size": 211,
+          "il_sha256": "27a6552e075c85a152a276cbdccb75aeb1cd8391f28085e3e18ea5b2d1e6a186",
+          "normalized_il_sha256": "b2a5ac6adcc70ad98e8913c278ea53e9dce42ea4074de6d8e94028866e2524ce",
+          "instruction_count": 77,
+          "decoded_instruction_count": 77,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 2,
+            "call": 10,
+            "brfalse.s": 1,
+            "ldc.r8": 1,
+            "ret": 2,
+            "stloc.1": 1,
+            "ldarg.1": 1,
+            "stloc.2": 1,
+            "ldloc.2": 1,
+            "switch": 1,
+            "br": 2,
+            "ldloc.1": 7,
+            "stloc.0": 7,
+            "ldc.i4": 4,
+            "newobj": 7,
+            "br.s": 5,
+            "ldc.i4.1": 5,
+            "ldc.i4.0": 15,
+            "ldc.i4.3": 3,
+            "ldloc.0": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000268"
+            },
+            {
+              "il_offset": 6,
+              "opcode": "brfalse.s",
+              "operand_kind": "branch",
+              "operand": "18"
+            },
+            {
+              "il_offset": 8,
+              "opcode": "ldc.r8",
+              "operand_kind": "constant",
+              "operand": "NaN"
+            },
+            {
+              "il_offset": 17,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 18,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 19,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000269"
+            },
+            {
+              "il_offset": 24,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 25,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 26,
+              "opcode": "stloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 27,
+              "opcode": "ldloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 28,
+              "opcode": "switch",
+              "operand_kind": "switch",
+              "operand": "6"
+            },
+            {
+              "il_offset": 57,
+              "opcode": "br",
+              "operand_kind": "branch",
+              "operand": "202"
+            },
+            {
+              "il_offset": 62,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 63,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 64,
+              "opcode": "br",
+              "operand_kind": "branch",
+              "operand": "204"
+            },
+            {
+              "il_offset": 69,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 70,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 75,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 80,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 85,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 86,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "204"
+            },
+            {
+              "il_offset": 88,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 89,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 90,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 91,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 92,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 93,
+              "opcode": "ldc.i4.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 94,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 99,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 104,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 105,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 106,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 107,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 108,
+              "opcode": "ldc.i4.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 109,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 114,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 119,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 120,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "204"
+            },
+            {
+              "il_offset": 122,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 123,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 124,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 125,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 126,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 127,
+              "opcode": "ldc.i4.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 128,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 133,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 138,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 139,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "204"
+            },
+            {
+              "il_offset": 141,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 142,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "254"
+            },
+            {
+              "il_offset": 147,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 148,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 149,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 150,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 151,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 156,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 161,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 162,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "204"
+            },
+            {
+              "il_offset": 164,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 165,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 170,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 175,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 180,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "254"
+            },
+            {
+              "il_offset": 185,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 186,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 187,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 188,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 189,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 194,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 199,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 200,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "204"
+            },
+            {
+              "il_offset": 202,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 203,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 204,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 205,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026d"
+            },
+            {
+              "il_offset": 210,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000118",
+        "row_offset": 40322,
+        "declaring_type_token": "0x02000012",
+        "declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter",
+        "name": "_ToNM",
+        "rva": 36588,
+        "impl_flags": 0,
+        "flags": 145,
+        "signature": {
+          "raw_length": 7,
+          "raw_sha256": "5b3c91ddcea985fca991c68ac5e9d2771e6a8c3a156ab6c60d7b1b97e10ee6c5",
+          "resolved_sha256": "392eeca35416c8136ff8ea30b2a785921039be77abf4250421f51226409b2210",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8",
+            "valuetype:561"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 36588,
+          "file_offset": 28908,
+          "max_stack": 6,
+          "init_locals": true,
+          "local_var_sig_token": "0x11000094",
+          "il_size": 241,
+          "il_sha256": "b8464de98ace6094865190b1eecb29502cf886cf4a4d382034840211650d0100",
+          "normalized_il_sha256": "2dcecb9d437c954d658fa34f3e70dfc99744550804cc3487de8d61ca4660e5cb",
+          "instruction_count": 75,
+          "decoded_instruction_count": 75,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 2,
+            "call": 12,
+            "brfalse.s": 1,
+            "ldc.r8": 1,
+            "ret": 2,
+            "stloc.1": 1,
+            "ldarg.1": 1,
+            "stloc.2": 1,
+            "ldloc.2": 1,
+            "switch": 1,
+            "br": 2,
+            "ldloc.1": 7,
+            "ldc.i4": 8,
+            "newobj": 9,
+            "stloc.0": 7,
+            "br.s": 5,
+            "ldc.i4.1": 3,
+            "ldc.i4.0": 9,
+            "ldc.i4.3": 1,
+            "ldloc.0": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000268"
+            },
+            {
+              "il_offset": 6,
+              "opcode": "brfalse.s",
+              "operand_kind": "branch",
+              "operand": "18"
+            },
+            {
+              "il_offset": 8,
+              "opcode": "ldc.r8",
+              "operand_kind": "constant",
+              "operand": "NaN"
+            },
+            {
+              "il_offset": 17,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 18,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 19,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a000269"
+            },
+            {
+              "il_offset": 24,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 25,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 26,
+              "opcode": "stloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 27,
+              "opcode": "ldloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 28,
+              "opcode": "switch",
+              "operand_kind": "switch",
+              "operand": "6"
+            },
+            {
+              "il_offset": 57,
+              "opcode": "br",
+              "operand_kind": "branch",
+              "operand": "232"
+            },
+            {
+              "il_offset": 62,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 63,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 68,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 73,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 78,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 79,
+              "opcode": "br",
+              "operand_kind": "branch",
+              "operand": "234"
+            },
+            {
+              "il_offset": 84,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 85,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 90,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 95,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 100,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 105,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 110,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 115,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 116,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "234"
+            },
+            {
+              "il_offset": 118,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 119,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 120,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 121,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 122,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 123,
+              "opcode": "ldc.i4.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 124,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 129,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 134,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 135,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "234"
+            },
+            {
+              "il_offset": 137,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 138,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 139,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "234"
+            },
+            {
+              "il_offset": 141,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 142,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 147,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 152,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 157,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "254"
+            },
+            {
+              "il_offset": 162,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 163,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 164,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 165,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 166,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 171,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 176,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 177,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "234"
+            },
+            {
+              "il_offset": 179,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 180,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 185,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 190,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 195,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "1000"
+            },
+            {
+              "il_offset": 200,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026a"
+            },
+            {
+              "il_offset": 205,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 210,
+              "opcode": "ldc.i4",
+              "operand_kind": "constant",
+              "operand": "254"
+            },
+            {
+              "il_offset": 215,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 216,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 217,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 218,
+              "opcode": "ldc.i4.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 219,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00026c"
+            },
+            {
+              "il_offset": 224,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026b"
+            },
+            {
+              "il_offset": 229,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 230,
+              "opcode": "br.s",
+              "operand_kind": "branch",
+              "operand": "234"
+            },
+            {
+              "il_offset": 232,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 233,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 234,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 235,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00026d"
+            },
+            {
+              "il_offset": 240,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      }
+    ],
+    "references": [
+      {
+        "token": "0x0a000088",
+        "row_offset": 43998,
+        "parent_token": "0x010000ba",
+        "parent_name": "System.Math",
+        "name": "Round",
+        "signature": {
+          "raw_length": 7,
+          "raw_sha256": "c7dbcc4af27b3f939efe42f9dc58d66e23fda4519a0b30e9aaf216e4474dbd87",
+          "resolved_sha256": "89fb8f58ca59fa95e12a3b1e4608ec2c244a321e67286e88a0f1eb83bd48417c",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8",
+            "valuetype:749"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00025e",
+        "row_offset": 46818,
+        "parent_token": "0x01000148",
+        "parent_name": "System.Convert",
+        "name": "ToDouble",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "5ec2ae82f46843573128416c6a34c659a1a89c1d36d25ce9b7b16e4d4b921f96",
+          "resolved_sha256": "5ec2ae82f46843573128416c6a34c659a1a89c1d36d25ce9b7b16e4d4b921f96",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00025f",
+        "row_offset": 46824,
+        "parent_token": "0x01000148",
+        "parent_name": "System.Convert",
+        "name": "ToDouble",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "b53a8df1b147abe512c8d3556864fa46fc9d3dcbcb1013e7cb304c626750845c",
+          "resolved_sha256": "b53a8df1b147abe512c8d3556864fa46fc9d3dcbcb1013e7cb304c626750845c",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "r8",
+          "parameter_types": [
+            "i4"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000266",
+        "row_offset": 46866,
+        "parent_token": "0x010000ba",
+        "parent_name": "System.Math",
+        "name": "Floor",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "5ec2ae82f46843573128416c6a34c659a1a89c1d36d25ce9b7b16e4d4b921f96",
+          "resolved_sha256": "5ec2ae82f46843573128416c6a34c659a1a89c1d36d25ce9b7b16e4d4b921f96",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000267",
+        "row_offset": 46872,
+        "parent_token": "0x010000ba",
+        "parent_name": "System.Math",
+        "name": "Ceiling",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "5ec2ae82f46843573128416c6a34c659a1a89c1d36d25ce9b7b16e4d4b921f96",
+          "resolved_sha256": "5ec2ae82f46843573128416c6a34c659a1a89c1d36d25ce9b7b16e4d4b921f96",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "r8",
+          "parameter_types": [
+            "r8"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000268",
+        "row_offset": 46878,
+        "parent_token": "0x0100014c",
+        "parent_name": "System.Double",
+        "name": "IsNaN",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "60aa756482d5d19da7def9d55595895bf0afe5c845143fb26383a7cd92c2d5b1",
+          "resolved_sha256": "60aa756482d5d19da7def9d55595895bf0afe5c845143fb26383a7cd92c2d5b1",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "bool",
+          "parameter_types": [
+            "r8"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000269",
+        "row_offset": 46884,
+        "parent_token": "0x01000148",
+        "parent_name": "System.Convert",
+        "name": "ToDecimal",
+        "signature": {
+          "raw_length": 6,
+          "raw_sha256": "7be34008bdaaaec5dd7cd8d75c6238f66a464d7a309e3ebac5d75c320657ae91",
+          "resolved_sha256": "44ba186758e20365fa24d69984d74f90e68f144a225ee9dffa79b578a02855be",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "valuetype:557",
+          "parameter_types": [
+            "r8"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00026a",
+        "row_offset": 46890,
+        "parent_token": "0x0100008b",
+        "parent_name": "System.Decimal",
+        "name": ".ctor",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a",
+          "resolved_sha256": "c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "i4"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00026b",
+        "row_offset": 46896,
+        "parent_token": "0x0100008b",
+        "parent_name": "System.Decimal",
+        "name": "op_Multiply",
+        "signature": {
+          "raw_length": 11,
+          "raw_sha256": "360471e37665508134ac061eda99a5899d0c1ab29188461551d095666ff7c4f8",
+          "resolved_sha256": "4fc08a594406a74b342925bf56fc29d80420837aa201810ce0aa72cf3be1ea67",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "valuetype:557",
+          "parameter_types": [
+            "valuetype:557",
+            "valuetype:557"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00026c",
+        "row_offset": 46902,
+        "parent_token": "0x0100008b",
+        "parent_name": "System.Decimal",
+        "name": ".ctor",
+        "signature": {
+          "raw_length": 8,
+          "raw_sha256": "b4451e1c0c09ce11487777257b8c43f7397a01495f0516ffef87b0479dfec7a1",
+          "resolved_sha256": "b4451e1c0c09ce11487777257b8c43f7397a01495f0516ffef87b0479dfec7a1",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 5,
+          "return_type": "void",
+          "parameter_types": [
+            "i4",
+            "i4",
+            "i4",
+            "bool",
+            "u1"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00026d",
+        "row_offset": 46908,
+        "parent_token": "0x01000148",
+        "parent_name": "System.Convert",
+        "name": "ToDouble",
+        "signature": {
+          "raw_length": 6,
+          "raw_sha256": "da69a70495108d85f31cd0a3a82dd422f255bb17a19a5ab7f690be07eb2f59e9",
+          "resolved_sha256": "97884c7e5767563f85c64d0e577b3042a470082df9c2d184829be7fd409b5a46",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "r8",
+          "parameter_types": [
+            "valuetype:557"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      }
+    ],
+    "fields": [],
+    "user_strings": [],
+    "call_edges": [
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x06000115",
+        "target_kind": "method-def",
+        "target_name": "_ToUM",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x06000116",
+        "target_kind": "method-def",
+        "target_name": "_ToMM",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x06000117",
+        "target_kind": "method-def",
+        "target_name": "_ToPM",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x06000118",
+        "target_kind": "method-def",
+        "target_name": "_ToNM",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x06000119",
+        "target_kind": "method-def",
+        "target_name": "_ToMIL",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x0600011a",
+        "target_kind": "method-def",
+        "target_name": "_ToINCH",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f2",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x0a00025e",
+        "target_kind": "member-ref",
+        "target_name": "ToDouble",
+        "target_declaring_type": "System.Convert"
+      },
+      {
+        "caller_token": "0x060000f3",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x0a00025f",
+        "target_kind": "member-ref",
+        "target_name": "ToDouble",
+        "target_declaring_type": "System.Convert"
+      },
+      {
+        "caller_token": "0x060000f3",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x060000f2",
+        "target_kind": "method-def",
+        "target_name": "ConvertUnitOfLength",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f7",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x060000f2",
+        "target_kind": "method-def",
+        "target_name": "ConvertUnitOfLength",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x060000f7",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength",
+        "opcode": "call",
+        "target_token": "0x06000114",
+        "target_kind": "method-def",
+        "target_name": "RoundValue",
+        "target_declaring_type": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+      },
+      {
+        "caller_token": "0x06000114",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.RoundValue",
+        "opcode": "call",
+        "target_token": "0x0a000266",
+        "target_kind": "member-ref",
+        "target_name": "Floor",
+        "target_declaring_type": "System.Math"
+      },
+      {
+        "caller_token": "0x06000114",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.RoundValue",
+        "opcode": "call",
+        "target_token": "0x0a000267",
+        "target_kind": "member-ref",
+        "target_name": "Ceiling",
+        "target_declaring_type": "System.Math"
+      },
+      {
+        "caller_token": "0x06000114",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.RoundValue",
+        "opcode": "call",
+        "target_token": "0x0a000088",
+        "target_kind": "member-ref",
+        "target_name": "Round",
+        "target_declaring_type": "System.Math"
+      },
+      {
+        "caller_token": "0x06000114",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.RoundValue",
+        "opcode": "call",
+        "target_token": "0x0a000088",
+        "target_kind": "member-ref",
+        "target_name": "Round",
+        "target_declaring_type": "System.Math"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a000268",
+        "target_kind": "member-ref",
+        "target_name": "IsNaN",
+        "target_declaring_type": "System.Double"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a000269",
+        "target_kind": "member-ref",
+        "target_name": "ToDecimal",
+        "target_declaring_type": "System.Convert"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000115",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM",
+        "opcode": "call",
+        "target_token": "0x0a00026d",
+        "target_kind": "member-ref",
+        "target_name": "ToDouble",
+        "target_declaring_type": "System.Convert"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a000268",
+        "target_kind": "member-ref",
+        "target_name": "IsNaN",
+        "target_declaring_type": "System.Double"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a000269",
+        "target_kind": "member-ref",
+        "target_name": "ToDecimal",
+        "target_declaring_type": "System.Convert"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026a",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "newobj",
+        "target_token": "0x0a00026c",
+        "target_kind": "member-ref",
+        "target_name": ".ctor",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026b",
+        "target_kind": "member-ref",
+        "target_name": "op_Multiply",
+        "target_declaring_type": "System.Decimal"
+      },
+      {
+        "caller_token": "0x06000118",
+        "caller": "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM",
+        "opcode": "call",
+        "target_token": "0x0a00026d",
+        "target_kind": "member-ref",
+        "target_name": "ToDouble",
+        "target_declaring_type": "System.Convert"
+      }
+    ]
+  }
+]

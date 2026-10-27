@@ -1,0 +1,35 @@
+[
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "c5a7b2cef4b4fa7a683f07b776ef7ce026c4806ccfe8b739921d9ca6cf0832a1"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyAntiHalation.exe",
+    "name": "OlyAntiHalation.exe",
+    "size_bytes": 9216,
+    "source_rehashed": true
+  },
+  {
+    "architecture": "x86_64",
+    "digest": {
+      "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyHamal64.dll",
+    "name": "OlyHamal64.dll",
+    "size_bytes": 102912,
+    "source_rehashed": true
+  },
+  {
+    "architecture": "x86_64",
+    "digest": {
+      "sha256": "ee667ccabc2398a65f01377a124281663f65004b5085c38668aefcad7e86db7e"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/Common/ImageProcessing/OlyiAntiHalationWrapper64.dll",
+    "name": "OlyiAntiHalationWrapper64.dll",
+    "size_bytes": 80384,
+    "source_rehashed": true
+  }
+]

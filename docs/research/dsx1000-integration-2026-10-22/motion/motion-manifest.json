@@ -1,0 +1,125 @@
+{
+  "scope": "Motion static analysis deliverables only",
+  "files": [
+    {
+      "path": "OlybMicroscopeDomain.resolved-il.txt",
+      "bytes": 57691,
+      "sha256": "8f1fbad0573088206296cd224a6a7819d4e0724f565d5380378cf838dba07b2b"
+    },
+    {
+      "path": "OlybMicroscopeDomain.selected.json",
+      "bytes": 327496,
+      "sha256": "a22e63eebed8c543669c0f5f9726276d60d117130f57f23635d6ecef35342eec"
+    },
+    {
+      "path": "OlybStageDomain.resolved-il.txt",
+      "bytes": 26896,
+      "sha256": "80c80f0c4652de9ba484c203ca5b1e33e3f6bc56792b153286b25380c43850bb"
+    },
+    {
+      "path": "OlybStageDomain.selected.json",
+      "bytes": 150131,
+      "sha256": "8d66ed6bff6d6ad32e18dca113305b22de8143f72fca425d56202f48df5d1f96"
+    },
+    {
+      "path": "OlydDevice.resolved-il.txt",
+      "bytes": 13365,
+      "sha256": "eced38aacb4534748701e5c3c564325db4655f627625f1fef81b418ceb5b133c"
+    },
+    {
+      "path": "OlydDevice.selected.json",
+      "bytes": 72043,
+      "sha256": "d8b8b3a55668420246212dee2e712ea761587927e34dbdab40fde60ec87f9e1a"
+    },
+    {
+      "path": "OlydMicroscope.resolved-il.txt",
+      "bytes": 35083,
+      "sha256": "0518c3100423c0a930365739f00f43f7cfd26254e24073b324c1bf78eb349c04"
+    },
+    {
+      "path": "OlydMicroscope.selected.json",
+      "bytes": 206161,
+      "sha256": "7a0dc3ccc9bbd763471557cb5e7a598cc38defcca8f1e7bdf54ddca2e13a38df"
+    },
+    {
+      "path": "OlydPort.resolved-il.txt",
+      "bytes": 22549,
+      "sha256": "00a683ed1709c9db8f354b8c34cac735426b6b7ba7edc4943f195984a503095c"
+    },
+    {
+      "path": "OlydPort.selected.json",
+      "bytes": 139332,
+      "sha256": "06dcdbeb0c25d64d01999b7e0298806d1187e0bd75cc928952bc07674f98e7fe"
+    },
+    {
+      "path": "OlydStage.resolved-il.txt",
+      "bytes": 39001,
+      "sha256": "2e59ad9abbea0e05fcab71ee3710d65b563983a773c2669f82c4466419ae479b"
+    },
+    {
+      "path": "OlydStage.selected.json",
+      "bytes": 257643,
+      "sha256": "6d205157637114cd7039699da3009997385eb0b71ea213e0920d9e2ad3a4945a"
+    },
+    {
+      "path": "OlyuMicroscope.shot-release-selected.json",
+      "bytes": 4481007,
+      "sha256": "90028a9a5887d99c24307ec14eca5eb0a738c46135237ae2e71ae407ca244d34"
+    },
+    {
+      "path": "OlyuMicroscope.ui-state-selected.json",
+      "bytes": 4385607,
+      "sha256": "d423cd156d534239a0e876a56451f75d4666f828e08910b3010f95c388dbeff0"
+    },
+    {
+      "path": "event-synchronization.resolved-il.txt",
+      "bytes": 4730,
+      "sha256": "d797eefc4cc7e109eddc1a02d20b4656d3af1011708ddd88a38146046dc99152"
+    },
+    {
+      "path": "event-synchronization.selected.json",
+      "bytes": 27088,
+      "sha256": "3249fd223fc0938996ce6563bcd45e9419e1b21e8b0194fbbba4251425128bd2"
+    },
+    {
+      "path": "motion-findings.md",
+      "bytes": 15296,
+      "sha256": "a23f5ae7fb5ee9fe2a22162455e92f34d6dc75859277f37ea700eca0133e82db"
+    },
+    {
+      "path": "rdk-control-path.resolved-il.txt",
+      "bytes": 45209,
+      "sha256": "4dd3073e931c6ef6d776f8cb6b8d445fff69b171483a326b29ddadd002321625"
+    },
+    {
+      "path": "rdk-control-path.selected.json",
+      "bytes": 335642,
+      "sha256": "922cc3e8de830d9a13719383395f2d42dd4f7b864f095f1cc18410d53ce7dd88"
+    },
+    {
+      "path": "rea-evidence-index.json",
+      "bytes": 35679,
+      "sha256": "613b6716ca2e13a6c6401c6b8352ac7e1f2103241eae291fc7047d32ff6fc799"
+    },
+    {
+      "path": "rea-evidence.json.gz",
+      "bytes": 5642931,
+      "sha256": "46252af99d27ec6b381cebb19d9b444f9eb9c4bc882d7f7ee79e0a18bf2a3436"
+    },
+    {
+      "path": "unit-switch-targets.json",
+      "bytes": 1180,
+      "sha256": "c86583b090c139eaf0c09e22e0e80d1e9c352f28137e890e3ac45b9fad9736d3"
+    },
+    {
+      "path": "units-and-rounding.resolved-il.txt",
+      "bytes": 13999,
+      "sha256": "a814cd19591bb906836b2a8e0f28261081a6b4832275344c4f34b853bb1e6a87"
+    },
+    {
+      "path": "units-and-rounding.selected.json",
+      "bytes": 102167,
+      "sha256": "1744c09c851caed89e75f702ef2efcf538e845dde12b0b8c9ce97e912a274d7e"
+    }
+  ]
+}

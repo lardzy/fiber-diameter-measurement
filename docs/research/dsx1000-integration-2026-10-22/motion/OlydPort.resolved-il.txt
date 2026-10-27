@@ -1,0 +1,542 @@
+Evidence: ev_d193d31052eeead1ce4148d5861e465877578ddc558080699b2be969c4770040
+Artifact: /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydPort.dll
+SHA256: 5f1c56f28a6f5c6a0ca5a0dc1918133bc4404b13fd5aa186fa909ed9e9ce804b
+Static CIL, not source C#, not runtime observation.
+
+0x06000007 Olympus.LI.Triumph.Device.Port.APortBase.Receive
+signature: {"raw_length":5,"raw_sha256":"921a868ebed6684e24cb462059e084c646891cd798191ce8d909b2b8ab851e3d","resolved_sha256":"ec94587bb7063544b7d3dec71b5ba353584a85a36ccf8b51e930c5571d4ca732","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:40"],"field_type":null,"issue":null}
+body offset: 643; IL sha256: 64ca6a532565f6d5945214b95405553ee551eaffd54fed2a81412b71677cb3be; normalized IL sha256: 823ec90532b2dce672e286b547d7f9d43df74b27bd0301954ef422c8eb4bef8c
+0: ldarg.1  
+1: callvirt 0x06000029 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.WaitForResponse
+6: ret  
+
+0x0600000a Olympus.LI.Triumph.Device.Port.APortBase.IsRequestCommandParameters
+signature: {"raw_length":5,"raw_sha256":"ef32aaeaaf1fc2adc17252ac55de8cce7d201ba2c3ebd9d4cd5739c9beb137cf","resolved_sha256":"ef32aaeaaf1fc2adc17252ac55de8cce7d201ba2c3ebd9d4cd5739c9beb137cf","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":1,"return_type":"bool","parameter_types":["string[]"],"field_type":null,"issue":null}
+body offset: 756; IL sha256: 5130a8d782d4f22dd890b4cdc99213d6855aa4215cada2d56e274ae6c4c3753d; normalized IL sha256: d5e8a39f91135412d8999bb5f35a5babdc7a938ee587da462d421eaf7bb4a348
+0: ldarg.0  
+1: ldlen  
+2: conv.i4  
+3: ldc.i4.1  
+4: beq.s 14 
+6: ldarg.0  
+7: ldlen  
+8: conv.i4  
+9: ldc.i4.2  
+10: beq.s 14 
+12: ldc.i4.0  
+13: ret  
+14: ldarg.0  
+15: ldlen  
+16: conv.i4  
+17: ldc.i4.1  
+18: bne.un.s 37 
+20: ldarg.0  
+21: ldc.i4.0  
+22: ldelem.ref  
+23: ldstr 0x70000001 "+"
+28: callvirt 0x0a000013 System.String.Equals
+33: brfalse.s 37 
+35: ldc.i4.1  
+36: ret  
+37: ldarg.0  
+38: ldlen  
+39: conv.i4  
+40: ldc.i4.2  
+41: bne.un.s 111 
+43: ldarg.0  
+44: ldc.i4.0  
+45: ldelem.ref  
+46: ldstr 0x70000005 "!"
+51: callvirt 0x0a000013 System.String.Equals
+56: brfalse.s 111 
+58: ldarg.0  
+59: ldc.i4.1  
+60: ldelem.ref  
+61: ldc.i4.0  
+62: callvirt 0x0a000014 System.String.get_Chars
+67: stloc.0  
+68: ldloca.s 0 
+70: call 0x0a000015 System.Char.ToString
+75: ldstr 0x70000009 "E"
+80: callvirt 0x0a000013 System.String.Equals
+85: brfalse.s 111 
+87: ldarg.0  
+88: ldc.i4.1  
+89: ldelem.ref  
+90: callvirt 0x0a000016 System.String.get_Length
+95: ldstr 0x70000009 "E"
+100: callvirt 0x0a000016 System.String.get_Length
+105: ldc.i4.8  
+106: add  
+107: bne.un.s 111 
+109: ldc.i4.1  
+110: ret  
+111: ldc.i4.0  
+112: ret  
+
+0x0600000c Olympus.LI.Triumph.Device.Port.Command.SCommandUtility.ParamToResult
+signature: {"raw_length":10,"raw_sha256":"c920ef8b487b3d80e211e1c4c519082ece691c64569c2e2bca280a86388ebc95","resolved_sha256":"72a046315f2c52ca458109203a3dfac4d4bc876a7f8e7705dd97f53580ce12c2","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":3,"return_type":"bool","parameter_types":["string[]","valuetype:12&","string&"],"field_type":null,"issue":null}
+body offset: 911; IL sha256: 1859f3b6ecaff9bfb40ae731d9e54f299ec6ef58eb0624d8f6ddfe318b8379a5; normalized IL sha256: ddce84b2ed97b9eefc47467ff6ac6aad9a20be9678fee2714a7c1f47833e4928
+0: ldarg.0  
+1: ldlen  
+2: conv.i4  
+3: ldc.i4.1  
+4: bne.un.s 26 
+6: ldstr 0x70000001 "+"
+11: ldarg.0  
+12: ldc.i4.0  
+13: ldelem.ref  
+14: call 0x0a000019 System.String.Equals
+19: brfalse.s 26 
+21: ldarg.1  
+22: ldc.i4.0  
+23: stind.i4  
+24: ldc.i4.1  
+25: ret  
+26: ldarg.0  
+27: ldarg.2  
+28: call 0x06000010 Olympus.LI.Triumph.Device.Port.Command.SCommandUtility.ParamToErrorCode
+33: brfalse.s 40 
+35: ldarg.1  
+36: ldc.i4.1  
+37: stind.i4  
+38: ldc.i4.1  
+39: ret  
+40: ldc.i4.0  
+41: ret  
+
+0x06000028 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.SetResponse
+signature: {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+body offset: 1862; IL sha256: cad14081ebf0c304e8fdd68287dd4a64c8c35538255af09858344ffac9e90545; normalized IL sha256: eb62ebe0a7b24d77d42dd5b660d5295f3cb30d0716a45b1e2e12156e515c24e8
+0: ldarg.0  
+1: call 0x0600002c Olympus.LI.Triumph.Device.Port.Command.ASendCommand.ThrowExceptionIfDisposed
+6: ldarg.0  
+7: ldfld 0x04000024 Olympus.LI.Triumph.Device.Port.Command.ASendCommand._clsEventHandle
+12: callvirt 0x0a000034 System.Threading.EventWaitHandle.Set
+17: pop  
+18: ret  
+
+0x06000029 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.WaitForResponse
+signature: {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+body offset: 1882; IL sha256: b09d6f92298db4557aabaed348840fb262460ad1d376d9372093f093e705edbe; normalized IL sha256: cd6ab9c87b9883926493283659182655f8c2cc670547193c5fe35e6421824b90
+0: ldarg.0  
+1: call 0x0600002c Olympus.LI.Triumph.Device.Port.Command.ASendCommand.ThrowExceptionIfDisposed
+6: ldarg.0  
+7: ldfld 0x04000024 Olympus.LI.Triumph.Device.Port.Command.ASendCommand._clsEventHandle
+12: ldc.i4.0  
+13: callvirt 0x0a000035 System.Threading.WaitHandle.WaitOne
+18: brfalse.s 28 
+20: ldarg.0  
+21: ldfld 0x04000026 Olympus.LI.Triumph.Device.Port.Command.ASendCommand._blnTimeout
+26: brtrue.s 54 
+28: ldarg.0  
+29: ldfld 0x04000024 Olympus.LI.Triumph.Device.Port.Command.ASendCommand._clsEventHandle
+34: ldarg.0  
+35: ldfld 0x04000025 Olympus.LI.Triumph.Device.Port.Command.ASendCommand._i32Timeout
+40: callvirt 0x0a000035 System.Threading.WaitHandle.WaitOne
+45: brtrue.s 54 
+47: ldarg.0  
+48: ldc.i4.1  
+49: stfld 0x04000026 Olympus.LI.Triumph.Device.Port.Command.ASendCommand._blnTimeout
+54: ret  
+
+0x06000036 Olympus.LI.Triumph.Device.Port.SendCommandTable.AddCommand
+signature: {"raw_length":5,"raw_sha256":"921a868ebed6684e24cb462059e084c646891cd798191ce8d909b2b8ab851e3d","resolved_sha256":"ec94587bb7063544b7d3dec71b5ba353584a85a36ccf8b51e930c5571d4ca732","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:40"],"field_type":null,"issue":null}
+body offset: 2808; IL sha256: 2333fdfd3d4e410e7df986e5176d3428fa953be16d4e763e74d33412e897e751; normalized IL sha256: 646b1cb9be23ceafa247eaaff271e3f8647e1e7d8c395829ec9f6b890406f2eb
+0: ldc.i4.0  
+1: stloc.1  
+2: ldarg.0  
+3: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+8: dup  
+9: stloc.2  
+10: ldloca.s 1 
+12: call 0x0a000024 System.Threading.Monitor.Enter
+17: ldnull  
+18: stloc.0  
+19: ldarg.0  
+20: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+25: callvirt 0x0a000053 System.Collections.Generic.Dictionary`2.get_Keys
+30: ldarg.1  
+31: callvirt 0x0600001f Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+36: call 0x2b000003 
+41: brfalse.s 63 
+43: ldarg.0  
+44: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+49: ldarg.1  
+50: callvirt 0x0600001f Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+55: callvirt 0x0a000055 System.Collections.Generic.Dictionary`2.get_Item
+60: stloc.0  
+61: br.s 93 
+63: ldarg.1  
+64: callvirt 0x0600001f Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+69: newobj 0x06000031 Olympus.LI.Triumph.Device.Port.SendCommandData..ctor
+74: stloc.0  
+75: ldarg.0  
+76: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+81: ldarg.1  
+82: callvirt 0x0600001f Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+87: ldloc.0  
+88: callvirt 0x0a000056 System.Collections.Generic.Dictionary`2.Add
+93: ldloc.0  
+94: ldarg.1  
+95: callvirt 0x06000034 Olympus.LI.Triumph.Device.Port.SendCommandData.AddCommand
+100: leave.s 112 
+102: ldloc.1  
+103: brfalse.s 111 
+105: ldloc.2  
+106: call 0x0a000026 System.Threading.Monitor.Exit
+111: endfinally  
+112: ret  
+
+0x06000037 Olympus.LI.Triumph.Device.Port.SendCommandTable.SearchCommand
+signature: {"raw_length":5,"raw_sha256":"070920141a0761f7ef1deb79934098d14acd7086457d30eea8c966f55f339586","resolved_sha256":"6abda124aaa031c393960b2f11b36830e8aa3de60f063d5acb2c023c568f548f","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"class:40","parameter_types":["string"],"field_type":null,"issue":null}
+body offset: 2952; IL sha256: dd7977e4f88c8885f8afe5220a83868495440597dbeb6e751bd769f72605e0ed; normalized IL sha256: 08365f7c26cf90f573b4281fe8a7b68604d13798e262a237e41a273bbd763c49
+0: ldc.i4.0  
+1: stloc.2  
+2: ldarg.0  
+3: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+8: dup  
+9: stloc.s 4 
+11: ldloca.s 2 
+13: call 0x0a000024 System.Threading.Monitor.Enter
+18: ldnull  
+19: stloc.0  
+20: ldarg.0  
+21: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+26: callvirt 0x0a000053 System.Collections.Generic.Dictionary`2.get_Keys
+31: ldarg.1  
+32: call 0x2b000003 
+37: brfalse.s 59 
+39: ldarg.0  
+40: ldfld 0x0400002b Olympus.LI.Triumph.Device.Port.SendCommandTable._clsCommandTable
+45: ldarg.1  
+46: callvirt 0x0a000055 System.Collections.Generic.Dictionary`2.get_Item
+51: stloc.1  
+52: ldloc.1  
+53: callvirt 0x06000035 Olympus.LI.Triumph.Device.Port.SendCommandData.GetCommand
+58: stloc.0  
+59: ldloc.0  
+60: stloc.3  
+61: leave.s 74 
+63: ldloc.2  
+64: brfalse.s 73 
+66: ldloc.s 4 
+68: call 0x0a000026 System.Threading.Monitor.Exit
+73: endfinally  
+74: ldloc.3  
+75: ret  
+
+0x06000075 Olympus.LI.Triumph.Device.Port.ASerialPortBase.Send
+signature: {"raw_length":6,"raw_sha256":"e807b739fc11062f086c03c971783c55a5afe1d72298b54c3b192e5469b17625","resolved_sha256":"f3cdfb6bc427437461c60a9f7dbb168f74b1e90041bf14375811abc14e067520","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["class:40","i4"],"field_type":null,"issue":null}
+body offset: 4240; IL sha256: 5bf5eb6b5f15281dcf2eea02e1fbcfc10c9e13cf58c178d21331c600b5fbe60a; normalized IL sha256: 26bd4ef1394317a703e8fb585e057599b7193354716a18852b2c4b4054c1c147
+0: ldarg.1  
+1: ldarg.2  
+2: callvirt 0x06000024 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.set_Timeout
+7: ldarg.0  
+8: ldfld 0x04000049 Olympus.LI.Triumph.Device.Port.ASerialPortBase._clsQueue
+13: ldarg.1  
+14: callvirt 0x0a00006f Olympus.LI.Triumph.Device.Port.ObjectQueue`1.Put
+19: ret  
+
+0x0600007b Olympus.LI.Triumph.Device.Port.ASerialPortBase.SendThreadFunction
+signature: {"raw_length":4,"raw_sha256":"cf4b7c51fb192d1f447c7f142ae8f38af4d8565d1a160a31640656a7a4d83925","resolved_sha256":"cf4b7c51fb192d1f447c7f142ae8f38af4d8565d1a160a31640656a7a4d83925","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["object"],"field_type":null,"issue":null}
+body offset: 4320; IL sha256: a772e5688b424dde5001b34465a2d744e3b08848cb5346d67632a0eb151abd5c; normalized IL sha256: 585e7c228af8a5652b8e999432e0938730196d83116ab7f2f9707b82a7da1f1c
+0: ldarg.1  
+1: castclass 0x02000015 
+6: stloc.0  
+7: br.s 125 
+9: ldloc.0  
+10: ldfld 0x04000049 Olympus.LI.Triumph.Device.Port.ASerialPortBase._clsQueue
+15: callvirt 0x0a000071 Olympus.LI.Triumph.Device.Port.ObjectQueue`1.Get
+20: stloc.1  
+21: ldloc.0  
+22: ldfld 0x0400004b Olympus.LI.Triumph.Device.Port.ASerialPortBase._blnTerminateThread
+27: brfalse.s 31 
+29: leave.s 133 
+31: ldloc.0  
+32: callvirt 0x06000001 Olympus.LI.Triumph.Device.Port.APortBase.get_ClsSendCommandTable
+37: ldloc.1  
+38: callvirt 0x06000036 Olympus.LI.Triumph.Device.Port.SendCommandTable.AddCommand
+43: ldloc.1  
+44: callvirt 0x0a000072 System.Object.ToString
+49: stloc.2  
+50: ldloc.0  
+51: ldloc.2  
+52: callvirt 0x0600007a Olympus.LI.Triumph.Device.Port.ASerialPortBase.WriteLine
+57: leave.s 96 
+59: pop  
+60: ldstr 0x700002a9 "The command '{0}' was failed to write stream."
+65: ldloc.2  
+66: call 0x0a00004f System.String.Format
+71: call 0x0a000073 Olympus.Mis.Core.Logging.Logger.DeviceErrorLog
+76: ldloc.0  
+77: callvirt 0x06000001 Olympus.LI.Triumph.Device.Port.APortBase.get_ClsSendCommandTable
+82: ldloc.1  
+83: callvirt 0x06000021 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveCommand
+88: callvirt 0x06000037 Olympus.LI.Triumph.Device.Port.SendCommandTable.SearchCommand
+93: pop  
+94: rethrow  
+96: ldloc.2  
+97: call 0x0a000074 Olympus.Mis.Core.Logging.Logger.Command_SendLog
+102: leave.s 125 
+104: stloc.3  
+105: ldloc.3  
+106: callvirt 0x0a00005c System.Exception.get_Message
+111: call 0x0a000075 Olympus.Mis.Core.Logging.Logger.ErrorLog
+116: ldarg.0  
+117: ldloc.3  
+118: call 0x0600007d Olympus.LI.Triumph.Device.Port.ASerialPortBase.DispatchException
+123: leave.s 125 
+125: ldloc.0  
+126: ldfld 0x0400004b Olympus.LI.Triumph.Device.Port.ASerialPortBase._blnTerminateThread
+131: brfalse.s 9 
+133: ret  
+
+0x0600007c Olympus.LI.Triumph.Device.Port.ASerialPortBase.SerialDataReceivedEvent
+signature: {"raw_length":6,"raw_sha256":"c5b2e726027316f05d19a9d3773361b321be7f8d3954f60f7324928dac877521","resolved_sha256":"5dd602ff9d4960506dead860842dcf602cb96d4cd86d2d452b9a7b8ace797d28","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["object","class:73"],"field_type":null,"issue":null}
+body offset: 4496; IL sha256: 9ea5f8654faa00ab1488fe631d3c693231b524ac8acca88378db3b8ae2354d95; normalized IL sha256: 1a3736c5b60584fdf62eca98de7406c4dcbe590f25094be8477a0b732a04e826
+0: br 563 
+5: ldarg.0  
+6: callvirt 0x06000079 Olympus.LI.Triumph.Device.Port.ASerialPortBase.ReadLine
+11: stloc.0  
+12: ldloc.0  
+13: call 0x0a000076 Olympus.Mis.Core.Logging.Logger.Command_RecvLog
+18: ldsfld 0x0a00002c System.String.Empty
+23: stloc.1  
+24: ldnull  
+25: stloc.2  
+26: ldloc.0  
+27: ldloca.s 1 
+29: ldloca.s 2 
+31: call 0x06000009 Olympus.LI.Triumph.Device.Port.APortBase.GetCommandWithParams
+36: brtrue.s 55 
+38: ldstr 0x70000305 "Invalid command format is in received string '{0}'."
+43: ldloc.0  
+44: call 0x0a00004f System.String.Format
+49: newobj 0x0a000077 Olympus.LI.Triumph.Device.Exception.CommandException..ctor
+54: throw  
+55: ldsfld 0x0a00002c System.String.Empty
+60: stloc.3  
+61: ldloc.1  
+62: callvirt 0x0a000016 System.String.get_Length
+67: ldstr 0x7000036d "V"
+72: callvirt 0x0a000016 System.String.get_Length
+77: ldc.i4.1  
+78: add  
+79: bne.un.s 113 
+81: ldloc.1  
+82: ldc.i4.1  
+83: ldstr 0x7000036d "V"
+88: callvirt 0x0a000016 System.String.get_Length
+93: callvirt 0x0a000049 System.String.Substring
+98: ldstr 0x7000036d "V"
+103: callvirt 0x0a000013 System.String.Equals
+108: brtrue 378 
+113: ldloc.1  
+114: callvirt 0x0a000016 System.String.get_Length
+119: ldstr 0x70000371 "GZMIR"
+124: callvirt 0x0a000016 System.String.get_Length
+129: ldc.i4.1  
+130: add  
+131: bne.un.s 165 
+133: ldloc.1  
+134: ldc.i4.1  
+135: ldstr 0x70000371 "GZMIR"
+140: callvirt 0x0a000016 System.String.get_Length
+145: callvirt 0x0a000049 System.String.Substring
+150: ldstr 0x70000371 "GZMIR"
+155: callvirt 0x0a000013 System.String.Equals
+160: brtrue 378 
+165: ldloc.1  
+166: callvirt 0x0a000016 System.String.get_Length
+171: ldstr 0x7000037d "GFSPD"
+176: callvirt 0x0a000016 System.String.get_Length
+181: ldc.i4.1  
+182: add  
+183: bne.un.s 217 
+185: ldloc.1  
+186: ldc.i4.1  
+187: ldstr 0x7000037d "GFSPD"
+192: callvirt 0x0a000016 System.String.get_Length
+197: callvirt 0x0a000049 System.String.Substring
+202: ldstr 0x7000037d "GFSPD"
+207: callvirt 0x0a000013 System.String.Equals
+212: brtrue 378 
+217: ldloc.1  
+218: callvirt 0x0a000016 System.String.get_Length
+223: ldstr 0x70000389 "GXYSPD"
+228: callvirt 0x0a000016 System.String.get_Length
+233: ldc.i4.1  
+234: add  
+235: bne.un.s 266 
+237: ldloc.1  
+238: ldc.i4.1  
+239: ldstr 0x70000389 "GXYSPD"
+244: callvirt 0x0a000016 System.String.get_Length
+249: callvirt 0x0a000049 System.String.Substring
+254: ldstr 0x70000389 "GXYSPD"
+259: callvirt 0x0a000013 System.String.Equals
+264: brtrue.s 378 
+266: ldloc.1  
+267: callvirt 0x0a000016 System.String.get_Length
+272: ldstr 0x70000397 "GJSTX"
+277: callvirt 0x0a000016 System.String.get_Length
+282: ldc.i4.1  
+283: add  
+284: bne.un.s 315 
+286: ldloc.1  
+287: ldc.i4.1  
+288: ldstr 0x70000397 "GJSTX"
+293: callvirt 0x0a000016 System.String.get_Length
+298: callvirt 0x0a000049 System.String.Substring
+303: ldstr 0x70000397 "GJSTX"
+308: callvirt 0x0a000013 System.String.Equals
+313: brtrue.s 378 
+315: ldloc.1  
+316: callvirt 0x0a000016 System.String.get_Length
+321: ldstr 0x700003a3 "GJSTY"
+326: callvirt 0x0a000016 System.String.get_Length
+331: ldc.i4.1  
+332: add  
+333: bne.un.s 364 
+335: ldloc.1  
+336: ldc.i4.1  
+337: ldstr 0x700003a3 "GJSTY"
+342: callvirt 0x0a000016 System.String.get_Length
+347: callvirt 0x0a000049 System.String.Substring
+352: ldstr 0x700003a3 "GJSTY"
+357: callvirt 0x0a000013 System.String.Equals
+362: brtrue.s 378 
+364: ldloc.2  
+365: call 0x0600000a Olympus.LI.Triumph.Device.Port.APortBase.IsRequestCommandParameters
+370: brtrue.s 378 
+372: ldstr 0x7000029f "?"
+377: stloc.3  
+378: ldarg.0  
+379: call 0x06000001 Olympus.LI.Triumph.Device.Port.APortBase.get_ClsSendCommandTable
+384: ldloc.1  
+385: ldloc.3  
+386: call 0x0a000030 System.String.Concat
+391: callvirt 0x06000037 Olympus.LI.Triumph.Device.Port.SendCommandTable.SearchCommand
+396: stloc.s 4 
+398: ldloc.s 4 
+400: brfalse.s 454 
+402: ldloc.s 4 
+404: callvirt 0x06000022 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveParameter
+409: ldloc.2  
+410: callvirt 0x0a000078 System.Collections.Generic.List`1.AddRange
+415: ldloc.s 4 
+417: callvirt 0x06000028 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.SetResponse
+422: ldarg.0  
+423: ldloc.s 4 
+425: callvirt 0x06000016 Olympus.LI.Triumph.Device.Port.Command.ACommand.get_Name
+430: call 0x0600007e Olympus.LI.Triumph.Device.Port.ASerialPortBase.CheckRespondAndNotifyCommand
+435: brfalse.s 452 
+437: ldloc.2  
+438: ldc.i4.0  
+439: ldelem.ref  
+440: ldstr 0x70000005 "!"
+445: call 0x0a000079 System.String.op_Equality
+450: brfalse.s 454 
+452: leave.s 563 
+454: ldarg.0  
+455: call 0x06000003 Olympus.LI.Triumph.Device.Port.APortBase.get_ClsNotifyCommandTable
+460: ldloc.1  
+461: ldloca.s 5 
+463: callvirt 0x0600002f Olympus.LI.Triumph.Device.Port.NotifyCommandTable.SearchCommand
+468: stloc.s 6 
+470: ldloc.s 6 
+472: brfalse.s 517 
+474: ldloc.s 6 
+476: callvirt 0x0600001c Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+481: ldloc.2  
+482: callvirt 0x0a000078 System.Collections.Generic.List`1.AddRange
+487: ldloc.s 5 
+489: dup  
+490: ldvirtftn 0x0600005a Olympus.LI.Triumph.Device.Port.IPortEventReceiver.CallbackReceivedNotifyCommand
+496: newobj 0x0600007f CallbackReceivedNotifyCommand..ctor
+501: stloc.s 7 
+503: ldloc.s 7 
+505: ldloc.s 6 
+507: ldnull  
+508: ldnull  
+509: callvirt 0x06000081 CallbackReceivedNotifyCommand.BeginInvoke
+514: pop  
+515: leave.s 563 
+517: ldstr 0x700003af "The received string {0} was not matched any send commands. Maybe already it was timeout."
+522: ldloc.0  
+523: call 0x0a00004f System.String.Format
+528: stloc.s 8 
+530: ldloc.s 8 
+532: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.WarningLog
+537: leave.s 563 
+539: stloc.s 9 
+541: ldloc.s 9 
+543: callvirt 0x0a00005c System.Exception.get_Message
+548: call 0x0a000075 Olympus.Mis.Core.Logging.Logger.ErrorLog
+553: ldarg.0  
+554: ldloc.s 9 
+556: call 0x0600007d Olympus.LI.Triumph.Device.Port.ASerialPortBase.DispatchException
+561: leave.s 563 
+563: ldarg.0  
+564: callvirt 0x06000072 Olympus.LI.Triumph.Device.Port.ASerialPortBase.get_BytesToRead
+569: ldc.i4.0  
+570: bgt 5 
+575: leave.s 589 
+577: stloc.s 10 
+579: ldarg.0  
+580: ldloc.s 10 
+582: call 0x0600007d Olympus.LI.Triumph.Device.Port.ASerialPortBase.DispatchException
+587: leave.s 589 
+589: ret  
+
+0x0600007e Olympus.LI.Triumph.Device.Port.ASerialPortBase.CheckRespondAndNotifyCommand
+signature: {"raw_length":4,"raw_sha256":"61bbd491345d80bcde08286d395defead9e181d82e76ce39bf961ebefbf660be","resolved_sha256":"61bbd491345d80bcde08286d395defead9e181d82e76ce39bf961ebefbf660be","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"bool","parameter_types":["string"],"field_type":null,"issue":null}
+body offset: 5268; IL sha256: f32ef7691edfe3b7dbfc42c2c94b81b3dffd72953b8934e720ea927035134ebd; normalized IL sha256: 08f052860923b40dee9c83e388ee8a64aeae0c26e080da1e91f283a430ad618b
+0: ldc.i4.0  
+1: stloc.0  
+2: ldarg.1  
+3: ldstr 0x700004be "ANPO"
+8: call 0x0a000079 System.String.op_Equality
+13: brtrue.s 132 
+15: ldarg.1  
+16: ldstr 0x700004c8 "DIC"
+21: call 0x0a000079 System.String.op_Equality
+26: brtrue.s 132 
+28: ldarg.1  
+29: ldstr 0x700004d0 "EIL"
+34: call 0x0a000079 System.String.op_Equality
+39: brtrue.s 132 
+41: ldarg.1  
+42: ldstr 0x700004d8 "DIL"
+47: call 0x0a000079 System.String.op_Equality
+52: brtrue.s 132 
+54: ldarg.1  
+55: ldstr 0x700004e0 "RILS1"
+60: call 0x0a000079 System.String.op_Equality
+65: brtrue.s 132 
+67: ldarg.1  
+68: ldstr 0x700004ec "RILS2"
+73: call 0x0a000079 System.String.op_Equality
+78: brtrue.s 132 
+80: ldarg.1  
+81: ldstr 0x700004f8 "RILS3"
+86: call 0x0a000079 System.String.op_Equality
+91: brtrue.s 132 
+93: ldarg.1  
+94: ldstr 0x70000504 "ZM"
+99: call 0x0a000079 System.String.op_Equality
+104: brtrue.s 132 
+106: ldarg.1  
+107: ldstr 0x7000050a "EASLR"
+112: call 0x0a000079 System.String.op_Equality
+117: brtrue.s 132 
+119: ldarg.1  
+120: ldstr 0x70000516 "EAS"
+125: call 0x0a000079 System.String.op_Equality
+130: brfalse.s 134 
+132: ldc.i4.1  
+133: stloc.0  
+134: ldloc.0  
+135: ret  
+

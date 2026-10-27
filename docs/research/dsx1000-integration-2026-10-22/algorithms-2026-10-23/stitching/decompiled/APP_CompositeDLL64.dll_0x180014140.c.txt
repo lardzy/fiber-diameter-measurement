@@ -1,0 +1,165 @@
+Evidence: ev_777419ab30838d534db82bfc1c71721e08a9cc26885623f82d5efe801d1b4108
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_180014140(longlong param_1,longlong param_2,undefined8 param_3,double *param_4)
+
+{
+  int iVar1;
+  int iVar2;
+  double dVar3;
+  double dVar4;
+  void *pvVar5;
+  basic_iostream<char,std::char_traits<char>_> *pbVar6;
+  float *pfVar7;
+  undefined8 uVar8;
+  undefined8 extraout_RAX;
+  basic_iostream<char,std::char_traits<char>_> *pbVar9;
+  longlong lVar10;
+  void *pvVar11;
+  float *pfVar12;
+  longlong lVar13;
+  ulonglong uVar14;
+  double dVar15;
+  double dVar16;
+  double dVar17;
+  undefined1 auStack_1b8 [40];
+  undefined8 local_190;
+  basic_iostream<char,std::char_traits<char>_> local_188 [248];
+  undefined1 local_90;
+  undefined7 uStack_8f;
+  undefined8 local_80;
+  ulonglong uStack_78;
+  ulonglong local_70;
+  
+  local_190 = 0xfffffffffffffffe;
+  local_70 = DAT_180023010 ^ (ulonglong)auStack_1b8;
+  local_80 = 0;
+  uStack_78 = 0xf;
+  local_90 = 0;
+  FUN_180015be0((longlong *)&local_90," 13 GetRoiSimilarityNCC() [start]",0x21);
+  pbVar9 = local_188;
+  pbVar6 = FUN_180010310(pbVar9,(undefined8 *)&local_90);
+  FUN_1800035c0(pbVar9,(longlong *)pbVar6);
+  if (0xf < uStack_78) {
+    pvVar5 = (void *)CONCAT71(uStack_8f,local_90);
+    pvVar11 = pvVar5;
+    if ((0xfff < uStack_78 + 1) &&
+       (pvVar11 = *(void **)((longlong)pvVar5 + -8),
+       0x1f < (ulonglong)((longlong)pvVar5 + (-8 - (longlong)pvVar11)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar11);
+  }
+  iVar1 = *(int *)(*(longlong *)(param_1 + 0x30) + 0xc);
+  iVar2 = *(int *)(*(longlong *)(param_1 + 0x30) + 0x10);
+  uVar14 = *(ulonglong *)(param_2 + 0x30);
+  if ((iVar1 == *(int *)(uVar14 + 0xc)) && (iVar2 == *(int *)(uVar14 + 0x10))) {
+    dVar3 = 0.0;
+    dVar4 = 0.0;
+    dVar15 = 0.0;
+    local_80 = 0;
+    uStack_78 = 0xf;
+    local_90 = 0;
+    FUN_180015be0((longlong *)&local_90," 14 GetRoiSimilarityNCC()_for1 [start]",0x26);
+    pbVar9 = local_188;
+    pbVar6 = FUN_180010310(pbVar9,(undefined8 *)&local_90);
+    FUN_1800035c0(pbVar9,(longlong *)pbVar6);
+    if (0xf < uStack_78) {
+      pvVar5 = (void *)CONCAT71(uStack_8f,local_90);
+      pvVar11 = pvVar5;
+      if ((0xfff < uStack_78 + 1) &&
+         (pvVar11 = *(void **)((longlong)pvVar5 + -8),
+         0x1f < (ulonglong)((longlong)pvVar5 + (-8 - (longlong)pvVar11)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      free(pvVar11);
+    }
+    if (0 < iVar2) {
+      pfVar12 = (float *)((longlong)
+                          (*(int *)(*(longlong *)(param_2 + 0x30) + 8) * *(int *)(param_2 + 0x60)) +
+                          (longlong)*(int *)(*(longlong *)(param_2 + 0x30) + 4) * 4 +
+                         *(longlong *)(param_2 + 0x58));
+      lVar13 = (longlong)(*(int *)(*(longlong *)(param_1 + 0x30) + 8) * *(int *)(param_1 + 0x60)) +
+               (longlong)*(int *)(*(longlong *)(param_1 + 0x30) + 4) * 4 +
+               *(longlong *)(param_1 + 0x58);
+      uVar14 = (ulonglong)((iVar2 - 1U >> 1) + 1);
+      dVar15 = 0.0;
+      dVar3 = 0.0;
+      dVar4 = 0.0;
+      do {
+        if (0 < (longlong)iVar1) {
+          lVar10 = ((longlong)iVar1 - 1U >> 1) + 1;
+          pfVar7 = pfVar12;
+          do {
+            dVar17 = (double)*(float *)((lVar13 - (longlong)pfVar12) + (longlong)pfVar7);
+            dVar4 = dVar4 + dVar17 * dVar17;
+            dVar16 = (double)*pfVar7;
+            dVar15 = dVar15 + dVar16 * dVar16;
+            dVar3 = dVar3 + dVar17 * dVar16;
+            pfVar7 = pfVar7 + 2;
+            lVar10 = lVar10 + -1;
+          } while (lVar10 != 0);
+        }
+        lVar13 = lVar13 + *(int *)(param_1 + 0x60) * 2;
+        pfVar12 = (float *)((longlong)pfVar12 + (longlong)(*(int *)(param_2 + 0x60) * 2));
+        uVar14 = uVar14 - 1;
+      } while (uVar14 != 0);
+    }
+    local_80 = 0;
+    uStack_78 = 0xf;
+    local_90 = 0;
+    FUN_180015be0((longlong *)&local_90," 14 GetRoiSimilarityNCC()_for1 [end]",0x24);
+    pbVar9 = local_188;
+    pbVar6 = FUN_180010310(pbVar9,(undefined8 *)&local_90);
+    FUN_1800035c0(pbVar9,(longlong *)pbVar6);
+    if (0xf < uStack_78) {
+      pvVar5 = (void *)CONCAT71(uStack_8f,local_90);
+      pvVar11 = pvVar5;
+      if ((0xfff < uStack_78 + 1) &&
+         (pvVar11 = *(void **)((longlong)pvVar5 + -8),
+         0x1f < (ulonglong)((longlong)pvVar5 + (-8 - (longlong)pvVar11)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      free(pvVar11);
+    }
+    if ((dVar4 == 0.0) || (dVar15 == 0.0)) {
+      *param_4 = 1.0;
+    }
+    else {
+      dVar15 = sqrt(dVar15 * dVar4);
+      *param_4 = ABS(1.0 - dVar3 / dVar15);
+    }
+    local_80 = 0;
+    uStack_78 = 0xf;
+    local_90 = 0;
+    FUN_180015be0((longlong *)&local_90," 13 GetRoiSimilarityNCC() [end]",0x1f);
+    pbVar9 = local_188;
+    pbVar6 = FUN_180010310(pbVar9,(undefined8 *)&local_90);
+    uVar8 = FUN_1800035c0(pbVar9,(longlong *)pbVar6);
+    if (0xf < uStack_78) {
+      pvVar5 = (void *)CONCAT71(uStack_8f,local_90);
+      pvVar11 = pvVar5;
+      if ((0xfff < uStack_78 + 1) &&
+         (pvVar11 = *(void **)((longlong)pvVar5 + -8),
+         0x1f < (ulonglong)((longlong)pvVar5 + (-8 - (longlong)pvVar11)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      free(pvVar11);
+      uVar8 = extraout_RAX;
+    }
+    uVar14 = CONCAT71((int7)((ulonglong)uVar8 >> 8),1);
+  }
+  else {
+    uVar14 = uVar14 & 0xffffffffffffff00;
+  }
+  return uVar14;
+}
+

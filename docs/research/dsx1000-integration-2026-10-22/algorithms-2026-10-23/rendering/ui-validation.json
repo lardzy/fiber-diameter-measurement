@@ -1,0 +1,32 @@
+{
+  "validated_at_utc": "2026-10-22T17:30:15.732023+00:00",
+  "environment": "macOS Codex IAB, 1280x720 viewport; independent HTML synthetic data",
+  "method": "CUA native accessibility and Playwright locators, screenshot inspection",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "initial_visible_height_field",
+      "observed": "6144 / 6144 triangles; 12.512 micrometres original span"
+    },
+    {
+      "name": "exaggeration_preserves_source_range",
+      "observed": "factor 4.0; original span remains 12.512 micrometres"
+    },
+    {
+      "name": "flatten_and_mask",
+      "observed": "quadratic base removed, local ridge and step retained, invalid area shown as hole; 5944 / 6144 triangles"
+    },
+    {
+      "name": "wire_and_reset",
+      "observed": "wireframe visible, reset button callable"
+    }
+  ],
+  "scope_limits": [
+    "No DSX runtime or device",
+    "No original Direct3D comparison",
+    "No mobile viewport QA"
+  ],
+  "source_sha256": "e459caad6863973eb7e5470bd1660d7172b658012091cc4b44e4173006139873",
+  "screenshot": "prototype-flat.png",
+  "screenshot_sha256": "a084da398d9b3a945399bc489b38af2b863e166d6c24813ba5d0880cc22cd625"
+}

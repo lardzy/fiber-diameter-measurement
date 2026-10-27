@@ -1,0 +1,11 @@
+{
+  "arrays": {
+    "efi": true,
+    "height": true,
+    "raw_height": true,
+    "height_response": true,
+    "fast_response": true
+  },
+  "overwrite_rejected": true,
+  "source_sha256": "98a134a6cd6175a83be72989aff763ee686a18c0bfc7af1b83c0f31161f5fcbd"
+}

@@ -1,0 +1,438 @@
+Evidence: ev_bd376dbcdd96ff53d2fa8ed8051146fbe0427574d998ce82dde916485ee6b617
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined8 FUN_140156060(longlong param_1)
+
+{
+  ulonglong *puVar1;
+  wchar_t *pwVar2;
+  LPCWSTR pWVar3;
+  LPCWSTR pWVar4;
+  longlong *plVar5;
+  int *piVar6;
+  wchar_t *pwVar7;
+  char *pcVar8;
+  int iVar9;
+  double dVar10;
+  double dVar11;
+  undefined1 auStack_128 [32];
+  LPCWSTR local_108;
+  undefined8 local_100;
+  longlong local_f8;
+  longlong local_f0 [2];
+  undefined8 local_e0;
+  ulonglong local_d8;
+  ulonglong local_d0 [2];
+  undefined8 local_c0;
+  ulonglong local_b8;
+  char local_b0;
+  double local_a8;
+  int local_a0;
+  uint local_9c;
+  int local_98 [2];
+  ushort local_90;
+  undefined8 local_80 [3];
+  ulonglong local_68;
+  char local_60;
+  double local_58;
+  int local_50;
+  uint local_4c;
+  int local_48 [2];
+  ushort local_40;
+  ulonglong local_30;
+  
+  local_100 = 0xfffffffffffffffe;
+  local_30 = DAT_1401c7000 ^ (ulonglong)auStack_128;
+  local_60 = 0;
+  local_f8 = param_1;
+  _ftime64(local_48);
+  local_50 = local_48[0];
+  local_4c = (uint)local_40;
+  local_60 = '\x01';
+  local_b0 = 0;
+  local_b8 = 0xf;
+  local_c0 = 0;
+  local_d0[0]._0_1_ = 0;
+  FUN_1400021b0(local_d0,&DAT_14016aeb7,0);
+  _ftime64(local_98);
+  local_a0 = local_98[0];
+  local_9c = (uint)local_90;
+  local_b0 = '\x01';
+  FUN_140138300(param_1);
+  dVar11 = -1.0;
+  if (local_b0 == '\0') {
+    dVar10 = -1.0;
+  }
+  else {
+    _ftime64(local_98);
+    local_a0 = local_98[0] - local_a0;
+    local_9c = (local_90 - local_9c) + local_a0 * 1000;
+    dVar10 = (double)(int)local_9c / 1000.0;
+    local_b0 = '\0';
+    local_a8 = dVar10;
+  }
+  puVar1 = FUN_140156da0(local_80,dVar10);
+  puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]Initialize [s], ",puVar1);
+  if (local_d0 != puVar1) {
+    if (0xf < local_b8) {
+      Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+    }
+    local_b8 = 0xf;
+    local_c0 = 0;
+    local_d0[0]._0_1_ = 0;
+    FUN_140001f90(local_d0,puVar1);
+  }
+  if (0xf < local_d8) {
+    Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  if (0xf < local_68) {
+    Ordinal_1486(local_80[0]);
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  plVar5 = local_f0;
+  FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+  FUN_140156ca0(plVar5,local_f0);
+  Ordinal_296(&local_108);
+  Ordinal_4612(&local_108,&DAT_140193bac,10);
+  pwVar7 = L"progress";
+  WritePrivateProfileStringW(L"out",L"progress",local_108,DAT_1401c9be8);
+  Ordinal_1030(&local_108);
+  _ftime64(local_98);
+  local_a0 = local_98[0];
+  local_9c = (uint)local_90;
+  local_b0 = '\x01';
+  if (*(int *)(param_1 + 0x48) != 0) {
+    FUN_14012a0c0(param_1);
+    if (local_b0 == '\0') {
+      dVar10 = -1.0;
+    }
+    else {
+      _ftime64(local_98);
+      local_a0 = local_98[0] - local_a0;
+      local_9c = (local_90 - local_9c) + local_a0 * 1000;
+      dVar10 = (double)(int)local_9c / 1000.0;
+      local_b0 = '\0';
+      local_a8 = dVar10;
+    }
+    puVar1 = FUN_140156da0(local_80,dVar10);
+    pcVar8 = "[Stitch_C++][Warrior]IntensityAdjustment [s], ";
+    pwVar2 = (wchar_t *)
+             FUN_140006600(local_f0,"[Stitch_C++][Warrior]IntensityAdjustment [s], ",puVar1);
+    pwVar7 = (wchar_t *)pcVar8;
+    if ((wchar_t *)local_d0 != pwVar2) {
+      if (0xf < local_b8) {
+        Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+      }
+      local_b8 = 0xf;
+      local_c0 = 0;
+      local_d0[0]._0_1_ = 0;
+      FUN_140001f90(local_d0,(undefined8 *)pwVar2);
+      pwVar7 = pwVar2;
+    }
+    if (0xf < local_d8) {
+      Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+    }
+    local_d8 = 0xf;
+    local_e0 = 0;
+    local_f0[0]._0_1_ = 0;
+    if (0xf < local_68) {
+      Ordinal_1486(local_80[0]);
+    }
+  }
+  _ftime64(local_98);
+  local_a0 = local_98[0];
+  local_9c = (uint)local_90;
+  local_b0 = '\x01';
+  if (*(int *)(param_1 + 0x5c) != 0) {
+    FUN_1401295a0();
+    if (local_b0 == '\0') {
+      dVar10 = -1.0;
+    }
+    else {
+      _ftime64(local_98);
+      local_a0 = local_98[0] - local_a0;
+      local_9c = (local_90 - local_9c) + local_a0 * 1000;
+      dVar10 = (double)(int)local_9c / 1000.0;
+      local_b0 = '\0';
+      local_a8 = dVar10;
+    }
+    puVar1 = FUN_140156da0(local_80,dVar10);
+    puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]Correct XZ image [s], ",puVar1);
+    if (local_d0 != puVar1) {
+      if (0xf < local_b8) {
+        Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+      }
+      local_b8 = 0xf;
+      local_c0 = 0;
+      local_d0[0]._0_1_ = 0;
+      FUN_140001f90(local_d0,puVar1);
+    }
+    if (0xf < local_d8) {
+      Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+    }
+    local_d8 = 0xf;
+    local_e0 = 0;
+    local_f0[0]._0_1_ = 0;
+    if (0xf < local_68) {
+      Ordinal_1486(local_80[0]);
+    }
+    local_d8 = 0xf;
+    local_e0 = 0;
+    local_f0[0]._0_1_ = 0;
+    plVar5 = local_f0;
+    FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+    pwVar7 = (wchar_t *)local_f0;
+    FUN_140156ca0(plVar5,(longlong *)pwVar7);
+  }
+  piVar6 = local_98;
+  _ftime64();
+  local_a0 = local_98[0];
+  local_9c = (uint)local_90;
+  local_b0 = '\x01';
+  if (*(int *)(param_1 + 0xa0) != 0) {
+    iVar9 = 0;
+    if ((DAT_1401c9b80 == 0) && (DAT_1401c9b78 != 0)) {
+      iVar9 = 2;
+    }
+    if (DAT_1401c9b70 == 1) {
+      FUN_14012e080();
+    }
+    else {
+      FUN_140130c30(piVar6,pwVar7,iVar9);
+    }
+    if (local_b0 == '\0') {
+      dVar10 = -1.0;
+    }
+    else {
+      _ftime64(local_98);
+      local_a0 = local_98[0] - local_a0;
+      local_9c = (local_90 - local_9c) + local_a0 * 1000;
+      dVar10 = (double)(int)local_9c / 1000.0;
+      local_b0 = '\0';
+      local_a8 = dVar10;
+    }
+    puVar1 = FUN_140156da0(local_80,dVar10);
+    puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]Matching [s], ",puVar1);
+    if (local_d0 != puVar1) {
+      if (0xf < local_b8) {
+        Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+      }
+      local_b8 = 0xf;
+      local_c0 = 0;
+      local_d0[0]._0_1_ = 0;
+      FUN_140001f90(local_d0,puVar1);
+    }
+    if (0xf < local_d8) {
+      Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+    }
+    local_d8 = 0xf;
+    local_e0 = 0;
+    local_f0[0]._0_1_ = 0;
+    if (0xf < local_68) {
+      Ordinal_1486(local_80[0]);
+    }
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  plVar5 = local_f0;
+  FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+  FUN_140156ca0(plVar5,local_f0);
+  Ordinal_296(&local_108);
+  Ordinal_4612(&local_108,&DAT_140193bac,0x32);
+  WritePrivateProfileStringW(L"out",L"progress",local_108,DAT_1401c9be8);
+  Ordinal_1030(&local_108);
+  if (local_b0 == '\0') {
+    dVar10 = -1.0;
+  }
+  else {
+    _ftime64(local_98);
+    local_a0 = local_98[0] - local_a0;
+    local_9c = (local_90 - local_9c) + local_a0 * 1000;
+    dVar10 = (double)(int)local_9c / 1000.0;
+    local_b0 = '\0';
+    local_a8 = dVar10;
+  }
+  puVar1 = FUN_140156da0(local_80,dVar10);
+  puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]ZCorr [s], ",puVar1);
+  if (local_d0 != puVar1) {
+    if (0xf < local_b8) {
+      Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+    }
+    local_b8 = 0xf;
+    local_c0 = 0;
+    local_d0[0]._0_1_ = 0;
+    FUN_140001f90(local_d0,puVar1);
+  }
+  if (0xf < local_d8) {
+    Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  if (0xf < local_68) {
+    Ordinal_1486(local_80[0]);
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  plVar5 = local_f0;
+  FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+  FUN_140156ca0(plVar5,local_f0);
+  Ordinal_296(&local_108);
+  Ordinal_4612(&local_108,&DAT_140193bac,0x3c);
+  WritePrivateProfileStringW(L"out",L"progress",local_108,DAT_1401c9be8);
+  Ordinal_1030(&local_108);
+  _ftime64(local_98);
+  local_a0 = local_98[0];
+  local_9c = (uint)local_90;
+  local_b0 = '\x01';
+  FUN_14012d460();
+  if (local_b0 == '\0') {
+    dVar10 = -1.0;
+  }
+  else {
+    _ftime64(local_98);
+    local_a0 = local_98[0] - local_a0;
+    local_9c = (local_90 - local_9c) + local_a0 * 1000;
+    dVar10 = (double)(int)local_9c / 1000.0;
+    local_b0 = '\0';
+    local_a8 = dVar10;
+  }
+  puVar1 = FUN_140156da0(local_80,dVar10);
+  puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]Stitching [s], ",puVar1);
+  if (local_d0 != puVar1) {
+    if (0xf < local_b8) {
+      Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+    }
+    local_b8 = 0xf;
+    local_c0 = 0;
+    local_d0[0]._0_1_ = 0;
+    FUN_140001f90(local_d0,puVar1);
+  }
+  if (0xf < local_d8) {
+    Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  if (0xf < local_68) {
+    Ordinal_1486(local_80[0]);
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  plVar5 = local_f0;
+  FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+  FUN_140156ca0(plVar5,local_f0);
+  Ordinal_296(&local_108);
+  Ordinal_4612(&local_108,&DAT_140193bac,0x5a);
+  pWVar3 = (LPCWSTR)Ordinal_1636(&DAT_1401c9be8);
+  pWVar4 = (LPCWSTR)Ordinal_1636(&local_108);
+  WritePrivateProfileStringW(L"out",L"progress",pWVar4,pWVar3);
+  Ordinal_1030(&local_108);
+  _ftime64(local_98);
+  local_a0 = local_98[0];
+  local_9c = (uint)local_90;
+  local_b0 = '\x01';
+  if (*(int *)(param_1 + 0x5c) != 0) {
+    FUN_140129280();
+    if (local_b0 == '\0') {
+      dVar10 = -1.0;
+    }
+    else {
+      _ftime64(local_98);
+      local_a0 = local_98[0] - local_a0;
+      local_9c = (local_90 - local_9c) + local_a0 * 1000;
+      dVar10 = (double)(int)local_9c / 1000.0;
+      local_b0 = '\0';
+      local_a8 = dVar10;
+    }
+    puVar1 = FUN_140156da0(local_80,dVar10);
+    puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]Correct XZ image [s], ",puVar1);
+    if (local_d0 != puVar1) {
+      if (0xf < local_b8) {
+        Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+      }
+      local_b8 = 0xf;
+      local_c0 = 0;
+      local_d0[0]._0_1_ = 0;
+      FUN_140001f90(local_d0,puVar1);
+    }
+    if (0xf < local_d8) {
+      Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+    }
+    local_d8 = 0xf;
+    local_e0 = 0;
+    local_f0[0]._0_1_ = 0;
+    if (0xf < local_68) {
+      Ordinal_1486(local_80[0]);
+    }
+    local_d8 = 0xf;
+    local_e0 = 0;
+    local_f0[0]._0_1_ = 0;
+    plVar5 = local_f0;
+    FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+    FUN_140156ca0(plVar5,local_f0);
+  }
+  FUN_140134620(param_1);
+  FUN_1401343f0();
+  Ordinal_296(&local_108);
+  Ordinal_4612(&local_108,&DAT_140193bac,100);
+  pWVar3 = (LPCWSTR)Ordinal_1636(&DAT_1401c9be8);
+  pWVar4 = (LPCWSTR)Ordinal_1636(&local_108);
+  WritePrivateProfileStringW(L"out",L"progress",pWVar4,pWVar3);
+  Ordinal_1030(&local_108);
+  if (local_60 != '\0') {
+    _ftime64(local_48);
+    local_50 = local_48[0] - local_50;
+    local_4c = (local_40 - local_4c) + local_50 * 1000;
+    dVar11 = (double)(int)local_4c / 1000.0;
+    local_60 = '\0';
+    local_58 = dVar11;
+  }
+  puVar1 = FUN_140156da0(local_80,dVar11);
+  puVar1 = FUN_140006600(local_f0,"[Stitch_C++][Warrior]Stitching end ----- [s], ",puVar1);
+  if (local_d0 != puVar1) {
+    if (0xf < local_b8) {
+      Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+    }
+    local_b8 = 0xf;
+    local_c0 = 0;
+    local_d0[0]._0_1_ = 0;
+    FUN_140001f90(local_d0,puVar1);
+  }
+  if (0xf < local_d8) {
+    Ordinal_1486(CONCAT71(local_f0[0]._1_7_,(undefined1)local_f0[0]));
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  if (0xf < local_68) {
+    Ordinal_1486(local_80[0]);
+  }
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0]._0_1_ = 0;
+  plVar5 = local_f0;
+  FUN_140001830(plVar5,(longlong *)local_d0,0,0xffffffffffffffff);
+  FUN_140156ca0(plVar5,local_f0);
+  if (0xf < local_b8) {
+    Ordinal_1486(CONCAT71(local_d0[0]._1_7_,(undefined1)local_d0[0]));
+  }
+  local_b8 = 0xf;
+  local_c0 = 0;
+  local_d0[0]._0_1_ = 0;
+  FUN_14001a000(param_1);
+  return 1;
+}
+

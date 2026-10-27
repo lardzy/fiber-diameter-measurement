@@ -1,0 +1,80 @@
+; Stitching Configuration Data
+
+[stitching]
+; Max size of stitched image
+; [pixel] (int)
+maximagewidth=10000
+maximageheight=10000
+
+[matching]
+templatesize=15
+logfiltersize=3
+featurecount=50
+featuredistance=10
+featurequality=1
+; Select stage type
+; This setting is available when image does not have stage type.
+search=search_olyusm
+
+; Correct difference of observation area
+; [%] (int)
+observationdiff=5
+
+; Search range of image matching
+; + low : < 20x
+; + mid : 20x <=  < 100x
+; + high : >= 100x
+
+; For manual stage
+[search_manual]
+; [um] (double)
+low=40
+mid=20
+high=10
+
+; For Olympus ultra sonic motor stage
+[search_olyusm]
+; [um] (double)
+low=2
+mid=2
+high=2
+
+; For Olympus ultra sonic motor stage (Matrix)
+[search_olymtrx]
+; [um] (double)
+low=2
+mid=2
+high=2
+
+; For Chuo-seiki 300mm stage
+[search_chs300mm]
+; [um] (double)
+low=5
+mid=4
+high=1
+
+; For Olympus MTS stage
+[search_olyMTS]
+; [um] (double)
+low=2
+mid=2
+high=2
+
+; For Olympus RMTS stage
+[search_olyRMTS]
+; [um] (double)
+low=2
+mid=2
+high=2
+
+[interpolation]
+; Width of interporation area
+; [%] (Ratio to image size) (int)
+interpolationwidthrate=30
+
+[shadingcorrection]
+; Smoothing filter size
+; [pixel] (int)
+smoothingsize=101
+; Number of executing smoothing filter
+smoothingnum=10

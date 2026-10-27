@@ -1,0 +1,74 @@
+Evidence: ev_9c7842f9a9c1dfce8caf1ebda8a1df8c879a9e3455b30714b931befc3e9e8ae8
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+bool FUN_140006e70(undefined8 param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  int *piVar1;
+  uint uVar2;
+  int iVar3;
+  int iVar4;
+  ulonglong uVar5;
+  uint uVar6;
+  wchar_t *pwVar7;
+  longlong lVar8;
+  int iVar9;
+  int iVar10;
+  undefined4 local_res8 [8];
+  
+  pwVar7 = L"STCStitching\n";
+  FUN_14000cc00(L"STCStitching\n",param_2,param_3,param_4);
+  local_res8[0] = 0;
+  FUN_14000b590(pwVar7,(longlong)(int)DAT_140030ed8,local_res8);
+  uVar2 = DAT_140030ed8;
+  iVar4 = 0;
+  if ((0 < (int)DAT_140030ed8) && (iVar4 = 0, 0xf < DAT_140030ed8)) {
+    uVar6 = DAT_140030ed8 & 0x8000000f;
+    if ((int)uVar6 < 0) {
+      uVar6 = (uVar6 - 1 | 0xfffffff0) + 1;
+    }
+    iVar10 = DAT_140030ed8 - uVar6;
+    lVar8 = 0x20;
+    iVar9 = 8;
+    iVar3 = 0;
+    do {
+      iVar4 = iVar3 + 0x10;
+      piVar1 = (int *)(lVar8 + -0x20 + DAT_140030f18);
+      *piVar1 = iVar3;
+      piVar1[1] = iVar3 + 1;
+      piVar1[2] = iVar3 + 2;
+      piVar1[3] = iVar3 + 3;
+      piVar1 = (int *)(lVar8 + -0x10 + DAT_140030f18);
+      *piVar1 = iVar9 + -4;
+      piVar1[1] = iVar9 + -3;
+      piVar1[2] = iVar9 + -2;
+      piVar1[3] = iVar9 + -1;
+      piVar1 = (int *)(lVar8 + DAT_140030f18);
+      *piVar1 = iVar9;
+      piVar1[1] = iVar9 + 1;
+      piVar1[2] = iVar9 + 2;
+      piVar1[3] = iVar9 + 3;
+      piVar1 = (int *)(lVar8 + 0x10 + DAT_140030f18);
+      *piVar1 = iVar9 + 4;
+      piVar1[1] = iVar9 + 5;
+      piVar1[2] = iVar9 + 6;
+      piVar1[3] = iVar9 + 7;
+      lVar8 = lVar8 + 0x40;
+      iVar9 = iVar9 + 0x10;
+      iVar3 = iVar4;
+    } while (iVar4 < iVar10);
+  }
+  if (iVar4 < (int)uVar2) {
+    lVar8 = (longlong)iVar4 * 4;
+    do {
+      *(int *)(lVar8 + DAT_140030f18) = iVar4;
+      iVar4 = iVar4 + 1;
+      lVar8 = lVar8 + 4;
+    } while (iVar4 < (int)uVar2);
+  }
+  uVar5 = FUN_1400082b0();
+  return (int)uVar5 == 1;
+}
+

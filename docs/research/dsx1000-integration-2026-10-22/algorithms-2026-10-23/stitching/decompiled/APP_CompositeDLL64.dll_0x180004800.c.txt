@@ -1,0 +1,157 @@
+Evidence: ev_1175ee2858d9c78ea81636e7d87d15dae8027af1b13af54715ac7a75d0a74ff3
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+undefined8
+FUN_180004800(longlong param_1,longlong param_2,undefined8 param_3,undefined8 param_4,
+             undefined8 param_5,int param_6)
+
+{
+  undefined8 uVar1;
+  int iVar2;
+  ulonglong uVar3;
+  int iVar4;
+  int iVar5;
+  ulonglong uVar6;
+  longlong lVar7;
+  longlong lVar8;
+  ulonglong uVar9;
+  float fVar10;
+  longlong local_98;
+  undefined **local_90;
+  longlong local_88;
+  undefined **local_80;
+  longlong local_78;
+  undefined **local_70;
+  longlong local_68;
+  undefined **local_60;
+  longlong local_58 [2];
+  undefined8 local_48;
+  undefined8 uStack_40;
+  undefined8 local_38;
+  undefined8 uStack_30;
+  
+  iVar4 = 1;
+  if (param_6 == 0) {
+    iVar2 = *(int *)(*(longlong *)(param_1 + 0x30) + 0xc);
+  }
+  else {
+    iVar2 = 1;
+    if (param_6 == 1) {
+      iVar4 = *(int *)(*(longlong *)(param_1 + 0x30) + 0x10);
+    }
+  }
+  iVar5 = iVar4;
+  if (iVar4 < iVar2) {
+    iVar5 = iVar2;
+  }
+  local_98 = cvCreateMat(iVar4,iVar2,0x15,param_4,0xfffffffffffffffe);
+  local_58[0] = cvCreateMat(*(undefined4 *)(*(longlong *)(param_1 + 0x30) + 0x10),
+                            *(undefined4 *)(*(longlong *)(param_1 + 0x30) + 0xc),0x15);
+  local_60 = AutoCvMat::vftable;
+  local_68 = cvCreateMat(*(undefined4 *)(*(longlong *)(param_1 + 0x30) + 0x10),
+                         *(undefined4 *)(*(longlong *)(param_1 + 0x30) + 0xc),0x15);
+  local_70 = AutoCvMat::vftable;
+  local_78 = cvCreateMat(*(undefined4 *)(*(longlong *)(param_1 + 0x30) + 0x10),
+                         *(undefined4 *)(*(longlong *)(param_1 + 0x30) + 0xc),0x15);
+  local_80 = AutoCvMat::vftable;
+  local_88 = cvCreateMat(*(undefined4 *)(*(longlong *)(param_2 + 0x30) + 0x10),
+                         *(undefined4 *)(*(longlong *)(param_2 + 0x30) + 0xc));
+  local_90 = AutoCvMat::vftable;
+  uVar1 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                        ,0x10c);
+  if ((char)uVar1 != '\0') {
+    uVar3 = 0;
+    lVar7 = (longlong)iVar5;
+    uVar6 = uVar3;
+    uVar9 = uVar3;
+    if (3 < lVar7) {
+      iVar4 = 2;
+      lVar8 = (lVar7 - 4U >> 2) + 1;
+      uVar9 = lVar8 * 4;
+      do {
+        fVar10 = (float)(int)uVar6;
+        *(float *)(uVar3 + *(longlong *)(local_98 + 0x18)) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 4 + uVar3) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 8 + uVar3) = fVar10;
+        fVar10 = (float)(iVar4 + -1);
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0xc + uVar3) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x10 + uVar3) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x14 + uVar3) = fVar10;
+        fVar10 = (float)iVar4;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x18 + uVar3) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x1c + uVar3) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x20 + uVar3) = fVar10;
+        fVar10 = (float)(iVar4 + 1);
+        *(float *)(uVar3 + 0x24 + *(longlong *)(local_98 + 0x18)) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x28 + uVar3) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 0x2c + uVar3) = fVar10;
+        uVar6 = (ulonglong)((int)uVar6 + 4);
+        iVar4 = iVar4 + 4;
+        uVar3 = uVar3 + 0x30;
+        lVar8 = lVar8 + -1;
+      } while (lVar8 != 0);
+    }
+    if ((longlong)uVar9 < lVar7) {
+      lVar8 = uVar9 * 0xc;
+      lVar7 = lVar7 - uVar9;
+      do {
+        fVar10 = (float)(int)uVar6;
+        *(float *)(lVar8 + *(longlong *)(local_98 + 0x18)) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 4 + lVar8) = fVar10;
+        *(float *)(*(longlong *)(local_98 + 0x18) + 8 + lVar8) = fVar10;
+        uVar6 = (ulonglong)((int)uVar6 + 1);
+        lVar8 = lVar8 + 0xc;
+        lVar7 = lVar7 + -1;
+      } while (lVar7 != 0);
+    }
+    cvConvertScale(local_98,local_98,(double)(1.0 / (float)(iVar5 + -1)),0);
+    cvRepeat(local_98,local_58[0]);
+    local_48 = 0x3ff0000000000000;
+    uStack_40 = 0x3ff0000000000000;
+    local_38 = 0x3ff0000000000000;
+    uStack_30 = 0x3ff0000000000000;
+    cvSubRS(local_98,&local_48,local_98,0);
+    cvRepeat(local_98,local_68);
+    uVar1 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                          ,0x11b);
+    if ((char)uVar1 != '\0') {
+      cvConvertScale(param_2,local_88,0x3ff0000000000000,0);
+      cvMul(local_58[0],local_88,local_88,0);
+      cvConvertScale(param_1,local_78,0x3ff0000000000000,0);
+      cvMul(local_68,local_78,local_78,0);
+      cvAdd(local_78,local_88,local_88,0);
+      cvConvertScale(local_88,param_3,0x3ff0000000000000,0);
+      uVar1 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                            ,0x127);
+      if ((char)uVar1 != '\0') {
+        uVar1 = 1;
+        goto LAB_180004b89;
+      }
+    }
+  }
+  uVar1 = 0;
+LAB_180004b89:
+  local_90 = AutoCvMat::vftable;
+  if (local_88 != 0) {
+    cvReleaseMat(&local_88);
+  }
+  local_80 = AutoCvMat::vftable;
+  if (local_78 != 0) {
+    cvReleaseMat(&local_78);
+  }
+  local_70 = AutoCvMat::vftable;
+  if (local_68 != 0) {
+    cvReleaseMat(&local_68);
+  }
+  local_60 = AutoCvMat::vftable;
+  if (local_58[0] != 0) {
+    cvReleaseMat(local_58);
+  }
+  if (local_98 != 0) {
+    cvReleaseMat(&local_98);
+  }
+  return uVar1;
+}
+

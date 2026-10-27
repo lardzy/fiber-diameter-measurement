@@ -1,0 +1,27 @@
+Evidence: ev_70ecce880dafbc219af7c4deb4b2699099782f01090db16a338df9a24f462e14
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_140156f60(longlong param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  longlong lVar1;
+  ulonglong uVar2;
+  undefined1 auStack_218 [32];
+  undefined8 local_1f8;
+  undefined1 local_1f0 [472];
+  longlong local_18;
+  ulonglong local_10;
+  
+  local_1f8 = 0xfffffffffffffffe;
+  local_10 = DAT_1401c7000 ^ (ulonglong)auStack_218;
+  local_18 = param_1;
+  lVar1 = FUN_14001a070((longlong)local_1f0,param_1,param_3,param_4);
+  uVar2 = FUN_140156060(lVar1);
+  FUN_14001a000(param_1);
+  return uVar2 & 0xffffffff;
+}
+

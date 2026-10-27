@@ -1,0 +1,138 @@
+Evidence: ev_5fef2bf65805b5b93d3808ce5289a7b1c53b912a828c04774ca94b2c6f6082d0
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong ExecuteStitching(undefined8 param_1,undefined8 *param_2,undefined8 *param_3,
+                          undefined8 *param_4,undefined8 *param_5,longlong param_6,int param_7,
+                          longlong *param_8,longlong param_9)
+
+{
+  ulonglong uVar1;
+  undefined4 *puVar2;
+  undefined1 auStackY_5e8 [32];
+  undefined8 local_598;
+  undefined8 uStack_590;
+  undefined8 local_588;
+  undefined8 local_578;
+  undefined8 uStack_570;
+  undefined8 local_568;
+  undefined8 uStack_560;
+  undefined8 local_558;
+  undefined8 uStack_550;
+  undefined8 local_548;
+  undefined8 uStack_540;
+  undefined8 local_538;
+  undefined8 uStack_530;
+  undefined8 local_528;
+  undefined8 uStack_520;
+  undefined8 local_518;
+  undefined8 local_510;
+  undefined8 uStack_508;
+  undefined8 local_4f8;
+  undefined8 uStack_4f0;
+  undefined8 local_4e8;
+  undefined8 uStack_4e0;
+  undefined8 local_4d8;
+  undefined8 uStack_4d0;
+  undefined8 local_4c8;
+  undefined8 uStack_4c0;
+  undefined8 local_4b8;
+  undefined8 uStack_4b0;
+  undefined8 local_4a8;
+  undefined8 uStack_4a0;
+  undefined8 local_498;
+  undefined8 uStack_490;
+  undefined8 local_488;
+  undefined8 uStack_480;
+  undefined8 local_478;
+  undefined8 uStack_470;
+  undefined8 local_468;
+  undefined8 uStack_460;
+  undefined8 local_458;
+  undefined8 uStack_450;
+  undefined8 local_448;
+  undefined8 uStack_440;
+  undefined8 local_438;
+  undefined8 uStack_430;
+  undefined8 local_428;
+  undefined8 uStack_420;
+  undefined8 local_418;
+  undefined8 uStack_410;
+  undefined8 local_408;
+  undefined8 uStack_400;
+  undefined8 local_3f8;
+  undefined8 uStack_3f0;
+  undefined8 local_3e8;
+  undefined8 uStack_3e0;
+  undefined4 local_3d8 [240];
+  ulonglong local_18;
+  
+                    /* 0x6d50  1  ExecuteStitching */
+  local_518 = 0xfffffffffffffffe;
+  local_18 = DAT_180023000 ^ (ulonglong)auStackY_5e8;
+  local_548 = *param_3;
+  uStack_540 = param_3[1];
+  local_558 = param_3[2];
+  uStack_550 = param_3[3];
+  local_528 = param_3[4];
+  uStack_520 = param_3[5];
+  local_538 = param_3[6];
+  uStack_530 = param_3[7];
+  local_510 = param_3[8];
+  uStack_508 = param_3[9];
+  local_578 = param_3[10];
+  uStack_570 = param_3[0xb];
+  local_568 = param_3[0xc];
+  uStack_560 = param_3[0xd];
+  local_598 = param_3[0xe];
+  uStack_590 = param_3[0xf];
+  puVar2 = local_3d8;
+  FUN_1800095f0(puVar2);
+  local_4f8 = *param_5;
+  uStack_4f0 = param_5[1];
+  local_4e8 = param_5[2];
+  uStack_4e0 = param_5[3];
+  local_458 = *param_4;
+  uStack_450 = param_4[1];
+  local_448 = param_4[2];
+  uStack_440 = param_4[3];
+  local_438 = param_4[4];
+  uStack_430 = param_4[5];
+  local_428 = param_4[6];
+  uStack_420 = param_4[7];
+  local_418 = param_4[8];
+  uStack_410 = param_4[9];
+  local_408 = param_4[10];
+  uStack_400 = param_4[0xb];
+  local_3f8 = param_4[0xc];
+  uStack_3f0 = param_4[0xd];
+  local_3e8 = param_4[0xe];
+  uStack_3e0 = param_4[0xf];
+  local_4d8 = local_548;
+  uStack_4d0 = uStack_540;
+  local_4c8 = local_558;
+  uStack_4c0 = uStack_550;
+  local_4b8 = local_528;
+  uStack_4b0 = uStack_520;
+  local_4a8 = local_538;
+  uStack_4a0 = uStack_530;
+  local_498 = local_510;
+  uStack_490 = uStack_508;
+  local_488 = local_578;
+  uStack_480 = uStack_570;
+  local_478 = local_568;
+  uStack_470 = uStack_560;
+  local_468 = local_598;
+  uStack_460 = uStack_590;
+  local_598 = *param_2;
+  uStack_590 = param_2[1];
+  local_588 = param_2[2];
+  uVar1 = FUN_180006ad0(puVar2,local_3d8,(undefined4 *)&local_598,&local_4d8,&local_458,&local_4f8,
+                        param_6,param_7,param_8,param_9);
+  FUN_1800098c0(local_3d8);
+  return uVar1 & 0xffffffff;
+}
+

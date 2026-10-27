@@ -1,0 +1,1392 @@
+{
+  "bundles": [
+    {
+      "file": "phase-correlation-evidence.json.gz",
+      "records": 25,
+      "uncompressed_sha256": "f972e91280c24e5686e27a381a348befb8060b02eecd9b25165556b145ccedaa",
+      "sha256": "bcac93a51c115d82a3fa6802dfd7d1a202c714fbd67e20e1871268d430b1b027"
+    },
+    {
+      "file": "solver-evidence.json.gz",
+      "records": 24,
+      "uncompressed_sha256": "63114bd14ef64cbe1deb649519204c64486b9018972f34961a559d46086543d2",
+      "sha256": "bf769aa74cd3329f9612189ac6510c941c068c4b9826e5a9e8261fad56bb747e"
+    }
+  ],
+  "unique_records": 49,
+  "records": [
+    {
+      "evidence_id": "ev_1882d5557f66a466e4a30b2c2ab4d2e1740d1524efd74fc8e1c7086bb12cb33c",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll",
+        "name": "OlyiBlurringCorrectionSharp64.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_33a285b3b4a7a1886755bd9fc6d8b491d49ccc9e8fe254e6c624c3c9ab777dc3",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180003640"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "Ghidra Listing reports a terminal call at 0x180003877 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_39dc87d9f7f21510430fd95f5ec509e724a6d175b5819c686b3c5c3ea1879fbc",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180003d10"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_3b0f5ac379a7332c716dbbf8e116bf67ac88451c54c28893307f99e4c8a16a19",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImage64.dll"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "0cc45691720b295dfd8c4c984935cb0cc5aa539b1dae088a1ddb35878a4c9975"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImage64.dll",
+        "name": "OlyiExtendFocusImage64.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_3fb4f7ba64e4cbfc31c06a6c9f68c760e06d2a5741fbbd87fda42232a17039ba",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002010"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_4058c7c46e47e5ea935564cdab5f9c4ba9ce7eec417b8c045e43c7ca10049a5e",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004d70"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_414455768d6112193ef32df2fc8f99d66b3137b0324a696dc1a8a2979d90d89c",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "name": "OlybMemoryDatabase.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_41bf4514852ddbf9a59086adb4b5273dad18e4cf472f5f6b1a35dbe8c077cfa5",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_9608f5546b072cfe45109c88ec2a520edaec01fb7864c17feeaacd091a863d73",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybImageProcessDomain.dll",
+        "name": "OlybImageProcessDomain.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_43c990c218361964d5b507513f44a5a8d404d7b940ddbfc07089c24d62071aae",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001c10"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_48a7ca88344532f3d9e9d32f52f86ff319e63c4dd8d9448ef965c0998a259531",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_callees",
+      "parameters": {
+        "procedure": "0x180005ca0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x180005d7f to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005d94 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005e41 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005e5e to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005e7b to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005fa3 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005fb8 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x1800060b8 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x1800062d2 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x1800062e7 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c0b to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c11 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c17 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c1d to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c23 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c29 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c2f to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c35 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c3b to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c41 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c47 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c4d to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_56f95d71117fcf7a9b354f841e2b97367ccf69b54c3ba5644178bd7cca7d6bc6",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002820"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_570c82c88133e0efb09c38dbcee1c6400f3463055f0ef0557d27a78f1f8d1ed8",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_managed_native_boundaries",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll",
+        "name": "OlyiBlurringCorrectionSharp64.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "P/Invoke rows prove managed import declarations only; this inspection does not verify that a native library, export, thunk, or provider-qualified function exists.",
+        "Managed metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "ReadyToRun, NativeAOT, C++/CLI, and IL2CPP native semantics require separately selected native-provider evidence; this tool does not translate managed tokens into native addresses."
+      ]
+    },
+    {
+      "evidence_id": "ev_7c9d4c9ffb88b43d6b0a1ad26433858404cca7e75986095d4d2551fe42c5d4f3",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_1882d5557f66a466e4a30b2c2ab4d2e1740d1524efd74fc8e1c7086bb12cb33c",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll",
+        "name": "OlyiBlurringCorrectionSharp64.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_8bee991df19cff034cc65a0abfbf3565e80a1f50f87f923029d1123f74ba1779",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800034f0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_9608f5546b072cfe45109c88ec2a520edaec01fb7864c17feeaacd091a863d73",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybImageProcessDomain.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybImageProcessDomain.dll",
+        "name": "OlybImageProcessDomain.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_998162eaf720507ee33d26c758717af3a583d221aa306f561a9713bbdf6a3d68",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180005920"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "Ghidra Listing reports a terminal call at 0x180005c91 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005c97 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_af42ea525d2347a518b21176b58f04cf27cffcc6b8423087727373109fbf5a89",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_b28983bf89a6f28ecaeb257f439dfe93b1e867e246a0d32a22aa3ce7e959c88f",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybProcessJoinDomain.dll",
+        "name": "OlybProcessJoinDomain.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_b28983bf89a6f28ecaeb257f439dfe93b1e867e246a0d32a22aa3ce7e959c88f",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybProcessJoinDomain.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybProcessJoinDomain.dll",
+        "name": "OlybProcessJoinDomain.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_b846845dfcadd616b18bba0b6b78988a3b70b2fdf25569b3130982b33124cde4",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004f30"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_c5aafc918a44b2aef144b5f654d4afc4ecabc26808df297c7b29f2e8474e6dc3",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001da0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_d1e522a5d30d9ab43b769a31ac29c91fe302b6edb85b971d127136b2abf8365d",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001c80"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_f7e96bf60d0a5643e721cb57e416070e9d6a9ed6d956c4551ad9e3359cae892c",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002870"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_fb7d7cd27e550cd688d2dfcc6f268c6ee7f938fd9faef283dd0fc5c689375625",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "search_procedures",
+      "parameters": {
+        "case_sensitive": false,
+        "mode": "literal",
+        "pattern": "OlyNmv"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Regex mode uses Java Pattern semantics. Matcher or compiler stack exhaustion returns a resource constraint without closing the session; literal mode avoids regex recursion and returns complete matching values.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "name": "OlybMemoryDatabase.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_fd20fcabd92215ad27a65c1ee90e7ab34b1d0694b76d0f383481568736005cec",
+      "bundle": "phase-correlation-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002ad0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_06e2960bc201588960f5c7f1982113f134d7c23bbc512f3e4426592dc381eb40",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll",
+        "name": "OlyuUiData.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_0f8259e737e35f734c87fd619541ad153f158a161bf4dd21be0d88166dbc1e35",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_492ff0abc0616b1a2ec562d5b70967c151dab9ab31bcfb9a58c3a54d65caeff3",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "Types, fields, methods, call edges, field accesses, and user strings cover only the selected declaring types; coverage describes that selection. Edge targets outside it keep their names but are not described.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_1809a536f8002d46e34eabe6babe7c9493d8e87357028d41b5b5315195727b72",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_5e460ae7786d86de74c0664086195f6a9170ae03ca32b4c4b1a9bc9882057737",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+        "name": "OlyuUiCalculator.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_2cf0d31cc6e097e18339e06a5f97f035c131dbad129cf09a38f266b7786f5be2",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002cb0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_3134223d16f0ef886f19873e491243c1d6189702b6f0e3612473857c6d2b0d67",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "type_names": [
+          "Olympus.LI.Triumph.Application.UiModel.Microscope.Observation"
+        ]
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Types, fields, methods, call edges, field accesses, and user strings cover only the selected declaring types; coverage describes that selection. Edge targets outside it keep their names but are not described."
+      ]
+    },
+    {
+      "evidence_id": "ev_3cb980527feef9f79af85c6da2d93706d2e7b7ebebf56e4d2819000ffc25e06a",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_af47bb7edf4802a786f74e96facab36c660ef3a84bf54ac116038c0d0f846959",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "The CLI metadata could not be admitted; managed member inspection is unavailable."
+      ]
+    },
+    {
+      "evidence_id": "ev_492ff0abc0616b1a2ec562d5b70967c151dab9ab31bcfb9a58c3a54d65caeff3",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.Display"
+        ]
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Types, fields, methods, call edges, field accesses, and user strings cover only the selected declaring types; coverage describes that selection. Edge targets outside it keep their names but are not described."
+      ]
+    },
+    {
+      "evidence_id": "ev_5e460ae7786d86de74c0664086195f6a9170ae03ca32b4c4b1a9bc9882057737",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+        "name": "OlyuUiCalculator.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_5f2f1add462f2653b6614f8673175c7f04c1a705c531b68a25ad63d5d6ba7da3",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.Observation",
+          "Olympus.LI.Triumph.Application.ViewModel.ImageDisplay",
+          "Olympus.LI.Triumph.Application.ViewModel.LiveImage"
+        ]
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Types, fields, methods, call edges, field accesses, and user strings cover only the selected declaring types; coverage describes that selection. Edge targets outside it keep their names but are not described."
+      ]
+    },
+    {
+      "evidence_id": "ev_658fb48b7363ba0fbc02fd301d4dd270ba243d491e18bf655285eda41fafc34c",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_06e2960bc201588960f5c7f1982113f134d7c23bbc512f3e4426592dc381eb40",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll",
+        "name": "OlyuUiData.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_6a6b0c6918aea1a0912603189ee65b2740f6bdd6b67e8424ec1deb550d67a2b1",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuImageDisplay.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "037fb816adaa7f326a23ca3c338c1377cfa06fde1f855b53a1a95ea590b9f065"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuImageDisplay.dll",
+        "name": "OlyuImageDisplay.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_86361d50710ba11fdbb932c35cdb09f728f9f424bb352a300563aae071974f79",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_6a6b0c6918aea1a0912603189ee65b2740f6bdd6b67e8424ec1deb550d67a2b1",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "037fb816adaa7f326a23ca3c338c1377cfa06fde1f855b53a1a95ea590b9f065"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuImageDisplay.dll",
+        "name": "OlyuImageDisplay.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_91d79aef109426b6287eca49d091bbf19c799f971c02a055d6996b9d0f8aeedd",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_artifact",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Static inspection did not load the assembly, resolve dependencies through a CLR, decompile C#, or execute target code."
+      ]
+    },
+    {
+      "evidence_id": "ev_abf7543b54225df4f4039e17679f01bc34923e3a8ed43b8abbffc59188e3f25b",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_ca7f048c65775df6acf996dc88d0ada6fb77174a4edb5a50f0f96824febec89e",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybCameraDomain.dll",
+        "name": "OlybCameraDomain.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_af47bb7edf4802a786f74e96facab36c660ef3a84bf54ac116038c0d0f846959",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The CLI metadata could not be admitted; managed member inspection is unavailable."
+      ]
+    },
+    {
+      "evidence_id": "ev_bdcfbfa44ec07c8b2f2a9be02c987e02d948d37f52c9d81e0809027155c39764",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_91d79aef109426b6287eca49d091bbf19c799f971c02a055d6996b9d0f8aeedd",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "Static inspection did not load the assembly, resolve dependencies through a CLR, decompile C#, or execute target code."
+      ]
+    },
+    {
+      "evidence_id": "ev_c5429d6f232dd559fcc4e064faf52d15804bf014116c2ff0b75fa8d1bb95cf3d",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_5f2f1add462f2653b6614f8673175c7f04c1a705c531b68a25ad63d5d6ba7da3",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "Types, fields, methods, call edges, field accesses, and user strings cover only the selected declaring types; coverage describes that selection. Edge targets outside it keep their names but are not described.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_c7dff38ee12bb6c242ea5d385f12b72937d1f94451532c9fac36cf78eba68076",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_3134223d16f0ef886f19873e491243c1d6189702b6f0e3612473857c6d2b0d67",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "name": "OlyuMicroscope.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "Types, fields, methods, call edges, field accesses, and user strings cover only the selected declaring types; coverage describes that selection. Edge targets outside it keep their names but are not described.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_ca7f048c65775df6acf996dc88d0ada6fb77174a4edb5a50f0f96824febec89e",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybCameraDomain.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybCameraDomain.dll",
+        "name": "OlybCameraDomain.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_cdac5777c41c79c7316d1a5106fc0a53d8695b98f5ab2c8ff020d7ce0c6b81fb",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_analysis_view",
+      "parameters": {
+        "parent_evidence_id": "ev_f1db89fcf366f9a9bcc91e823ea243325245d9aa349f22822e42537a46b7800a",
+        "view": {
+          "kind": "summary"
+        }
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "414a588d2343d6c84b2a52006fd17978f485585d4bea50cf8cd7ab64efb968f2"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybBusinessObject.dll",
+        "name": "OlybBusinessObject.dll"
+      },
+      "confidence": "derived",
+      "limitations": [
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes.",
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens."
+      ]
+    },
+    {
+      "evidence_id": "ev_d2f6dc3bbd6e9396ad512be13b53df9cabc9b1ba680df8e9a6a712e86ccba27f",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180006e60"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "Ghidra Listing reports a terminal call at 0x180006f0f to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006f3a to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006f63 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006f78 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_d9f8b641eb53e6b0ccd6f6537c7a24071f782defb0b019537c3cd00de0bc46c1",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180005ca0"
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "Ghidra Listing reports a terminal call at 0x180005d7f to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005d94 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005e41 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005e5e to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005e7b to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005fa3 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180005fb8 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x1800060b8 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x1800062d2 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x1800062e7 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c0b to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c11 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c17 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c1d to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c23 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c29 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c2f to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c35 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c3b to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c41 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c47 to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "Ghidra Listing reports a terminal call at 0x180006c4d to 0x1800027a0 FUN_1800027a0 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    },
+    {
+      "evidence_id": "ev_f1db89fcf366f9a9bcc91e823ea243325245d9aa349f22822e42537a46b7800a",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "inspect_managed_members",
+      "parameters": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybBusinessObject.dll"
+      },
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "414a588d2343d6c84b2a52006fd17978f485585d4bea50cf8cd7ab64efb968f2"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybBusinessObject.dll",
+        "name": "OlybBusinessObject.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+        "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+        "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+        "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+        "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+      ]
+    },
+    {
+      "evidence_id": "ev_fc100b8f3fe87aeb9d40847155a423fd986bd57c16f3cfc17a89b109ca0803fa",
+      "bundle": "solver-evidence.json.gz",
+      "operation": "read_bytes",
+      "parameters": {
+        "address": "0x180016520",
+        "length": 960
+      },
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+        "name": "OlyNmv.dll"
+      },
+      "confidence": "observed",
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Bytes reflect Ghidra's initialized memory, including loader fixups. Reads stop at an unmapped or uninitialized byte and report completeness explicitly.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyNmv.pdb (GUID 236ec31d-66e5-4696-9b9c-a740a501855a, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ]
+    }
+  ]
+}

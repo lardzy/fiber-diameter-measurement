@@ -1,0 +1,338 @@
+EVIDENCE ev_54f8cd0938416c64dd8a72abe7dc812768890f4b82db502ab777d2f71c2b1cef SHA256 ddb3f38f49ea249509acd5c605e957fd9f1ba1c8149e3ba712be432de48fa3f7
+
+METHOD 0x060002e5 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity SerializeTifTagDescriptionData IL_SHA256 4e08aa298051be8c3b6cef1687895b73fb8de3032635410400ff110dbde0cde1 DECODE_ISSUE null
+0000: ldarg.0        
+0001: callvirt      0x0600061c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_FileType
+0006: ldc.i4.1       
+0007: bne.un.s      17 
+0009: ldarg.0        
+000a: ldarg.1        
+000b: call          0x06000600 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.SerializeTifTagDescriptionData
+0010: ret            
+0011: newobj        0x0600034a Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData..ctor
+0016: stloc.0        
+0017: ldarg.0        
+0018: call          0x06000648 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_AcquisitionParams
+001d: brfalse.s     104 
+001f: ldloc.0        
+0020: ldarg.0        
+0021: call          0x06000648 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_AcquisitionParams
+0026: callvirt      0x060000e1 Olympus.Mis.Imaging.Utilities.BusinessEntities.Acquisition.AcquisitionParameters.get_ColorSettingInformation
+002b: newobj        0x06000563 Olympus.Mis.Imaging.BusinessEntities.Common.ColorInfoConverter..ctor
+0030: callvirt      0x06000559 Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_ColorInfo
+0035: ldloc.0        
+0036: ldarg.0        
+0037: call          0x06000648 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_AcquisitionParams
+003c: callvirt      0x060000e5 Olympus.Mis.Imaging.Utilities.BusinessEntities.Acquisition.AcquisitionParameters.get_IntensityImageSettingInformation
+0041: callvirt      0x06000555 Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_IntensityInfo
+0046: ldloc.0        
+0047: ldarg.0        
+0048: call          0x06000648 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_AcquisitionParams
+004d: callvirt      0x060000eb Olympus.Mis.Imaging.Utilities.BusinessEntities.Acquisition.AcquisitionParameters.get_HDRColorSettingInformation
+0052: callvirt      0x0600055b Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_HDRColorInfo
+0057: ldloc.0        
+0058: ldarg.0        
+0059: call          0x06000648 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_AcquisitionParams
+005e: callvirt      0x060000e7 Olympus.Mis.Imaging.Utilities.BusinessEntities.Acquisition.AcquisitionParameters.get_HeightImageSettings
+0063: callvirt      0x06000557 Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_HeightInfo
+0068: ldloc.0        
+0069: ldarg.1        
+006a: callvirt      0x0600055d Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_emImageData
+006f: ldloc.0        
+0070: ldarg.0        
+0071: callvirt      0x0600061c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_FileType
+0076: stloc.1        
+0077: ldloca.s      1 
+0079: constrained.  0x02000054 Olympus.Mis.Imaging.BusinessEntities.Common.emFileType
+007f: callvirt      0x0a00001a System.Object.ToString
+0084: callvirt      0x06000561 Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_FileType
+0089: ldloc.0        
+008a: ldarg.0        
+008b: callvirt      0x0600061a Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_FileVersion
+0090: callvirt      0x0600055f Olympus.Mis.Imaging.BusinessEntities.Common.TiffTagDescData.set_FileVersion
+0095: ldarg.0        
+0096: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+009b: brfalse       1171 
+00a0: ldloc.0        
+00a1: ldarg.0        
+00a2: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+00a7: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00ac: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+00b1: callvirt      0x0a000184 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_AE
+00b6: callvirt      0x06000368 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_AE
+00bb: ldloc.0        
+00bc: ldarg.0        
+00bd: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+00c2: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00c7: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+00cc: callvirt      0x0a000185 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_AELock
+00d1: callvirt      0x0600036a Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_AELock
+00d6: ldloc.0        
+00d7: ldarg.0        
+00d8: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+00dd: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00e2: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+00e7: callvirt      0x0a000186 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_AEMode
+00ec: callvirt      0x0600036c Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_AEMode
+00f1: ldloc.0        
+00f2: ldarg.0        
+00f3: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+00f8: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00fd: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+0102: callvirt      0x0a000187 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_AETargetValue
+0107: callvirt      0x0600036e Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_AETargetValue
+010c: ldloc.0        
+010d: ldarg.0        
+010e: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0113: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0118: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+011d: callvirt      0x0a000188 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_Binning
+0122: callvirt      0x06000370 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_Binning
+0127: ldloc.0        
+0128: ldarg.0        
+0129: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+012e: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0133: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+0138: callvirt      0x0a000189 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_BinningLevel
+013d: callvirt      0x06000372 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_BinningLevel
+0142: ldloc.0        
+0143: ldarg.0        
+0144: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0149: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+014e: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+0153: callvirt      0x0a00018a Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_BlueGainLevel
+0158: callvirt      0x06000374 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_BlueGainLevel
+015d: ldloc.0        
+015e: ldarg.0        
+015f: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0164: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0169: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+016e: callvirt      0x0a00018b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_BlueOffsetLevel
+0173: callvirt      0x06000376 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_BlueOffsetLevel
+0178: ldloc.0        
+0179: ldarg.0        
+017a: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+017f: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0184: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0189: callvirt      0x0a00018c Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_CommonImageVersion
+018e: callvirt      0x0600034e Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_CommonImageVersion
+0193: ldloc.0        
+0194: ldarg.0        
+0195: call          0x060002cb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_DataType
+019a: callvirt      0x0600034c Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_DataType
+019f: ldloc.0        
+01a0: ldarg.0        
+01a1: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+01a6: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+01ab: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+01b0: callvirt      0x0a00018d Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_GammaCorrectionLevel
+01b5: callvirt      0x06000378 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_GammaCorrectionLevel
+01ba: ldloc.0        
+01bb: ldarg.0        
+01bc: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+01c1: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+01c6: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+01cb: callvirt      0x0a00018e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_GreenGainLevel
+01d0: callvirt      0x0600037a Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_GreenGainLevel
+01d5: ldloc.0        
+01d6: ldarg.0        
+01d7: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+01dc: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+01e1: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+01e6: callvirt      0x0a00018f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_GreenOffsetLevel
+01eb: callvirt      0x0600037c Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_GreenOffsetLevel
+01f0: ldloc.0        
+01f1: ldarg.0        
+01f2: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+01f7: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+01fc: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0201: callvirt      0x0a000190 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_GRRMode
+0206: callvirt      0x06000350 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_GRRMode
+020b: ldloc.0        
+020c: ldarg.0        
+020d: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0212: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0217: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+021c: callvirt      0x0a000191 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_GRROperator
+0221: callvirt      0x06000352 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_GRROperator
+0226: ldloc.0        
+0227: ldarg.0        
+0228: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+022d: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0232: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0237: callvirt      0x0a000192 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_GRRSample
+023c: callvirt      0x06000354 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_GRRSample
+0241: ldloc.0        
+0242: ldarg.0        
+0243: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0248: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+024d: callvirt      0x0a000193 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_HeightImageSettingInfo
+0252: callvirt      0x0600038c Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_HeightImageSettingInfo
+0257: ldloc.0        
+0258: ldarg.0        
+0259: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+025e: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0263: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0268: callvirt      0x0a000194 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageData
+026d: callvirt      0x06000356 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageData
+0272: ldloc.0        
+0273: ldarg.0        
+0274: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0279: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+027e: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0283: callvirt      0x0a000195 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelX
+0288: callvirt      0x06000358 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageDataPerPixelX
+028d: ldloc.0        
+028e: ldarg.0        
+028f: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0294: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0299: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+029e: callvirt      0x0a000196 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelY
+02a3: callvirt      0x0600035a Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageDataPerPixelY
+02a8: ldloc.0        
+02a9: ldarg.0        
+02aa: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+02af: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+02b4: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+02b9: callvirt      0x0a000197 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelZ
+02be: callvirt      0x0600035c Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageDataPerPixelZ
+02c3: ldloc.0        
+02c4: ldarg.0        
+02c5: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+02ca: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+02cf: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+02d4: callvirt      0x0a000198 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageFlip
+02d9: callvirt      0x0600035e Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageFlip
+02de: ldloc.0        
+02df: ldarg.0        
+02e0: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+02e5: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+02ea: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+02ef: callvirt      0x0a000083 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageHeight
+02f4: callvirt      0x06000360 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageHeight
+02f9: ldloc.0        
+02fa: ldarg.0        
+02fb: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0300: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0305: callvirt      0x0a000199 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageProcessing
+030a: newobj        0x060003b0 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageProcessingConverter..ctor
+030f: callvirt      0x0600038a Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageProcessing
+0314: ldloc.0        
+0315: ldarg.0        
+0316: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+031b: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0320: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0325: callvirt      0x0a00019a Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageRotation
+032a: callvirt      0x06000362 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageRotation
+032f: ldloc.0        
+0330: ldarg.0        
+0331: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0336: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+033b: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0340: callvirt      0x0a00019b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageRotationAngle
+0345: callvirt      0x06000364 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageRotationAngle
+034a: ldloc.0        
+034b: ldarg.0        
+034c: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0351: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0356: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+035b: callvirt      0x0a000082 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageWidth
+0360: callvirt      0x06000366 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageWidth
+0365: ldloc.0        
+0366: ldarg.0        
+0367: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+036c: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0371: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+0376: callvirt      0x0a00019c Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_RedGainLevel
+037b: callvirt      0x0600037e Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_RedGainLevel
+0380: ldloc.0        
+0381: ldarg.0        
+0382: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0387: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+038c: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+0391: callvirt      0x0a00019d Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_RedOffsetLevel
+0396: callvirt      0x06000380 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_RedOffsetLevel
+039b: ldloc.0        
+039c: ldarg.0        
+039d: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+03a2: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+03a7: callvirt      0x0a000118 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ColorImageProcessing
+03ac: callvirt      0x0a00019e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ColorImageProcessing.get_ShadingCorrection
+03b1: callvirt      0x06000382 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ShadingCorrection
+03b6: ldloc.0        
+03b7: ldarg.0        
+03b8: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+03bd: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+03c2: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+03c7: callvirt      0x0a00019f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageAspectRatio
+03cc: callvirt      0x06000384 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageAspectRatio
+03d1: ldloc.0        
+03d2: ldarg.0        
+03d3: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+03d8: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+03dd: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+03e2: callvirt      0x0a0001a0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageTrimmingSizeX
+03e7: callvirt      0x06000386 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageTrimmingSizeX
+03ec: ldloc.0        
+03ed: ldarg.0        
+03ee: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+03f3: callvirt      0x0a000080 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+03f8: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+03fd: callvirt      0x0a0001a1 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageTrimmingSizeY
+0402: callvirt      0x06000388 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ImageTrimmingSizeY
+0407: ldloc.0        
+0408: ldarg.0        
+0409: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+040e: callvirt      0x0a000144 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+0413: callvirt      0x0a0001a2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_ColorImageDataInfo
+0418: ldc.i4.3       
+0419: newobj        0x06000399 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.BaseImageData..ctor
+041e: callvirt      0x0600038e Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_ColorImageData
+0423: ldloc.0        
+0424: ldarg.0        
+0425: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+042a: callvirt      0x0a000144 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+042f: callvirt      0x0a0001a3 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_HeightImageDataInfo
+0434: ldc.i4.2       
+0435: newobj        0x06000399 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.BaseImageData..ctor
+043a: callvirt      0x06000390 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_HeightImageData
+043f: ldloc.0        
+0440: ldarg.0        
+0441: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0446: callvirt      0x0a000144 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+044b: callvirt      0x0a0001a4 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_HDRColorImageDataInfo
+0450: ldc.i4.6       
+0451: newobj        0x06000399 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.BaseImageData..ctor
+0456: callvirt      0x06000394 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_HDRColorImage
+045b: ldloc.0        
+045c: ldarg.0        
+045d: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0462: callvirt      0x0a000144 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+0467: callvirt      0x0a0001a5 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_InvalidImageDataInfo
+046c: ldc.i4.5       
+046d: newobj        0x06000399 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.BaseImageData..ctor
+0472: callvirt      0x06000396 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_InvalidImageData
+0477: ldloc.0        
+0478: ldarg.0        
+0479: call          0x060002eb Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+047e: callvirt      0x0a000144 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+0483: callvirt      0x0a0001a6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_MapImageDataInfo
+0488: ldc.i4.7       
+0489: newobj        0x06000399 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.BaseImageData..ctor
+048e: callvirt      0x06000392 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescData.set_MapImageData
+0493: newobj        0x060003fc Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.TiffTagDescDataSerializer..ctor
+0498: ldloc.0        
+0499: callvirt      0x0600002e Olympus.CF.CommonUtility.Common.ISerializer.SerializeToXml
+049e: ret            
+
+METHOD 0x060002f3 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity GetXResolution IL_SHA256 7114c6db098706f007fb7aa64cc71d73fd7e5fe602a7b95d896697f6179f8913 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: call          0x060005d2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+0007: ret            
+
+METHOD 0x060002f7 Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity GetZResolution IL_SHA256 5b9b4a846e4e66a2672b2b6b3240314aa976a7afbeec08e0c1e7a79bd5d5c594 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: call          0x060005d6 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+0007: ret            

@@ -1,0 +1,48 @@
+Evidence: ev_ac28a740c7f5a3ebbe236a32e4bd3f243131e7ea03afe73b87f45bb32a9760c4
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+longlong FUN_140015e60(longlong param_1,int param_2,int param_3,int param_4,ulonglong *param_5,
+                      longlong *param_6)
+
+{
+  uint3 uVar1;
+  longlong lVar2;
+  int iVar3;
+  undefined2 *puVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  
+  uVar1 = (uint3)((uint)param_3 >> 8);
+  if ((param_3 < 0) || (param_4 < 0)) {
+    lVar2 = (ulonglong)uVar1 << 8;
+  }
+  else {
+    lVar2 = *param_6;
+    iVar7 = *(int *)(lVar2 + 0x2c) * param_4;
+    for (iVar6 = 0; iVar6 < *(int *)(lVar2 + 0x2c); iVar6 = iVar6 + 1) {
+      iVar5 = *(int *)(lVar2 + 0x28) * param_3;
+      puVar4 = (undefined2 *)
+               ((longlong)(*(int *)(lVar2 + 0x60) * iVar6) + *(longlong *)(lVar2 + 0x58));
+      for (iVar3 = 0; iVar3 < *(int *)(lVar2 + 0x28); iVar3 = iVar3 + 1) {
+        if (param_2 == 3) {
+          FUN_14001cf60(param_1,param_5,CONCAT44(iVar7,iVar5),(undefined1 *)puVar4);
+          lVar2 = *param_6;
+          puVar4 = (undefined2 *)((longlong)puVar4 + (longlong)*(int *)(lVar2 + 8));
+        }
+        if (param_2 == 2) {
+          FUN_14001d320(param_1,param_5,CONCAT44(iVar7,iVar5),puVar4);
+          lVar2 = *param_6;
+          puVar4 = puVar4 + *(int *)(lVar2 + 8);
+        }
+        iVar5 = iVar5 + 1;
+      }
+      iVar7 = iVar7 + 1;
+    }
+    lVar2 = CONCAT71((uint7)uVar1,1);
+  }
+  return lVar2;
+}
+

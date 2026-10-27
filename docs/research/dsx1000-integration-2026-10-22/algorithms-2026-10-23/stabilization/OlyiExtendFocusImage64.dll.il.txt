@@ -1,0 +1,19 @@
+
+METHOD Olympus.LI.Triumph.Image.ExtendFocusImage.OlyiExtendFocusImage::get_ParamIsStabilizer 0x060000cf
+0000 ldarg.0  
+0001 ldfld 0x0400014a Olympus.LI.Triumph.Image.ExtendFocusImage.OlyiExtendFocusImage.efiParam
+0006 ldc.i4 144 
+0011 conv.i8  
+0012 add  
+0013 ldind.u1  
+0014 ret  
+
+METHOD Olympus.LI.Triumph.Image.ExtendFocusImage.OlyiExtendFocusImage::set_ParamIsStabilizer 0x060000d0
+0000 ldarg.0  
+0001 ldfld 0x0400014a Olympus.LI.Triumph.Image.ExtendFocusImage.OlyiExtendFocusImage.efiParam
+0006 ldc.i4 144 
+0011 conv.i8  
+0012 add  
+0013 ldarg.1  
+0014 stind.i1  
+0015 ret  

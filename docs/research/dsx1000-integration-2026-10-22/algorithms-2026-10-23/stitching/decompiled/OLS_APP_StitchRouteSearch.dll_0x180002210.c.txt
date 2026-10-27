@@ -1,0 +1,51 @@
+Evidence: ev_c0aba333147cd023ec4aff677a98e8fa23a2d1e13a9cc5ca467bd610ae209d65
+Subject SHA256: 1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4
+Bundle: route-evidence.json.gz
+
+
+void FUN_180002210(void)
+
+{
+  longlong *plVar1;
+  longlong *local_30;
+  undefined8 uStack_28;
+  undefined8 local_20;
+  undefined8 local_18;
+  undefined8 local_10;
+  
+  DAT_180007758 = DAT_180007750;
+  DAT_180007770 = DAT_180007768;
+  FUN_1800023d0(&DAT_180007780);
+  FUN_1800023d0(&DAT_180007798);
+  FUN_1800023d0(&DAT_1800077b0);
+  FUN_1800023d0(&DAT_1800077c8);
+  local_30 = (longlong *)0x0;
+  uStack_28 = 0;
+  local_20 = 0;
+  local_18 = 0;
+  local_10 = 0;
+  plVar1 = operator_new(0x10);
+  if (plVar1 == (longlong *)0x0) {
+                    /* WARNING: Subroutine does not return */
+    std::_Xbad_alloc();
+  }
+  *plVar1 = 0;
+  plVar1[1] = 0;
+  *plVar1 = (longlong)&local_30;
+  local_30 = plVar1;
+  FUN_180002530(0x180007728);
+  std::_Container_base12::_Swap_all
+            ((_Container_base12 *)&DAT_180007728,(_Container_base12 *)&local_30);
+  DAT_180007730 = uStack_28;
+  DAT_180007738 = local_20;
+  DAT_180007740 = local_18;
+  DAT_180007748 = local_10;
+  uStack_28 = 0;
+  local_20 = 0;
+  local_18 = 0;
+  local_10 = 0;
+  FUN_180002530((longlong)&local_30);
+  operator_delete(local_30);
+  return;
+}
+

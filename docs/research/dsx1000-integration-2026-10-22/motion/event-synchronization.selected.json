@@ -1,0 +1,871 @@
+[
+  {
+    "selection_only": true,
+    "evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d",
+    "artifact": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+      "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+    },
+    "module": {
+      "mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b"
+    },
+    "coverage": {
+      "state": "complete",
+      "issues": []
+    },
+    "methods": [
+      {
+        "token": "0x06000028",
+        "row_offset": 352220,
+        "declaring_type_token": "0x02000009",
+        "declaring_type": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "Update",
+        "rva": 10344,
+        "impl_flags": 0,
+        "flags": 454,
+        "signature": {
+          "raw_length": 5,
+          "raw_sha256": "a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a",
+          "resolved_sha256": "a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "var:0"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 10344,
+          "file_offset": 2664,
+          "max_stack": 2,
+          "init_locals": true,
+          "local_var_sig_token": "0x11000009",
+          "il_size": 84,
+          "il_sha256": "a15dc7a17300432451cafc2587f6ddb5c435db5913dcdd731df9e724e9fb0588",
+          "normalized_il_sha256": "c6c07969e5f35536e722ba5a493fb9e93c13f03422700b5cf7f390c4d5a77892",
+          "instruction_count": 38,
+          "decoded_instruction_count": 38,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldc.i4.0": 2,
+            "stloc.2": 1,
+            "ldarg.0": 4,
+            "ldfld": 1,
+            "dup": 2,
+            "stloc.3": 1,
+            "ldloca.s": 3,
+            "call": 4,
+            "initobj": 1,
+            "stloc.1": 1,
+            "stloc.s": 1,
+            "ldarg.1": 1,
+            "callvirt": 2,
+            "stloc.0": 1,
+            "leave.s": 2,
+            "ldloc.1": 1,
+            "brfalse.s": 2,
+            "ldloc.s": 1,
+            "endfinally": 2,
+            "ldloc.0": 1,
+            "newobj": 1,
+            "ldloc.2": 1,
+            "ldloc.3": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "stloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 3,
+              "opcode": "ldfld",
+              "operand_kind": "field",
+              "operand": "0x0a00004e"
+            },
+            {
+              "il_offset": 8,
+              "opcode": "dup",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 9,
+              "opcode": "stloc.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 10,
+              "opcode": "ldloca.s",
+              "operand_kind": "variable",
+              "operand": "2"
+            },
+            {
+              "il_offset": 12,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00005b"
+            },
+            {
+              "il_offset": 17,
+              "opcode": "ldloca.s",
+              "operand_kind": "variable",
+              "operand": "0"
+            },
+            {
+              "il_offset": 19,
+              "opcode": "initobj",
+              "operand_kind": "type",
+              "operand": "0x1b000104"
+            },
+            {
+              "il_offset": 25,
+              "opcode": "ldc.i4.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 26,
+              "opcode": "stloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 27,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 28,
+              "opcode": "dup",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 29,
+              "opcode": "stloc.s",
+              "operand_kind": "variable",
+              "operand": "4"
+            },
+            {
+              "il_offset": 31,
+              "opcode": "ldloca.s",
+              "operand_kind": "variable",
+              "operand": "1"
+            },
+            {
+              "il_offset": 33,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00005b"
+            },
+            {
+              "il_offset": 38,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 39,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 40,
+              "opcode": "callvirt",
+              "operand_kind": "method",
+              "operand": "0x0a000060"
+            },
+            {
+              "il_offset": 45,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 46,
+              "opcode": "leave.s",
+              "operand_kind": "branch",
+              "operand": "59"
+            },
+            {
+              "il_offset": 48,
+              "opcode": "ldloc.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 49,
+              "opcode": "brfalse.s",
+              "operand_kind": "branch",
+              "operand": "58"
+            },
+            {
+              "il_offset": 51,
+              "opcode": "ldloc.s",
+              "operand_kind": "variable",
+              "operand": "4"
+            },
+            {
+              "il_offset": 53,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00005d"
+            },
+            {
+              "il_offset": 58,
+              "opcode": "endfinally",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 59,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 60,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 61,
+              "opcode": "newobj",
+              "operand_kind": "method",
+              "operand": "0x0a00005e"
+            },
+            {
+              "il_offset": 66,
+              "opcode": "callvirt",
+              "operand_kind": "method",
+              "operand": "0x0a00005f"
+            },
+            {
+              "il_offset": 71,
+              "opcode": "leave.s",
+              "operand_kind": "branch",
+              "operand": "83"
+            },
+            {
+              "il_offset": 73,
+              "opcode": "ldloc.2",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 74,
+              "opcode": "brfalse.s",
+              "operand_kind": "branch",
+              "operand": "82"
+            },
+            {
+              "il_offset": 76,
+              "opcode": "ldloc.3",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 77,
+              "opcode": "call",
+              "operand_kind": "method",
+              "operand": "0x0a00005d"
+            },
+            {
+              "il_offset": 82,
+              "opcode": "endfinally",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 83,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [
+            {
+              "flags": 2,
+              "try_offset": 27,
+              "try_length": 21,
+              "handler_offset": 48,
+              "handler_length": 11,
+              "class_token": null,
+              "filter_offset": null
+            },
+            {
+              "flags": 2,
+              "try_offset": 2,
+              "try_length": 71,
+              "handler_offset": 73,
+              "handler_length": 10,
+              "class_token": null,
+              "filter_offset": null
+            }
+          ],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0600003f",
+        "row_offset": 352588,
+        "declaring_type_token": "0x02000009",
+        "declaring_type": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "OnEntityUpdateHandler",
+        "rva": 12884,
+        "impl_flags": 0,
+        "flags": 452,
+        "signature": {
+          "raw_length": 10,
+          "raw_sha256": "816f8ba4c52416d2151b81df12842be11cc4ac5ba57de11f3ea039f47a330872",
+          "resolved_sha256": "7490ef4afac4b1322a264eef9250ccf1a1afe03ae78efa062fb804a7aaa785fd",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "class:1984<var:0>"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 12884,
+          "file_offset": 5204,
+          "max_stack": 3,
+          "init_locals": true,
+          "local_var_sig_token": "0x11000016",
+          "il_size": 19,
+          "il_sha256": "91e56c19aaff1c43ac8b0b7b1ac92f74c2deb4380639c751e205a4adbc5ef15f",
+          "normalized_il_sha256": "0ea8947b8e01e0e49af07d0d99b07567c677c59c226626671292368a499306b1",
+          "instruction_count": 10,
+          "decoded_instruction_count": 10,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 2,
+            "ldfld": 1,
+            "stloc.0": 1,
+            "ldloc.0": 2,
+            "brfalse.s": 1,
+            "ldarg.1": 1,
+            "callvirt": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "ldfld",
+              "operand_kind": "field",
+              "operand": "0x0a000050"
+            },
+            {
+              "il_offset": 6,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 7,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 8,
+              "opcode": "brfalse.s",
+              "operand_kind": "branch",
+              "operand": "18"
+            },
+            {
+              "il_offset": 10,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 11,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 12,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 13,
+              "opcode": "callvirt",
+              "operand_kind": "method",
+              "operand": "0x0a000094"
+            },
+            {
+              "il_offset": 18,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000aac",
+        "row_offset": 395292,
+        "declaring_type_token": "0x0200016d",
+        "declaring_type": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEvent",
+        "name": "set_AcquisitionStateEvent",
+        "rva": 65508,
+        "impl_flags": 0,
+        "flags": 2182,
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a",
+          "resolved_sha256": "c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "i4"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "tiny",
+          "rva": 65508,
+          "file_offset": 57828,
+          "max_stack": 8,
+          "init_locals": false,
+          "local_var_sig_token": null,
+          "il_size": 8,
+          "il_sha256": "26e1f250391f5ae7aa62606ffc7954ae4963d9a50e44535389df244ef588bbd1",
+          "normalized_il_sha256": "839bb6bb06f1b0f0344f7e4c98131cebdf3947d122194fe3a4bdddc719921367",
+          "instruction_count": 4,
+          "decoded_instruction_count": 4,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 1,
+            "ldarg.1": 1,
+            "stfld": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 2,
+              "opcode": "stfld",
+              "operand_kind": "field",
+              "operand": "0x04000401"
+            },
+            {
+              "il_offset": 7,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      },
+      {
+        "token": "0x06000ab0",
+        "row_offset": 395356,
+        "declaring_type_token": "0x0200016e",
+        "declaring_type": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao",
+        "name": "UpdateEvent",
+        "rva": 65544,
+        "impl_flags": 0,
+        "flags": 134,
+        "signature": {
+          "raw_length": 6,
+          "raw_sha256": "f37b595d3e652f968ffa8e53e20be394fd5031be869f2efaa99bad7a2a82be13",
+          "resolved_sha256": "1bd0ab8d1567456f9d7e35fbc18540be70f222550d098f2f2cec273904eeacfa",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "valuetype:569"
+          ],
+          "field_type": null,
+          "issue": null
+        },
+        "body": {
+          "status": "present",
+          "header_format": "fat",
+          "rva": 65544,
+          "file_offset": 57864,
+          "max_stack": 2,
+          "init_locals": true,
+          "local_var_sig_token": "0x110000a9",
+          "il_size": 22,
+          "il_sha256": "c9d098c7bf217c78e2ff7a6ddc40d5ba3554af381a289c5eaeb63b4537487338",
+          "normalized_il_sha256": "4bf46b711a1b5b4dcc37fe2a2988288f87141d45771350042b1298a91fa09599",
+          "instruction_count": 10,
+          "decoded_instruction_count": 10,
+          "truncated_instructions": 0,
+          "opcode_counts": {
+            "ldarg.0": 2,
+            "callvirt": 3,
+            "stloc.0": 1,
+            "ldloc.0": 2,
+            "ldarg.1": 1,
+            "ret": 1
+          },
+          "anchors": [
+            {
+              "il_offset": 0,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 1,
+              "opcode": "callvirt",
+              "operand_kind": "method",
+              "operand": "0x0a00037d"
+            },
+            {
+              "il_offset": 6,
+              "opcode": "stloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 7,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 8,
+              "opcode": "ldarg.1",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 9,
+              "opcode": "callvirt",
+              "operand_kind": "method",
+              "operand": "0x06000aac"
+            },
+            {
+              "il_offset": 14,
+              "opcode": "ldarg.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 15,
+              "opcode": "ldloc.0",
+              "operand_kind": "none",
+              "operand": null
+            },
+            {
+              "il_offset": 16,
+              "opcode": "callvirt",
+              "operand_kind": "method",
+              "operand": "0x0a00037e"
+            },
+            {
+              "il_offset": 21,
+              "opcode": "ret",
+              "operand_kind": "none",
+              "operand": null
+            }
+          ],
+          "exception_regions": [],
+          "issue": null
+        }
+      }
+    ],
+    "references": [
+      {
+        "token": "0x0a00004e",
+        "row_offset": 445524,
+        "parent_token": "0x1b000001",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "_syncEvent",
+        "signature": {
+          "raw_length": 2,
+          "raw_sha256": "b8bf785a5019dbd0dfb48c701319b5449f6a46a35f161093619e9bc9ba0e6453",
+          "resolved_sha256": "b8bf785a5019dbd0dfb48c701319b5449f6a46a35f161093619e9bc9ba0e6453",
+          "kind": "field",
+          "parse_status": "decoded",
+          "calling_convention": "field",
+          "generic_parameter_count": null,
+          "parameter_count": null,
+          "return_type": null,
+          "parameter_types": [],
+          "field_type": "object",
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000050",
+        "row_offset": 445540,
+        "parent_token": "0x1b000001",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "EntityUpdateHandler",
+        "signature": {
+          "raw_length": 12,
+          "raw_sha256": "c25452f2643def35ada1ee49611687c9b9f331e5c9905ce428f84f3246c97633",
+          "resolved_sha256": "2e411150b710b0babbee1487b926ffd49f892250dec5212ba12b7c9bc3364f63",
+          "kind": "field",
+          "parse_status": "decoded",
+          "calling_convention": "field",
+          "generic_parameter_count": null,
+          "parameter_count": null,
+          "return_type": null,
+          "parameter_types": [],
+          "field_type": "class:53<class:1984<var:0>>",
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00005b",
+        "row_offset": 445628,
+        "parent_token": "0x010000ef",
+        "parent_name": "System.Threading.Monitor",
+        "name": "Enter",
+        "signature": {
+          "raw_length": 6,
+          "raw_sha256": "9a01ad846c510afab986942c0f0f8d0fd07ad10bafd7f08a8116df4c7bd0869c",
+          "resolved_sha256": "9a01ad846c510afab986942c0f0f8d0fd07ad10bafd7f08a8116df4c7bd0869c",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "void",
+          "parameter_types": [
+            "object",
+            "bool&"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00005d",
+        "row_offset": 445644,
+        "parent_token": "0x010000ef",
+        "parent_name": "System.Threading.Monitor",
+        "name": "Exit",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "5a2a16fc9d52ebb2b465c0aa5b989fbf7b2b7294ea3d80e076ed2e9ba9d6b336",
+          "resolved_sha256": "5a2a16fc9d52ebb2b465c0aa5b989fbf7b2b7294ea3d80e076ed2e9ba9d6b336",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "object"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00005e",
+        "row_offset": 445652,
+        "parent_token": "0x1b000103",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1",
+        "name": ".ctor",
+        "signature": {
+          "raw_length": 5,
+          "raw_sha256": "a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a",
+          "resolved_sha256": "a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "var:0"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00005f",
+        "row_offset": 445660,
+        "parent_token": "0x1b000001",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "OnEntityUpdateHandler",
+        "signature": {
+          "raw_length": 10,
+          "raw_sha256": "816f8ba4c52416d2151b81df12842be11cc4ac5ba57de11f3ea039f47a330872",
+          "resolved_sha256": "7490ef4afac4b1322a264eef9250ccf1a1afe03ae78efa062fb804a7aaa785fd",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "class:1984<var:0>"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000060",
+        "row_offset": 445668,
+        "parent_token": "0x1b000001",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "UpdateBase",
+        "signature": {
+          "raw_length": 6,
+          "raw_sha256": "67b7a0f8b78f5f4218c978babe9fcb40d26d1c4883b170f4972853b6bb6e6c17",
+          "resolved_sha256": "67b7a0f8b78f5f4218c978babe9fcb40d26d1c4883b170f4972853b6bb6e6c17",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "var:0",
+          "parameter_types": [
+            "var:0"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a000094",
+        "row_offset": 446084,
+        "parent_token": "0x1b0000fb",
+        "parent_name": "System.EventHandler`1",
+        "name": "Invoke",
+        "signature": {
+          "raw_length": 6,
+          "raw_sha256": "080f80d52d786209015ba03ca24c437b7e195e7f958cc534420ee707e87dd86b",
+          "resolved_sha256": "080f80d52d786209015ba03ca24c437b7e195e7f958cc534420ee707e87dd86b",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 2,
+          "return_type": "void",
+          "parameter_types": [
+            "object",
+            "var:0"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00037d",
+        "row_offset": 452044,
+        "parent_token": "0x1b0000ab",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "GetFirst",
+        "signature": {
+          "raw_length": 4,
+          "raw_sha256": "7f4eb5014e42b77f8925c61cbd4b06358fdb996690e6510e0287686700ab50f4",
+          "resolved_sha256": "7f4eb5014e42b77f8925c61cbd4b06358fdb996690e6510e0287686700ab50f4",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 0,
+          "return_type": "var:0",
+          "parameter_types": [],
+          "field_type": null,
+          "issue": null
+        }
+      },
+      {
+        "token": "0x0a00037e",
+        "row_offset": 452052,
+        "parent_token": "0x1b0000ab",
+        "parent_name": "Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2",
+        "name": "Update",
+        "signature": {
+          "raw_length": 5,
+          "raw_sha256": "a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a",
+          "resolved_sha256": "a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a",
+          "kind": "method",
+          "parse_status": "decoded",
+          "calling_convention": "default has-this",
+          "generic_parameter_count": null,
+          "parameter_count": 1,
+          "return_type": "void",
+          "parameter_types": [
+            "var:0"
+          ],
+          "field_type": null,
+          "issue": null
+        }
+      }
+    ],
+    "fields": [],
+    "user_strings": [],
+    "call_edges": []
+  }
+]

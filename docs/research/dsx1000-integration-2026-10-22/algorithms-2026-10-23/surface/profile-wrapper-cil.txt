@@ -1,0 +1,479 @@
+EVIDENCE ev_95a59d69a896d27afe8d1e8c4ba34dfe1f7c23ae235ddafbb2a8d2d5aa4689f2 SHA256 0bac697fb85805b24d20362a0bc03f56989c03c3cebef74a2c54caf1a056ea63
+
+METHOD 0x060000e9 OpenCVWrapper.WImageWrapper RescaleInclinedHeightData IL_SHA256 cb898187fd35bc96d6906c440219bbe2fa7ad69dc17f9c5588f295e950f1bf1c DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: conv.i8        
+0002: stloc.2        
+0003: ldarg.0        
+0004: ldc.i4.0       
+0005: ldelema       0x01000038 
+000a: stloc.s       14 
+000c: ldarg.s       5 
+000e: ldc.i4.0       
+000f: ldelema       0x01000026 
+0014: stloc.s       13 
+0016: ldloca.s      17 
+0018: ldarg.2        
+0019: ldarg.1        
+001a: ldc.i4.5       
+001b: ldloc.s       14 
+001d: ldc.i4        2147483647 
+0022: call          0x0600005b <Module>.cvInitMatHeader
+0027: pop            
+0028: ldloca.s      16 
+002a: ldarg.2        
+002b: ldarg.1        
+002c: ldc.i4.2       
+002d: ldloc.s       13 
+002f: ldc.i4        2147483647 
+0034: call          0x0600005b <Module>.cvInitMatHeader
+0039: pop            
+003a: ldarg.1        
+003b: stloc.1        
+003c: ldarg.2        
+003d: stloc.0        
+003e: ldarg.3        
+003f: ldarg.1        
+0040: ble.s         89 
+0042: ldarg.1        
+0043: conv.r8        
+0044: stloc.s       8 
+0046: ldloc.s       8 
+0048: ldarg.3        
+0049: conv.r8        
+004a: div            
+004b: ldloc.s       8 
+004d: mul            
+004e: conv.i4        
+004f: stloc.1        
+0050: ldloc.1        
+0051: ldc.i4.1       
+0052: blt.s         87 
+0054: ldloc.1        
+0055: br.s          88 
+0057: ldc.i4.1       
+0058: stloc.1        
+0059: ldarg.s       4 
+005b: ldarg.2        
+005c: ble.s         118 
+005e: ldarg.2        
+005f: conv.r8        
+0060: stloc.s       7 
+0062: ldloc.s       7 
+0064: ldarg.s       4 
+0066: conv.r8        
+0067: div            
+0068: ldloc.s       7 
+006a: mul            
+006b: conv.i4        
+006c: stloc.0        
+006d: ldloc.0        
+006e: ldc.i4.1       
+006f: blt.s         116 
+0071: ldloc.0        
+0072: br.s          117 
+0074: ldc.i4.1       
+0075: stloc.0        
+0076: ldloc.1        
+0077: ldarg.1        
+0078: bne.un.s      135 
+007a: ldloc.0        
+007b: ldarg.2        
+007c: bne.un.s      135 
+007e: ldloca.s      17 
+0080: stloc.s       6 
+0082: ldloca.s      16 
+0084: stloc.2        
+0085: br.s          184 
+0087: ldloca.s      12 
+0089: ldc.i4.0       
+008a: stind.i4       
+008b: ldloca.s      12 
+008d: ldc.i4.4       
+008e: add            
+008f: ldc.i4.0       
+0090: stind.i4       
+0091: ldloca.s      12 
+0093: ldc.i4.8       
+0094: add            
+0095: ldloc.1        
+0096: stind.i4       
+0097: ldloca.s      12 
+0099: ldc.i4.s      12 
+009b: add            
+009c: ldloc.0        
+009d: stind.i4       
+009e: ldloc.s       12 
+00a0: stloc.s       11 
+00a2: ldloca.s      17 
+00a4: ldloca.s      15 
+00a6: ldloc.s       11 
+00a8: call          0x06000060 <Module>.cvGetSubRect
+00ad: stloc.s       6 
+00af: ldloc.0        
+00b0: ldloc.1        
+00b1: ldc.i4.2       
+00b2: call          0x06000064 <Module>.cvCreateMat
+00b7: stloc.2        
+00b8: ldc.r8        1 
+00c1: stloc.s       5 
+00c3: ldloc.s       6 
+00c5: ldloca.s      4 
+00c7: ldloca.s      3 
+00c9: ldc.i4.0       
+00ca: conv.i8        
+00cb: ldc.i4.0       
+00cc: conv.i8        
+00cd: ldc.i4.0       
+00ce: conv.i8        
+00cf: call          0x0600005e <Module>.cvMinMaxLoc
+00d4: ldloc.s       4 
+00d6: ldc.r8        0 
+00df: bgt.un.s      316 
+00e1: ldloca.s      10 
+00e3: ldc.r8        1 
+00ec: ldloc.s       4 
+00ee: sub            
+00ef: stind.r8       
+00f0: ldloca.s      10 
+00f2: ldc.i4.8       
+00f3: add            
+00f4: ldc.r8        0 
+00fd: stind.r8       
+00fe: ldloca.s      10 
+0100: ldc.i4.s      16 
+0102: add            
+0103: ldc.r8        0 
+010c: stind.r8       
+010d: ldloca.s      10 
+010f: ldc.i4.s      24 
+0111: add            
+0112: ldc.r8        0 
+011b: stind.r8       
+011c: ldloc.s       10 
+011e: stloc.s       9 
+0120: ldloca.s      17 
+0122: ldloc.s       9 
+0124: ldloca.s      17 
+0126: ldc.i4.0       
+0127: conv.i8        
+0128: call          0x0600005a <Module>.cvAddS
+012d: ldc.r8        1 
+0136: ldloc.s       4 
+0138: sub            
+0139: ldloc.3        
+013a: add            
+013b: stloc.3        
+013c: ldloc.3        
+013d: ldc.r8        65535 
+0146: ble.un.s      341 
+0148: ldc.r8        65535 
+0151: ldloc.3        
+0152: div            
+0153: stloc.s       5 
+0155: ldloc.s       6 
+0157: ldloc.2        
+0158: ldloc.s       5 
+015a: ldc.r8        0 
+0163: call          0x06000055 <Module>.cvConvertScale
+0168: ldloc.2        
+0169: ldloca.s      16 
+016b: beq.s         381 
+016d: ldloc.2        
+016e: ldloca.s      16 
+0170: ldc.i4.1       
+0171: call          0x0600005f <Module>.cvResize
+0176: ldloca.s      2 
+0178: call          0x06000071 <Module>.cvReleaseMat
+017d: ldloc.s       5 
+017f: ret            
+
+METHOD 0x060001b2 OpenCVWrapper.ProfileWidthWrapper CalculateHorizontalProfileWidthAverage IL_SHA256 5e937fbfb8bdcd8c8314bd068c69bc8b1d376c418244b4dc46c85d5304d7478c DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: conv.i8        
+0002: stloc.2        
+0003: ldarg.s       7 
+0005: ldlen          
+0006: ldc.i4.0       
+0007: ble.s         18 
+0009: ldarg.s       7 
+000b: ldc.i4.0       
+000c: ldelema       0x01000026 
+0011: stloc.2        
+0012: ldc.i4.0       
+0013: conv.i8        
+0014: stloc.0        
+0015: ldarg.1        
+0016: ldlen          
+0017: ldc.i4.0       
+0018: ble.s         34 
+001a: ldarg.1        
+001b: ldc.i4.0       
+001c: ldelema       0x1b000001 
+0021: stloc.0        
+0022: sizeof        0x1b000001 
+0028: conv.u8        
+0029: ldarg.2        
+002a: ldarg.s       5 
+002c: mul            
+002d: conv.i8        
+002e: mul            
+002f: stloc.s       14 
+0031: ldloc.0        
+0032: ldloc.s       14 
+0034: add            
+0035: stloc.0        
+0036: ldarg.3        
+0037: ldarg.s       4 
+0039: bgt           262 
+003e: ldarg.2        
+003f: conv.i8        
+0040: stloc.s       6 
+0042: ldarg.s       6 
+0044: ldarg.s       5 
+0046: sub            
+0047: stloc.s       5 
+0049: ldloc.s       5 
+004b: ldarg.2        
+004c: mul            
+004d: conv.i8        
+004e: stloc.s       13 
+0050: ldloc.s       5 
+0052: ldc.i4.1       
+0053: add            
+0054: conv.r8        
+0055: stloc.s       12 
+0057: ldarg.s       4 
+0059: ldarg.3        
+005a: sub            
+005b: ldc.i4.1       
+005c: add            
+005d: stloc.s       4 
+005f: ldc.r8        0 
+0068: stloc.1        
+0069: ldtoken       0x01000033 
+006e: call          0x0a000038 System.Type.GetTypeFromHandle
+0073: stloc.s       11 
+0075: ldarg.s       5 
+0077: ldarg.s       6 
+0079: bgt.s         180 
+007b: ldloc.s       5 
+007d: ldc.i4.1       
+007e: add            
+007f: stloc.3        
+0080: ldloc.0        
+0081: ldobj         0x1b000001 
+0086: box           0x1b000001 
+008b: ldloc.s       11 
+008d: call          0x0a00003d System.Convert.ChangeType
+0092: unbox         0x01000033 
+0097: ldind.r8       
+0098: ldloc.1        
+0099: add            
+009a: stloc.1        
+009b: sizeof        0x1b000001 
+00a1: conv.u8        
+00a2: ldloc.s       6 
+00a4: mul            
+00a5: stloc.s       10 
+00a7: ldloc.0        
+00a8: ldloc.s       10 
+00aa: add            
+00ab: stloc.0        
+00ac: ldloc.3        
+00ad: ldc.i4.m1      
+00ae: add            
+00af: stloc.3        
+00b0: ldloc.3        
+00b1: ldc.i4.0       
+00b2: bgt.un.s      128 
+00b4: sizeof        0x1b000001 
+00ba: conv.u8        
+00bb: ldloc.s       6 
+00bd: mul            
+00be: stloc.s       9 
+00c0: ldloc.0        
+00c1: ldloc.s       9 
+00c3: sub            
+00c4: stloc.0        
+00c5: sizeof        0x1b000001 
+00cb: conv.u8        
+00cc: ldloc.s       13 
+00ce: mul            
+00cf: stloc.s       8 
+00d1: ldloc.0        
+00d2: ldloc.s       8 
+00d4: sub            
+00d5: stloc.0        
+00d6: sizeof        0x1b000001 
+00dc: conv.u8        
+00dd: stloc.s       7 
+00df: ldloc.0        
+00e0: ldloc.s       7 
+00e2: add            
+00e3: stloc.0        
+00e4: ldloc.1        
+00e5: ldloc.s       12 
+00e7: div            
+00e8: stloc.1        
+00e9: ldloc.2        
+00ea: ldloc.1        
+00eb: conv.u4        
+00ec: ldc.i4        65535 
+00f1: and            
+00f2: stind.i2       
+00f3: ldloc.2        
+00f4: ldc.i4.2       
+00f5: conv.i8        
+00f6: add            
+00f7: stloc.2        
+00f8: ldloc.s       4 
+00fa: ldc.i4.m1      
+00fb: add            
+00fc: stloc.s       4 
+00fe: ldloc.s       4 
+0100: ldc.i4.0       
+0101: bgt.un        95 
+0106: ret            
+
+METHOD 0x060001b3 OpenCVWrapper.ProfileWidthWrapper CalculateVerticalProfileWidthAverage IL_SHA256 e836726cae80f539a2d2b2cb1eebd20439385400787dced4eea7eda48be2fd02 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: conv.i8        
+0002: stloc.2        
+0003: ldarg.s       7 
+0005: ldlen          
+0006: ldc.i4.0       
+0007: ble.s         18 
+0009: ldarg.s       7 
+000b: ldc.i4.0       
+000c: ldelema       0x01000026 
+0011: stloc.2        
+0012: ldc.i4.0       
+0013: conv.i8        
+0014: stloc.0        
+0015: ldarg.1        
+0016: ldlen          
+0017: ldc.i4.0       
+0018: ble.s         34 
+001a: ldarg.1        
+001b: ldc.i4.0       
+001c: ldelema       0x1b000001 
+0021: stloc.0        
+0022: sizeof        0x1b000001 
+0028: conv.u8        
+0029: ldarg.s       5 
+002b: conv.i8        
+002c: mul            
+002d: stloc.s       14 
+002f: ldloc.0        
+0030: ldloc.s       14 
+0032: add            
+0033: stloc.0        
+0034: ldarg.3        
+0035: ldarg.s       4 
+0037: bgt           255 
+003c: ldarg.s       6 
+003e: ldarg.s       5 
+0040: sub            
+0041: stloc.s       5 
+0043: ldloc.s       5 
+0045: conv.i8        
+0046: stloc.s       13 
+0048: ldarg.2        
+0049: conv.i8        
+004a: stloc.s       12 
+004c: ldloc.s       5 
+004e: ldc.i4.1       
+004f: add            
+0050: conv.r8        
+0051: stloc.s       11 
+0053: ldarg.s       4 
+0055: ldarg.3        
+0056: sub            
+0057: ldc.i4.1       
+0058: add            
+0059: stloc.s       4 
+005b: ldc.r8        0 
+0064: stloc.1        
+0065: ldtoken       0x01000033 
+006a: call          0x0a000038 System.Type.GetTypeFromHandle
+006f: stloc.s       10 
+0071: ldarg.s       5 
+0073: ldarg.s       6 
+0075: bgt.s         173 
+0077: ldloc.s       5 
+0079: ldc.i4.1       
+007a: add            
+007b: stloc.3        
+007c: ldloc.0        
+007d: ldobj         0x1b000001 
+0082: box           0x1b000001 
+0087: ldloc.s       10 
+0089: call          0x0a00003d System.Convert.ChangeType
+008e: unbox         0x01000033 
+0093: ldind.r8       
+0094: ldloc.1        
+0095: add            
+0096: stloc.1        
+0097: sizeof        0x1b000001 
+009d: conv.u8        
+009e: stloc.s       9 
+00a0: ldloc.0        
+00a1: ldloc.s       9 
+00a3: add            
+00a4: stloc.0        
+00a5: ldloc.3        
+00a6: ldc.i4.m1      
+00a7: add            
+00a8: stloc.3        
+00a9: ldloc.3        
+00aa: ldc.i4.0       
+00ab: bgt.un.s      124 
+00ad: sizeof        0x1b000001 
+00b3: conv.u8        
+00b4: stloc.s       8 
+00b6: ldloc.0        
+00b7: ldloc.s       8 
+00b9: sub            
+00ba: stloc.0        
+00bb: sizeof        0x1b000001 
+00c1: conv.u8        
+00c2: ldloc.s       13 
+00c4: mul            
+00c5: stloc.s       7 
+00c7: ldloc.0        
+00c8: ldloc.s       7 
+00ca: sub            
+00cb: stloc.0        
+00cc: sizeof        0x1b000001 
+00d2: conv.u8        
+00d3: ldloc.s       12 
+00d5: mul            
+00d6: stloc.s       6 
+00d8: ldloc.0        
+00d9: ldloc.s       6 
+00db: add            
+00dc: stloc.0        
+00dd: ldloc.1        
+00de: ldloc.s       11 
+00e0: div            
+00e1: stloc.1        
+00e2: ldloc.2        
+00e3: ldloc.1        
+00e4: conv.u4        
+00e5: ldc.i4        65535 
+00ea: and            
+00eb: stind.i2       
+00ec: ldloc.2        
+00ed: ldc.i4.2       
+00ee: conv.i8        
+00ef: add            
+00f0: stloc.2        
+00f1: ldloc.s       4 
+00f3: ldc.i4.m1      
+00f4: add            
+00f5: stloc.s       4 
+00f7: ldloc.s       4 
+00f9: ldc.i4.0       
+00fa: bgt.un        91 
+00ff: ret            

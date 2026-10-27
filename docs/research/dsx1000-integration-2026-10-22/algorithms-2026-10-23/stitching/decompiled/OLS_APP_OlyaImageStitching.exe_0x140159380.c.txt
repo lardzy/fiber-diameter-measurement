@@ -1,0 +1,262 @@
+Evidence: ev_d582fbb2a53e9e5a7691f654ae37835dbeafe4e046a282a16578c83a98151826
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined1 (*) [16]
+FUN_140159380(undefined1 (*param_1) [16],undefined8 *param_2,int *param_3,int *param_4,
+             double *param_5)
+
+{
+  float fVar1;
+  float fVar2;
+  float fVar3;
+  double dVar4;
+  double dVar5;
+  double dVar6;
+  int iVar7;
+  Exception *pEVar8;
+  longlong lVar9;
+  int iVar10;
+  double *pdVar11;
+  int iVar12;
+  int iVar13;
+  longlong lVar14;
+  longlong lVar15;
+  float *pfVar16;
+  longlong lVar17;
+  int iVar18;
+  undefined1 auVar19 [16];
+  double dVar20;
+  double dVar21;
+  double dVar22;
+  double dVar23;
+  undefined1 auStackY_208 [32];
+  uint local_1c8 [2];
+  int local_1c0;
+  int local_1bc;
+  longlong local_1b8;
+  int *local_1b0;
+  undefined8 local_1a8;
+  undefined8 local_1a0;
+  undefined8 local_198;
+  undefined4 *local_188;
+  undefined1 *local_180;
+  undefined1 local_178 [16];
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_168;
+  undefined7 uStack_167;
+  undefined8 local_158;
+  ulonglong local_150;
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_148;
+  undefined7 uStack_147;
+  undefined8 local_138;
+  ulonglong local_130;
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_128;
+  undefined7 uStack_127;
+  undefined8 local_118;
+  ulonglong local_110;
+  Exception local_108 [176];
+  ulonglong local_58;
+  
+  local_58 = DAT_1401c7000 ^ (ulonglong)auStackY_208;
+  (**(code **)*param_2)(param_2,local_1c8,0xffffffff);
+  if (1 < (local_1c8[0] & 0xfff) - 5) {
+    local_110 = 0xf;
+    local_118 = 0;
+    local_128 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1400021b0((ulonglong *)&local_128,"PhasecorrelateOriginal.cpp",0x1a);
+    local_150 = 0xf;
+    local_158 = 0;
+    local_168 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1400021b0((ulonglong *)&local_168,"weightedCentroid",0x10);
+    local_130 = 0xf;
+    local_138 = 0;
+    local_148 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1400021b0((ulonglong *)&local_148,"type == CV_32FC1 || type == CV_64FC1",0x24);
+    pEVar8 = (Exception *)
+             cv::Exception::Exception(local_108,-0xd7,&local_148,&local_168,&local_128,0x182);
+    cv::error(pEVar8);
+    cv::Exception::~Exception(local_108);
+    if (0xf < local_130) {
+      Ordinal_1486(CONCAT71(uStack_147,local_148));
+    }
+    local_130 = 0xf;
+    local_138 = 0;
+    local_148 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < local_150) {
+      Ordinal_1486(CONCAT71(uStack_167,local_168));
+    }
+    local_150 = 0xf;
+    local_158 = 0;
+    local_168 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < local_110) {
+      Ordinal_1486(CONCAT71(uStack_127,local_128));
+    }
+  }
+  iVar13 = param_3[1] - (param_4[1] >> 1);
+  iVar7 = param_3[1] + (param_4[1] >> 1);
+  iVar12 = *param_4;
+  iVar18 = *param_3;
+  iVar10 = iVar18 + (iVar12 >> 1);
+  *(undefined8 *)*param_1 = 0;
+  *(undefined8 *)(*param_1 + 8) = 0;
+  dVar6 = 0.0;
+  if (iVar13 < 0) {
+    iVar13 = 0;
+  }
+  iVar18 = iVar18 - (iVar12 >> 1);
+  if (iVar18 < 0) {
+    iVar18 = 0;
+  }
+  if (local_1c0 + -1 < iVar7) {
+    iVar7 = local_1c0 + -1;
+  }
+  if (local_1bc + -1 < iVar10) {
+    iVar10 = local_1bc + -1;
+  }
+  lVar17 = (longlong)iVar18;
+  lVar15 = (longlong)iVar10;
+  if ((local_1c8[0] & 0xfff) == 5) {
+    local_1b8 = local_1b8 + (longlong)(local_1bc * iVar13) * 4;
+    if (iVar13 <= iVar7) {
+      do {
+        if (lVar17 <= lVar15) {
+          lVar9 = lVar17;
+          iVar10 = iVar18;
+          if (3 < (lVar15 - lVar17) + 1) {
+            dVar23 = (double)iVar13;
+            dVar22 = *(double *)(*param_1 + 8);
+            iVar12 = iVar18 + 2;
+            pfVar16 = (float *)(local_1b8 + (lVar17 + 2) * 4);
+            lVar14 = ((lVar15 - lVar17) - 3U >> 2) + 1;
+            lVar9 = lVar17 + lVar14 * 4;
+            do {
+              dVar20 = (double)pfVar16[-2] * (double)iVar10 + *(double *)*param_1;
+              *(double *)*param_1 = dVar20;
+              dVar22 = dVar22 + (double)pfVar16[-2] * dVar23;
+              *(double *)(*param_1 + 8) = dVar22;
+              fVar1 = pfVar16[-2];
+              dVar20 = (double)(iVar12 + -1) * (double)pfVar16[-1] + dVar20;
+              *(double *)*param_1 = dVar20;
+              dVar22 = dVar22 + (double)pfVar16[-1] * dVar23;
+              *(double *)(*param_1 + 8) = dVar22;
+              fVar2 = pfVar16[-1];
+              dVar20 = (double)*pfVar16 * (double)iVar12 + dVar20;
+              *(double *)*param_1 = dVar20;
+              dVar22 = dVar22 + (double)*pfVar16 * dVar23;
+              *(double *)(*param_1 + 8) = dVar22;
+              fVar3 = *pfVar16;
+              *(double *)*param_1 = (double)(iVar12 + 1) * (double)pfVar16[1] + dVar20;
+              dVar22 = dVar22 + (double)pfVar16[1] * dVar23;
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar6 = dVar6 + (double)fVar1 + (double)fVar2 + (double)fVar3 + (double)pfVar16[1];
+              iVar10 = iVar10 + 4;
+              iVar12 = iVar12 + 4;
+              pfVar16 = pfVar16 + 4;
+              lVar14 = lVar14 + -1;
+            } while (lVar14 != 0);
+          }
+          if (lVar9 <= lVar15) {
+            dVar22 = *(double *)(*param_1 + 8);
+            do {
+              *(double *)*param_1 =
+                   (double)*(float *)(local_1b8 + lVar9 * 4) * (double)iVar10 + *(double *)*param_1;
+              dVar22 = dVar22 + (double)*(float *)(local_1b8 + lVar9 * 4) * (double)iVar13;
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar6 = dVar6 + (double)*(float *)(local_1b8 + lVar9 * 4);
+              iVar10 = iVar10 + 1;
+              lVar9 = lVar9 + 1;
+            } while (lVar9 <= lVar15);
+          }
+        }
+        local_1b8 = local_1b8 + (longlong)local_1bc * 4;
+        iVar13 = iVar13 + 1;
+      } while (iVar13 <= iVar7);
+    }
+  }
+  else {
+    local_1b8 = local_1b8 + (longlong)(local_1bc * iVar13) * 8;
+    if (iVar13 <= iVar7) {
+      dVar6 = 0.0;
+      do {
+        if (lVar17 <= lVar15) {
+          lVar9 = lVar17;
+          iVar10 = iVar18;
+          if (3 < (lVar15 - lVar17) + 1) {
+            dVar23 = (double)iVar13;
+            dVar22 = *(double *)(*param_1 + 8);
+            iVar12 = iVar18 + 2;
+            pdVar11 = (double *)(local_1b8 + (lVar17 + 2) * 8);
+            lVar14 = ((lVar15 - lVar17) - 3U >> 2) + 1;
+            lVar9 = lVar17 + lVar14 * 4;
+            do {
+              dVar21 = (double)iVar10 * pdVar11[-2] + *(double *)*param_1;
+              *(double *)*param_1 = dVar21;
+              dVar22 = dVar22 + dVar23 * pdVar11[-2];
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar20 = pdVar11[-2];
+              dVar21 = (double)(iVar12 + -1) * pdVar11[-1] + dVar21;
+              *(double *)*param_1 = dVar21;
+              dVar22 = dVar22 + dVar23 * pdVar11[-1];
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar4 = pdVar11[-1];
+              dVar21 = (double)iVar12 * *pdVar11 + dVar21;
+              *(double *)*param_1 = dVar21;
+              dVar22 = dVar22 + dVar23 * *pdVar11;
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar5 = *pdVar11;
+              *(double *)*param_1 = (double)(iVar12 + 1) * pdVar11[1] + dVar21;
+              dVar22 = dVar22 + dVar23 * pdVar11[1];
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar6 = dVar6 + dVar20 + dVar4 + dVar5 + pdVar11[1];
+              iVar10 = iVar10 + 4;
+              iVar12 = iVar12 + 4;
+              pdVar11 = pdVar11 + 4;
+              lVar14 = lVar14 + -1;
+            } while (lVar14 != 0);
+          }
+          if (lVar9 <= lVar15) {
+            dVar22 = *(double *)(*param_1 + 8);
+            do {
+              *(double *)*param_1 =
+                   (double)iVar10 * *(double *)(local_1b8 + lVar9 * 8) + *(double *)*param_1;
+              dVar22 = dVar22 + (double)iVar13 * *(double *)(local_1b8 + lVar9 * 8);
+              *(double *)(*param_1 + 8) = dVar22;
+              dVar6 = dVar6 + *(double *)(local_1b8 + lVar9 * 8);
+              iVar10 = iVar10 + 1;
+              lVar9 = lVar9 + 1;
+            } while (lVar9 <= lVar15);
+          }
+        }
+        local_1b8 = local_1b8 + (longlong)local_1bc * 8;
+        iVar13 = iVar13 + 1;
+      } while (iVar13 <= iVar7);
+    }
+  }
+  if (param_5 != (double *)0x0) {
+    *param_5 = dVar6;
+  }
+  dVar6 = dVar6 + 2.220446049250313e-16;
+  auVar19._8_4_ = SUB84(dVar6,0);
+  auVar19._0_8_ = dVar6;
+  auVar19._12_4_ = (int)((ulonglong)dVar6 >> 0x20);
+  auVar19 = divpd(*param_1,auVar19);
+  *param_1 = auVar19;
+  if ((local_1b0 != (int *)0x0) && (iVar7 = cv::_interlockedExchangeAdd(local_1b0,-1), iVar7 == 1))
+  {
+    cv::Mat::deallocate((Mat *)local_1c8);
+  }
+  local_198 = 0;
+  local_1a0 = 0;
+  local_1a8 = 0;
+  local_1b8 = 0;
+  *local_188 = 0;
+  local_1b0 = (int *)0x0;
+  if (local_180 != local_178) {
+    cv::fastFree(local_180);
+  }
+  return param_1;
+}
+

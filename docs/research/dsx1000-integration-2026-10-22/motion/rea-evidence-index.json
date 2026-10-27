@@ -1,0 +1,969 @@
+{
+  "bundle": "rea-evidence.json.gz",
+  "compressed_bytes": 5642931,
+  "compressed_sha256": "46252af99d27ec6b381cebb19d9b444f9eb9c4bc882d7f7ee79e0a18bf2a3436",
+  "uncompressed_bytes": 76100534,
+  "uncompressed_sha256": "a40d73321260385df33f28a1d86d033ab5fd37099ca6e3c8d80a09e07847430b",
+  "records": [
+    {
+      "evidence_id": "ev_18b134a035b930a946d843257b1faf606ef0c14cbc061b0c88c261023d1b8f79",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateManager",
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_378406d3cc5d33fff9bac20201e3e02f62d6c8d92469fb1ab8c86b8b422a8ea1"
+    },
+    {
+      "evidence_id": "ev_1931be4fca901d823b61819df9e7677305e3073b130baddccfaad319a5f60132",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 2549760,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "name": "OlyuMicroscope.dll",
+        "row_offset": 1074360,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.UiController",
+          "Olympus.LI.Triumph.Application.ViewModel.ViewModelBase"
+        ],
+        "unmatched_type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.ViewModelBase"
+        ]
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_1be78f5cf3a5f2b18b24aedbcc630025fdcb511aa1f1b3b7d100f4078eb3aa21",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateManager",
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_378406d3cc5d33fff9bac20201e3e02f62d6c8d92469fb1ab8c86b8b422a8ea1"
+    },
+    {
+      "evidence_id": "ev_1cfc76648617683da0d14a4df5ad5c8fcd2cb070e272e1a7548e581b2bd3b2e2",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.Focus",
+          "Olympus.LI.Triumph.Application.ViewModel.Stage"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94"
+    },
+    {
+      "evidence_id": "ev_378406d3cc5d33fff9bac20201e3e02f62d6c8d92469fb1ab8c86b8b422a8ea1",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 2549760,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "name": "OlyuMicroscope.dll",
+        "row_offset": 1074360,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateManager",
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_39d30b0eff53f7d043487746bef513de6c267af445646e80a6f5de31b297ba7c",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 129536,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainManager.dll",
+        "sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "ca294a94-db18-4a18-a4c5-54474ffb20ff",
+        "name": "OlyuDomainManager.dll",
+        "row_offset": 40044,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00",
+        "requires_mvid": "ca294a94-db18-4a18-a4c5-54474ffb20ff",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_3a11f4f672b22c536ff4a0b883514fbf5e6f5de8288ae07abde4955e5183cc74",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 148480,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMicroscopeDomain.dll",
+        "sha256": "7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "0efcd9fc-47d6-4f4a-842d-2763a044ebbd",
+        "name": "OlybMicroscopeDomain.dll",
+        "row_offset": 52584,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e",
+        "requires_mvid": "0efcd9fc-47d6-4f4a-842d-2763a044ebbd",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_3cb980527feef9f79af85c6da2d93706d2e7b7ebebf56e4d2819000ffc25e06a",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": null,
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "examined": 0,
+        "exhausted": true,
+        "next_offset": null,
+        "status": "complete-within-view",
+        "total": 0
+      },
+      "parent_evidence_id": "ev_af47bb7edf4802a786f74e96facab36c660ef3a84bf54ac116038c0d0f846959"
+    },
+    {
+      "evidence_id": "ev_3d05d5ee1dc51fdeb1c788d1de1e8bbe252d3a87e2c72888509acbce51f029f5",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 287232,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll",
+        "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "name": "OlyuDomainController.dll",
+        "row_offset": 77812,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a",
+        "requires_mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.DomainController.Controller"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_41611f4f8bd648e36b5e3d01b87eda3111fbd49567474c67518cd737601b9a63",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainManager.dll",
+        "sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "ca294a94-db18-4a18-a4c5-54474ffb20ff",
+        "name": "OlyuDomainManager.dll",
+        "row_offset": 40044,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00",
+        "requires_mvid": "ca294a94-db18-4a18-a4c5-54474ffb20ff",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "examined": 7180,
+        "exhausted": true,
+        "next_offset": null,
+        "status": "complete-within-view",
+        "total": 7180
+      },
+      "parent_evidence_id": "ev_39d30b0eff53f7d043487746bef513de6c267af445646e80a6f5de31b297ba7c"
+    },
+    {
+      "evidence_id": "ev_4566a595099128c86f22718a13c0b5abcd7f38afca9a976715f034e16e099a8c",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 41472,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+        "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "5514a0e7-0c2d-4b6d-8f6f-1af575714d3a",
+        "name": "OlyuUiCalculator.dll",
+        "row_offset": 14312,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6",
+        "requires_mvid": "5514a0e7-0c2d-4b6d-8f6f-1af575714d3a",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator",
+          "Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_4684867e9518b6709ba1c0b5051e947e6333e545b8607f9332f19604451da144",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b",
+        "requires_mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d"
+    },
+    {
+      "evidence_id": "ev_56533c7dcccb747a2f1b084724aaacd10ee1d5dfab1f8430b29b947475aaa542",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 287232,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll",
+        "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "name": "OlyuDomainController.dll",
+        "row_offset": 77812,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a",
+        "requires_mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.DomainController.Focus.FocusController",
+          "Olympus.LI.Triumph.Application.DomainController.Stage.StageController"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_5eae8ebc2f0558be8a834b544dfeb1050714610bd409b804628601e92cc6aefb",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 287232,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll",
+        "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "name": "OlyuDomainController.dll",
+        "row_offset": 77812,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a",
+        "requires_mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_855f51c173d088e2d3819fc4f1397ad027a52731108f639331e3ebd35228f1e1",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 95744,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiUtility.dll",
+        "sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "79b86c12-2352-4d32-a5f1-1dcf4850f9d1",
+        "name": "OlyuUiUtility.dll",
+        "row_offset": 33872,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c",
+        "requires_mvid": "79b86c12-2352-4d32-a5f1-1dcf4850f9d1",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_8a1d2a1a382d16fb79f914c50837e789cf8fa654e8ed058ee30020fa68e67ebe",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 34304,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydStage.dll",
+        "sha256": "2b81ecb535e5e9f8b96b2dfdf7e871a2a9310ffbf3d59e36fdb8300130ff6194"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "9f57fe49-ea76-4ede-97e1-ff6e3b9d573e",
+        "name": "OlydStage.dll",
+        "row_offset": 13128,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "2b81ecb535e5e9f8b96b2dfdf7e871a2a9310ffbf3d59e36fdb8300130ff6194",
+        "requires_mvid": "9f57fe49-ea76-4ede-97e1-ff6e3b9d573e",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 2549760,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "name": "OlyuMicroscope.dll",
+        "row_offset": 1074360,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.Focus",
+          "Olympus.LI.Triumph.Application.ViewModel.Stage"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_8f11ab0f7a398e242f34634982949a7fe3cf300ad783c900a9e44b35881defe8",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 2549760,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "name": "OlyuMicroscope.dll",
+        "row_offset": 1074360,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.UiControllerBase"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_9456222e22105955084056c64958f96d663fe59e47b1abe0995cc5bbcc49bdd2",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b",
+        "requires_mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d"
+    },
+    {
+      "evidence_id": "ev_a7d5111d4ee999be7120243b063b362e8ce63a09ea10faff069179eeefc3e576",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateManager",
+          "Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_378406d3cc5d33fff9bac20201e3e02f62d6c8d92469fb1ab8c86b8b422a8ea1"
+    },
+    {
+      "evidence_id": "ev_af47bb7edf4802a786f74e96facab36c660ef3a84bf54ac116038c0d0f846959",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 2549760,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": null,
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [
+          {
+            "code": "resource-limit",
+            "detail": "Managed metadata exceeds the 67108864 byte representation budget",
+            "offset": null,
+            "scope": "metadata.representation"
+          }
+        ],
+        "state": "unavailable"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_b2af3d972d98b8a6613d8ee31fc38476ec7f78d3996decf065a4678306a7bfd7",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b",
+        "requires_mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d"
+    },
+    {
+      "evidence_id": "ev_c49870d88d47307137285103cf9202ed455f5453ec63c785285199db8445dc95",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.Focus",
+          "Olympus.LI.Triumph.Application.ViewModel.Stage"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94"
+    },
+    {
+      "evidence_id": "ev_c66f21c1077a53c53582e76d6e5227554440c9c3e2d311a0e8d689d59491cb0b",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 14336,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydDevice.dll",
+        "sha256": "5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "2dd74228-d067-478d-bd8b-db92d7ad3634",
+        "name": "OlydDevice.dll",
+        "row_offset": 3728,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d",
+        "requires_mvid": "2dd74228-d067-478d-bd8b-db92d7ad3634",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_cd772ef6ffceef23ce1f6c17757bac986e7fd8d56df2539e0c994aac8a9e1b0a",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 36352,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydMicroscope.dll",
+        "sha256": "f3d42e588a5ea19570db681ec1886b05da8e7a69d858ff04d6698d58a654d810"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "0b936040-2529-4ae4-8f33-c4df5e88c2f1",
+        "name": "OlydMicroscope.dll",
+        "row_offset": 14856,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "f3d42e588a5ea19570db681ec1886b05da8e7a69d858ff04d6698d58a654d810",
+        "requires_mvid": "0b936040-2529-4ae4-8f33-c4df5e88c2f1",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_d0e42863977cc2fe13867071f4c8075b1c0d3fe2a548e1569e5b21df275ca1b1",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll",
+        "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a",
+        "requires_mvid": "634ab81e-15f5-4f07-aadd-d59983ef1f5c",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_5eae8ebc2f0558be8a834b544dfeb1050714610bd409b804628601e92cc6aefb"
+    },
+    {
+      "evidence_id": "ev_d193d31052eeead1ce4148d5861e465877578ddc558080699b2be969c4770040",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 24576,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydPort.dll",
+        "sha256": "5f1c56f28a6f5c6a0ca5a0dc1918133bc4404b13fd5aa186fa909ed9e9ce804b"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "abf8bced-bcff-4d0e-aa00-0b995ee895b6",
+        "name": "OlydPort.dll",
+        "row_offset": 6416,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "5f1c56f28a6f5c6a0ca5a0dc1918133bc4404b13fd5aa186fa909ed9e9ce804b",
+        "requires_mvid": "abf8bced-bcff-4d0e-aa00-0b995ee895b6",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_dc8f7ba152da524dc28f6b43bc87ede5fb95324ba29338a6e20e43c869ada281",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b",
+        "requires_mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d"
+    },
+    {
+      "evidence_id": "ev_f358e75a4fb3a68e478952f023c231ddf2bebe9ebd8428237e2a7d4906ae8f4c",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 62464,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybStageDomain.dll",
+        "sha256": "2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "48b64101-7167-42dd-89eb-78403d18ef94",
+        "name": "OlybStageDomain.dll",
+        "row_offset": 23416,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff",
+        "requires_mvid": "48b64101-7167-42dd-89eb-78403d18ef94",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    },
+    {
+      "evidence_id": "ev_f6ffe30e976abe9fd58321fbf734a67882f90a762f41339e0f8ca59aa6ee1491",
+      "operation": "inspect_analysis_view",
+      "authority": "shipped-artifact",
+      "confidence": "derived",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+        "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+      },
+      "module": null,
+      "identity_scope": {
+        "requires_artifact_sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067",
+        "requires_mvid": "6800ce31-c557-472a-9993-8b8c0a52a6b6",
+        "token_identity": "build-local"
+      },
+      "selection": {
+        "type_names": [
+          "Olympus.LI.Triumph.Application.ViewModel.Focus",
+          "Olympus.LI.Triumph.Application.ViewModel.Stage"
+        ],
+        "unmatched_type_names": []
+      },
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": "ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94"
+    },
+    {
+      "evidence_id": "ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d",
+      "operation": "inspect_managed_members",
+      "authority": "shipped-artifact",
+      "confidence": "observed",
+      "artifact": {
+        "byte_length": 724480,
+        "format": "pe",
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+        "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+      },
+      "module": {
+        "enc_base_id": null,
+        "enc_id": null,
+        "generation": 0,
+        "mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b",
+        "name": "OlybMemoryDatabase.dll",
+        "row_offset": 321348,
+        "token": "0x00000001"
+      },
+      "identity_scope": {
+        "requires_artifact_sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b",
+        "requires_mvid": "c0223e38-004b-4799-8ff5-4416e69eaf0b",
+        "token_identity": "build-local"
+      },
+      "selection": null,
+      "coverage": {
+        "issues": [],
+        "state": "complete"
+      },
+      "parent_evidence_id": null
+    }
+  ],
+  "unknowns_count": 0,
+  "execution": "static analysis only; no original assembly execution or hardware communication"
+}

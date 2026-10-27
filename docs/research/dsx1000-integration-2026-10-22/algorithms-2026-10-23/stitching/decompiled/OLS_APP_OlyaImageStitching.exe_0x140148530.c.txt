@@ -1,0 +1,533 @@
+Evidence: ev_bd32d70483437eebd72c93efb39fc045c3374832cdf573e1386bfd819c1d70d9
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_140148530(longlong param_1,longlong param_2)
+
+{
+  uint uVar1;
+  longlong lVar2;
+  uint uVar3;
+  int iVar4;
+  uint uVar5;
+  ulonglong uVar6;
+  ulonglong *puVar7;
+  undefined8 *puVar8;
+  undefined8 uVar9;
+  ulonglong *puVar10;
+  int iVar11;
+  ulonglong unaff_RSI;
+  uint *puVar12;
+  undefined8 uVar13;
+  double dVar14;
+  double dVar15;
+  double dVar16;
+  undefined4 uVar17;
+  undefined4 uVar18;
+  undefined1 auStackY_248 [32];
+  undefined8 uVar19;
+  undefined8 local_1e8;
+  uint local_1e0;
+  uint local_1dc [5];
+  undefined8 local_1c8;
+  undefined8 uStack_1c0;
+  undefined8 local_1b8;
+  undefined8 uStack_1b0;
+  undefined8 local_1a8;
+  undefined8 uStack_1a0;
+  undefined8 local_198;
+  undefined8 uStack_190;
+  undefined8 local_188;
+  undefined8 uStack_180;
+  undefined8 local_178;
+  undefined8 uStack_170;
+  undefined8 local_168;
+  undefined8 uStack_160;
+  undefined8 local_158;
+  undefined8 uStack_150;
+  undefined8 local_148;
+  undefined8 uStack_140;
+  undefined8 local_138;
+  ulonglong local_128;
+  undefined8 uStack_120;
+  undefined8 local_118;
+  ulonglong local_110;
+  char local_108 [8];
+  double local_100;
+  int local_f8;
+  uint local_f4;
+  int local_f0 [2];
+  ushort local_e8;
+  undefined1 local_d8;
+  undefined7 uStack_d7;
+  undefined8 local_c8;
+  ulonglong local_c0;
+  undefined8 local_b8;
+  uint uStack_b0;
+  uint uStack_ac;
+  ulonglong local_a0;
+  undefined8 local_98 [3];
+  ulonglong local_80;
+  ulonglong local_78;
+  
+  local_1dc[1] = 0xfffffffe;
+  local_1dc[2] = 0xffffffff;
+  local_78 = DAT_1401c7000 ^ (ulonglong)auStackY_248;
+  local_108[0] = '\0';
+  _ftime64(local_f0);
+  local_f8 = local_f0[0];
+  local_f4 = (uint)local_e8;
+  local_108[0] = '\x01';
+  local_c0 = 0xf;
+  local_c8 = 0;
+  local_d8 = 0;
+  FUN_1400021b0((ulonglong *)&local_d8,&DAT_14016adce,0);
+  if (param_2 == 0) {
+    if (local_c0 < 0x10) {
+      return unaff_RSI;
+    }
+    Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+    return unaff_RSI;
+  }
+  *(longlong *)(param_1 + 0x238) = param_2;
+  local_1e0 = 0;
+  local_1dc[0] = 0;
+  local_1e8 = (double)((ulonglong)local_1e8._4_4_ << 0x20);
+  local_b8 = (double)((ulonglong)local_b8._4_4_ << 0x20);
+  local_1c8 = *(undefined8 *)(param_1 + 0x30);
+  uStack_1c0 = *(undefined8 *)(param_1 + 0x38);
+  local_1b8 = *(undefined8 *)(param_1 + 0x40);
+  uStack_1b0 = *(undefined8 *)(param_1 + 0x48);
+  local_1a8 = *(undefined8 *)(param_1 + 0x50);
+  uStack_1a0 = *(undefined8 *)(param_1 + 0x58);
+  local_198 = *(undefined8 *)(param_1 + 0x60);
+  uStack_190 = *(undefined8 *)(param_1 + 0x68);
+  local_188 = *(undefined8 *)(param_1 + 0x70);
+  uStack_180 = *(undefined8 *)(param_1 + 0x78);
+  local_178 = *(undefined8 *)(param_1 + 0x80);
+  uStack_170 = *(undefined8 *)(param_1 + 0x88);
+  local_168 = *(undefined8 *)(param_1 + 0x90);
+  uStack_160 = *(undefined8 *)(param_1 + 0x98);
+  local_158 = *(undefined8 *)(param_1 + 0xa0);
+  uStack_150 = *(undefined8 *)(param_1 + 0xa8);
+  local_148 = *(undefined8 *)(param_1 + 0xb0);
+  uStack_140 = *(undefined8 *)(param_1 + 0xb8);
+  local_138 = *(undefined8 *)(param_1 + 0xc0);
+  local_128 = *(ulonglong *)(param_1 + 0x10);
+  uStack_120 = *(undefined8 *)(param_1 + 0x18);
+  local_118 = *(undefined8 *)(param_1 + 0x20);
+  puVar10 = (ulonglong *)(param_1 + 0x1c0);
+  puVar7 = puVar10;
+  FUN_140149320((int *)&local_128,&local_1c8,*(longlong *)(param_1 + 0x28),*(int *)(param_1 + 0x198)
+                ,puVar10,(longlong *)(param_1 + 0x1a0),(longlong *)(param_1 + 0x410),
+                (int *)&local_1e0,(int *)local_1dc,(int *)&local_1e8,(int *)&local_b8,
+                (longlong *)(param_1 + 0x468));
+  uVar19 = CONCAT44((int)((ulonglong)puVar7 >> 0x20),(uint)local_b8);
+  puVar12 = local_1dc;
+  FUN_1401473d0(param_1,(int *)&local_1e0,(int *)puVar12,(int)local_1e8,(uint)local_b8,puVar10);
+  uVar1 = *(uint *)(param_1 + 0x198);
+  lVar2 = *(longlong *)(param_1 + 0x260);
+  *(undefined4 *)(lVar2 + 0xc) = *(undefined4 *)(param_1 + 0x33c);
+  *(uint *)(lVar2 + 8) = uVar1;
+  uVar17 = 0;
+  uVar18 = 0x3ff00000;
+  local_1e8 = 1.0;
+  local_b8 = 0.0;
+  if ((*(int *)(param_1 + 300) == 1) && (*(int *)(param_1 + 0x128) == 1)) {
+    if (*(uint *)(param_1 + 0x164) < 2) {
+      uVar6 = FUN_1401405e0(param_1,(ulonglong)uVar1,(ulonglong)puVar12);
+      iVar4 = (int)uVar6;
+    }
+    else {
+      uVar6 = FUN_140140d90(param_1,(double *)&local_1e8,(double *)&local_b8);
+      iVar4 = (int)uVar6;
+      uVar17 = SUB84(local_1e8,0);
+      uVar18 = (undefined4)((ulonglong)local_1e8 >> 0x20);
+    }
+    if (iVar4 != 0) goto LAB_1401492ba;
+  }
+  dVar15 = -1.0;
+  if (local_108[0] == '\0') {
+    dVar16 = -1.0;
+  }
+  else {
+    _ftime64(local_f0);
+    local_f8 = local_f0[0] - local_f8;
+    local_f4 = (local_e8 - local_f4) + local_f8 * 1000;
+    dVar16 = (double)(int)local_f4 / 1000.0;
+    local_108[0] = '\0';
+    local_100 = dVar16;
+  }
+  puVar7 = FUN_14014a4e0(&local_b8,dVar16);
+  puVar8 = FUN_140006600(&local_128,"[Stitch_C++]fit z scale , ",puVar7);
+  if ((undefined8 *)&local_d8 != puVar8) {
+    if (0xf < local_c0) {
+      Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+    }
+    local_c0 = 0xf;
+    local_c8 = 0;
+    local_d8 = 0;
+    FUN_140001f90((undefined8 *)&local_d8,puVar8);
+  }
+  if (0xf < local_110) {
+    Ordinal_1486(local_128);
+  }
+  local_110 = 0xf;
+  local_118 = 0;
+  local_128 = local_128 & 0xffffffffffffff00;
+  if (0xf < local_a0) {
+    Ordinal_1486(local_b8);
+  }
+  local_110 = 0xf;
+  local_118 = 0;
+  local_128 = local_128 & 0xffffffffffffff00;
+  puVar7 = &local_128;
+  FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+  FUN_14014a3d0(puVar7,(longlong *)&local_128);
+  _ftime64(local_f0);
+  uVar3 = local_1dc[0];
+  uVar1 = local_1e0;
+  local_f8 = local_f0[0];
+  local_f4 = (uint)local_e8;
+  local_108[0] = '\x01';
+  uVar9 = FUN_1401452e0(param_1,puVar10,local_1e0,local_1dc[0]);
+  if ((int)uVar9 == 0) {
+    if (local_108[0] == (char)uVar9) {
+      dVar16 = -1.0;
+    }
+    else {
+      _ftime64(local_f0);
+      local_f8 = local_f0[0] - local_f8;
+      local_f4 = (local_e8 - local_f4) + local_f8 * 1000;
+      dVar16 = (double)(int)local_f4 / 1000.0;
+      local_108[0] = '\0';
+      local_100 = dVar16;
+    }
+    puVar7 = FUN_14014a4e0(&local_b8,dVar16);
+    puVar8 = FUN_140006600(&local_128,"[Stitch_C++]set image coord data , ",puVar7);
+    if ((undefined8 *)&local_d8 != puVar8) {
+      if (0xf < local_c0) {
+        Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+      }
+      local_c0 = 0xf;
+      local_c8 = 0;
+      local_d8 = 0;
+      FUN_140001f90((undefined8 *)&local_d8,puVar8);
+    }
+    if (0xf < local_110) {
+      Ordinal_1486(local_128);
+    }
+    local_110 = 0xf;
+    local_118 = 0;
+    local_128 = local_128 & 0xffffffffffffff00;
+    if (0xf < local_a0) {
+      Ordinal_1486(local_b8);
+    }
+    local_110 = 0xf;
+    local_118 = 0;
+    local_128 = local_128 & 0xffffffffffffff00;
+    puVar7 = &local_128;
+    FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+    FUN_14014a3d0(puVar7,(longlong *)&local_128);
+    _ftime64(local_f0);
+    local_f8 = local_f0[0];
+    local_f4 = (uint)local_e8;
+    local_108[0] = '\x01';
+    iVar4 = *(int *)(param_1 + 0x220);
+    iVar11 = *(int *)(param_1 + 0x224);
+    lVar2 = *(longlong *)(param_1 + 0x260);
+    *(undefined4 *)(lVar2 + 0xc) = *(undefined4 *)(param_1 + 0x330);
+    *(int *)(lVar2 + 8) = iVar4 * iVar11;
+    iVar11 = (*(int *)(param_1 + 0x120) != 1) + 2;
+    iVar4 = FUN_140147110(param_1,iVar11);
+    if (iVar4 == 0) {
+      if (local_108[0] == '\0') {
+        dVar16 = -1.0;
+      }
+      else {
+        _ftime64(local_f0);
+        local_f8 = local_f0[0] - local_f8;
+        local_f4 = (local_e8 - local_f4) + local_f8 * 1000;
+        dVar16 = (double)(int)local_f4 / 1000.0;
+        local_108[0] = '\0';
+        local_100 = dVar16;
+      }
+      puVar7 = FUN_14014a4e0(&local_b8,dVar16);
+      puVar8 = FUN_140006600(&local_128,"[Stitch_C++]stitch first , ",puVar7);
+      if ((undefined8 *)&local_d8 != puVar8) {
+        if (0xf < local_c0) {
+          Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+        }
+        local_c0 = 0xf;
+        local_c8 = 0;
+        local_d8 = 0;
+        FUN_140001f90((undefined8 *)&local_d8,puVar8);
+      }
+      if (0xf < local_110) {
+        Ordinal_1486(local_128);
+      }
+      local_110 = 0xf;
+      local_118 = 0;
+      local_128 = local_128 & 0xffffffffffffff00;
+      if (0xf < local_a0) {
+        Ordinal_1486(local_b8);
+      }
+      local_110 = 0xf;
+      local_118 = 0;
+      local_128 = local_128 & 0xffffffffffffff00;
+      puVar7 = &local_128;
+      FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+      FUN_14014a3d0(puVar7,(longlong *)&local_128);
+      _ftime64(local_f0);
+      local_f8 = local_f0[0];
+      local_f4 = (uint)local_e8;
+      local_108[0] = '\x01';
+      local_1e8 = 0.0;
+      local_b8 = 0.0;
+      _uStack_b0 = CONCAT44(uVar3,uVar1);
+      _ftime64(local_f0);
+      local_f8 = local_f0[0] - local_f8;
+      local_f4 = (local_e8 - local_f4) + local_f8 * 1000;
+      local_100 = (double)(int)local_f4 / 1000.0;
+      local_108[0] = '\0';
+      puVar7 = FUN_14014a4e0(local_98,local_100);
+      puVar8 = FUN_140006600(&local_128,"[Stitch_C++]trim rect , ",puVar7);
+      if ((undefined8 *)&local_d8 != puVar8) {
+        if (0xf < local_c0) {
+          Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+        }
+        local_c0 = 0xf;
+        local_c8 = 0;
+        local_d8 = 0;
+        FUN_140001f90((undefined8 *)&local_d8,puVar8);
+      }
+      if (0xf < local_110) {
+        Ordinal_1486(local_128);
+      }
+      local_110 = 0xf;
+      local_118 = 0;
+      local_128 = local_128 & 0xffffffffffffff00;
+      if (0xf < local_80) {
+        Ordinal_1486(local_98[0]);
+      }
+      local_110 = 0xf;
+      local_118 = 0;
+      local_128 = local_128 & 0xffffffffffffff00;
+      uVar13 = 0xffffffffffffffff;
+      puVar7 = &local_128;
+      FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+      FUN_14014a3d0(puVar7,(longlong *)&local_128);
+      _ftime64(local_f0);
+      uVar9 = _uStack_b0;
+      dVar16 = local_b8;
+      local_f8 = local_f0[0];
+      local_f4 = (uint)local_e8;
+      local_108[0] = '\x01';
+      uVar5 = FUN_140144f50(param_1,uVar1,uVar3,uVar13,uVar19,iVar11);
+      if (uVar5 == 0) {
+        if (local_108[0] == '\0') {
+          dVar14 = -1.0;
+        }
+        else {
+          _ftime64(local_f0);
+          local_f8 = local_f0[0] - local_f8;
+          local_f4 = (local_e8 - local_f4) + local_f8 * 1000;
+          dVar14 = (double)(int)local_f4 / 1000.0;
+          local_108[0] = '\0';
+          local_100 = dVar14;
+        }
+        puVar7 = FUN_14014a4e0(local_98,dVar14);
+        puVar8 = FUN_140006600(&local_128,"[Stitch_C++]create first , ",puVar7);
+        if ((undefined8 *)&local_d8 != puVar8) {
+          if (0xf < local_c0) {
+            Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+          }
+          local_c0 = 0xf;
+          local_c8 = 0;
+          local_d8 = 0;
+          FUN_140001f90((undefined8 *)&local_d8,puVar8);
+        }
+        if (0xf < local_110) {
+          Ordinal_1486(local_128);
+        }
+        local_110 = 0xf;
+        local_118 = 0;
+        local_128 = local_128 & 0xffffffffffffff00;
+        if (0xf < local_80) {
+          Ordinal_1486(local_98[0]);
+        }
+        local_110 = 0xf;
+        local_118 = 0;
+        local_128 = local_128 & 0xffffffffffffff00;
+        puVar7 = &local_128;
+        FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+        FUN_14014a3d0(puVar7,(longlong *)&local_128);
+        _ftime64(local_f0);
+        local_f8 = local_f0[0];
+        local_f4 = (uint)local_e8;
+        local_108[0] = '\x01';
+        if ((*(int *)(param_1 + 0x120) == 1) && (*(int *)(param_1 + 0x124) == 1)) {
+          iVar4 = FUN_140147110(param_1,3);
+          if (iVar4 != 0) goto LAB_1401492ba;
+          if (local_108[0] == '\0') {
+            dVar14 = -1.0;
+          }
+          else {
+            _ftime64(local_f0);
+            local_f8 = local_f0[0] - local_f8;
+            local_f4 = (local_e8 - local_f4) + local_f8 * 1000;
+            dVar14 = (double)(int)local_f4 / 1000.0;
+            local_108[0] = '\0';
+            local_100 = dVar14;
+          }
+          puVar7 = FUN_14014a4e0(local_98,dVar14);
+          puVar8 = FUN_140006600(&local_128,"[Stitch_C++]stitch second , ",puVar7);
+          if ((undefined8 *)&local_d8 != puVar8) {
+            if (0xf < local_c0) {
+              Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+            }
+            local_c0 = 0xf;
+            local_c8 = 0;
+            local_d8 = 0;
+            FUN_140001f90((undefined8 *)&local_d8,puVar8);
+          }
+          if (0xf < local_110) {
+            Ordinal_1486(local_128);
+          }
+          local_110 = 0xf;
+          local_118 = 0;
+          local_128 = local_128 & 0xffffffffffffff00;
+          if (0xf < local_80) {
+            Ordinal_1486(local_98[0]);
+          }
+          local_110 = 0xf;
+          local_118 = 0;
+          local_128 = local_128 & 0xffffffffffffff00;
+          uVar13 = 0xffffffffffffffff;
+          puVar7 = &local_128;
+          FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+          FUN_14014a3d0(puVar7,(longlong *)&local_128);
+          _ftime64(local_f0);
+          local_f8 = local_f0[0];
+          local_f4 = (uint)local_e8;
+          local_108[0] = '\x01';
+          local_b8 = dVar16;
+          _uStack_b0 = uVar9;
+          uVar5 = FUN_140144f50(param_1,uVar1,uVar3,uVar13,uVar19,3);
+          if (uVar5 != 0) goto LAB_1401492ba;
+          dVar14 = dVar15;
+          if (local_108[0] != '\0') {
+            dVar14 = (double)FUN_1401610f0(local_108);
+          }
+          puVar7 = FUN_14014a4e0(local_98,dVar14);
+          puVar8 = FUN_140006600(&local_128,"[Stitch_C++]create second , ",puVar7);
+          FUN_140006ff0((undefined8 *)&local_d8,puVar8);
+          if (0xf < local_110) {
+            Ordinal_1486(local_128);
+          }
+          local_110 = 0xf;
+          local_118 = 0;
+          local_128 = local_128 & 0xffffffffffffff00;
+          if (0xf < local_80) {
+            Ordinal_1486(local_98[0]);
+          }
+          local_110 = 0xf;
+          local_118 = 0;
+          local_128 = local_128 & 0xffffffffffffff00;
+          puVar7 = &local_128;
+          FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+          FUN_14014a3d0(puVar7,(longlong *)&local_128);
+          _ftime64(local_f0);
+          local_f4 = (uint)local_e8;
+        }
+        local_108[0] = '\x01';
+        iVar4 = *(int *)(param_1 + 0x220);
+        uVar5 = *(uint *)(param_1 + 0x224);
+        lVar2 = *(longlong *)(param_1 + 0x260);
+        *(undefined4 *)(lVar2 + 0xc) = *(undefined4 *)(param_1 + 0x334);
+        *(uint *)(lVar2 + 8) = iVar4 * uVar5;
+        if ((*(int *)(param_1 + 0x128) != 1) ||
+           (local_f8 = local_f0[0], local_b8 = dVar16, _uStack_b0 = uVar9,
+           uVar5 = FUN_140143c30(param_1,(ulonglong)uVar5,uVar1,uVar3,(uint *)&local_b8), uVar5 == 0
+           )) {
+          dVar14 = dVar15;
+          if (local_108[0] != '\0') {
+            dVar14 = (double)FUN_1401610f0(local_108);
+          }
+          puVar7 = FUN_14014a4e0(local_98,dVar14);
+          puVar8 = FUN_140006600(&local_128,"[Stitch_C++]stitch z , ",puVar7);
+          FUN_140006ff0((undefined8 *)&local_d8,puVar8);
+          if (0xf < local_110) {
+            Ordinal_1486(local_128);
+          }
+          local_110 = 0xf;
+          local_118 = 0;
+          local_128 = local_128 & 0xffffffffffffff00;
+          if (0xf < local_80) {
+            Ordinal_1486(local_98[0]);
+          }
+          local_110 = 0xf;
+          local_118 = 0;
+          local_128 = local_128 & 0xffffffffffffff00;
+          puVar7 = &local_128;
+          FUN_140001830((longlong *)puVar7,(longlong *)&local_d8,0,0xffffffffffffffff);
+          FUN_14014a3d0(puVar7,(longlong *)&local_128);
+          _ftime64(local_f0);
+          local_f8 = local_f0[0];
+          local_f4 = (uint)local_e8;
+          local_108[0] = '\x01';
+          uVar5 = *(uint *)(param_1 + 0x198);
+          uVar6 = (ulonglong)uVar5;
+          lVar2 = *(longlong *)(param_1 + 0x260);
+          *(undefined4 *)(lVar2 + 0xc) = *(undefined4 *)(param_1 + 0x338);
+          *(uint *)(lVar2 + 8) = uVar5;
+          if (*(int *)(param_1 + 0x158) == 1) {
+            local_b8 = dVar16;
+            _uStack_b0 = uVar9;
+            uVar6 = FUN_14013f2a0(param_1,(longlong *)puVar10,uVar1,uVar3);
+            if ((int)uVar6 != 0) goto LAB_1401492ba;
+            if (local_108[0] != (char)uVar6) {
+              dVar15 = (double)FUN_1401610f0(local_108);
+            }
+            puVar10 = FUN_14014a4e0(local_98,dVar15);
+            puVar8 = FUN_140006600(&local_128,"[Stitch_C++]stitch invalid , ",puVar10);
+            FUN_140006ff0((undefined8 *)&local_d8,puVar8);
+            if (0xf < local_110) {
+              Ordinal_1486(local_128);
+            }
+            local_110 = 0xf;
+            local_118 = 0;
+            local_128 = local_128 & 0xffffffffffffff00;
+            if (0xf < local_80) {
+              Ordinal_1486(local_98[0]);
+            }
+            local_110 = 0xf;
+            local_118 = 0;
+            local_128 = local_128 & 0xffffffffffffff00;
+            uVar6 = 0;
+            puVar10 = &local_128;
+            FUN_140001830((longlong *)puVar10,(longlong *)&local_d8,0,0xffffffffffffffff);
+            FUN_14014a3d0(puVar10,(longlong *)&local_128);
+            _ftime64(local_f0);
+            local_f8 = local_f0[0];
+            local_f4 = (uint)local_e8;
+          }
+          local_108[0] = '\x01';
+          local_b8 = dVar16;
+          _uStack_b0 = uVar9;
+          FUN_140147d40(param_1,0,uVar6,uVar1,uVar3,(double)CONCAT44(uVar18,uVar17),local_1e8,
+                        (long *)&local_b8);
+        }
+      }
+    }
+  }
+LAB_1401492ba:
+  if (0xf < local_c0) {
+    Ordinal_1486(CONCAT71(uStack_d7,local_d8));
+  }
+  return unaff_RSI;
+}
+

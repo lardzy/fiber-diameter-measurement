@@ -1,0 +1,7 @@
+0x06000117 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel..ctor
+0 ldarg.0 None 
+1 ldc.i4.1 None 
+2 stfld 0x04000092 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.IsDSXOutprocessStitching
+7 ldarg.0 None 
+8 call 0x0a000115 ..ctor
+13 ret None 

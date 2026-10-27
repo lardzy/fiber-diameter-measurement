@@ -1,0 +1,289 @@
+{
+  "version_scope": "Declared assembly versions in supplied copy, not live device verification",
+  "records": [
+    {
+      "file": "DSX-BSW-CTRL/DSX-BSW-CTRL.exe",
+      "evidence_id": "ev_cfca8102d146a1e8f664cfd22185767d43a61489a3b2aeccfc46212e5955e500",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/DSX-BSW-CTRL.exe",
+        "sha256": "99927e1185bcb7fee71d3ed6a497637600e7b9dfe459825e1429746c853aa7aa",
+        "byte_length": 34816,
+        "format": "pe"
+      },
+      "pe": {
+        "machine": 332,
+        "machine_hex": "0x014c",
+        "architecture": "x86",
+        "optional_header": "pe32",
+        "section_count": 3,
+        "characteristics": 258,
+        "cli": {
+          "header_offset": 520,
+          "header_size": 72,
+          "runtime_version": "2.5",
+          "flags": 1,
+          "flag_names": [
+            "il-only"
+          ],
+          "entry_point": {
+            "kind": "metadata-token",
+            "value": "0x06000030"
+          },
+          "metadata_rva": 16324,
+          "metadata_size": 23764,
+          "resources_rva": 15360,
+          "resources_size": 962,
+          "strong_name_rva": 0,
+          "strong_name_size": 0,
+          "managed_native_header_rva": 0,
+          "managed_native_header_size": 0,
+          "ready_to_run_signature": false
+        }
+      },
+      "classification": {
+        "status": "managed",
+        "container": "pe",
+        "runtime_family": "dotnet-framework",
+        "implementation": "cil",
+        "managed_architecture": "anycpu",
+        "evidence": [
+          {
+            "code": "cli-header-observed",
+            "detail": "A file-backed PE CLI header and metadata root were admitted.",
+            "file_offset": 520
+          },
+          {
+            "code": "target-framework-observed",
+            "detail": "An assembly-level TargetFrameworkAttribute names .NET Framework.",
+            "file_offset": 12452
+          },
+          {
+            "code": "managed-architecture-derived",
+            "detail": "Managed architecture anycpu is derived from PE machine and CLI flags.",
+            "file_offset": 536
+          }
+        ]
+      },
+      "metadata": {
+        "status": "complete",
+        "version": "v4.0.30319",
+        "stream_names": [
+          "#Blob",
+          "#GUID",
+          "#Strings",
+          "#US",
+          "#~"
+        ],
+        "table_row_counts": {
+          "Module": 1,
+          "TypeRef": 125,
+          "TypeDef": 9,
+          "Field": 40,
+          "MethodDef": 52,
+          "Param": 64,
+          "MemberRef": 207,
+          "Constant": 20,
+          "CustomAttribute": 21,
+          "FieldMarshal": 1,
+          "StandAloneSig": 22,
+          "ModuleRef": 3,
+          "TypeSpec": 3,
+          "ImplMap": 3,
+          "Assembly": 1,
+          "AssemblyRef": 14,
+          "ManifestResource": 1,
+          "NestedClass": 2,
+          "MethodSpec": 1
+        }
+      },
+      "module": {
+        "name": "DSX-BSW-CTRL.exe",
+        "generation": 0,
+        "mvid": "ff71165a-1e17-483e-ba09-ecc5d8e95b50",
+        "enc_id": null,
+        "enc_base_id": null,
+        "token": "0x00000001",
+        "row_offset": 8852
+      },
+      "assembly": {
+        "name": "DSX-BSW-CTRL",
+        "version": "1.2.4.1217",
+        "culture": null,
+        "flags": 0,
+        "hash_algorithm": 32772,
+        "public_key": {
+          "kind": "none",
+          "byte_length": 0,
+          "sha256": null,
+          "token": null
+        },
+        "token": "0x20000001",
+        "row_offset": 12662
+      },
+      "target_frameworks": [
+        ".NETFramework,Version=v4.6.2"
+      ],
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      },
+      "limitations": [
+        "Static inspection did not load the assembly, resolve dependencies through a CLR, decompile C#, or execute target code."
+      ],
+      "reported_counts": {
+        "references": 14,
+        "resources": 1,
+        "attributes": 21
+      },
+      "identity_scope": {
+        "token_identity": "build-local",
+        "requires_artifact_sha256": "99927e1185bcb7fee71d3ed6a497637600e7b9dfe459825e1429746c853aa7aa",
+        "requires_mvid": "ff71165a-1e17-483e-ba09-ecc5d8e95b50"
+      }
+    },
+    {
+      "file": "DSX-BSW-APP/DSX-BSW-APP.exe",
+      "evidence_id": "ev_c874ac163fe1d8050a84f597da6093e7ea9983f085ba05d21ead3abc38182abd",
+      "artifact": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/DSX-BSW-APP.exe",
+        "sha256": "345544ec1a3feceb4cf8e50f7d8e07ce4a7298453d33bd791e30a48a78e505a4",
+        "byte_length": 1577744,
+        "format": "pe"
+      },
+      "pe": {
+        "machine": 332,
+        "machine_hex": "0x014c",
+        "architecture": "x86",
+        "optional_header": "pe32",
+        "section_count": 3,
+        "characteristics": 34,
+        "cli": {
+          "header_offset": 520,
+          "header_size": 72,
+          "runtime_version": "2.5",
+          "flags": 1,
+          "flag_names": [
+            "il-only"
+          ],
+          "entry_point": {
+            "kind": "metadata-token",
+            "value": "0x06000045"
+          },
+          "metadata_rva": 19924,
+          "metadata_size": 36572,
+          "resources_rva": 56496,
+          "resources_size": 1398544,
+          "strong_name_rva": 0,
+          "strong_name_size": 0,
+          "managed_native_header_rva": 0,
+          "managed_native_header_size": 0,
+          "ready_to_run_signature": false
+        }
+      },
+      "classification": {
+        "status": "managed",
+        "container": "pe",
+        "runtime_family": "dotnet-framework",
+        "implementation": "cil",
+        "managed_architecture": "anycpu",
+        "evidence": [
+          {
+            "code": "cli-header-observed",
+            "detail": "A file-backed PE CLI header and metadata root were admitted.",
+            "file_offset": 520
+          },
+          {
+            "code": "target-framework-observed",
+            "detail": "An assembly-level TargetFrameworkAttribute names .NET Framework.",
+            "file_offset": 20530
+          },
+          {
+            "code": "managed-architecture-derived",
+            "detail": "Managed architecture anycpu is derived from PE machine and CLI flags.",
+            "file_offset": 536
+          }
+        ]
+      },
+      "metadata": {
+        "status": "complete",
+        "version": "v4.0.30319",
+        "stream_names": [
+          "#Blob",
+          "#GUID",
+          "#Strings",
+          "#US",
+          "#~"
+        ],
+        "table_row_counts": {
+          "Module": 1,
+          "TypeRef": 206,
+          "TypeDef": 19,
+          "Field": 93,
+          "MethodDef": 206,
+          "Param": 138,
+          "InterfaceImpl": 15,
+          "MemberRef": 349,
+          "Constant": 21,
+          "CustomAttribute": 45,
+          "FieldMarshal": 1,
+          "StandAloneSig": 29,
+          "PropertyMap": 8,
+          "Property": 31,
+          "MethodSemantics": 53,
+          "MethodImpl": 21,
+          "ModuleRef": 3,
+          "ImplMap": 3,
+          "Assembly": 1,
+          "AssemblyRef": 27,
+          "ManifestResource": 2,
+          "NestedClass": 4,
+          "MethodSpec": 8
+        }
+      },
+      "module": {
+        "name": "DSX-BSW-APP.exe",
+        "generation": 0,
+        "mvid": "f7e30347-33fd-48cd-a3f0-076cf9a94630",
+        "enc_id": null,
+        "enc_base_id": null,
+        "token": "0x00000001",
+        "row_offset": 12468
+      },
+      "assembly": {
+        "name": "DSX-BSW-APP",
+        "version": "1.2.4.44",
+        "culture": null,
+        "flags": 0,
+        "hash_algorithm": 32772,
+        "public_key": {
+          "kind": "none",
+          "byte_length": 0,
+          "sha256": null,
+          "token": null
+        },
+        "token": "0x20000001",
+        "row_offset": 21554
+      },
+      "target_frameworks": [
+        ".NETFramework,Version=v4.7.2"
+      ],
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      },
+      "limitations": [
+        "Static inspection did not load the assembly, resolve dependencies through a CLR, decompile C#, or execute target code."
+      ],
+      "reported_counts": {
+        "references": 27,
+        "resources": 2,
+        "attributes": 45
+      },
+      "identity_scope": {
+        "token_identity": "build-local",
+        "requires_artifact_sha256": "345544ec1a3feceb4cf8e50f7d8e07ce4a7298453d33bd791e30a48a78e505a4",
+        "requires_mvid": "f7e30347-33fd-48cd-a3f0-076cf9a94630"
+      }
+    }
+  ]
+}

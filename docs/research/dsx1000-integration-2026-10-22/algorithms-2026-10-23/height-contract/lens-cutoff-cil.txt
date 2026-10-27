@@ -1,0 +1,32 @@
+EVIDENCE ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d SHA256 1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b
+
+METHOD 0x06000bf6 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper GetLensCutoff IL_SHA256 44ade7fb99bdde53f81f41164460074a06c7005b58497f54c2fbbb4d9f0fd280 DECODE_ISSUE null
+0000: call          0x06000bf7 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetZoomMagnification
+0005: callvirt      0x060010c8 Olympus.LI.Triumph.Workflow.MemoryDatabase.ZoomMagnification.get_OpticalZoom
+000a: stloc.0        
+000b: call          0x06000bf9 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetLensMaster
+0010: stloc.1        
+0011: ldloc.1        
+0012: callvirt      0x060010e2 Olympus.LI.Triumph.Workflow.MemoryDatabase.LensMaster.get_LensMagnification
+0017: stloc.2        
+0018: ldloc.1        
+0019: callvirt      0x0a0003df Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.MasterDbEntity`1.get_Id
+001e: stloc.3        
+001f: ldloc.3        
+0020: ldloc.0        
+0021: call          0x06000bef Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetLensNA
+0026: stloc.s       4 
+0028: ldloc.s       4 
+002a: ldloc.2        
+002b: ldloc.0        
+002c: mul            
+002d: div            
+002e: stloc.s       5 
+0030: ldc.r8        2 
+0039: ldloc.s       5 
+003b: mul            
+003c: ldsfld        0x040003b6 Olympus.LI.Triumph.Workflow.MemoryDatabase.LensOpticalParamMaster.OPTICAL_LENS_WAVE_LENGTH
+0041: ldc.r8        0.000001 
+004a: mul            
+004b: div            
+004c: ret            

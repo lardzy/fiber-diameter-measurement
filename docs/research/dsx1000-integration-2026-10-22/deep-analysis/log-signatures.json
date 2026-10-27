@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "scope": "static literal candidates only; missing log line is not evidence of missing operation",
+  "default_log_directory": "%PUBLIC%\\OLYMPUS\\DSX-BSW\\Log\\CurrentLog",
+  "log_force_flush_in_copy": false,
+  "clock": "vendor local time; collector monotonic receipt clock is separate",
+  "signatures": [
+    {
+      "kind": "rdk_request",
+      "literal": ">>ProcMVZR_SET().",
+      "assembly": "OlyuRdkMicroscopeControl.dll",
+      "meaning": "request handler entered; not arrival"
+    },
+    {
+      "kind": "rdk_shot",
+      "literal": ">>ProcSHOT_SET().",
+      "assembly": "OlyuRdkMicroscopeControl.dll",
+      "meaning": "dispatch; not capture complete"
+    },
+    {
+      "kind": "rdk_error",
+      "literal": "SetRdkErrorcode:",
+      "assembly": "OlymRdkData.dll",
+      "meaning": "stored shared/current error; not per-shot unique"
+    },
+    {
+      "kind": "z_mode",
+      "literal": "[Extend]-[ExtendMode] Selected value Changed",
+      "assembly": "OlyuMicroscope.dll",
+      "meaning": "selected mode; not actual run proof"
+    },
+    {
+      "kind": "z_pitch",
+      "literal": "[Extend]-[Pitch] Adjust value Changed",
+      "assembly": "OlyuMicroscope.dll",
+      "meaning": "UI pitch setting; record displayed units"
+    },
+    {
+      "kind": "z_steps",
+      "literal": "[Extend]-[StepCount] Adjust value Changed",
+      "assembly": "OlyuMicroscope.dll",
+      "meaning": "step count; literal um suffix is not valid count unit"
+    },
+    {
+      "kind": "autosave_start",
+      "literal": "<S> PerformAutoSaveInfoOperation",
+      "assembly": "OlycAcquisitionContainer.dll",
+      "meaning": "APP save handling start"
+    },
+    {
+      "kind": "save_result",
+      "literal": "<E> ReturnVal= IsSuccess:",
+      "assembly": "OlycAcquisitionContainer.dll",
+      "meaning": "many methods emit this; retain logger context"
+    },
+    {
+      "kind": "transfer_complete",
+      "literal": "Send Iamge Data for ImageProcess Complete",
+      "assembly": "OlybProcessJoinDomain.dll",
+      "meaning": "exact original typo Iamge; transfer Result success"
+    },
+    {
+      "kind": "transfer_error",
+      "literal": "Send Iamge Data for ImageProcess Error",
+      "assembly": "OlybProcessJoinDomain.dll",
+      "meaning": "transfer Result failure"
+    },
+    {
+      "kind": "autosave_restore",
+      "literal": "AutoSave=OFF.Wait",
+      "assembly": "OlyuMicroscope.dll",
+      "meaning": "temporary autosave restore waiting; not file-ready event"
+    }
+  ]
+}

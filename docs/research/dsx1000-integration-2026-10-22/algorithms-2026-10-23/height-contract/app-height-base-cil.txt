@@ -1,0 +1,17 @@
+EVIDENCE ev_54f8cd0938416c64dd8a72abe7dc812768890f4b82db502ab777d2f71c2b1cef SHA256 ddb3f38f49ea249509acd5c605e957fd9f1ba1c8149e3ba712be432de48fa3f7
+
+METHOD 0x060005d2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase GetXResolution IL_SHA256 abe9deb2d48dcb80cf44ba98de32c8da9ba73ac639eaccd1bf5a5d920c866d33 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: call          0x06000662 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetTiffTag
+0007: callvirt      0x06000695 Olympus.Mis.Imaging.BusinessEntities.Common.TIFFTagsEntity.get_ImageData
+000c: callvirt      0x06000698 Olympus.Mis.Imaging.BusinessEntities.Common.ImageParameters.get_DataPerPixelX
+0011: ret            
+
+METHOD 0x060005d6 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase GetZResolution IL_SHA256 33082825a1ddbed105ea917cfec49a11662498a7269fced5eea8d1d8646f2327 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: call          0x06000662 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetTiffTag
+0007: callvirt      0x06000695 Olympus.Mis.Imaging.BusinessEntities.Common.TIFFTagsEntity.get_ImageData
+000c: callvirt      0x0600069c Olympus.Mis.Imaging.BusinessEntities.Common.ImageParameters.get_DataPerPixelZ
+0011: ret            

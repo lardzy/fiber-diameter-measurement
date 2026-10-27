@@ -1,0 +1,639 @@
+Evidence: ev_f548c0b8b7f42179aac998b048405630ebdbddf6c4f489aa8d1ef9ca8d31072b
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* private: bool __cdecl CCompositeDLL::OrderMatch(class ctool::matrix<struct _IplImage * __ptr64> &
+   __ptr64,struct CvPoint * __ptr64,int * __ptr64 const) __ptr64 */
+
+bool __thiscall
+CCompositeDLL::OrderMatch
+          (CCompositeDLL *this,matrix<_IplImage*___ptr64> *param_1,CvPoint *param_2,int *param_3)
+
+{
+  double dVar1;
+  void *pvVar2;
+  int *piVar3;
+  bool bVar4;
+  basic_iostream<char,std::char_traits<char>_> *pbVar5;
+  basic_ostream<char,std::char_traits<char>_> *pbVar6;
+  basic_ostream<char,struct_std::char_traits<char>_> *pbVar7;
+  _IplImage **pp_Var8;
+  _IplImage **pp_Var9;
+  basic_iostream<char,std::char_traits<char>_> *pbVar10;
+  int iVar11;
+  int iVar12;
+  uint uVar13;
+  ulonglong uVar14;
+  longlong lVar15;
+  void *pvVar16;
+  int iVar17;
+  undefined4 *puVar18;
+  int iVar19;
+  uint uVar20;
+  _IplImage *p_Var21;
+  _IplImage *p_Var22;
+  double dVar23;
+  undefined4 uVar24;
+  undefined4 uVar25;
+  undefined4 uVar26;
+  undefined4 uVar27;
+  undefined1 auStackY_4e8 [32];
+  uint local_498;
+  uint local_494;
+  longlong local_490;
+  int local_488;
+  int local_484;
+  int local_480;
+  int local_47c;
+  uint local_478;
+  uint local_474;
+  uint local_470;
+  uint local_46c;
+  uint local_468;
+  uint local_464;
+  int *local_460;
+  _IplImage *local_458;
+  int local_450;
+  uint local_44c;
+  undefined **local_448;
+  undefined8 local_440;
+  int local_438;
+  undefined4 *local_430;
+  int local_428;
+  undefined **local_420;
+  undefined8 local_418;
+  int local_410;
+  void *local_408;
+  undefined8 local_400;
+  undefined8 local_3f8;
+  CvPoint *local_3e0;
+  undefined8 local_3d8;
+  basic_iostream<char,std::char_traits<char>_> local_3d0 [248];
+  basic_iostream<char,std::char_traits<char>_> local_2d8 [248];
+  basic_iostream<char,std::char_traits<char>_> local_1e0 [248];
+  undefined1 local_e8;
+  undefined7 uStack_e7;
+  undefined8 local_d8;
+  ulonglong uStack_d0;
+  undefined8 local_c8;
+  undefined8 local_c0;
+  undefined8 local_b8;
+  undefined8 local_b0;
+  double local_a8;
+  double local_a0;
+  double local_98;
+  double dStack_90;
+  ulonglong local_88;
+  
+                    /* 0xd330  69
+                       ?OrderMatch@CCompositeDLL@@AEAA_NAEAV?$matrix@PEAU_IplImage@@@ctool@@PEAUCvPoint@@QEAH@Z
+                        */
+  local_3d8 = 0xfffffffffffffffe;
+  local_88 = DAT_180023010 ^ (ulonglong)auStackY_4e8;
+  local_d8 = 0;
+  uStack_d0 = 0xf;
+  local_e8 = 0;
+  local_460 = param_3;
+  local_3e0 = param_2;
+  FUN_180015be0((longlong *)&local_e8," 4 OrderMatch() [start]",0x17);
+  pbVar10 = local_2d8;
+  pbVar5 = FUN_180010310(pbVar10,(undefined8 *)&local_e8);
+  FUN_1800035c0(pbVar10,(longlong *)pbVar5);
+  if (0xf < uStack_d0) {
+    pvVar2 = (void *)CONCAT71(uStack_e7,local_e8);
+    pvVar16 = pvVar2;
+    if ((0xfff < uStack_d0 + 1) &&
+       (pvVar16 = *(void **)((longlong)pvVar2 + -8),
+       0x1f < (ulonglong)((longlong)pvVar2 + (-8 - (longlong)pvVar16)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar16);
+  }
+  local_490 = *(longlong *)param_2;
+  local_400 = 0;
+  local_3f8 = 0;
+  local_a8 = 0.0;
+  local_a0 = 0.0;
+  local_98 = 0.0;
+  dStack_90 = 0.0;
+  iVar11 = (int)((ulonglong)local_490 >> 0x20);
+  iVar17 = (int)local_490;
+  *(undefined4 *)
+   (*(longlong *)(this + 0x30) + (longlong)(iVar11 * *(int *)(this + 0x24) + iVar17) * 8) = 0;
+  *(undefined4 *)
+   (*(longlong *)(this + 0x30) + 4 + (longlong)(iVar11 * *(int *)(this + 0x24) + iVar17) * 8) = 0;
+  lVar15 = DAT_180023ce0;
+  if (*(longlong *)(DAT_180023ce0 + 0xa8) != 0) {
+    pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)(DAT_180023ce0 + 0x20),
+                           "match result= {");
+    std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,FUN_180011510);
+    pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)(lVar15 + 0x20),
+                           "\t index=[");
+    pbVar7 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,iVar17);
+    pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar7,", ");
+    pbVar7 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,iVar11);
+    pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar7,"]");
+    std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,FUN_180011510);
+  }
+  local_c8 = 0;
+  local_c0 = 0;
+  local_b8 = 0;
+  local_b0 = 0;
+  p_Var22 = (_IplImage *)(longlong)*(int *)(param_1 + 0x10);
+  local_428 = *(int *)(param_1 + 8);
+  local_450 = *(int *)(param_1 + 0xc);
+  local_448 = ctool::matrix<e_matchDir>::vftable;
+  local_440 = 0;
+  local_438 = 0;
+  local_430 = (undefined4 *)0x0;
+  ctool::matrix<e_matchDir>::allocate((matrix<e_matchDir> *)&local_448,local_428,local_450);
+  uVar14 = (ulonglong)((longlong)(local_430 + local_438) + (3 - (longlong)local_430)) >> 2;
+  if (local_430 + local_438 < local_430) {
+    uVar14 = 0;
+  }
+  puVar18 = local_430;
+  if (uVar14 != 0) {
+    for (; uVar14 != 0; uVar14 = uVar14 - 1) {
+      *puVar18 = 0;
+      puVar18 = puVar18 + 1;
+    }
+  }
+  local_420 = ctool::matrix<bool>::vftable;
+  local_418 = 0;
+  local_410 = 0;
+  local_408 = (void *)0x0;
+  ctool::matrix<bool>::allocate
+            ((matrix<bool> *)&local_420,*(int *)(param_1 + 8),*(int *)(param_1 + 0xc));
+  memset(local_408,0,(longlong)local_410);
+  *(undefined1 *)((longlong)(local_418._4_4_ * iVar11 + iVar17) + (longlong)local_408) = 1;
+  local_d8 = 0;
+  uStack_d0 = 0xf;
+  local_e8 = 0;
+  FUN_180015be0((longlong *)&local_e8," 5 OrderMatch():for1 [start]",0x1c);
+  pbVar10 = local_2d8;
+  pbVar5 = FUN_180010310(pbVar10,(undefined8 *)&local_e8);
+  FUN_1800035c0(pbVar10,(longlong *)pbVar5);
+  if (0xf < uStack_d0) {
+    pvVar2 = (void *)CONCAT71(uStack_e7,local_e8);
+    pvVar16 = pvVar2;
+    if ((0xfff < uStack_d0 + 1) &&
+       (pvVar16 = *(void **)((longlong)pvVar2 + -8),
+       0x1f < (ulonglong)((longlong)pvVar2 + (-8 - (longlong)pvVar16)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar16);
+  }
+  local_458 = p_Var22;
+  if (1 < (longlong)p_Var22) {
+    local_490 = 1;
+    local_47c = local_3f8._4_4_;
+    local_480 = (int)local_3f8;
+    local_484 = local_400._4_4_;
+    local_488 = (uint)local_400;
+    p_Var21 = p_Var22;
+    do {
+      lVar15 = local_490;
+      local_d8 = 0;
+      uStack_d0 = 0xf;
+      local_e8 = 0;
+      FUN_180015be0((longlong *)&local_e8," 6 OrderMatch():for1_iter [start]",0x21);
+      pbVar10 = local_1e0;
+      pbVar5 = FUN_180010310(pbVar10,(undefined8 *)&local_e8);
+      FUN_1800035c0(pbVar10,(longlong *)pbVar5);
+      if (0xf < uStack_d0) {
+        pvVar2 = (void *)CONCAT71(uStack_e7,local_e8);
+        pvVar16 = pvVar2;
+        if ((0xfff < uStack_d0 + 1) &&
+           (pvVar16 = *(void **)((longlong)pvVar2 + -8),
+           0x1f < (ulonglong)((longlong)pvVar2 + (-8 - (longlong)pvVar16)))) {
+                    /* WARNING: Subroutine does not return */
+          _invalid_parameter_noinfo_noreturn();
+        }
+        free(pvVar16);
+      }
+      uVar20 = local_460[lVar15];
+      if (uVar20 == 0) {
+        if (*(longlong *)(DAT_180023ce0 + 0xa8) != 0) {
+          pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)
+                                 (DAT_180023ce0 + 0x20),
+                                 "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                                );
+          pbVar6 = FUN_180011340(pbVar6," (");
+          pbVar7 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,0x71d);
+          pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar7,
+                                 ") : error no = ");
+          pvVar16 = (void *)0xf004;
+LAB_18000e205:
+          pbVar7 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,pvVar16);
+          std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                    ((basic_ostream<char,std::char_traits<char>_> *)pbVar7,FUN_180011510);
+        }
+LAB_18000e21e:
+        DAT_180023ce8 = 0xf000;
+LAB_18000e228:
+        bVar4 = false;
+        goto LAB_18000e31c;
+      }
+      iVar11 = *(int *)(local_3e0 + lVar15 * 8);
+      iVar17 = *(int *)(local_3e0 + lVar15 * 8 + 4);
+      if ((((-1 < iVar11) && (iVar11 < local_450)) && (-1 < iVar17)) && (iVar17 < local_428)) {
+        local_468 = 0;
+        local_464 = 0;
+        local_c8 = 0;
+        uVar26 = 0;
+        uVar27 = 0;
+        local_a8 = 0.0;
+        local_470 = 0;
+        local_46c = 0;
+        local_c0 = 0;
+        uVar24 = 0;
+        uVar25 = 0;
+        local_a0 = 0.0;
+        local_478 = 0;
+        local_474 = 0;
+        local_b8 = 0;
+        local_98 = 0.0;
+        dStack_90 = 0.0;
+        local_44c = 0;
+        local_400 = local_400 & 0xffffffff00000000;
+        local_b0 = 0;
+        if (((uVar20 & 1) != 0) && (iVar19 = iVar17 + 1, iVar19 < local_428)) {
+          iVar12 = *(int *)(param_1 + 0x20);
+          if (iVar12 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,*(int *)(param_1 + 0xc) * iVar17 + iVar11,0);
+            iVar12 = *(int *)(param_1 + 0x20);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(*(int *)(param_1 + 0xc) * iVar17 + iVar11) * 8);
+          }
+          p_Var21 = *pp_Var8;
+          if (iVar12 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,iVar19 * *(int *)(param_1 + 0xc) + iVar11,1);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(iVar19 * *(int *)(param_1 + 0xc) + iVar11) * 8);
+          }
+          p_Var22 = *pp_Var8;
+          if (*(double *)
+               ((longlong)(*(int *)(this + 0x44) * iVar19 + iVar11) * 0x20 + 0x18 +
+               *(longlong *)(this + 0x50)) <
+              *(double *)
+               ((longlong)(iVar11 + *(int *)(this + 0x44) * iVar17) * 0x20 + 8 +
+               *(longlong *)(this + 0x50))) {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&local_a8,1);
+            local_468 = -local_498;
+            local_464 = -local_494;
+          }
+          else {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&local_a8,3);
+            local_468 = local_498;
+            local_464 = local_494;
+          }
+          local_c8 = CONCAT44(local_464,local_468);
+          if (bVar4 != false) {
+            uVar26 = SUB84(local_a8,0);
+            uVar27 = (undefined4)((ulonglong)local_a8 >> 0x20);
+            FUN_1800034c0(local_460,iVar11,iVar17,local_468,local_464,local_a8,local_460[local_490])
+            ;
+            uVar20 = local_460[local_490];
+            uVar24 = SUB84(local_a0,0);
+            uVar25 = (undefined4)((ulonglong)local_a0 >> 0x20);
+            goto LAB_18000d95e;
+          }
+          goto LAB_18000e228;
+        }
+LAB_18000d95e:
+        if (((uVar20 & 2) != 0) && (iVar19 = iVar17 + -1, -1 < iVar19)) {
+          iVar12 = *(int *)(param_1 + 0x20);
+          if (iVar12 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,iVar19 * *(int *)(param_1 + 0xc) + iVar11,0);
+            iVar12 = *(int *)(param_1 + 0x20);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(iVar19 * *(int *)(param_1 + 0xc) + iVar11) * 8);
+          }
+          p_Var21 = *pp_Var8;
+          if (iVar12 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,*(int *)(param_1 + 0xc) * iVar17 + iVar11,1);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(*(int *)(param_1 + 0xc) * iVar17 + iVar11) * 8);
+          }
+          p_Var22 = *pp_Var8;
+          if (*(double *)
+               ((longlong)(*(int *)(this + 0x44) * iVar19 + iVar11) * 0x20 + 8 +
+               *(longlong *)(this + 0x50)) <
+              *(double *)
+               ((longlong)(iVar11 + *(int *)(this + 0x44) * iVar17) * 0x20 + 0x18 +
+               *(longlong *)(this + 0x50))) {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&local_a0,3);
+            local_470 = -local_498;
+            local_46c = -local_494;
+          }
+          else {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&local_a0,1);
+            local_470 = local_498;
+            local_46c = local_494;
+          }
+          lVar15 = local_490;
+          local_c0 = CONCAT44(local_46c,local_470);
+          if (bVar4 == false) goto LAB_18000e228;
+          uVar24 = SUB84(local_a0,0);
+          uVar25 = (undefined4)((ulonglong)local_a0 >> 0x20);
+          FUN_1800034c0((ulonglong)local_46c,iVar11,iVar17,local_470,local_46c,local_a0,
+                        local_460[local_490]);
+          uVar20 = local_460[lVar15];
+          uVar26 = SUB84(local_a8,0);
+          uVar27 = (undefined4)((ulonglong)local_a8 >> 0x20);
+        }
+        if (((uVar20 & 4) != 0) && (iVar19 = iVar11 + 1, iVar19 < local_450)) {
+          iVar12 = *(int *)(param_1 + 0x20);
+          if (iVar12 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,*(int *)(param_1 + 0xc) * iVar17 + iVar11,0);
+            iVar12 = *(int *)(param_1 + 0x20);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(*(int *)(param_1 + 0xc) * iVar17 + iVar11) * 8);
+          }
+          p_Var21 = *pp_Var8;
+          if (iVar12 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,*(int *)(param_1 + 0xc) * iVar17 + iVar19,1);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(*(int *)(param_1 + 0xc) * iVar17 + iVar19) * 8);
+          }
+          p_Var22 = *pp_Var8;
+          lVar15 = (longlong)(*(int *)(this + 0x44) * iVar17 + iVar11);
+          if (*(double *)(lVar15 * 0x20 + 0x30 + *(longlong *)(this + 0x50)) <
+              *(double *)(lVar15 * 0x20 + *(longlong *)(this + 0x50))) {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&local_98,0);
+            local_478 = -local_498;
+            local_474 = -local_494;
+          }
+          else {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&local_98,2);
+            local_474 = local_494;
+            local_478 = local_498;
+          }
+          piVar3 = local_460;
+          lVar15 = local_490;
+          local_b8 = CONCAT44(local_474,local_478);
+          if (bVar4 == false) goto LAB_18000e228;
+          FUN_1800034c0((ulonglong)local_478,iVar11,iVar17,local_478,local_474,local_98,
+                        local_460[local_490]);
+          uVar20 = piVar3[lVar15];
+          uVar24 = SUB84(local_a0,0);
+          uVar25 = (undefined4)((ulonglong)local_a0 >> 0x20);
+          uVar26 = SUB84(local_a8,0);
+          uVar27 = (undefined4)((ulonglong)local_a8 >> 0x20);
+        }
+        if (((uVar20 & 8) == 0) || (iVar11 + -1 < 0)) {
+          uVar20 = local_44c;
+          uVar13 = (uint)local_400;
+        }
+        else {
+          iVar19 = *(int *)(param_1 + 0x20);
+          if (iVar19 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,*(int *)(param_1 + 0xc) * iVar17 + -1 + iVar11,0);
+            iVar19 = *(int *)(param_1 + 0x20);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                       (longlong)(*(int *)(param_1 + 0xc) * iVar17 + iVar11) * 8 + -8);
+          }
+          p_Var21 = *pp_Var8;
+          if (iVar19 == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_1,*(int *)(param_1 + 0xc) * iVar17 + iVar11,1);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_1 + 0x18) +
+                      (longlong)(*(int *)(param_1 + 0xc) * iVar17 + iVar11) * 8);
+          }
+          p_Var22 = *pp_Var8;
+          lVar15 = (longlong)(*(int *)(this + 0x44) * iVar17 + iVar11);
+          if (*(double *)(lVar15 * 0x20 + -0x20 + *(longlong *)(this + 0x50)) <
+              *(double *)(lVar15 * 0x20 + 0x10 + *(longlong *)(this + 0x50))) {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&dStack_90,2);
+            uVar20 = -local_498;
+            uVar13 = -local_494;
+          }
+          else {
+            bVar4 = GetShift(this,p_Var21,p_Var22,(int *)&local_498,(int *)&local_494,&dStack_90,0);
+            uVar20 = local_498;
+            uVar13 = local_494;
+          }
+          local_b0 = CONCAT44(uVar13,uVar20);
+          if (bVar4 == false) goto LAB_18000e228;
+          FUN_1800034c0(local_460,iVar11,iVar17,uVar20,uVar13,dStack_90,local_460[local_490]);
+          uVar24 = SUB84(local_a0,0);
+          uVar25 = (undefined4)((ulonglong)local_a0 >> 0x20);
+          uVar26 = SUB84(local_a8,0);
+          uVar27 = (undefined4)((ulonglong)local_a8 >> 0x20);
+        }
+        dVar23 = local_98;
+        if (local_98 <= dStack_90) {
+          dVar23 = dStack_90;
+        }
+        dVar1 = dVar23;
+        if (dVar23 <= (double)CONCAT44(uVar25,uVar24) && (double)CONCAT44(uVar25,uVar24) != dVar23)
+        {
+          dVar1 = (double)CONCAT44(uVar25,uVar24);
+        }
+        if ((double)CONCAT44(uVar27,uVar26) < dVar1 || (double)CONCAT44(uVar27,uVar26) == dVar1) {
+          if (dVar23 <= (double)CONCAT44(uVar25,uVar24) && (double)CONCAT44(uVar25,uVar24) != dVar23
+             ) {
+            dVar23 = (double)CONCAT44(uVar25,uVar24);
+          }
+        }
+        else {
+          dVar23 = (double)CONCAT44(uVar27,uVar26);
+        }
+        if (*(double *)(this + 0x98) < dVar23) {
+          if (dStack_90 == dVar23) {
+            *(undefined8 *)
+             (*(longlong *)(this + 0x30) + (longlong)(*(int *)(this + 0x24) * iVar17 + iVar11) * 8)
+                 = local_b0;
+            local_430[local_440._4_4_ * iVar17 + iVar11] = 8;
+            local_488 = local_488 + uVar20;
+            local_484 = local_484 + uVar13;
+          }
+          else if (local_98 == dVar23) {
+            *(undefined8 *)
+             (*(longlong *)(this + 0x30) + (longlong)(*(int *)(this + 0x24) * iVar17 + iVar11) * 8)
+                 = local_b8;
+            local_430[local_440._4_4_ * iVar17 + iVar11] = 4;
+            local_488 = local_488 - local_478;
+            local_484 = local_484 - local_474;
+          }
+          else {
+            if ((double)CONCAT44(uVar25,uVar24) == dVar23) {
+              *(undefined8 *)
+               (*(longlong *)(this + 0x30) + (longlong)(*(int *)(this + 0x24) * iVar17 + iVar11) * 8
+               ) = local_c0;
+              local_430[local_440._4_4_ * iVar17 + iVar11] = 2;
+              uVar13 = local_46c;
+              uVar20 = local_470;
+            }
+            else {
+              if ((double)CONCAT44(uVar27,uVar26) != dVar23) goto LAB_18000df90;
+              *(undefined8 *)
+               (*(longlong *)(this + 0x30) + (longlong)(*(int *)(this + 0x24) * iVar17 + iVar11) * 8
+               ) = local_c8;
+              local_430[local_440._4_4_ * iVar17 + iVar11] = 1;
+              uVar20 = -local_468;
+              uVar13 = -local_464;
+            }
+            local_480 = local_480 + uVar20;
+            local_47c = local_47c + uVar13;
+          }
+        }
+        else {
+          LowVoteMatch(this,(matrix<e_matchDir> *)&local_448,(matrix<bool> *)&local_420,
+                       (CvPoint *)&local_400,(int *)&local_400,iVar11,iVar17,
+                       *(int *)(p_Var22 + 0x28),*(int *)(p_Var22 + 0x2c));
+        }
+LAB_18000df90:
+        lVar15 = (longlong)(*(int *)(this + 0x24) * iVar17 + iVar11);
+        uVar20 = *(uint *)(*(longlong *)(this + 0x30) + lVar15 * 8);
+        uVar13 = (int)uVar20 >> 0x1f;
+        if ((*(int *)(p_Var22 + 0x28) < (int)((uVar20 ^ uVar13) - uVar13)) ||
+           (uVar20 = *(uint *)(*(longlong *)(this + 0x30) + 4 + lVar15 * 8),
+           uVar13 = (int)uVar20 >> 0x1f,
+           *(int *)(p_Var22 + 0x2c) < (int)((uVar20 ^ uVar13) - uVar13))) {
+          if (*(longlong *)(DAT_180023ce0 + 0xa8) != 0) {
+            pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)
+                                   (DAT_180023ce0 + 0x20),
+                                   "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                                  );
+            pbVar6 = FUN_180011340(pbVar6," (");
+            pbVar7 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,0x7ef);
+            pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar7,
+                                   ") : error no = ");
+            pvVar16 = (void *)0xf003;
+            goto LAB_18000e205;
+          }
+          goto LAB_18000e21e;
+        }
+        *(undefined1 *)((longlong)(local_418._4_4_ * iVar17 + iVar11) + (longlong)local_408) = 1;
+        p_Var21 = local_458;
+        lVar15 = local_490;
+      }
+      local_d8 = 0;
+      uStack_d0 = 0xf;
+      local_e8 = 0;
+      FUN_180015be0((longlong *)&local_e8," 6 OrderMatch():for1_iter [end]",0x1f);
+      pbVar10 = local_3d0;
+      pbVar5 = FUN_180010310(pbVar10,(undefined8 *)&local_e8);
+      FUN_1800035c0(pbVar10,(longlong *)pbVar5);
+      if (0xf < uStack_d0) {
+        pvVar2 = (void *)CONCAT71(uStack_e7,local_e8);
+        pvVar16 = pvVar2;
+        if ((0xfff < uStack_d0 + 1) &&
+           (pvVar16 = *(void **)((longlong)pvVar2 + -8),
+           0x1f < (ulonglong)((longlong)pvVar2 + (-8 - (longlong)pvVar16)))) {
+                    /* WARNING: Subroutine does not return */
+          _invalid_parameter_noinfo_noreturn();
+        }
+        free(pvVar16);
+      }
+      local_490 = lVar15 + 1;
+      param_2 = local_3e0;
+    } while (local_490 < (longlong)p_Var21);
+  }
+  if (*(longlong *)(DAT_180023ce0 + 0xa8) != 0) {
+    pbVar6 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)(DAT_180023ce0 + 0x20),"}"
+                          );
+    std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar6,FUN_180011510);
+  }
+  local_d8 = 0;
+  uStack_d0 = 0xf;
+  local_e8 = 0;
+  FUN_180015be0((longlong *)&local_e8," 5 OrderMatch():for1 [end]",0x1a);
+  pbVar10 = local_3d0;
+  pbVar5 = FUN_180010310(pbVar10,(undefined8 *)&local_e8);
+  FUN_1800035c0(pbVar10,(longlong *)pbVar5);
+  if (0xf < uStack_d0) {
+    pvVar2 = (void *)CONCAT71(uStack_e7,local_e8);
+    pvVar16 = pvVar2;
+    if ((0xfff < uStack_d0 + 1) &&
+       (pvVar16 = *(void **)((longlong)pvVar2 + -8),
+       0x1f < (ulonglong)((longlong)pvVar2 + (-8 - (longlong)pvVar16)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar16);
+  }
+  iVar11 = *(int *)(param_1 + 0x20);
+  if (iVar11 == 1) {
+    pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0);
+    iVar11 = *(int *)(param_1 + 0x20);
+  }
+  else {
+    pp_Var8 = *(_IplImage ***)(param_1 + 0x18);
+  }
+  if (iVar11 == 1) {
+    pp_Var9 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0);
+  }
+  else {
+    pp_Var9 = *(_IplImage ***)(param_1 + 0x18);
+  }
+  OrderMatchPosition(this,param_2,(matrix<e_matchDir> *)&local_448,*(int *)(*pp_Var9 + 0x28),
+                     *(int *)(*pp_Var8 + 0x2c));
+  local_d8 = 0;
+  uStack_d0 = 0xf;
+  local_e8 = 0;
+  FUN_180015be0((longlong *)&local_e8," 4 OrderMatch() [end]",0x15);
+  pbVar10 = local_3d0;
+  pbVar5 = FUN_180010310(pbVar10,(undefined8 *)&local_e8);
+  FUN_1800035c0(pbVar10,(longlong *)pbVar5);
+  if (0xf < uStack_d0) {
+    pvVar2 = (void *)CONCAT71(uStack_e7,local_e8);
+    pvVar16 = pvVar2;
+    if ((0xfff < uStack_d0 + 1) &&
+       (pvVar16 = *(void **)((longlong)pvVar2 + -8),
+       0x1f < (ulonglong)((longlong)pvVar2 + (-8 - (longlong)pvVar16)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar16);
+  }
+  bVar4 = true;
+LAB_18000e31c:
+  local_420 = ctool::matrix<bool>::vftable;
+  if (local_408 != (void *)0x0) {
+    free(local_408);
+    local_408 = (void *)0x0;
+  }
+  local_448 = ctool::matrix<e_matchDir>::vftable;
+  if (local_430 != (undefined4 *)0x0) {
+    free(local_430);
+  }
+  return bVar4;
+}
+

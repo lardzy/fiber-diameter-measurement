@@ -1,0 +1,175 @@
+EVIDENCE ev_b28983bf89a6f28ecaeb257f439dfe93b1e867e246a0d32a22aa3ce7e959c88f SHA256 0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d
+
+METHOD 0x0600009b Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinService TransferImageDataTask IL_SHA256 b91ee10a84f7f60d58b02424cdeddddfd65c51705cd9bf3018a9b66da834d0bd DECODE_ISSUE null
+0000: newobj        0x0a0005a0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result..ctor
+0005: stloc.0        
+0006: call          0x0a000019 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCurrentLensMaster
+000b: brtrue.s      14 
+000d: ret            
+000e: newobj        0x0a000022 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity..ctor
+0013: stloc.1        
+0014: call          0x0a00001a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageInfoDao
+0019: callvirt      0x0a00001b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+001e: stloc.1        
+001f: ldloc.1        
+0020: ldc.i4.1       
+0021: callvirt      0x0a00002a Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.set_TransferImageStatus
+0026: call          0x0a000016 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemInfoFromImageProcessDao
+002b: callvirt      0x0a000017 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0030: callvirt      0x0a000018 Olympus.LI.Triumph.Workflow.MemoryDatabase.fromImageProcess.SystemInfoFromImageProcessEntity.get_ProcessJoinStatus
+0035: brfalse       221 
+003a: newobj        0x0a000310 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AnnotationData..ctor
+003f: stloc.2        
+0040: ldloc.2        
+0041: ldc.i4.0       
+0042: callvirt      0x0a000313 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AnnotationData.set_IsAnnotationData
+0047: ldloc.2        
+0048: ldc.i4.0       
+0049: callvirt      0x0a000311 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AnnotationData.set_IsShowAnnotation
+004e: ldloc.2        
+004f: ldnull         
+0050: callvirt      0x0a000315 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AnnotationData.set_Data
+0055: ldc.i4.0       
+0056: stloc.3        
+0057: call          0x0a00001a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageInfoDao
+005c: callvirt      0x0a00001b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0061: callvirt      0x0a00001c Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_AcquisitionInfo
+0066: callvirt      0x0a00001d Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+006b: callvirt      0x0a00001e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_AcquisitionConditionInfo
+0070: callvirt      0x0a00001f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionConditionInfo.get_StitchinSettingInfo
+0075: callvirt      0x0a000020 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchinSettingInfo.get_StitchingCommonSettingInfo
+007a: callvirt      0x0a000021 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingCommonSettingInfo.get_StitchingMode
+007f: ldc.i4.1       
+0080: bne.un.s      132 
+0082: ldc.i4.1       
+0083: stloc.3        
+0084: ldloc.1        
+0085: callvirt      0x0a000023 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_SnapType
+008a: brtrue.s      146 
+008c: ldloc.3        
+008d: brfalse       291 
+0092: ldarg.0        
+0093: ldfld         0x0400000e Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinService._clsMicroscopeClient
+0098: ldloc.1        
+0099: callvirt      0x0a00001c Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_AcquisitionInfo
+009e: ldloc.1        
+009f: callvirt      0x0a000560 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_ImageFilePath
+00a4: ldloc.1        
+00a5: callvirt      0x0a0005a8 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_AutoSaveInfo
+00aa: ldloc.1        
+00ab: callvirt      0x0a0005a9 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_StitchingInfo
+00b0: ldloc.2        
+00b1: ldloc.1        
+00b2: callvirt      0x0a0005aa Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_UserChoices
+00b7: callvirt      0x0a0005ab Olympus.LI.Triumph.InterProcess.InterProcessCommunication.MicroscopeClient.ImageTrancefer
+00bc: stloc.0        
+00bd: ldloc.0        
+00be: callvirt      0x0a0005a6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+00c3: brfalse.s     209 
+00c5: ldstr         0x700009ad "Send Iamge Data for ImageProcess Complete"
+00ca: call          0x0a00004d Olympus.Mis.Core.Logging.Logger.Process_joinLog
+00cf: br.s          291 
+00d1: ldstr         0x70000a01 "Send Iamge Data for ImageProcess Error"
+00d6: call          0x0a00004d Olympus.Mis.Core.Logging.Logger.Process_joinLog
+00db: br.s          291 
+00dd: call          0x0a0005ac System.Configuration.ConfigurationManager.get_AppSettings
+00e2: ldstr         0x70000a4f "DebugSaveImage_ImageTransfer"
+00e7: callvirt      0x0a0005ad System.Collections.Specialized.NameValueCollection.Get
+00ec: stloc.s       4 
+00ee: ldstr         0x70000a89 "DebugSaveImage_ImageTransfer value=["
+00f3: ldloc.s       4 
+00f5: ldstr         0x70000ad3 "]"
+00fa: call          0x0a0002f4 System.String.Concat
+00ff: call          0x0a000025 Olympus.Mis.Core.Logging.Logger.DebugLog
+0104: ldstr         0x70000349 "ON"
+0109: ldloc.s       4 
+010b: call          0x0a000335 System.String.op_Equality
+0110: brfalse.s     291 
+0112: ldarg.0        
+0113: ldarg.1        
+0114: call          0x060000a7 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinService._SaveImage
+0119: ldstr         0x70000ad7 "Save Image Data for Test"
+011e: call          0x0a00004d Olympus.Mis.Core.Logging.Logger.Process_joinLog
+0123: ldloc.1        
+0124: ldc.i4.0       
+0125: callvirt      0x0a0005ae Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.set_ExtendFocusType
+012a: ldloc.1        
+012b: ldc.i4.0       
+012c: callvirt      0x0a0005af Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.set_SnapType
+0131: call          0x0a000016 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemInfoFromImageProcessDao
+0136: callvirt      0x0a000017 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+013b: callvirt      0x0a000018 Olympus.LI.Triumph.Workflow.MemoryDatabase.fromImageProcess.SystemInfoFromImageProcessEntity.get_ProcessJoinStatus
+0140: brfalse.s     342 
+0142: ldloc.1        
+0143: ldloc.0        
+0144: callvirt      0x0a0005a6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+0149: brtrue.s      334 
+014b: ldc.i4.2       
+014c: br.s          335 
+014e: ldc.i4.3       
+014f: callvirt      0x0a00002a Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.set_TransferImageStatus
+0154: br.s          349 
+0156: ldloc.1        
+0157: ldc.i4.3       
+0158: callvirt      0x0a00002a Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.set_TransferImageStatus
+015d: call          0x0a00001a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageInfoDao
+0162: ldloc.1        
+0163: callvirt      0x0a000045 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+0168: leave.s       447 
+016a: stloc.s       5 
+016c: newobj        0x0a000022 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity..ctor
+0171: stloc.s       6 
+0173: call          0x0a00001a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageInfoDao
+0178: callvirt      0x0a00001b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+017d: stloc.s       6 
+017f: ldloc.s       6 
+0181: callvirt      0x0a000023 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_SnapType
+0186: brtrue.s      415 
+0188: ldstr         0x70000b09 "TransferImageDataTask, SnapType = None"
+018d: ldc.i4.0       
+018e: newarr        0x01000005 
+0193: call          0x0a000024 System.String.Format
+0198: call          0x0a000025 Olympus.Mis.Core.Logging.Logger.DebugLog
+019d: br.s          445 
+019f: ldloc.0        
+01a0: ldc.i4.0       
+01a1: callvirt      0x0a0005a2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_IsSuccess
+01a6: ldloc.0        
+01a7: ldsfld        0x0a0005b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.ErrorCode.ImageTransfer.UNKNOWNEDERROR
+01ac: callvirt      0x0a0005a4 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_ErrorCode
+01b1: ldloc.s       5 
+01b3: callvirt      0x0a000026 System.Exception.get_Message
+01b8: call          0x0a000028 Olympus.Mis.Core.Logging.Logger.ErrorLog
+01bd: leave.s       447 
+01bf: leave.s       559 
+01c1: call          0x0a0005b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageResultInfoDao
+01c6: callvirt      0x0a0005b2 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2.Get
+01cb: stloc.s       7 
+01cd: ldloc.s       7 
+01cf: ldloc.0        
+01d0: callvirt      0x0a0005a6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+01d5: callvirt      0x0a0005b3 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageResultInfo.set_IsSuccess
+01da: ldloc.s       7 
+01dc: ldloc.0        
+01dd: callvirt      0x0a0005b4 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_ErrorCode
+01e2: callvirt      0x0a0005b5 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageResultInfo.set_ErrorCode
+01e7: call          0x0a0005b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageResultInfoDao
+01ec: ldloc.s       7 
+01ee: callvirt      0x0a0005b6 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+01f3: call          0x0a0005b7 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SaveAsDialogImageMovingInfoDao
+01f8: callvirt      0x0a0005b8 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2.Get
+01fd: stloc.s       8 
+01ff: ldloc.s       8 
+0201: ldloc.0        
+0202: callvirt      0x0a0005a6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+0207: callvirt      0x0a0005b9 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.SaveAsDialogImageMovingInfo.set_IsSuccess
+020c: ldloc.s       8 
+020e: call          0x0a0005ba Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemInfoDao
+0213: callvirt      0x0a0005bb Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0218: callvirt      0x0a0005bc Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemInfo.SystemInfo.get_SaveAsDialog_Temp_Folder_Path
+021d: callvirt      0x0a0005bd Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.SaveAsDialogImageMovingInfo.set_TempPath
+0222: call          0x0a0005b7 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SaveAsDialogImageMovingInfoDao
+0227: ldloc.s       8 
+0229: callvirt      0x0a0005be Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+022e: endfinally     
+022f: ret            

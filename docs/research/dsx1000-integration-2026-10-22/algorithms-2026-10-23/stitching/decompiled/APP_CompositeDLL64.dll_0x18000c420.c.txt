@@ -1,0 +1,110 @@
+Evidence: ev_e21bf3c78e68b77408c249631357b30df2bf0927cd6f4614b376f4f005911e58
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* public: void __cdecl
+   CCompositeDLL::SetDialogData(int,int,int,int,int,int,float,double,int,int,double,int,bool,enum
+   E_BUFFERING_MODE,char const * __ptr64,int) __ptr64 */
+
+void __thiscall
+CCompositeDLL::SetDialogData
+          (CCompositeDLL *this,int param_1,int param_2,int param_3,int param_4,int param_5,
+          int param_6,float param_7,double param_8,int param_9,int param_10,double param_11,
+          int param_12,bool param_13,E_BUFFERING_MODE param_14,char *param_15,int param_16)
+
+{
+  void *pvVar1;
+  basic_iostream<char,std::char_traits<char>_> *pbVar2;
+  basic_iostream<char,std::char_traits<char>_> *pbVar3;
+  void *pvVar4;
+  undefined1 auStack_168 [40];
+  undefined8 local_140;
+  basic_iostream<char,std::char_traits<char>_> local_138 [248];
+  undefined1 local_40;
+  undefined7 uStack_3f;
+  undefined8 local_30;
+  ulonglong uStack_28;
+  ulonglong local_20;
+  
+                    /* 0xc420  73
+                       ?SetDialogData@CCompositeDLL@@QEAAXHHHHHHMNHHNH_NW4E_BUFFERING_MODE@@PEBDH@Z
+                        */
+  local_140 = 0xfffffffffffffffe;
+  local_20 = DAT_180023010 ^ (ulonglong)auStack_168;
+  local_30 = 0;
+  uStack_28 = 0xf;
+  local_40 = 0;
+  FUN_180015be0((longlong *)&local_40," ---------------------------------------------",0x2e);
+  pbVar3 = local_138;
+  pbVar2 = FUN_180010310(pbVar3,(undefined8 *)&local_40);
+  FUN_1800035c0(pbVar3,(longlong *)pbVar2);
+  if (0xf < uStack_28) {
+    pvVar1 = (void *)CONCAT71(uStack_3f,local_40);
+    pvVar4 = pvVar1;
+    if ((0xfff < uStack_28 + 1) &&
+       (pvVar4 = *(void **)((longlong)pvVar1 + -8),
+       0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar4)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar4);
+  }
+  local_30 = 0;
+  uStack_28 = 0xf;
+  local_40 = 0;
+  FUN_180015be0((longlong *)&local_40," 1 SetDialogData() [start]",0x1a);
+  pbVar3 = local_138;
+  pbVar2 = FUN_180010310(pbVar3,(undefined8 *)&local_40);
+  FUN_1800035c0(pbVar3,(longlong *)pbVar2);
+  if (0xf < uStack_28) {
+    pvVar1 = (void *)CONCAT71(uStack_3f,local_40);
+    pvVar4 = pvVar1;
+    if ((0xfff < uStack_28 + 1) &&
+       (pvVar4 = *(void **)((longlong)pvVar1 + -8),
+       0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar4)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar4);
+  }
+  *(int *)(this + 0x78) = param_1;
+  *(int *)(this + 0x7c) = param_2;
+  *(int *)(this + 0x80) = param_3;
+  *(int *)(this + 0x84) = param_4;
+  *(int *)(this + 0x88) = param_5;
+  *(int *)(this + 0x8c) = (param_6 / 2) * 2 + 1;
+  *(double *)(this + 0x90) = (double)param_7;
+  *(double *)(this + 0x98) = param_8;
+  *(int *)(this + 0xa0) = param_9;
+  *(int *)(this + 0xa4) = param_10;
+  *(double *)(this + 0xa8) = (param_11 * 3.141592653589793) / 180.0;
+  *(int *)(this + 0xb0) = param_12;
+  this[0xb8] = (CCompositeDLL)param_13;
+  local_30 = 0;
+  uStack_28 = 0xf;
+  local_40 = 0;
+  FUN_180015be0((longlong *)&local_40," 1 SetDialogData() [end]",0x18);
+  pbVar3 = local_138;
+  pbVar2 = FUN_180010310(pbVar3,(undefined8 *)&local_40);
+  FUN_1800035c0(pbVar3,(longlong *)pbVar2);
+  if (0xf < uStack_28) {
+    pvVar1 = (void *)CONCAT71(uStack_3f,local_40);
+    pvVar4 = pvVar1;
+    if ((0xfff < uStack_28 + 1) &&
+       (pvVar4 = *(void **)((longlong)pvVar1 + -8),
+       0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar4)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar4);
+  }
+  *(E_BUFFERING_MODE *)(this + 0xbc) = param_14;
+  if (param_15 != (char *)0x0) {
+    strcpy_s((char *)(this + 0xc0),0x100,param_15);
+  }
+  *(int *)(this + 0x1c0) = param_16;
+  return;
+}
+

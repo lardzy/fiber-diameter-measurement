@@ -1,0 +1,12 @@
+{
+  "vendor_execution": false,
+  "device_connection": false,
+  "configuration_write": false,
+  "retained_bundle_records": 12,
+  "report_evidence_references_verified": 16,
+  "source_identities_verified": 17,
+  "bundle_round_trip_verified": true,
+  "remaining_device_acceptance": "not executed",
+  "relative_links_verified": 23,
+  "resolved_cil_replay_matches": true
+}

@@ -1,0 +1,442 @@
+Evidence: ev_589d661034f0dc465c03d4e6c39583df881049f7ec03080951dc4e9068d7625c
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+/* WARNING: Function: _alloca_probe replaced with injection: alloca_probe */
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+ulonglong FUN_140004560(undefined8 param_1,undefined8 param_2,UINT *param_3,undefined8 param_4,
+                       char *param_5)
+
+{
+  WCHAR WVar1;
+  WCHAR WVar2;
+  void *pvVar3;
+  errno_t eVar4;
+  UINT UVar5;
+  DWORD DVar6;
+  ulonglong uVar7;
+  undefined4 extraout_var;
+  undefined4 extraout_var_00;
+  undefined4 extraout_var_01;
+  undefined4 extraout_var_02;
+  undefined4 extraout_var_03;
+  undefined4 extraout_var_04;
+  WCHAR *pWVar8;
+  longlong *plVar9;
+  void *pvVar10;
+  char *******pppppppcVar11;
+  longlong lVar12;
+  size_t sVar13;
+  undefined4 uVar14;
+  double dVar15;
+  undefined4 uVar16;
+  undefined4 uVar17;
+  undefined4 uVar18;
+  undefined1 auStackY_1518 [32];
+  size_t local_14e8 [2];
+  undefined1 local_14d8;
+  undefined7 uStack_14d7;
+  undefined8 local_14c8;
+  ulonglong uStack_14c0;
+  undefined1 local_14b8;
+  undefined7 uStack_14b7;
+  undefined8 local_14a8;
+  ulonglong uStack_14a0;
+  undefined1 local_1498;
+  undefined7 uStack_1497;
+  undefined8 local_1488;
+  ulonglong uStack_1480;
+  char ******local_1478 [3];
+  ulonglong local_1460;
+  undefined1 local_1458;
+  undefined7 uStack_1457;
+  undefined8 local_1448;
+  ulonglong uStack_1440;
+  wchar_t local_1438 [512];
+  WCHAR local_1038 [512];
+  char local_c38 [512];
+  WCHAR local_a38 [512];
+  WCHAR local_638 [256];
+  wchar_t local_438 [512];
+  ulonglong local_38;
+  
+  local_14e8[1] = 0xfffffffffffffffe;
+  uVar7 = DAT_140030010 ^ (ulonglong)auStackY_1518;
+  if ((param_3 == (UINT *)0x0) || (param_5 == (char *)0x0)) {
+LAB_1400058f8:
+    return uVar7 & 0xffffffffffffff00;
+  }
+  local_38 = uVar7;
+  memset(local_1038,0,0x400);
+  memset(local_1438,0,0x400);
+  _wsetlocale(0,L"");
+  local_14e8[0] = 0;
+  eVar4 = mbstowcs_s(local_14e8,local_1438,0x200,param_5,0x200);
+  uVar7 = CONCAT44(extraout_var,eVar4);
+  if (eVar4 != 0) goto LAB_1400058f8;
+  GetPrivateProfileStringW(L"Directory",L"InputImageDir",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e20,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"InputImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e28,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"InputSubImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e38,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"InputImageExtension",L".",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e30,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"BlockSaveDir",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e58,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"OutputImageDir",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e78,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"OutputImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e80,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"OutputSubImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e88,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"ZImageDir",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e40,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"ZImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e48,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"ZImageExtension",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e50,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"OutputZImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e90,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"InvalidImageDir",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e60,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"InvalidImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e68,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"InvalidImageExtension",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e70,local_1038,0x200);
+  GetPrivateProfileStringW(L"Directory",L"OutPutInvalidImageName",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030e98,local_1038,0x200);
+  GetPrivateProfileStringW(L"ALMIS",L"AlmisDllPath",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030eb0,local_1038,0x200);
+  GetPrivateProfileStringW(L"File",L"IniFilePath",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030ea0,local_1038,0x200);
+  GetPrivateProfileStringW(L"File",L"ImageRelationDataPath",L"",local_1038,0x400,local_1438);
+  wcstombs(DAT_140030ea8,local_1038,0x200);
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"MaxWidth",-1,local_1438);
+  *param_3 = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"MaxHeight",-1,local_1438);
+  param_3[1] = UVar5;
+  uVar17 = 0;
+  uVar18 = 0xbff00000;
+  memset(local_a38,0,0x400);
+  DVar6 = GetPrivateProfileStringW
+                    (L"Parameter",L"OverlapAreaRatio",L"NODATA",local_a38,0x200,local_1438);
+  uVar7 = CONCAT44(extraout_var_00,DVar6);
+  if (DVar6 == 0) goto LAB_1400058f8;
+  pWVar8 = local_a38;
+  lVar12 = (longlong)L"NODATA" - (longlong)pWVar8;
+  do {
+    WVar1 = *pWVar8;
+    WVar2 = *(WCHAR *)((longlong)pWVar8 + lVar12);
+    if (WVar1 != WVar2) break;
+    pWVar8 = pWVar8 + 1;
+  } while (WVar2 != L'\0');
+  uVar14 = uVar17;
+  uVar16 = uVar18;
+  if (WVar1 != WVar2) {
+    memset(local_c38,0,0x200);
+    wcstombs(local_c38,local_a38,0x200);
+    dVar15 = atof(local_c38);
+    uVar14 = SUB84(dVar15,0);
+    uVar16 = (undefined4)((ulonglong)dVar15 >> 0x20);
+  }
+  *(ulonglong *)(param_3 + 2) = CONCAT44(uVar16,uVar14);
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"MatchingEnable",-1,local_1438);
+  param_3[4] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"SaveMatchingROIEnable",0,local_1438);
+  param_3[5] = UVar5;
+  memset(local_a38,0,0x400);
+  DVar6 = GetPrivateProfileStringW
+                    (L"Parameter",L"BlockSizeRatio",L"NODATA",local_a38,0x200,local_1438);
+  uVar7 = CONCAT44(extraout_var_01,DVar6);
+  if (DVar6 == 0) goto LAB_1400058f8;
+  pWVar8 = local_a38;
+  lVar12 = (longlong)L"NODATA" - (longlong)pWVar8;
+  do {
+    WVar1 = *pWVar8;
+    WVar2 = *(WCHAR *)((longlong)pWVar8 + lVar12);
+    if (WVar1 != WVar2) break;
+    pWVar8 = pWVar8 + 1;
+  } while (WVar2 != L'\0');
+  uVar14 = uVar17;
+  uVar16 = uVar18;
+  if (WVar1 != WVar2) {
+    memset(local_c38,0,0x200);
+    wcstombs(local_c38,local_a38,0x200);
+    dVar15 = atof(local_c38);
+    uVar14 = SUB84(dVar15,0);
+    uVar16 = (undefined4)((ulonglong)dVar15 >> 0x20);
+  }
+  *(ulonglong *)(param_3 + 6) = CONCAT44(uVar16,uVar14);
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"LoadImageLimit",-1,local_1438);
+  param_3[8] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"SaveBitmapEnable",-1,local_1438);
+  param_3[9] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"TrimRectEnable",-1,local_1438);
+  param_3[10] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"Parameter",L"SaveSrcStitchImageEnable",-1,local_1438);
+  param_3[0xb] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"ColorStitching",L"CorrectEnable",-1,local_1438);
+  param_3[0xc] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"ColorStitching",L"CorrectionType",-1,local_1438);
+  param_3[0xd] = UVar5;
+  memset(local_a38,0,0x400);
+  DVar6 = GetPrivateProfileStringW
+                    (L"ColorStitching",L"CorrectionAdjuster",L"NODATA",local_a38,0x200,local_1438);
+  uVar7 = CONCAT44(extraout_var_02,DVar6);
+  if (DVar6 == 0) goto LAB_1400058f8;
+  pWVar8 = local_a38;
+  lVar12 = (longlong)L"NODATA" - (longlong)pWVar8;
+  do {
+    WVar1 = *pWVar8;
+    WVar2 = *(WCHAR *)((longlong)pWVar8 + lVar12);
+    if (WVar1 != WVar2) break;
+    pWVar8 = pWVar8 + 1;
+  } while (WVar2 != L'\0');
+  uVar14 = uVar17;
+  uVar16 = uVar18;
+  if (WVar1 != WVar2) {
+    memset(local_c38,0,0x200);
+    wcstombs(local_c38,local_a38,0x200);
+    dVar15 = atof(local_c38);
+    uVar14 = SUB84(dVar15,0);
+    uVar16 = (undefined4)((ulonglong)dVar15 >> 0x20);
+  }
+  *(ulonglong *)(param_3 + 0xe) = CONCAT44(uVar16,uVar14);
+  UVar5 = GetPrivateProfileIntW(L"ColorStitching",L"CorrectionAreaLimitEnable",-1,local_1438);
+  param_3[0x10] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"ColorStitching",L"CorrectionAreaThreshold",-1,local_1438);
+  param_3[0x11] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"ColorStitching",L"CorrectionCount",-1,local_1438);
+  param_3[0x12] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"ColorStitching",L"SwapRBEnable",-1,local_1438);
+  param_3[0x13] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"StitchHeightImageEnable",-1,local_1438);
+  param_3[0x16] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"HeightCorrectionEnable",-1,local_1438);
+  param_3[0x17] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"CorrectEnable",-1,local_1438);
+  param_3[0x18] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"CorrectionType",-1,local_1438);
+  param_3[0x19] = UVar5;
+  memset(local_a38,0,0x400);
+  DVar6 = GetPrivateProfileStringW
+                    (L"3DStitching",L"CorrectionAdjuster",L"NODATA",local_a38,0x200,local_1438);
+  uVar7 = CONCAT44(extraout_var_03,DVar6);
+  if (DVar6 == 0) goto LAB_1400058f8;
+  pWVar8 = local_a38;
+  lVar12 = (longlong)L"NODATA" - (longlong)pWVar8;
+  do {
+    WVar1 = *pWVar8;
+    WVar2 = *(WCHAR *)((longlong)pWVar8 + lVar12);
+    if (WVar1 != WVar2) break;
+    pWVar8 = pWVar8 + 1;
+  } while (WVar2 != L'\0');
+  if (WVar1 != WVar2) {
+    memset(local_c38,0,0x200);
+    wcstombs(local_c38,local_a38,0x200);
+    dVar15 = atof(local_c38);
+    uVar17 = SUB84(dVar15,0);
+    uVar18 = (undefined4)((ulonglong)dVar15 >> 0x20);
+  }
+  *(ulonglong *)(param_3 + 0x1a) = CONCAT44(uVar18,uVar17);
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"CorrectionAreaLimitEnable",-1,local_1438);
+  param_3[0x1c] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"CorrectionAreaThreshold",-1,local_1438);
+  param_3[0x1d] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"CorrectionCount",-1,local_1438);
+  param_3[0x1e] = UVar5;
+  UVar5 = GetPrivateProfileIntW(L"3DStitching",L"SwapImageByteEnable",-1,local_1438);
+  param_3[0x1f] = UVar5;
+  uVar17 = 0x9999999a;
+  uVar18 = 0x3fa99999;
+  memset(local_a38,0,0x400);
+  DVar6 = GetPrivateProfileStringW
+                    (L"3DStitching",L"CorrectionNonOverlapRatio",L"NODATA",local_a38,0x200,
+                     local_1438);
+  if (DVar6 == 0) {
+    param_3[0x20] = 0x9999999a;
+    param_3[0x21] = 0x3fa99999;
+  }
+  else {
+    pWVar8 = local_a38;
+    lVar12 = (longlong)L"NODATA" - (longlong)pWVar8;
+    do {
+      WVar1 = *pWVar8;
+      WVar2 = *(WCHAR *)((longlong)pWVar8 + lVar12);
+      if (WVar1 != WVar2) break;
+      pWVar8 = pWVar8 + 1;
+    } while (WVar2 != L'\0');
+    if (WVar1 != WVar2) {
+      memset(local_c38,0,0x200);
+      wcstombs(local_c38,local_a38,0x200);
+      dVar15 = atof(local_c38);
+      uVar17 = SUB84(dVar15,0);
+      uVar18 = (undefined4)((ulonglong)dVar15 >> 0x20);
+    }
+    *(ulonglong *)(param_3 + 0x20) = CONCAT44(uVar18,uVar17);
+  }
+  UVar5 = GetPrivateProfileIntW(L"InvalidStitching",L"StitchInvalidImageEnable",-1,local_1438);
+  param_3[0x22] = UVar5;
+  _DAT_140030140 = GetPrivateProfileIntW(L"ImageInfomation",L"Width",-1,local_1438);
+  _DAT_140030144 = GetPrivateProfileIntW(L"ImageInfomation",L"Height",-1,local_1438);
+  DAT_140030148 = GetPrivateProfileIntW(L"ImageInfomation",L"Depth",-1,local_1438);
+  DAT_14003014c = GetPrivateProfileIntW(L"ImageInfomation",L"Channel",-1,local_1438);
+  uVar17 = 0;
+  uVar18 = 0;
+  memset(local_a38,0,0x400);
+  DVar6 = GetPrivateProfileStringW
+                    (L"ImageInfomation",L"ResizeRate",L"NODATA",local_a38,0x200,local_1438);
+  uVar7 = CONCAT44(extraout_var_04,DVar6);
+  if (DVar6 == 0) goto LAB_1400058f8;
+  pWVar8 = local_a38;
+  lVar12 = (longlong)L"NODATA" - (longlong)pWVar8;
+  do {
+    WVar1 = *pWVar8;
+    WVar2 = *(WCHAR *)((longlong)pWVar8 + lVar12);
+    if (WVar1 != WVar2) break;
+    pWVar8 = pWVar8 + 1;
+  } while (WVar2 != L'\0');
+  if (WVar1 != WVar2) {
+    memset(local_c38,0,0x200);
+    wcstombs(local_c38,local_a38,0x200);
+    dVar15 = atof(local_c38);
+    uVar17 = SUB84(dVar15,0);
+    uVar18 = (undefined4)((ulonglong)dVar15 >> 0x20);
+  }
+  DAT_140030150 = CONCAT44(uVar18,uVar17);
+  _DAT_140030158 =
+       GetPrivateProfileIntW(L"ShadingCorrection",L"ShadingCorrectionEnable",-1,local_1438);
+  _DAT_14003015c =
+       GetPrivateProfileIntW(L"ShadingCorrection",L"SaveCorrectedImageEnable",0,local_1438);
+  _DAT_140030160 = GetPrivateProfileIntW(L"ShadingCorrection",L"RGBConvertCode",-1,local_1438);
+  _DAT_140030164 = GetPrivateProfileIntW(L"ShadingCorrection",L"KernelSize",-1,local_1438);
+  _DAT_140030168 = GetPrivateProfileIntW(L"ShadingCorrection",L"SmoothCount",-1,local_1438);
+  local_1488 = 0;
+  uStack_1480 = 0xf;
+  local_1498 = 0;
+  FUN_14000cca0((longlong *)&local_1498,&DAT_1400264e0,4);
+  local_14a8 = 0;
+  uStack_14a0 = 0xf;
+  local_14b8 = 0;
+  FUN_14000cca0((longlong *)&local_14b8,"ShadingImage",0xc);
+  local_14c8 = 0;
+  uStack_14c0 = 0xf;
+  local_14d8 = 0;
+  sVar13 = 0xffffffffffffffff;
+  do {
+    sVar13 = sVar13 + 1;
+  } while (DAT_140030e58[sVar13] != '\0');
+  FUN_14000cca0((longlong *)&local_14d8,DAT_140030e58,sVar13);
+  plVar9 = FUN_14000c190((longlong *)&local_1458,(longlong *)&local_14d8,(undefined8 *)&local_14b8);
+  FUN_14000c190((longlong *)local_1478,plVar9,(undefined8 *)&local_1498);
+  if (0xf < uStack_1440) {
+    pvVar3 = (void *)CONCAT71(uStack_1457,local_1458);
+    pvVar10 = pvVar3;
+    if ((0xfff < uStack_1440 + 1) &&
+       (pvVar10 = *(void **)((longlong)pvVar3 + -8),
+       0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar10)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(pvVar10);
+  }
+  local_1448 = 0;
+  uStack_1440 = 0xf;
+  local_1458 = 0;
+  if (0xf < uStack_14c0) {
+    pvVar3 = (void *)CONCAT71(uStack_14d7,local_14d8);
+    pvVar10 = pvVar3;
+    if ((0xfff < uStack_14c0 + 1) &&
+       (pvVar10 = *(void **)((longlong)pvVar3 + -8),
+       0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar10)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(pvVar10);
+  }
+  local_14c8 = 0;
+  uStack_14c0 = 0xf;
+  local_14d8 = 0;
+  if (0xf < uStack_14a0) {
+    pvVar3 = (void *)CONCAT71(uStack_14b7,local_14b8);
+    pvVar10 = pvVar3;
+    if ((0xfff < uStack_14a0 + 1) &&
+       (pvVar10 = *(void **)((longlong)pvVar3 + -8),
+       0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar10)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(pvVar10);
+  }
+  local_14a8 = 0;
+  uStack_14a0 = 0xf;
+  local_14b8 = 0;
+  if (0xf < uStack_1480) {
+    pvVar3 = (void *)CONCAT71(uStack_1497,local_1498);
+    pvVar10 = pvVar3;
+    if ((0xfff < uStack_1480 + 1) &&
+       (pvVar10 = *(void **)((longlong)pvVar3 + -8),
+       0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar10)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(pvVar10);
+  }
+  pppppppcVar11 = local_1478;
+  if (0xf < local_1460) {
+    pppppppcVar11 = (char *******)local_1478[0];
+  }
+  eVar4 = mbstowcs_s(local_14e8,local_438,0x200,(char *)pppppppcVar11,0x200);
+  if (eVar4 == 0) {
+    GetPrivateProfileStringW
+              (L"ShadingCorrection",L"ShadingImageName",local_438,local_1038,0x400,local_1438);
+    wcstombs(DAT_140030170,local_1038,0x200);
+    memset(local_638,0,0x200);
+    UVar5 = GetPrivateProfileIntW(L"CompositeMatch",L"MTC_BufferingMode",0,local_1438);
+    param_3[0x2c] = UVar5;
+    UVar5 = GetPrivateProfileIntW(L"CompositeMatch",L"MTC_ProcedureType",-1,local_1438);
+    param_3[0x23] = UVar5;
+    if (-1 < (int)UVar5) {
+      UVar5 = GetPrivateProfileIntW(L"CompositeMatch",L"MTC_LogFilterSize",-1,local_1438);
+      param_3[0x24] = UVar5;
+      if (-1 < (int)param_3[0x23]) {
+        GetPrivateProfileStringW(L"CompositeMatch",L"MTC_MinVote",L"0.0",local_638,0x20,local_1438);
+        dVar15 = _wtof(local_638);
+        *(double *)(param_3 + 0x26) = dVar15;
+        memset(local_638,0,0x200);
+        GetPrivateProfileStringW
+                  (L"CompositeMatch",L"MTC_MaxCameraAngle",L"0.0",local_638,0x20,local_1438);
+        dVar15 = _wtof(local_638);
+        *(double *)(param_3 + 0x28) = dVar15;
+        memset(local_638,0,0x200);
+        UVar5 = GetPrivateProfileIntW(L"CompositeMatch",L"MTC_ImageType",-1,local_1438);
+        param_3[0x2a] = UVar5;
+        if (-1 < (int)UVar5) {
+          UVar5 = GetPrivateProfileIntW(L"CompositeMatch",L"MTC_NoiseReduct",-1,local_1438);
+          *(bool *)(param_3 + 0x2b) = UVar5 == 1;
+          uVar7 = 1;
+          goto LAB_1400058b5;
+        }
+      }
+    }
+  }
+  uVar7 = 0;
+LAB_1400058b5:
+  if (local_1460 < 0x10) {
+    return uVar7;
+  }
+  pppppppcVar11 = (char *******)local_1478[0];
+  if ((0xfff < local_1460 + 1) &&
+     (pppppppcVar11 = (char *******)local_1478[0][-1],
+     0x1f < (ulonglong)((longlong)local_1478[0] + (-8 - (longlong)pppppppcVar11)))) {
+                    /* WARNING: Subroutine does not return */
+    _invalid_parameter_noinfo_noreturn();
+  }
+  FUN_1400219e4(pppppppcVar11);
+  return uVar7;
+}
+

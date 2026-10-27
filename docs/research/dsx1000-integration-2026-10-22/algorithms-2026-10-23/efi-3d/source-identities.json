@@ -1,0 +1,39 @@
+{
+  "mode": "static-read-only",
+  "targets": [
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "bytes": 30720,
+      "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "pe_machine": "0x14c",
+      "optional_header_magic": "0x10b",
+      "pe_timestamp": 1677022411,
+      "section_count": 3,
+      "clr_flags": "0x1",
+      "il_only": true,
+      "requires_32bit": false,
+      "prefers_32bit": false
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "bytes": 30208,
+      "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a",
+      "pe_machine": "0x8664",
+      "optional_header_magic": "0x20b",
+      "pe_timestamp": 1515550545,
+      "section_count": 6,
+      "clr_flags": null
+    },
+    {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "bytes": 1007104,
+      "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547",
+      "pe_machine": "0x8664",
+      "optional_header_magic": "0x20b",
+      "pe_timestamp": 1475050062,
+      "section_count": 8,
+      "clr_flags": null
+    }
+  ],
+  "identity_method": "SHA-256 of source bytes; PE/COFF and CLR flags decoded from file headers only; timestamp is not claimed as product version"
+}

@@ -1,0 +1,415 @@
+Evidence: ev_999e6382706cd60ba45bf1de8882c7deb724ac6b0d65ed93751fd00add9916dc
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_14013c340(int *param_1,longlong *param_2,uint *param_3,undefined4 param_4,int *param_5,
+                  uint *param_6,int *param_7)
+
+{
+  uint uVar1;
+  uint uVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  Mat *pMVar7;
+  Mat *pMVar8;
+  int *piVar9;
+  longlong lVar10;
+  ulonglong uVar11;
+  longlong lVar12;
+  uint *in_R9;
+  longlong lVar13;
+  ulonglong uVar14;
+  longlong lVar15;
+  undefined4 uVar16;
+  undefined4 uVar17;
+  float fVar18;
+  float fVar19;
+  undefined1 auStackY_408 [32];
+  int local_3b8;
+  int local_3b4;
+  double local_3b0;
+  longlong local_3a8;
+  float local_3a0;
+  float local_39c;
+  double local_398;
+  longlong local_390;
+  longlong local_388;
+  float local_380;
+  float local_37c;
+  ulonglong local_378;
+  double local_370;
+  undefined4 local_368;
+  undefined4 uStack_364;
+  _InputArray local_360 [32];
+  int local_340;
+  int local_33c;
+  float local_338;
+  float local_334;
+  undefined8 local_330;
+  longlong *local_328;
+  undefined8 local_320;
+  undefined4 local_318;
+  undefined4 local_314;
+  double local_310;
+  longlong local_308;
+  undefined8 *local_300;
+  int *local_2f8;
+  longlong *local_2f0;
+  double local_2e8;
+  double local_2e0;
+  _OutputArray local_2d8 [32];
+  undefined8 local_2b8;
+  undefined8 local_2b0;
+  Mat local_2a8 [96];
+  undefined8 local_248;
+  undefined8 local_240;
+  undefined8 local_238;
+  int *piStack_230;
+  undefined8 local_228;
+  undefined8 local_220;
+  undefined8 local_218;
+  undefined8 local_210;
+  undefined8 *local_208;
+  undefined8 *local_200;
+  undefined8 local_1f8;
+  undefined8 local_1f0;
+  undefined8 local_1e8;
+  int local_1e0 [2];
+  longlong local_1d8;
+  int *piStack_1d0;
+  undefined8 local_1c8;
+  undefined8 local_1c0;
+  undefined8 local_1b8;
+  undefined8 local_1b0;
+  int *local_1a8;
+  undefined8 *local_1a0;
+  undefined8 local_198;
+  undefined8 local_190;
+  Mat local_188 [4];
+  uint local_184;
+  int local_180;
+  int local_17c;
+  longlong local_178;
+  int *local_170;
+  undefined8 local_168;
+  undefined8 local_160;
+  undefined8 local_158;
+  int *local_148;
+  undefined1 *local_140;
+  undefined1 local_138 [16];
+  Mat local_128 [16];
+  undefined8 local_118;
+  int *local_110;
+  undefined8 local_108;
+  undefined8 local_100;
+  undefined8 local_f8;
+  undefined4 *local_e8;
+  undefined1 *local_e0;
+  undefined1 local_d8 [16];
+  ulonglong local_c8;
+  
+  local_2b8 = 0xfffffffffffffffe;
+  local_c8 = DAT_1401c7000 ^ (ulonglong)auStackY_408;
+  local_2f8 = param_5;
+  if (1 < DAT_1401c9b50 - *param_1) {
+    local_2f0 = param_2;
+    _vcomp_for_static_simple_init(1,(DAT_1401c9b50 - *param_1) + -1,1,1);
+    if (local_3b4 <= local_3b8) {
+      uVar1 = *param_3;
+      uVar2 = *in_R9;
+      iVar3 = *param_7;
+      lVar13 = (longlong)local_3b4 * 4;
+      lVar12 = (longlong)local_3b4 * 0x18;
+      uVar11 = (ulonglong)((local_3b8 - local_3b4) + 1);
+      do {
+        uVar14 = (ulonglong)uVar1;
+        local_3a8 = lVar12;
+        local_378 = uVar11;
+        local_388 = FUN_140133c00(iVar3,*(int *)(lVar13 + DAT_1401c9c18),(ulonglong)uVar2,param_4);
+        cv::cvarrToMat(local_188,SUB81(local_388,0),false,(int)CONCAT71((int7)(uVar14 >> 8),1));
+        if (local_178 == 0) {
+LAB_14013cd21:
+          cvReleaseImage(&local_388);
+          if ((local_170 != (int *)0x0) &&
+             (iVar6 = cv::_interlockedExchangeAdd(local_170,-1), iVar6 == 1)) {
+            cv::Mat::deallocate(local_188);
+          }
+          *local_148 = 0;
+        }
+        else {
+          uVar14 = (ulonglong)local_184;
+          if ((int)local_184 < 3) {
+            lVar10 = (longlong)local_17c * (longlong)local_180;
+          }
+          else {
+            lVar10 = 1;
+            piVar9 = local_148;
+            if (0 < (int)local_184) {
+              do {
+                lVar10 = lVar10 * *piVar9;
+                uVar14 = uVar14 - 1;
+                piVar9 = piVar9 + 1;
+              } while (uVar14 != 0);
+            }
+          }
+          if (lVar10 == 0) goto LAB_14013cd21;
+          local_1a8 = local_1e0;
+          local_1a0 = &local_198;
+          local_190 = 0;
+          local_198 = 0;
+          local_1e8 = 0x42ff0000;
+          local_1e0[0] = 0;
+          local_1e0[1] = 0;
+          local_1b8 = 0;
+          local_1c0 = 0;
+          local_1c8 = 0;
+          local_1d8 = 0;
+          piStack_1d0 = (int *)0x0;
+          local_1b0 = 0;
+          piVar9 = param_5;
+          if (0 < (int)*param_6) {
+            uVar14 = (ulonglong)*param_6;
+            lVar10 = DAT_1401c9c18;
+            do {
+              iVar6 = *param_5;
+              lVar12 = (longlong)iVar6;
+              if (*(int *)(lVar13 + lVar10) == *(int *)(lVar10 + lVar12 * 4)) {
+                iVar4 = param_5[1];
+                lVar15 = (longlong)iVar4;
+                fVar18 = *(float *)(DAT_1401c9b18 + lVar12 * 8) -
+                         *(float *)(DAT_1401c9b18 + lVar15 * 8);
+                fVar19 = *(float *)(DAT_1401c9b18 + 4 + lVar12 * 8) -
+                         *(float *)(DAT_1401c9b18 + 4 + lVar15 * 8);
+                iVar5 = *(int *)(lVar10 + lVar15 * 4);
+                uVar11 = (ulonglong)uVar2;
+                if (iVar3 == 2) {
+                  local_390 = FUN_140134010(0,2,iVar5,param_4,uVar1,0);
+                  local_368 = *(undefined4 *)(local_390 + 0x28);
+                  uStack_364 = *(undefined4 *)(local_390 + 0x2c);
+                  lVar12 = cvCreateImage(*(undefined8 *)(local_390 + 0x28),8,1);
+                  cvCvtColor(local_390,lVar12);
+                  cvReleaseImage(&local_390);
+                }
+                else {
+                  lVar12 = FUN_140134010(0,iVar3,iVar5,param_4,uVar1,0);
+                }
+                local_308 = lVar12;
+                pMVar7 = (Mat *)cv::cvarrToMat(local_128,SUB81(lVar12,0),false,
+                                               (int)CONCAT71((int7)(uVar11 >> 8),1));
+                if ((Mat *)&local_1e8 != pMVar7) {
+                  FUN_140013570((Mat *)&local_1e8,pMVar7);
+                }
+                if ((local_110 != (int *)0x0) &&
+                   (iVar5 = cv::_interlockedExchangeAdd(local_110,-1), iVar5 == 1)) {
+                  cv::Mat::deallocate(local_128);
+                }
+                local_f8 = 0;
+                local_100 = 0;
+                local_108 = 0;
+                local_118 = 0;
+                *local_e8 = 0;
+                local_110 = (int *)0x0;
+                if (local_e0 != local_d8) {
+                  cv::fastFree(local_e0);
+                }
+                lVar10 = DAT_1401c9c18;
+                if (local_1d8 != 0) {
+                  uVar11 = (ulonglong)local_1e8._4_4_;
+                  if ((int)local_1e8._4_4_ < 3) {
+                    lVar12 = (longlong)local_1e0[0] * (longlong)local_1e0[1];
+                  }
+                  else {
+                    lVar12 = 1;
+                    piVar9 = local_1a8;
+                    if (0 < (int)local_1e8._4_4_) {
+                      do {
+                        lVar12 = lVar12 * *piVar9;
+                        uVar11 = uVar11 - 1;
+                        piVar9 = piVar9 + 1;
+                      } while (uVar11 != 0);
+                    }
+                  }
+                  if (lVar12 != 0) {
+                    if (DAT_1401c9b6c == 1) {
+                      local_208 = &local_240;
+                      local_200 = &local_1f8;
+                      local_1f0 = 0;
+                      local_1f8 = 0;
+                      local_248 = 0x42ff0000;
+                      local_240 = 0;
+                      local_218 = 0;
+                      local_220 = 0;
+                      local_228 = 0;
+                      local_238 = 0;
+                      piStack_230 = (int *)0x0;
+                      local_210 = 0;
+                      cv::_OutputArray::_OutputArray(local_2d8,(Mat *)&local_248);
+                      cv::Mat::convertTo((Mat *)&local_1e8,local_2d8,5,1.0,0.0);
+                      cv::_OutputArray::_OutputArray(local_2d8,(Mat *)&local_248);
+                      cv::_InputArray::_InputArray(local_360,(Mat *)&local_248);
+                      cv::threshold(local_360,local_2d8,4096.0,65535.0,3);
+                      cv::_OutputArray::_OutputArray((_OutputArray *)local_360,(Mat *)&local_1e8);
+                      cv::Mat::convertTo((Mat *)&local_248,(_OutputArray *)local_360,2,1.0,0.0);
+                      if ((piStack_230 != (int *)0x0) &&
+                         (iVar5 = cv::_interlockedExchangeAdd(piStack_230,-1), iVar5 == 1)) {
+                        cv::Mat::deallocate((Mat *)&local_248);
+                      }
+                      local_218 = 0;
+                      local_220 = 0;
+                      local_228 = 0;
+                      local_238 = 0;
+                      *(undefined4 *)local_208 = 0;
+                      piStack_230 = (int *)0x0;
+                      cv::_OutputArray::_OutputArray((_OutputArray *)local_360,(Mat *)&local_248);
+                      cv::Mat::convertTo(local_188,(_OutputArray *)local_360,5,1.0,0.0);
+                      cv::_OutputArray::_OutputArray((_OutputArray *)local_360,(Mat *)&local_248);
+                      cv::_InputArray::_InputArray((_InputArray *)local_2d8,(Mat *)&local_248);
+                      cv::threshold((_InputArray *)local_2d8,(_OutputArray *)local_360,4096.0,
+                                    65535.0,3);
+                      cv::_OutputArray::_OutputArray((_OutputArray *)local_360,local_188);
+                      param_4 = 0;
+                      cv::Mat::convertTo((Mat *)&local_248,(_OutputArray *)local_360,2,1.0,0.0);
+                      if ((piStack_230 != (int *)0x0) &&
+                         (iVar5 = cv::_interlockedExchangeAdd(piStack_230,-1), iVar5 == 1)) {
+                        cv::Mat::deallocate((Mat *)&local_248);
+                      }
+                      *(undefined4 *)local_208 = 0;
+                      local_218 = 0;
+                      local_220 = 0;
+                      local_228 = 0;
+                      local_238 = 0;
+                      *(undefined4 *)local_208 = 0;
+                      piStack_230 = (int *)0x0;
+                      if (local_200 != &local_1f8) {
+                        cv::fastFree(local_200);
+                      }
+                    }
+                    uVar16 = 0;
+                    uVar17 = 0x3ff00000;
+                    if (iVar3 == 2) {
+                      uVar16 = (undefined4)DAT_1401c70d8;
+                      uVar17 = (undefined4)((ulonglong)DAT_1401c70d8 >> 0x20);
+                    }
+                    local_300 = &local_248;
+                    pMVar7 = FUN_140006390((Mat *)&local_248,local_188);
+                    pMVar8 = FUN_140006390(local_2a8,(Mat *)&local_1e8);
+                    iVar5 = (int)((double)DAT_1401c711c * (double)CONCAT44(uVar17,uVar16));
+                    local_3a0 = fVar18;
+                    local_39c = fVar19;
+                    FUN_140132670(pMVar8,pMVar7,(double *)&local_3a0,iVar5,iVar5,&local_398,
+                                  &local_370,&local_3b0,'\x01');
+                    if (DAT_1401c9b6c == 1) {
+                      local_300 = &local_248;
+                      pMVar7 = FUN_140006390((Mat *)&local_248,local_188);
+                      pMVar8 = FUN_140006390(local_2a8,(Mat *)&local_1e8);
+                      iVar5 = (int)((double)DAT_1401c711c * (double)CONCAT44(uVar17,uVar16));
+                      local_380 = fVar18;
+                      local_37c = fVar19;
+                      FUN_140132670(pMVar8,pMVar7,(double *)&local_380,iVar5,iVar5,&local_2e0,
+                                    &local_310,&local_2e8,'\0');
+                      uVar16 = SUB84(local_3b0,0);
+                      uVar17 = (undefined4)((ulonglong)local_3b0 >> 0x20);
+                      if (local_3b0 < local_2e8) {
+                        uVar16 = SUB84(local_2e8,0);
+                        uVar17 = (undefined4)((ulonglong)local_2e8 >> 0x20);
+                        local_3b0 = local_2e8;
+                        local_398 = local_2e0;
+                        local_370 = local_310;
+                      }
+                    }
+                    else {
+                      uVar16 = SUB84(local_3b0,0);
+                      uVar17 = (undefined4)((ulonglong)local_3b0 >> 0x20);
+                    }
+                    local_328 = (longlong *)0x0;
+                    local_320 = 0;
+                    local_328 = (longlong *)FUN_14000e7b0();
+                    local_318 = 1;
+                    local_314 = 1;
+                    local_334 = (float)local_370;
+                    local_338 = (float)local_398;
+                    local_330 = CONCAT44(uVar17,uVar16);
+                    local_340 = iVar6;
+                    local_33c = iVar4;
+                    FUN_14000b380((longlong *)(local_3a8 + *local_2f0),&local_340);
+                    FUN_14000cfa0((longlong *)&local_328,&local_2b0,(longlong *)*local_328,local_328
+                                 );
+                    Ordinal_1486();
+                    lVar10 = DAT_1401c9c18;
+                  }
+                }
+              }
+              param_5 = param_5 + 10;
+              uVar14 = uVar14 - 1;
+              uVar11 = local_378;
+              lVar12 = local_3a8;
+              piVar9 = local_2f8;
+            } while (uVar14 != 0);
+          }
+          cvReleaseImage(&local_308);
+          if ((piStack_1d0 != (int *)0x0) &&
+             (iVar6 = cv::_interlockedExchangeAdd(piStack_1d0,-1), iVar6 == 1)) {
+            cv::Mat::deallocate((Mat *)&local_1e8);
+          }
+          local_1b8 = 0;
+          local_1c0 = 0;
+          local_1c8 = 0;
+          local_1d8 = 0;
+          *local_1a8 = 0;
+          piStack_1d0 = (int *)0x0;
+          cvReleaseImageHeader(&local_388);
+          if ((local_170 != (int *)0x0) &&
+             (iVar6 = cv::_interlockedExchangeAdd(local_170,-1), iVar6 == 1)) {
+            cv::Mat::deallocate(local_188);
+          }
+          local_158 = 0;
+          local_160 = 0;
+          local_168 = 0;
+          local_178 = 0;
+          *local_148 = 0;
+          local_170 = (int *)0x0;
+          if ((piStack_1d0 != (int *)0x0) &&
+             (iVar6 = cv::_interlockedExchangeAdd(piStack_1d0,-1), iVar6 == 1)) {
+            cv::Mat::deallocate((Mat *)&local_1e8);
+          }
+          local_1b8 = 0;
+          local_1c0 = 0;
+          local_1c8 = 0;
+          local_1d8 = 0;
+          *local_1a8 = 0;
+          piStack_1d0 = (int *)0x0;
+          if (local_1a0 != &local_198) {
+            cv::fastFree(local_1a0);
+          }
+          param_5 = piVar9;
+          if ((local_170 != (int *)0x0) &&
+             (iVar6 = cv::_interlockedExchangeAdd(local_170,-1), iVar6 == 1)) {
+            cv::Mat::deallocate(local_188);
+          }
+        }
+        local_158 = 0;
+        local_160 = 0;
+        local_168 = 0;
+        local_178 = 0;
+        *local_148 = 0;
+        local_170 = (int *)0x0;
+        if (local_140 != local_138) {
+          cv::fastFree(local_140);
+        }
+        lVar12 = lVar12 + 0x18;
+        lVar13 = lVar13 + 4;
+        uVar11 = uVar11 - 1;
+        local_3a8 = lVar12;
+        local_378 = uVar11;
+      } while (uVar11 != 0);
+    }
+    _vcomp_for_static_end();
+  }
+  return;
+}
+

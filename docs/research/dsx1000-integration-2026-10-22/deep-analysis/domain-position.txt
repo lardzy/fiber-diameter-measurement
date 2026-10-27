@@ -1,0 +1,82 @@
+EVIDENCE ev_5eae8ebc2f0558be8a834b544dfeb1050714610bd409b804628601e92cc6aefb SHA256 509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a
+
+METHOD 0x06000114 Olympus.LI.Triumph.Application.DomainController.Focus.FocusController Olympus.LI.Triumph.Application.DomainController.IReceiveResultData<Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs>.ReceiveResultData IL_SHA256 4083869e4080946059c2ed0053589348f8b7be9e406ecd639eecb686ad1c6b56 DECODE_ISSUE null
+0000: newobj        0x0a0005d9 Olympus.LI.Triumph.Application.UiData.ZInfo..ctor
+0005: stloc.0        
+0006: ldloc.0        
+0007: ldarg.2        
+0008: callvirt      0x0a0005da Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZMoveStepType
+000d: call          0x0a0005db Olympus.LI.Triumph.Application.UiBusiness.UiUtility.Convert.ConvertZMoveTypeForUILayer
+0012: callvirt      0x0a0005dc Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZMoveType
+0017: ldloc.0        
+0018: ldarg.2        
+0019: callvirt      0x0a0005dd Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZCurrentPos
+001e: callvirt      0x0a0005de Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZCurrentPos
+0023: ldloc.0        
+0024: ldarg.2        
+0025: callvirt      0x0a0005df Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZBasePosEnable
+002a: callvirt      0x0a0005e0 Olympus.LI.Triumph.Application.UiData.ZInfo.set_EnableZHomePos
+002f: ldloc.0        
+0030: ldarg.2        
+0031: callvirt      0x0a0005e1 Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZBasePos
+0036: callvirt      0x0a0005e2 Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZHomePos
+003b: ldloc.0        
+003c: ldarg.2        
+003d: callvirt      0x0a0005e3 Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZLimitPos
+0042: callvirt      0x0a0005e4 Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZNearSampleLimitPos
+0047: ldloc.0        
+0048: ldarg.2        
+0049: callvirt      0x0a0005e5 Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZLimitEnable
+004e: callvirt      0x0a0005e6 Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZNearSampleLimitSwitch
+0053: ldloc.0        
+0054: ldarg.2        
+0055: callvirt      0x0a0005e7 Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZNearLimitWarnning
+005a: callvirt      0x0a0005e8 Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZNearSampleLimitWarningVisible
+005f: ldloc.0        
+0060: ldarg.2        
+0061: callvirt      0x0a0005e9 Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_EucentricPos
+0066: callvirt      0x0a0005ea Olympus.LI.Triumph.Application.UiData.ZInfo.set_EucentricPos
+006b: ldloc.0        
+006c: ldarg.2        
+006d: callvirt      0x0a0005eb Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_EnableAdjustFreeAnglePosition
+0072: call          0x0a0005ec Olympus.LI.Triumph.Application.UiBusiness.UiUtility.Convert.ConvertZAdapterStatusForUILayer
+0077: callvirt      0x0a0005ed Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZAdapterStatus
+007c: ldloc.0        
+007d: ldarg.2        
+007e: callvirt      0x0a0005ee Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_ZContinuousMoveSpeedType
+0083: call          0x0a0005ef Olympus.LI.Triumph.Application.UiBusiness.UiUtility.Convert.ConvertZContinuousMoveSpeedTypeForUILayer
+0088: callvirt      0x0a0005f0 Olympus.LI.Triumph.Application.UiData.ZInfo.set_ZContinuousMoveSpeedType
+008d: ldloc.0        
+008e: ldarg.2        
+008f: callvirt      0x0a0005f1 Olympus.LI.Triumph.Workflow.BusinessObject.ZInfoBoUpdateEventArgs.get_DiffusionAdapterStatus
+0094: callvirt      0x0a0005f2 Olympus.LI.Triumph.Application.UiData.ZInfo.set_DiffusionAdapterStatus
+0099: call          0x0a0005f3 Olympus.LI.Triumph.Application.UiData.UiResultData.get_FocusData
+009e: ldloc.0        
+009f: callvirt      0x0a0005f4 Olympus.LI.Triumph.Application.UiData.FocusResultData.set_ZInfo
+00a4: leave.s       191 
+00a6: stloc.1        
+00a7: ldloc.1        
+00a8: callvirt      0x0a00015b System.Exception.get_Message
+00ad: call          0x0a00015c Olympus.Mis.Core.Logging.Logger.ErrorLog
+00b2: call          0x0a00015d Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager.get_Instance
+00b7: ldloc.1        
+00b8: callvirt      0x0a00015e Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager.UiExceptionNortifier
+00bd: leave.s       191 
+00bf: ret            
+
+METHOD 0x06000265 Olympus.LI.Triumph.Application.DomainController.Stage.StageController _SetResultPositionXY IL_SHA256 7ae4b403e7997205fec9dde6a71cba67fd6135d8e3377296b2238434b1a04932 DECODE_ISSUE null
+0000: call          0x0a0007eb Olympus.LI.Triumph.Application.UiData.UiResultData.get_StageData
+0005: ldc.i4.2       
+0006: newarr        0x0100025c 
+000b: stloc.0        
+000c: ldloc.0        
+000d: ldc.i4.0       
+000e: ldarg.1        
+000f: stelem.r8      
+0010: ldloc.0        
+0011: ldc.i4.1       
+0012: ldarg.2        
+0013: stelem.r8      
+0014: ldloc.0        
+0015: callvirt      0x0a000ce3 Olympus.LI.Triumph.Application.UiData.StageResultData.set_MovePositionXY
+001a: ret            

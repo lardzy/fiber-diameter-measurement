@@ -1,0 +1,1704 @@
+EVIDENCE ev_951d2e8f1c32aff2a9b533e814e57a9386c0d3ba51a8c4e67a59a326b9c843bf SHA256 af324fc21fdf0999526e36169e38ec31c04a959609ee5f70e190b64c2d25b817
+
+METHOD 0x06000086 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel ExecuteAutoInclinationFilter IL_SHA256 8dcd350f6ebe65ce1b5c05e672d0e139259d6fc4bb569b7e7ebfd10b57839adf DECODE_ISSUE null
+0000: ldarg.s       4 
+0002: stloc.0        
+0003: ldarg.s       5 
+0005: stloc.1        
+0006: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+000b: stloc.2        
+000c: ldarg.s       13 
+000e: brfalse.s     32 
+0010: ldarg.3        
+0011: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0016: ldarg.1        
+0017: ldind.ref      
+0018: ldc.i4.0       
+0019: callvirt      0x0a00008a System.Array.CopyTo
+001e: br.s          46 
+0020: ldarg.2        
+0021: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0026: ldarg.1        
+0027: ldind.ref      
+0028: ldc.i4.0       
+0029: callvirt      0x0a00008a System.Array.CopyTo
+002e: ldarg.s       6 
+0030: brtrue.s      71 
+0032: ldarg.0        
+0033: ldarg.1        
+0034: ldind.ref      
+0035: ldarg.s       7 
+0037: ldarg.s       9 
+0039: ldarg.s       11 
+003b: ldarg.s       4 
+003d: ldarg.s       5 
+003f: call          0x06000087 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateInclinationInXDirection
+0044: stloc.0        
+0045: br.s          140 
+0047: ldarg.s       6 
+0049: ldc.i4.1       
+004a: bne.un.s      97 
+004c: ldarg.0        
+004d: ldarg.1        
+004e: ldind.ref      
+004f: ldarg.s       8 
+0051: ldarg.s       9 
+0053: ldarg.s       10 
+0055: ldarg.s       4 
+0057: ldarg.s       5 
+0059: call          0x06000088 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateInclinationInYDirection
+005e: stloc.1        
+005f: br.s          140 
+0061: ldarg.s       6 
+0063: ldc.i4.2       
+0064: bne.un.s      140 
+0066: ldarg.0        
+0067: ldarg.1        
+0068: ldind.ref      
+0069: ldarg.s       7 
+006b: ldarg.s       9 
+006d: ldarg.s       11 
+006f: ldarg.s       4 
+0071: ldarg.s       5 
+0073: call          0x06000087 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateInclinationInXDirection
+0078: stloc.0        
+0079: ldarg.0        
+007a: ldarg.1        
+007b: ldind.ref      
+007c: ldarg.s       8 
+007e: ldarg.s       9 
+0080: ldarg.s       10 
+0082: ldarg.s       4 
+0084: ldarg.s       5 
+0086: call          0x06000088 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateInclinationInYDirection
+008b: stloc.1        
+008c: ldarg.s       12 
+008e: ldloc.2        
+008f: ldarg.1        
+0090: ldind.ref      
+0091: ldarg.s       4 
+0093: ldarg.s       5 
+0095: ldloc.0        
+0096: ldloc.1        
+0097: ldarg.3        
+0098: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+009d: callvirt      0x0a00008b OpenCVWrapper.IImageProcessingCommonWrapper.RescaleInclinedHeightData
+00a2: stind.r8       
+00a3: ldloc.2        
+00a4: ldc.i4.3       
+00a5: ldarg.3        
+00a6: callvirt      0x0a00008c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_ColorData
+00ab: ldarg.s       4 
+00ad: ldarg.s       5 
+00af: ldloc.0        
+00b0: ldloc.1        
+00b1: callvirt      0x0a00008d OpenCVWrapper.IImageProcessingCommonWrapper.ResizeInclinedImageData
+00b6: ldarg.3        
+00b7: callvirt      0x0a00008e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_InvalidData
+00bc: brfalse.s     209 
+00be: ldloc.2        
+00bf: ldc.i4.5       
+00c0: ldarg.3        
+00c1: callvirt      0x0a00008e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_InvalidData
+00c6: ldarg.s       4 
+00c8: ldarg.s       5 
+00ca: ldloc.0        
+00cb: ldloc.1        
+00cc: callvirt      0x0a00008d OpenCVWrapper.IImageProcessingCommonWrapper.ResizeInclinedImageData
+00d1: ret            
+
+METHOD 0x06000087 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalculateInclinationInXDirection IL_SHA256 8ddcfdc7d4006c966becab87c660c1e10839c4e0ad82254434eef6f962217e69 DECODE_ISSUE null
+0000: ldarg.s       5 
+0002: stloc.0        
+0003: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0008: stloc.1        
+0009: ldc.r4        0 
+000e: stloc.2        
+000f: ldc.i4.2       
+0010: newarr        0x010000bd 
+0015: stloc.3        
+0016: ldarg.s       5 
+0018: newarr        0x010000bd 
+001d: stloc.s       4 
+001f: ldc.i4.0       
+0020: stloc.s       7 
+0022: br.s          52 
+0024: ldloc.s       4 
+0026: ldloc.s       7 
+0028: ldarg.2        
+0029: ldloc.s       7 
+002b: ldelem.r8      
+002c: conv.r4        
+002d: stelem.r4      
+002e: ldloc.s       7 
+0030: ldc.i4.1       
+0031: add            
+0032: stloc.s       7 
+0034: ldloc.s       7 
+0036: ldarg.s       5 
+0038: blt.s         36 
+003a: ldarg.0        
+003b: ldarg.s       5 
+003d: ldloc.s       4 
+003f: ldloca.s      3 
+0041: call          0x0600008b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateLeastSquare
+0046: ldarg.0        
+0047: ldloc.s       4 
+0049: ldloc.3        
+004a: ldarg.s       5 
+004c: call          0x06000089 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateYvalueForLine
+0051: ldc.i4.0       
+0052: stloc.s       8 
+0054: br.s          100 
+0056: ldloc.2        
+0057: ldloc.s       4 
+0059: ldloc.s       8 
+005b: ldelem.r4      
+005c: add            
+005d: stloc.2        
+005e: ldloc.s       8 
+0060: ldc.i4.1       
+0061: add            
+0062: stloc.s       8 
+0064: ldloc.s       8 
+0066: ldarg.s       5 
+0068: blt.s         86 
+006a: ldloc.2        
+006b: ldarg.s       5 
+006d: conv.r4        
+006e: div            
+006f: stloc.2        
+0070: ldloc.3        
+0071: ldc.i4.1       
+0072: ldelem.r4      
+0073: conv.r8        
+0074: ldarg.3        
+0075: mul            
+0076: ldarg.s       4 
+0078: div            
+0079: call          0x0a00008f System.Math.Atan
+007e: call          0x0a000090 System.Math.Cos
+0083: call          0x0a000091 System.Math.Abs
+0088: stloc.s       5 
+008a: ldloc.s       5 
+008c: ldc.r8        0 
+0095: ble.un.s      159 
+0097: ldarg.s       5 
+0099: conv.r8        
+009a: ldloc.s       5 
+009c: div            
+009d: conv.i2        
+009e: stloc.0        
+009f: ldarg.s       5 
+00a1: newarr        0x010000bd 
+00a6: stloc.s       6 
+00a8: ldc.i4.0       
+00a9: stloc.s       9 
+00ab: br.s          192 
+00ad: ldloc.s       6 
+00af: ldloc.s       9 
+00b1: ldloc.s       4 
+00b3: ldloc.s       9 
+00b5: ldelem.r4      
+00b6: neg            
+00b7: ldloc.2        
+00b8: add            
+00b9: stelem.r4      
+00ba: ldloc.s       9 
+00bc: ldc.i4.1       
+00bd: add            
+00be: stloc.s       9 
+00c0: ldloc.s       9 
+00c2: ldarg.s       5 
+00c4: blt.s         173 
+00c6: ldloc.1        
+00c7: ldarg.1        
+00c8: ldarg.s       5 
+00ca: ldarg.s       6 
+00cc: ldloc.s       6 
+00ce: callvirt      0x0a000092 OpenCVWrapper.IImageProcessingCommonWrapper.InclineX
+00d3: ldnull         
+00d4: stloc.3        
+00d5: ldnull         
+00d6: stloc.s       4 
+00d8: ldloc.0        
+00d9: ret            
+
+METHOD 0x0600008b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalculateLeastSquare IL_SHA256 1ca2ce881751a1adad02f568952f75689e58bbdc1d8ce01dd7347480a9a4214a DECODE_ISSUE null
+0000: ldc.r8        0 
+0009: stloc.0        
+000a: ldc.r8        0 
+0013: stloc.1        
+0014: ldc.r8        0 
+001d: stloc.2        
+001e: ldc.r8        0 
+0027: stloc.3        
+0028: ldc.i4.0       
+0029: stloc.s       4 
+002b: ldarg.1        
+002c: stloc.s       4 
+002e: ldc.i4.0       
+002f: stloc.s       8 
+0031: br.s          92 
+0033: ldloc.3        
+0034: ldarg.2        
+0035: ldloc.s       8 
+0037: ldelem.r4      
+0038: conv.r8        
+0039: add            
+003a: stloc.3        
+003b: ldloc.0        
+003c: ldloc.s       8 
+003e: ldloc.s       8 
+0040: mul            
+0041: conv.r8        
+0042: add            
+0043: stloc.0        
+0044: ldloc.1        
+0045: ldloc.s       8 
+0047: conv.r8        
+0048: add            
+0049: stloc.1        
+004a: ldloc.2        
+004b: ldarg.2        
+004c: ldloc.s       8 
+004e: ldelem.r4      
+004f: ldloc.s       8 
+0051: conv.r4        
+0052: mul            
+0053: conv.r8        
+0054: add            
+0055: stloc.2        
+0056: ldloc.s       8 
+0058: ldc.i4.1       
+0059: add            
+005a: stloc.s       8 
+005c: ldloc.s       8 
+005e: ldloc.s       4 
+0060: blt.s         51 
+0062: ldloc.3        
+0063: ldloc.0        
+0064: mul            
+0065: conv.r8        
+0066: ldloc.1        
+0067: ldloc.2        
+0068: mul            
+0069: sub            
+006a: stloc.s       5 
+006c: ldarg.1        
+006d: conv.r8        
+006e: ldloc.0        
+006f: mul            
+0070: conv.r8        
+0071: ldloc.1        
+0072: ldloc.1        
+0073: mul            
+0074: sub            
+0075: stloc.s       6 
+0077: ldarg.3        
+0078: ldind.ref      
+0079: ldc.i4.0       
+007a: ldloc.s       5 
+007c: ldloc.s       6 
+007e: div            
+007f: conv.r4        
+0080: stelem.r4      
+0081: ldarg.1        
+0082: conv.r8        
+0083: ldloc.2        
+0084: mul            
+0085: ldloc.1        
+0086: ldloc.3        
+0087: mul            
+0088: sub            
+0089: conv.r8        
+008a: stloc.s       7 
+008c: ldarg.3        
+008d: ldind.ref      
+008e: ldc.i4.1       
+008f: ldloc.s       7 
+0091: ldloc.s       6 
+0093: div            
+0094: conv.r4        
+0095: stelem.r4      
+0096: ret            
+
+METHOD 0x06000093 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalcLeastSquare IL_SHA256 a6710a02141ca16fa261b17e903373b5ce379ea084e4a211a99ffcea82ac2594 DECODE_ISSUE null
+0000: ldc.r8        0 
+0009: stloc.0        
+000a: ldc.r8        0 
+0013: stloc.1        
+0014: ldc.r8        0 
+001d: stloc.2        
+001e: ldc.r8        0 
+0027: stloc.3        
+0028: ldc.i4.0       
+0029: stloc.s       4 
+002b: ldarg.s       5 
+002d: brtrue.s      52 
+002f: ldarg.2        
+0030: stloc.s       4 
+0032: br.s          60 
+0034: ldarg.s       5 
+0036: ldc.i4.1       
+0037: bne.un.s      60 
+0039: ldarg.1        
+003a: stloc.s       4 
+003c: ldc.i4.0       
+003d: stloc.s       7 
+003f: br.s          106 
+0041: ldloc.3        
+0042: ldarg.3        
+0043: ldloc.s       7 
+0045: ldelem.r4      
+0046: conv.r8        
+0047: add            
+0048: stloc.3        
+0049: ldloc.0        
+004a: ldloc.s       7 
+004c: ldloc.s       7 
+004e: mul            
+004f: conv.r8        
+0050: add            
+0051: stloc.0        
+0052: ldloc.s       7 
+0054: conv.r8        
+0055: ldloc.1        
+0056: add            
+0057: stloc.1        
+0058: ldloc.2        
+0059: ldarg.3        
+005a: ldloc.s       7 
+005c: ldelem.r4      
+005d: ldloc.s       7 
+005f: conv.r4        
+0060: mul            
+0061: conv.r8        
+0062: add            
+0063: stloc.2        
+0064: ldloc.s       7 
+0066: ldc.i4.1       
+0067: add            
+0068: stloc.s       7 
+006a: ldloc.s       7 
+006c: ldloc.s       4 
+006e: blt.s         65 
+0070: ldarg.s       5 
+0072: brtrue.s      171 
+0074: ldloc.3        
+0075: ldloc.0        
+0076: mul            
+0077: conv.r8        
+0078: ldloc.1        
+0079: ldloc.2        
+007a: mul            
+007b: sub            
+007c: stloc.s       5 
+007e: ldarg.2        
+007f: conv.r8        
+0080: ldloc.0        
+0081: mul            
+0082: conv.r8        
+0083: ldloc.1        
+0084: ldloc.1        
+0085: mul            
+0086: sub            
+0087: stloc.s       6 
+0089: ldarg.s       4 
+008b: ldind.ref      
+008c: ldc.i4.0       
+008d: ldloc.s       5 
+008f: ldloc.s       6 
+0091: div            
+0092: conv.r4        
+0093: stelem.r4      
+0094: ldarg.2        
+0095: conv.r8        
+0096: ldloc.2        
+0097: mul            
+0098: ldloc.1        
+0099: ldloc.3        
+009a: mul            
+009b: sub            
+009c: conv.r8        
+009d: stloc.s       8 
+009f: ldarg.s       4 
+00a1: ldind.ref      
+00a2: ldc.i4.1       
+00a3: ldloc.s       8 
+00a5: ldloc.s       6 
+00a7: div            
+00a8: conv.r4        
+00a9: stelem.r4      
+00aa: ret            
+00ab: ldarg.s       5 
+00ad: ldc.i4.1       
+00ae: bne.un.s      230 
+00b0: ldloc.3        
+00b1: ldloc.0        
+00b2: mul            
+00b3: conv.r8        
+00b4: ldloc.1        
+00b5: ldloc.2        
+00b6: mul            
+00b7: sub            
+00b8: stloc.s       5 
+00ba: ldarg.1        
+00bb: conv.r8        
+00bc: ldloc.0        
+00bd: mul            
+00be: conv.r8        
+00bf: ldloc.1        
+00c0: ldloc.1        
+00c1: mul            
+00c2: sub            
+00c3: stloc.s       6 
+00c5: ldarg.s       4 
+00c7: ldind.ref      
+00c8: ldc.i4.0       
+00c9: ldloc.s       5 
+00cb: ldloc.s       6 
+00cd: div            
+00ce: conv.r4        
+00cf: stelem.r4      
+00d0: ldarg.1        
+00d1: conv.r8        
+00d2: ldloc.2        
+00d3: mul            
+00d4: ldloc.1        
+00d5: ldloc.3        
+00d6: mul            
+00d7: sub            
+00d8: conv.r8        
+00d9: stloc.s       9 
+00db: ldarg.s       4 
+00dd: ldind.ref      
+00de: ldc.i4.1       
+00df: ldloc.s       9 
+00e1: ldloc.s       6 
+00e3: div            
+00e4: conv.r4        
+00e5: stelem.r4      
+00e6: ret            
+
+METHOD 0x06000096 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel ExecuteCurvedSurfaceAutoCompensation IL_SHA256 c811b69eff682e7533e23cfef94bb9c820cbf5ef389360e7d5ef2d86e5539783 DECODE_ISSUE null
+0000: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldarg.s       10 
+0008: brfalse.s     26 
+000a: ldarg.3        
+000b: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0010: ldarg.1        
+0011: ldind.ref      
+0012: ldc.i4.0       
+0013: callvirt      0x0a00008a System.Array.CopyTo
+0018: br.s          40 
+001a: ldarg.2        
+001b: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0020: ldarg.1        
+0021: ldind.ref      
+0022: ldc.i4.0       
+0023: callvirt      0x0a00008a System.Array.CopyTo
+0028: ldarg.s       6 
+002a: ldc.i4.1       
+002b: bne.un.s      60 
+002d: ldarg.0        
+002e: ldarg.s       4 
+0030: ldarg.s       5 
+0032: ldarg.1        
+0033: ldarg.s       8 
+0035: call          0x06000098 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateCurvedAutoComParameterY
+003a: br.s          105 
+003c: ldarg.s       6 
+003e: brtrue.s      79 
+0040: ldarg.0        
+0041: ldarg.s       4 
+0043: ldarg.s       5 
+0045: ldarg.1        
+0046: ldarg.s       7 
+0048: call          0x06000097 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateCurvedAutoComParameterX
+004d: br.s          105 
+004f: ldarg.0        
+0050: ldarg.s       4 
+0052: ldarg.s       5 
+0054: ldarg.1        
+0055: ldarg.s       7 
+0057: call          0x06000097 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateCurvedAutoComParameterX
+005c: ldarg.0        
+005d: ldarg.s       4 
+005f: ldarg.s       5 
+0061: ldarg.1        
+0062: ldarg.s       8 
+0064: call          0x06000098 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateCurvedAutoComParameterY
+0069: ldarg.s       9 
+006b: ldloc.0        
+006c: ldarg.1        
+006d: ldind.ref      
+006e: ldarg.s       4 
+0070: ldarg.s       5 
+0072: ldarg.s       4 
+0074: ldarg.s       5 
+0076: ldarg.3        
+0077: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+007c: callvirt      0x0a00008b OpenCVWrapper.IImageProcessingCommonWrapper.RescaleInclinedHeightData
+0081: stind.r8       
+0082: ret            
+
+METHOD 0x0600009e Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalcSpline IL_SHA256 ac0b39796f4d5f4ef693ba659ee394f31d3a0854041684c23d69407e87399717 DECODE_ISSUE null
+0000: ldarg.2        
+0001: ldind.ref      
+0002: ldc.i4.0       
+0003: ldelem.r8      
+0004: ldarg.2        
+0005: ldind.ref      
+0006: ldc.i4.1       
+0007: ldelem.r8      
+0008: bne.un.s      56 
+000a: ldarg.2        
+000b: ldind.ref      
+000c: ldc.i4.1       
+000d: ldelem.r8      
+000e: ldarg.2        
+000f: ldind.ref      
+0010: ldc.i4.2       
+0011: ldelem.r8      
+0012: bne.un.s      56 
+0014: ldarg.3        
+0015: stloc.0        
+0016: br.s          50 
+0018: ldarg.2        
+0019: ldind.ref      
+001a: ldc.i4.0       
+001b: ldelem.r8      
+001c: stloc.1        
+001d: ldarg.s       6 
+001f: ldind.ref      
+0020: ldloc.0        
+0021: ldarg.3        
+0022: sub            
+0023: ldloc.1        
+0024: stelem.r8      
+0025: ldarg.s       5 
+0027: ldind.ref      
+0028: ldloc.0        
+0029: ldarg.3        
+002a: sub            
+002b: ldloc.1        
+002c: stelem.r8      
+002d: ldloc.0        
+002e: ldc.i4.1       
+002f: add            
+0030: conv.i2        
+0031: stloc.0        
+0032: ldloc.0        
+0033: ldarg.s       4 
+0035: blt.s         24 
+0037: ret            
+0038: ldarg.1        
+0039: ldind.ref      
+003a: ldc.i4.0       
+003b: ldelem.r8      
+003c: ldarg.1        
+003d: ldind.ref      
+003e: ldc.i4.1       
+003f: ldelem.r8      
+0040: sub            
+0041: call          0x0a000091 System.Math.Abs
+0046: ldc.r8        1 
+004f: bge.un.s      99 
+0051: ldarg.1        
+0052: ldind.ref      
+0053: ldc.i4.1       
+0054: ldarg.1        
+0055: ldind.ref      
+0056: ldc.i4.0       
+0057: ldelem.r8      
+0058: ldc.r8        1 
+0061: add            
+0062: stelem.r8      
+0063: ldarg.1        
+0064: ldind.ref      
+0065: ldc.i4.0       
+0066: ldelem.r8      
+0067: ldarg.1        
+0068: ldind.ref      
+0069: ldc.i4.2       
+006a: ldelem.r8      
+006b: sub            
+006c: call          0x0a000091 System.Math.Abs
+0071: ldc.r8        1 
+007a: bge.un.s      142 
+007c: ldarg.1        
+007d: ldind.ref      
+007e: ldc.i4.2       
+007f: ldarg.1        
+0080: ldind.ref      
+0081: ldc.i4.0       
+0082: ldelem.r8      
+0083: ldc.r8        1 
+008c: add            
+008d: stelem.r8      
+008e: ldarg.1        
+008f: ldind.ref      
+0090: ldc.i4.1       
+0091: ldelem.r8      
+0092: ldarg.1        
+0093: ldind.ref      
+0094: ldc.i4.2       
+0095: ldelem.r8      
+0096: sub            
+0097: call          0x0a000091 System.Math.Abs
+009c: ldc.r8        1 
+00a5: bge.un.s      185 
+00a7: ldarg.1        
+00a8: ldind.ref      
+00a9: ldc.i4.2       
+00aa: ldarg.1        
+00ab: ldind.ref      
+00ac: ldc.i4.1       
+00ad: ldelem.r8      
+00ae: ldc.r8        1 
+00b7: add            
+00b8: stelem.r8      
+00b9: ldarg.2        
+00ba: ldind.ref      
+00bb: ldc.i4.1       
+00bc: ldelem.r8      
+00bd: ldarg.2        
+00be: ldind.ref      
+00bf: ldc.i4.0       
+00c0: ldelem.r8      
+00c1: sub            
+00c2: ldarg.1        
+00c3: ldind.ref      
+00c4: ldc.i4.0       
+00c5: ldelem.r8      
+00c6: ldarg.1        
+00c7: ldind.ref      
+00c8: ldc.i4.2       
+00c9: ldelem.r8      
+00ca: sub            
+00cb: mul            
+00cc: ldarg.2        
+00cd: ldind.ref      
+00ce: ldc.i4.2       
+00cf: ldelem.r8      
+00d0: ldarg.2        
+00d1: ldind.ref      
+00d2: ldc.i4.0       
+00d3: ldelem.r8      
+00d4: sub            
+00d5: ldarg.1        
+00d6: ldind.ref      
+00d7: ldc.i4.1       
+00d8: ldelem.r8      
+00d9: ldarg.1        
+00da: ldind.ref      
+00db: ldc.i4.0       
+00dc: ldelem.r8      
+00dd: sub            
+00de: mul            
+00df: add            
+00e0: ldarg.1        
+00e1: ldind.ref      
+00e2: ldc.i4.0       
+00e3: ldelem.r8      
+00e4: ldarg.1        
+00e5: ldind.ref      
+00e6: ldc.i4.2       
+00e7: ldelem.r8      
+00e8: sub            
+00e9: ldarg.1        
+00ea: ldind.ref      
+00eb: ldc.i4.1       
+00ec: ldelem.r8      
+00ed: ldarg.1        
+00ee: ldind.ref      
+00ef: ldc.i4.1       
+00f0: ldelem.r8      
+00f1: mul            
+00f2: ldarg.1        
+00f3: ldind.ref      
+00f4: ldc.i4.0       
+00f5: ldelem.r8      
+00f6: ldarg.1        
+00f7: ldind.ref      
+00f8: ldc.i4.0       
+00f9: ldelem.r8      
+00fa: mul            
+00fb: sub            
+00fc: mul            
+00fd: ldarg.1        
+00fe: ldind.ref      
+00ff: ldc.i4.1       
+0100: ldelem.r8      
+0101: ldarg.1        
+0102: ldind.ref      
+0103: ldc.i4.0       
+0104: ldelem.r8      
+0105: sub            
+0106: ldarg.1        
+0107: ldind.ref      
+0108: ldc.i4.2       
+0109: ldelem.r8      
+010a: ldarg.1        
+010b: ldind.ref      
+010c: ldc.i4.2       
+010d: ldelem.r8      
+010e: mul            
+010f: ldarg.1        
+0110: ldind.ref      
+0111: ldc.i4.0       
+0112: ldelem.r8      
+0113: ldarg.1        
+0114: ldind.ref      
+0115: ldc.i4.0       
+0116: ldelem.r8      
+0117: mul            
+0118: sub            
+0119: mul            
+011a: add            
+011b: div            
+011c: stloc.2        
+011d: ldarg.2        
+011e: ldind.ref      
+011f: ldc.i4.1       
+0120: ldelem.r8      
+0121: ldarg.2        
+0122: ldind.ref      
+0123: ldc.i4.0       
+0124: ldelem.r8      
+0125: sub            
+0126: ldloc.2        
+0127: ldarg.1        
+0128: ldind.ref      
+0129: ldc.i4.1       
+012a: ldelem.r8      
+012b: ldarg.1        
+012c: ldind.ref      
+012d: ldc.i4.1       
+012e: ldelem.r8      
+012f: mul            
+0130: ldarg.1        
+0131: ldind.ref      
+0132: ldc.i4.0       
+0133: ldelem.r8      
+0134: ldarg.1        
+0135: ldind.ref      
+0136: ldc.i4.0       
+0137: ldelem.r8      
+0138: mul            
+0139: sub            
+013a: mul            
+013b: sub            
+013c: ldarg.1        
+013d: ldind.ref      
+013e: ldc.i4.1       
+013f: ldelem.r8      
+0140: ldarg.1        
+0141: ldind.ref      
+0142: ldc.i4.0       
+0143: ldelem.r8      
+0144: sub            
+0145: div            
+0146: stloc.3        
+0147: ldarg.2        
+0148: ldind.ref      
+0149: ldc.i4.0       
+014a: ldelem.r8      
+014b: ldloc.2        
+014c: ldarg.1        
+014d: ldind.ref      
+014e: ldc.i4.0       
+014f: ldelem.r8      
+0150: mul            
+0151: ldarg.1        
+0152: ldind.ref      
+0153: ldc.i4.0       
+0154: ldelem.r8      
+0155: mul            
+0156: sub            
+0157: ldloc.3        
+0158: ldarg.1        
+0159: ldind.ref      
+015a: ldc.i4.0       
+015b: ldelem.r8      
+015c: mul            
+015d: sub            
+015e: stloc.s       4 
+0160: ldarg.3        
+0161: stloc.s       5 
+0163: br.s          404 
+0165: ldloc.2        
+0166: ldloc.s       5 
+0168: conv.r8        
+0169: mul            
+016a: ldloc.s       5 
+016c: conv.r8        
+016d: mul            
+016e: ldloc.3        
+016f: ldloc.s       5 
+0171: conv.r8        
+0172: mul            
+0173: add            
+0174: ldloc.s       4 
+0176: add            
+0177: stloc.s       6 
+0179: ldarg.s       6 
+017b: ldind.ref      
+017c: ldloc.s       5 
+017e: ldarg.3        
+017f: sub            
+0180: ldloc.s       6 
+0182: stelem.r8      
+0183: ldarg.s       5 
+0185: ldind.ref      
+0186: ldloc.s       5 
+0188: ldarg.3        
+0189: sub            
+018a: ldloc.s       6 
+018c: stelem.r8      
+018d: ldloc.s       5 
+018f: ldc.i4.1       
+0190: add            
+0191: conv.i2        
+0192: stloc.s       5 
+0194: ldloc.s       5 
+0196: ldarg.s       4 
+0198: blt.s         357 
+019a: ret            
+
+METHOD 0x060000a2 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel ExecuteThreePointsInclinationCorrection IL_SHA256 8c6de90d74a5ccc2d94e6948ab69a0512ac003a1ac85e57ebfb77e53a9890645 DECODE_ISSUE null
+0000: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldc.i4.4       
+0007: newarr        0x010000b1 
+000c: stloc.1        
+000d: ldc.r8        0 
+0016: stloc.2        
+0017: ldarg.s       4 
+0019: stloc.s       4 
+001b: ldarg.s       5 
+001d: stloc.s       5 
+001f: ldarg.s       13 
+0021: brfalse.s     51 
+0023: ldarg.3        
+0024: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0029: ldarg.1        
+002a: ldind.ref      
+002b: ldc.i4.0       
+002c: callvirt      0x0a00008a System.Array.CopyTo
+0031: br.s          65 
+0033: ldarg.2        
+0034: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0039: ldarg.1        
+003a: ldind.ref      
+003b: ldc.i4.0       
+003c: callvirt      0x0a00008a System.Array.CopyTo
+0041: ldarg.0        
+0042: ldloca.s      1 
+0044: ldarg.1        
+0045: ldind.ref      
+0046: ldarg.s       4 
+0048: ldarg.s       5 
+004a: ldarg.s       6 
+004c: ldarg.s       11 
+004e: call          0x060000a3 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalcPlaneEquationPassingThrough3Points
+0053: ldloc.1        
+0054: ldc.i4.2       
+0055: ldelem.r8      
+0056: ldc.r8        0 
+005f: beq.s         103 
+0061: ldloc.1        
+0062: ldc.i4.2       
+0063: ldelem.r8      
+0064: stloc.3        
+0065: br.s          113 
+0067: ldc.r8        1 
+0070: stloc.3        
+0071: ldloc.1        
+0072: ldc.i4.1       
+0073: ldelem.r8      
+0074: neg            
+0075: ldloc.3        
+0076: div            
+0077: stloc.2        
+0078: ldloc.1        
+0079: ldc.i4.2       
+007a: ldelem.r8      
+007b: ldc.r8        0 
+0084: beq.s         140 
+0086: ldloc.1        
+0087: ldc.i4.2       
+0088: ldelem.r8      
+0089: stloc.3        
+008a: br.s          150 
+008c: ldc.r8        1 
+0095: stloc.3        
+0096: ldloc.1        
+0097: ldc.i4.0       
+0098: ldelem.r8      
+0099: neg            
+009a: ldloc.3        
+009b: div            
+009c: dup            
+009d: ldc.r8        0 
+00a6: beq.s         195 
+00a8: ldloc.2        
+00a9: ldc.r8        0 
+00b2: beq.s         195 
+00b4: ldarg.0        
+00b5: ldarg.s       7 
+00b7: ldarg.s       4 
+00b9: ldarg.s       5 
+00bb: ldloca.s      1 
+00bd: ldarg.1        
+00be: call          0x060000a5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._ExecuteFittingToPlaneEquation
+00c3: ldarg.s       8 
+00c5: mul            
+00c6: ldarg.s       9 
+00c8: div            
+00c9: stloc.s       6 
+00cb: ldloc.s       6 
+00cd: ldc.r8        -1.5707963267948966 
+00d6: blt.s         229 
+00d8: ldloc.s       6 
+00da: ldc.r8        1.5707963267948966 
+00e3: ble.un.s      240 
+00e5: ldc.r8        0 
+00ee: stloc.s       6 
+00f0: ldloc.s       6 
+00f2: call          0x0a00008f System.Math.Atan
+00f7: call          0x0a000090 System.Math.Cos
+00fc: call          0x0a000091 System.Math.Abs
+0101: stloc.s       7 
+0103: ldloc.s       7 
+0105: ldc.r8        0 
+010e: ble.un.s      281 
+0110: ldarg.s       4 
+0112: conv.r8        
+0113: ldloc.s       7 
+0115: div            
+0116: conv.i2        
+0117: stloc.s       4 
+0119: ldloc.2        
+011a: ldarg.s       8 
+011c: mul            
+011d: ldarg.s       10 
+011f: div            
+0120: stloc.s       6 
+0122: ldloc.s       6 
+0124: ldc.r8        -1.5707963267948966 
+012d: blt.s         316 
+012f: ldloc.s       6 
+0131: ldc.r8        1.5707963267948966 
+013a: ble.un.s      327 
+013c: ldc.r8        0 
+0145: stloc.s       6 
+0147: ldloc.s       6 
+0149: call          0x0a00008f System.Math.Atan
+014e: call          0x0a000090 System.Math.Cos
+0153: call          0x0a000091 System.Math.Abs
+0158: stloc.s       7 
+015a: ldloc.s       7 
+015c: ldc.r8        0 
+0165: ble.un.s      368 
+0167: ldarg.s       5 
+0169: conv.r8        
+016a: ldloc.s       7 
+016c: div            
+016d: conv.i2        
+016e: stloc.s       5 
+0170: ldarg.s       12 
+0172: ldloc.0        
+0173: ldarg.1        
+0174: ldind.ref      
+0175: ldarg.s       4 
+0177: ldarg.s       5 
+0179: ldloc.s       4 
+017b: ldloc.s       5 
+017d: ldarg.3        
+017e: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0183: callvirt      0x0a00008b OpenCVWrapper.IImageProcessingCommonWrapper.RescaleInclinedHeightData
+0188: stind.r8       
+0189: ldloc.0        
+018a: ldc.i4.3       
+018b: ldarg.3        
+018c: callvirt      0x0a00008c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_ColorData
+0191: ldarg.s       4 
+0193: ldarg.s       5 
+0195: ldloc.s       4 
+0197: ldloc.s       5 
+0199: callvirt      0x0a00008d OpenCVWrapper.IImageProcessingCommonWrapper.ResizeInclinedImageData
+019e: ldarg.3        
+019f: callvirt      0x0a00008e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_InvalidData
+01a4: brfalse.s     443 
+01a6: ldloc.0        
+01a7: ldc.i4.5       
+01a8: ldarg.3        
+01a9: callvirt      0x0a00008e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_InvalidData
+01ae: ldarg.s       4 
+01b0: ldarg.s       5 
+01b2: ldloc.s       4 
+01b4: ldloc.s       5 
+01b6: callvirt      0x0a00008d OpenCVWrapper.IImageProcessingCommonWrapper.ResizeInclinedImageData
+01bb: ldloc.1        
+01bc: ret            
+
+METHOD 0x060000a3 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalcPlaneEquationPassingThrough3Points IL_SHA256 3403d35d71f0146538d8d692b691115397af13ca3dc79210e63b8ce66134a246 DECODE_ISSUE null
+0000: ldloca.s      0 
+0002: initobj       0x01000044 
+0008: ldloca.s      1 
+000a: initobj       0x01000044 
+0010: ldloca.s      2 
+0012: initobj       0x01000044 
+0018: ldarg.s       5 
+001a: ldc.i4.0       
+001b: ldelem        0x01000044 
+0020: stloc.0        
+0021: ldarg.s       5 
+0023: ldc.i4.1       
+0024: ldelem        0x01000044 
+0029: stloc.1        
+002a: ldarg.s       5 
+002c: ldc.i4.2       
+002d: ldelem        0x01000044 
+0032: stloc.2        
+0033: ldarg.0        
+0034: ldloc.0        
+0035: ldarg.2        
+0036: ldarg.3        
+0037: ldarg.s       4 
+0039: ldarg.s       6 
+003b: call          0x060000a4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._GetPixelDataValue
+0040: stloc.3        
+0041: ldarg.0        
+0042: ldloc.1        
+0043: ldarg.2        
+0044: ldarg.3        
+0045: ldarg.s       4 
+0047: ldarg.s       6 
+0049: call          0x060000a4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._GetPixelDataValue
+004e: stloc.s       4 
+0050: ldarg.0        
+0051: ldloc.2        
+0052: ldarg.2        
+0053: ldarg.3        
+0054: ldarg.s       4 
+0056: ldarg.s       6 
+0058: call          0x060000a4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._GetPixelDataValue
+005d: stloc.s       5 
+005f: newobj        0x0600013d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector..ctor
+0064: dup            
+0065: ldloca.s      1 
+0067: call          0x0a00007f System.Windows.Point.get_X
+006c: ldloca.s      0 
+006e: call          0x0a00007f System.Windows.Point.get_X
+0073: sub            
+0074: callvirt      0x06000137 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.set_IComponent
+0079: dup            
+007a: ldloca.s      1 
+007c: call          0x0a000081 System.Windows.Point.get_Y
+0081: ldloca.s      0 
+0083: call          0x0a000081 System.Windows.Point.get_Y
+0088: sub            
+0089: callvirt      0x06000139 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.set_JComponent
+008e: dup            
+008f: ldloc.s       4 
+0091: ldloc.3        
+0092: sub            
+0093: conv.r8        
+0094: callvirt      0x0600013b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.set_KComponent
+0099: newobj        0x0600013d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector..ctor
+009e: stloc.s       6 
+00a0: ldloc.s       6 
+00a2: ldloca.s      2 
+00a4: call          0x0a00007f System.Windows.Point.get_X
+00a9: ldloca.s      0 
+00ab: call          0x0a00007f System.Windows.Point.get_X
+00b0: sub            
+00b1: callvirt      0x06000137 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.set_IComponent
+00b6: ldloc.s       6 
+00b8: ldloca.s      2 
+00ba: call          0x0a000081 System.Windows.Point.get_Y
+00bf: ldloca.s      0 
+00c1: call          0x0a000081 System.Windows.Point.get_Y
+00c6: sub            
+00c7: callvirt      0x06000139 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.set_JComponent
+00cc: ldloc.s       6 
+00ce: ldloc.s       5 
+00d0: ldloc.3        
+00d1: sub            
+00d2: conv.r8        
+00d3: callvirt      0x0600013b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.set_KComponent
+00d8: ldloc.s       6 
+00da: ldarg.1        
+00db: ldind.ref      
+00dc: ldc.i4.0       
+00dd: ldelem.r8      
+00de: ldarg.1        
+00df: ldind.ref      
+00e0: ldc.i4.1       
+00e1: ldelem.r8      
+00e2: ldarg.1        
+00e3: ldind.ref      
+00e4: ldc.i4.2       
+00e5: ldelem.r8      
+00e6: callvirt      0x0600013c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Helpers.Vector.CrossProduct
+00eb: stloc.s       7 
+00ed: ldarg.1        
+00ee: ldind.ref      
+00ef: ldc.i4.0       
+00f0: ldloca.s      7 
+00f2: call          0x060001c0 stCrossProduct.get_IComponent
+00f7: stelem.r8      
+00f8: ldarg.1        
+00f9: ldind.ref      
+00fa: ldc.i4.1       
+00fb: ldloca.s      7 
+00fd: call          0x060001c2 stCrossProduct.get_JComponent
+0102: stelem.r8      
+0103: ldarg.1        
+0104: ldind.ref      
+0105: ldc.i4.2       
+0106: ldloca.s      7 
+0108: call          0x060001c4 stCrossProduct.get_KComponent
+010d: stelem.r8      
+010e: ldarg.1        
+010f: ldind.ref      
+0110: ldc.i4.3       
+0111: ldarg.1        
+0112: ldind.ref      
+0113: ldc.i4.0       
+0114: ldelem.r8      
+0115: ldloca.s      0 
+0117: call          0x0a00007f System.Windows.Point.get_X
+011c: mul            
+011d: ldarg.1        
+011e: ldind.ref      
+011f: ldc.i4.1       
+0120: ldelem.r8      
+0121: ldloca.s      0 
+0123: call          0x0a000081 System.Windows.Point.get_Y
+0128: mul            
+0129: add            
+012a: ldarg.1        
+012b: ldind.ref      
+012c: ldc.i4.2       
+012d: ldelem.r8      
+012e: ldloc.3        
+012f: conv.r8        
+0130: mul            
+0131: add            
+0132: neg            
+0133: stelem.r8      
+0134: ret            
+
+METHOD 0x060000a5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _ExecuteFittingToPlaneEquation IL_SHA256 676203bb1437782ff6b7d50fe919fb6fee337cc7225c19f5faf04521e6847a7a DECODE_ISSUE null
+0000: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldc.r8        1 
+000f: stloc.1        
+0010: ldarg.s       4 
+0012: ldind.ref      
+0013: ldc.i4.2       
+0014: ldelem.r8      
+0015: ldc.r8        0 
+001e: beq.s         40 
+0020: ldarg.s       4 
+0022: ldind.ref      
+0023: ldc.i4.2       
+0024: ldelem.r8      
+0025: stloc.1        
+0026: br.s          50 
+0028: ldc.r8        1 
+0031: stloc.1        
+0032: ldarg.s       4 
+0034: ldind.ref      
+0035: ldc.i4.0       
+0036: ldelem.r8      
+0037: ldloc.1        
+0038: div            
+0039: conv.r4        
+003a: neg            
+003b: stloc.2        
+003c: ldarg.s       4 
+003e: ldind.ref      
+003f: ldc.i4.1       
+0040: ldelem.r8      
+0041: ldloc.1        
+0042: div            
+0043: conv.r4        
+0044: neg            
+0045: stloc.3        
+0046: ldarg.2        
+0047: newarr        0x010000bd 
+004c: stloc.s       4 
+004e: ldc.i4.0       
+004f: stloc.s       6 
+0051: br.s          114 
+0053: ldloc.s       4 
+0055: ldloc.s       6 
+0057: ldloc.2        
+0058: conv.r8        
+0059: ldloc.s       6 
+005b: conv.r8        
+005c: ldarg.2        
+005d: conv.r8        
+005e: ldc.r8        2 
+0067: div            
+0068: sub            
+0069: mul            
+006a: conv.r4        
+006b: stelem.r4      
+006c: ldloc.s       6 
+006e: ldc.i4.1       
+006f: add            
+0070: stloc.s       6 
+0072: ldloc.s       6 
+0074: ldarg.2        
+0075: blt.s         83 
+0077: ldarg.3        
+0078: newarr        0x010000bd 
+007d: stloc.s       5 
+007f: ldc.i4.0       
+0080: stloc.s       7 
+0082: br.s          163 
+0084: ldloc.s       5 
+0086: ldloc.s       7 
+0088: ldloc.3        
+0089: conv.r8        
+008a: ldloc.s       7 
+008c: conv.r8        
+008d: ldarg.3        
+008e: conv.r8        
+008f: ldc.r8        2 
+0098: div            
+0099: sub            
+009a: mul            
+009b: conv.r4        
+009c: stelem.r4      
+009d: ldloc.s       7 
+009f: ldc.i4.1       
+00a0: add            
+00a1: stloc.s       7 
+00a3: ldloc.s       7 
+00a5: ldarg.3        
+00a6: blt.s         132 
+00a8: ldarg.s       5 
+00aa: ldind.ref      
+00ab: ldc.i4.0       
+00ac: ldelem.r4      
+00ad: pop            
+00ae: ldloc.s       5 
+00b0: ldc.i4.0       
+00b1: ldelem.r4      
+00b2: pop            
+00b3: ldloc.s       4 
+00b5: ldc.i4.0       
+00b6: ldelem.r4      
+00b7: pop            
+00b8: ldloc.0        
+00b9: ldarg.s       5 
+00bb: ldind.ref      
+00bc: ldarg.2        
+00bd: ldarg.3        
+00be: ldloc.s       4 
+00c0: ldc.i4.1       
+00c1: callvirt      0x0a000096 OpenCVWrapper.IImageProcessingCommonWrapper.InclineX
+00c6: ldloc.0        
+00c7: ldarg.s       5 
+00c9: ldind.ref      
+00ca: ldarg.2        
+00cb: ldarg.3        
+00cc: ldloc.s       5 
+00ce: ldc.i4.1       
+00cf: callvirt      0x0a000097 OpenCVWrapper.IImageProcessingCommonWrapper.InclineY
+00d4: ldloc.0        
+00d5: ldarg.s       5 
+00d7: ldind.ref      
+00d8: ldarg.2        
+00d9: ldarg.3        
+00da: callvirt      0x0a000098 OpenCVWrapper.IImageProcessingCommonWrapper.OffsetHeightFor3Points
+00df: ret            
+
+METHOD 0x060000a6 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _ApplyOffsetOfFittingToPlane IL_SHA256 a600dccff612b81525fc961b344a6924a30f705ebbf2ff8006a0427047308506 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldc.i4.0       
+0003: stloc.1        
+0004: ldarg.0        
+0005: ldarg.2        
+0006: ldloca.s      0 
+0008: ldloca.s      1 
+000a: ldarg.s       5 
+000c: ldarg.s       6 
+000e: call          0x060000a1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._GetIMaxAndJMax
+0013: ldc.i4.0       
+0014: stloc.2        
+0015: br.s          81 
+0017: ldc.i4.0       
+0018: stloc.3        
+0019: br.s          73 
+001b: ldloc.2        
+001c: ldarg.s       5 
+001e: mul            
+001f: ldloc.3        
+0020: add            
+0021: stloc.s       4 
+0023: ldarg.2        
+0024: ldc.i4.1       
+0025: bne.un.s      47 
+0027: ldloc.3        
+0028: ldarg.s       5 
+002a: mul            
+002b: ldloc.2        
+002c: add            
+002d: stloc.s       4 
+002f: ldarg.s       4 
+0031: ldind.ref      
+0032: ldloc.s       4 
+0034: ldelem.r4      
+0035: stloc.s       5 
+0037: ldloc.s       5 
+0039: ldarg.1        
+003a: add            
+003b: stloc.s       5 
+003d: ldarg.s       4 
+003f: ldind.ref      
+0040: ldloc.s       4 
+0042: ldloc.s       5 
+0044: stelem.r4      
+0045: ldloc.3        
+0046: ldc.i4.1       
+0047: add            
+0048: stloc.3        
+0049: ldloc.3        
+004a: ldloc.1        
+004b: blt.s         27 
+004d: ldloc.2        
+004e: ldc.i4.1       
+004f: add            
+0050: stloc.2        
+0051: ldloc.2        
+0052: ldloc.0        
+0053: blt.s         23 
+0055: ret            
+
+METHOD 0x060000ab Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel ExecuteSurfaceOfSphereCompensation IL_SHA256 b8ae2e61f38bec129a7c1aa8d95bd8e7438606642d171c5ba044cace1c54b9e1 DECODE_ISSUE null
+0000: call          0x0a000099 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingFilterWrapper
+0005: stloc.0        
+0006: ldarg.s       8 
+0008: call          0x0a00009a System.Convert.ToUInt16
+000d: stloc.2        
+000e: ldarg.s       9 
+0010: call          0x0a00009a System.Convert.ToUInt16
+0015: stloc.3        
+0016: ldarg.s       14 
+0018: ldc.i4.1       
+0019: sub            
+001a: switch        7  targets=67,88,71,88,75,88,79
+003b: ldarg.s       14 
+003d: ldc.i4.s      11 
+003f: beq.s         83 
+0041: br.s          88 
+0043: ldc.i4.1       
+0044: stloc.1        
+0045: br.s          90 
+0047: ldc.i4.3       
+0048: stloc.1        
+0049: br.s          90 
+004b: ldc.i4.5       
+004c: stloc.1        
+004d: br.s          90 
+004f: ldc.i4.7       
+0050: stloc.1        
+0051: br.s          90 
+0053: ldc.i4.s      11 
+0055: stloc.1        
+0056: br.s          90 
+0058: ldc.i4.1       
+0059: stloc.1        
+005a: ldloc.0        
+005b: ldarg.s       15 
+005d: ldarg.1        
+005e: ldnull         
+005f: ldarg.3        
+0060: ldarg.2        
+0061: ldarg.s       4 
+0063: ldarg.s       5 
+0065: ldarg.s       6 
+0067: ldarg.s       7 
+0069: ldloc.1        
+006a: ldloc.2        
+006b: ldloc.3        
+006c: callvirt      0x2b000003 OpenCVWrapper.IImageProcessingFilterWrapper.CorrectSphereImage
+0071: ldarg.s       13 
+0073: ldarg.s       6 
+0075: ldarg.s       15 
+0077: ldc.i4.4       
+0078: ldelem.r8      
+0079: div            
+007a: stind.r8       
+007b: ret            
+
+METHOD 0x060000ad Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel buildpolynomialleastsquares IL_SHA256 d3f9b2eb5b6352335e86d1c912edc0e0c95bd2b0be0bd4f2b0db91a07f9808cb DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldind.ref      
+0002: ldarg.2        
+0003: ldind.ref      
+0004: ldarg.3        
+0005: ldarg.s       4 
+0007: ldloca.s      2 
+0009: ldloca.s      0 
+000b: ldloca.s      1 
+000d: call          0x0a00009e alglib.polynomialfit
+0012: ldloc.2        
+0013: ldc.i4.0       
+0014: ble.s         34 
+0016: ldloc.0        
+0017: ldloca.s      3 
+0019: call          0x0a00009f alglib.polynomialbar2pow
+001e: ldarg.s       5 
+0020: ldloc.3        
+0021: stind.ref      
+0022: ret            
+
+METHOD 0x0600010f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _ExecuteSurfaceCorrectionFilter IL_SHA256 3ce13b201b6a9ba38301b724eb08db204c98e868fd158a80293571bdc9eea6e8 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldarg.0        
+0002: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0007: callvirt      0x0a00001c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+000c: conv.i2        
+000d: stloc.0        
+000e: ldarg.1        
+000f: ldarg.0        
+0010: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0015: callvirt      0x0a00001d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+001a: conv.i2        
+001b: stloc.1        
+001c: ldarg.2        
+001d: callvirt      0x06000145 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_CompensationMethod
+0022: ldc.i4.5       
+0023: beq.s         72 
+0025: ldarg.0        
+0026: ldfld         0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+002b: brfalse.s     58 
+002d: ldarg.0        
+002e: ldfld         0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+0033: ldlen          
+0034: conv.i4        
+0035: ldloc.1        
+0036: ldloc.0        
+0037: mul            
+0038: beq.s         72 
+003a: ldarg.0        
+003b: ldloc.1        
+003c: ldloc.0        
+003d: mul            
+003e: newarr        0x010000bd 
+0043: stfld         0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+0048: ldarg.0        
+0049: ldloc.1        
+004a: newarr        0x010000be 
+004f: stfld         0x040000af Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ui16ControlSplineData
+0054: ldc.r8        1 
+005d: stloc.3        
+005e: ldarg.0        
+005f: ldarg.1        
+0060: ldarg.2        
+0061: call          0x0600011a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.SaveToHistory
+0066: pop            
+0067: ldarg.0        
+0068: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+006d: brfalse.s     122 
+006f: ldarg.0        
+0070: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+0075: ldlen          
+0076: conv.i4        
+0077: ldloc.1        
+0078: pop            
+0079: pop            
+007a: ldarg.0        
+007b: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0080: brfalse.s     141 
+0082: ldarg.0        
+0083: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0088: ldlen          
+0089: conv.i4        
+008a: ldloc.0        
+008b: beq.s         153 
+008d: ldarg.0        
+008e: ldloc.0        
+008f: newarr        0x010000b1 
+0094: stfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0099: ldarg.2        
+009a: callvirt      0x06000145 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_CompensationMethod
+009f: stloc.s       4 
+00a1: ldloc.s       4 
+00a3: switch        6  targets=197,270,354,406,504,582
+00c0: br            598 
+00c5: ldarg.0        
+00c6: ldfld         0x0400009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsInclinationCorrectionModel
+00cb: ldarg.0        
+00cc: ldflda        0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+00d1: ldarg.0        
+00d2: ldfld         0x04000095 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainImageEntity
+00d7: ldarg.1        
+00d8: ldloc.1        
+00d9: ldloc.0        
+00da: ldarg.2        
+00db: callvirt      0x0600014b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_Direction
+00e0: ldarg.0        
+00e1: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+00e6: ldarg.0        
+00e7: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+00ec: ldarg.1        
+00ed: ldc.i4.2       
+00ee: callvirt      0x0a0000e1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+00f3: ldarg.1        
+00f4: ldc.i4.2       
+00f5: callvirt      0x0a0000dd Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetYResolution
+00fa: ldarg.1        
+00fb: ldc.i4.2       
+00fc: callvirt      0x0a0000d9 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+0101: ldloca.s      3 
+0103: ldarg.3        
+0104: callvirt      0x06000086 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.ExecuteAutoInclinationFilter
+0109: br            598 
+010e: ldarg.0        
+010f: ldfld         0x0400009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsInclinationCorrectionModel
+0114: ldarg.0        
+0115: ldflda        0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+011a: ldarg.0        
+011b: ldfld         0x04000095 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainImageEntity
+0120: ldarg.1        
+0121: ldloc.1        
+0122: ldloc.0        
+0123: ldarg.2        
+0124: callvirt      0x0600014b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_Direction
+0129: ldarg.2        
+012a: callvirt      0x06000153 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_ManualInclinationCorrectionAbsolutePoints
+012f: ldarg.2        
+0130: callvirt      0x06000155 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_ManualInclinationCorrectionAbsolutePointsY
+0135: ldarg.2        
+0136: callvirt      0x06000147 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_HorizontalProfilePosition
+013b: ldarg.2        
+013c: callvirt      0x06000149 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_VerticalProfilePosition
+0141: ldarg.1        
+0142: ldc.i4.2       
+0143: callvirt      0x0a0000e1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+0148: ldarg.1        
+0149: ldc.i4.2       
+014a: callvirt      0x0a0000d9 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+014f: ldarg.1        
+0150: callvirt      0x0a0000de Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationY
+0155: ldloca.s      3 
+0157: ldarg.3        
+0158: callvirt      0x06000090 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.ExecuteManualInclinationFilter
+015d: br            598 
+0162: ldarg.0        
+0163: ldfld         0x0400009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsInclinationCorrectionModel
+0168: ldarg.0        
+0169: ldflda        0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+016e: ldarg.0        
+016f: ldfld         0x04000095 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainImageEntity
+0174: ldarg.1        
+0175: ldloc.1        
+0176: ldloc.0        
+0177: ldarg.2        
+0178: callvirt      0x0600014b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_Direction
+017d: ldarg.0        
+017e: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+0183: ldarg.0        
+0184: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0189: ldloca.s      3 
+018b: ldarg.3        
+018c: callvirt      0x06000096 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.ExecuteCurvedSurfaceAutoCompensation
+0191: br            598 
+0196: ldarg.0        
+0197: ldfld         0x040000b5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblSplidata
+019c: brfalse.s     425 
+019e: ldarg.0        
+019f: ldfld         0x040000b5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblSplidata
+01a4: ldlen          
+01a5: conv.i4        
+01a6: ldloc.1        
+01a7: bge.s         437 
+01a9: ldarg.0        
+01aa: ldloc.1        
+01ab: newarr        0x010000b1 
+01b0: stfld         0x040000b5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblSplidata
+01b5: ldarg.0        
+01b6: ldfld         0x0400009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsInclinationCorrectionModel
+01bb: ldarg.0        
+01bc: ldflda        0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+01c1: ldarg.0        
+01c2: ldfld         0x04000095 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainImageEntity
+01c7: ldarg.1        
+01c8: ldloc.1        
+01c9: ldloc.0        
+01ca: ldarg.2        
+01cb: callvirt      0x06000157 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_CurvedProfileCompensationAbsPoints
+01d0: ldarg.2        
+01d1: callvirt      0x06000159 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_CurvedProfileCompensationAbsPointsY
+01d6: ldarg.2        
+01d7: callvirt      0x0600014b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_Direction
+01dc: ldarg.2        
+01dd: callvirt      0x06000147 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_HorizontalProfilePosition
+01e2: ldarg.2        
+01e3: callvirt      0x06000149 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_VerticalProfilePosition
+01e8: ldarg.0        
+01e9: ldflda        0x040000b5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblSplidata
+01ee: ldloca.s      3 
+01f0: ldarg.3        
+01f1: callvirt      0x0600009c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.ExecuteCurvedSurfaceManualProfileCompensation
+01f6: br.s          598 
+01f8: ldarg.0        
+01f9: ldfld         0x0400009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsInclinationCorrectionModel
+01fe: ldarg.0        
+01ff: ldflda        0x040000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHeightData
+0204: ldarg.0        
+0205: ldfld         0x04000095 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainImageEntity
+020a: ldarg.1        
+020b: ldloc.1        
+020c: ldloc.0        
+020d: ldarg.0        
+020e: call          0x060000d7 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_ICThreePoints
+0213: ldarg.2        
+0214: callvirt      0x0600014b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_Direction
+0219: ldarg.1        
+021a: ldc.i4.2       
+021b: callvirt      0x0a0000e1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+0220: ldarg.1        
+0221: ldc.i4.2       
+0222: callvirt      0x0a0000d9 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+0227: ldarg.1        
+0228: ldc.i4.2       
+0229: callvirt      0x0a0000dd Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetYResolution
+022e: ldarg.0        
+022f: call          0x060000c5 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentMaskValue
+0234: ldloca.s      3 
+0236: ldarg.3        
+0237: callvirt      0x060000a2 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.ExecuteThreePointsInclinationCorrection
+023c: stloc.2        
+023d: ldarg.2        
+023e: ldloc.2        
+023f: callvirt      0x0600015c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.set_PlaneParameters
+0244: br.s          598 
+0246: ldarg.0        
+0247: call          0x0600010e Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.FreeAllocations
+024c: ldarg.0        
+024d: ldarg.1        
+024e: ldloca.s      3 
+0250: ldarg.3        
+0251: call          0x0600010d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ExecuteSurfaceOfSphereCorrection
+0256: ldarg.0        
+0257: ldloc.3        
+0258: stfld         0x040000b4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblPreviewImageZPitchFactor
+025d: ldarg.0        
+025e: ldfld         0x04000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsOperation
+0263: ldarg.0        
+0264: ldfld         0x040000b4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblPreviewImageZPitchFactor
+0269: callvirt      0x0a0000fd Utilities.BusinessEntities.CommonClasses.Operation.set_ZResolutionFactor
+026e: ret            

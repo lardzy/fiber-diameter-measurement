@@ -1,0 +1,582 @@
+// ev_6a6b0c6918aea1a0912603189ee65b2740f6bdd6b67e8424ec1deb550d67a2b1
+// 037fb816adaa7f326a23ca3c338c1377cfa06fde1f855b53a1a95ea590b9f065
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay::add_ReceiveLiveStitchingImageForLiveImageRegister 0x0600000d
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay::remove_ReceiveLiveStitchingImageForLiveImageRegister 0x0600000e
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay::BackupLiveImage 0x0600001c
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay::GetBackupLiveImage 0x0600001d
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_CreateBitmapImage 0x06000026
+0000 call 0x0a000038 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager::get_Instance
+0005 ldarg.1  
+0006 callvirt 0x0a00008d Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageBufferHeader
+0011 callvirt 0x0a00008e Olympus.LI.Triumph.Image.ImageDataManager.ImageManager::GetImageBuffer
+0016 stloc.0  
+0017 ldarg.0  
+0018 ldarg.0  
+0019 ldflda 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0024 ldarg.0  
+0025 ldflda 0x04000016 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_rctLive
+0030 ldarg.1  
+0031 callvirt 0x0a00008f Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ConvertType
+0036 ldarg.1  
+0037 callvirt 0x0a000090 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_CamByte
+0042 ldarg.1  
+0043 callvirt 0x0a000091 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageSizeX
+0048 ldarg.1  
+0049 callvirt 0x0a000092 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageSizeY
+0054 ldloc.0  
+0055 call 0x0600002c Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateBitmapImage
+0060 call 0x0a000093 Olympus.LI.Triumph.Application.UiData.UICommonData::get_AcquisitionData
+0065 callvirt 0x0a000094 Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData::get_LiveStitchingEnable
+0070 brfalse.s 107 
+0072 ldarg.0  
+0073 ldarg.1  
+0074 callvirt 0x0a000091 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageSizeX
+0079 conv.r8  
+0080 ldarg.1  
+0081 callvirt 0x0a000092 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageSizeY
+0086 conv.r8  
+0087 ldarg.1  
+0088 callvirt 0x0a000095 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_SumShiftX
+0093 ldarg.1  
+0094 callvirt 0x0a000096 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_SumShiftY
+0099 ldarg.2  
+0100 call 0x06000029 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateLiveImageForLiveStitching
+0105 br.s 114 
+0107 ldarg.0  
+0108 ldarg.1  
+0109 call 0x06000028 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateLiveImageForLive
+0114 leave.s 133 
+0116 ldarg.1  
+0117 callvirt 0x0a000097 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::Dettach
+0122 ldstr 0x700001cf 'UiBusiness.Application ImageDisplay has Dettached the Image Buffer'
+0127 call 0x0a00003c Olympus.Mis.Core.Logging.Logger::MemoryLog
+0132 endfinally  
+0133 ldarg.0  
+0134 ldarg.1  
+0135 call 0x06000033 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_OutputLog
+0140 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateLiveImageForLive 0x06000028
+0000 ldc.r8 0 
+0009 stloc.0  
+0010 ldc.r8 0 
+0019 stloc.1  
+0020 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0025 ldarg.1  
+0026 callvirt 0x0a000091 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageSizeX
+0031 conv.r8  
+0032 callvirt 0x0a00009c Olympus.LI.Triumph.Application.UiData.ObservationCommonData::set_GraphicWidth
+0037 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0042 ldarg.1  
+0043 callvirt 0x0a000092 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ImageSizeY
+0048 conv.r8  
+0049 callvirt 0x0a00009d Olympus.LI.Triumph.Application.UiData.ObservationCommonData::set_GraphicHeight
+0054 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0059 callvirt 0x0a0000a3 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurCorrection
+0064 brfalse.s 102 
+0066 ldarg.0  
+0067 ldarg.1  
+0068 callvirt 0x0a0000a4 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ShiftX
+0073 ldarg.1  
+0074 callvirt 0x0a0000a5 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ShiftY
+0079 ldarg.1  
+0080 callvirt 0x0a0000a6 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_ResetAccShiftFlag
+0085 call 0x0600002e Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateBlurAccumulationValue
+0090 ldarg.0  
+0091 ldloca.s 0 
+0093 ldloca.s 1 
+0095 call 0x0600002f Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_CalcBlurCorrectionValueForDisplay
+0100 br.s 140 
+0102 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0107 ldc.r8 0 
+0116 callvirt 0x0a0000a7 Olympus.LI.Triumph.Application.UiData.ObservationResultData::set_BlurAccumulationX
+0121 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0126 ldc.r8 0 
+0135 callvirt 0x0a0000a8 Olympus.LI.Triumph.Application.UiData.ObservationResultData::set_BlurAccumulationY
+0140 ldarg.0  
+0141 ldfld 0x0400000a Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseImageInfo
+0146 ldarg.0  
+0147 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0152 ldarg.1  
+0153 callvirt 0x0a0000a9 Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_CallbackID
+0158 ldloc.0  
+0159 ldloc.1  
+0160 ldarg.1  
+0161 callvirt 0x0a0000aa Olympus.LI.Triumph.Workflow.BusinessObject.ICurrentFrame::get_FrameNo
+0166 callvirt 0x0a00009e DgtNotifyImageInfo`5::Invoke
+0171 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateLiveImageForLiveStitching 0x06000029
+0000 call 0x0a000093 Olympus.LI.Triumph.Application.UiData.UICommonData::get_AcquisitionData
+0005 callvirt 0x0a000094 Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData::get_LiveStitchingEnable
+0010 brtrue.s 13 
+0012 ret  
+0013 ldarg.0  
+0014 ldfld 0x04000031 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_moveFollowImage
+0019 ldarg.1  
+0020 callvirt 0x0a0000ab Olympus.LI.Triumph.Application.UiData.Roi::set_Width
+0025 ldarg.0  
+0026 ldfld 0x04000031 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_moveFollowImage
+0031 ldarg.2  
+0032 callvirt 0x0a0000ac Olympus.LI.Triumph.Application.UiData.Roi::set_Height
+0037 ldarg.0  
+0038 ldarg.3  
+0039 stfld 0x0400002c Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblMoveFollowImageSumShiftX
+0044 ldarg.0  
+0045 ldarg.s 4 
+0047 stfld 0x0400002d Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblMoveFollowImageSumShiftY
+0052 call 0x0a000093 Olympus.LI.Triumph.Application.UiData.UICommonData::get_AcquisitionData
+0057 callvirt 0x0a0000ad Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData::get_LiveStichingFirstAcquisition
+0062 brtrue.s 117 
+0064 ldarg.0  
+0065 ldfld 0x04000031 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_moveFollowImage
+0070 ldarg.0  
+0071 ldfld 0x0400002a Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblBaseX
+0076 ldarg.3  
+0077 add  
+0078 ldarg.0  
+0079 ldfld 0x0400002e Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblStitchingSumShiftX
+0084 sub  
+0085 callvirt 0x0a0000ae Olympus.LI.Triumph.Application.UiData.Roi::set_X
+0090 ldarg.0  
+0091 ldfld 0x04000031 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_moveFollowImage
+0096 ldarg.0  
+0097 ldfld 0x0400002b Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblBaseY
+0102 ldarg.s 4 
+0104 add  
+0105 ldarg.0  
+0106 ldfld 0x0400002f Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblStitchingSumShiftY
+0111 sub  
+0112 callvirt 0x0a0000af Olympus.LI.Triumph.Application.UiData.Roi::set_Y
+0117 call 0x0a000093 Olympus.LI.Triumph.Application.UiData.UICommonData::get_AcquisitionData
+0122 callvirt 0x0a0000ad Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData::get_LiveStichingFirstAcquisition
+0127 brfalse.s 138 
+0129 ldarg.0  
+0130 ldc.i4.0  
+0131 stfld 0x04000035 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_isMoveFollowMarginLacked
+0136 br.s 146 
+0138 ldarg.0  
+0139 ldarg.s 5 
+0141 stfld 0x04000035 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_isMoveFollowMarginLacked
+0146 ldarg.0  
+0147 call 0x0600005d Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_GetMoveFollowStrokeColor
+0152 stloc.0  
+0153 ldarg.0  
+0154 call 0x0a000093 Olympus.LI.Triumph.Application.UiData.UICommonData::get_AcquisitionData
+0159 callvirt 0x0a0000b0 Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData::get_StitchingDispSizeTypeForLiveStitching
+0164 call 0x06000054 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_GetReductionRatioForLiveStitchingImage
+0169 stloc.1  
+0170 ldarg.0  
+0171 ldarg.0  
+0172 ldfld 0x04000031 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_moveFollowImage
+0177 ldloc.1  
+0178 call 0x06000052 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_GetImageFramePosForStitchingDispForLiveStitching
+0183 stloc.2  
+0184 ldarg.0  
+0185 call 0x0a000093 Olympus.LI.Triumph.Application.UiData.UICommonData::get_AcquisitionData
+0190 callvirt 0x0a0000b1 Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData::get_LiveDispSizeTypeForLiveStitching
+0195 call 0x06000055 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_GetReductionRatioForLiveStitchingImage
+0200 stloc.3  
+0201 ldarg.0  
+0202 ldarg.0  
+0203 ldfld 0x04000031 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_moveFollowImage
+0208 ldloc.3  
+0209 call 0x06000052 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_GetImageFramePosForStitchingDispForLiveStitching
+0214 stloc.s 4 
+0216 newobj 0x0a0000b2 Olympus.LI.Triumph.Application.UiData.LiveStitchingEventInfo::.ctor
+0221 stloc.s 5 
+0223 ldarg.0  
+0224 ldfld 0x0400000c Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseMoveFollowImageInfoForStitchingImage
+0229 ldc.i4.0  
+0230 ldloc.2  
+0231 ldloc.0  
+0232 ldarg.0  
+0233 ldfld 0x04000035 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_isMoveFollowMarginLacked
+0238 ldloc.s 5 
+0240 callvirt 0x0a0000b3 DgtNotifyImageInfo`5::Invoke
+0245 ldarg.0  
+0246 ldfld 0x0400000f Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseMoveFollowImageInfoForLive
+0251 ldarg.0  
+0252 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0257 ldc.i4.0  
+0258 ldloc.s 4 
+0260 callvirt 0x0a0000b4 DgtNotifyImageInfo`3::Invoke
+0265 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateBitmapImage 0x0600002c
+0000 ldstr 0x70000318 '[WriteableBitmap Update]-[Live]-[ImageDisplay] Lock.'
+0005 call 0x0a00005c Olympus.Mis.Core.Logging.Logger::DebugLog
+0010 ldarg.1  
+0011 ldind.ref  
+0012 callvirt 0x0a0000c3 System.Windows.Media.Imaging.WriteableBitmap::Lock
+0017 ldarg.s 7 
+0019 callvirt 0x0a00004a Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer::GetPLiveBuff
+0024 stloc.0  
+0025 ldarg.s 5 
+0027 stloc.1  
+0028 ldarg.s 6 
+0030 stloc.2  
+0031 ldarg.s 4 
+0033 stloc.3  
+0034 ldloc.1  
+0035 ldloc.3  
+0036 mul  
+0037 stloc.s 4 
+0039 ldloc.1  
+0040 ldloc.2  
+0041 mul  
+0042 ldloc.3  
+0043 mul  
+0044 stloc.s 5 
+0046 ldarg.0  
+0047 ldarg.3  
+0048 call 0x0600002d Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_GetPixelFormat
+0053 pop  
+0054 ldarg.2  
+0055 ldloc.1  
+0056 call 0x0a0000c4 System.Windows.Int32Rect::set_Width
+0061 ldarg.2  
+0062 ldloc.2  
+0063 call 0x0a0000c5 System.Windows.Int32Rect::set_Height
+0068 ldloc.3  
+0069 ldc.i4.6  
+0070 bne.un.s 178 
+0072 ldc.i4 6912000 
+0077 call 0x0a0000c6 System.Runtime.InteropServices.Marshal::AllocCoTaskMem
+0082 stloc.s 6 
+0084 ldloc.0  
+0085 call 0x0a0000c7 System.IntPtr::op_Explicit
+0090 stloc.s 7 
+0092 ldloc.s 6 
+0094 call 0x0a0000c7 System.IntPtr::op_Explicit
+0099 stloc.s 8 
+0101 ldc.i4.0  
+0102 stloc.s 9 
+0104 br.s 130 
+0106 ldloc.s 8 
+0108 ldloc.s 9 
+0110 add  
+0111 ldloc.s 7 
+0113 ldloc.s 9 
+0115 conv.i  
+0116 ldc.i4.2  
+0117 mul  
+0118 add  
+0119 ldc.i4.1  
+0120 conv.i  
+0121 add  
+0122 ldind.u1  
+0123 stind.i1  
+0124 ldloc.s 9 
+0126 ldc.i4.1  
+0127 add  
+0128 stloc.s 9 
+0130 ldloc.s 9 
+0132 ldloc.s 5 
+0134 ldc.i4.2  
+0135 div  
+0136 blt.s 106 
+0138 ldloc.s 4 
+0140 ldc.i4.2  
+0141 div  
+0142 stloc.s 4 
+0144 ldloc.s 5 
+0146 ldc.i4.2  
+0147 div  
+0148 stloc.s 5 
+0150 ldarg.1  
+0151 ldind.ref  
+0152 ldarg.2  
+0153 ldobj 0x01000004 
+0158 ldloc.s 6 
+0160 ldloc.s 5 
+0162 ldloc.s 4 
+0164 callvirt 0x0a0000c8 System.Windows.Media.Imaging.WriteableBitmap::WritePixels
+0169 ldloc.s 6 
+0171 call 0x0a0000c9 System.Runtime.InteropServices.Marshal::FreeCoTaskMem
+0176 br.s 196 
+0178 ldarg.1  
+0179 ldind.ref  
+0180 ldarg.2  
+0181 ldobj 0x01000004 
+0186 ldloc.0  
+0187 ldloc.s 5 
+0189 ldloc.s 4 
+0191 callvirt 0x0a0000c8 System.Windows.Media.Imaging.WriteableBitmap::WritePixels
+0196 ldstr 0x70000382 '[WriteableBitmap Update]-[Live]-[ImageDisplay] UnLock.'
+0201 call 0x0a00005c Olympus.Mis.Core.Logging.Logger::DebugLog
+0206 ldarg.1  
+0207 ldind.ref  
+0208 callvirt 0x0a0000ca System.Windows.Media.Imaging.WriteableBitmap::Unlock
+0213 leave.s 252 
+0215 stloc.s 10 
+0217 ldloc.s 10 
+0219 callvirt 0x0a0000cb System.Exception::get_Message
+0224 call 0x0a0000cc Olympus.Mis.Core.Logging.Logger::ErrorLog
+0229 ldloc.s 10 
+0231 newobj 0x0a0000cd Olympus.LI.Triumph.Application.UiExceptionObject.UiLayerFatalException::.ctor
+0236 stloc.s 11 
+0238 call 0x0a0000b5 Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager::get_Instance
+0243 ldloc.s 11 
+0245 callvirt 0x0a0000b7 Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager::UiExceptionNortifier
+0250 leave.s 252 
+0252 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_UpdateBlurAccumulationValue 0x0600002e
+0000 ldarg.1  
+0001 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0006 callvirt 0x0a0000d1 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationX
+0011 add  
+0012 stloc.0  
+0013 ldarg.2  
+0014 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0019 callvirt 0x0a0000d2 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationY
+0024 add  
+0025 stloc.1  
+0026 ldarg.0  
+0027 ldarg.1  
+0028 stfld 0x0400002e Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblStitchingSumShiftX
+0033 ldarg.0  
+0034 ldarg.2  
+0035 stfld 0x0400002f Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::dblStitchingSumShiftY
+0040 ldloc.0  
+0041 ldc.r8 0 
+0050 bge.un.s 55 
+0052 ldloc.0  
+0053 neg  
+0054 stloc.0  
+0055 ldloc.1  
+0056 ldc.r8 0 
+0065 bge.un.s 70 
+0067 ldloc.1  
+0068 neg  
+0069 stloc.1  
+0070 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0075 callvirt 0x0a0000d3 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeX
+0080 stloc.2  
+0081 ldarg.3  
+0082 brtrue.s 108 
+0084 ldloc.0  
+0085 ldloc.2  
+0086 bgt.un.s 108 
+0088 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0093 dup  
+0094 callvirt 0x0a0000d1 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationX
+0099 ldarg.1  
+0100 add  
+0101 callvirt 0x0a0000a7 Olympus.LI.Triumph.Application.UiData.ObservationResultData::set_BlurAccumulationX
+0106 br.s 127 
+0108 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0113 ldc.r8 0 
+0122 callvirt 0x0a0000a7 Olympus.LI.Triumph.Application.UiData.ObservationResultData::set_BlurAccumulationX
+0127 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0132 callvirt 0x0a0000d4 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeY
+0137 stloc.3  
+0138 ldarg.3  
+0139 brtrue.s 165 
+0141 ldloc.1  
+0142 ldloc.3  
+0143 bgt.un.s 165 
+0145 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0150 dup  
+0151 callvirt 0x0a0000d2 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationY
+0156 ldarg.2  
+0157 add  
+0158 callvirt 0x0a0000a8 Olympus.LI.Triumph.Application.UiData.ObservationResultData::set_BlurAccumulationY
+0163 br.s 184 
+0165 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0170 ldc.r8 0 
+0179 callvirt 0x0a0000a8 Olympus.LI.Triumph.Application.UiData.ObservationResultData::set_BlurAccumulationY
+0184 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0189 callvirt 0x0a0000d1 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationX
+0194 ldc.r8 0 
+0203 beq.s 226 
+0205 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0210 callvirt 0x0a0000d2 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationY
+0215 ldc.r8 0 
+0224 bne.un.s 235 
+0226 ldarg.0  
+0227 ldloc.0  
+0228 ldloc.1  
+0229 ldarg.3  
+0230 call 0x06000034 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_OutputLogBlurCorrection
+0235 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_CalcBlurCorrectionValueForDisplay 0x0600002f
+0000 ldarg.1  
+0001 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0006 callvirt 0x0a0000d5 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_ImageWidth
+0011 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0016 callvirt 0x0a0000d1 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationX
+0021 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0026 callvirt 0x0a000029 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_GraphicWidth
+0031 call 0x0a0000d6 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::ConvertBlurShiftXForDisplay
+0036 stind.r8  
+0037 ldarg.2  
+0038 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0043 callvirt 0x0a0000d7 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_ImageHeight
+0048 call 0x0a000034 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0053 callvirt 0x0a0000d2 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurAccumulationY
+0058 call 0x0a000028 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0063 callvirt 0x0a00002a Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_GraphicHeight
+0068 call 0x0a0000d8 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::ConvertBlurShiftYForDisplay
+0073 stind.r8  
+0074 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_OutputLogBlurCorrection 0x06000034
+0000 call 0x0a000098 System.DateTime::get_Now
+0005 stloc.0  
+0006 ldarg.0  
+0007 ldfld 0x04000023 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_stbLog
+0012 callvirt 0x0a0000ea System.Text.StringBuilder::Clear
+0017 pop  
+0018 ldarg.0  
+0019 ldfld 0x04000023 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_stbLog
+0024 ldstr 0x70000478 'Reset BlurAccumulation / {0}[ms] / x:{1} y:{2} ReqReset:{3}'
+0029 ldc.i4.4  
+0030 newarr 0x01000001 
+0035 stloc.1  
+0036 ldloc.1  
+0037 ldc.i4.0  
+0038 ldloca.s 0 
+0040 ldstr 0x70000448 'yyyy/MM/dd HH.mm.ss.fff'
+0045 call 0x0a0000eb System.DateTime::ToString
+0050 stelem.ref  
+0051 ldloc.1  
+0052 ldc.i4.1  
+0053 ldarg.1  
+0054 box 0x0100004d 
+0059 stelem.ref  
+0060 ldloc.1  
+0061 ldc.i4.2  
+0062 ldarg.2  
+0063 box 0x0100004d 
+0068 stelem.ref  
+0069 ldloc.1  
+0070 ldc.i4.3  
+0071 ldarg.3  
+0072 box 0x01000043 
+0077 stelem.ref  
+0078 ldloc.1  
+0079 callvirt 0x0a0000ec System.Text.StringBuilder::AppendFormat
+0084 pop  
+0085 ldarg.0  
+0086 ldfld 0x04000023 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_stbLog
+0091 callvirt 0x0a0000ed System.Object::ToString
+0096 call 0x0a00005c Olympus.Mis.Core.Logging.Logger::DebugLog
+0101 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay.add_ReceiveLiveStitchingImageForLiveImageRegister 0x0600003f
+0000 ldarg.0  
+0001 dup  
+0002 ldfld 0x04000010 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseLiveStitchingImageInfoForLiveImage
+0007 ldarg.1  
+0008 call 0x0a0000ee System.Delegate::Combine
+0013 castclass 0x1b000007 
+0018 stfld 0x04000010 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseLiveStitchingImageInfoForLiveImage
+0023 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay.remove_ReceiveLiveStitchingImageForLiveImageRegister 0x06000040
+0000 ldarg.0  
+0001 dup  
+0002 ldfld 0x04000010 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseLiveStitchingImageInfoForLiveImage
+0007 ldarg.1  
+0008 call 0x0a0000ef System.Delegate::Remove
+0013 castclass 0x1b000007 
+0018 stfld 0x04000010 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_dgtRaiseLiveStitchingImageInfoForLiveImage
+0023 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay.BackupLiveImage 0x06000049
+0000 ldarg.0  
+0001 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0006 callvirt 0x0a0000f0 System.Windows.Media.Imaging.WriteableBitmap::get_BackBuffer
+0011 stloc.0  
+0012 ldarg.0  
+0013 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0018 callvirt 0x0a0000f1 System.Windows.Media.Imaging.WriteableBitmap::get_BackBufferStride
+0023 stloc.1  
+0024 ldarg.0  
+0025 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0030 callvirt 0x0a000031 System.Windows.Media.Imaging.BitmapSource::get_Format
+0035 stloc.3  
+0036 ldloca.s 3 
+0038 call 0x0a0000f2 System.Windows.Media.PixelFormat::get_BitsPerPixel
+0043 conv.r8  
+0044 ldarg.0  
+0045 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0050 callvirt 0x0a0000f3 System.Windows.Media.ImageSource::get_Width
+0055 mul  
+0056 ldarg.0  
+0057 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0062 callvirt 0x0a0000f4 System.Windows.Media.ImageSource::get_Height
+0067 mul  
+0068 conv.i4  
+0069 stloc.2  
+0070 ldarg.0  
+0071 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0076 ldarg.0  
+0077 ldfld 0x04000016 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_rctLive
+0082 ldloc.0  
+0083 ldloc.2  
+0084 ldloc.1  
+0085 callvirt 0x0a0000f5 System.Windows.Media.Imaging.BitmapSource::CopyPixels
+0090 ldarg.0  
+0091 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0096 ldarg.0  
+0097 ldfld 0x04000016 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_rctLive
+0102 ldloc.0  
+0103 ldloc.2  
+0104 ldloc.1  
+0105 callvirt 0x0a0000c8 System.Windows.Media.Imaging.WriteableBitmap::WritePixels
+0110 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::Olympus.LI.Triumph.Application.UiBusiness.Interface.InfImageDisplay.GetBackupLiveImage 0x0600004a
+0000 ldarg.0  
+0001 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0006 callvirt 0x0a0000f0 System.Windows.Media.Imaging.WriteableBitmap::get_BackBuffer
+0011 stloc.0  
+0012 ldarg.0  
+0013 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0018 callvirt 0x0a0000f1 System.Windows.Media.Imaging.WriteableBitmap::get_BackBufferStride
+0023 stloc.1  
+0024 ldarg.0  
+0025 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0030 callvirt 0x0a000031 System.Windows.Media.Imaging.BitmapSource::get_Format
+0035 stloc.3  
+0036 ldloca.s 3 
+0038 call 0x0a0000f2 System.Windows.Media.PixelFormat::get_BitsPerPixel
+0043 conv.r8  
+0044 ldarg.0  
+0045 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0050 callvirt 0x0a0000f3 System.Windows.Media.ImageSource::get_Width
+0055 mul  
+0056 ldarg.0  
+0057 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0062 callvirt 0x0a0000f4 System.Windows.Media.ImageSource::get_Height
+0067 mul  
+0068 conv.i4  
+0069 stloc.2  
+0070 ldarg.0  
+0071 ldfld 0x04000014 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLiveBackup
+0076 ldarg.0  
+0077 ldfld 0x04000016 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_rctLive
+0082 ldloc.0  
+0083 ldloc.2  
+0084 ldloc.1  
+0085 callvirt 0x0a0000f5 System.Windows.Media.Imaging.BitmapSource::CopyPixels
+0090 ldarg.0  
+0091 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0096 ldarg.0  
+0097 ldfld 0x04000016 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_rctLive
+0102 ldloc.0  
+0103 ldloc.2  
+0104 ldloc.1  
+0105 callvirt 0x0a0000c8 System.Windows.Media.Imaging.WriteableBitmap::WritePixels
+0110 ldarg.0  
+0111 ldfld 0x04000013 Olympus.LI.Triumph.Application.UiBusiness.ImageDisplay.ImageDisplay::_wbmpLive
+0116 ret  

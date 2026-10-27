@@ -1,0 +1,31 @@
+{
+  "source_sha256": "98a134a6cd6175a83be72989aff763ee686a18c0bfc7af1b83c0f31161f5fcbd",
+  "runner_sha256": "81f2396a24890307606c7a964cd42c1747f3f6f6d867848bbe2f5d1403e13fc9",
+  "native_executed": false,
+  "results": [
+    {
+      "mutation": "wrong_odd_right_halo",
+      "caught": true,
+      "returncode": 1,
+      "failed_checks": [
+        "pyramid_nonconstant_edge_halo_7",
+        "pyramid_odd_terminal_impulse_halo"
+      ]
+    },
+    {
+      "mutation": "mixed_float64_axial_grid",
+      "caught": true,
+      "returncode": 1,
+      "failed_checks": [
+        "fractional_z_last_layer_float32_grid_endpoint",
+        "fractional_z_interior_window_float32_endpoint"
+      ]
+    },
+    {
+      "mutation": "float32_guided_moments",
+      "caught": true,
+      "returncode": 1,
+      "error": "numpy.linalg.LinAlgError: Singular matrix"
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+Evidence: ev_7fdf845af0ab9a249621f8b2434f8ece165d687ca58b06818c56ec0b4145c075
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_1401396a0(undefined8 *param_1)
+
+{
+  basic_ios<char,std::char_traits<char>_> *this;
+  code *pcVar1;
+  double *pdVar2;
+  longlong lVar3;
+  int iVar4;
+  basic_streambuf<char,std::char_traits<char>_> *pbVar5;
+  basic_istream<char,struct_std::char_traits<char>_> *pbVar6;
+  longlong lVar7;
+  double *pdVar8;
+  ulonglong uVar9;
+  uint uVar10;
+  longlong lVar11;
+  undefined ***pppuVar12;
+  undefined ***pppuVar13;
+  double *pdVar14;
+  undefined ***pppuVar15;
+  undefined1 auStack_288 [32];
+  wchar_t *local_268;
+  double local_260;
+  double local_258;
+  double local_250;
+  double local_248;
+  int iStack_23c;
+  longlong local_238 [2];
+  undefined **local_228;
+  basic_istream<char,std::char_traits<char>_> local_220 [16];
+  longlong *local_210;
+  char *local_1c0;
+  char *local_1b8;
+  undefined8 local_1b0;
+  undefined1 local_1a8;
+  undefined1 local_1a7;
+  undefined4 local_1a4;
+  char local_1a0;
+  FILE *local_198;
+  basic_ios<char,std::char_traits<char>_> local_188 [96];
+  undefined8 *local_128;
+  undefined8 local_120;
+  char local_118 [256];
+  ulonglong local_18;
+  
+  local_120 = 0xfffffffffffffffe;
+  local_18 = DAT_1401c7000 ^ (ulonglong)auStack_288;
+  local_128 = param_1;
+  Ordinal_296(&local_268);
+  Ordinal_4612(&local_268,L"%s\\%s",*param_1,L"HWStageXYPosition");
+  local_118[0] = '\0';
+  memset(local_118 + 1,0,0xff);
+  pppuVar13 = (undefined ***)0x0;
+  if (DAT_1401c71d8 != (double *)0x0) {
+    pppuVar12 = pppuVar13;
+    if (0 < DAT_1401c71e0) {
+      do {
+        uVar10 = (int)pppuVar12 + 1;
+        pppuVar12 = (undefined ***)(ulonglong)uVar10;
+      } while ((int)uVar10 < DAT_1401c71e0);
+    }
+    Ordinal_266(DAT_1401c71d8);
+    DAT_1401c71d8 = (double *)0x0;
+  }
+  _DAT_1401c71e8 = 0;
+  DAT_1401c71e0 = 0;
+  FUN_14000a600((basic_istream<char,std::char_traits<char>_> *)local_238);
+  pbVar5 = FUN_14000be20((basic_streambuf<char,std::char_traits<char>_> *)&local_228,local_268);
+  this = (basic_ios<char,std::char_traits<char>_> *)
+         ((longlong)local_238 + (longlong)*(int *)(local_238[0] + 4));
+  if (pbVar5 == (basic_streambuf<char,std::char_traits<char>_> *)0x0) {
+    std::basic_ios<char,std::char_traits<char>_>::setstate(this,2,false);
+  }
+  else {
+    std::basic_ios<char,std::char_traits<char>_>::clear(this,0,false);
+  }
+  while (pbVar6 = std::basic_istream<char,std::char_traits<char>_>::getline
+                            ((basic_istream<char,std::char_traits<char>_> *)local_238,local_118,
+                             0x100),
+        ((byte)pbVar6[(longlong)*(int *)(*(longlong *)pbVar6 + 4) + 0x10] & 6) == 0) {
+    lVar11 = -1;
+    do {
+      lVar7 = lVar11 + 1;
+      lVar3 = lVar11 + 1;
+      lVar11 = lVar7;
+    } while (local_118[lVar3] != '\0');
+    if ((lVar7 != 0) &&
+       (iVar4 = sscanf(local_118,"%lf,%lf",&local_248,&local_250), lVar11 = DAT_1401c71e0,
+       iVar4 == 2)) {
+      if (DAT_1401c71e0 < 0) {
+        Ordinal_2302();
+        pcVar1 = (code *)swi(3);
+        (*pcVar1)();
+        return;
+      }
+      FUN_1400078b0(0x1401c71d0,DAT_1401c71e0 + 1);
+      DAT_1401c71d8[lVar11] = local_248;
+      lVar11 = DAT_1401c71e0;
+      if (DAT_1401c71e0 < 0) {
+        Ordinal_2302();
+        pcVar1 = (code *)swi(3);
+        (*pcVar1)();
+        return;
+      }
+      FUN_1400078b0(0x1401c71d0,DAT_1401c71e0 + 1);
+      DAT_1401c71d8[lVar11] = local_250;
+    }
+  }
+  if (0 < DAT_1401c71e0) {
+    local_260 = *DAT_1401c71d8;
+    if (DAT_1401c71e0 < 2) {
+      Ordinal_2302();
+      pcVar1 = (code *)swi(3);
+      (*pcVar1)();
+      return;
+    }
+    local_258 = DAT_1401c71d8[1];
+    iVar4 = 2;
+    if (2 < DAT_1401c71e0) {
+      lVar11 = 2;
+      pdVar2 = DAT_1401c71d8;
+      do {
+        pdVar14 = pdVar2 + 2;
+        if ((lVar11 < 0) || (DAT_1401c71e0 <= lVar11)) {
+          Ordinal_2302();
+          pcVar1 = (code *)swi(3);
+          (*pcVar1)();
+          return;
+        }
+        pdVar8 = &local_260;
+        if (*pdVar14 <= local_260 && local_260 != *pdVar14) {
+          pdVar8 = pdVar14;
+        }
+        local_260 = *pdVar8;
+        if ((lVar11 + 1 < 0) || (DAT_1401c71e0 <= lVar11 + 1)) {
+          Ordinal_2302();
+          pcVar1 = (code *)swi(3);
+          (*pcVar1)();
+          return;
+        }
+        pdVar8 = &local_258;
+        if (local_258 < pdVar2[3]) {
+          pdVar8 = pdVar2 + 3;
+        }
+        local_258 = *pdVar8;
+        iVar4 = iVar4 + 2;
+        lVar11 = lVar11 + 2;
+        pdVar2 = pdVar14;
+      } while (iVar4 < DAT_1401c71e0);
+    }
+    pppuVar12 = pppuVar13;
+    pppuVar15 = pppuVar13;
+    if (0 < DAT_1401c71e0) {
+      do {
+        if (((longlong)pppuVar12 < 0) || (DAT_1401c71e0 <= (longlong)pppuVar12)) {
+          Ordinal_2302();
+          pcVar1 = (code *)swi(3);
+          (*pcVar1)();
+          return;
+        }
+        DAT_1401c71d8[(longlong)pppuVar12] = DAT_1401c71d8[(longlong)pppuVar12] - local_260;
+        lVar11 = (longlong)pppuVar12 + 1;
+        if ((lVar11 < 0) || (DAT_1401c71e0 <= lVar11)) {
+          Ordinal_2302();
+          pcVar1 = (code *)swi(3);
+          (*pcVar1)();
+          return;
+        }
+        DAT_1401c71d8[lVar11] = DAT_1401c71d8[lVar11] - local_258;
+        uVar10 = (int)pppuVar15 + 2;
+        pppuVar12 = (undefined ***)((longlong)pppuVar12 + 2);
+        pppuVar15 = (undefined ***)(ulonglong)uVar10;
+      } while ((int)uVar10 < DAT_1401c71e0);
+    }
+  }
+  pppuVar12 = pppuVar13;
+  pppuVar15 = pppuVar13;
+  if (0 < DAT_1401c71e0) {
+    do {
+      if (((longlong)pppuVar12 < 0) || (DAT_1401c71e0 <= (longlong)pppuVar12)) {
+        Ordinal_2302();
+        pcVar1 = (code *)swi(3);
+        (*pcVar1)();
+        return;
+      }
+      DAT_1401c71d8[(longlong)pppuVar12] = DAT_1401c71d8[(longlong)pppuVar12] / 1000.0;
+      uVar10 = (int)pppuVar15 + 1;
+      pppuVar15 = (undefined ***)(ulonglong)uVar10;
+      pppuVar12 = (undefined ***)((longlong)pppuVar12 + 1);
+    } while ((int)uVar10 < DAT_1401c71e0);
+  }
+  pppuVar12 = pppuVar13;
+  if (local_198 != (FILE *)0x0) {
+    uVar9 = FUN_140008930((longlong *)&local_228);
+    pppuVar12 = &local_228;
+    if ((char)uVar9 == '\0') {
+      pppuVar12 = pppuVar13;
+    }
+    iVar4 = fclose(local_198);
+    if (iVar4 != 0) {
+      pppuVar12 = pppuVar13;
+    }
+  }
+  local_1a0 = '\0';
+  local_1a7 = 0;
+  std::basic_streambuf<char,std::char_traits<char>_>::_Init
+            ((basic_streambuf<char,std::char_traits<char>_> *)&local_228);
+  local_198 = (FILE *)0x0;
+  local_1a4 = DAT_1401c9df8;
+  local_1b0 = 0;
+  if (pppuVar12 == (undefined ***)0x0) {
+    std::basic_ios<char,std::char_traits<char>_>::setstate
+              ((basic_ios<char,std::char_traits<char>_> *)
+               ((longlong)local_238 + (longlong)*(int *)(local_238[0] + 4)),2,false);
+  }
+  DAT_1401c9a38 = (uint)(0 < DAT_1401c71e0);
+  *(undefined ***)((longlong)local_238 + (longlong)*(int *)(local_238[0] + 4)) =
+       std::basic_ifstream<char,std::char_traits<char>_>::vftable;
+  *(int *)((longlong)&iStack_23c + (longlong)*(int *)(local_238[0] + 4)) =
+       *(int *)(local_238[0] + 4) + -0xb0;
+  local_228 = std::basic_filebuf<char,std::char_traits<char>_>::vftable;
+  if ((local_198 != (FILE *)0x0) && ((undefined1 *)*local_210 == &local_1a8)) {
+    std::basic_streambuf<char,std::char_traits<char>_>::setg
+              ((basic_streambuf<char,std::char_traits<char>_> *)&local_228,local_1c0,local_1c0,
+               local_1b8);
+  }
+  if (local_1a0 != '\0') {
+    if (local_198 != (FILE *)0x0) {
+      FUN_140008930((longlong *)&local_228);
+      fclose(local_198);
+    }
+    local_1a0 = '\0';
+    local_1a7 = 0;
+    std::basic_streambuf<char,std::char_traits<char>_>::_Init
+              ((basic_streambuf<char,std::char_traits<char>_> *)&local_228);
+    local_198 = (FILE *)0x0;
+    local_1a4 = DAT_1401c9df8;
+    local_1b0 = 0;
+  }
+  std::basic_streambuf<char,std::char_traits<char>_>::~basic_streambuf<char,std::char_traits<char>_>
+            ((basic_streambuf<char,std::char_traits<char>_> *)&local_228);
+  std::basic_istream<char,std::char_traits<char>_>::~basic_istream<char,std::char_traits<char>_>
+            (local_220);
+  std::basic_ios<char,std::char_traits<char>_>::~basic_ios<char,std::char_traits<char>_>(local_188);
+  Ordinal_1030(&local_268);
+  Ordinal_1030(param_1);
+  return;
+}
+

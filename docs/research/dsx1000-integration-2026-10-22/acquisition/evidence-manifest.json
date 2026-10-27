@@ -1,0 +1,1681 @@
+{
+  "scope": "Static-only, original binaries not executed",
+  "capture_date": "2026-10-22",
+  "archives": [
+    {
+      "archive": "raw/OlybAcquisitionDomain.dll.members.json.gz",
+      "uncompressed_bytes": 4613813,
+      "uncompressed_sha256": "148078037c4354beaa54ad14ff2d6338ae67fa6b1e2e51e4df412ba767016cdb",
+      "compressed_bytes": 346793,
+      "compressed_sha256": "b59ab18e042f8629212dfae11561dfcf80e1db05b14eeca89ce2ddcc2054e17f",
+      "record_count": 1,
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "subject": {
+        "name": "OlybAcquisitionDomain.dll",
+        "digest": {
+          "sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybAcquisitionDomain.dll",
+        "format": "pe",
+        "architecture": "x86"
+      },
+      "mvid": "3f86c8cf-e5cd-4168-9b54-7a1354281c36",
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      }
+    },
+    {
+      "archive": "raw/OlybCameraDomain.dll.members.json.gz",
+      "uncompressed_bytes": 2932000,
+      "uncompressed_sha256": "233ecf32b42f3b51016398262c120f157f5da2e2473402ca0c265619be8de891",
+      "compressed_bytes": 196077,
+      "compressed_sha256": "d4ee3116754a5293f975d262230d5bb8d3744f9ff871f52de75ca782bb4fd55f",
+      "record_count": 1,
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "subject": {
+        "name": "OlybCameraDomain.dll",
+        "digest": {
+          "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybCameraDomain.dll",
+        "format": "pe",
+        "architecture": "x86"
+      },
+      "mvid": "e4436a54-0dc9-482f-8332-9f2faa761a63",
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      }
+    },
+    {
+      "archive": "raw/OlybScenarioDefinition.dll.members.json.gz",
+      "uncompressed_bytes": 7963482,
+      "uncompressed_sha256": "d83862ef3b82c3567786c4af9976660c16cad39e746e0c96bd827cda61bd49ba",
+      "compressed_bytes": 640457,
+      "compressed_sha256": "9a46f99e02d94ffb400fd53930186feac4da233a923e654eee742666037010e3",
+      "record_count": 1,
+      "evidence_id": "ev_676fb60a189fe73fc169c1c909e7b767fc0663267b7041084f157993d217060f",
+      "subject": {
+        "name": "OlybScenarioDefinition.dll",
+        "digest": {
+          "sha256": "3adada8987b382a8fd4397690fc39cccc7ab06128db86fceccfc400d315cfd98"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybScenarioDefinition.dll",
+        "format": "pe",
+        "architecture": "x86"
+      },
+      "mvid": "0fb137be-374e-4b94-864a-717027ea011e",
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      }
+    },
+    {
+      "archive": "raw/OlydCamera.dll.members.json.gz",
+      "uncompressed_bytes": 3153927,
+      "uncompressed_sha256": "78f4306bf6040acd9a8d28c1afcead35b8dde88efd7ae9a1e882a3494554b631",
+      "compressed_bytes": 263018,
+      "compressed_sha256": "e48d573ae07954cfd0ddf504b46ae6637b84336b9f91cfb07e1dae44c2f12b72",
+      "record_count": 1,
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "subject": {
+        "name": "OlydCamera.dll",
+        "digest": {
+          "sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydCamera.dll",
+        "format": "pe",
+        "architecture": "x86"
+      },
+      "mvid": "2997dfbc-7f87-4767-acae-7de43985991c",
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      }
+    },
+    {
+      "archive": "raw/OlyiExtendFocusImageSGSharp64.dll.members.json.gz",
+      "uncompressed_bytes": 585967,
+      "uncompressed_sha256": "ff2270558c096b41d55ced16dcf0a5ef26db6a6ac3183d6337a5304bb07bac5c",
+      "compressed_bytes": 50651,
+      "compressed_sha256": "fc5b22b8b3da6a1d1819649d6e838ba17833dba4d8ae69f2918e4215dc258a7c",
+      "record_count": 1,
+      "evidence_id": "ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553",
+      "subject": {
+        "name": "OlyiExtendFocusImageSGSharp64.dll",
+        "digest": {
+          "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+        "format": "pe",
+        "architecture": "x86"
+      },
+      "mvid": "d49a91dc-5d44-47ce-87e4-3412eff536cf",
+      "coverage": {
+        "state": "complete",
+        "issues": []
+      }
+    },
+    {
+      "archive": "rea-evidence-bundle.json.gz",
+      "uncompressed_bytes": 602268,
+      "uncompressed_sha256": "0f7ba0d71f2728c8dd14ad5dcbdfe77c22a6da8cf5a597cb131adbd1b7e8fc40",
+      "compressed_bytes": 32838,
+      "compressed_sha256": "c97797db3578136977edaff2e97992f2ccce7201ce95c16633240b15a6150117",
+      "record_count": 9,
+      "evidence_ids": [
+        "ev_0f1f7a2b33802ee2152b6c124bd2858278a18bb61e4de8409aa4f5a36f6bb9a5",
+        "ev_2d312dbc7e99e94b63bb0118ffe068027b4ae8160a8fc5162d234b8881e9d63e",
+        "ev_7e657401932fb1beb4a31b51fcf3085223406a243a633a7d0f3baaafac80f9b9",
+        "ev_8566a53f15e053a46240f2d74eff00f4f9a2eb82cf0511576d0200da084c6c24",
+        "ev_920d49fd69eaa71782cdfc9aaf1b4dfc9a0e74fd240df6685129ca22f8f0160b",
+        "ev_978adfaf4e498dabe78ffd37237bd989c60efa109e745283488b54b4a13468ba",
+        "ev_a51c95a476453734230d29fee0d42f5a08504617e0f16775d67834445f065f59",
+        "ev_a6faa20e8279ba30fe88aa0ba5c9ac91e46122cd03ad2941f52777c32f684229",
+        "ev_ef855a4b990152413812b391bd64c1471e41e981879b3e166d3b7a51d78c391c"
+      ],
+      "unknown_count": 0
+    }
+  ],
+  "selected_methods": [
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000011",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "SGPreProcessTask",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "0b0837a2c946ca1d3c4c8975a3193818eca95c00a848f98f5fa7409deabd1769",
+        "resolved_sha256": "6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:73"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 12856,
+        "file_offset": 5176,
+        "max_stack": 8,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000007",
+        "il_size": 1028,
+        "il_sha256": "e43355a71f3a4b52eb7b7fa8275e0666071a05fe770d9a78620b3e6b8f3d18b8",
+        "normalized_il_sha256": "b9f69b6c2f0072458ee0163215e6ad594d380adf0ce23914fdead3daf5a391c0",
+        "instruction_count": 327,
+        "decoded_instruction_count": 327,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 474,
+            "try_length": 73,
+            "handler_offset": 547,
+            "handler_length": 29,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          },
+          {
+            "flags": 2,
+            "try_offset": 474,
+            "try_length": 104,
+            "handler_offset": 578,
+            "handler_length": 11,
+            "class_token": null,
+            "filter_offset": null
+          },
+          {
+            "flags": 0,
+            "try_offset": 597,
+            "try_length": 56,
+            "handler_offset": 653,
+            "handler_length": 29,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          },
+          {
+            "flags": 2,
+            "try_offset": 597,
+            "try_length": 87,
+            "handler_offset": 684,
+            "handler_length": 11,
+            "class_token": null,
+            "filter_offset": null
+          },
+          {
+            "flags": 0,
+            "try_offset": 770,
+            "try_length": 166,
+            "handler_offset": 936,
+            "handler_length": 26,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          },
+          {
+            "flags": 2,
+            "try_offset": 770,
+            "try_length": 194,
+            "handler_offset": 964,
+            "handler_length": 63,
+            "class_token": null,
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000013",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "SGInputImageThreadEndTask",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "0b0837a2c946ca1d3c4c8975a3193818eca95c00a848f98f5fa7409deabd1769",
+        "resolved_sha256": "6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:73"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 14120,
+        "file_offset": 6440,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000009",
+        "il_size": 169,
+        "il_sha256": "59c5d1fa51c4420f583e176289ba240681fc0dc47d1c5da3dc9b58aa5a6a6b0b",
+        "normalized_il_sha256": "062436a89dbf1e2d01099a0a2cc390fe89665074a54791bb659418d001498f88",
+        "instruction_count": 55,
+        "decoded_instruction_count": 55,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000014",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "SGAfterProcessTask",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "0b0837a2c946ca1d3c4c8975a3193818eca95c00a848f98f5fa7409deabd1769",
+        "resolved_sha256": "6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:73"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 14304,
+        "file_offset": 6624,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100000a",
+        "il_size": 232,
+        "il_sha256": "77a2440563a682147c2200421577d14108abba429a4294514b59d8dd9b3f80c5",
+        "normalized_il_sha256": "034c302f1ab0eca499a907c0cf536729229fe128d9a91539677a984858a55f47",
+        "instruction_count": 69,
+        "decoded_instruction_count": 69,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 2,
+            "try_offset": 126,
+            "try_length": 85,
+            "handler_offset": 211,
+            "handler_length": 10,
+            "class_token": null,
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000030",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_ReceiveSnapImage",
+      "signature": {
+        "raw_length": 10,
+        "raw_sha256": "92a9e61c85fba61ac4473546b23ea5c801cc95435f269e60d2f84abf331392f4",
+        "resolved_sha256": "511e1373bf3b1f6fae60396ea666231cfb70cfab4d7c7b52e38a1244a4fe1b7a",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "void",
+        "parameter_types": [
+          "object",
+          "class:97<class:101>"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 17848,
+        "file_offset": 10168,
+        "max_stack": 2,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 78,
+        "il_sha256": "bc050091fe76c4523e5360826c70f576ff8d8c9f9e392ab86362ebcae329453f",
+        "normalized_il_sha256": "e03ef75a561a4abccdd0bc9e11c93fa80e7c7d973a74ebde1b57f29e301fc724",
+        "instruction_count": 23,
+        "decoded_instruction_count": 23,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000033",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_OnImagedProcessAcquisitionFine",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "d64ef7331af26339cf4a21717ee07b5efdb9a0e303fb04a95a212d2abe61c7fa",
+        "resolved_sha256": "92b937dc90b13f316dd583ef0edaa09a100ce80d14cbdf70b63d979e316163d8",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:113"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 18060,
+        "file_offset": 10380,
+        "max_stack": 5,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000021",
+        "il_size": 416,
+        "il_sha256": "44e7c7b7040000b3e36d5240a25322f81231b7aab067c55657e3916707b6e1bf",
+        "normalized_il_sha256": "2e2b272dbb3fc281b1e7375a5e8f28c9fd7b8bf28511cc7b27dc2fbd34e85dae",
+        "instruction_count": 139,
+        "decoded_instruction_count": 139,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 2,
+            "try_offset": 2,
+            "try_length": 403,
+            "handler_offset": 405,
+            "handler_length": 10,
+            "class_token": null,
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000053",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_SaveZstackImage",
+      "signature": {
+        "raw_length": 8,
+        "raw_sha256": "663a9371a59cc019ebbd93d6aa8c123bc5d0ce1d0d10bba5759a2b8b10ae09fc",
+        "resolved_sha256": "5e3c99a23031e2c99319afbbd8c4562669084089d407ff2f268462c524643033",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 3,
+        "return_type": "void",
+        "parameter_types": [
+          "class:65",
+          "u4",
+          "native-int[]"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 21032,
+        "file_offset": 13352,
+        "max_stack": 5,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000027",
+        "il_size": 240,
+        "il_sha256": "a2c3f683022688cbdeaf175472146da400bc31941dfa880338a774b91cfc7cb8",
+        "normalized_il_sha256": "4b6457d27d161434e3cb4338699c0f8e5f3577e848ab01ea37f172b39c6e814f",
+        "instruction_count": 101,
+        "decoded_instruction_count": 101,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 96,
+            "try_length": 117,
+            "handler_offset": 213,
+            "handler_length": 26,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000054",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_SaveZstackImage",
+      "signature": {
+        "raw_length": 7,
+        "raw_sha256": "3e1d80d32be86768054196351a4e6819222171bbdc1ef28e441a575a30ac231e",
+        "resolved_sha256": "3e1d80d32be86768054196351a4e6819222171bbdc1ef28e441a575a30ac231e",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 3,
+        "return_type": "bool",
+        "parameter_types": [
+          "u4",
+          "i4",
+          "native-int[]"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 21300,
+        "file_offset": 13620,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000028",
+        "il_size": 134,
+        "il_sha256": "fd8ded8bac093b626b2e9897be102e7244fc71c0661e178a69ced742af554438",
+        "normalized_il_sha256": "a87259923254c9e2ce2ea378676dcfdcea310ddf2c9aae9e103db7724a985958",
+        "instruction_count": 59,
+        "decoded_instruction_count": 59,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 2,
+            "try_length": 102,
+            "handler_offset": 104,
+            "handler_length": 28,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000056",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_CreateZstackImagePath",
+      "signature": {
+        "raw_length": 3,
+        "raw_sha256": "df29f5ab2554df47369dafce3bc8630f16eabc3f72c21bbd24c5e73c286f650f",
+        "resolved_sha256": "df29f5ab2554df47369dafce3bc8630f16eabc3f72c21bbd24c5e73c286f650f",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "string",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 21568,
+        "file_offset": 13888,
+        "max_stack": 1,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100002a",
+        "il_size": 35,
+        "il_sha256": "980504f7944607c629a7fc34fe4a705cd6ccc2c38c665b66585625a5d930c433",
+        "normalized_il_sha256": "75b5ffa96671d8364cdd46f453486a90e1d1b60097c4afa7c649aa31fa22fada",
+        "instruction_count": 14,
+        "decoded_instruction_count": 14,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000062",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_EnqueueZstackImage",
+      "signature": {
+        "raw_length": 7,
+        "raw_sha256": "6170e81147805c87f09c86c5080d1f6a19ec1a90ed84a074a88d16f880504e1a",
+        "resolved_sha256": "0f8abb4c58d1a889cd49da42886bc11d1c37d9941a355a548562f47cd0f5e0eb",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 3,
+        "return_type": "bool",
+        "parameter_types": [
+          "class:113",
+          "u4",
+          "r4"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 23764,
+        "file_offset": 16084,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000033",
+        "il_size": 290,
+        "il_sha256": "6d31111cdfcdb26e3f6e31492bb393a5d9d25ba842ea2c04e41dc9632e5af934",
+        "normalized_il_sha256": "640e27725ba8e9089d2470c13e42d7205921ff6e5a851d8b4681deabdd948e75",
+        "instruction_count": 96,
+        "decoded_instruction_count": 96,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 2,
+            "try_length": 258,
+            "handler_offset": 260,
+            "handler_length": 28,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybAcquisitionDomain.dll",
+      "evidence_id": "ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f",
+      "artifact_sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302",
+      "token": "0x06000063",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService",
+      "name": "_SGInputImageThread",
+      "signature": {
+        "raw_length": 3,
+        "raw_sha256": "0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df",
+        "resolved_sha256": "0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "void",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 24096,
+        "file_offset": 16416,
+        "max_stack": 5,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000034",
+        "il_size": 490,
+        "il_sha256": "15f45be0f7cb395c8969e973688b9e985bfe931522438f885f6ac22124826f4e",
+        "normalized_il_sha256": "cbe619117ad33d1c17e947531e9ac62334c00e275b39a3281611a68db483f83e",
+        "instruction_count": 157,
+        "decoded_instruction_count": 157,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 138,
+            "try_length": 153,
+            "handler_offset": 291,
+            "handler_length": 34,
+            "class_token": "0x01000009",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000c2",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_SetDeviceEventHandler",
+      "signature": {
+        "raw_length": 3,
+        "raw_sha256": "0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df",
+        "resolved_sha256": "0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "void",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "tiny",
+        "rva": 38012,
+        "file_offset": 30332,
+        "max_stack": 8,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 55,
+        "il_sha256": "7a71d2461c79ec0fe42a4ebb8ef60cea1b9b3b34f2fc348f642a82f42c6b62bd",
+        "normalized_il_sha256": "830c9a9d02b1530a12595784b976e4c1bce650d0719d8a3db43047c5661242a7",
+        "instruction_count": 13,
+        "decoded_instruction_count": 13,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000c4",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "StartSnapTask",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "4a20d5e38e28af20fc05bfb6debf38bcfa9f0be956cef2e113c3a81422804cdd",
+        "resolved_sha256": "6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:29"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 38212,
+        "file_offset": 30532,
+        "max_stack": 2,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100007e",
+        "il_size": 181,
+        "il_sha256": "65676e5a59ceaca2be2597246600d45caa5820ccb553be6f3280b7314ffb3114",
+        "normalized_il_sha256": "1ff651deecc08e3555c85af227d8010e3c81975a84502f39e6858a948b581a6b",
+        "instruction_count": 56,
+        "decoded_instruction_count": 56,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 118,
+            "try_length": 17,
+            "handler_offset": 135,
+            "handler_length": 24,
+            "class_token": "0x0100007d",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000c7",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_SetCcdMode",
+      "signature": {
+        "raw_length": 6,
+        "raw_sha256": "3f2bbb060ac0de914f07f3ad03e7e371e9143d7a64178ff98a3dbbdb7832a214",
+        "resolved_sha256": "73ece00b634c4522b6dea19588a589919c49c747b2da677a4d625d2c39102390",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "valuetype:193"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 38728,
+        "file_offset": 31048,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000081",
+        "il_size": 182,
+        "il_sha256": "ad67fa29322960ab1bd41344502760965c112c165175575182a276bc442de08c",
+        "normalized_il_sha256": "544644d3ff35dcad02090c626bd185f85ee8c59188860e4c7097d0bd965a9c56",
+        "instruction_count": 64,
+        "decoded_instruction_count": 64,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 2,
+            "try_offset": 123,
+            "try_length": 47,
+            "handler_offset": 170,
+            "handler_length": 11,
+            "class_token": null,
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000ca",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_StartRepetitiveSnap3D",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "d2d561359eb238d81ea557a082aafca1ef9846a3184452605bf4a1a66522798e",
+        "resolved_sha256": "0d2de748a5cd0238dbdd99410a00c766050947dfade7161fd0a5af16f1b925ca",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "valuetype:32"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 39048,
+        "file_offset": 31368,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000084",
+        "il_size": 302,
+        "il_sha256": "798f44b549c9770e6bb9a7ba3a7cc26f455b6cce01978ef6b348d7bfc24b2dfa",
+        "normalized_il_sha256": "8089bfc525929e79cd3455bbd1c83b66377b4aeb260b48b6045690e763c00e2c",
+        "instruction_count": 79,
+        "decoded_instruction_count": 79,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 75,
+            "try_length": 202,
+            "handler_offset": 277,
+            "handler_length": 24,
+            "class_token": "0x0100007d",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000cd",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "StartHdrHighResoSnapTask",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "4a20d5e38e28af20fc05bfb6debf38bcfa9f0be956cef2e113c3a81422804cdd",
+        "resolved_sha256": "6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:29"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 39420,
+        "file_offset": 31740,
+        "max_stack": 3,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 75,
+        "il_sha256": "58bd281d2c7aba8076b1926d489ae0ea319bf1b623a1b0f3cb04bf6d93a57f27",
+        "normalized_il_sha256": "b538a562ffb0a3396b2920d5bf0318a7a2ccd4d715b37178f7d1cbc14888ea4e",
+        "instruction_count": 21,
+        "decoded_instruction_count": 21,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000d1",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "StartHdrRepetitiveSnapTask",
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "4a20d5e38e28af20fc05bfb6debf38bcfa9f0be956cef2e113c3a81422804cdd",
+        "resolved_sha256": "6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:29"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 39736,
+        "file_offset": 32056,
+        "max_stack": 2,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000083",
+        "il_size": 10,
+        "il_sha256": "6885c7ac812a3b3399b30f4cac4f23072092333b9dc3a9848dcd27636eb29968",
+        "normalized_il_sha256": "20369edfbe4675bf1f9c4f4e914208fe2fcc91413e4479e66a82d40277fcbf63",
+        "instruction_count": 6,
+        "decoded_instruction_count": 6,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000d3",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_ReceiveInputSnap",
+      "signature": {
+        "raw_length": 7,
+        "raw_sha256": "21e2d2c27450a16d9b5c37047a40ac21964269fce4bf8d506b70eacd5028f382",
+        "resolved_sha256": "b6000c67d9ce312bcdf5115c7eeb86ac8bbe3ebec0970ccd3bee2da52465c505",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "void",
+        "parameter_types": [
+          "object",
+          "class:197"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 39804,
+        "file_offset": 32124,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000086",
+        "il_size": 328,
+        "il_sha256": "2229dd5a647c986bc1ed4303ec72ff4317d584bc9e141b45f8a3c1c52a18a849",
+        "normalized_il_sha256": "5e7db1233b318c47a97b4dbce55f49031e25c06110199a1f3ebba688a97a979f",
+        "instruction_count": 107,
+        "decoded_instruction_count": 107,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000d4",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_ReceiveInputSnap_HdrEachSnapEnded",
+      "signature": {
+        "raw_length": 11,
+        "raw_sha256": "50bfe7a12b9362fe1964ac87265589af828172a37c4c6cee07d3721b826d545e",
+        "resolved_sha256": "511e1373bf3b1f6fae60396ea666231cfb70cfab4d7c7b52e38a1244a4fe1b7a",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "void",
+        "parameter_types": [
+          "object",
+          "class:89<class:201>"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "tiny",
+        "rva": 40144,
+        "file_offset": 32464,
+        "max_stack": 8,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 26,
+        "il_sha256": "0eeb45a56d5ce7fccf884006e8dc9c84f5a18fc79d4ae72b7372d28dc66de7f5",
+        "normalized_il_sha256": "a9782cce30068644ec1489d7b694e3f0593ef7fdd11cd76badd10fade8c9cdf1",
+        "instruction_count": 9,
+        "decoded_instruction_count": 9,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000d5",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_ReceiveInputSnap_HdrWholeSnapEnded",
+      "signature": {
+        "raw_length": 11,
+        "raw_sha256": "50bfe7a12b9362fe1964ac87265589af828172a37c4c6cee07d3721b826d545e",
+        "resolved_sha256": "511e1373bf3b1f6fae60396ea666231cfb70cfab4d7c7b52e38a1244a4fe1b7a",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "void",
+        "parameter_types": [
+          "object",
+          "class:89<class:201>"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "tiny",
+        "rva": 40171,
+        "file_offset": 32491,
+        "max_stack": 8,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 26,
+        "il_sha256": "9739edbfb74645fc1ab79906b883dee4fb1d7258f1c5d4f8ff562f8aae488fb7",
+        "normalized_il_sha256": "9ea58bbafbd0b6bc0b4a3c2c75adf4b4d67e7ce882eeb31fb6c704d37d2b0674",
+        "instruction_count": 9,
+        "decoded_instruction_count": 9,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000d7",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_ReceiveResumeRepeativeSnapEvent",
+      "signature": {
+        "raw_length": 11,
+        "raw_sha256": "50bfe7a12b9362fe1964ac87265589af828172a37c4c6cee07d3721b826d545e",
+        "resolved_sha256": "511e1373bf3b1f6fae60396ea666231cfb70cfab4d7c7b52e38a1244a4fe1b7a",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "void",
+        "parameter_types": [
+          "object",
+          "class:89<class:201>"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 40300,
+        "file_offset": 32620,
+        "max_stack": 2,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000088",
+        "il_size": 92,
+        "il_sha256": "cb3843bf7da83ffcc33213955e5c6b8ab32ef7c890bd72d85a356c5f172b4ece",
+        "normalized_il_sha256": "9a1aa3572c2e40b4c2fbdd56f24adec4d676af2642495f75620dc2146104a051",
+        "instruction_count": 26,
+        "decoded_instruction_count": 26,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlybCameraDomain.dll",
+      "evidence_id": "ev_834f41d1d8bf823d3b53aa85461b76af8c1dbbe939c362670a25b7cdfa0611a9",
+      "artifact_sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988",
+      "token": "0x060000da",
+      "declaring_type": "Olympus.LI.Triumph.Workflow.CameraDomain.SnapService",
+      "name": "_WaitForExtendSnapIdle",
+      "signature": {
+        "raw_length": 4,
+        "raw_sha256": "77351a8b26c920ccc018ef8a4f299abe78d40eb3fb1e2550c72956c87cbf42e6",
+        "resolved_sha256": "77351a8b26c920ccc018ef8a4f299abe78d40eb3fb1e2550c72956c87cbf42e6",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "bool",
+        "parameter_types": [
+          "u4"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 40604,
+        "file_offset": 32924,
+        "max_stack": 2,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100008a",
+        "il_size": 158,
+        "il_sha256": "f4752bb2f923c34ec71aacf6637a5d5f3f64aa07bebebcab7a12a374bcd9a63e",
+        "normalized_il_sha256": "5fcb4cb7b83e9c466c579237c977aaecc36f741e440f94acf4a9724741e3e6b4",
+        "instruction_count": 46,
+        "decoded_instruction_count": 46,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x0600007a",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.ACameraBase",
+      "name": "SiaCapture",
+      "signature": {
+        "raw_length": 3,
+        "raw_sha256": "0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df",
+        "resolved_sha256": "0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "void",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 18412,
+        "file_offset": 10732,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000002",
+        "il_size": 105,
+        "il_sha256": "4a3a95247bf0d611311b0861eecf55f41634208ee339054ea93f8591373126c7",
+        "normalized_il_sha256": "14beb84d934c21ba77311ba2b5b3f058697adeff9c31d0e5037dc0c5e82cea8b",
+        "instruction_count": 36,
+        "decoded_instruction_count": 36,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x0600007e",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.ACameraBase",
+      "name": "_OnCapturedCallbackProcess",
+      "signature": {
+        "raw_length": 11,
+        "raw_sha256": "e3aa54368563a0118bb0c896e3da342ead0b4e55d5468cd36e4c14f0148f878d",
+        "resolved_sha256": "c0b4c08cede73022cc686d7bddf7b3d3dccd6aee5b12f16b2b422b35e648c49b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 6,
+        "return_type": "void",
+        "parameter_types": [
+          "native-int",
+          "valuetype:93",
+          "native-int",
+          "native-int",
+          "valuetype:97",
+          "native-int"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 18812,
+        "file_offset": 11132,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000030",
+        "il_size": 254,
+        "il_sha256": "082fda3344e2fa686733edb10662cd52daba8cd609e63e80add71b4b33088e6c",
+        "normalized_il_sha256": "2bed98e96e23d8751a2d598b664ee61ac21cb1ff28543fb43ff871f1ce227321",
+        "instruction_count": 85,
+        "decoded_instruction_count": 85,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 2,
+            "try_offset": 80,
+            "try_length": 124,
+            "handler_offset": 204,
+            "handler_length": 49,
+            "class_token": null,
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x0600007f",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.ACameraBase",
+      "name": "_OnInputSnap",
+      "signature": {
+        "raw_length": 6,
+        "raw_sha256": "c6cb19657b4c8d66a32347c28cef43ebee0797add0c112c4f3c2094134d07e96",
+        "resolved_sha256": "caece68875f2a2cc6e955cd97f7e56fa7570a1eb48af5bf61a79a0a87150ce2a",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:132"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 19096,
+        "file_offset": 11416,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000031",
+        "il_size": 33,
+        "il_sha256": "3ff0a36047e230f4ea72c747ff104538651e24fcf2cdf6fa3ef56004b63aadb5",
+        "normalized_il_sha256": "f04d9e10b0cb607275774c31baae35d7722c7cd112602349c9b028b82a3b6e14",
+        "instruction_count": 16,
+        "decoded_instruction_count": 16,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x06000105",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.ACameraBase",
+      "name": "DplibCamRegisterCallback",
+      "signature": {
+        "raw_length": 6,
+        "raw_sha256": "929ad1c61995dca74b233526c50033aabef6951bbdea30caf93b7ec7ec0324a7",
+        "resolved_sha256": "36eb77713284afe84469e71aa5659db22005b1e140f53e9a304140af3d4df2f6",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "valuetype:45",
+        "parameter_types": [
+          "native-int",
+          "native-int"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 30412,
+        "file_offset": 22732,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100005a",
+        "il_size": 88,
+        "il_sha256": "da607c177546abc940d5c81018899e8afa3fc19b2ca29d83a687d522aaeb5e0f",
+        "normalized_il_sha256": "3632122be5ea5efbe7e740c285ef742cd3f6ac6ef33f6899df3f572f860df29b",
+        "instruction_count": 34,
+        "decoded_instruction_count": 34,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x06000146",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.ACameraBase",
+      "name": "DplibCamSiaCapture",
+      "signature": {
+        "raw_length": 4,
+        "raw_sha256": "19c1ff44493daeeb24e25ed98877a82e5798b8d3067c076df7259d9f61ecdfaa",
+        "resolved_sha256": "6a7049b6837dcfc4042c0824ebf02bee047111b1db07f2e56057a216552dc777",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "valuetype:45",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 38836,
+        "file_offset": 31156,
+        "max_stack": 4,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000060",
+        "il_size": 42,
+        "il_sha256": "72146c1c0523ef57b20fdcf3fe0928f2acad948a489acfdd7dd778797ebfbb68",
+        "normalized_il_sha256": "caea336ee1aa2841b2b6dae4152a3ddf3892e18bb25ac3dea5cbc69fb00565d8",
+        "instruction_count": 20,
+        "decoded_instruction_count": 20,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x060001ce",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.DPController",
+      "name": "_CallbackCamera",
+      "signature": {
+        "raw_length": 11,
+        "raw_sha256": "e3aa54368563a0118bb0c896e3da342ead0b4e55d5468cd36e4c14f0148f878d",
+        "resolved_sha256": "c0b4c08cede73022cc686d7bddf7b3d3dccd6aee5b12f16b2b422b35e648c49b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 6,
+        "return_type": "void",
+        "parameter_types": [
+          "native-int",
+          "valuetype:93",
+          "native-int",
+          "native-int",
+          "valuetype:97",
+          "native-int"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 50336,
+        "file_offset": 42656,
+        "max_stack": 7,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100009b",
+        "il_size": 27,
+        "il_sha256": "766cad3aee363de3700cb59c856ac0edb06e236fd54b73f186a59b32102e6bf2",
+        "normalized_il_sha256": "2b1d9df27b3ca16a683950678a156078639e9db5d93dbc29c79e4903586c9a4c",
+        "instruction_count": 15,
+        "decoded_instruction_count": 15,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlydCamera.dll",
+      "evidence_id": "ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa",
+      "artifact_sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955",
+      "token": "0x060001d0",
+      "declaring_type": "Olympus.LI.Triumph.Device.Camera.DPController",
+      "name": "_SetCallbackProcessTable",
+      "signature": {
+        "raw_length": 6,
+        "raw_sha256": "12558298f2fdb2daa0d1e438a224f4a9148c46dd31281e10f0bb984547c00bb4",
+        "resolved_sha256": "8cf5dc8b96de503187316d6616637a58a6ae8f0791b7032b4d209d5561656387",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:161"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 50444,
+        "file_offset": 42764,
+        "max_stack": 4,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 261,
+        "il_sha256": "4dca76400c272ce849f1d3253a9e4bd7a3eb2a099e8b77fbdb0b15f41158abb0",
+        "normalized_il_sha256": "6dc1c0c67d00b6f588ae5c59c6423a7b4a38855c43574d42a621907b997f7808",
+        "instruction_count": 72,
+        "decoded_instruction_count": 72,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlyiExtendFocusImageSGSharp64.dll",
+      "evidence_id": "ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553",
+      "artifact_sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "token": "0x06000007",
+      "declaring_type": "Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIUtil",
+      "name": "SetParamFromIniFile",
+      "signature": {
+        "raw_length": 8,
+        "raw_sha256": "37edadd93715f4ddb3ca7b6410d82ef1ab0894b1811e7497464a5d55205f943a",
+        "resolved_sha256": "37edadd93715f4ddb3ca7b6410d82ef1ab0894b1811e7497464a5d55205f943a",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default generic",
+        "generic_parameter_count": 1,
+        "parameter_count": 3,
+        "return_type": "void",
+        "parameter_types": [
+          "mvar:0",
+          "string",
+          "string"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 8576,
+        "file_offset": 896,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000003",
+        "il_size": 71,
+        "il_sha256": "9984d992e1d3478015d25e1e10e8ba6dc5d8c3632dff59970a9befb02a3680df",
+        "normalized_il_sha256": "94177fa0a9919c98004465e7dcb1115d232fbd3e246c8314c0621d757ac5d906",
+        "instruction_count": 24,
+        "decoded_instruction_count": 24,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlyiExtendFocusImageSGSharp64.dll",
+      "evidence_id": "ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553",
+      "artifact_sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "token": "0x06000087",
+      "declaring_type": "Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam",
+      "name": ".cctor",
+      "signature": {
+        "raw_length": 3,
+        "raw_sha256": "cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568",
+        "resolved_sha256": "cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "void",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "tiny",
+        "rva": 11279,
+        "file_offset": 3599,
+        "max_stack": 8,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 31,
+        "il_sha256": "a7e5e36cd50115b4d90bd98d51cb681186cf9e343d2ebf18bd8cb7f26a860a7b",
+        "normalized_il_sha256": "716066878840bb302685a1ed115fa7f928b005b6c1662eff7a6f662d774cc1f3",
+        "instruction_count": 7,
+        "decoded_instruction_count": 7,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlyiExtendFocusImageSGSharp64.dll",
+      "evidence_id": "ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553",
+      "artifact_sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "token": "0x06000090",
+      "declaring_type": "Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo",
+      "name": "GetDebugInfo",
+      "signature": {
+        "raw_length": 8,
+        "raw_sha256": "cdcd89ba8e37235b10baa326f77c72c6e8a3d4e3d17f631a40f6a11058c11b30",
+        "resolved_sha256": "79f541a0033f0d304b2a2422cbdb7b0ec02d4c12f8d586c35862db5a9b25f381",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default",
+        "generic_parameter_count": null,
+        "parameter_count": 4,
+        "return_type": "class:64",
+        "parameter_types": [
+          "string",
+          "i4",
+          "i4",
+          "i4"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 11388,
+        "file_offset": 3708,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100000b",
+        "il_size": 60,
+        "il_sha256": "bb59ed70bc05df199fc887cd6522c816734a93a5d509a1ae89d0af76cb75c625",
+        "normalized_il_sha256": "1001256483d7fd5a3a819acce9aad19392bee607157af63c3af9777c8bacfc34",
+        "instruction_count": 24,
+        "decoded_instruction_count": 24,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlyiExtendFocusImageSGSharp64.dll",
+      "evidence_id": "ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553",
+      "artifact_sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "token": "0x06000092",
+      "declaring_type": "Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo",
+      "name": ".cctor",
+      "signature": {
+        "raw_length": 3,
+        "raw_sha256": "cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568",
+        "resolved_sha256": "cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default",
+        "generic_parameter_count": null,
+        "parameter_count": 0,
+        "return_type": "void",
+        "parameter_types": [],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "tiny",
+        "rva": 11460,
+        "file_offset": 3780,
+        "max_stack": 8,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 11,
+        "il_sha256": "92d2fbdcecfe734c9436fe36cbbc3a9019cd926effdd2df838466c17832bfa6e",
+        "normalized_il_sha256": "c2d8f7d03f49cacea7b1cfb27abebcaebbd5809233b05912c9da9bb316737ed2",
+        "instruction_count": 3,
+        "decoded_instruction_count": 3,
+        "truncated_instructions": 0,
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "assembly": "OlyiExtendFocusImageSGSharp64.dll",
+      "evidence_id": "ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553",
+      "artifact_sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc",
+      "token": "0x060000ab",
+      "declaring_type": "<>c__DisplayClass3`1",
+      "name": "<SetParamFromIniFile>b__2",
+      "signature": {
+        "raw_length": 6,
+        "raw_sha256": "44b4ba5924ad648b84d95e3414c93831912d7a16f42e37132bd03299c0477f69",
+        "resolved_sha256": "1fc0612f4b0842aa52f6edccf32f9451133fc43aa31cb47fee1af8d00800cb60",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:129"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 8336,
+        "file_offset": 656,
+        "max_stack": 8,
+        "init_locals": true,
+        "local_var_sig_token": "0x11000002",
+        "il_size": 209,
+        "il_sha256": "10a98de005a626605612dfc9a172acb3fa8ca777ebdf3f701a9a5bcf9262d651",
+        "normalized_il_sha256": "1b8f62bd5a2ef5c1d2fac82de21fd45bc158976d7dd9a834ff83b3fc0b91dca2",
+        "instruction_count": 82,
+        "decoded_instruction_count": 82,
+        "truncated_instructions": 0,
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 35,
+            "try_length": 170,
+            "handler_offset": 205,
+            "handler_length": 3,
+            "class_token": "0x01000002",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    }
+  ],
+  "cil_decoder": {
+    "package": "rea-agents",
+    "version": "6.7.0",
+    "source_path": "/Users/lishuyang/PycharmProjects/rea/dist/dotnet/ManagedMemberInstructionDecoder.js",
+    "sha256": "4a33dcf00ad388153d4765a050445b884129477e6c6ceb3a62efca35bcd42ae2",
+    "notes": "Original PE and method IL SHA-256 checked before decoding; switch relative branch offsets additionally resolved by print_cil.mjs; no target code execution."
+  }
+}

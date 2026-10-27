@@ -1,0 +1,116 @@
+Evidence: ev_b5a3bccf602e3d9d864518356b7c814f5910b6c83edfb35c7f6c721b28f24828
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* private: bool __cdecl CCompositeDLL::ContrastMatch(class ctool::matrix<struct _IplImage *
+   __ptr64> & __ptr64) __ptr64 */
+
+bool __thiscall
+CCompositeDLL::ContrastMatch(CCompositeDLL *this,matrix<_IplImage*___ptr64> *param_1)
+
+{
+  undefined1 auVar1 [16];
+  undefined1 auVar2 [16];
+  void *pvVar3;
+  bool bVar4;
+  basic_iostream<char,std::char_traits<char>_> *pbVar5;
+  size_t sVar6;
+  CvPoint *_Memory;
+  int *_Dst;
+  basic_iostream<char,std::char_traits<char>_> *pbVar7;
+  void *pvVar8;
+  bool bVar9;
+  undefined1 auStack_178 [32];
+  CvPoint *local_158;
+  int *local_150;
+  undefined8 local_148;
+  undefined8 local_140;
+  basic_iostream<char,std::char_traits<char>_> local_138 [248];
+  undefined1 local_40;
+  undefined7 uStack_3f;
+  undefined8 local_30;
+  ulonglong uStack_28;
+  ulonglong local_20;
+  
+                    /* 0x8e40  54
+                       ?ContrastMatch@CCompositeDLL@@AEAA_NAEAV?$matrix@PEAU_IplImage@@@ctool@@@Z */
+  local_140 = 0xfffffffffffffffe;
+  local_20 = DAT_180023010 ^ (ulonglong)auStack_178;
+  local_30 = 0;
+  uStack_28 = 0xf;
+  local_40 = 0;
+  FUN_180015be0((longlong *)&local_40," 3 ContrastMatch() [start]",0x1a);
+  pbVar7 = local_138;
+  pbVar5 = FUN_180010310(pbVar7,(undefined8 *)&local_40);
+  FUN_1800035c0(pbVar7,(longlong *)pbVar5);
+  if (0xf < uStack_28) {
+    pvVar3 = (void *)CONCAT71(uStack_3f,local_40);
+    pvVar8 = pvVar3;
+    if ((0xfff < uStack_28 + 1) &&
+       (pvVar8 = *(void **)((longlong)pvVar3 + -8),
+       0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar8)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar8);
+  }
+  auVar1._8_8_ = 0;
+  auVar1._0_8_ = (longlong)*(int *)(param_1 + 0x10);
+  sVar6 = SUB168(ZEXT816(8) * auVar1,0);
+  if (SUB168(ZEXT816(8) * auVar1,8) != 0) {
+    sVar6 = 0xffffffffffffffff;
+  }
+  _Memory = (CvPoint *)thunk_FUN_1800161b8(sVar6);
+  auVar2._8_8_ = 0;
+  auVar2._0_8_ = (longlong)*(int *)(param_1 + 0x10);
+  sVar6 = SUB168(ZEXT816(4) * auVar2,0);
+  if (SUB168(ZEXT816(4) * auVar2,8) != 0) {
+    sVar6 = 0xffffffffffffffff;
+  }
+  _Dst = (int *)thunk_FUN_1800161b8(sVar6);
+  memset(_Dst,0,(longlong)*(int *)(param_1 + 0x10) << 2);
+  ContrastCalc(this,(matrix<_IplImage*___ptr64> *)&local_148);
+  if (DAT_180023ce8 == 0) {
+    local_158 = _Memory;
+    local_150 = _Dst;
+    bVar4 = SetMatchOrder(this,*(undefined4 *)(param_1 + 0xc),*(undefined4 *)(param_1 + 8),local_148
+                         );
+    if (bVar4) {
+      bVar4 = OrderMatch(this,param_1,_Memory,_Dst);
+      bVar9 = true;
+      if (!bVar4) {
+        bVar9 = false;
+      }
+    }
+    else {
+      bVar9 = false;
+    }
+  }
+  else {
+    bVar9 = false;
+  }
+  free(_Memory);
+  free(_Dst);
+  local_30 = 0;
+  uStack_28 = 0xf;
+  local_40 = 0;
+  FUN_180015be0((longlong *)&local_40," 3 ContrastMatch() [end]",0x18);
+  pbVar7 = local_138;
+  pbVar5 = FUN_180010310(pbVar7,(undefined8 *)&local_40);
+  FUN_1800035c0(pbVar7,(longlong *)pbVar5);
+  if (0xf < uStack_28) {
+    pvVar3 = (void *)CONCAT71(uStack_3f,local_40);
+    pvVar8 = pvVar3;
+    if ((0xfff < uStack_28 + 1) &&
+       (pvVar8 = *(void **)((longlong)pvVar3 + -8),
+       0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar8)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar8);
+  }
+  return bVar9;
+}
+

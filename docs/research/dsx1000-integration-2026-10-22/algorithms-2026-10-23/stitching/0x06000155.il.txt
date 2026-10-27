@@ -1,0 +1,136 @@
+0x06000155 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._PerformStitchingOperation
+0 ldarg.0 None 
+1 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+6 newobj 0x06000059 Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching..ctor
+11 stloc.0 None 
+12 ldarg.0 None 
+13 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+18 call 0x0a000192 .ValidateInputImageData
+23 stloc.1 None 
+24 ldarg.0 None 
+25 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+30 ldc.i4.1 None 
+31 stfld 0x04000092 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.IsDSXOutprocessStitching
+36 ldarg.0 None 
+37 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+42 callvirt 0x0a000187 .get_ProcessingHistory
+47 brfalse.s 100 
+49 ldarg.0 None 
+50 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+55 callvirt 0x0a000187 .get_ProcessingHistory
+60 callvirt 0x0a00007f .Dispose
+65 ldarg.0 None 
+66 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+71 ldnull None 
+72 callvirt 0x0a000193 .set_ProcessingHistory
+77 ldarg.0 None 
+78 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+83 callvirt 0x0a000194 .DisposeHistory
+88 ldarg.0 None 
+89 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+94 ldc.i4.0 None 
+95 callvirt 0x0a000195 .set_CurrentOpCount
+100 ldloc.1 None 
+101 ldsfld 0x0a00014a .Empty
+106 callvirt 0x0a000196 .Equals
+111 brfalse.s 149 
+113 ldarg.0 None 
+114 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+119 ldloc.0 None 
+120 ldarg.0 None 
+121 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+126 callvirt 0x0600010f Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_StitchingOperationDataObject
+131 ldarg.0 None 
+132 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+137 callvirt 0x06000062 Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.ExecuteStitchingOperationOutProcess
+142 callvirt 0x0600010c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.set_ImageEntityObject
+147 br.s 197 
+149 ldloc.1 None 
+150 ldstr 0x70001a72 'InvalidImage'
+155 callvirt 0x0a000196 .Equals
+160 brfalse.s 173 
+162 ldc.i4 983044 
+167 newobj 0x0a00018d ..ctor
+172 throw None 
+173 ldloc.1 None 
+174 ldstr 0x70001a8c 'InvalidImageSize'
+179 callvirt 0x0a000196 .Equals
+184 brfalse.s 197 
+186 ldc.i4 983046 
+191 newobj 0x0a00018d ..ctor
+196 throw None 
+197 ldarg.0 None 
+198 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+203 ldc.i4.0 None 
+204 callvirt 0x0a0000ae .set_ImageId
+209 ldarg.0 None 
+210 ldfld 0x0400009c Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageEntity
+215 ldc.i4.0 None 
+216 callvirt 0x0a000197 .set_UserID
+221 ldarg.0 None 
+222 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+227 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+232 brfalse 447 
+237 ldarg.0 None 
+238 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+243 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+248 ldc.i4.0 None 
+249 callvirt 0x0a0000ae .set_ImageId
+254 ldarg.0 None 
+255 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+260 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+265 ldarg.0 None 
+266 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+271 callvirt 0x06000123 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_UserDetails
+276 callvirt 0x0a000198 .get_UserID
+281 callvirt 0x0a000197 .set_UserID
+286 ldarg.0 None 
+287 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+292 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+297 call 0x0a000074 .get_Now
+302 newobj 0x0a000199 ..ctor
+307 callvirt 0x0a00019a .set_CreatedDateTime
+312 ldarg.0 None 
+313 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+318 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+323 call 0x0a000074 .get_Now
+328 newobj 0x0a000199 ..ctor
+333 callvirt 0x0a00019b .set_OriginalDateTime
+338 ldarg.0 None 
+339 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+344 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+349 call 0x0a000074 .get_Now
+354 newobj 0x0a000199 ..ctor
+359 callvirt 0x0a00019c .set_UpdateDateTime
+364 ldarg.0 None 
+365 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+370 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+375 ldarg.0 None 
+376 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+381 callvirt 0x06000123 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_UserDetails
+386 callvirt 0x0a00019d .get_UserName
+391 callvirt 0x0a00019e .set_OriginalUserName
+396 ldarg.0 None 
+397 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+402 callvirt 0x0600010b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_ImageEntityObject
+407 callvirt 0x0a000040 .get_AcquisitionInfo
+412 callvirt 0x0a000044 .get_ImageInfomation
+417 callvirt 0x0a00019f .get_AcquisitionConditionInfo
+422 callvirt 0x0a0001a0 .get_AcquistionCommonSettingInfo
+427 ldc.i4.1 None 
+428 callvirt 0x0a0001a1 .set_Stitching
+433 ldarg.0 None 
+434 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+439 ldc.i4.1 None 
+440 callvirt 0x06000106 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.set_IsStitchingSucceeded
+445 br.s 459 
+447 ldarg.0 None 
+448 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+453 ldc.i4.0 None 
+454 callvirt 0x06000106 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.set_IsStitchingSucceeded
+459 ldnull None 
+460 stloc.0 None 
+461 ldarg.0 None 
+462 ldfld 0x0400009b Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel._clsImageStitchingModel
+467 callvirt 0x06000105 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.get_IsStitchingSucceeded
+472 ret None 

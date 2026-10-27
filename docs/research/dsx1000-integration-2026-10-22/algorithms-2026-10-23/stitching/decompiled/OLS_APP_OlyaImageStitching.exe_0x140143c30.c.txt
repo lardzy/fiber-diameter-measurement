@@ -1,0 +1,86 @@
+Evidence: ev_cefa167b70f5da3988836552b8eb56d56b121bee3cfc4b2cc759934276a961ac
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+uint FUN_140143c30(longlong param_1,undefined8 param_2,uint param_3,uint param_4,uint *param_5)
+
+{
+  char *pcVar1;
+  uint uVar2;
+  undefined8 uVar3;
+  ulonglong uVar4;
+  undefined1 auStackY_b8 [32];
+  longlong local_88 [2];
+  uint local_78;
+  uint uStack_74;
+  uint uStack_70;
+  uint uStack_6c;
+  undefined8 local_68;
+  undefined8 local_60;
+  undefined8 local_58;
+  undefined1 local_50;
+  undefined7 uStack_4f;
+  undefined8 local_40;
+  ulonglong local_38;
+  ulonglong local_30;
+  
+  local_58 = 0xfffffffffffffffe;
+  local_30 = DAT_1401c7000 ^ (ulonglong)auStackY_b8;
+  pcVar1 = *(char **)(param_1 + 0xa0);
+  local_38 = 0xf;
+  local_40 = 0;
+  local_50 = 0;
+  if (*pcVar1 == '\0') {
+    uVar4 = 0;
+  }
+  else {
+    uVar4 = 0xffffffffffffffff;
+    do {
+      uVar4 = uVar4 + 1;
+    } while (pcVar1[uVar4] != '\0');
+  }
+  FUN_1400021b0((ulonglong *)&local_50,pcVar1,uVar4);
+  local_88[0] = 0;
+  local_78 = param_3;
+  uStack_74 = param_4;
+  uVar2 = FUN_14013eb60(param_1,CONCAT44(param_4,param_3),0x10,1,local_88);
+  if (local_88[0] == 0) {
+    uVar2 = 0x2bd;
+  }
+  else {
+    if (uVar2 == 0) {
+      uVar2 = FUN_140146ed0(param_1);
+      if (uVar2 == 0) {
+        uVar2 = FUN_140144c50(param_1,param_3,param_4,local_88);
+        if (uVar2 == 0) {
+          if (*(int *)(param_1 + 0xf8) == 1) {
+            local_78 = *param_5;
+            uStack_74 = param_5[1];
+            uStack_70 = param_5[2];
+            uStack_6c = param_5[3];
+            cvSetImageROI(local_88[0],&local_78);
+          }
+          local_60 = 0xf;
+          local_68 = 0;
+          local_78 = local_78 & 0xffffff00;
+          FUN_140001830((longlong *)&local_78,(longlong *)&local_50,0,0xffffffffffffffff);
+          uVar3 = FUN_1401448b0(param_1,(longlong *)&local_78,local_88[0],*(int *)(param_1 + 0xf4));
+          if ((char)uVar3 == '\0') {
+            uVar2 = 0x2c0;
+          }
+        }
+      }
+    }
+    if (local_88[0] != 0) {
+      cvReleaseImageHeader(local_88);
+    }
+  }
+  if (0xf < local_38) {
+    Ordinal_1486(CONCAT71(uStack_4f,local_50));
+  }
+  return uVar2;
+}
+

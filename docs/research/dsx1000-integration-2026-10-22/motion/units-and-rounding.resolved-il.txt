@@ -1,0 +1,368 @@
+Selected CIL interpreted statically; no target execution. Tokens scoped to artifact SHA-256 + MVID.
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll
+SHA256 3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6
+MVID 5514a0e7-0c2d-4b6d-8f6f-1af575714d3a
+EVIDENCE ev_4566a595099128c86f22718a13c0b5abcd7f38afca9a976715f034e16e099a8c
+
+METHOD 0x06000002 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator.ConvertZPosToUMForDisp
+SIGNATURE {"raw_length":5,"raw_sha256":"5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a","resolved_sha256":"5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":2,"return_type":"i4","parameter_types":["u4","u4"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldarg.1  
+IL_0002 call 0x06000003 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator.ConvertZPosForDisp
+IL_0007 conv.r8  
+IL_0008 ldsfld 0x04000001 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator._dblNM_TO_UM
+IL_000d mul  
+IL_000e conv.i4  
+IL_000f ret  
+
+METHOD 0x06000003 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator.ConvertZPosForDisp
+SIGNATURE {"raw_length":5,"raw_sha256":"5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a","resolved_sha256":"5fff445538f27bfb5f0df4d278d60b77e6812c6cb8285d9667dbab929f21614a","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":2,"return_type":"i4","parameter_types":["u4","u4"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.1  
+IL_0001 ldc.i4.2  
+IL_0002 div  
+IL_0003 ldarg.0  
+IL_0004 sub  
+IL_0005 ret  
+
+METHOD 0x06000006 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator..cctor
+SIGNATURE {"raw_length":3,"raw_sha256":"cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568","resolved_sha256":"cf7605ed1bc735f6c825554154627467e1cac9df54cee8699218ed434603c568","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldc.r8 0.001 
+IL_0009 stsfld 0x04000001 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator._dblNM_TO_UM
+IL_000e ldc.r8 1000 
+IL_0017 stsfld 0x04000002 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator._dblUM_TO_NM
+IL_001c ret  
+
+METHOD 0x06000083 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate.SubtractForInt32
+SIGNATURE {"raw_length":5,"raw_sha256":"d8e6ac56db05a388e5930a577acd67f9774c608c445ba1d11f52d14e15d437cd","resolved_sha256":"d8e6ac56db05a388e5930a577acd67f9774c608c445ba1d11f52d14e15d437cd","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":2,"return_type":"i4","parameter_types":["i4","i4"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldarg.1  
+IL_0002 sub  
+IL_0003 ret  
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiUtility.dll
+SHA256 644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c
+MVID 79b86c12-2352-4d32-a5f1-1dcf4850f9d1
+EVIDENCE ev_855f51c173d088e2d3819fc4f1397ad027a52731108f639331e3ebd35228f1e1
+
+METHOD 0x060000f2 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+SIGNATURE {"raw_length":10,"raw_sha256":"729b3f60cb77f7a7affbb99e1a02c6beda31c5340791eedeed3713e80b1e2caa","resolved_sha256":"dc97827d4e777568baa8acc184c207b8cc478bc3d23c57ca35b7faf1c099ac2f","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":3,"return_type":"r8","parameter_types":["r8","valuetype:561","valuetype:561"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.2  
+IL_0001 stloc.1  
+IL_0002 ldloc.1  
+IL_0003 switch 6 
+IL_0020 br.s 94 
+IL_0022 ldarg.0  
+IL_0023 ldarg.1  
+IL_0024 call 0x06000115 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM
+IL_0029 stloc.0  
+IL_002a br.s 101 
+IL_002c ldarg.0  
+IL_002d ldarg.1  
+IL_002e call 0x06000116 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToMM
+IL_0033 stloc.0  
+IL_0034 br.s 101 
+IL_0036 ldarg.0  
+IL_0037 ldarg.1  
+IL_0038 call 0x06000117 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToPM
+IL_003d stloc.0  
+IL_003e br.s 101 
+IL_0040 ldarg.0  
+IL_0041 ldarg.1  
+IL_0042 call 0x06000118 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM
+IL_0047 stloc.0  
+IL_0048 br.s 101 
+IL_004a ldarg.0  
+IL_004b ldarg.1  
+IL_004c call 0x06000119 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToMIL
+IL_0051 stloc.0  
+IL_0052 br.s 101 
+IL_0054 ldarg.0  
+IL_0055 ldarg.1  
+IL_0056 call 0x0600011a Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToINCH
+IL_005b stloc.0  
+IL_005c br.s 101 
+IL_005e ldarg.0  
+IL_005f call 0x0a00025e System.Convert.ToDouble
+IL_0064 stloc.0  
+IL_0065 ldloc.0  
+IL_0066 ret  
+
+METHOD 0x060000f3 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+SIGNATURE {"raw_length":10,"raw_sha256":"35bbfb6eec64fefb6296c892ac5c20dd2b78c1ef274b3512cdd9fabc97cb2f65","resolved_sha256":"984a5221f96f3d64b6966c3a415ea63bc036db51e2bcb49c71812cdc04203a0a","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":3,"return_type":"r8","parameter_types":["i4","valuetype:561","valuetype:561"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 call 0x0a00025f System.Convert.ToDouble
+IL_0006 ldarg.1  
+IL_0007 ldarg.2  
+IL_0008 call 0x060000f2 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_000d ret  
+
+METHOD 0x060000f7 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+SIGNATURE {"raw_length":14,"raw_sha256":"e55b0ffbcd32815b552a8c44b5718c88974d1c17723ce0049bba735d30d6f364","resolved_sha256":"8ad491a11430641aced72a5d0c9da8ca31a69523d25bbfb6adb1a01173f50a33","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":5,"return_type":"r8","parameter_types":["r8","valuetype:561","valuetype:561","i4","valuetype:565"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldarg.1  
+IL_0002 ldarg.2  
+IL_0003 call 0x060000f2 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_0008 stloc.0  
+IL_0009 ldarg.2  
+IL_000a stloc.1  
+IL_000b ldloc.1  
+IL_000c switch 6 
+IL_0029 br.s 62 
+IL_002b ldarg.3  
+IL_002c ldc.i4.3  
+IL_002d add  
+IL_002e starg.s 3 
+IL_0030 br.s 62 
+IL_0032 ldarg.3  
+IL_0033 ldc.i4.1  
+IL_0034 add  
+IL_0035 starg.s 3 
+IL_0037 br.s 62 
+IL_0039 ldarg.3  
+IL_003a ldc.i4.4  
+IL_003b add  
+IL_003c starg.s 3 
+IL_003e ldloc.0  
+IL_003f ldarg.3  
+IL_0040 ldarg.s 4 
+IL_0042 call 0x06000114 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.RoundValue
+IL_0047 ret  
+
+METHOD 0x06000114 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.RoundValue
+SIGNATURE {"raw_length":8,"raw_sha256":"2053d4df507eba2d9134a71a59e20da113f2cb7e08330cd79764766a9516224e","resolved_sha256":"8e46e760c0c182548ba56c08808600af0cfa90be8c8aa2a79e80165f7cb7e7e0","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":3,"return_type":"r8","parameter_types":["r8","i4","valuetype:565"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldc.r8 0 
+IL_0009 stloc.0  
+IL_000a ldc.i4.1  
+IL_000b stloc.1  
+IL_000c ldc.i4.0  
+IL_000d stloc.2  
+IL_000e br.s 25 
+IL_0010 ldloc.1  
+IL_0011 ldc.i4.s 10 
+IL_0013 mul  
+IL_0014 stloc.1  
+IL_0015 ldloc.2  
+IL_0016 ldc.i4.1  
+IL_0017 add  
+IL_0018 stloc.2  
+IL_0019 ldloc.2  
+IL_001a ldarg.1  
+IL_001b blt.s 16 
+IL_001d ldarg.2  
+IL_001e stloc.3  
+IL_001f ldloc.3  
+IL_0020 switch 4 
+IL_0035 br.s 115 
+IL_0037 ldarg.0  
+IL_0038 ldloc.1  
+IL_0039 conv.r8  
+IL_003a mul  
+IL_003b call 0x0a000266 System.Math.Floor
+IL_0040 ldloc.1  
+IL_0041 conv.r8  
+IL_0042 div  
+IL_0043 stloc.0  
+IL_0044 br.s 115 
+IL_0046 ldarg.0  
+IL_0047 ldloc.1  
+IL_0048 conv.r8  
+IL_0049 mul  
+IL_004a call 0x0a000267 System.Math.Ceiling
+IL_004f ldloc.1  
+IL_0050 conv.r8  
+IL_0051 div  
+IL_0052 stloc.0  
+IL_0053 br.s 115 
+IL_0055 ldarg.0  
+IL_0056 ldloc.1  
+IL_0057 conv.r8  
+IL_0058 mul  
+IL_0059 ldc.i4.0  
+IL_005a call 0x0a000088 System.Math.Round
+IL_005f ldloc.1  
+IL_0060 conv.r8  
+IL_0061 div  
+IL_0062 stloc.0  
+IL_0063 br.s 115 
+IL_0065 ldarg.0  
+IL_0066 ldloc.1  
+IL_0067 conv.r8  
+IL_0068 mul  
+IL_0069 ldc.i4.1  
+IL_006a call 0x0a000088 System.Math.Round
+IL_006f ldloc.1  
+IL_0070 conv.r8  
+IL_0071 div  
+IL_0072 stloc.0  
+IL_0073 ldloc.0  
+IL_0074 ret  
+
+METHOD 0x06000115 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToUM
+SIGNATURE {"raw_length":7,"raw_sha256":"5b3c91ddcea985fca991c68ac5e9d2771e6a8c3a156ab6c60d7b1b97e10ee6c5","resolved_sha256":"392eeca35416c8136ff8ea30b2a785921039be77abf4250421f51226409b2210","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":2,"return_type":"r8","parameter_types":["r8","valuetype:561"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 call 0x0a000268 System.Double.IsNaN
+IL_0006 brfalse.s 18 
+IL_0008 ldc.r8 NaN 
+IL_0011 ret  
+IL_0012 ldarg.0  
+IL_0013 call 0x0a000269 System.Convert.ToDecimal
+IL_0018 stloc.1  
+IL_0019 ldarg.1  
+IL_001a stloc.2  
+IL_001b ldloc.2  
+IL_001c switch 6 
+IL_0039 br 202 
+IL_003e ldloc.1  
+IL_003f stloc.0  
+IL_0040 br 204 
+IL_0045 ldloc.1  
+IL_0046 ldc.i4 1000 
+IL_004b newobj 0x0a00026a System.Decimal..ctor
+IL_0050 call 0x0a00026b System.Decimal.op_Multiply
+IL_0055 stloc.0  
+IL_0056 br.s 204 
+IL_0058 ldloc.1  
+IL_0059 ldc.i4.1  
+IL_005a ldc.i4.0  
+IL_005b ldc.i4.0  
+IL_005c ldc.i4.0  
+IL_005d ldc.i4.3  
+IL_005e newobj 0x0a00026c System.Decimal..ctor
+IL_0063 call 0x0a00026b System.Decimal.op_Multiply
+IL_0068 ldc.i4.1  
+IL_0069 ldc.i4.0  
+IL_006a ldc.i4.0  
+IL_006b ldc.i4.0  
+IL_006c ldc.i4.3  
+IL_006d newobj 0x0a00026c System.Decimal..ctor
+IL_0072 call 0x0a00026b System.Decimal.op_Multiply
+IL_0077 stloc.0  
+IL_0078 br.s 204 
+IL_007a ldloc.1  
+IL_007b ldc.i4.1  
+IL_007c ldc.i4.0  
+IL_007d ldc.i4.0  
+IL_007e ldc.i4.0  
+IL_007f ldc.i4.3  
+IL_0080 newobj 0x0a00026c System.Decimal..ctor
+IL_0085 call 0x0a00026b System.Decimal.op_Multiply
+IL_008a stloc.0  
+IL_008b br.s 204 
+IL_008d ldloc.1  
+IL_008e ldc.i4 254 
+IL_0093 ldc.i4.0  
+IL_0094 ldc.i4.0  
+IL_0095 ldc.i4.0  
+IL_0096 ldc.i4.1  
+IL_0097 newobj 0x0a00026c System.Decimal..ctor
+IL_009c call 0x0a00026b System.Decimal.op_Multiply
+IL_00a1 stloc.0  
+IL_00a2 br.s 204 
+IL_00a4 ldloc.1  
+IL_00a5 ldc.i4 1000 
+IL_00aa newobj 0x0a00026a System.Decimal..ctor
+IL_00af call 0x0a00026b System.Decimal.op_Multiply
+IL_00b4 ldc.i4 254 
+IL_00b9 ldc.i4.0  
+IL_00ba ldc.i4.0  
+IL_00bb ldc.i4.0  
+IL_00bc ldc.i4.1  
+IL_00bd newobj 0x0a00026c System.Decimal..ctor
+IL_00c2 call 0x0a00026b System.Decimal.op_Multiply
+IL_00c7 stloc.0  
+IL_00c8 br.s 204 
+IL_00ca ldloc.1  
+IL_00cb stloc.0  
+IL_00cc ldloc.0  
+IL_00cd call 0x0a00026d System.Convert.ToDouble
+IL_00d2 ret  
+
+METHOD 0x06000118 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter._ToNM
+SIGNATURE {"raw_length":7,"raw_sha256":"5b3c91ddcea985fca991c68ac5e9d2771e6a8c3a156ab6c60d7b1b97e10ee6c5","resolved_sha256":"392eeca35416c8136ff8ea30b2a785921039be77abf4250421f51226409b2210","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":2,"return_type":"r8","parameter_types":["r8","valuetype:561"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 call 0x0a000268 System.Double.IsNaN
+IL_0006 brfalse.s 18 
+IL_0008 ldc.r8 NaN 
+IL_0011 ret  
+IL_0012 ldarg.0  
+IL_0013 call 0x0a000269 System.Convert.ToDecimal
+IL_0018 stloc.1  
+IL_0019 ldarg.1  
+IL_001a stloc.2  
+IL_001b ldloc.2  
+IL_001c switch 6 
+IL_0039 br 232 
+IL_003e ldloc.1  
+IL_003f ldc.i4 1000 
+IL_0044 newobj 0x0a00026a System.Decimal..ctor
+IL_0049 call 0x0a00026b System.Decimal.op_Multiply
+IL_004e stloc.0  
+IL_004f br 234 
+IL_0054 ldloc.1  
+IL_0055 ldc.i4 1000 
+IL_005a newobj 0x0a00026a System.Decimal..ctor
+IL_005f call 0x0a00026b System.Decimal.op_Multiply
+IL_0064 ldc.i4 1000 
+IL_0069 newobj 0x0a00026a System.Decimal..ctor
+IL_006e call 0x0a00026b System.Decimal.op_Multiply
+IL_0073 stloc.0  
+IL_0074 br.s 234 
+IL_0076 ldloc.1  
+IL_0077 ldc.i4.1  
+IL_0078 ldc.i4.0  
+IL_0079 ldc.i4.0  
+IL_007a ldc.i4.0  
+IL_007b ldc.i4.3  
+IL_007c newobj 0x0a00026c System.Decimal..ctor
+IL_0081 call 0x0a00026b System.Decimal.op_Multiply
+IL_0086 stloc.0  
+IL_0087 br.s 234 
+IL_0089 ldloc.1  
+IL_008a stloc.0  
+IL_008b br.s 234 
+IL_008d ldloc.1  
+IL_008e ldc.i4 1000 
+IL_0093 newobj 0x0a00026a System.Decimal..ctor
+IL_0098 call 0x0a00026b System.Decimal.op_Multiply
+IL_009d ldc.i4 254 
+IL_00a2 ldc.i4.0  
+IL_00a3 ldc.i4.0  
+IL_00a4 ldc.i4.0  
+IL_00a5 ldc.i4.1  
+IL_00a6 newobj 0x0a00026c System.Decimal..ctor
+IL_00ab call 0x0a00026b System.Decimal.op_Multiply
+IL_00b0 stloc.0  
+IL_00b1 br.s 234 
+IL_00b3 ldloc.1  
+IL_00b4 ldc.i4 1000 
+IL_00b9 newobj 0x0a00026a System.Decimal..ctor
+IL_00be call 0x0a00026b System.Decimal.op_Multiply
+IL_00c3 ldc.i4 1000 
+IL_00c8 newobj 0x0a00026a System.Decimal..ctor
+IL_00cd call 0x0a00026b System.Decimal.op_Multiply
+IL_00d2 ldc.i4 254 
+IL_00d7 ldc.i4.0  
+IL_00d8 ldc.i4.0  
+IL_00d9 ldc.i4.0  
+IL_00da ldc.i4.1  
+IL_00db newobj 0x0a00026c System.Decimal..ctor
+IL_00e0 call 0x0a00026b System.Decimal.op_Multiply
+IL_00e5 stloc.0  
+IL_00e6 br.s 234 
+IL_00e8 ldloc.1  
+IL_00e9 stloc.0  
+IL_00ea ldloc.0  
+IL_00eb call 0x0a00026d System.Convert.ToDouble
+IL_00f0 ret  
+

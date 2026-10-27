@@ -1,0 +1,699 @@
+EVIDENCE ev_3d4eafea998ffcddb9c26de4668733e0390c5d1267223ecec9dc200575a7ffd7 SHA256 82180eddd2ab0ef88cd744b7e9af26162356d932c2037ed2dd3d7f8018ab07fa
+
+METHOD 0x060001f9 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _setInitialParameter IL_SHA256 e99fccdcec76704dd3f3b01cc447f733586e953c1d0e9aaff00d3e80854ff5d4 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: ldc.i4.2       
+0003: callvirt      0x0a000150 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+0008: stfld         0x04000169 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblResolutionX
+000d: ldarg.0        
+000e: ldarg.1        
+000f: ldc.i4.2       
+0010: callvirt      0x0a000157 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetYResolution
+0015: stfld         0x0400016a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblResolutionY
+001a: ldarg.0        
+001b: ldarg.1        
+001c: ldc.i4.2       
+001d: callvirt      0x0a000158 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+0022: stfld         0x0400016b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblResolutionZHeight
+0027: ldarg.0        
+0028: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+002d: callvirt      0x060003f8 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_IsReverse
+0032: brtrue.s      80 
+0034: ldarg.0        
+0035: ldc.r4        1 
+003a: ldarg.0        
+003b: ldfld         0x04000144 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaHeightfactor
+0040: mul            
+0041: conv.r8        
+0042: ldc.i4.1       
+0043: call          0x0a0000a9 System.Math.Round
+0048: conv.r4        
+0049: stfld         0x0400012f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaDepthfactor
+004e: br.s          107 
+0050: ldarg.0        
+0051: ldc.r4        1 
+0056: ldarg.0        
+0057: ldfld         0x04000144 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaHeightfactor
+005c: mul            
+005d: conv.r8        
+005e: ldc.i4.1       
+005f: call          0x0a0000a9 System.Math.Round
+0064: conv.r4        
+0065: neg            
+0066: stfld         0x0400012f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaDepthfactor
+006b: ldarg.0        
+006c: ldarg.1        
+006d: call          0x06000202 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._SetWireInterval
+0072: ldarg.0        
+0073: ldflda        0x04000184 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stArbitaryLinePosition
+0078: ldarg.0        
+0079: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+007e: callvirt      0x060003a6 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_ProfileLineStartPosition
+0083: stfld         0x04000367 _stArbitaryLine._ptOne
+0088: ldarg.0        
+0089: ldflda        0x04000184 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stArbitaryLinePosition
+008e: ldarg.0        
+008f: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0094: callvirt      0x060003a8 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_ProfileLineEndPosition
+0099: stfld         0x04000368 _stArbitaryLine._ptTwo
+009e: ldarg.0        
+009f: ldarg.0        
+00a0: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+00a5: callvirt      0x060003a6 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_ProfileLineStartPosition
+00aa: stloc.0        
+00ab: ldloca.s      0 
+00ad: call          0x0a000159 System.Drawing.Point.get_Y
+00b2: stfld         0x04000129 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32StartPosYscale
+00b7: ldarg.0        
+00b8: ldarg.0        
+00b9: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+00be: callvirt      0x060003a6 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_ProfileLineStartPosition
+00c3: stloc.0        
+00c4: ldloca.s      0 
+00c6: call          0x0a00015a System.Drawing.Point.get_X
+00cb: stfld         0x04000128 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32StartPosXscale
+00d0: ldarg.0        
+00d1: ldarg.1        
+00d2: ldc.i4.2       
+00d3: callvirt      0x0a00014f Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+00d8: conv.r8        
+00d9: ldarg.0        
+00da: ldfld         0x0400016a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblResolutionY
+00df: mul            
+00e0: ldarg.1        
+00e1: callvirt      0x0a00015b Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationY
+00e6: mul            
+00e7: ldarg.1        
+00e8: callvirt      0x0a00015c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationY
+00ed: mul            
+00ee: ldc.r8        1000 
+00f7: div            
+00f8: conv.r8        
+00f9: stfld         0x0400016c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblImageMarkingLength
+00fe: ldarg.0        
+00ff: ldarg.1        
+0100: ldc.i4.2       
+0101: callvirt      0x0a00014d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0106: conv.r8        
+0107: ldarg.0        
+0108: ldfld         0x04000169 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblResolutionX
+010d: mul            
+010e: ldarg.1        
+010f: callvirt      0x0a00015d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationX
+0114: mul            
+0115: ldarg.1        
+0116: callvirt      0x0a00015e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationX
+011b: mul            
+011c: ldc.r8        1000 
+0125: div            
+0126: conv.r8        
+0127: stfld         0x0400016d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblImageMarkingWidth
+012c: ldarg.0        
+012d: ldarg.0        
+012e: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0133: callvirt      0x0600040a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_MaximumScaleHeight
+0138: ldarg.0        
+0139: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+013e: callvirt      0x0600040c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_MinimumScaleHeight
+0143: sub            
+0144: stfld         0x0400016e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblImageMarkingHeight
+0149: ldarg.0        
+014a: ldarg.0        
+014b: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0150: callvirt      0x06000412 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_Intensity
+0155: stfld         0x0400016f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32IntensityLevel
+015a: ldarg.0        
+015b: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0160: ldarg.0        
+0161: ldfld         0x04000126 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_WIDTH
+0166: conv.r8        
+0167: ldarg.0        
+0168: ldfld         0x04000127 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_LENGTH
+016d: conv.r8        
+016e: ldarg.0        
+016f: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0174: callvirt      0x060003f8 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_IsReverse
+0179: brtrue.s      387 
+017b: ldarg.0        
+017c: ldfld         0x04000177 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblmaxHeightPixel
+0181: br.s          394 
+0183: ldarg.0        
+0184: ldfld         0x04000177 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._dblmaxHeightPixel
+0189: neg            
+018a: callvirt      0x060004f3 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.setModel
+018f: ldarg.0        
+0190: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0195: ldarg.0        
+0196: ldfld         0x04000142 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaWindowWidth
+019b: ldarg.0        
+019c: ldfld         0x04000143 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaWindowHeight
+01a1: div            
+01a2: conv.r8        
+01a3: callvirt      0x060004ed Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.set_aspectRatio
+01a8: ldarg.0        
+01a9: call          0x060001f0 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._ChangePerspectiveLevelViaPerspectiveSliderChange
+01ae: ldarg.0        
+01af: call          0x060001f5 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._ChangeZoomfactorViaZoomSliderChange
+01b4: ldarg.0        
+01b5: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+01ba: callvirt      0x060003f0 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_IsAutoDepthFactor
+01bf: brfalse.s     476 
+01c1: ldarg.0        
+01c2: call          0x060001f3 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._GetAutoDepthFactor
+01c7: pop            
+01c8: ldarg.0        
+01c9: ldarg.0        
+01ca: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+01cf: callvirt      0x060003ee Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_AutoHeightCoefficient
+01d4: conv.r4        
+01d5: stfld         0x04000144 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaHeightfactor
+01da: br.s          493 
+01dc: ldarg.0        
+01dd: ldarg.0        
+01de: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+01e3: callvirt      0x060003ec Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_HeightCoefficient
+01e8: stfld         0x04000144 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._flaHeightfactor
+01ed: ldarg.0        
+01ee: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+01f3: callvirt      0x060003f0 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_IsAutoDepthFactor
+01f8: brfalse.s     530 
+01fa: ldarg.0        
+01fb: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0200: ldarg.0        
+0201: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0206: callvirt      0x060003ee Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_AutoHeightCoefficient
+020b: callvirt      0x060004eb Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.set_heightScale
+0210: br.s          553 
+0212: ldarg.0        
+0213: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0218: ldarg.0        
+0219: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+021e: callvirt      0x060003ec Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_HeightCoefficient
+0223: conv.r8        
+0224: callvirt      0x060004eb Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.set_heightScale
+0229: ldarg.0        
+022a: ldarg.0        
+022b: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0230: callvirt      0x06000418 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_IsMouseOperationsAllowed
+0235: stfld         0x04000134 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._blnIsRotation
+023a: ldarg.0        
+023b: ldarg.0        
+023c: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0241: callvirt      0x06000412 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_Intensity
+0246: stfld         0x0400016f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32IntensityLevel
+024b: ldarg.0        
+024c: ldfld         0x0400017b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._lightPosition
+0251: ldarg.0        
+0252: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0257: callvirt      0x060003ba Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_LightPosX
+025c: callvirt      0x060001c8 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.AzimuthElevation.set_displayTheta
+0261: ldarg.0        
+0262: ldfld         0x0400017b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._lightPosition
+0267: ldarg.0        
+0268: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+026d: callvirt      0x060003bc Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_LightPosY
+0272: callvirt      0x060001ca Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.AzimuthElevation.set_displayPhi
+0277: ldarg.0        
+0278: ldarg.0        
+0279: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+027e: callvirt      0x0600039e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_CutterPosition
+0283: stfld         0x0400012c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32CutterPosition
+0288: ldarg.0        
+0289: ldfld         0x0400012c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32CutterPosition
+028e: ldarg.0        
+028f: ldfld         0x04000127 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_LENGTH
+0294: ble.s         676 
+0296: ldarg.0        
+0297: ldarg.0        
+0298: ldfld         0x04000127 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_LENGTH
+029d: ldc.i4.2       
+029e: div            
+029f: stfld         0x0400012c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32CutterPosition
+02a4: ldarg.0        
+02a5: call          0x060001f6 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._InitializeModelTopPlane
+02aa: ldarg.0        
+02ab: ldfld         0x04000170 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._euler
+02b0: ldarg.0        
+02b1: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+02b6: callvirt      0x060003fe Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_RotationX
+02bb: callvirt      0x0600042a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Euler.set_displayX
+02c0: ldarg.0        
+02c1: ldfld         0x04000170 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._euler
+02c6: ldarg.0        
+02c7: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+02cc: callvirt      0x06000400 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_RotationY
+02d1: callvirt      0x0600042c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Euler.set_displayY
+02d6: ldarg.0        
+02d7: ldfld         0x04000170 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._euler
+02dc: ldarg.0        
+02dd: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+02e2: callvirt      0x06000402 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_RotationZ
+02e7: callvirt      0x0600042e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Euler.set_displayZ
+02ec: ldarg.0        
+02ed: call          0x06000236 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._CreateCompleteHorizontalPlane
+02f2: ret            
+
+METHOD 0x06000202 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _SetWireInterval IL_SHA256 c8afc53156bc69a61f82cab3126ff48ef3c8abbe6eaa0926c506433189546f89 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000147 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._emImageType
+0006: ldc.i4.8       
+0007: bne.un.s      42 
+0009: ldarg.0        
+000a: ldarg.0        
+000b: ldarg.0        
+000c: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0011: callvirt      0x060003e0 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_LineInterval
+0016: dup            
+0017: stloc.0        
+0018: stfld         0x0400012e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32H
+001d: ldloc.0        
+001e: stfld         0x0400012d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32W
+0023: ldarg.0        
+0024: call          0x06000203 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._SetWireIntervalForContourImages
+0029: ret            
+002a: ldarg.0        
+002b: ldarg.0        
+002c: ldc.i4.2       
+002d: dup            
+002e: stloc.0        
+002f: stfld         0x0400012e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32H
+0034: ldloc.0        
+0035: stfld         0x0400012d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32W
+003a: ret            
+
+METHOD 0x06000206 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _LightSetup IL_SHA256 7439e92ecf3c727531952dd53c1f0d07cc1584e54719572614a3d20ea69f359e DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+0006: ldc.i4        147 
+000b: ldc.i4.1       
+000c: callvirt      0x2b000011 SlimDX.Direct3D9.Device.SetRenderState
+0011: pop            
+0012: ldarg.0        
+0013: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+0018: ldc.i4        145 
+001d: ldc.i4.1       
+001e: callvirt      0x2b000011 SlimDX.Direct3D9.Device.SetRenderState
+0023: pop            
+0024: ldarg.0        
+0025: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+002a: ldc.i4.s      27 
+002c: ldc.i4.1       
+002d: callvirt      0x0a000170 SlimDX.Direct3D9.Device.SetRenderState
+0032: pop            
+0033: ldarg.0        
+0034: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+0039: ldc.i4.s      19 
+003b: ldc.i4.5       
+003c: callvirt      0x2b000012 SlimDX.Direct3D9.Device.SetRenderState
+0041: pop            
+0042: ldarg.0        
+0043: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+0048: ldc.i4.s      20 
+004a: ldc.i4.6       
+004b: callvirt      0x2b000012 SlimDX.Direct3D9.Device.SetRenderState
+0050: pop            
+0051: ldarg.0        
+0052: ldfld         0x0400017b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._lightPosition
+0057: callvirt      0x060001cb Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.AzimuthElevation.get_matrix
+005c: ldarg.0        
+005d: ldfld         0x04000170 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._euler
+0062: callvirt      0x0600042f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Euler.get_matrix
+0067: call          0x0a000171 SlimDX.Matrix.op_Multiply
+006c: stloc.0        
+006d: ldarg.0        
+006e: ldfld         0x0400016f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32IntensityLevel
+0073: ldc.i4.1       
+0074: sub            
+0075: conv.r4        
+0076: ldc.r4        9 
+007b: div            
+007c: stloc.1        
+007d: ldloc.1        
+007e: ldc.r4        0 
+0083: bge.un.s      141 
+0085: ldc.r4        0 
+008a: stloc.1        
+008b: br.s          155 
+008d: ldloc.1        
+008e: ldc.r4        1 
+0093: ble.un.s      155 
+0095: ldc.r4        1 
+009a: stloc.1        
+009b: ldc.r4        0.20000000298023224 
+00a0: ldc.r4        0.800000011920929 
+00a5: ldc.r4        1 
+00aa: ldloc.1        
+00ab: sub            
+00ac: mul            
+00ad: add            
+00ae: stloc.2        
+00af: ldloca.s      3 
+00b1: initobj       0x01000082 
+00b7: ldloca.s      3 
+00b9: ldc.i4.3       
+00ba: call          0x0a000172 SlimDX.Direct3D9.Light.set_Type
+00bf: ldloca.s      3 
+00c1: ldloc.0        
+00c2: ldfld         0x0a00013e SlimDX.Matrix.M31
+00c7: ldloc.0        
+00c8: ldfld         0x0a00013f SlimDX.Matrix.M32
+00cd: ldloc.0        
+00ce: ldfld         0x0a000140 SlimDX.Matrix.M33
+00d3: newobj        0x0a000153 SlimDX.Vector3..ctor
+00d8: call          0x0a000173 SlimDX.Direct3D9.Light.set_Direction
+00dd: ldloca.s      3 
+00df: ldloc.2        
+00e0: ldloc.2        
+00e1: ldloc.2        
+00e2: newobj        0x0a000174 SlimDX.Color4..ctor
+00e7: call          0x0a000175 SlimDX.Direct3D9.Light.set_Ambient
+00ec: ldloca.s      3 
+00ee: ldloc.1        
+00ef: ldloc.1        
+00f0: ldloc.1        
+00f1: newobj        0x0a000174 SlimDX.Color4..ctor
+00f6: call          0x0a000176 SlimDX.Direct3D9.Light.set_Diffuse
+00fb: ldarg.0        
+00fc: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+0101: ldc.i4.0       
+0102: ldloc.3        
+0103: callvirt      0x0a000177 SlimDX.Direct3D9.Device.SetLight
+0108: pop            
+0109: ldarg.0        
+010a: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+010f: ldc.i4.0       
+0110: ldc.i4.1       
+0111: callvirt      0x0a000178 SlimDX.Direct3D9.Device.EnableLight
+0116: pop            
+0117: ldarg.0        
+0118: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+011d: ldc.i4        137 
+0122: ldc.i4.1       
+0123: callvirt      0x0a000170 SlimDX.Direct3D9.Device.SetRenderState
+0128: pop            
+0129: ret            
+
+METHOD 0x06000277 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager CreateRainbowLUTArray IL_SHA256 7e673384c1284776660e4c63cc43aa11ef4faed1f9b17a210ef909a3a999fb51 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldc.i4        256 
+0006: newarr        0x010000e0 
+000b: stfld         0x04000172 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytRed
+0010: ldarg.0        
+0011: ldc.i4        256 
+0016: newarr        0x010000e0 
+001b: stfld         0x04000173 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytGreen
+0020: ldarg.0        
+0021: ldc.i4        256 
+0026: newarr        0x010000e0 
+002b: stfld         0x04000174 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytBlue
+0030: ldc.i4.0       
+0031: stloc.0        
+0032: ldc.i4.0       
+0033: stloc.1        
+0034: ldc.i4.0       
+0035: stloc.2        
+0036: ldc.i4.0       
+0037: stloc.3        
+0038: br            238 
+003d: ldloc.3        
+003e: ldc.i4.s      31 
+0040: blt.s         112 
+0042: ldloc.3        
+0043: ldc.i4.s      63 
+0045: blt.s         105 
+0047: ldloc.3        
+0048: ldc.i4.s      127 
+004a: blt.s         100 
+004c: ldloc.3        
+004d: ldc.i4        191 
+0052: blt.s         93 
+0054: ldc.i4        255 
+0059: dup            
+005a: stloc.0        
+005b: br.s          117 
+005d: ldloc.0        
+005e: ldc.i4.4       
+005f: add            
+0060: dup            
+0061: stloc.0        
+0062: br.s          117 
+0064: ldc.i4.0       
+0065: dup            
+0066: stloc.0        
+0067: br.s          117 
+0069: ldloc.0        
+006a: ldc.i4.4       
+006b: sub            
+006c: dup            
+006d: stloc.0        
+006e: br.s          117 
+0070: ldloc.0        
+0071: ldc.i4.4       
+0072: add            
+0073: dup            
+0074: stloc.0        
+0075: stloc.0        
+0076: ldarg.0        
+0077: ldfld         0x04000172 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytRed
+007c: ldloc.3        
+007d: ldloc.0        
+007e: conv.u1        
+007f: stelem.i1      
+0080: ldloc.3        
+0081: ldc.i4.s      63 
+0083: ble.s         182 
+0085: ldloc.3        
+0086: ldc.i4.s      127 
+0088: blt.s         175 
+008a: ldloc.3        
+008b: ldc.i4        191 
+0090: blt.s         166 
+0092: ldloc.3        
+0093: ldc.i4        255 
+0098: ble.s         159 
+009a: ldc.i4.0       
+009b: dup            
+009c: stloc.1        
+009d: br.s          185 
+009f: ldloc.1        
+00a0: ldc.i4.4       
+00a1: sub            
+00a2: dup            
+00a3: stloc.1        
+00a4: br.s          185 
+00a6: ldc.i4        255 
+00ab: dup            
+00ac: stloc.1        
+00ad: br.s          185 
+00af: ldloc.1        
+00b0: ldc.i4.4       
+00b1: add            
+00b2: dup            
+00b3: stloc.1        
+00b4: br.s          185 
+00b6: ldc.i4.0       
+00b7: dup            
+00b8: stloc.1        
+00b9: stloc.1        
+00ba: ldarg.0        
+00bb: ldfld         0x04000173 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytGreen
+00c0: ldloc.3        
+00c1: ldloc.1        
+00c2: conv.u1        
+00c3: stelem.i1      
+00c4: ldloc.3        
+00c5: ldc.i4.s      63 
+00c7: blt.s         218 
+00c9: ldloc.3        
+00ca: ldc.i4.s      127 
+00cc: blt.s         211 
+00ce: ldc.i4.0       
+00cf: dup            
+00d0: stloc.2        
+00d1: br.s          223 
+00d3: ldloc.2        
+00d4: ldc.i4.4       
+00d5: sub            
+00d6: dup            
+00d7: stloc.2        
+00d8: br.s          223 
+00da: ldloc.2        
+00db: ldc.i4.4       
+00dc: add            
+00dd: dup            
+00de: stloc.2        
+00df: stloc.2        
+00e0: ldarg.0        
+00e1: ldfld         0x04000174 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytBlue
+00e6: ldloc.3        
+00e7: ldloc.2        
+00e8: conv.u1        
+00e9: stelem.i1      
+00ea: ldloc.3        
+00eb: ldc.i4.1       
+00ec: add            
+00ed: stloc.3        
+00ee: ldloc.3        
+00ef: ldc.i4        256 
+00f4: blt           61 
+00f9: ret            
+
+METHOD 0x06000278 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager CreateGrayScaleLUTArray IL_SHA256 2de1d7e9a12fb7ffe71ee0190b13acbbe68ab94f53feab2ff80e3699ebb59d5b DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldc.i4        256 
+0006: newarr        0x010000e0 
+000b: stfld         0x04000172 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytRed
+0010: ldarg.0        
+0011: ldc.i4        256 
+0016: newarr        0x010000e0 
+001b: stfld         0x04000173 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytGreen
+0020: ldarg.0        
+0021: ldc.i4        256 
+0026: newarr        0x010000e0 
+002b: stfld         0x04000174 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytBlue
+0030: ldc.i4.0       
+0031: stloc.0        
+0032: br.s          86 
+0034: ldarg.0        
+0035: ldfld         0x04000172 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytRed
+003a: ldloc.0        
+003b: ldloc.0        
+003c: conv.u1        
+003d: stelem.i1      
+003e: ldarg.0        
+003f: ldfld         0x04000173 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytGreen
+0044: ldloc.0        
+0045: ldloc.0        
+0046: conv.u1        
+0047: stelem.i1      
+0048: ldarg.0        
+0049: ldfld         0x04000174 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._bytBlue
+004e: ldloc.0        
+004f: ldloc.0        
+0050: conv.u1        
+0051: stelem.i1      
+0052: ldloc.0        
+0053: ldc.i4.1       
+0054: add            
+0055: stloc.0        
+0056: ldloc.0        
+0057: ldc.i4        256 
+005c: blt.s         52 
+005e: ret            
+
+METHOD 0x0600036c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D .ctor IL_SHA256 6cb1f279a2c0037d45441774a6f7f756894d544a18fa0d921e66e03b2ac79eab DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x0a00001c System.Object..ctor
+0006: ldarg.0        
+0007: ldc.r4        0.10000000149011612 
+000c: stfld         0x04000263 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaHeightCoefficientMinimum
+0011: ldarg.0        
+0012: ldc.r4        50 
+0017: stfld         0x04000264 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaHeightCoefficientMaximum
+001c: ldarg.0        
+001d: ldc.r4        0.20000000298023224 
+0022: stfld         0x04000265 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaZoomCoefficientMinimum
+0027: ldarg.0        
+0028: ldc.r4        5 
+002d: stfld         0x04000266 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaZoomCoefficientMaximum
+0032: ldarg.0        
+0033: ldc.r4        5 
+0038: stfld         0x04000268 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaPerspectiveLevelMaximum
+003d: ldarg.0        
+003e: ldc.r4        1 
+0043: stfld         0x04000267 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaPerspectiveLevelMinimum
+0048: ldarg.0        
+0049: ldc.i4.1       
+004a: stfld         0x04000269 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._emDisplayKind
+004f: ldarg.0        
+0050: ldc.i4.2       
+0051: stfld         0x0400026a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._emDisplayType
+0056: ldarg.0        
+0057: ldc.i4.3       
+0058: stfld         0x0400026b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._emWireMethod
+005d: ldarg.0        
+005e: ldc.i4.2       
+005f: stfld         0x04000278 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._emDisplayViewType
+0064: ldarg.0        
+0065: ldc.i4.4       
+0066: stfld         0x0400026d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i16LineInterval
+006b: ldarg.0        
+006c: ldc.i4.0       
+006d: stfld         0x04000262 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._emRotationLight
+0072: ldarg.0        
+0073: ldc.r4        1 
+0078: stfld         0x0400026f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaPerspective
+007d: ldarg.0        
+007e: ldc.r4        1 
+0083: stfld         0x04000273 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._flaHeightCoefficient
+0088: ldarg.0        
+0089: ldc.r8        1 
+0092: stfld         0x0400027b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._dblZoom
+0097: ldarg.0        
+0098: ldc.i4.1       
+0099: stfld         0x0400026e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._blnIsPerspective
+009e: ldarg.0        
+009f: ldc.i4.1       
+00a0: stfld         0x04000289 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._blnIsMouseOperationsAllowed
+00a5: ldarg.0        
+00a6: ldc.i4.1       
+00a7: stfld         0x04000240 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._blnIsDisplayScale
+00ac: ldarg.0        
+00ad: ldc.i4.1       
+00ae: stfld         0x04000257 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._blnIsRotation
+00b3: ldarg.0        
+00b4: ldc.r8        35 
+00bd: stfld         0x0400027c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._dblRotationX
+00c2: ldarg.0        
+00c3: ldc.r8        60 
+00cc: stfld         0x0400027d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._dblRotationY
+00d1: ldarg.0        
+00d2: ldc.i4        384 
+00d7: stfld         0x0400024c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32Cutterposition
+00dc: ldarg.0        
+00dd: call          0x0a000190 System.Drawing.Color.get_Red
+00e2: stfld         0x0400028b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._clsProfileLineColor
+00e7: ldarg.0        
+00e8: call          0x0a00027b System.Drawing.Color.get_Black
+00ed: stfld         0x0400028c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._clsBackgroundColor
+00f2: ldarg.0        
+00f3: call          0x0a00027c System.Drawing.Color.get_Green
+00f8: stfld         0x0400028d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._clsScaleColor
+00fd: ldarg.0        
+00fe: call          0x0a000145 SlimDX.Matrix.get_Identity
+0103: stfld         0x04000249 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._stTranslationMatrix3DObject
+0108: ldarg.0        
+0109: ldc.i4.0       
+010a: stfld         0x0400027f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._emRotationtype
+010f: ldarg.0        
+0110: ldc.i4.1       
+0111: stfld         0x04000280 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32LightIntensityMinimum
+0116: ldarg.0        
+0117: ldc.i4.s      10 
+0119: stfld         0x04000281 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32LightIntensityMaximum
+011e: ldarg.0        
+011f: ldc.i4.0       
+0120: stfld         0x0400025a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32LightPosX
+0125: ldarg.0        
+0126: ldc.i4.s      90 
+0128: stfld         0x0400025b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32LightPosY
+012d: ldarg.0        
+012e: ldc.i4.s      10 
+0130: stfld         0x0400025c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32LightPosZ
+0135: ldarg.0        
+0136: ldc.i4.4       
+0137: stfld         0x04000286 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._i32Intensity
+013c: ldarg.0        
+013d: call          0x0a0001a8 System.Drawing.Color.get_Transparent
+0142: call          0x06000425 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.set_MinHeightPixelColor
+0147: ldarg.0        
+0148: call          0x0a0001a8 System.Drawing.Color.get_Transparent
+014d: call          0x06000423 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.set_MaxHeightPixelColor
+0152: ldarg.0        
+0153: ldc.i4.0       
+0154: stfld         0x04000254 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._blnIsShowDynamicOverlays
+0159: ldarg.0        
+015a: newobj        0x0a0000d7 System.Collections.ArrayList..ctor
+015f: stfld         0x04000233 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D._alMeasurementListFor3D
+0164: ret            

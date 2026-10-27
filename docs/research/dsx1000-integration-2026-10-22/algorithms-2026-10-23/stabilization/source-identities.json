@@ -1,0 +1,154 @@
+[
+  {
+    "architecture": "x86_64",
+    "digest": {
+      "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+    "name": "OlyNmv.dll",
+    "size_bytes": 105472,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "414a588d2343d6c84b2a52006fd17978f485585d4bea50cf8cd7ab64efb968f2"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybBusinessObject.dll",
+    "name": "OlybBusinessObject.dll",
+    "size_bytes": 271360,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybCameraDomain.dll",
+    "name": "OlybCameraDomain.dll",
+    "size_bytes": 105984,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybImageProcessDomain.dll",
+    "name": "OlybImageProcessDomain.dll",
+    "size_bytes": 178176,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+    "name": "OlybMemoryDatabase.dll",
+    "size_bytes": 724480,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybProcessJoinDomain.dll",
+    "name": "OlybProcessJoinDomain.dll",
+    "size_bytes": 106496,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiBlurringCorrectionSharp64.dll",
+    "name": "OlyiBlurringCorrectionSharp64.dll",
+    "size_bytes": 8704,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86_64",
+    "digest": {
+      "sha256": "0cc45691720b295dfd8c4c984935cb0cc5aa539b1dae088a1ddb35878a4c9975"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImage64.dll",
+    "name": "OlyiExtendFocusImage64.dll",
+    "size_bytes": 141312,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "037fb816adaa7f326a23ca3c338c1377cfa06fde1f855b53a1a95ea590b9f065"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuImageDisplay.dll",
+    "name": "OlyuImageDisplay.dll",
+    "size_bytes": 40960,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll",
+    "name": "OlyuMicroscope.dll",
+    "size_bytes": 2549760,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+    "name": "OlyuUiCalculator.dll",
+    "size_bytes": 41472,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "architecture": "x86",
+    "digest": {
+      "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+    },
+    "format": "pe",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll",
+    "name": "OlyuUiData.dll",
+    "size_bytes": 385024,
+    "source_rehashed": true,
+    "architecture_note": "PE machine value alone does not establish managed process bitness"
+  },
+  {
+    "name": "OlyNmv.ini",
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.ini",
+    "sha256": "5427160ee68904753c55ceed6e4e9ba5e337bb4e91839659460b518ee5b038af",
+    "size_bytes": 108,
+    "content_utf8": "[Parameter]\r\nDividerValue=8\r\nIsUseLpf=true\r\nLpfCutOff=0.5\r\nIsEstimationSubPixel=true\r\nReliabilityThresh=0.35",
+    "source_rehashed": true
+  }
+]

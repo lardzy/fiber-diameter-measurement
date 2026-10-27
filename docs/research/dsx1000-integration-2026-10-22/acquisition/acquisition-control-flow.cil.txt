@@ -1,0 +1,1061 @@
+EVIDENCE ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f SHA256 6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302
+
+METHOD 0x06000011 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService SGPreProcessTask IL_SHA256 e43355a71f3a4b52eb7b7fa8275e0666071a05fe770d9a78620b3e6b8f3d18b8 DECODE_ISSUE null
+{"offset":0,"opcode":"call","operandKind":"method","operand":"0x0a000061"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+{"offset":5,"opcode":"callvirt","operandKind":"method","operand":"0x0a000062"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":10,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":11,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":17,"opcode":"stfld","operandKind":"field","operand":"0x04000029"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrCudaMemory
+{"offset":22,"opcode":"ldc.i4","operandKind":"constant","operand":"500"} 
+{"offset":27,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":28,"opcode":"ldc.i4","operandKind":"constant","operand":"800"} 
+{"offset":33,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":34,"opcode":"call","operandKind":"method","operand":"0x0a0000d7"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_CUDAMemoryInfoDao
+{"offset":39,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000d8"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":44,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":45,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":46,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":47,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000d9"} Olympus.LI.Triumph.Workflow.MemoryDatabase.CUDAMemoryInfo.get_CudaMemoryPtr
+{"offset":52,"opcode":"stfld","operandKind":"field","operand":"0x04000029"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrCudaMemory
+{"offset":57,"opcode":"call","operandKind":"method","operand":"0x0a0000da"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemInfoDao
+{"offset":62,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000db"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":67,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000dc"} Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemInfo.SystemInfo.get_ExtendTempPath
+{"offset":72,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":74,"opcode":"call","operandKind":"method","operand":"0x0a0000dd"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetLensCutoff
+{"offset":79,"opcode":"stloc.s","operandKind":"variable","operand":"5"} 
+{"offset":81,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":83,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":85,"opcode":"call","operandKind":"method","operand":"0x0a0000de"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.GetDefaultParam
+{"offset":90,"opcode":"stloc.s","operandKind":"variable","operand":"6"} 
+{"offset":92,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":94,"opcode":"call","operandKind":"method","operand":"0x0a0000df"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.MVParam.GetDefaultParam
+{"offset":99,"opcode":"stloc.s","operandKind":"variable","operand":"7"} 
+{"offset":101,"opcode":"call","operandKind":"method","operand":"0x0a0000e0"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCuttedLiveImageSize
+{"offset":106,"opcode":"stloc.s","operandKind":"variable","operand":"8"} 
+{"offset":108,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":110,"opcode":"ldloca.s","operandKind":"variable","operand":"8"} 
+{"offset":112,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e1"} CAM_IMG_SIZE._IWidth
+{"offset":117,"opcode":"stfld","operandKind":"field","operand":"0x0a0000e2"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+{"offset":122,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":124,"opcode":"ldloca.s","operandKind":"variable","operand":"8"} 
+{"offset":126,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e3"} CAM_IMG_SIZE._IHeight
+{"offset":131,"opcode":"stfld","operandKind":"field","operand":"0x0a0000e4"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nHeight
+{"offset":136,"opcode":"call","operandKind":"method","operand":"0x0a000085"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_HdrDao
+{"offset":141,"opcode":"callvirt","operandKind":"method","operand":"0x0a000086"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":146,"opcode":"stloc.s","operandKind":"variable","operand":"9"} 
+{"offset":148,"opcode":"ldloc.s","operandKind":"variable","operand":"9"} 
+{"offset":150,"opcode":"callvirt","operandKind":"method","operand":"0x0a000087"} Olympus.LI.Triumph.Workflow.MemoryDatabase.HdrEntity.get_HdrEnabled
+{"offset":155,"opcode":"brfalse.s","operandKind":"branch","operand":"178"} 
+{"offset":157,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":159,"opcode":"ldc.i4","operandKind":"constant","operand":"1920"} 
+{"offset":164,"opcode":"stfld","operandKind":"field","operand":"0x0a0000e2"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+{"offset":169,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":171,"opcode":"ldc.i4.s","operandKind":"constant","operand":"16"} 
+{"offset":173,"opcode":"stfld","operandKind":"field","operand":"0x0a0000e5"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nColorBits
+{"offset":178,"opcode":"call","operandKind":"method","operand":"0x0a0000e6"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_LiveMonochromeModeDao
+{"offset":183,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000e7"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleXmlDao`2.Get
+{"offset":188,"opcode":"stloc.s","operandKind":"variable","operand":"10"} 
+{"offset":190,"opcode":"ldloc.s","operandKind":"variable","operand":"10"} 
+{"offset":192,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000e8"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Live.LiveMonochromeMode.get_MonochromeModeEnable
+{"offset":197,"opcode":"brfalse.s","operandKind":"branch","operand":"215"} 
+{"offset":199,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":201,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":202,"opcode":"stfld","operandKind":"field","operand":"0x0a0000e9"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nChannel
+{"offset":207,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":209,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":210,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ea"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nGuideImgChannel
+{"offset":215,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":216,"opcode":"stloc.s","operandKind":"variable","operand":"11"} 
+{"offset":218,"opcode":"ldc.i4.s","operandKind":"constant","operand":"32"} 
+{"offset":220,"opcode":"stloc.s","operandKind":"variable","operand":"12"} 
+{"offset":222,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":224,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":226,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e2"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+{"offset":231,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":233,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e9"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nChannel
+{"offset":238,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":239,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":241,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e5"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nColorBits
+{"offset":246,"opcode":"ldc.i4.8","operandKind":"none","operand":null} 
+{"offset":247,"opcode":"div","operandKind":"none","operand":null} 
+{"offset":248,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":249,"opcode":"stfld","operandKind":"field","operand":"0x0a0000eb"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nInImageStep
+{"offset":254,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":256,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":258,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e2"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+{"offset":263,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":265,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e9"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nChannel
+{"offset":270,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":271,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":273,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e5"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nColorBits
+{"offset":278,"opcode":"ldc.i4.8","operandKind":"none","operand":null} 
+{"offset":279,"opcode":"div","operandKind":"none","operand":null} 
+{"offset":280,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":281,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ec"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nOutEFIStep
+{"offset":286,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":288,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":290,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e2"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+{"offset":295,"opcode":"ldloc.s","operandKind":"variable","operand":"11"} 
+{"offset":297,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":298,"opcode":"ldloc.s","operandKind":"variable","operand":"12"} 
+{"offset":300,"opcode":"ldc.i4.8","operandKind":"none","operand":null} 
+{"offset":301,"opcode":"div","operandKind":"none","operand":null} 
+{"offset":302,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":303,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ed"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nOutDepthStep
+{"offset":308,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":309,"opcode":"callvirt","operandKind":"method","operand":"0x0a00009e"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_ExtendMode
+{"offset":314,"opcode":"brtrue.s","operandKind":"branch","operand":"331"} 
+{"offset":316,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":318,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":319,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a1"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zstep
+{"offset":324,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ee"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nMaxImgNum
+{"offset":329,"opcode":"br.s","operandKind":"branch","operand":"371"} 
+{"offset":331,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":332,"opcode":"callvirt","operandKind":"method","operand":"0x0a00009e"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_ExtendMode
+{"offset":337,"opcode":"ldc.i4.2","operandKind":"none","operand":null} 
+{"offset":338,"opcode":"bne.un.s","operandKind":"branch","operand":"371"} 
+{"offset":340,"opcode":"ldc.i4.2","operandKind":"none","operand":null} 
+{"offset":341,"opcode":"stloc.s","operandKind":"variable","operand":"13"} 
+{"offset":343,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":344,"opcode":"stloc.s","operandKind":"variable","operand":"14"} 
+{"offset":346,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":347,"opcode":"stloc.s","operandKind":"variable","operand":"15"} 
+{"offset":349,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":351,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":352,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a1"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zstep
+{"offset":357,"opcode":"ldloc.s","operandKind":"variable","operand":"13"} 
+{"offset":359,"opcode":"add","operandKind":"none","operand":null} 
+{"offset":360,"opcode":"ldloc.s","operandKind":"variable","operand":"14"} 
+{"offset":362,"opcode":"add","operandKind":"none","operand":null} 
+{"offset":363,"opcode":"ldloc.s","operandKind":"variable","operand":"15"} 
+{"offset":365,"opcode":"add","operandKind":"none","operand":null} 
+{"offset":366,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ee"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nMaxImgNum
+{"offset":371,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":373,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":375,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000ee"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nMaxImgNum
+{"offset":380,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ef"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nCacheImgNum
+{"offset":385,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":386,"opcode":"stloc.s","operandKind":"variable","operand":"16"} 
+{"offset":388,"opcode":"ldloc.s","operandKind":"variable","operand":"16"} 
+{"offset":390,"opcode":"brtrue.s","operandKind":"branch","operand":"406"} 
+{"offset":392,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":394,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":396,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000ee"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nMaxImgNum
+{"offset":401,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ef"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nCacheImgNum
+{"offset":406,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":407,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":409,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":411,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e2"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+{"offset":416,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":418,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e4"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nHeight
+{"offset":423,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":425,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000e5"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nColorBits
+{"offset":430,"opcode":"call","operandKind":"method","operand":"0x0a0000f0"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.GetDebugInfo
+{"offset":435,"opcode":"stfld","operandKind":"field","operand":"0x0400002c"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._debugInfo
+{"offset":440,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":441,"opcode":"stloc.s","operandKind":"variable","operand":"18"} 
+{"offset":443,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":444,"opcode":"stloc.s","operandKind":"variable","operand":"19"} 
+{"offset":446,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":447,"opcode":"stloc.s","operandKind":"variable","operand":"20"} 
+{"offset":449,"opcode":"ldloc.s","operandKind":"variable","operand":"16"} 
+{"offset":451,"opcode":"brfalse","operandKind":"branch","operand":"589"} 
+{"offset":456,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":457,"opcode":"ldc.i4","operandKind":"constant","operand":"1000000"} 
+{"offset":462,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":463,"opcode":"stloc.s","operandKind":"variable","operand":"19"} 
+{"offset":465,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":466,"opcode":"ldc.i4","operandKind":"constant","operand":"1000000"} 
+{"offset":471,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":472,"opcode":"stloc.s","operandKind":"variable","operand":"20"} 
+{"offset":474,"opcode":"ldstr","operandKind":"string","operand":"0x70000438"} "1.EFI_CalcCacheImageNum START"
+{"offset":479,"opcode":"call","operandKind":"method","operand":"0x0a00005d"} Olympus.Mis.Core.Logging.Logger.SystemLog
+{"offset":484,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":486,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":488,"opcode":"ldloc.s","operandKind":"variable","operand":"19"} 
+{"offset":490,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":491,"opcode":"ldloc.s","operandKind":"variable","operand":"20"} 
+{"offset":493,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":494,"opcode":"ldloca.s","operandKind":"variable","operand":"18"} 
+{"offset":496,"opcode":"call","operandKind":"method","operand":"0x0a0000f1"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_CalcCacheImageNum
+{"offset":501,"opcode":"stloc.s","operandKind":"variable","operand":"17"} 
+{"offset":503,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":505,"opcode":"brfalse.s","operandKind":"branch","operand":"536"} 
+{"offset":507,"opcode":"ldstr","operandKind":"string","operand":"0x70000474"} "1.EFI_CalcCacheImageNum[EFI_ERROR_CODE]:"
+{"offset":512,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":514,"opcode":"box","operandKind":"type","operand":"0x010000c0"} 
+{"offset":519,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000b3"} System.Object.ToString
+{"offset":524,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":529,"opcode":"call","operandKind":"method","operand":"0x0a00006e"} Olympus.Mis.Core.Logging.Logger.WarningLog
+{"offset":534,"opcode":"br.s","operandKind":"branch","operand":"545"} 
+{"offset":536,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":538,"opcode":"ldloc.s","operandKind":"variable","operand":"18"} 
+{"offset":540,"opcode":"stfld","operandKind":"field","operand":"0x0a0000ef"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nCacheImgNum
+{"offset":545,"opcode":"leave.s","operandKind":"branch","operand":"576"} 
+{"offset":547,"opcode":"stloc.s","operandKind":"variable","operand":"21"} 
+{"offset":549,"opcode":"ldstr","operandKind":"string","operand":"0x700004c6"} "[Unexpected Error]1.EFI_CalcCacheImageNum:"
+{"offset":554,"opcode":"ldloc.s","operandKind":"variable","operand":"21"} 
+{"offset":556,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":561,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":566,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":571,"opcode":"leave","operandKind":"branch","operand":"1027"} 
+{"offset":576,"opcode":"leave.s","operandKind":"branch","operand":"589"} 
+{"offset":578,"opcode":"ldstr","operandKind":"string","operand":"0x7000051c"} "1.EFI_CalcCacheImageNum END"
+{"offset":583,"opcode":"call","operandKind":"method","operand":"0x0a00005d"} Olympus.Mis.Core.Logging.Logger.SystemLog
+{"offset":588,"opcode":"endfinally","operandKind":"none","operand":null} 
+{"offset":589,"opcode":"ldloca.s","operandKind":"variable","operand":"22"} 
+{"offset":591,"opcode":"initobj","operandKind":"type","operand":"0x010000c1"} 
+{"offset":597,"opcode":"ldstr","operandKind":"string","operand":"0x70000554"} "2.EFI_GetMemorySize START"
+{"offset":602,"opcode":"call","operandKind":"method","operand":"0x0a00005d"} Olympus.Mis.Core.Logging.Logger.SystemLog
+{"offset":607,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":609,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":611,"opcode":"ldloca.s","operandKind":"variable","operand":"22"} 
+{"offset":613,"opcode":"call","operandKind":"method","operand":"0x0a0000f3"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_GetMemorySize
+{"offset":618,"opcode":"stloc.s","operandKind":"variable","operand":"17"} 
+{"offset":620,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":622,"opcode":"brfalse.s","operandKind":"branch","operand":"651"} 
+{"offset":624,"opcode":"ldstr","operandKind":"string","operand":"0x70000588"} "2.EFI_GetMemorySize[EFI_ERROR_CODE]:"
+{"offset":629,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":631,"opcode":"box","operandKind":"type","operand":"0x010000c0"} 
+{"offset":636,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000b3"} System.Object.ToString
+{"offset":641,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":646,"opcode":"call","operandKind":"method","operand":"0x0a00006e"} Olympus.Mis.Core.Logging.Logger.WarningLog
+{"offset":651,"opcode":"leave.s","operandKind":"branch","operand":"682"} 
+{"offset":653,"opcode":"stloc.s","operandKind":"variable","operand":"23"} 
+{"offset":655,"opcode":"ldstr","operandKind":"string","operand":"0x700005d2"} "[Unexpected Error]2.EFI_GetMemorySize:"
+{"offset":660,"opcode":"ldloc.s","operandKind":"variable","operand":"23"} 
+{"offset":662,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":667,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":672,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":677,"opcode":"leave","operandKind":"branch","operand":"1027"} 
+{"offset":682,"opcode":"leave.s","operandKind":"branch","operand":"695"} 
+{"offset":684,"opcode":"ldstr","operandKind":"string","operand":"0x70000620"} "2.EFI_GetMemorySize END"
+{"offset":689,"opcode":"call","operandKind":"method","operand":"0x0a00005d"} Olympus.Mis.Core.Logging.Logger.SystemLog
+{"offset":694,"opcode":"endfinally","operandKind":"none","operand":null} 
+{"offset":695,"opcode":"ldloca.s","operandKind":"variable","operand":"24"} 
+{"offset":697,"opcode":"initobj","operandKind":"type","operand":"0x010000b3"} 
+{"offset":703,"opcode":"ldloca.s","operandKind":"variable","operand":"25"} 
+{"offset":705,"opcode":"initobj","operandKind":"type","operand":"0x010000b3"} 
+{"offset":711,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":712,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":717,"opcode":"stfld","operandKind":"field","operand":"0x04000027"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrWorkMemory
+{"offset":722,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":723,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":728,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":733,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f5"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendSGLibraryWorkHeader
+{"offset":738,"opcode":"ldstr","operandKind":"string","operand":"0x70000650"} "_SGProcessSnap"
+{"offset":743,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f6"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Attach
+{"offset":748,"opcode":"stfld","operandKind":"field","operand":"0x04000028"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._imageBufferWork
+{"offset":753,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":754,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":755,"opcode":"ldfld","operandKind":"field","operand":"0x04000028"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._imageBufferWork
+{"offset":760,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f7"} Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+{"offset":765,"opcode":"stfld","operandKind":"field","operand":"0x04000027"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrWorkMemory
+{"offset":770,"opcode":"ldstr","operandKind":"string","operand":"0x7000066e"} "3.EFI_CreateContext START"
+{"offset":775,"opcode":"call","operandKind":"method","operand":"0x0a00005d"} Olympus.Mis.Core.Logging.Logger.SystemLog
+{"offset":780,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":782,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":784,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":785,"opcode":"ldfld","operandKind":"field","operand":"0x04000027"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrWorkMemory
+{"offset":790,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":795,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f8"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendSGLibraryWorkMemorySize
+{"offset":800,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":801,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":802,"opcode":"ldfld","operandKind":"field","operand":"0x04000029"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrCudaMemory
+{"offset":807,"opcode":"ldloca.s","operandKind":"variable","operand":"22"} 
+{"offset":809,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000f9"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMemorySize.nCudaMemorySize
+{"offset":814,"opcode":"ldloca.s","operandKind":"variable","operand":"24"} 
+{"offset":816,"opcode":"ldloca.s","operandKind":"variable","operand":"25"} 
+{"offset":818,"opcode":"call","operandKind":"method","operand":"0x0a0000fa"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_CreateContext
+{"offset":823,"opcode":"stloc.s","operandKind":"variable","operand":"17"} 
+{"offset":825,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":827,"opcode":"brtrue.s","operandKind":"branch","operand":"903"} 
+{"offset":829,"opcode":"newobj","operandKind":"method","operand":"0x0a0000fb"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData..ctor
+{"offset":834,"opcode":"stloc.s","operandKind":"variable","operand":"26"} 
+{"offset":836,"opcode":"ldloc.s","operandKind":"variable","operand":"26"} 
+{"offset":838,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":840,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000fc"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_EFIParam
+{"offset":845,"opcode":"ldloc.s","operandKind":"variable","operand":"26"} 
+{"offset":847,"opcode":"ldloc.s","operandKind":"variable","operand":"24"} 
+{"offset":849,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000fd"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_EFIContext
+{"offset":854,"opcode":"ldloc.s","operandKind":"variable","operand":"26"} 
+{"offset":856,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":858,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000fe"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_MVParam
+{"offset":863,"opcode":"ldloc.s","operandKind":"variable","operand":"26"} 
+{"offset":865,"opcode":"ldloc.s","operandKind":"variable","operand":"25"} 
+{"offset":867,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000ff"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_MVContext
+{"offset":872,"opcode":"ldloc.s","operandKind":"variable","operand":"26"} 
+{"offset":874,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":876,"opcode":"ldfld","operandKind":"field","operand":"0x0a0000ee"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nMaxImgNum
+{"offset":881,"opcode":"newarr","operandKind":"type","operand":"0x010000b3"} 
+{"offset":886,"opcode":"callvirt","operandKind":"method","operand":"0x0a000100"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_InputImageList
+{"offset":891,"opcode":"call","operandKind":"method","operand":"0x0a000101"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SGLibraryDataDao
+{"offset":896,"opcode":"ldloc.s","operandKind":"variable","operand":"26"} 
+{"offset":898,"opcode":"callvirt","operandKind":"method","operand":"0x0a000102"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+{"offset":903,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":905,"opcode":"brfalse.s","operandKind":"branch","operand":"934"} 
+{"offset":907,"opcode":"ldstr","operandKind":"string","operand":"0x700006a2"} "3.EFI_CreateContext[EFI_ERROR_CODE]:"
+{"offset":912,"opcode":"ldloc.s","operandKind":"variable","operand":"17"} 
+{"offset":914,"opcode":"box","operandKind":"type","operand":"0x010000c0"} 
+{"offset":919,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000b3"} System.Object.ToString
+{"offset":924,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":929,"opcode":"call","operandKind":"method","operand":"0x0a00006e"} Olympus.Mis.Core.Logging.Logger.WarningLog
+{"offset":934,"opcode":"leave.s","operandKind":"branch","operand":"962"} 
+{"offset":936,"opcode":"stloc.s","operandKind":"variable","operand":"27"} 
+{"offset":938,"opcode":"ldstr","operandKind":"string","operand":"0x700006ec"} "[Unexpected Error]3.EFI_CreateContext:"
+{"offset":943,"opcode":"ldloc.s","operandKind":"variable","operand":"27"} 
+{"offset":945,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":950,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":955,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":960,"opcode":"leave.s","operandKind":"branch","operand":"1027"} 
+{"offset":962,"opcode":"leave.s","operandKind":"branch","operand":"1027"} 
+{"offset":964,"opcode":"ldstr","operandKind":"string","operand":"0x7000073a"} "3.EFI_CreateContext END"
+{"offset":969,"opcode":"call","operandKind":"method","operand":"0x0a00005d"} Olympus.Mis.Core.Logging.Logger.SystemLog
+{"offset":974,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":976,"opcode":"call","operandKind":"method","operand":"0x2b000001"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIUtil.CreateParamValueLog
+{"offset":981,"opcode":"stloc.s","operandKind":"variable","operand":"28"} 
+{"offset":983,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":985,"opcode":"call","operandKind":"method","operand":"0x2b000002"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIUtil.CreateParamValueLog
+{"offset":990,"opcode":"stloc.s","operandKind":"variable","operand":"29"} 
+{"offset":992,"opcode":"ldstr","operandKind":"string","operand":"0x7000076a"} "[EFIParam] {0}"
+{"offset":997,"opcode":"ldloc.s","operandKind":"variable","operand":"28"} 
+{"offset":999,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":1004,"opcode":"call","operandKind":"method","operand":"0x0a000104"} Olympus.Mis.Core.Logging.Logger.DebugLog
+{"offset":1009,"opcode":"ldstr","operandKind":"string","operand":"0x70000788"} "[MVParam] {0}"
+{"offset":1014,"opcode":"ldloc.s","operandKind":"variable","operand":"29"} 
+{"offset":1016,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":1021,"opcode":"call","operandKind":"method","operand":"0x0a000104"} Olympus.Mis.Core.Logging.Logger.DebugLog
+{"offset":1026,"opcode":"endfinally","operandKind":"none","operand":null} 
+{"offset":1027,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000013 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService SGInputImageThreadEndTask IL_SHA256 59c5d1fa51c4420f583e176289ba240681fc0dc47d1c5da3dc9b58aa5a6a6b0b DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":6,"opcode":"callvirt","operandKind":"method","operand":"0x0a000109"} System.Collections.Generic.Queue`1.get_Count
+{"offset":11,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"ble.s","operandKind":"branch","operand":"56"} 
+{"offset":14,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":15,"opcode":"ldfld","operandKind":"field","operand":"0x04000026"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._blnInputImageThread
+{"offset":20,"opcode":"brfalse.s","operandKind":"branch","operand":"56"} 
+{"offset":22,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":23,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":28,"opcode":"call","operandKind":"method","operand":"0x0a00010a"} System.Threading.Monitor.Enter
+{"offset":33,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":34,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":39,"opcode":"call","operandKind":"method","operand":"0x0a00010b"} System.Threading.Monitor.Wait
+{"offset":44,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":45,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":46,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":51,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":56,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":57,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":58,"opcode":"stfld","operandKind":"field","operand":"0x04000026"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._blnInputImageThread
+{"offset":63,"opcode":"newobj","operandKind":"method","operand":"0x06000077"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo..ctor
+{"offset":68,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":69,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":70,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":71,"opcode":"callvirt","operandKind":"method","operand":"0x0600006e"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_IsEnabled
+{"offset":76,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":77,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":82,"opcode":"call","operandKind":"method","operand":"0x0a00010a"} System.Threading.Monitor.Enter
+{"offset":87,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":93,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":94,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010c"} System.Collections.Generic.Queue`1.Enqueue
+{"offset":99,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":100,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":105,"opcode":"call","operandKind":"method","operand":"0x0a00010d"} System.Threading.Monitor.Pulse
+{"offset":110,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":111,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":116,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":121,"opcode":"call","operandKind":"method","operand":"0x0a000101"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SGLibraryDataDao
+{"offset":126,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010e"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":131,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":132,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":133,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":134,"opcode":"ldfld","operandKind":"field","operand":"0x0400002c"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._debugInfo
+{"offset":139,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":140,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":145,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":146,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010f"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_InputImageList
+{"offset":151,"opcode":"call","operandKind":"method","operand":"0x06000053"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._SaveZstackImage
+{"offset":156,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":157,"opcode":"ldfld","operandKind":"field","operand":"0x0400002d"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._inputThreadFinishedWaiter
+{"offset":162,"opcode":"callvirt","operandKind":"method","operand":"0x0a000110"} System.Threading.WaitHandle.WaitOne
+{"offset":167,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":168,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000014 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService SGAfterProcessTask IL_SHA256 77a2440563a682147c2200421577d14108abba429a4294514b59d8dd9b3f80c5 DECODE_ISSUE null
+{"offset":0,"opcode":"call","operandKind":"method","operand":"0x0a000101"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SGLibraryDataDao
+{"offset":5,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010e"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":10,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":11,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"callvirt","operandKind":"method","operand":"0x0a000111"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIContext
+{"offset":17,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":18,"opcode":"callvirt","operandKind":"method","operand":"0x0a000112"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_MVContext
+{"offset":23,"opcode":"call","operandKind":"method","operand":"0x0a000113"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_ReleaseContext
+{"offset":28,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":29,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":34,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000fd"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_EFIContext
+{"offset":39,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":40,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":45,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000ff"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.set_MVContext
+{"offset":50,"opcode":"ldstr","operandKind":"string","operand":"0x700007d2"} "EFIMV_ReleaseContext Complete"
+{"offset":55,"opcode":"call","operandKind":"method","operand":"0x0a000114"} Olympus.Mis.Core.Logging.Logger.StepLog
+{"offset":60,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":61,"opcode":"ldfld","operandKind":"field","operand":"0x04000027"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrWorkMemory
+{"offset":66,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":71,"opcode":"call","operandKind":"method","operand":"0x0a000115"} System.IntPtr.op_Inequality
+{"offset":76,"opcode":"brfalse.s","operandKind":"branch","operand":"114"} 
+{"offset":78,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":79,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":84,"opcode":"stfld","operandKind":"field","operand":"0x04000027"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ptrWorkMemory
+{"offset":89,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":94,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":99,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f5"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendSGLibraryWorkHeader
+{"offset":104,"opcode":"ldstr","operandKind":"string","operand":"0x70000650"} "_SGProcessSnap"
+{"offset":109,"opcode":"callvirt","operandKind":"method","operand":"0x0a000116"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Dettach
+{"offset":114,"opcode":"ldstr","operandKind":"string","operand":"0x7000080e"} "Dettach SGLibrary buffer Complete"
+{"offset":119,"opcode":"call","operandKind":"method","operand":"0x0a000114"} Olympus.Mis.Core.Logging.Logger.StepLog
+{"offset":124,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":125,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":126,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":127,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":132,"opcode":"dup","operandKind":"none","operand":null} 
+{"offset":133,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":134,"opcode":"ldloca.s","operandKind":"variable","operand":"2"} 
+{"offset":136,"opcode":"call","operandKind":"method","operand":"0x0a000089"} System.Threading.Monitor.Enter
+{"offset":141,"opcode":"br.s","operandKind":"branch","operand":"184"} 
+{"offset":143,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":144,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":149,"opcode":"callvirt","operandKind":"method","operand":"0x0a000117"} System.Collections.Generic.Queue`1.Dequeue
+{"offset":154,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":155,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":156,"opcode":"callvirt","operandKind":"method","operand":"0x0600006f"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_ImageBuffer
+{"offset":161,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":166,"opcode":"call","operandKind":"method","operand":"0x0a000115"} System.IntPtr.op_Inequality
+{"offset":171,"opcode":"brfalse.s","operandKind":"branch","operand":"184"} 
+{"offset":173,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":174,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":179,"opcode":"callvirt","operandKind":"method","operand":"0x06000070"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_ImageBuffer
+{"offset":184,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":185,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":186,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":191,"opcode":"callvirt","operandKind":"method","operand":"0x0a000109"} System.Collections.Generic.Queue`1.get_Count
+{"offset":196,"opcode":"blt.s","operandKind":"branch","operand":"143"} 
+{"offset":198,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":199,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":204,"opcode":"callvirt","operandKind":"method","operand":"0x0a000118"} System.Collections.Generic.Queue`1.Clear
+{"offset":209,"opcode":"leave.s","operandKind":"branch","operand":"221"} 
+{"offset":211,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":212,"opcode":"brfalse.s","operandKind":"branch","operand":"220"} 
+{"offset":214,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":215,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":220,"opcode":"endfinally","operandKind":"none","operand":null} 
+{"offset":221,"opcode":"ldstr","operandKind":"string","operand":"0x70000852"} "EfiImageQueue clear Complete"
+{"offset":226,"opcode":"call","operandKind":"method","operand":"0x0a000114"} Olympus.Mis.Core.Logging.Logger.StepLog
+{"offset":231,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000030 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _ReceiveSnapImage IL_SHA256 bc050091fe76c4523e5360826c70f576ff8d8c9f9e392ab86362ebcae329453f DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldfld","operandKind":"field","operand":"0x04000018"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+{"offset":6,"opcode":"brfalse.s","operandKind":"branch","operand":"77"} 
+{"offset":8,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":9,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001a3"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+{"offset":14,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001a4"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_IsFiltered
+{"offset":19,"opcode":"brfalse.s","operandKind":"branch","operand":"77"} 
+{"offset":21,"opcode":"call","operandKind":"method","operand":"0x0a000085"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_HdrDao
+{"offset":26,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001a5"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2.Get
+{"offset":31,"opcode":"callvirt","operandKind":"method","operand":"0x0a000087"} Olympus.LI.Triumph.Workflow.MemoryDatabase.HdrEntity.get_HdrEnabled
+{"offset":36,"opcode":"brfalse.s","operandKind":"branch","operand":"60"} 
+{"offset":38,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":39,"opcode":"ldfld","operandKind":"field","operand":"0x04000018"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+{"offset":44,"opcode":"call","operandKind":"method","operand":"0x0a0001a6"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_RealHDRImageDao
+{"offset":49,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001a7"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":54,"opcode":"callvirt","operandKind":"method","operand":"0x06000066"} _ReceiveImageProcess.Invoke
+{"offset":59,"opcode":"ret","operandKind":"none","operand":null} 
+{"offset":60,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":61,"opcode":"ldfld","operandKind":"field","operand":"0x04000018"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+{"offset":66,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":67,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001a3"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+{"offset":72,"opcode":"callvirt","operandKind":"method","operand":"0x06000066"} _ReceiveImageProcess.Invoke
+{"offset":77,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000033 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _OnImagedProcessAcquisitionFine IL_SHA256 44e7c7b7040000b3e36d5240a25322f81231b7aab067c55657e3916707b6e1bf DECODE_ISSUE null
+{"offset":0,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":2,"opcode":"call","operandKind":"method","operand":"0x0a000061"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+{"offset":7,"opcode":"dup","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":9,"opcode":"ldloca.s","operandKind":"variable","operand":"1"} 
+{"offset":11,"opcode":"call","operandKind":"method","operand":"0x0a000089"} System.Threading.Monitor.Enter
+{"offset":16,"opcode":"call","operandKind":"method","operand":"0x0a000061"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+{"offset":21,"opcode":"callvirt","operandKind":"method","operand":"0x0a000062"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":26,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":27,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":28,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":33,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":34,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":35,"opcode":"ldc.i4.2","operandKind":"none","operand":null} 
+{"offset":36,"opcode":"beq.s","operandKind":"branch","operand":"72"} 
+{"offset":38,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":39,"opcode":"ldc.i4.s","operandKind":"constant","operand":"9"} 
+{"offset":41,"opcode":"beq","operandKind":"branch","operand":"259"} 
+{"offset":46,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":47,"opcode":"ldc.i4.s","operandKind":"constant","operand":"12"} 
+{"offset":49,"opcode":"sub","operandKind":"none","operand":null} 
+{"offset":50,"opcode":"switch","operandKind":"switch","operand":"3","switchTargets":[259,293,259]} 
+{"offset":67,"opcode":"br","operandKind":"branch","operand":"293"} 
+{"offset":72,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":73,"opcode":"dup","operandKind":"none","operand":null} 
+{"offset":74,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":79,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":80,"opcode":"add","operandKind":"none","operand":null} 
+{"offset":81,"opcode":"stfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":86,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":87,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":93,"opcode":"callvirt","operandKind":"method","operand":"0x0a000095"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_CurrentStep
+{"offset":98,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":99,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":104,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":105,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a1"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zstep
+{"offset":110,"opcode":"bgt.un","operandKind":"branch","operand":"335"} 
+{"offset":115,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":116,"opcode":"ldfld","operandKind":"field","operand":"0x0400002a"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._condition
+{"offset":121,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001aa"} System.Threading.EventWaitHandle.Reset
+{"offset":126,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":127,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":128,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":129,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":130,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":135,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":136,"opcode":"callvirt","operandKind":"method","operand":"0x0a000188"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zpitch
+{"offset":141,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":142,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":147,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":148,"opcode":"conv.r.un","operandKind":"none","operand":null} 
+{"offset":149,"opcode":"conv.r4","operandKind":"none","operand":null} 
+{"offset":150,"opcode":"call","operandKind":"method","operand":"0x06000062"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._EnqueueZstackImage
+{"offset":155,"opcode":"brtrue.s","operandKind":"branch","operand":"211"} 
+{"offset":157,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":158,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":159,"opcode":"stfld","operandKind":"field","operand":"0x04000018"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+{"offset":164,"opcode":"ldstr","operandKind":"string","operand":"0x70000c29"} "_EnqueueZstackImage() is failed. Current steps is {0}."
+{"offset":169,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":170,"opcode":"ldflda","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":175,"opcode":"call","operandKind":"method","operand":"0x0a0001ab"} System.UInt32.ToString
+{"offset":180,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":185,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":190,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":191,"opcode":"ldc.i4.s","operandKind":"constant","operand":"14"} 
+{"offset":193,"opcode":"call","operandKind":"method","operand":"0x06000008"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.set__CurrentState
+{"offset":198,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":199,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":200,"opcode":"callvirt","operandKind":"method","operand":"0x0a000064"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_IsOnRepeativeSnapping
+{"offset":205,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":206,"opcode":"call","operandKind":"method","operand":"0x0600004a"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ExecuteStartExtendEndWF
+{"offset":211,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":212,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":217,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":218,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a1"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zstep
+{"offset":223,"opcode":"bne.un.s","operandKind":"branch","operand":"335"} 
+{"offset":225,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":226,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":227,"opcode":"stfld","operandKind":"field","operand":"0x04000018"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+{"offset":232,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":233,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":234,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":239,"opcode":"callvirt","operandKind":"method","operand":"0x0a000063"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_BuildingCount
+{"offset":244,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":245,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":246,"opcode":"callvirt","operandKind":"method","operand":"0x0a000064"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_IsOnRepeativeSnapping
+{"offset":251,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":252,"opcode":"call","operandKind":"method","operand":"0x0600004a"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ExecuteStartExtendEndWF
+{"offset":257,"opcode":"br.s","operandKind":"branch","operand":"335"} 
+{"offset":259,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":260,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":261,"opcode":"stfld","operandKind":"field","operand":"0x04000018"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+{"offset":266,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":267,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":268,"opcode":"ldfld","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":273,"opcode":"callvirt","operandKind":"method","operand":"0x0a000063"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_BuildingCount
+{"offset":278,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":279,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":280,"opcode":"callvirt","operandKind":"method","operand":"0x0a000064"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_IsOnRepeativeSnapping
+{"offset":285,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":286,"opcode":"call","operandKind":"method","operand":"0x0600004a"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._ExecuteStartExtendEndWF
+{"offset":291,"opcode":"br.s","operandKind":"branch","operand":"335"} 
+{"offset":293,"opcode":"ldstr","operandKind":"string","operand":"0x70000c97"} "AcquisitionDomainState is invalid at _OnImagedProcessAcquisitionFine(). Current steps is {0}. Current state is {1}"
+{"offset":298,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":299,"opcode":"ldflda","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":304,"opcode":"call","operandKind":"method","operand":"0x0a0001ab"} System.UInt32.ToString
+{"offset":309,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":310,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":315,"opcode":"box","operandKind":"type","operand":"0x02000006"} _emAcquisitionState
+{"offset":320,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000b3"} System.Object.ToString
+{"offset":325,"opcode":"call","operandKind":"method","operand":"0x0a0001ac"} System.String.Format
+{"offset":330,"opcode":"call","operandKind":"method","operand":"0x0a00006e"} Olympus.Mis.Core.Logging.Logger.WarningLog
+{"offset":335,"opcode":"call","operandKind":"method","operand":"0x0a000061"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+{"offset":340,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":341,"opcode":"callvirt","operandKind":"method","operand":"0x0a000065"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+{"offset":346,"opcode":"ldstr","operandKind":"string","operand":"0x70000d7e"} "_OnImagedProcessAcquisitionFine() Current steps is {0} / {1}. Current state is {2}."
+{"offset":351,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":352,"opcode":"ldflda","operandKind":"field","operand":"0x0400001b"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._iStepCurrent
+{"offset":357,"opcode":"call","operandKind":"method","operand":"0x0a0001ab"} System.UInt32.ToString
+{"offset":362,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":363,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a1"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zstep
+{"offset":368,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":370,"opcode":"ldloca.s","operandKind":"variable","operand":"4"} 
+{"offset":372,"opcode":"call","operandKind":"method","operand":"0x0a0001ab"} System.UInt32.ToString
+{"offset":377,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":378,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":383,"opcode":"box","operandKind":"type","operand":"0x02000006"} _emAcquisitionState
+{"offset":388,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000b3"} System.Object.ToString
+{"offset":393,"opcode":"call","operandKind":"method","operand":"0x0a0001ad"} System.String.Format
+{"offset":398,"opcode":"call","operandKind":"method","operand":"0x0a000114"} Olympus.Mis.Core.Logging.Logger.StepLog
+{"offset":403,"opcode":"leave.s","operandKind":"branch","operand":"415"} 
+{"offset":405,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":406,"opcode":"brfalse.s","operandKind":"branch","operand":"414"} 
+{"offset":408,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":409,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":414,"opcode":"endfinally","operandKind":"none","operand":null} 
+{"offset":415,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000053 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _SaveZstackImage IL_SHA256 a2c3f683022688cbdeaf175472146da400bc31941dfa880338a774b91cfc7cb8 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001c7"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.get_SaveStackImagePath
+{"offset":6,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":7,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"call","operandKind":"method","operand":"0x0a0001c8"} System.String.IsNullOrEmpty
+{"offset":13,"opcode":"brfalse.s","operandKind":"branch","operand":"16"} 
+{"offset":15,"opcode":"ret","operandKind":"none","operand":null} 
+{"offset":16,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":17,"opcode":"call","operandKind":"method","operand":"0x0a0001c9"} System.IO.Directory.Exists
+{"offset":22,"opcode":"brtrue.s","operandKind":"branch","operand":"25"} 
+{"offset":24,"opcode":"ret","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":26,"opcode":"call","operandKind":"method","operand":"0x2b000003"} System.Linq.Enumerable.Last
+{"offset":31,"opcode":"stloc.s","operandKind":"variable","operand":"8"} 
+{"offset":33,"opcode":"ldloca.s","operandKind":"variable","operand":"8"} 
+{"offset":35,"opcode":"call","operandKind":"method","operand":"0x0a0001cb"} System.Char.ToString
+{"offset":40,"opcode":"ldstr","operandKind":"string","operand":"0x700016dd"} "\\"
+{"offset":45,"opcode":"call","operandKind":"method","operand":"0x0a0001cc"} System.String.op_Inequality
+{"offset":50,"opcode":"brfalse.s","operandKind":"branch","operand":"64"} 
+{"offset":52,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":53,"opcode":"ldstr","operandKind":"string","operand":"0x700016dd"} "\\"
+{"offset":58,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":63,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":64,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":65,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001cd"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.get_ImageWidth
+{"offset":70,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":71,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":72,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001ce"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.get_ImageHeight
+{"offset":77,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":78,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":79,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001cf"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.get_ImageBitNum
+{"offset":84,"opcode":"ldc.i4.8","operandKind":"none","operand":null} 
+{"offset":85,"opcode":"div","operandKind":"none","operand":null} 
+{"offset":86,"opcode":"ldc.i4.3","operandKind":"none","operand":null} 
+{"offset":87,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":89,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":90,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":91,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":92,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":93,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":94,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":96,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":97,"opcode":"stloc.s","operandKind":"variable","operand":"5"} 
+{"offset":99,"opcode":"br.s","operandKind":"branch","operand":"204"} 
+{"offset":101,"opcode":"ldstr","operandKind":"string","operand":"0x700016e1"} "zstack_{0}x{1}x{2}_{3}.raw"
+{"offset":106,"opcode":"ldc.i4.4","operandKind":"none","operand":null} 
+{"offset":107,"opcode":"newarr","operandKind":"type","operand":"0x01000005"} 
+{"offset":112,"opcode":"stloc.s","operandKind":"variable","operand":"9"} 
+{"offset":114,"opcode":"ldloc.s","operandKind":"variable","operand":"9"} 
+{"offset":116,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":117,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":118,"opcode":"box","operandKind":"type","operand":"0x010000c7"} 
+{"offset":123,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":124,"opcode":"ldloc.s","operandKind":"variable","operand":"9"} 
+{"offset":126,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":127,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":128,"opcode":"box","operandKind":"type","operand":"0x010000c7"} 
+{"offset":133,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":134,"opcode":"ldloc.s","operandKind":"variable","operand":"9"} 
+{"offset":136,"opcode":"ldc.i4.2","operandKind":"none","operand":null} 
+{"offset":137,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":138,"opcode":"box","operandKind":"type","operand":"0x010000c7"} 
+{"offset":143,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":144,"opcode":"ldloc.s","operandKind":"variable","operand":"9"} 
+{"offset":146,"opcode":"ldc.i4.3","operandKind":"none","operand":null} 
+{"offset":147,"opcode":"ldloca.s","operandKind":"variable","operand":"5"} 
+{"offset":149,"opcode":"ldstr","operandKind":"string","operand":"0x70001717"} "0000"
+{"offset":154,"opcode":"call","operandKind":"method","operand":"0x0a0001d0"} System.Int32.ToString
+{"offset":159,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":160,"opcode":"ldloc.s","operandKind":"variable","operand":"9"} 
+{"offset":162,"opcode":"call","operandKind":"method","operand":"0x0a000069"} System.String.Format
+{"offset":167,"opcode":"stloc.s","operandKind":"variable","operand":"6"} 
+{"offset":169,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":170,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":172,"opcode":"call","operandKind":"method","operand":"0x0a0000f2"} System.String.Concat
+{"offset":177,"opcode":"ldarg.3","operandKind":"none","operand":null} 
+{"offset":178,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":180,"opcode":"ldelema","operandKind":"type","operand":"0x010000b3"} 
+{"offset":185,"opcode":"ldobj","operandKind":"type","operand":"0x010000b3"} 
+{"offset":190,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":192,"opcode":"call","operandKind":"method","operand":"0x0a0001d1"} Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.WriteFile
+{"offset":197,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":198,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":200,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":201,"opcode":"add","operandKind":"none","operand":null} 
+{"offset":202,"opcode":"stloc.s","operandKind":"variable","operand":"5"} 
+{"offset":204,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":206,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":207,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":208,"opcode":"conv.u8","operandKind":"none","operand":null} 
+{"offset":209,"opcode":"blt.s","operandKind":"branch","operand":"101"} 
+{"offset":211,"opcode":"leave.s","operandKind":"branch","operand":"239"} 
+{"offset":213,"opcode":"stloc.s","operandKind":"variable","operand":"7"} 
+{"offset":215,"opcode":"ldstr","operandKind":"string","operand":"0x70001721"} "Exception occurred in _SaveZstackImage(). Message= {0}"
+{"offset":220,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":222,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":227,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":232,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":237,"opcode":"leave.s","operandKind":"branch","operand":"239"} 
+{"offset":239,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000054 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _SaveZstackImage IL_SHA256 fd8ded8bac093b626b2e9897be102e7244fc71c0661e178a69ced742af554438 DECODE_ISSUE null
+{"offset":0,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":2,"opcode":"call","operandKind":"method","operand":"0x0a000061"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+{"offset":7,"opcode":"callvirt","operandKind":"method","operand":"0x0a000062"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":12,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":14,"opcode":"call","operandKind":"method","operand":"0x06000056"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._CreateZstackImagePath
+{"offset":19,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":20,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":21,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":22,"opcode":"br.s","operandKind":"branch","operand":"96"} 
+{"offset":24,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":26,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001d2"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_ZstackImageFile
+{"offset":31,"opcode":"ldloca.s","operandKind":"variable","operand":"3"} 
+{"offset":33,"opcode":"ldstr","operandKind":"string","operand":"0x70001717"} "0000"
+{"offset":38,"opcode":"call","operandKind":"method","operand":"0x0a0001d0"} System.Int32.ToString
+{"offset":43,"opcode":"ldstr","operandKind":"string","operand":"0x7000178f"} ".raw"
+{"offset":48,"opcode":"call","operandKind":"method","operand":"0x0a0001d3"} System.String.Concat
+{"offset":53,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":55,"opcode":"ldarg.3","operandKind":"none","operand":null} 
+{"offset":56,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":57,"opcode":"ldelema","operandKind":"type","operand":"0x010000b3"} 
+{"offset":62,"opcode":"ldobj","operandKind":"type","operand":"0x010000b3"} 
+{"offset":67,"opcode":"stloc.s","operandKind":"variable","operand":"5"} 
+{"offset":69,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":71,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":73,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":74,"opcode":"call","operandKind":"method","operand":"0x0a0001d1"} Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.WriteFile
+{"offset":79,"opcode":"stloc.s","operandKind":"variable","operand":"6"} 
+{"offset":81,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":83,"opcode":"conv.u8","operandKind":"none","operand":null} 
+{"offset":84,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":85,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":86,"opcode":"ceq","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"dup","operandKind":"none","operand":null} 
+{"offset":89,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":90,"opcode":"brfalse.s","operandKind":"branch","operand":"102"} 
+{"offset":92,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":93,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":94,"opcode":"add","operandKind":"none","operand":null} 
+{"offset":95,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":96,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":97,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":98,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":99,"opcode":"conv.u8","operandKind":"none","operand":null} 
+{"offset":100,"opcode":"blt.s","operandKind":"branch","operand":"24"} 
+{"offset":102,"opcode":"leave.s","operandKind":"branch","operand":"132"} 
+{"offset":104,"opcode":"stloc.s","operandKind":"variable","operand":"7"} 
+{"offset":106,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":107,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":108,"opcode":"ldstr","operandKind":"string","operand":"0x70001721"} "Exception occurred in _SaveZstackImage(). Message= {0}"
+{"offset":113,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":115,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":120,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":125,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":130,"opcode":"leave.s","operandKind":"branch","operand":"132"} 
+{"offset":132,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":133,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000056 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _CreateZstackImagePath IL_SHA256 980504f7944607c629a7fc34fe4a705cd6ccc2c38c665b66585625a5d930c433 DECODE_ISSUE null
+{"offset":0,"opcode":"call","operandKind":"method","operand":"0x0a0000da"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemInfoDao
+{"offset":5,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000db"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":10,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":11,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000dc"} Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemInfo.SystemInfo.get_ExtendTempPath
+{"offset":17,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":18,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":19,"opcode":"call","operandKind":"method","operand":"0x0a0001c9"} System.IO.Directory.Exists
+{"offset":24,"opcode":"brtrue.s","operandKind":"branch","operand":"33"} 
+{"offset":26,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":27,"opcode":"call","operandKind":"method","operand":"0x0a0001d7"} System.IO.Directory.CreateDirectory
+{"offset":32,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":33,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":34,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000062 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _EnqueueZstackImage IL_SHA256 6d31111cdfcdb26e3f6e31492bb393a5d9d25ba842ea2c04e41dc9632e5af934 DECODE_ISSUE null
+{"offset":0,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":2,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":7,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"callvirt","operandKind":"method","operand":"0x0a000212"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageBufferHeader
+{"offset":13,"opcode":"callvirt","operandKind":"method","operand":"0x0a000213"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Attach
+{"offset":18,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f7"} Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+{"offset":23,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":24,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":26,"opcode":"sub","operandKind":"none","operand":null} 
+{"offset":27,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":28,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":33,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":34,"opcode":"callvirt","operandKind":"method","operand":"0x0a000214"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendSGSnapImage
+{"offset":39,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":40,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":45,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":46,"opcode":"callvirt","operandKind":"method","operand":"0x0a000213"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Attach
+{"offset":51,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000f7"} Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+{"offset":56,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":58,"opcode":"call","operandKind":"method","operand":"0x0a000101"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SGLibraryDataDao
+{"offset":63,"opcode":"callvirt","operandKind":"method","operand":"0x0a000215"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryDataDao.GetFileSize
+{"offset":68,"opcode":"stloc.s","operandKind":"variable","operand":"5"} 
+{"offset":70,"opcode":"call","operandKind":"method","operand":"0x0a0000e6"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_LiveMonochromeModeDao
+{"offset":75,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000e7"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleXmlDao`2.Get
+{"offset":80,"opcode":"stloc.s","operandKind":"variable","operand":"6"} 
+{"offset":82,"opcode":"ldloc.s","operandKind":"variable","operand":"6"} 
+{"offset":84,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000e8"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Live.LiveMonochromeMode.get_MonochromeModeEnable
+{"offset":89,"opcode":"brfalse.s","operandKind":"branch","operand":"120"} 
+{"offset":91,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":93,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":94,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":95,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001ee"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeX
+{"offset":100,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":101,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001ef"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeY
+{"offset":106,"opcode":"mul","operandKind":"none","operand":null} 
+{"offset":107,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":108,"opcode":"callvirt","operandKind":"method","operand":"0x0a000216"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_CamByte
+{"offset":113,"opcode":"call","operandKind":"method","operand":"0x0a000217"} Olympus.LI.Triumph.Image.ImageDataManager.ImageUtility.ConvertMonochromeImage_3chTo1ch
+{"offset":118,"opcode":"br.s","operandKind":"branch","operand":"135"} 
+{"offset":120,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":122,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":123,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":125,"opcode":"call","operandKind":"method","operand":"0x0a000218"} System.IntPtr.op_Explicit
+{"offset":130,"opcode":"call","operandKind":"method","operand":"0x0a000219"} Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.CopyMemory
+{"offset":135,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":140,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":141,"opcode":"callvirt","operandKind":"method","operand":"0x0a000212"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageBufferHeader
+{"offset":146,"opcode":"callvirt","operandKind":"method","operand":"0x0a00021a"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Dettach
+{"offset":151,"opcode":"call","operandKind":"method","operand":"0x0a0000f4"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":156,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":157,"opcode":"callvirt","operandKind":"method","operand":"0x0a00021a"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Dettach
+{"offset":162,"opcode":"newobj","operandKind":"method","operand":"0x06000077"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo..ctor
+{"offset":167,"opcode":"stloc.s","operandKind":"variable","operand":"7"} 
+{"offset":169,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":171,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":172,"opcode":"callvirt","operandKind":"method","operand":"0x0600006e"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_IsEnabled
+{"offset":177,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":179,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":180,"opcode":"conv.u8","operandKind":"none","operand":null} 
+{"offset":181,"opcode":"callvirt","operandKind":"method","operand":"0x06000072"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_FrameNo
+{"offset":186,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":188,"opcode":"ldarg.3","operandKind":"none","operand":null} 
+{"offset":189,"opcode":"callvirt","operandKind":"method","operand":"0x06000074"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_ZHeight
+{"offset":194,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":196,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":198,"opcode":"callvirt","operandKind":"method","operand":"0x06000070"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_ImageBuffer
+{"offset":203,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":205,"opcode":"ldloc.s","operandKind":"variable","operand":"5"} 
+{"offset":207,"opcode":"callvirt","operandKind":"method","operand":"0x06000076"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.set_ImageByteSize
+{"offset":212,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":213,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":218,"opcode":"call","operandKind":"method","operand":"0x0a00010a"} System.Threading.Monitor.Enter
+{"offset":223,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":224,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":229,"opcode":"ldloc.s","operandKind":"variable","operand":"7"} 
+{"offset":231,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010c"} System.Collections.Generic.Queue`1.Enqueue
+{"offset":236,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":237,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":242,"opcode":"call","operandKind":"method","operand":"0x0a00010d"} System.Threading.Monitor.Pulse
+{"offset":247,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":248,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":253,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":258,"opcode":"leave.s","operandKind":"branch","operand":"288"} 
+{"offset":260,"opcode":"stloc.s","operandKind":"variable","operand":"8"} 
+{"offset":262,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":263,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":264,"opcode":"ldstr","operandKind":"string","operand":"0x70001d40"} "Exception occurred at _EnqueueZstackImage(). Message:{0}"
+{"offset":269,"opcode":"ldloc.s","operandKind":"variable","operand":"8"} 
+{"offset":271,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":276,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":281,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":286,"opcode":"leave.s","operandKind":"branch","operand":"288"} 
+{"offset":288,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":289,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000063 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _SGInputImageThread IL_SHA256 15f45be0f7cb395c8969e973688b9e985bfe931522438f885f6ac22124826f4e DECODE_ISSUE null
+{"offset":0,"opcode":"newobj","operandKind":"method","operand":"0x0a00021b"} System.Diagnostics.Stopwatch..ctor
+{"offset":5,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":6,"opcode":"br","operandKind":"branch","operand":"466"} 
+{"offset":11,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":14,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":19,"opcode":"call","operandKind":"method","operand":"0x0a00010a"} System.Threading.Monitor.Enter
+{"offset":24,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":30,"opcode":"callvirt","operandKind":"method","operand":"0x0a000109"} System.Collections.Generic.Queue`1.get_Count
+{"offset":35,"opcode":"brtrue.s","operandKind":"branch","operand":"55"} 
+{"offset":37,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":38,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":43,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":44,"opcode":"ldfld","operandKind":"field","operand":"0x0400002e"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueueTimeoutValue
+{"offset":49,"opcode":"call","operandKind":"method","operand":"0x0a00021c"} System.Threading.Monitor.Wait
+{"offset":54,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":55,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":56,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":61,"opcode":"callvirt","operandKind":"method","operand":"0x0a000109"} System.Collections.Generic.Queue`1.get_Count
+{"offset":66,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":67,"opcode":"ble.s","operandKind":"branch","operand":"83"} 
+{"offset":69,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":70,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":75,"opcode":"callvirt","operandKind":"method","operand":"0x0a000117"} System.Collections.Generic.Queue`1.Dequeue
+{"offset":80,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":81,"opcode":"br.s","operandKind":"branch","operand":"104"} 
+{"offset":83,"opcode":"ldstr","operandKind":"string","operand":"0x70001db2"} "[_SGInputImageThread] EFI Image Queue wait time out."
+{"offset":88,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":89,"opcode":"newarr","operandKind":"type","operand":"0x01000005"} 
+{"offset":94,"opcode":"call","operandKind":"method","operand":"0x0a000069"} System.String.Format
+{"offset":99,"opcode":"call","operandKind":"method","operand":"0x0a00006e"} Olympus.Mis.Core.Logging.Logger.WarningLog
+{"offset":104,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":105,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":110,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":115,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":116,"opcode":"brfalse.s","operandKind":"branch","operand":"126"} 
+{"offset":118,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":119,"opcode":"callvirt","operandKind":"method","operand":"0x0600006d"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_IsEnabled
+{"offset":124,"opcode":"brtrue.s","operandKind":"branch","operand":"138"} 
+{"offset":126,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":127,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":128,"opcode":"stfld","operandKind":"field","operand":"0x04000026"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._blnInputImageThread
+{"offset":133,"opcode":"br","operandKind":"branch","operand":"477"} 
+{"offset":138,"opcode":"call","operandKind":"method","operand":"0x0a000101"} Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SGLibraryDataDao
+{"offset":143,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010e"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+{"offset":148,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":149,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":150,"opcode":"callvirt","operandKind":"method","operand":"0x0a00021d"} System.Diagnostics.Stopwatch.Restart
+{"offset":155,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":156,"opcode":"callvirt","operandKind":"method","operand":"0x0a000111"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIContext
+{"offset":161,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":162,"opcode":"callvirt","operandKind":"method","operand":"0x0a000112"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_MVContext
+{"offset":167,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":168,"opcode":"callvirt","operandKind":"method","operand":"0x0600006f"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_ImageBuffer
+{"offset":173,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":174,"opcode":"callvirt","operandKind":"method","operand":"0x06000073"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_ZHeight
+{"offset":179,"opcode":"ldsfld","operandKind":"field","operand":"0x0a0000d6"} System.IntPtr.Zero
+{"offset":184,"opcode":"call","operandKind":"method","operand":"0x0a00021e"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_InputImage
+{"offset":189,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":190,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":191,"opcode":"callvirt","operandKind":"method","operand":"0x0a00021f"} System.Diagnostics.Stopwatch.Stop
+{"offset":196,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":197,"opcode":"callvirt","operandKind":"method","operand":"0x0a00010f"} Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_InputImageList
+{"offset":202,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":203,"opcode":"callvirt","operandKind":"method","operand":"0x06000071"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_FrameNo
+{"offset":208,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":209,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":210,"opcode":"sub","operandKind":"none","operand":null} 
+{"offset":211,"opcode":"conv.ovf.i.un","operandKind":"none","operand":null} 
+{"offset":212,"opcode":"ldelema","operandKind":"type","operand":"0x010000b3"} 
+{"offset":217,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":218,"opcode":"callvirt","operandKind":"method","operand":"0x0600006f"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_ImageBuffer
+{"offset":223,"opcode":"stobj","operandKind":"type","operand":"0x010000b3"} 
+{"offset":228,"opcode":"ldstr","operandKind":"string","operand":"0x70001e1c"} "[_SGInputImageThread] EFIMV_InputImage(). StepCount= {0}, Result= {1}, ProcTime={2} ms"
+{"offset":233,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":234,"opcode":"callvirt","operandKind":"method","operand":"0x06000071"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.EFIInputImageInfo.get_FrameNo
+{"offset":239,"opcode":"box","operandKind":"type","operand":"0x010000fd"} 
+{"offset":244,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":245,"opcode":"box","operandKind":"type","operand":"0x010000c0"} 
+{"offset":250,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":251,"opcode":"callvirt","operandKind":"method","operand":"0x0a000220"} System.Diagnostics.Stopwatch.get_Elapsed
+{"offset":256,"opcode":"stloc.s","operandKind":"variable","operand":"5"} 
+{"offset":258,"opcode":"ldloca.s","operandKind":"variable","operand":"5"} 
+{"offset":260,"opcode":"call","operandKind":"method","operand":"0x0a0001fd"} System.TimeSpan.get_TotalMilliseconds
+{"offset":265,"opcode":"stloc.s","operandKind":"variable","operand":"6"} 
+{"offset":267,"opcode":"ldloca.s","operandKind":"variable","operand":"6"} 
+{"offset":269,"opcode":"ldstr","operandKind":"string","operand":"0x70001ecb"} "f3"
+{"offset":274,"opcode":"call","operandKind":"method","operand":"0x0a000221"} System.Double.ToString
+{"offset":279,"opcode":"call","operandKind":"method","operand":"0x0a0001ad"} System.String.Format
+{"offset":284,"opcode":"call","operandKind":"method","operand":"0x0a000114"} Olympus.Mis.Core.Logging.Logger.StepLog
+{"offset":289,"opcode":"leave.s","operandKind":"branch","operand":"325"} 
+{"offset":291,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":293,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":294,"opcode":"ldc.i4.s","operandKind":"constant","operand":"14"} 
+{"offset":296,"opcode":"call","operandKind":"method","operand":"0x06000008"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.set__CurrentState
+{"offset":301,"opcode":"ldstr","operandKind":"string","operand":"0x70001ed1"} "[_SGInputImageThread] Exception occurred at EFIMV_InputImage(). {0}."
+{"offset":306,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":308,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a0"} System.Exception.get_Message
+{"offset":313,"opcode":"call","operandKind":"method","operand":"0x0a0000b4"} System.String.Format
+{"offset":318,"opcode":"call","operandKind":"method","operand":"0x0a00006a"} Olympus.Mis.Core.Logging.Logger.ErrorLog
+{"offset":323,"opcode":"leave.s","operandKind":"branch","operand":"325"} 
+{"offset":325,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":326,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":331,"opcode":"callvirt","operandKind":"method","operand":"0x0a000109"} System.Collections.Generic.Queue`1.get_Count
+{"offset":336,"opcode":"brtrue.s","operandKind":"branch","operand":"383"} 
+{"offset":338,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":339,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":344,"opcode":"call","operandKind":"method","operand":"0x0a00010a"} System.Threading.Monitor.Enter
+{"offset":349,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":350,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":355,"opcode":"call","operandKind":"method","operand":"0x0a00010d"} System.Threading.Monitor.Pulse
+{"offset":360,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":361,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":366,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":371,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":372,"opcode":"ldfld","operandKind":"field","operand":"0x0400002a"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._condition
+{"offset":377,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001c6"} System.Threading.EventWaitHandle.Set
+{"offset":382,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":383,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":384,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":389,"opcode":"ldc.i4.s","operandKind":"constant","operand":"9"} 
+{"offset":391,"opcode":"beq.s","operandKind":"branch","operand":"431"} 
+{"offset":393,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":394,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":399,"opcode":"ldc.i4.s","operandKind":"constant","operand":"10"} 
+{"offset":401,"opcode":"beq.s","operandKind":"branch","operand":"431"} 
+{"offset":403,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":404,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":409,"opcode":"ldc.i4.s","operandKind":"constant","operand":"13"} 
+{"offset":411,"opcode":"beq.s","operandKind":"branch","operand":"431"} 
+{"offset":413,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":414,"opcode":"call","operandKind":"method","operand":"0x06000007"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService.get__CurrentState
+{"offset":419,"opcode":"ldc.i4.s","operandKind":"constant","operand":"14"} 
+{"offset":421,"opcode":"beq.s","operandKind":"branch","operand":"431"} 
+{"offset":423,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":424,"opcode":"ldfld","operandKind":"field","operand":"0x04000026"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._blnInputImageThread
+{"offset":429,"opcode":"brtrue.s","operandKind":"branch","operand":"466"} 
+{"offset":431,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":432,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":437,"opcode":"call","operandKind":"method","operand":"0x0a00010a"} System.Threading.Monitor.Enter
+{"offset":442,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":443,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":448,"opcode":"call","operandKind":"method","operand":"0x0a00010d"} System.Threading.Monitor.Pulse
+{"offset":453,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":454,"opcode":"ldfld","operandKind":"field","operand":"0x04000025"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._efiImageQueue
+{"offset":459,"opcode":"call","operandKind":"method","operand":"0x0a0000a5"} System.Threading.Monitor.Exit
+{"offset":464,"opcode":"br.s","operandKind":"branch","operand":"477"} 
+{"offset":466,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":467,"opcode":"ldfld","operandKind":"field","operand":"0x04000026"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._blnInputImageThread
+{"offset":472,"opcode":"brtrue","operandKind":"branch","operand":"11"} 
+{"offset":477,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":478,"opcode":"ldfld","operandKind":"field","operand":"0x0400002d"} Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._inputThreadFinishedWaiter
+{"offset":483,"opcode":"callvirt","operandKind":"method","operand":"0x0a0001c6"} System.Threading.EventWaitHandle.Set
+{"offset":488,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":489,"opcode":"ret","operandKind":"none","operand":null} 

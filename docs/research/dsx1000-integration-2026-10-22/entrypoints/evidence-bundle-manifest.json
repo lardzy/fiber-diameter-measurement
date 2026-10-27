@@ -1,0 +1,11 @@
+{
+  "uncompressed_path": "rea-evidence-bundle.json",
+  "compressed_path": "rea-evidence-bundle.json.gz",
+  "records_reported_by_REA": 37,
+  "raw_bytes": 58739705,
+  "raw_sha256": "3a889a6e05123974c688212d2032e8020df3b33ac7545b933292b6c0ebc9d60e",
+  "gzip_bytes": 4300352,
+  "gzip_sha256": "6836f980c5aeb08cbb680f4ce06670c8dff7b83c28550047d352df516cf76988",
+  "roundtrip_verified": true,
+  "note": "Gzip retains the exact exported bundle; target code was not executed."
+}

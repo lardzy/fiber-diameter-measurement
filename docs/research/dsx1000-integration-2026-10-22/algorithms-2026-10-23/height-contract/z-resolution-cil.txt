@@ -1,0 +1,15 @@
+EVIDENCE ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d SHA256 1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b
+
+METHOD 0x06000bf3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper GetExtendZResolution IL_SHA256 89107e7ecc652972b33ba1ef9dce4b4a569c3bb9cadd274eaa755e02b7a4fde2 DECODE_ISSUE null
+0000: ldarg.0        
+0001: conv.r.un      
+0002: conv.r4        
+0003: ldc.r4        1000 
+0008: div            
+0009: ldc.i4        65535 
+000e: ldarg.1        
+000f: div.un         
+0010: conv.r.un      
+0011: conv.r4        
+0012: div            
+0013: ret            

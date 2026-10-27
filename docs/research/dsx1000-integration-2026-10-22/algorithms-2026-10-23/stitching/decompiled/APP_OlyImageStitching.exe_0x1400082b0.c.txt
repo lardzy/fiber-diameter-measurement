@@ -1,0 +1,894 @@
+Evidence: ev_b67d44ac9ac0c6e176d2dd7c1db715a48f49274cdbbcc67070dfc8dd9956220d
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Type propagation algorithm not settling */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+ulonglong FUN_1400082b0(void)
+
+{
+  int iVar1;
+  ulonglong uVar2;
+  undefined4 uVar3;
+  undefined4 uVar4;
+  code *pcVar5;
+  undefined1 auVar6 [16];
+  int iVar7;
+  undefined8 *******pppppppuVar8;
+  ulonglong uVar9;
+  uint uVar10;
+  IAtlStringMgr *pIVar11;
+  undefined8 *puVar12;
+  CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *pCVar13;
+  __uint64 _Var14;
+  ulonglong uVar15;
+  longlong *plVar16;
+  longlong *plVar17;
+  longlong ******pppppplVar18;
+  longlong lVar19;
+  ulonglong uVar20;
+  char *pcVar21;
+  undefined1 *puVar22;
+  ulonglong uVar23;
+  undefined8 *******pppppppuVar24;
+  longlong *******ppppppplVar25;
+  longlong *******ppppppplVar26;
+  undefined4 *puVar27;
+  longlong *******ppppppplVar28;
+  int iVar29;
+  int iVar30;
+  int iVar31;
+  undefined1 auStackY_778 [32];
+  undefined8 local_728;
+  void *local_720;
+  undefined4 local_718;
+  undefined8 local_710;
+  wchar_t *local_708;
+  void *local_700;
+  void *local_6f8;
+  undefined8 local_6f0;
+  char *local_6e8;
+  char *pcStack_6e0;
+  void *local_6d8;
+  void *pvStack_6d0;
+  char *local_6c8;
+  void *pvStack_6c0;
+  void *local_6b8;
+  char *pcStack_6b0;
+  char *local_6a8;
+  void *pvStack_6a0;
+  void *local_698;
+  char *pcStack_690;
+  char *local_688;
+  void *pvStack_680;
+  char *local_678;
+  char *pcStack_670;
+  void *local_668;
+  void *pvStack_660;
+  void *local_658;
+  undefined8 local_648;
+  undefined8 uStack_640;
+  undefined8 local_638;
+  undefined8 uStack_630;
+  undefined8 local_628;
+  undefined8 uStack_620;
+  undefined8 local_618;
+  undefined8 uStack_610;
+  undefined8 local_608;
+  undefined8 uStack_600;
+  undefined8 local_5f8;
+  undefined8 uStack_5f0;
+  undefined8 local_5e8;
+  undefined8 uStack_5e0;
+  undefined8 local_5d8;
+  undefined8 uStack_5d0;
+  undefined8 local_5c8;
+  undefined8 uStack_5c0;
+  undefined8 local_5b8;
+  undefined8 uStack_5b0;
+  undefined8 local_5a8;
+  undefined8 uStack_5a0;
+  undefined8 local_598;
+  undefined8 local_588;
+  undefined8 local_580;
+  undefined8 local_578;
+  undefined8 local_570;
+  undefined8 local_568;
+  undefined8 local_560;
+  undefined8 local_558;
+  double local_550;
+  undefined8 local_548;
+  longlong *******local_538;
+  undefined8 ******ppppppuStack_530;
+  ulonglong local_528;
+  ulonglong uStack_520;
+  longlong *******local_518;
+  longlong lStack_510;
+  ulonglong local_508;
+  ulonglong uStack_500;
+  longlong *******local_4f8;
+  longlong lStack_4f0;
+  ulonglong local_4e8;
+  ulonglong uStack_4e0;
+  longlong *******local_4d8;
+  longlong lStack_4d0;
+  ulonglong local_4c8;
+  undefined1 *puStack_4c0;
+  undefined1 local_4b8;
+  undefined7 uStack_4b7;
+  ulonglong local_4a8;
+  ulonglong uStack_4a0;
+  longlong local_498 [2];
+  ulonglong local_488;
+  ulonglong uStack_480;
+  longlong *******local_478;
+  undefined8 uStack_470;
+  undefined8 local_468;
+  ulonglong uStack_460;
+  undefined8 *******local_458;
+  longlong lStack_450;
+  ulonglong local_448;
+  ulonglong uStack_440;
+  undefined1 local_438;
+  undefined7 uStack_437;
+  undefined8 local_428;
+  ulonglong uStack_420;
+  undefined8 *******local_418;
+  longlong lStack_410;
+  ulonglong local_408;
+  ulonglong uStack_400;
+  undefined4 local_3f8 [226];
+  undefined8 local_70;
+  longlong local_50;
+  undefined8 *local_48;
+  undefined8 *local_40;
+  ulonglong local_38;
+  
+  local_6f0 = 0xfffffffffffffffe;
+  local_38 = DAT_140030010 ^ (ulonglong)auStackY_778;
+  ppppppplVar25 = (longlong *******)0x0;
+  local_718 = 0;
+  local_408 = 0;
+  uStack_400 = 0xf;
+  local_418 = (undefined8 *******)((ulonglong)local_418 & 0xffffffffffffff00);
+  _DAT_140030d90 = DAT_1400300b8;
+  _DAT_140030d70 = 0;
+  _DAT_140030d88 = 0;
+  _DAT_140030db4 = DAT_140030ef4;
+  _DAT_140030db0 = DAT_140030efc;
+  _DAT_140030db8 = DAT_140030ef8;
+  _DAT_140030dbc = DAT_140030eb8;
+  _DAT_140030de8 = DAT_140030ef0;
+  _DAT_140030d60 = DAT_1400300dc;
+  _DAT_140030d64 = DAT_1400300d8;
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_708);
+  pIVar11 = ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::GetManager
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &DAT_140030f08);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+            CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &local_728,pIVar11);
+  local_718 = 1;
+  lVar19 = -1;
+  do {
+    lVar19 = lVar19 + 1;
+  } while ((&DAT_140025c90)[lVar19] != 0);
+  ATL::CSimpleStringT<wchar_t,1>::Concatenate
+            ((CSimpleStringT<wchar_t,1> *)&local_728,DAT_140030f08,*(int *)(DAT_140030f08 + -8),
+             L"\\",(int)lVar19);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+            CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                      ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720,
+                       (wchar_t *)*puVar12);
+  strcpy_s(DAT_140030e78,0x104,(char *)*puVar12);
+  ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+  ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+            ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728);
+  pIVar11 = ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::GetManager
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &DAT_140030f08);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+            CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &local_728,pIVar11);
+  local_718 = 2;
+  lVar19 = -1;
+  do {
+    lVar19 = lVar19 + 1;
+  } while ((&DAT_140025c90)[lVar19] != 0);
+  ATL::CSimpleStringT<wchar_t,1>::Concatenate
+            ((CSimpleStringT<wchar_t,1> *)&local_728,DAT_140030f08,*(int *)(DAT_140030f08 + -8),
+             L"\\",(int)lVar19);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+            CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                      ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720,
+                       (wchar_t *)*puVar12);
+  strcpy_s(DAT_140030e20,0x104,(char *)*puVar12);
+  ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+  ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+            ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728);
+  pIVar11 = ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::GetManager
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &DAT_140030f08);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+            CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &local_728,pIVar11);
+  local_718 = 4;
+  lVar19 = -1;
+  do {
+    lVar19 = lVar19 + 1;
+  } while ((&DAT_140025c90)[lVar19] != 0);
+  ATL::CSimpleStringT<wchar_t,1>::Concatenate
+            ((CSimpleStringT<wchar_t,1> *)&local_728,DAT_140030f08,*(int *)(DAT_140030f08 + -8),
+             L"\\",(int)lVar19);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+            CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                      ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720,
+                       (wchar_t *)*puVar12);
+  strcpy_s(DAT_140030e40,0x104,(char *)*puVar12);
+  ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+  ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+            ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728);
+  pIVar11 = ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::GetManager
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &DAT_140030f08);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+            CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &local_728,pIVar11);
+  local_718 = 8;
+  lVar19 = -1;
+  do {
+    lVar19 = lVar19 + 1;
+  } while ((&DAT_140025c90)[lVar19] != 0);
+  ATL::CSimpleStringT<wchar_t,1>::Concatenate
+            ((CSimpleStringT<wchar_t,1> *)&local_728,DAT_140030f08,*(int *)(DAT_140030f08 + -8),
+             L"\\",(int)lVar19);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+            CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                      ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720,
+                       (wchar_t *)*puVar12);
+  strcpy_s(DAT_140030e60,0x104,(char *)*puVar12);
+  ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+  ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+            ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728);
+  pIVar11 = ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::GetManager
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &DAT_140030f08);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+            CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                      ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                       &local_728,pIVar11);
+  local_718 = 0x10;
+  lVar19 = -1;
+  do {
+    lVar19 = lVar19 + 1;
+  } while ((&DAT_140025c90)[lVar19] != 0);
+  ATL::CSimpleStringT<wchar_t,1>::Concatenate
+            ((CSimpleStringT<wchar_t,1> *)&local_728,DAT_140030f08,*(int *)(DAT_140030f08 + -8),
+             L"\\",(int)lVar19);
+  puVar12 = (undefined8 *)
+            ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+            CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                      ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720,
+                       (wchar_t *)*puVar12);
+  strcpy_s(DAT_140030e58,0x104,(char *)*puVar12);
+  ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+  ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+            ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728);
+  if (DAT_140030efc != 1) {
+    pCVar13 = (CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *)
+              ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+              CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                        ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                         &local_720);
+    local_718 = 0x20;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710,
+               L"C");
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728,
+               L"%s%s%s",L"StitchedImage",local_710);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_720,
+               L"%s\\%s",DAT_140030f08,local_728);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_708,
+               pCVar13);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_720)
+    ;
+    puVar12 = (undefined8 *)
+              ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+              CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                        ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720
+                         ,local_708);
+    strcpy_s(DAT_140030e80,0x104,(char *)*puVar12);
+    ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+    ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+              ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+    DAT_140030148 = 8;
+    DAT_14003014c = 3;
+    strcpy_s(DAT_140030e28,0x104,"ImageC_");
+  }
+  if (DAT_140030ef8 == 1) {
+    pCVar13 = (CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *)
+              ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+              CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                        ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                         &local_720);
+    local_718 = 0x40;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728,
+               L"H");
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710,
+               L"%s%s%s",L"StitchedImage",local_728);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_720,
+               L"%s\\%s",DAT_140030f08,local_710);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_708,
+               pCVar13);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_720)
+    ;
+    puVar12 = (undefined8 *)
+              ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+              CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                        ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720
+                         ,local_708);
+    strcpy_s(DAT_140030e90,0x104,(char *)*puVar12);
+    ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+    ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+              ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  }
+  if (DAT_140030ef0 == 1) {
+    pCVar13 = (CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *)
+              ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+              CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                        ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+                         &local_720);
+    local_718 = 0x80;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728,
+               L"Inv");
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710,
+               L"%s%s%s",L"StitchedImage",local_728);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_720,
+               L"%s\\%s",DAT_140030f08,local_710);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_728)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_710)
+    ;
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_708,
+               pCVar13);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+              ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_720)
+    ;
+    puVar12 = (undefined8 *)
+              ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+              CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                        ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720
+                         ,local_708);
+    strcpy_s(DAT_140030e98,0x104,(char *)*puVar12);
+    ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+    ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+              ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_720);
+  }
+  _DAT_140030140 = DAT_140030ee4;
+  _DAT_140030144 = DAT_140030ee0;
+  uVar10 = ((int)(DAT_140030148 + (DAT_140030148 >> 0x1f & 7U)) >> 3) * DAT_14003014c *
+           DAT_1400300d8 * DAT_1400300dc;
+  local_588 = 0;
+  local_580 = 0;
+  local_578 = 0;
+  local_570 = 0;
+  local_568 = 0;
+  local_560 = 0;
+  local_558 = 0;
+  local_550 = 0.0;
+  local_548 = 0;
+  local_700 = operator_new__((ulonglong)uVar10);
+  local_6f8 = operator_new__((ulonglong)uVar10);
+  FUN_14000f9b0(local_3f8);
+  local_70 = DAT_1400300a0;
+  ppppppplVar28 = ppppppplVar25;
+  ppppppplVar26 = ppppppplVar25;
+  iVar30 = DAT_140030edc;
+  if (0 < DAT_140030edc) {
+    do {
+      lVar19 = (longlong)*(int *)((longlong)ppppppplVar28 + DAT_140030f18);
+      if ((lVar19 < 0) || (DAT_140030100 <= lVar19)) {
+        AfxThrowInvalidArgException();
+        pcVar5 = (code *)swi(3);
+        uVar15 = (*pcVar5)();
+        return uVar15;
+      }
+      puVar12 = (undefined8 *)(DAT_1400300f8 + lVar19 * 8);
+      if (local_40 == local_48) {
+        FUN_14000c500(&local_50,local_48,puVar12);
+        iVar30 = DAT_140030edc;
+      }
+      else {
+        *local_48 = *puVar12;
+        local_48 = local_48 + 1;
+      }
+      uVar10 = (int)ppppppplVar26 + 1;
+      ppppppplVar28 = (longlong *******)((longlong)ppppppplVar28 + 4);
+      ppppppplVar26 = (longlong *******)(ulonglong)uVar10;
+    } while ((int)uVar10 < iVar30);
+  }
+  iVar30 = DAT_1400300d0 * DAT_1400300d4;
+  auVar6._8_8_ = 0;
+  auVar6._0_8_ = (longlong)iVar30;
+  _Var14 = SUB168(ZEXT816(0x10) * auVar6,0);
+  if (SUB168(ZEXT816(0x10) * auVar6,8) != 0) {
+    _Var14 = 0xffffffffffffffff;
+  }
+  local_720 = operator_new__(_Var14);
+  lVar19 = DAT_140030ec0;
+  iVar7 = DAT_1400300d4;
+  if (0 < iVar30) {
+    puVar27 = (undefined4 *)((longlong)local_720 + 8);
+    iVar31 = 1 - DAT_1400300d4;
+    ppppppplVar28 = ppppppplVar25;
+    iVar29 = -1;
+    do {
+      iVar1 = iVar29 + 1;
+      uVar3 = *(undefined4 *)(lVar19 + 4 + (longlong)ppppppplVar28 * 8);
+      uVar4 = *(undefined4 *)(lVar19 + (longlong)ppppppplVar28 * 8);
+      puVar27[-2] = iVar1;
+      *puVar27 = uVar4;
+      puVar27[1] = uVar3;
+      if (iVar1 % iVar7 == 0) {
+        iVar29 = iVar31 + iVar29;
+        if (iVar29 < 1) {
+          iVar29 = 0;
+        }
+        puVar27[-1] = iVar29;
+      }
+      else {
+        if (iVar29 < 1) {
+          iVar29 = 0;
+        }
+        puVar27[-1] = iVar29;
+      }
+      ppppppplVar28 = (longlong *******)((longlong)ppppppplVar28 + 1);
+      puVar27 = puVar27 + 4;
+      iVar29 = iVar1;
+    } while ((longlong)ppppppplVar28 < (longlong)iVar30);
+  }
+  local_478 = _DAT_140030158;
+  uStack_470 = _DAT_140030160;
+  local_468 = _DAT_140030168;
+  uStack_460 = DAT_140030170;
+  local_648 = CONCAT44(_DAT_140030d64,_DAT_140030d60);
+  uStack_640 = uRam0000000140030d68;
+  local_638 = CONCAT44(uRam0000000140030d74,_DAT_140030d70);
+  uStack_630 = uRam0000000140030d78;
+  uStack_620 = CONCAT44(uRam0000000140030d8c,_DAT_140030d88);
+  local_628 = _DAT_140030d80;
+  local_618 = CONCAT44(uRam0000000140030d94,_DAT_140030d90);
+  uStack_610 = uRam0000000140030d98;
+  local_608 = _DAT_140030da0;
+  uStack_600 = uRam0000000140030da8;
+  local_5f8 = CONCAT44(_DAT_140030db4,_DAT_140030db0);
+  uStack_5f0 = CONCAT44(_DAT_140030dbc,_DAT_140030db8);
+  local_5e8 = _DAT_140030dc0;
+  uStack_5e0 = uRam0000000140030dc8;
+  local_5d8 = _DAT_140030dd0;
+  uStack_5d0 = uRam0000000140030dd8;
+  uStack_5c0 = CONCAT44(DAT_140030dec,_DAT_140030de8);
+  local_5c8 = _DAT_140030de0;
+  local_5b8 = _DAT_140030df0;
+  uStack_5b0 = DAT_140030df8;
+  local_5a8 = DAT_140030e00;
+  uStack_5a0 = _DAT_140030e08;
+  local_598 = _DAT_140030e10;
+  local_6e8 = DAT_140030e20;
+  pcStack_6e0 = DAT_140030e28;
+  local_6d8 = DAT_140030e30;
+  pvStack_6d0 = DAT_140030e38;
+  local_6c8 = DAT_140030e40;
+  pvStack_6c0 = DAT_140030e48;
+  local_6b8 = DAT_140030e50;
+  pcStack_6b0 = DAT_140030e58;
+  local_6a8 = DAT_140030e60;
+  pvStack_6a0 = DAT_140030e68;
+  local_698 = DAT_140030e70;
+  pcStack_690 = DAT_140030e78;
+  local_688 = DAT_140030e80;
+  pvStack_680 = DAT_140030e88;
+  local_678 = DAT_140030e90;
+  pcStack_670 = DAT_140030e98;
+  local_668 = DAT_140030ea0;
+  pvStack_660 = DAT_140030ea8;
+  local_658 = DAT_140030eb0;
+  local_518 = (longlong *******)CONCAT44(_DAT_140030144,_DAT_140030140);
+  lStack_510 = CONCAT44(DAT_14003014c,DAT_140030148);
+  local_508 = DAT_140030150;
+  iVar30 = FUN_140008080(local_3f8,&local_518,&local_6e8,&local_648,&local_478,(longlong)local_720,
+                         iVar30,(longlong *)&local_700,(longlong)&local_588);
+  local_528 = 0;
+  uStack_520 = 0xf;
+  local_538 = (longlong *******)((ulonglong)local_538 & 0xffffffffffffff00);
+  FUN_14000cca0((longlong *)&local_538,&DAT_140026ad0,1);
+  plVar16 = FUN_140005930((longlong *)&local_478,local_580._4_4_);
+  local_488 = 0;
+  uStack_480 = 0xf;
+  local_498[0]._0_1_ = 0;
+  FUN_14000cca0(local_498,", hight = ",10);
+  plVar17 = FUN_140005930((longlong *)&local_438,(long)local_580);
+  local_4a8 = 0;
+  uStack_4a0 = 0xf;
+  local_4b8 = 0;
+  pcVar21 = "[Stitch_C++]finish stitching dll:stitchingResult width =";
+  FUN_14000cca0((longlong *)&local_4b8,"[Stitch_C++]finish stitching dll:stitchingResult width =",
+                0x38);
+  uVar15 = plVar17[2];
+  if ((uStack_4a0 - local_4a8 < uVar15) && (local_4a8 <= plVar17[3] - uVar15)) {
+    puVar12 = (undefined8 *)&local_4b8;
+    if (0xf < uStack_4a0) {
+      puVar12 = (undefined8 *)CONCAT71(uStack_4b7,local_4b8);
+    }
+    plVar17 = FUN_14000c7a0(plVar17,pcVar21,puVar12,local_4a8);
+  }
+  else {
+    if (0xf < (ulonglong)plVar17[3]) {
+      plVar17 = (longlong *)*plVar17;
+    }
+    plVar17 = FUN_14000cb80((longlong *)&local_4b8,plVar17,uVar15);
+  }
+  local_4d8 = (longlong *******)*plVar17;
+  lStack_4d0 = plVar17[1];
+  local_4c8 = plVar17[2];
+  puVar22 = (undefined1 *)plVar17[3];
+  plVar17[2] = 0;
+  plVar17[3] = 0xf;
+  *(undefined1 *)plVar17 = 0;
+  puStack_4c0 = puVar22;
+  if (((longlong)puVar22 - local_4c8 < local_488) && (local_4c8 <= uStack_480 - local_488)) {
+    ppppppplVar28 = (longlong *******)&local_4d8;
+    if ((undefined1 *)0xf < puVar22) {
+      ppppppplVar28 = local_4d8;
+    }
+    plVar17 = FUN_14000c7a0(local_498,puVar22,ppppppplVar28,local_4c8);
+  }
+  else {
+    puVar22 = (undefined1 *)local_498;
+    if (0xf < uStack_480) {
+      puVar22 = (undefined1 *)CONCAT71(local_498[0]._1_7_,(undefined1)local_498[0]);
+    }
+    plVar17 = FUN_14000cb80((longlong *)&local_4d8,puVar22,local_488);
+  }
+  local_4f8 = (longlong *******)*plVar17;
+  lStack_4f0 = plVar17[1];
+  local_4e8 = plVar17[2];
+  uStack_4e0 = plVar17[3];
+  plVar17[2] = 0;
+  plVar17[3] = 0xf;
+  *(undefined1 *)plVar17 = 0;
+  uVar15 = plVar16[2];
+  if ((uStack_4e0 - local_4e8 < uVar15) && (local_4e8 <= plVar16[3] - uVar15)) {
+    ppppppplVar28 = (longlong *******)&local_4f8;
+    if (0xf < uStack_4e0) {
+      ppppppplVar28 = local_4f8;
+    }
+    plVar17 = FUN_14000c7a0(plVar16,puVar22,ppppppplVar28,local_4e8);
+  }
+  else {
+    if (0xf < (ulonglong)plVar16[3]) {
+      plVar16 = (longlong *)*plVar16;
+    }
+    plVar17 = FUN_14000cb80((longlong *)&local_4f8,plVar16,uVar15);
+  }
+  local_518 = (longlong *******)*plVar17;
+  lStack_510 = plVar17[1];
+  local_508 = plVar17[2];
+  uStack_500 = plVar17[3];
+  plVar17[2] = 0;
+  plVar17[3] = 0xf;
+  *(undefined1 *)plVar17 = 0;
+  if ((uStack_500 - local_508 < local_528) && (local_508 <= uStack_520 - local_528)) {
+    ppppppplVar28 = (longlong *******)&local_518;
+    if (0xf < uStack_500) {
+      ppppppplVar28 = local_518;
+    }
+    ppppppplVar26 = (longlong *******)&local_538;
+    plVar17 = FUN_14000c7a0(ppppppplVar26,uStack_500,ppppppplVar28,local_508);
+  }
+  else {
+    ppppppplVar28 = (longlong *******)&local_538;
+    if (0xf < uStack_520) {
+      ppppppplVar28 = local_538;
+    }
+    ppppppplVar26 = (longlong *******)&local_518;
+    plVar17 = FUN_14000cb80((longlong *)ppppppplVar26,ppppppplVar28,local_528);
+  }
+  local_458 = (undefined8 *******)*plVar17;
+  lStack_450 = plVar17[1];
+  local_448 = plVar17[2];
+  uStack_440 = plVar17[3];
+  plVar17[2] = 0;
+  plVar17[3] = 0xf;
+  *(undefined1 *)plVar17 = 0;
+  local_418 = local_458;
+  lStack_410 = lStack_450;
+  local_408 = local_448;
+  uStack_400 = uStack_440;
+  if (0xf < uStack_500) {
+    ppppppplVar26 = local_518;
+    if ((0xfff < uStack_500 + 1) &&
+       (ppppppplVar26 = (longlong *******)local_518[-1],
+       0x1f < (ulonglong)((longlong)local_518 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_508 = 0;
+  uStack_500 = 0xf;
+  local_518 = (longlong *******)((ulonglong)local_518 & 0xffffffffffffff00);
+  if (0xf < uStack_4e0) {
+    ppppppplVar26 = local_4f8;
+    if ((0xfff < uStack_4e0 + 1) &&
+       (ppppppplVar26 = (longlong *******)local_4f8[-1],
+       0x1f < (ulonglong)((longlong)local_4f8 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_4e8 = 0;
+  uStack_4e0 = 0xf;
+  local_4f8 = (longlong *******)((ulonglong)local_4f8 & 0xffffffffffffff00);
+  if ((undefined1 *)0xf < puStack_4c0) {
+    ppppppplVar26 = local_4d8;
+    if (((undefined1 *)0xfff < puStack_4c0 + 1) &&
+       (ppppppplVar26 = (longlong *******)local_4d8[-1],
+       0x1f < (ulonglong)((longlong)local_4d8 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_4c8 = 0;
+  puStack_4c0 = (undefined1 *)0xf;
+  local_4d8 = (longlong *******)((ulonglong)local_4d8 & 0xffffffffffffff00);
+  if (0xf < uStack_4a0) {
+    ppppppplVar28 = (longlong *******)CONCAT71(uStack_4b7,local_4b8);
+    ppppppplVar26 = ppppppplVar28;
+    if ((0xfff < uStack_4a0 + 1) &&
+       (ppppppplVar26 = (longlong *******)ppppppplVar28[-1],
+       0x1f < (ulonglong)((longlong)ppppppplVar28 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_4a8 = 0;
+  uStack_4a0 = 0xf;
+  local_4b8 = 0;
+  if (0xf < uStack_420) {
+    ppppppplVar28 = (longlong *******)CONCAT71(uStack_437,local_438);
+    ppppppplVar26 = ppppppplVar28;
+    if ((0xfff < uStack_420 + 1) &&
+       (ppppppplVar26 = (longlong *******)ppppppplVar28[-1],
+       0x1f < (ulonglong)((longlong)ppppppplVar28 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_428 = 0;
+  uStack_420 = 0xf;
+  local_438 = 0;
+  if (0xf < uStack_480) {
+    ppppppplVar28 = (longlong *******)CONCAT71(local_498[0]._1_7_,(undefined1)local_498[0]);
+    ppppppplVar26 = ppppppplVar28;
+    if ((0xfff < uStack_480 + 1) &&
+       (ppppppplVar26 = (longlong *******)ppppppplVar28[-1],
+       0x1f < (ulonglong)((longlong)ppppppplVar28 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_488 = 0;
+  uStack_480 = 0xf;
+  local_498[0]._0_1_ = 0;
+  if (0xf < uStack_460) {
+    ppppppplVar26 = local_478;
+    if ((0xfff < uStack_460 + 1) &&
+       (ppppppplVar26 = (longlong *******)local_478[-1],
+       0x1f < (ulonglong)((longlong)local_478 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  local_468 = 0;
+  uStack_460 = 0xf;
+  local_478 = (longlong *******)((ulonglong)local_478 & 0xffffffffffffff00);
+  if (0xf < uStack_520) {
+    ppppppplVar26 = local_538;
+    if ((0xfff < uStack_520 + 1) &&
+       (ppppppplVar26 = (longlong *******)local_538[-1],
+       0x1f < (ulonglong)((longlong)local_538 + (-8 - (longlong)ppppppplVar26)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppppplVar26);
+  }
+  uVar9 = uStack_440;
+  uVar15 = local_448;
+  pppppppuVar8 = local_458;
+  local_528 = 0;
+  uStack_520 = 0;
+  pppppppuVar24 = &local_418;
+  if (0xf < uStack_440) {
+    pppppppuVar24 = local_458;
+  }
+  if (local_448 < 0x10) {
+    local_538 = (longlong *******)*pppppppuVar24;
+    ppppppuStack_530 = pppppppuVar24[1];
+    uStack_520 = 0xf;
+  }
+  else {
+    uVar23 = local_448 | 0xf;
+    if (0x7fffffffffffffff < uVar23) {
+      uVar23 = 0x7fffffffffffffff;
+    }
+    uVar2 = uVar23 + 1;
+    if (uVar2 < 0x1000) {
+      ppppppplVar26 = ppppppplVar25;
+      if (uVar2 != 0) {
+        ppppppplVar26 = operator_new(uVar2);
+      }
+    }
+    else {
+      uVar20 = uVar23 + 0x28;
+      if (uVar20 <= uVar2) {
+        uVar20 = 0xffffffffffffffff;
+      }
+      pppppplVar18 = operator_new(uVar20);
+      if (pppppplVar18 == (longlong ******)0x0) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      ppppppplVar26 = (longlong *******)((longlong)pppppplVar18 + 0x27U & 0xffffffffffffffe0);
+      ppppppplVar26[-1] = pppppplVar18;
+    }
+    local_538 = ppppppplVar26;
+    memcpy(ppppppplVar26,pppppppuVar24,uVar15 + 1);
+    uStack_520 = uVar23;
+  }
+  local_528 = uVar15;
+  FUN_140005ad0(ppppppplVar26,(longlong *)&local_538);
+  DAT_140030ed4 = (long)local_580;
+  DAT_140030ed0 = local_580._4_4_;
+  DAT_1400300c0 = local_550;
+  DAT_1400300b0 = (1.0 / local_550) * DAT_1400300e8;
+  DAT_1400300a8 = (1.0 / local_550) * DAT_1400300e0;
+  DAT_1400300a0 = local_70;
+  operator_delete__(local_700);
+  operator_delete__(local_6f8);
+  operator_delete__(DAT_140030e20);
+  operator_delete__(DAT_140030e28);
+  operator_delete__(DAT_140030e30);
+  operator_delete__(DAT_140030e38);
+  operator_delete__(DAT_140030e40);
+  operator_delete__(DAT_140030e48);
+  operator_delete__(DAT_140030e50);
+  operator_delete__(DAT_140030e60);
+  operator_delete__(DAT_140030e68);
+  operator_delete__(DAT_140030e70);
+  operator_delete__(DAT_140030e58);
+  operator_delete__(DAT_140030e78);
+  operator_delete__(DAT_140030e80);
+  operator_delete__(DAT_140030e88);
+  operator_delete__(DAT_140030e90);
+  operator_delete__(DAT_140030e98);
+  operator_delete__(DAT_140030ea0);
+  operator_delete__(DAT_140030ea8);
+  operator_delete__(DAT_140030eb0);
+  operator_delete__(local_720);
+  FUN_14000feb0(local_3f8);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_708);
+  if (0xf < uVar9) {
+    pppppppuVar24 = pppppppuVar8;
+    if ((0xfff < uVar9 + 1) &&
+       (pppppppuVar24 = (undefined8 *******)pppppppuVar8[-1],
+       0x1f < (ulonglong)((longlong)pppppppuVar8 + (-8 - (longlong)pppppppuVar24)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(pppppppuVar24);
+  }
+  return (ulonglong)(iVar30 == 0);
+}
+

@@ -1,0 +1,246 @@
+// ev_b28983bf89a6f28ecaeb257f439dfe93b1e867e246a0d32a22aa3ce7e959c88f
+// 0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d
+
+METHOD Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService::_GetAnnotationAcquitionOffset 0x0600004a
+0000 ldc.i4.0  
+0001 stloc.1  
+0002 call 0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_AcquisitionConditionDao
+0007 callvirt 0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0012 stloc.2  
+0013 call 0x0a000331 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFineDao
+0018 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0023 stloc.3  
+0024 ldarg.1  
+0025 callvirt 0x0a000206 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquistionCommonSettingInfo::get_ImageType
+0030 brtrue.s 44 
+0032 ldc.r8 0 
+0041 stloc.0  
+0042 br.s 101 
+0044 ldloc.2  
+0045 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0050 brfalse.s 61 
+0052 ldloc.2  
+0053 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0058 ldc.i4.2  
+0059 bne.un.s 83 
+0061 ldloc.3  
+0062 callvirt 0x0a000334 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamStabilize
+0067 ldstr 0x70000349 'ON'
+0072 call 0x0a000335 System.String::op_Equality
+0077 brfalse.s 101 
+0079 ldc.i4.1  
+0080 stloc.1  
+0081 br.s 101 
+0083 call 0x0a000336 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFastDao
+0088 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0093 stloc.3  
+0094 ldloc.3  
+0095 callvirt 0x0a000337 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamIsStabilizer
+0100 stloc.1  
+0101 ldloc.1  
+0102 brfalse.s 127 
+0104 ldarg.2  
+0105 brfalse.s 117 
+0107 ldloc.3  
+0108 callvirt 0x0a000338 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamXLimit
+0113 conv.r8  
+0114 stloc.0  
+0115 br.s 137 
+0117 ldloc.3  
+0118 callvirt 0x0a000339 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamYLimit
+0123 conv.r8  
+0124 stloc.0  
+0125 br.s 137 
+0127 ldc.r8 0 
+0136 stloc.0  
+0137 ldloc.0  
+0138 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService::_GetExtendBlurCorrection 0x06000070
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 call 0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_AcquisitionConditionDao
+0007 callvirt 0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0012 stloc.1  
+0013 ldloc.1  
+0014 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0019 brfalse.s 30 
+0021 ldloc.1  
+0022 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0027 ldc.i4.2  
+0028 bne.un.s 63 
+0030 call 0x0a000331 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFineDao
+0035 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0040 stloc.2  
+0041 ldloc.2  
+0042 callvirt 0x0a000334 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamStabilize
+0047 ldstr 0x70000349 'ON'
+0052 call 0x0a000335 System.String::op_Equality
+0057 brfalse.s 81 
+0059 ldc.i4.1  
+0060 stloc.0  
+0061 br.s 81 
+0063 call 0x0a000336 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFastDao
+0068 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0073 stloc.2  
+0074 ldloc.2  
+0075 callvirt 0x0a000337 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamIsStabilizer
+0080 stloc.0  
+0081 ldloc.0  
+0082 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService::_GetExtendBlurCorrectionValue 0x06000071
+0000 call 0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_AcquisitionConditionDao
+0005 callvirt 0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0010 stloc.0  
+0011 ldloc.0  
+0012 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0017 brfalse.s 28 
+0019 ldloc.0  
+0020 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0025 ldc.i4.2  
+0026 bne.un.s 59 
+0028 call 0x0a000331 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFineDao
+0033 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0038 stloc.1  
+0039 ldloc.1  
+0040 callvirt 0x0a000334 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamStabilize
+0045 ldstr 0x70000349 'ON'
+0050 call 0x0a000335 System.String::op_Equality
+0055 brfalse.s 77 
+0057 br.s 77 
+0059 call 0x0a000336 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFastDao
+0064 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0069 stloc.1  
+0070 ldloc.1  
+0071 callvirt 0x0a000337 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamIsStabilizer
+0076 pop  
+0077 ldloc.1  
+0078 callvirt 0x0a000338 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamXLimit
+0083 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService::_GetExtendImageResolution 0x0600007f
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 call 0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_AcquisitionConditionDao
+0007 callvirt 0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0012 stloc.1  
+0013 ldloc.1  
+0014 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0019 brfalse.s 30 
+0021 ldloc.1  
+0022 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0027 ldc.i4.2  
+0028 bne.un.s 63 
+0030 call 0x0a000331 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFineDao
+0035 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0040 stloc.2  
+0041 ldloc.2  
+0042 callvirt 0x0a000334 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamStabilize
+0047 ldstr 0x70000349 'ON'
+0052 call 0x0a000335 System.String::op_Equality
+0057 brfalse.s 81 
+0059 ldc.i4.1  
+0060 stloc.0  
+0061 br.s 81 
+0063 call 0x0a000336 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFastDao
+0068 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0073 stloc.2  
+0074 ldloc.2  
+0075 callvirt 0x0a000337 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamIsStabilizer
+0080 stloc.0  
+0081 ldarg.0  
+0082 ldarg.1  
+0083 ldarg.2  
+0084 ldarg.3  
+0085 ldarg.s 4 
+0087 call 0x06000080 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService::_GetImageResolution
+0092 ldloc.0  
+0093 brfalse.s 134 
+0095 ldarg.3  
+0096 dup  
+0097 ldind.r8  
+0098 ldarg.1  
+0099 ldloc.2  
+0100 callvirt 0x0a000338 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamXLimit
+0105 ldc.i4.2  
+0106 mul  
+0107 sub  
+0108 conv.r8  
+0109 ldarg.1  
+0110 conv.r8  
+0111 div  
+0112 mul  
+0113 stind.r8  
+0114 ldarg.s 4 
+0116 dup  
+0117 ldind.r8  
+0118 ldarg.2  
+0119 ldloc.2  
+0120 callvirt 0x0a000339 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamYLimit
+0125 ldc.i4.2  
+0126 mul  
+0127 sub  
+0128 conv.r8  
+0129 ldarg.2  
+0130 conv.r8  
+0131 div  
+0132 mul  
+0133 stind.r8  
+0134 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinService::_GetExtendImageResolution 0x060000a8
+0000 call 0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_AcquisitionConditionDao
+0005 callvirt 0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0010 stloc.0  
+0011 ldloc.0  
+0012 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0017 brfalse.s 28 
+0019 ldloc.0  
+0020 callvirt 0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition::get_ExtendMode
+0025 ldc.i4.2  
+0026 bne.un.s 41 
+0028 call 0x0a000331 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFineDao
+0033 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0038 stloc.1  
+0039 br.s 52 
+0041 call 0x0a000336 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExtendFocusImageParamFastDao
+0046 callvirt 0x0a000332 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0051 stloc.1  
+0052 ldarg.0  
+0053 ldarg.1  
+0054 ldarg.2  
+0055 ldarg.3  
+0056 ldarg.s 4 
+0058 call 0x060000a9 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinService::_GetImageResolution
+0063 ldarg.3  
+0064 dup  
+0065 ldind.r8  
+0066 ldarg.1  
+0067 ldloc.1  
+0068 callvirt 0x0a000338 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamXLimit
+0073 ldc.i4.2  
+0074 mul  
+0075 sub  
+0076 conv.r8  
+0077 ldarg.1  
+0078 conv.r8  
+0079 div  
+0080 mul  
+0081 stind.r8  
+0082 ldarg.s 4 
+0084 dup  
+0085 ldind.r8  
+0086 ldarg.2  
+0087 ldloc.1  
+0088 callvirt 0x0a000339 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamYLimit
+0093 ldc.i4.2  
+0094 mul  
+0095 sub  
+0096 conv.r8  
+0097 ldarg.2  
+0098 conv.r8  
+0099 div  
+0100 mul  
+0101 stind.r8  
+0102 ret  

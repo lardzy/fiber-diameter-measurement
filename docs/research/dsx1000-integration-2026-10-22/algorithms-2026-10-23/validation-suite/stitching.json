@@ -1,0 +1,571 @@
+{
+  "schema": "dsx-stitching-independent-validation-v1",
+  "utc": "2026-10-22T18:23:16.471759+00:00",
+  "seed": 20261023,
+  "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:07:20) [Clang 20.1.8 ]",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "dependencies": {
+    "numpy": "2.4.3",
+    "opencv": "4.13.0",
+    "scipy": "1.18.1"
+  },
+  "sources": {
+    "run_reference_tests.py": "9e7069b6a3960225f541553c2ba4ea35720f9fd7622e244a149b5a8c9db74816",
+    "reference_prototype.py": "4b679dd972ecff3081c8627dfcb1e4042f096f5d2ce814ed5cdc5de0a9600b63"
+  },
+  "input": {
+    "path": "fixtures/synthetic-inputs.npz",
+    "sha256": "6505dfe46cb58944b3ec9159cfd13e089acadbf3eac07e5c71b18b9754d306b4"
+  },
+  "grid_input": {
+    "path": "fixtures/grid-inputs.npz",
+    "sha256": "db96d2ca344368bbd6c79c6b59ddf27675a1280714a121ed2ae2131b32f954d7",
+    "seed": 20261024
+  },
+  "scope": "independent synthetic algorithms only; no original executable or DLL invoked",
+  "not_vendor_equivalence": true,
+  "passed": 39,
+  "total": 39,
+  "tests": [
+    {
+      "name": "composite textured even-pixel ground truth",
+      "pass": true,
+      "details": {
+        "x": 16,
+        "y": 12,
+        "cost": 0.0,
+        "min_vote_value": 0.9991760128175784,
+        "equal_minima": 1
+      }
+    },
+    {
+      "name": "cosine invariance to positive exposure multiplier",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "cosine is sensitive to additive offset",
+      "pass": true,
+      "details": {
+        "cost": 0.016291495569953907
+      }
+    },
+    {
+      "name": "zero-energy ROI reports maximal cost",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "odd displacement limitation is exposed",
+      "pass": true,
+      "details": {
+        "expected": [
+          17,
+          13
+        ],
+        "actual": {
+          "x": 20,
+          "y": 18,
+          "cost": 0.2286021438217407,
+          "min_vote_value": 0.9991302357518883,
+          "equal_minima": 1
+        },
+        "limitation": "2-pixel grid cannot represent odd displacement"
+      }
+    },
+    {
+      "name": "periodic wrong matches pass texture gate",
+      "pass": true,
+      "details": {
+        "x": 0,
+        "y": 0,
+        "cost": 0.0,
+        "min_vote_value": 0.762951094834821,
+        "equal_minima": 44
+      }
+    },
+    {
+      "name": "unrelated high contrast can pass MinVote",
+      "pass": true,
+      "details": {
+        "x": 6,
+        "y": 14,
+        "cost": 0.21965924421930771,
+        "min_vote_value": 0.9991760128175784,
+        "equal_minima": 1
+      }
+    },
+    {
+      "name": "correct low-contrast match rejected by MinVote",
+      "pass": true,
+      "details": {
+        "x": 16,
+        "y": 12,
+        "cost": 0.0,
+        "min_vote_value": 0.009991760128175804,
+        "equal_minima": 1
+      }
+    },
+    {
+      "name": "MinVote exact boundary is rejected",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "out-of-range ROI explicit gap",
+      "pass": true,
+      "details": {
+        "expected_error": "partial-border ROI branch is not implemented"
+      }
+    },
+    {
+      "name": "shared normalization preserves tile brightness difference",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "flat normalization explicit numerical guard",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "feather reduces overlap discontinuity",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "paint-order direct override",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "fourth-power weights favor interior",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "count truncation uses latest covering tiles",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "weight threshold shortcut",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "border exclusive extent asymmetry",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "blend handles uint16 above byte range",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "height additive seam recovered",
+      "pass": true,
+      "details": {
+        "offset": -3.499999999999999
+      }
+    },
+    {
+      "name": "height offset cannot repair tilt",
+      "pass": true,
+      "details": {
+        "remaining_max_error": 2.990000000000001,
+        "offset": -3.6899999999999995
+      }
+    },
+    {
+      "name": "empty height overlap fails explicitly",
+      "pass": true,
+      "details": {
+        "expected_error": "nonempty equal-size overlap required"
+      }
+    },
+    {
+      "name": "invalid height requires mask",
+      "pass": true,
+      "details": {
+        "expected_error": "nonfinite height requires an explicit invalid-data mask"
+      }
+    },
+    {
+      "name": "loop closure distributes inconsistency",
+      "pass": true,
+      "details": {
+        "positions": [
+          -0.33333333333333764,
+          9.999999999999998,
+          20.333333333333332
+        ],
+        "components": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "rank": 3,
+        "objective": 0.33333333333333215,
+        "edge_weights": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "residuals": [
+          0.3333333333333357,
+          0.3333333333333339,
+          -0.3333333333333286
+        ],
+        "gauge": "analyst component centroid; vendor objective is unanchored",
+        "zero_score_edges_are_retained": true
+      }
+    },
+    {
+      "name": "zero-score bad edge still biases result",
+      "pass": true,
+      "details": {
+        "good": {
+          "positions": [
+            -2.701370029635918e-15,
+            10.000000000000002,
+            20.0
+          ],
+          "components": [
+            [
+              0,
+              1,
+              2
+            ]
+          ],
+          "rank": 3,
+          "objective": 3.155443620884047e-29,
+          "edge_weights": [
+            1.0,
+            1.0
+          ],
+          "residuals": [
+            5.329070518200751e-15,
+            -1.7763568394002505e-15
+          ],
+          "gauge": "analyst component centroid; vendor objective is unanchored",
+          "zero_score_edges_are_retained": true
+        },
+        "bad": {
+          "positions": [
+            -4.635254915624204,
+            10.000000000000005,
+            24.63525491562422
+          ],
+          "components": [
+            [
+              0,
+              1,
+              2
+            ]
+          ],
+          "rank": 3,
+          "objective": 139.05764746872632,
+          "edge_weights": [
+            1.0,
+            1.0,
+            0.22360679774997896
+          ],
+          "residuals": [
+            4.635254915624209,
+            4.635254915624214,
+            -20.729490168751575
+          ],
+          "gauge": "analyst component centroid; vendor objective is unanchored",
+          "zero_score_edges_are_retained": true
+        },
+        "limitation": "zero score is downweighted, never deleted"
+      }
+    },
+    {
+      "name": "disconnected graph and isolated tile explicit gauges",
+      "pass": true,
+      "details": {
+        "positions": [
+          0.49999999999999845,
+          9.499999999999998,
+          99.49999999999994,
+          110.49999999999996,
+          500.0
+        ],
+        "components": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            4
+          ]
+        ],
+        "rank": 5,
+        "objective": 2.0194839173657902e-28,
+        "edge_weights": [
+          1.0,
+          1.0
+        ],
+        "residuals": [
+          0.0,
+          1.4210854715202004e-14
+        ],
+        "gauge": "analyst component centroid; vendor objective is unanchored",
+        "zero_score_edges_are_retained": true
+      }
+    },
+    {
+      "name": "invalid edge identity fails",
+      "pass": true,
+      "details": {
+        "expected_error": "invalid graph edge"
+      }
+    },
+    {
+      "name": "hardware exact identity when no edges",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "OLS centroid exposes measurable fractional bias",
+      "pass": true,
+      "details": {
+        "shift": [
+          3.0397156468660143,
+          -2.0916132701859453
+        ],
+        "score": 0.9794226682989849,
+        "status": "centroid",
+        "ground_truth": [
+          3.3,
+          -2.4
+        ],
+        "error": 0.4035471714828193
+      }
+    },
+    {
+      "name": "OLS amplitude-fit fractional Fourier-shift image",
+      "pass": true,
+      "details": {
+        "shift": [
+          3.299967623923625,
+          -2.3999693069540777
+        ],
+        "score": 0.9998674408929831,
+        "status": "fit",
+        "fit_rms": 3.2604252615159464e-05,
+        "nfev": 5,
+        "ground_truth": [
+          3.3,
+          -2.4
+        ],
+        "error": 4.461248019801769e-05
+      }
+    },
+    {
+      "name": "OLS LPF integer translation",
+      "pass": true,
+      "details": {
+        "shift": [
+          -6.000000000001318,
+          3.999999999998682
+        ],
+        "score": 0.9999080459076393,
+        "status": "fit",
+        "fit_rms": 3.953358098706035e-05,
+        "nfev": 4
+      }
+    },
+    {
+      "name": "OLS dark image has rejected score",
+      "pass": true,
+      "details": {
+        "shift": [
+          32.0,
+          32.0
+        ],
+        "score": 0.0,
+        "status": "centroid"
+      }
+    },
+    {
+      "name": "phase restricted search cannot recover large motion",
+      "pass": true,
+      "details": {
+        "shift": [
+          11.97698129966328,
+          3.4397267918391634
+        ],
+        "score": 2.016263982487062e-18,
+        "status": "centroid",
+        "limitation": "search window excludes true displacement"
+      }
+    },
+    {
+      "name": "OLS gate rejects both lower and upper boundaries",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "hardware transform excludes synthetic outlier",
+      "pass": true,
+      "details": {
+        "parameters": [
+          1.999999999999991,
+          -2.9999999999999787,
+          1.02,
+          0.9799999999999999,
+          0.0249999999999999
+        ],
+        "inliers": [
+          true,
+          true,
+          true,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true
+        ],
+        "rms": 1.4989244362817607e-14
+      }
+    },
+    {
+      "name": "hardware collinear degeneracy explicit analyst guard",
+      "pass": true,
+      "details": {
+        "expected_error": "degenerate geometry; analyst guard"
+      }
+    },
+    {
+      "name": "hardware too few points not falsely recovered",
+      "pass": true,
+      "details": {
+        "expected_error": "at least 3 paired 2-D points"
+      }
+    },
+    {
+      "name": "3x3 end-to-end overlap phase graph and feather",
+      "pass": true,
+      "details": {
+        "position_errors_px": [
+          0.023695187140791718,
+          0.026858566182292824,
+          0.07370707008317431,
+          0.03161991034306766,
+          0.05100596662819792,
+          0.057384668390987416,
+          0.04531737659177244,
+          0.027620257636950155,
+          0.06102109044445794
+        ],
+        "rounded_exact": true,
+        "mosaic_mae": 0.0,
+        "accepted_pairs": 12,
+        "total_pairs": 12,
+        "positions": [
+          [
+            0.023695187140791718,
+            0.0
+          ],
+          [
+            64.00171554562726,
+            0.02680372139404119
+          ],
+          [
+            128.07281205353036,
+            0.011451508238591979
+          ],
+          [
+            0.0,
+            64.03161991034307
+          ],
+          [
+            64.05100504492681,
+            63.99969336717256
+          ],
+          [
+            128.04756763649777,
+            64.03209860003737
+          ],
+          [
+            0.04531378201194586,
+            128.00057077222635
+          ],
+          [
+            64.02206179905741,
+            128.0166179317089
+          ],
+          [
+            128.0609490070447,
+            127.99703486605794
+          ]
+        ],
+        "scores": [
+          0.8923097374562028,
+          0.8483872562128808,
+          0.8849133060761677,
+          0.8774967803621029,
+          0.858080741070541,
+          0.922132060795367,
+          0.9637004665655318,
+          0.8877697626827558,
+          0.8883521778498661,
+          0.8932450791155049,
+          0.8762595937348074,
+          0.9495372977104776
+        ]
+      }
+    },
+    {
+      "name": "3x3 dark tile failure retains explicit disconnected component",
+      "pass": true,
+      "details": {
+        "components": [
+          [
+            0,
+            1,
+            2,
+            3,
+            5,
+            6,
+            7,
+            8
+          ],
+          [
+            4
+          ]
+        ],
+        "rejected": [
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            7,
+            4
+          ]
+        ],
+        "mode": "explicit improvement: reject failed edges"
+      }
+    }
+  ]
+}

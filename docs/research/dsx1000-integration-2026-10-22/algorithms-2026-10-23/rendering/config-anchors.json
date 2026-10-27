@@ -1,0 +1,11 @@
+{
+  "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/DSX-BSW-APP.exe.config",
+  "sha256": "61e32d3d8e68a96d4018d901602b4252359122fe37886133f69184964be461c4",
+  "anchors": [
+    {
+      "line": 150,
+      "text": "<add key=\"ThreeDAutoDepthFactor\" value=\"4.0\"/>"
+    }
+  ],
+  "scope": "read-only file identity and selected literal, not proof of runtime override"
+}

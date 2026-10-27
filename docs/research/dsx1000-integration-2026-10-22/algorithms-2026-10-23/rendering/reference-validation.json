@@ -1,0 +1,114 @@
+{
+  "status": "passed",
+  "scope": "Independent synthetic renderer math; no DSX or Direct3D runtime",
+  "numpy": "2.4.3",
+  "opencv": "4.13.0",
+  "checks": [
+    {
+      "name": "landscape_1024_resampling",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Observed normalization, not original image size"
+    },
+    {
+      "name": "small_images_upsampled",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Code is fixed long edge, not a maximum cap"
+    },
+    {
+      "name": "wire_interval_multiple",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Rounded dimensions before mesh sampling"
+    },
+    {
+      "name": "analytic_plane_normals",
+      "passed": true,
+      "error": 1.1102230246251565e-16,
+      "limit": 1e-12,
+      "meaning": "Independent normal direction from physical derivatives"
+    },
+    {
+      "name": "triangle_count",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Two triangles per grid quad"
+    },
+    {
+      "name": "triangle_index_range",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "No out-of-range vertex indices"
+    },
+    {
+      "name": "mask_mode_distinction",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Display-like full grid and scientific hole-preserving option explicitly differ"
+    },
+    {
+      "name": "auto_exaggeration_formula",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Display height exaggeration is not measured geometry"
+    },
+    {
+      "name": "height_scale_and_clamp",
+      "passed": true,
+      "error": 0.0,
+      "limit": 1e-05,
+      "meaning": "Calibration and display clipping both included"
+    },
+    {
+      "name": "display_axis_mapping",
+      "passed": true,
+      "error": 2.980232227667301e-09,
+      "limit": 1e-05,
+      "meaning": "Row->X, column->Y, negative displayed Z"
+    },
+    {
+      "name": "reverse_only_display",
+      "passed": true,
+      "error": 0.0,
+      "limit": 1e-05,
+      "meaning": "Reverse changes displayed elevation, not source heights"
+    },
+    {
+      "name": "mesh_sample_count",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Buffer dimensions and interval sampling"
+    },
+    {
+      "name": "sphere_nan_mask_to_mesh",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Surface sphere output can flow into scientific hole mesh; invalid vertices are unreferenced placeholders"
+    },
+    {
+      "name": "nonfinite_valid_point_rejected",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Mask cannot declare a nonfinite height valid"
+    },
+    {
+      "name": "oversized_interval_rejected",
+      "passed": true,
+      "error": 0.0,
+      "limit": 0,
+      "meaning": "Reject zero-sized aligned image before OpenCV"
+    }
+  ],
+  "source_sha256": "723d83553f566f7f445f59a82b3ea81ee6a4373fc12a8e1a758b1806fddb5fdb"
+}

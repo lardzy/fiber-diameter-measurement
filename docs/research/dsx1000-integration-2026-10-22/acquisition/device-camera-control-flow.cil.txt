@@ -1,0 +1,293 @@
+EVIDENCE ev_a6e39f1bc4f47017a22e7f595e5bf75abb1cfc7f72f32b1ad192428600c879fa SHA256 19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955
+
+METHOD 0x0600007a Olympus.LI.Triumph.Device.Camera.ACameraBase SiaCapture IL_SHA256 4a3a95247bf0d611311b0861eecf55f41634208ee339054ea93f8591373126c7 DECODE_ISSUE null
+{"offset":0,"opcode":"ldstr","operandKind":"string","operand":"0x70002cca"} "SiaCapture()"
+{"offset":5,"opcode":"call","operandKind":"method","operand":"0x0a000019"} Olympus.Mis.Core.Logging.Logger.CameraInfoLog
+{"offset":10,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":11,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"conv.i8","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"stfld","operandKind":"field","operand":"0x04000063"} Olympus.LI.Triumph.Device.Camera.ACameraBase._i64FrameNo
+{"offset":18,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":19,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":20,"opcode":"ldc.i4.3","operandKind":"none","operand":null} 
+{"offset":21,"opcode":"call","operandKind":"method","operand":"0x06000168"} Olympus.LI.Triumph.Device.Camera.ACameraBase._SetCameraState
+{"offset":26,"opcode":"beq.s","operandKind":"branch","operand":"69"} 
+{"offset":28,"opcode":"newobj","operandKind":"method","operand":"0x0a000016"} System.Text.StringBuilder..ctor
+{"offset":33,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":34,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":35,"opcode":"ldstr","operandKind":"string","operand":"0x70002ce4"} "SiaCapture() status error. The current status is {0}"
+{"offset":40,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":41,"opcode":"ldfld","operandKind":"field","operand":"0x0400005e"} Olympus.LI.Triumph.Device.Camera.ACameraBase._emCurrentState
+{"offset":46,"opcode":"box","operandKind":"type","operand":"0x01000029"} 
+{"offset":51,"opcode":"callvirt","operandKind":"method","operand":"0x0a000017"} System.Text.StringBuilder.AppendFormat
+{"offset":56,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":57,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":58,"opcode":"callvirt","operandKind":"method","operand":"0x0a000018"} System.Object.ToString
+{"offset":63,"opcode":"newobj","operandKind":"method","operand":"0x0a000021"} Olympus.LI.Triumph.Device.Exception.CameraStatusException..ctor
+{"offset":68,"opcode":"throw","operandKind":"none","operand":null} 
+{"offset":69,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":70,"opcode":"call","operandKind":"method","operand":"0x0a000025"} System.DateTime.get_Now
+{"offset":75,"opcode":"stfld","operandKind":"field","operand":"0x0400003c"} Olympus.LI.Triumph.Device.Camera.ACameraBase._dtSnapStartTime
+{"offset":80,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":81,"opcode":"call","operandKind":"method","operand":"0x06000146"} Olympus.LI.Triumph.Device.Camera.ACameraBase.DplibCamSiaCapture
+{"offset":86,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":87,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":89,"opcode":"call","operandKind":"method","operand":"0x06000169"} Olympus.LI.Triumph.Device.Camera.ACameraBase._CheckDpCameraError
+{"offset":94,"opcode":"ldstr","operandKind":"string","operand":"0x70002d4e"} "SiaCapture() return"
+{"offset":99,"opcode":"call","operandKind":"method","operand":"0x0a000019"} Olympus.Mis.Core.Logging.Logger.CameraInfoLog
+{"offset":104,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x0600007e Olympus.LI.Triumph.Device.Camera.ACameraBase _OnCapturedCallbackProcess IL_SHA256 082fda3344e2fa686733edb10662cd52daba8cd609e63e80add71b4b33088e6c DECODE_ISSUE null
+{"offset":0,"opcode":"newobj","operandKind":"method","operand":"0x0a000016"} System.Text.StringBuilder..ctor
+{"offset":5,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":6,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":7,"opcode":"ldstr","operandKind":"string","operand":"0x70002e6e"} "Start _OnCapturedCallbackProcess "
+{"offset":12,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"newarr","operandKind":"type","operand":"0x01000001"} 
+{"offset":18,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001f"} System.Text.StringBuilder.AppendFormat
+{"offset":23,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":24,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldstr","operandKind":"string","operand":"0x70002eb2"} "dtTime = ["
+{"offset":30,"opcode":"call","operandKind":"method","operand":"0x0a000025"} System.DateTime.get_Now
+{"offset":35,"opcode":"box","operandKind":"type","operand":"0x01000012"} 
+{"offset":40,"opcode":"ldstr","operandKind":"string","operand":"0x70002ec8"} "] "
+{"offset":45,"opcode":"call","operandKind":"method","operand":"0x0a00004e"} System.String.Concat
+{"offset":50,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":51,"opcode":"newarr","operandKind":"type","operand":"0x01000001"} 
+{"offset":56,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001f"} System.Text.StringBuilder.AppendFormat
+{"offset":61,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":62,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":63,"opcode":"callvirt","operandKind":"method","operand":"0x0a000018"} System.Object.ToString
+{"offset":68,"opcode":"call","operandKind":"method","operand":"0x0a000019"} Olympus.Mis.Core.Logging.Logger.CameraInfoLog
+{"offset":73,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":74,"opcode":"callvirt","operandKind":"method","operand":"0x0a000052"} System.Text.StringBuilder.Clear
+{"offset":79,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":80,"opcode":"call","operandKind":"method","operand":"0x0a000025"} System.DateTime.get_Now
+{"offset":85,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":86,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":87,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"ldfld","operandKind":"field","operand":"0x0400003c"} Olympus.LI.Triumph.Device.Camera.ACameraBase._dtSnapStartTime
+{"offset":93,"opcode":"call","operandKind":"method","operand":"0x0a00003d"} System.DateTime.op_Subtraction
+{"offset":98,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":99,"opcode":"call","operandKind":"method","operand":"0x0a000046"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+{"offset":104,"opcode":"callvirt","operandKind":"method","operand":"0x0a000064"} Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetCamSnapBufferHeader
+{"offset":109,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":110,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":111,"opcode":"newobj","operandKind":"method","operand":"0x0600026f"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs..ctor
+{"offset":116,"opcode":"stloc.s","operandKind":"variable","operand":"4"} 
+{"offset":118,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":120,"opcode":"ldc.i4.3","operandKind":"none","operand":null} 
+{"offset":121,"opcode":"callvirt","operandKind":"method","operand":"0x06000277"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs.set_CamByte
+{"offset":126,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":128,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":129,"opcode":"callvirt","operandKind":"method","operand":"0x06000273"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs.set_EMId
+{"offset":134,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":136,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":137,"opcode":"callvirt","operandKind":"method","operand":"0x06000281"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs.set_CallBackTime
+{"offset":142,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":144,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":145,"opcode":"callvirt","operandKind":"method","operand":"0x06000285"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs.set_SnapDeviceTimeSpan
+{"offset":150,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":152,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":153,"opcode":"ldfld","operandKind":"field","operand":"0x04000062"} Olympus.LI.Triumph.Device.Camera.ACameraBase._sclsConfInfo
+{"offset":158,"opcode":"callvirt","operandKind":"method","operand":"0x060002b6"} Olympus.LI.Triumph.Device.Camera.ConfidenceInfo.get_CiaXSize
+{"offset":163,"opcode":"callvirt","operandKind":"method","operand":"0x06000279"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs.set_XSize
+{"offset":168,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":170,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":171,"opcode":"ldfld","operandKind":"field","operand":"0x04000062"} Olympus.LI.Triumph.Device.Camera.ACameraBase._sclsConfInfo
+{"offset":176,"opcode":"callvirt","operandKind":"method","operand":"0x060002b8"} Olympus.LI.Triumph.Device.Camera.ConfidenceInfo.get_CiaYSize
+{"offset":181,"opcode":"callvirt","operandKind":"method","operand":"0x0600027b"} Olympus.LI.Triumph.Device.Camera.Parameter.InputSnapEventArgs.set_YSize
+{"offset":186,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":187,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":188,"opcode":"call","operandKind":"method","operand":"0x06000168"} Olympus.LI.Triumph.Device.Camera.ACameraBase._SetCameraState
+{"offset":193,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":194,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":195,"opcode":"ldloc.s","operandKind":"variable","operand":"4"} 
+{"offset":197,"opcode":"call","operandKind":"method","operand":"0x0600007f"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnInputSnap
+{"offset":202,"opcode":"leave.s","operandKind":"branch","operand":"253"} 
+{"offset":204,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":205,"opcode":"ldfld","operandKind":"field","operand":"0x0400003b"} Olympus.LI.Triumph.Device.Camera.ACameraBase._ewhWaitForSnapStart
+{"offset":210,"opcode":"callvirt","operandKind":"method","operand":"0x0a00002b"} System.Threading.EventWaitHandle.Set
+{"offset":215,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":216,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":217,"opcode":"ldstr","operandKind":"string","operand":"0x70002ece"} "End _OnCapturedCallbackProcess "
+{"offset":222,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":223,"opcode":"newarr","operandKind":"type","operand":"0x01000001"} 
+{"offset":228,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001f"} System.Text.StringBuilder.AppendFormat
+{"offset":233,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":234,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":235,"opcode":"callvirt","operandKind":"method","operand":"0x0a000018"} System.Object.ToString
+{"offset":240,"opcode":"call","operandKind":"method","operand":"0x0a000019"} Olympus.Mis.Core.Logging.Logger.CameraInfoLog
+{"offset":245,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":246,"opcode":"callvirt","operandKind":"method","operand":"0x0a000052"} System.Text.StringBuilder.Clear
+{"offset":251,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":252,"opcode":"endfinally","operandKind":"none","operand":null} 
+{"offset":253,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x0600007f Olympus.LI.Triumph.Device.Camera.ACameraBase _OnInputSnap IL_SHA256 3ff0a36047e230f4ea72c747ff104538651e24fcf2cdf6fa3ef56004b63aadb5 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":2,"opcode":"callvirt","operandKind":"method","operand":"0x06000080"} Olympus.LI.Triumph.Device.Camera.ACameraBase.PreOnInputSnap
+{"offset":7,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":9,"opcode":"call","operandKind":"method","operand":"0x06000081"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OutLogInputSnapEvent
+{"offset":14,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":15,"opcode":"ldfld","operandKind":"field","operand":"0x0400003d"} Olympus.LI.Triumph.Device.Camera.ACameraBase._inputSnapEventHandler
+{"offset":20,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":21,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":22,"opcode":"brfalse.s","operandKind":"branch","operand":"32"} 
+{"offset":24,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":26,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":27,"opcode":"callvirt","operandKind":"method","operand":"0x0a000065"} System.EventHandler`1.Invoke
+{"offset":32,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000105 Olympus.LI.Triumph.Device.Camera.ACameraBase DplibCamRegisterCallback IL_SHA256 da607c177546abc940d5c81018899e8afa3fc19b2ca29d83a687d522aaeb5e0f DECODE_ISSUE null
+{"offset":0,"opcode":"newobj","operandKind":"method","operand":"0x0a000016"} System.Text.StringBuilder..ctor
+{"offset":5,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":6,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":7,"opcode":"ldstr","operandKind":"string","operand":"0x70004d85"} "DplibCamOnRegisterCallback(System.IntPtr pFunc = {0}, System.IntPtr pUser = {1})"
+{"offset":12,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"box","operandKind":"type","operand":"0x0100005d"} 
+{"offset":18,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":19,"opcode":"box","operandKind":"type","operand":"0x0100005d"} 
+{"offset":24,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001d"} System.Text.StringBuilder.AppendFormat
+{"offset":29,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":30,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":31,"opcode":"callvirt","operandKind":"method","operand":"0x0a000018"} System.Object.ToString
+{"offset":36,"opcode":"call","operandKind":"method","operand":"0x0a000019"} Olympus.Mis.Core.Logging.Logger.CameraInfoLog
+{"offset":41,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":42,"opcode":"call","operandKind":"method","operand":"0x06000154"} Olympus.LI.Triumph.Device.Camera.ACameraBase._RaiseExceptionIfCameraIsInvalid
+{"offset":47,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":48,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":49,"opcode":"call","operandKind":"method","operand":"0x060000fc"} Olympus.LI.Triumph.Device.Camera.ACameraBase.get_CameraObject
+{"offset":54,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":55,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":56,"opcode":"call","operandKind":"method","operand":"0x060001ef"} Olympus.LI.Triumph.Device.Camera.NativeMethods.CAM_RegisterCallbackEx
+{"offset":61,"opcode":"beq.s","operandKind":"branch","operand":"76"} 
+{"offset":63,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":64,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":65,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":66,"opcode":"ldloca.s","operandKind":"variable","operand":"1"} 
+{"offset":68,"opcode":"callvirt","operandKind":"method","operand":"0x06000108"} Olympus.LI.Triumph.Device.Camera.ACameraBase.DplibCamGetLastError
+{"offset":73,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":74,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":75,"opcode":"ret","operandKind":"none","operand":null} 
+{"offset":76,"opcode":"ldstr","operandKind":"string","operand":"0x70004e28"} "DplibCamOnRegisterCallback() return"
+{"offset":81,"opcode":"call","operandKind":"method","operand":"0x0a000019"} Olympus.Mis.Core.Logging.Logger.CameraInfoLog
+{"offset":86,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":87,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000146 Olympus.LI.Triumph.Device.Camera.ACameraBase DplibCamSiaCapture IL_SHA256 72146c1c0523ef57b20fdcf3fe0928f2acad948a489acfdd7dd778797ebfbb68 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"call","operandKind":"method","operand":"0x06000154"} Olympus.LI.Triumph.Device.Camera.ACameraBase._RaiseExceptionIfCameraIsInvalid
+{"offset":6,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":7,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"call","operandKind":"method","operand":"0x060000fc"} Olympus.LI.Triumph.Device.Camera.ACameraBase.get_CameraObject
+{"offset":13,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":14,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":15,"opcode":"ldfld","operandKind":"field","operand":"0x0400005b"} Olympus.LI.Triumph.Device.Camera.ACameraBase._pCamSnapBuff
+{"offset":20,"opcode":"call","operandKind":"method","operand":"0x0600024a"} Olympus.LI.Triumph.Device.Camera.NativeMethods.CAM_SIA_CaptureEx
+{"offset":25,"opcode":"beq.s","operandKind":"branch","operand":"40"} 
+{"offset":27,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":28,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":29,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":30,"opcode":"ldloca.s","operandKind":"variable","operand":"0"} 
+{"offset":32,"opcode":"callvirt","operandKind":"method","operand":"0x06000108"} Olympus.LI.Triumph.Device.Camera.ACameraBase.DplibCamGetLastError
+{"offset":37,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":38,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":39,"opcode":"ret","operandKind":"none","operand":null} 
+{"offset":40,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":41,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x060001ce Olympus.LI.Triumph.Device.Camera.DPController _CallbackCamera IL_SHA256 766cad3aee363de3700cb59c856ac0edb06e236fd54b73f186a59b32102e6bf2 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":2,"opcode":"call","operandKind":"method","operand":"0x060001d1"} Olympus.LI.Triumph.Device.Camera.DPController._GetCallbackProcessTable
+{"offset":7,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":9,"opcode":"brfalse.s","operandKind":"branch","operand":"26"} 
+{"offset":11,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":12,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":14,"opcode":"ldarg.3","operandKind":"none","operand":null} 
+{"offset":15,"opcode":"ldarg.s","operandKind":"variable","operand":"4"} 
+{"offset":17,"opcode":"ldarg.s","operandKind":"variable","operand":"5"} 
+{"offset":19,"opcode":"ldarg.s","operandKind":"variable","operand":"6"} 
+{"offset":21,"opcode":"callvirt","operandKind":"method","operand":"0x060001dd"} _dgtDpCameraCallBack.Invoke
+{"offset":26,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x060001d0 Olympus.LI.Triumph.Device.Camera.DPController _SetCallbackProcessTable IL_SHA256 4dca76400c272ce849f1d3253a9e4bd7a3eb2a099e8b77fbdb0b15f41158abb0 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":2,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":7,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"ldftn","operandKind":"method","operand":"0x060001cf"} Olympus.LI.Triumph.Device.Camera.DPController._OnInitializedCallbackProcess
+{"offset":14,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":19,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":24,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"ldc.i4.2","operandKind":"none","operand":null} 
+{"offset":26,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":31,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":32,"opcode":"ldfld","operandKind":"field","operand":"0x04000110"} Olympus.LI.Triumph.Device.Camera.DPController._clsCameraInstance
+{"offset":37,"opcode":"ldftn","operandKind":"method","operand":"0x060000cc"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnLiveFrameTransferCallbackProcess
+{"offset":43,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":48,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":53,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":54,"opcode":"ldc.i4.3","operandKind":"none","operand":null} 
+{"offset":55,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":60,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":61,"opcode":"ldfld","operandKind":"field","operand":"0x04000110"} Olympus.LI.Triumph.Device.Camera.DPController._clsCameraInstance
+{"offset":66,"opcode":"ldftn","operandKind":"method","operand":"0x0600007e"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnCapturedCallbackProcess
+{"offset":72,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":77,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":82,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":83,"opcode":"ldc.i4.s","operandKind":"constant","operand":"19"} 
+{"offset":85,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":90,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":91,"opcode":"ldfld","operandKind":"field","operand":"0x04000111"} Olympus.LI.Triumph.Device.Camera.DPController._clsDpLinkPort
+{"offset":96,"opcode":"ldftn","operandKind":"method","operand":"0x0600025a"} Olympus.LI.Triumph.Device.Camera.DPLinkPort._OnCommandSentByDpLinkProcess
+{"offset":102,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":107,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":112,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":113,"opcode":"ldc.i4.s","operandKind":"constant","operand":"18"} 
+{"offset":115,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":120,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":121,"opcode":"ldfld","operandKind":"field","operand":"0x04000111"} Olympus.LI.Triumph.Device.Camera.DPController._clsDpLinkPort
+{"offset":126,"opcode":"ldftn","operandKind":"method","operand":"0x0600025b"} Olympus.LI.Triumph.Device.Camera.DPLinkPort._OnResponseReceivedByDpLinkProcess
+{"offset":132,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":137,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":142,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":143,"opcode":"ldc.i4.7","operandKind":"none","operand":null} 
+{"offset":144,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":149,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":150,"opcode":"ldfld","operandKind":"field","operand":"0x04000110"} Olympus.LI.Triumph.Device.Camera.DPController._clsCameraInstance
+{"offset":155,"opcode":"ldftn","operandKind":"method","operand":"0x06000020"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnRecordFrameTransferCallbackProcess
+{"offset":161,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":166,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":171,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":172,"opcode":"ldc.i4.8","operandKind":"none","operand":null} 
+{"offset":173,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":178,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":179,"opcode":"ldfld","operandKind":"field","operand":"0x04000110"} Olympus.LI.Triumph.Device.Camera.DPController._clsCameraInstance
+{"offset":184,"opcode":"ldftn","operandKind":"method","operand":"0x06000021"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnRecordStopCallbackProcess
+{"offset":190,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":195,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":200,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":201,"opcode":"ldc.i4.s","operandKind":"constant","operand":"9"} 
+{"offset":203,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":208,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":209,"opcode":"ldfld","operandKind":"field","operand":"0x04000110"} Olympus.LI.Triumph.Device.Camera.DPController._clsCameraInstance
+{"offset":214,"opcode":"ldftn","operandKind":"method","operand":"0x06000022"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnRecordAllCHStopCallbackProcess
+{"offset":220,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":225,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":230,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":231,"opcode":"ldc.i4.s","operandKind":"constant","operand":"10"} 
+{"offset":233,"opcode":"box","operandKind":"type","operand":"0x01000017"} 
+{"offset":238,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":239,"opcode":"ldfld","operandKind":"field","operand":"0x04000110"} Olympus.LI.Triumph.Device.Camera.DPController._clsCameraInstance
+{"offset":244,"opcode":"ldftn","operandKind":"method","operand":"0x06000023"} Olympus.LI.Triumph.Device.Camera.ACameraBase._OnRecordFinishCallbackProcess
+{"offset":250,"opcode":"newobj","operandKind":"method","operand":"0x060001dc"} _dgtDpCameraCallBack..ctor
+{"offset":255,"opcode":"callvirt","operandKind":"method","operand":"0x0a0000a8"} System.Collections.Hashtable.Add
+{"offset":260,"opcode":"ret","operandKind":"none","operand":null} 

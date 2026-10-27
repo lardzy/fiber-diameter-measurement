@@ -1,0 +1,20 @@
+Evidence: ev_da1fa35cf2f8563df5546aaded07f2480d8e5b9bd89f5c51300bfb403940bacd
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+bool FUN_14012df90(double param_1,double param_2)
+
+{
+  double dVar1;
+  double dVar2;
+  
+  dVar1 = (ABS(param_1) * DAT_1401c70f8) / 1000.0;
+  dVar2 = (ABS(param_2) * DAT_1401c70f0) / 1000.0;
+  if (0 < DAT_1401c71e0) {
+    dVar1 = sqrt(dVar2 * dVar2 + dVar1 * dVar1);
+    return DAT_1401c9b08 < dVar1;
+  }
+  return false;
+}
+

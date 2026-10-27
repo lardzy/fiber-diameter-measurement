@@ -1,0 +1,151 @@
+EVIDENCE ev_24a221a19a0268e311c802c076fa435586198dfa3b238878f45d11cf71640553 SHA256 cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc
+
+METHOD 0x06000007 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIUtil SetParamFromIniFile IL_SHA256 9984d992e1d3478015d25e1e10e8ba6dc5d8c3632dff59970a9befb02a3680df DECODE_ISSUE null
+{"offset":0,"opcode":"newobj","operandKind":"method","operand":"0x0a000027"} <>c__DisplayClass3`1..ctor
+{"offset":5,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":6,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":7,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":8,"opcode":"stfld","operandKind":"field","operand":"0x0a000028"} <>c__DisplayClass3`1.param
+{"offset":13,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":14,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":15,"opcode":"stfld","operandKind":"field","operand":"0x0a000029"} <>c__DisplayClass3`1.inifile
+{"offset":20,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":21,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":22,"opcode":"stfld","operandKind":"field","operand":"0x0a00002a"} <>c__DisplayClass3`1.section
+{"offset":27,"opcode":"ldc.i4.s","operandKind":"constant","operand":"52"} 
+{"offset":29,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":30,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":31,"opcode":"ldflda","operandKind":"field","operand":"0x0a000028"} <>c__DisplayClass3`1.param
+{"offset":36,"opcode":"constrained.","operandKind":"type","operand":"0x1b000006"} 
+{"offset":42,"opcode":"callvirt","operandKind":"method","operand":"0x0a00002b"} System.Object.GetType
+{"offset":47,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":48,"opcode":"callvirt","operandKind":"method","operand":"0x0a00002c"} System.Type.GetProperties
+{"offset":53,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":54,"opcode":"ldftn","operandKind":"method","operand":"0x0a00002d"} <>c__DisplayClass3`1.<SetParamFromIniFile>b__2
+{"offset":60,"opcode":"newobj","operandKind":"method","operand":"0x0a00002e"} System.Action`1..ctor
+{"offset":65,"opcode":"call","operandKind":"method","operand":"0x2b000001"} System.Array.ForEach
+{"offset":70,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000087 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam .cctor IL_SHA256 a7e5e36cd50115b4d90bd98d51cb681186cf9e343d2ebf18bd8cb7f26a860a7b DECODE_ISSUE null
+{"offset":0,"opcode":"ldstr","operandKind":"string","operand":"0x7000008f"} "EFIParam\\"
+{"offset":5,"opcode":"stsfld","operandKind":"field","operand":"0x04000078"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam._EFI_PARAM_PATH_WORKDIR
+{"offset":10,"opcode":"ldstr","operandKind":"string","operand":"0x700000a3"} "EFIParamDefault.ini"
+{"offset":15,"opcode":"stsfld","operandKind":"field","operand":"0x04000079"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam._EFI_DEFAULTPARAM_FILE_NAME
+{"offset":20,"opcode":"ldstr","operandKind":"string","operand":"0x700000cb"} "Input"
+{"offset":25,"opcode":"stsfld","operandKind":"field","operand":"0x0400007a"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam._PARAM_INI_SECTION_NAME_INPUT
+{"offset":30,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000090 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo GetDebugInfo IL_SHA256 bb59ed70bc05df199fc887cd6522c816734a93a5d509a1ae89d0af76cb75c625 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldsfld","operandKind":"field","operand":"0x04000078"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam._EFI_PARAM_PATH_WORKDIR
+{"offset":6,"opcode":"ldsfld","operandKind":"field","operand":"0x04000079"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDefaultParam._EFI_DEFAULTPARAM_FILE_NAME
+{"offset":11,"opcode":"call","operandKind":"method","operand":"0x0a000044"} System.String.Concat
+{"offset":16,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":17,"opcode":"ldsfld","operandKind":"field","operand":"0x040000a8"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo._PARAM_INI_SECTION_NAME_DEBUG
+{"offset":22,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":23,"opcode":"newobj","operandKind":"method","operand":"0x06000091"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo..ctor
+{"offset":28,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":29,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":30,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":31,"opcode":"callvirt","operandKind":"method","operand":"0x0600008b"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.set_ImageWidth
+{"offset":36,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":37,"opcode":"ldarg.2","operandKind":"none","operand":null} 
+{"offset":38,"opcode":"callvirt","operandKind":"method","operand":"0x0600008d"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.set_ImageHeight
+{"offset":43,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":44,"opcode":"ldarg.3","operandKind":"none","operand":null} 
+{"offset":45,"opcode":"callvirt","operandKind":"method","operand":"0x0600008f"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo.set_ImageBitNum
+{"offset":50,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":51,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":52,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":53,"opcode":"call","operandKind":"method","operand":"0x2b000005"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIUtil.SetParamFromIniFile
+{"offset":58,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":59,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x06000092 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo .cctor IL_SHA256 92d2fbdcecfe734c9436fe36cbbc3a9019cd926effdd2df838466c17832bfa6e DECODE_ISSUE null
+{"offset":0,"opcode":"ldstr","operandKind":"string","operand":"0x700000d7"} "Debug"
+{"offset":5,"opcode":"stsfld","operandKind":"field","operand":"0x040000a8"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIDebugInfo._PARAM_INI_SECTION_NAME_DEBUG
+{"offset":10,"opcode":"ret","operandKind":"none","operand":null} 
+
+METHOD 0x060000ab <>c__DisplayClass3`1 <SetParamFromIniFile>b__2 IL_SHA256 10a98de005a626605612dfc9a172acb3fa8ca777ebdf3f701a9a5bcf9262d651 DECODE_ISSUE null
+{"offset":0,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":1,"opcode":"ldfld","operandKind":"field","operand":"0x0a000015"} <>c__DisplayClass3`1.inifile
+{"offset":6,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":7,"opcode":"ldfld","operandKind":"field","operand":"0x0a000016"} <>c__DisplayClass3`1.section
+{"offset":12,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":13,"opcode":"callvirt","operandKind":"method","operand":"0x0a000017"} System.Reflection.MemberInfo.get_Name
+{"offset":18,"opcode":"call","operandKind":"method","operand":"0x0a000018"} Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.ReadIniFile
+{"offset":23,"opcode":"stloc.0","operandKind":"none","operand":null} 
+{"offset":24,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":25,"opcode":"call","operandKind":"method","operand":"0x0a000019"} System.String.IsNullOrEmpty
+{"offset":30,"opcode":"brtrue","operandKind":"branch","operand":"208"} 
+{"offset":35,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":36,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001a"} System.Reflection.PropertyInfo.get_PropertyType
+{"offset":41,"opcode":"stloc.1","operandKind":"none","operand":null} 
+{"offset":42,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":43,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":44,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":45,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001b"} System.Type.get_IsPrimitive
+{"offset":50,"opcode":"brfalse.s","operandKind":"branch","operand":"62"} 
+{"offset":52,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":53,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":54,"opcode":"call","operandKind":"method","operand":"0x0a00001c"} System.Convert.ChangeType
+{"offset":59,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":60,"opcode":"br.s","operandKind":"branch","operand":"94"} 
+{"offset":62,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":63,"opcode":"callvirt","operandKind":"method","operand":"0x0a00001d"} System.Type.get_IsClass
+{"offset":68,"opcode":"brfalse.s","operandKind":"branch","operand":"80"} 
+{"offset":70,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":71,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":72,"opcode":"call","operandKind":"method","operand":"0x0a00001c"} System.Convert.ChangeType
+{"offset":77,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":78,"opcode":"br.s","operandKind":"branch","operand":"94"} 
+{"offset":80,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":81,"opcode":"ldloc.0","operandKind":"none","operand":null} 
+{"offset":82,"opcode":"call","operandKind":"method","operand":"0x0a00001e"} System.Enum.Parse
+{"offset":87,"opcode":"ldloc.1","operandKind":"none","operand":null} 
+{"offset":88,"opcode":"call","operandKind":"method","operand":"0x0a00001c"} System.Convert.ChangeType
+{"offset":93,"opcode":"stloc.2","operandKind":"none","operand":null} 
+{"offset":94,"opcode":"ldsfld","operandKind":"field","operand":"0x0a00001f"} <SetParamFromIniFile>o__SiteContainer0`1.<>p__Site1
+{"offset":99,"opcode":"brtrue.s","operandKind":"branch","operand":"175"} 
+{"offset":101,"opcode":"ldc.i4","operandKind":"constant","operand":"256"} 
+{"offset":106,"opcode":"ldstr","operandKind":"string","operand":"0x70000001"} "SetValue"
+{"offset":111,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":112,"opcode":"ldtoken","operandKind":"type","operand":"0x02000003"} Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIUtil
+{"offset":117,"opcode":"call","operandKind":"method","operand":"0x0a000020"} System.Type.GetTypeFromHandle
+{"offset":122,"opcode":"ldc.i4.3","operandKind":"none","operand":null} 
+{"offset":123,"opcode":"newarr","operandKind":"type","operand":"0x01000027"} 
+{"offset":128,"opcode":"stloc.3","operandKind":"none","operand":null} 
+{"offset":129,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":130,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":131,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":132,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":133,"opcode":"call","operandKind":"method","operand":"0x0a000021"} Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create
+{"offset":138,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":139,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":140,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":141,"opcode":"ldc.i4.1","operandKind":"none","operand":null} 
+{"offset":142,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":143,"opcode":"call","operandKind":"method","operand":"0x0a000021"} Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create
+{"offset":148,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":149,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":150,"opcode":"ldc.i4.2","operandKind":"none","operand":null} 
+{"offset":151,"opcode":"ldc.i4.0","operandKind":"none","operand":null} 
+{"offset":152,"opcode":"ldnull","operandKind":"none","operand":null} 
+{"offset":153,"opcode":"call","operandKind":"method","operand":"0x0a000021"} Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create
+{"offset":158,"opcode":"stelem.ref","operandKind":"none","operand":null} 
+{"offset":159,"opcode":"ldloc.3","operandKind":"none","operand":null} 
+{"offset":160,"opcode":"call","operandKind":"method","operand":"0x0a000022"} Microsoft.CSharp.RuntimeBinder.Binder.InvokeMember
+{"offset":165,"opcode":"call","operandKind":"method","operand":"0x0a000023"} System.Runtime.CompilerServices.CallSite`1.Create
+{"offset":170,"opcode":"stsfld","operandKind":"field","operand":"0x0a00001f"} <SetParamFromIniFile>o__SiteContainer0`1.<>p__Site1
+{"offset":175,"opcode":"ldsfld","operandKind":"field","operand":"0x0a00001f"} <SetParamFromIniFile>o__SiteContainer0`1.<>p__Site1
+{"offset":180,"opcode":"ldfld","operandKind":"field","operand":"0x0a000024"} System.Runtime.CompilerServices.CallSite`1.Target
+{"offset":185,"opcode":"ldsfld","operandKind":"field","operand":"0x0a00001f"} <SetParamFromIniFile>o__SiteContainer0`1.<>p__Site1
+{"offset":190,"opcode":"ldarg.1","operandKind":"none","operand":null} 
+{"offset":191,"opcode":"ldarg.0","operandKind":"none","operand":null} 
+{"offset":192,"opcode":"ldfld","operandKind":"field","operand":"0x0a000025"} <>c__DisplayClass3`1.param
+{"offset":197,"opcode":"ldloc.2","operandKind":"none","operand":null} 
+{"offset":198,"opcode":"callvirt","operandKind":"method","operand":"0x0a000026"} System.Action`4.Invoke
+{"offset":203,"opcode":"leave.s","operandKind":"branch","operand":"208"} 
+{"offset":205,"opcode":"pop","operandKind":"none","operand":null} 
+{"offset":206,"opcode":"leave.s","operandKind":"branch","operand":"208"} 
+{"offset":208,"opcode":"ret","operandKind":"none","operand":null} 

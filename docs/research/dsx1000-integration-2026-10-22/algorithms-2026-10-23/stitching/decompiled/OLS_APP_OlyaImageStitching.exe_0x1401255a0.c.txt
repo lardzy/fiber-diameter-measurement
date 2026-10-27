@@ -1,0 +1,29 @@
+Evidence: ev_b0a8d11060ca354d1c7af06c656d5f9f4c7294e0fc2457cb82840c1b404f9e8d
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+undefined8 * FUN_1401255a0(undefined8 *param_1,undefined8 param_2,undefined4 *param_3)
+
+{
+  Algorithm *pAVar1;
+  Algorithm *pAVar2;
+  undefined4 *puVar3;
+  
+  pAVar1 = (Algorithm *)Ordinal_1484(0xd8);
+  pAVar2 = (Algorithm *)0x0;
+  if (pAVar1 != (Algorithm *)0x0) {
+    pAVar2 = FUN_140126170(pAVar1,param_2,*param_3,param_3[1]);
+  }
+  *param_1 = pAVar2;
+  if (pAVar2 == (Algorithm *)0x0) {
+    param_1[1] = 0;
+  }
+  else {
+    puVar3 = cv::fastMalloc(4);
+    param_1[1] = puVar3;
+    *puVar3 = 1;
+  }
+  return param_1;
+}
+

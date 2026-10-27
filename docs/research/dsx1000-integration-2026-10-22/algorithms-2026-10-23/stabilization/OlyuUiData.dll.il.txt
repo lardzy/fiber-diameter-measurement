@@ -1,0 +1,94 @@
+// ev_06e2960bc201588960f5c7f1982113f134d7c23bbc512f3e4426592dc381eb40
+// 3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245
+
+METHOD Olympus.LI.Triumph.Application.UiData.ObservationCommonData::.ctor 0x06000bb9
+0000 ldarg.0  
+0001 ldc.r8 1920 
+0010 stfld 0x04000c4b Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblGraphicWidth
+0015 ldarg.0  
+0016 ldc.r8 1200 
+0025 stfld 0x04000c4c Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblGraphicHeight
+0030 ldarg.0  
+0031 ldc.r8 1024 
+0040 stfld 0x04000c4d Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblNormalDisplayWidth
+0045 ldarg.0  
+0046 ldc.r8 1024 
+0055 stfld 0x04000c4e Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblNormalDisplayHeight
+0060 ldarg.0  
+0061 ldc.r8 1600 
+0070 stfld 0x04000c4f Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblWideDisplayWidth
+0075 ldarg.0  
+0076 ldc.r8 1200 
+0085 stfld 0x04000c50 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblWideDisplayHeight
+0090 ldarg.0  
+0091 ldc.r8 1024 
+0100 stfld 0x04000c51 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblVisibleWidth
+0105 ldarg.0  
+0106 ldc.r8 768 
+0115 stfld 0x04000c52 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblVisibleHeight
+0120 ldarg.0  
+0121 ldc.r8 1045.787234042553 
+0130 stfld 0x04000c53 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblImageWidth
+0135 ldarg.0  
+0136 ldc.r8 1024.5333333333333 
+0145 stfld 0x04000c54 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblNonBlrCorrectionImageWidth
+0150 ldarg.0  
+0151 ldc.r8 784.3404255319149 
+0160 stfld 0x04000c55 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblImageHeight
+0165 ldarg.0  
+0166 ldc.r8 20 
+0175 stfld 0x04000c56 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblBlurCorrectionBufferSize
+0180 ldarg.0  
+0181 ldc.r8 1 
+0190 stfld 0x04000c57 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblDualScreenDisplaySizeRate
+0195 ldarg.0  
+0196 ldc.r8 1 
+0205 stfld 0x04000c58 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblDualScreenStillImageDisplaySizeRate
+0210 ldarg.0  
+0211 ldc.r8 1080 
+0220 stfld 0x04000c59 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblWideImageFrameScaleHeight
+0225 ldarg.0  
+0226 ldc.r8 1083 
+0235 stfld 0x04000c5b Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblNormalDisplaySettingFrameStartX
+0240 ldarg.0  
+0241 call 0x0a000011 System.Object::.ctor
+0246 ldarg.0  
+0247 ldarg.0  
+0248 call 0x06000be0 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_ImageWidth
+0253 call 0x06000bef Olympus.LI.Triumph.Application.UiData.ObservationCommonData::set_OriginalImageWidth
+0258 ldarg.0  
+0259 ldarg.0  
+0260 call 0x06000be4 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_ImageHeight
+0265 call 0x06000bf1 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::set_OriginalImageHeight
+0270 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiData.ObservationCommonData::set_BlurCorrectionBufferSize 0x06000be7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000c56 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblBlurCorrectionBufferSize
+0007 ldarg.0  
+0008 ldfld 0x04000c66 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dgtUpdateBlurCorrectionBufferSize
+0013 brfalse.s 29 
+0015 ldarg.0  
+0016 ldfld 0x04000c66 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dgtUpdateBlurCorrectionBufferSize
+0021 ldnull  
+0022 ldnull  
+0023 callvirt 0x06000c27 UpdateUiCommonData::BeginInvoke
+0028 pop  
+0029 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeX 0x06000bec
+0000 ldarg.0  
+0001 ldfld 0x04000c56 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblBlurCorrectionBufferSize
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeY 0x06000bed
+0000 ldarg.0  
+0001 ldfld 0x04000c56 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblBlurCorrectionBufferSize
+0006 ldarg.0  
+0007 ldfld 0x04000c4c Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblGraphicHeight
+0012 ldarg.0  
+0013 ldfld 0x04000c4b Olympus.LI.Triumph.Application.UiData.ObservationCommonData::_dblGraphicWidth
+0018 div  
+0019 mul  
+0020 ret  

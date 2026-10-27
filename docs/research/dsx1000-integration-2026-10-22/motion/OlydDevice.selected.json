@@ -1,0 +1,2351 @@
+{
+  "selection_only": true,
+  "evidence_id": "ev_c66f21c1077a53c53582e76d6e5227554440c9c3e2d311a0e8d689d59491cb0b",
+  "artifact": {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydDevice.dll",
+    "sha256": "5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d",
+    "byte_length": 14336,
+    "format": "pe"
+  },
+  "module": {
+    "name": "OlydDevice.dll",
+    "generation": 0,
+    "mvid": "2dd74228-d067-478d-bd8b-db92d7ad3634",
+    "enc_id": null,
+    "enc_base_id": null,
+    "token": "0x00000001",
+    "row_offset": 3728
+  },
+  "coverage": {
+    "state": "complete",
+    "issues": []
+  },
+  "limitations": [
+    "Metadata tokens are build-local coordinates and are only meaningful with the reported artifact SHA-256 and MVID.",
+    "CIL instruction anchors are decoded from file-backed method bodies only; no target assembly is loaded or executed.",
+    "Exported types are reported from ExportedType rows as declared; forwarded types are not resolved in their implementing assemblies.",
+    "User strings are the #US literals loaded by ldstr in the inspected method bodies, with their own coverage; instruction anchors and normalized CIL digests keep their build-local tokens.",
+    "Member signatures decode ECMA-335 primitive, class, valuetype, generic instantiation, generic variable, pointer, byref, single-dimension and general array, function pointer, custom modifier, and typed reference forms; class and valuetype operands keep their encoded TypeDefOrRefOrSpec values, and unsupported forms such as vararg sentinels retain raw signature hashes."
+  ],
+  "methods": [
+    {
+      "token": "0x0600001c",
+      "row_offset": 4744,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "WaitForAsyncCommandResponse",
+      "rva": 9452,
+      "impl_flags": 0,
+      "flags": 134,
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "82569dd2934d24c018b29f82ef3846474bc1370ae0b68fd2d9d985f662275959",
+        "resolved_sha256": "387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:28"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 9452,
+        "file_offset": 1772,
+        "max_stack": 2,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 88,
+        "il_sha256": "ae03436ef04da732cf12a24f1f9ed2dd445fc258f6ec6c631a3ad2d87b7bfdfc",
+        "normalized_il_sha256": "f8bb1f25b2b6add5aadae67285fda0806d8f4f8f4f94a7f86070d98af955c883",
+        "instruction_count": 29,
+        "decoded_instruction_count": 29,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldarg.1": 5,
+          "brtrue.s": 1,
+          "ldstr": 1,
+          "newobj": 1,
+          "throw": 1,
+          "callvirt": 8,
+          "ldtoken": 2,
+          "call": 2,
+          "brfalse.s": 2,
+          "ldarg.0": 2,
+          "pop": 2,
+          "ret": 2
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "brtrue.s",
+            "operand_kind": "branch",
+            "operand": "14"
+          },
+          {
+            "il_offset": 3,
+            "opcode": "ldstr",
+            "operand_kind": "string",
+            "operand": "0x70000127"
+          },
+          {
+            "il_offset": 8,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a000035"
+          },
+          {
+            "il_offset": 13,
+            "opcode": "throw",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 14,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 15,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 20,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000028"
+          },
+          {
+            "il_offset": 25,
+            "opcode": "ldtoken",
+            "operand_kind": "type",
+            "operand": "0x0100000e"
+          },
+          {
+            "il_offset": 30,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000036"
+          },
+          {
+            "il_offset": 35,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000037"
+          },
+          {
+            "il_offset": 40,
+            "opcode": "brfalse.s",
+            "operand_kind": "branch",
+            "operand": "51"
+          },
+          {
+            "il_offset": 42,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 43,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 44,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x06000024"
+          },
+          {
+            "il_offset": 49,
+            "opcode": "pop",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 50,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 51,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 52,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 57,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000028"
+          },
+          {
+            "il_offset": 62,
+            "opcode": "ldtoken",
+            "operand_kind": "type",
+            "operand": "0x0100000f"
+          },
+          {
+            "il_offset": 67,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000036"
+          },
+          {
+            "il_offset": 72,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000037"
+          },
+          {
+            "il_offset": 77,
+            "opcode": "brfalse.s",
+            "operand_kind": "branch",
+            "operand": "87"
+          },
+          {
+            "il_offset": 79,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 80,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 81,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x06000025"
+          },
+          {
+            "il_offset": 86,
+            "opcode": "pop",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 87,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "token": "0x0600001e",
+      "row_offset": 4772,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "SendRequest",
+      "rva": 9609,
+      "impl_flags": 0,
+      "flags": 452,
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "5df6f3e148f9a9b375e6ca5a80070a6a42e80f99771f4b795f6663f4bb73f780",
+        "resolved_sha256": "605999529bde6f65d215da9dfcc56b113f99d70e6f737680cc6d073db156ba39",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "i4",
+        "parameter_types": [
+          "class:57"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "tiny",
+        "rva": 9609,
+        "file_offset": 1929,
+        "max_stack": 8,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 13,
+        "il_sha256": "73b59f5ed83795cd50a0f6d426c796bab94da0a3d1097c18dedaa037fe036daf",
+        "normalized_il_sha256": "906cbbde1ac1cfe701dcb1a6cfa9b4ca044da1d581b38bb6038e9dc97238fe86",
+        "instruction_count": 5,
+        "decoded_instruction_count": 5,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldarg.0": 1,
+          "ldarg.1": 1,
+          "ldc.i4": 1,
+          "callvirt": 1,
+          "ret": 1
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 2,
+            "opcode": "ldc.i4",
+            "operand_kind": "constant",
+            "operand": "5000"
+          },
+          {
+            "il_offset": 7,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600001f"
+          },
+          {
+            "il_offset": 12,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "token": "0x0600001f",
+      "row_offset": 4786,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "SendRequest",
+      "rva": 9624,
+      "impl_flags": 0,
+      "flags": 452,
+      "signature": {
+        "raw_length": 6,
+        "raw_sha256": "da52fd766924770a5741f1290bfd2019d22553c84a86cfa56639ea2da810212d",
+        "resolved_sha256": "ad12f9b2190bbf2e968d20c547bed707178019bdca0c1788ec93909902f93cf1",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "i4",
+        "parameter_types": [
+          "class:57",
+          "i4"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 9624,
+        "file_offset": 1944,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100000a",
+        "il_size": 30,
+        "il_sha256": "3a6c937a3af91947071a80cb7caadf768f909342b6c3f28de915b5de4860fe50",
+        "normalized_il_sha256": "7b99a8ee5b5362e37cbc78196f74a0b00e67f311e37425579a7a183f3626bb82",
+        "instruction_count": 17,
+        "decoded_instruction_count": 17,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldnull": 1,
+          "stloc.0": 2,
+          "ldarg.0": 2,
+          "ldarg.1": 1,
+          "ldarg.2": 1,
+          "call": 1,
+          "ldloc.0": 2,
+          "callvirt": 2,
+          "stloc.1": 1,
+          "leave.s": 1,
+          "endfinally": 1,
+          "ldloc.1": 1,
+          "ret": 1
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldnull",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "stloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 2,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 3,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 4,
+            "opcode": "ldarg.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 5,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x06000022"
+          },
+          {
+            "il_offset": 10,
+            "opcode": "stloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 11,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 12,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 13,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x06000024"
+          },
+          {
+            "il_offset": 18,
+            "opcode": "stloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 19,
+            "opcode": "leave.s",
+            "operand_kind": "branch",
+            "operand": "28"
+          },
+          {
+            "il_offset": 21,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 22,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002e"
+          },
+          {
+            "il_offset": 27,
+            "opcode": "endfinally",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 28,
+            "opcode": "ldloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 29,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [
+          {
+            "flags": 2,
+            "try_offset": 2,
+            "try_length": 19,
+            "handler_offset": 21,
+            "handler_length": 7,
+            "class_token": null,
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    },
+    {
+      "token": "0x06000022",
+      "row_offset": 4828,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "AsyncSendCommand",
+      "rva": 9760,
+      "impl_flags": 0,
+      "flags": 132,
+      "signature": {
+        "raw_length": 7,
+        "raw_sha256": "d31fdd377a733974d741b1474768c706fd2eab038fb54e7994fb68dddca5a21b",
+        "resolved_sha256": "8eee5320e3fc533d712881919ab859b2b36b7a36147ca84539e6b5f91c1c326e",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 2,
+        "return_type": "class:28",
+        "parameter_types": [
+          "class:33",
+          "i4"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 9760,
+        "file_offset": 2080,
+        "max_stack": 2,
+        "init_locals": false,
+        "local_var_sig_token": null,
+        "il_size": 64,
+        "il_sha256": "228ba5ab5dda378e6b86f46192b8f248081839c77071a12c4d2620ffc0e17785",
+        "normalized_il_sha256": "1c373384b00e99ef5983507252f1ccb3ecffdfd5fac2d62543eaf121009875df",
+        "instruction_count": 22,
+        "decoded_instruction_count": 22,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldarg.1": 4,
+          "ldarg.0": 3,
+          "ldfld": 3,
+          "callvirt": 4,
+          "ldarg.2": 1,
+          "ldc.i4.s": 1,
+          "ble.s": 1,
+          "ldsfld": 1,
+          "newobj": 2,
+          "throw": 1,
+          "ret": 1
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 2,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000005"
+          },
+          {
+            "il_offset": 7,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00003a"
+          },
+          {
+            "il_offset": 12,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 13,
+            "opcode": "ldarg.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 14,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00003b"
+          },
+          {
+            "il_offset": 19,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 20,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000007"
+          },
+          {
+            "il_offset": 25,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00003c"
+          },
+          {
+            "il_offset": 30,
+            "opcode": "ldc.i4.s",
+            "operand_kind": "constant",
+            "operand": "100"
+          },
+          {
+            "il_offset": 32,
+            "opcode": "ble.s",
+            "operand_kind": "branch",
+            "operand": "45"
+          },
+          {
+            "il_offset": 34,
+            "opcode": "ldsfld",
+            "operand_kind": "field",
+            "operand": "0x0a000025"
+          },
+          {
+            "il_offset": 39,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a00003d"
+          },
+          {
+            "il_offset": 44,
+            "opcode": "throw",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 45,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 46,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000007"
+          },
+          {
+            "il_offset": 51,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 52,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00003e"
+          },
+          {
+            "il_offset": 57,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 58,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0600002c"
+          },
+          {
+            "il_offset": 63,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "token": "0x06000023",
+      "row_offset": 4842,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "AsyncReceiveCommand",
+      "rva": 9836,
+      "impl_flags": 0,
+      "flags": 132,
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "82569dd2934d24c018b29f82ef3846474bc1370ae0b68fd2d9d985f662275959",
+        "resolved_sha256": "387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "class:28"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 9836,
+        "file_offset": 2156,
+        "max_stack": 2,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100000c",
+        "il_size": 96,
+        "il_sha256": "aa2c34e6113d08f81cfed61fdace9be3e9204d88a959644da59e09d2ac82a13b",
+        "normalized_il_sha256": "21770835438d07df568b05d599b28ed01e0b0dae6ed0ec22d115def32acc93b9",
+        "instruction_count": 30,
+        "decoded_instruction_count": 30,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldarg.1": 5,
+          "brtrue.s": 1,
+          "ldstr": 1,
+          "newobj": 2,
+          "throw": 2,
+          "ldarg.0": 1,
+          "ldfld": 1,
+          "callvirt": 9,
+          "brfalse.s": 1,
+          "call": 3,
+          "stloc.0": 1,
+          "ldloc.0": 2,
+          "ret": 1
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "brtrue.s",
+            "operand_kind": "branch",
+            "operand": "14"
+          },
+          {
+            "il_offset": 3,
+            "opcode": "ldstr",
+            "operand_kind": "string",
+            "operand": "0x70000127"
+          },
+          {
+            "il_offset": 8,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a000035"
+          },
+          {
+            "il_offset": 13,
+            "opcode": "throw",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 14,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 15,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000006"
+          },
+          {
+            "il_offset": 20,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 21,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 26,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00003f"
+          },
+          {
+            "il_offset": 31,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 32,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 37,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000040"
+          },
+          {
+            "il_offset": 42,
+            "opcode": "brfalse.s",
+            "operand_kind": "branch",
+            "operand": "95"
+          },
+          {
+            "il_offset": 44,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 45,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 50,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000041"
+          },
+          {
+            "il_offset": 55,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 56,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 61,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000042"
+          },
+          {
+            "il_offset": 66,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000043"
+          },
+          {
+            "il_offset": 71,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000044"
+          },
+          {
+            "il_offset": 76,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000045"
+          },
+          {
+            "il_offset": 81,
+            "opcode": "stloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 82,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 83,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000046"
+          },
+          {
+            "il_offset": 88,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 89,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a000047"
+          },
+          {
+            "il_offset": 94,
+            "opcode": "throw",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 95,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "token": "0x06000024",
+      "row_offset": 4856,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "AsyncReceiveRequestCommand",
+      "rva": 9944,
+      "impl_flags": 0,
+      "flags": 452,
+      "signature": {
+        "raw_length": 5,
+        "raw_sha256": "14ae12c6e53ec684648bd8dd3aff09cbcd54699757d574046075254d0f91066c",
+        "resolved_sha256": "c96f3563d42ea9cb38cc3d76b9a28bf2ac8bb4a3275d362ab3186d3ae85aeb0b",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default has-this",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "i4",
+        "parameter_types": [
+          "class:28"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 9944,
+        "file_offset": 2264,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100000d",
+        "il_size": 151,
+        "il_sha256": "9fe66f1a730af4892b77ff3de04223ecc68f4677aed8657e29c58c750794e41c",
+        "normalized_il_sha256": "917bb87563e5c6482b7a4b16ee4915cc4e88477454679e6b1407093b05568b6c",
+        "instruction_count": 53,
+        "decoded_instruction_count": 53,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldarg.0": 1,
+          "ldarg.1": 2,
+          "call": 7,
+          "callvirt": 13,
+          "stloc.0": 1,
+          "ldloc.0": 7,
+          "ldc.i4.1": 2,
+          "beq.s": 2,
+          "ldc.i4.2": 1,
+          "newobj": 2,
+          "throw": 2,
+          "ldc.i4.0": 2,
+          "stloc.1": 1,
+          "ldsfld": 1,
+          "stloc.2": 1,
+          "ldloca.s": 2,
+          "brfalse.s": 1,
+          "ldloc.1": 1,
+          "bne.un.s": 1,
+          "ldloc.2": 1,
+          "ret": 2
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 2,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x06000023"
+          },
+          {
+            "il_offset": 7,
+            "opcode": "ldarg.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 8,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600002d"
+          },
+          {
+            "il_offset": 13,
+            "opcode": "stloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 14,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 15,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000048"
+          },
+          {
+            "il_offset": 20,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000049"
+          },
+          {
+            "il_offset": 25,
+            "opcode": "ldc.i4.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 26,
+            "opcode": "beq.s",
+            "operand_kind": "branch",
+            "operand": "75"
+          },
+          {
+            "il_offset": 28,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 29,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000048"
+          },
+          {
+            "il_offset": 34,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000049"
+          },
+          {
+            "il_offset": 39,
+            "opcode": "ldc.i4.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 40,
+            "opcode": "beq.s",
+            "operand_kind": "branch",
+            "operand": "75"
+          },
+          {
+            "il_offset": 42,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 43,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00004a"
+          },
+          {
+            "il_offset": 48,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 49,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000048"
+          },
+          {
+            "il_offset": 54,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000043"
+          },
+          {
+            "il_offset": 59,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000044"
+          },
+          {
+            "il_offset": 64,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a00004b"
+          },
+          {
+            "il_offset": 69,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a00004c"
+          },
+          {
+            "il_offset": 74,
+            "opcode": "throw",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 75,
+            "opcode": "ldc.i4.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 76,
+            "opcode": "stloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 77,
+            "opcode": "ldsfld",
+            "operand_kind": "field",
+            "operand": "0x0a000025"
+          },
+          {
+            "il_offset": 82,
+            "opcode": "stloc.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 83,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 84,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000048"
+          },
+          {
+            "il_offset": 89,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000043"
+          },
+          {
+            "il_offset": 94,
+            "opcode": "ldloca.s",
+            "operand_kind": "variable",
+            "operand": "1"
+          },
+          {
+            "il_offset": 96,
+            "opcode": "ldloca.s",
+            "operand_kind": "variable",
+            "operand": "2"
+          },
+          {
+            "il_offset": 98,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a00004d"
+          },
+          {
+            "il_offset": 103,
+            "opcode": "brfalse.s",
+            "operand_kind": "branch",
+            "operand": "116"
+          },
+          {
+            "il_offset": 105,
+            "opcode": "ldloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 106,
+            "opcode": "ldc.i4.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 107,
+            "opcode": "bne.un.s",
+            "operand_kind": "branch",
+            "operand": "149"
+          },
+          {
+            "il_offset": 109,
+            "opcode": "ldloc.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 110,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a00004e"
+          },
+          {
+            "il_offset": 115,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 116,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 117,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00004a"
+          },
+          {
+            "il_offset": 122,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 123,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000048"
+          },
+          {
+            "il_offset": 128,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000043"
+          },
+          {
+            "il_offset": 133,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000044"
+          },
+          {
+            "il_offset": 138,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a00004b"
+          },
+          {
+            "il_offset": 143,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a00004c"
+          },
+          {
+            "il_offset": 148,
+            "opcode": "throw",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 149,
+            "opcode": "ldc.i4.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 150,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [],
+        "issue": null
+      }
+    },
+    {
+      "token": "0x06000026",
+      "row_offset": 4884,
+      "declaring_type_token": "0x02000005",
+      "declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort",
+      "name": "SendThreadFunc",
+      "rva": 10148,
+      "impl_flags": 0,
+      "flags": 145,
+      "signature": {
+        "raw_length": 4,
+        "raw_sha256": "5a2a16fc9d52ebb2b465c0aa5b989fbf7b2b7294ea3d80e076ed2e9ba9d6b336",
+        "resolved_sha256": "5a2a16fc9d52ebb2b465c0aa5b989fbf7b2b7294ea3d80e076ed2e9ba9d6b336",
+        "kind": "method",
+        "parse_status": "decoded",
+        "calling_convention": "default",
+        "generic_parameter_count": null,
+        "parameter_count": 1,
+        "return_type": "void",
+        "parameter_types": [
+          "object"
+        ],
+        "field_type": null,
+        "issue": null
+      },
+      "body": {
+        "status": "present",
+        "header_format": "fat",
+        "rva": 10148,
+        "file_offset": 2468,
+        "max_stack": 3,
+        "init_locals": true,
+        "local_var_sig_token": "0x1100000f",
+        "il_size": 135,
+        "il_sha256": "7445e28ac34e45d86fff4b532c39af16f5399f03ff36ce22cc1dec092d2dfd93",
+        "normalized_il_sha256": "359bcb012a00fcd7387a26ef5fa05459183dc13ae99906a6480ae5e9186e17fc",
+        "instruction_count": 48,
+        "decoded_instruction_count": 48,
+        "truncated_instructions": 0,
+        "opcode_counts": {
+          "ldarg.0": 1,
+          "castclass": 1,
+          "stloc.0": 1,
+          "br.s": 1,
+          "ldloc.0": 8,
+          "ldfld": 4,
+          "callvirt": 9,
+          "stloc.1": 1,
+          "brfalse.s": 2,
+          "leave.s": 4,
+          "ldloc.1": 2,
+          "stloc.2": 1,
+          "ldloc.2": 2,
+          "call": 3,
+          "newobj": 2,
+          "stloc.3": 1,
+          "ldstr": 1,
+          "ldloc.3": 3,
+          "ret": 1
+        },
+        "anchors": [
+          {
+            "il_offset": 0,
+            "opcode": "ldarg.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 1,
+            "opcode": "castclass",
+            "operand_kind": "type",
+            "operand": "0x02000005"
+          },
+          {
+            "il_offset": 6,
+            "opcode": "stloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 7,
+            "opcode": "br.s",
+            "operand_kind": "branch",
+            "operand": "126"
+          },
+          {
+            "il_offset": 9,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 10,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000007"
+          },
+          {
+            "il_offset": 15,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00004f"
+          },
+          {
+            "il_offset": 20,
+            "opcode": "stloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 21,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 22,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000009"
+          },
+          {
+            "il_offset": 27,
+            "opcode": "brfalse.s",
+            "operand_kind": "branch",
+            "operand": "31"
+          },
+          {
+            "il_offset": 29,
+            "opcode": "leave.s",
+            "operand_kind": "branch",
+            "operand": "134"
+          },
+          {
+            "il_offset": 31,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 32,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000006"
+          },
+          {
+            "il_offset": 37,
+            "opcode": "ldloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 38,
+            "opcode": "ldloc.1",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 39,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000050"
+          },
+          {
+            "il_offset": 44,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000051"
+          },
+          {
+            "il_offset": 49,
+            "opcode": "leave.s",
+            "operand_kind": "branch",
+            "operand": "126"
+          },
+          {
+            "il_offset": 51,
+            "opcode": "stloc.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 52,
+            "opcode": "ldloc.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 53,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a00001e"
+          },
+          {
+            "il_offset": 58,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000052"
+          },
+          {
+            "il_offset": 63,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 64,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 65,
+            "opcode": "ldloc.2",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 66,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a000053"
+          },
+          {
+            "il_offset": 71,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600000d"
+          },
+          {
+            "il_offset": 76,
+            "opcode": "leave.s",
+            "operand_kind": "branch",
+            "operand": "126"
+          },
+          {
+            "il_offset": 78,
+            "opcode": "stloc.3",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 79,
+            "opcode": "ldstr",
+            "operand_kind": "string",
+            "operand": "0x70000157"
+          },
+          {
+            "il_offset": 84,
+            "opcode": "ldloc.3",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 85,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000054"
+          },
+          {
+            "il_offset": 90,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000029"
+          },
+          {
+            "il_offset": 95,
+            "opcode": "ldloc.3",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 96,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0a000055"
+          },
+          {
+            "il_offset": 101,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000056"
+          },
+          {
+            "il_offset": 106,
+            "opcode": "call",
+            "operand_kind": "method",
+            "operand": "0x0a000052"
+          },
+          {
+            "il_offset": 111,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 112,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 113,
+            "opcode": "ldloc.3",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 114,
+            "opcode": "newobj",
+            "operand_kind": "method",
+            "operand": "0x0a000057"
+          },
+          {
+            "il_offset": 119,
+            "opcode": "callvirt",
+            "operand_kind": "method",
+            "operand": "0x0600000e"
+          },
+          {
+            "il_offset": 124,
+            "opcode": "leave.s",
+            "operand_kind": "branch",
+            "operand": "126"
+          },
+          {
+            "il_offset": 126,
+            "opcode": "ldloc.0",
+            "operand_kind": "none",
+            "operand": null
+          },
+          {
+            "il_offset": 127,
+            "opcode": "ldfld",
+            "operand_kind": "field",
+            "operand": "0x04000009"
+          },
+          {
+            "il_offset": 132,
+            "opcode": "brfalse.s",
+            "operand_kind": "branch",
+            "operand": "9"
+          },
+          {
+            "il_offset": 134,
+            "opcode": "ret",
+            "operand_kind": "none",
+            "operand": null
+          }
+        ],
+        "exception_regions": [
+          {
+            "flags": 0,
+            "try_offset": 9,
+            "try_length": 42,
+            "handler_offset": 51,
+            "handler_length": 27,
+            "class_token": "0x01000039",
+            "filter_offset": null
+          },
+          {
+            "flags": 0,
+            "try_offset": 9,
+            "try_length": 42,
+            "handler_offset": 78,
+            "handler_length": 48,
+            "class_token": "0x01000025",
+            "filter_offset": null
+          }
+        ],
+        "issue": null
+      }
+    }
+  ],
+  "call_edges": [
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "newobj",
+      "target_token": "0x0a000035",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.DeviceParameterException"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x0a000028",
+      "target_kind": "member-ref",
+      "target_name": "GetType",
+      "target_declaring_type": "System.Object"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "call",
+      "target_token": "0x0a000036",
+      "target_kind": "member-ref",
+      "target_name": "GetTypeFromHandle",
+      "target_declaring_type": "System.Type"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x0a000037",
+      "target_kind": "member-ref",
+      "target_name": "Equals",
+      "target_declaring_type": "System.Type"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x06000024",
+      "target_kind": "method-def",
+      "target_name": "AsyncReceiveRequestCommand",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x0a000028",
+      "target_kind": "member-ref",
+      "target_name": "GetType",
+      "target_declaring_type": "System.Object"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "call",
+      "target_token": "0x0a000036",
+      "target_kind": "member-ref",
+      "target_name": "GetTypeFromHandle",
+      "target_declaring_type": "System.Type"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x0a000037",
+      "target_kind": "member-ref",
+      "target_name": "Equals",
+      "target_declaring_type": "System.Type"
+    },
+    {
+      "caller_token": "0x0600001c",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse",
+      "opcode": "callvirt",
+      "target_token": "0x06000025",
+      "target_kind": "method-def",
+      "target_name": "AsyncReceiveQueryCommand",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort"
+    },
+    {
+      "caller_token": "0x0600001e",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest",
+      "opcode": "callvirt",
+      "target_token": "0x0600001f",
+      "target_kind": "method-def",
+      "target_name": "SendRequest",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort"
+    },
+    {
+      "caller_token": "0x0600001f",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest",
+      "opcode": "call",
+      "target_token": "0x06000022",
+      "target_kind": "method-def",
+      "target_name": "AsyncSendCommand",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort"
+    },
+    {
+      "caller_token": "0x0600001f",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest",
+      "opcode": "callvirt",
+      "target_token": "0x06000024",
+      "target_kind": "method-def",
+      "target_name": "AsyncReceiveRequestCommand",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort"
+    },
+    {
+      "caller_token": "0x0600001f",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest",
+      "opcode": "callvirt",
+      "target_token": "0x0600002e",
+      "target_kind": "method-def",
+      "target_name": "Close",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000022",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00003a",
+      "target_kind": "member-ref",
+      "target_name": "set_Index",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ACommand"
+    },
+    {
+      "caller_token": "0x06000022",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00003b",
+      "target_kind": "member-ref",
+      "target_name": "set_Timeout",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000022",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00003c",
+      "target_kind": "member-ref",
+      "target_name": "get_Count",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.ObjectQueue`1"
+    },
+    {
+      "caller_token": "0x06000022",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand",
+      "opcode": "newobj",
+      "target_token": "0x0a00003d",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandException"
+    },
+    {
+      "caller_token": "0x06000022",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00003e",
+      "target_kind": "member-ref",
+      "target_name": "Put",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.ObjectQueue`1"
+    },
+    {
+      "caller_token": "0x06000022",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand",
+      "opcode": "newobj",
+      "target_token": "0x0600002c",
+      "target_kind": "method-def",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "newobj",
+      "target_token": "0x0a000035",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.DeviceParameterException"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00003f",
+      "target_kind": "member-ref",
+      "target_name": "Receive",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.IPort"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000040",
+      "target_kind": "member-ref",
+      "target_name": "get_IsTimeout",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000041",
+      "target_kind": "member-ref",
+      "target_name": "get_SendCommand",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000042",
+      "target_kind": "member-ref",
+      "target_name": "get_SendParameter",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000043",
+      "target_kind": "member-ref",
+      "target_name": "ToArray",
+      "target_declaring_type": "System.Collections.Generic.List`1"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "call",
+      "target_token": "0x0a000044",
+      "target_kind": "member-ref",
+      "target_name": "ChainParametersArray",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ACommand"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "call",
+      "target_token": "0x0a000045",
+      "target_kind": "member-ref",
+      "target_name": "CreateMessage",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandTimeoutException"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "call",
+      "target_token": "0x0a000046",
+      "target_kind": "member-ref",
+      "target_name": "WarningLog",
+      "target_declaring_type": "Olympus.Mis.Core.Logging.Logger"
+    },
+    {
+      "caller_token": "0x06000023",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand",
+      "opcode": "newobj",
+      "target_token": "0x0a000047",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandTimeoutException"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x06000023",
+      "target_kind": "method-def",
+      "target_name": "AsyncReceiveCommand",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0600002d",
+      "target_kind": "method-def",
+      "target_name": "get_Command",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.Command.CommandHandle"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000048",
+      "target_kind": "member-ref",
+      "target_name": "get_ReceiveParameter",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000049",
+      "target_kind": "member-ref",
+      "target_name": "get_Count",
+      "target_declaring_type": "System.Collections.Generic.List`1"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000048",
+      "target_kind": "member-ref",
+      "target_name": "get_ReceiveParameter",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000049",
+      "target_kind": "member-ref",
+      "target_name": "get_Count",
+      "target_declaring_type": "System.Collections.Generic.List`1"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00004a",
+      "target_kind": "member-ref",
+      "target_name": "get_Name",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ACommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000048",
+      "target_kind": "member-ref",
+      "target_name": "get_ReceiveParameter",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000043",
+      "target_kind": "member-ref",
+      "target_name": "ToArray",
+      "target_declaring_type": "System.Collections.Generic.List`1"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x0a000044",
+      "target_kind": "member-ref",
+      "target_name": "ChainParametersArray",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ACommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x0a00004b",
+      "target_kind": "member-ref",
+      "target_name": "CreateMessage",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandParameterException"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "newobj",
+      "target_token": "0x0a00004c",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandParameterException"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000048",
+      "target_kind": "member-ref",
+      "target_name": "get_ReceiveParameter",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000043",
+      "target_kind": "member-ref",
+      "target_name": "ToArray",
+      "target_declaring_type": "System.Collections.Generic.List`1"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x0a00004d",
+      "target_kind": "member-ref",
+      "target_name": "ParamToResult",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.SCommandUtility"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x0a00004e",
+      "target_kind": "member-ref",
+      "target_name": "ConvertToInt32",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.HardwareException"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a00004a",
+      "target_kind": "member-ref",
+      "target_name": "get_Name",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ACommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000048",
+      "target_kind": "member-ref",
+      "target_name": "get_ReceiveParameter",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "callvirt",
+      "target_token": "0x0a000043",
+      "target_kind": "member-ref",
+      "target_name": "ToArray",
+      "target_declaring_type": "System.Collections.Generic.List`1"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x0a000044",
+      "target_kind": "member-ref",
+      "target_name": "ChainParametersArray",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ACommand"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "call",
+      "target_token": "0x0a00004b",
+      "target_kind": "member-ref",
+      "target_name": "CreateMessage",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandParameterException"
+    },
+    {
+      "caller_token": "0x06000024",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand",
+      "opcode": "newobj",
+      "target_token": "0x0a00004c",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.CommandParameterException"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a00004f",
+      "target_kind": "member-ref",
+      "target_name": "Get",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.ObjectQueue`1"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a000050",
+      "target_kind": "member-ref",
+      "target_name": "get_Timeout",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.Command.ASendCommand"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a000051",
+      "target_kind": "member-ref",
+      "target_name": "Send",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Port.IPort"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a00001e",
+      "target_kind": "member-ref",
+      "target_name": "get_Message",
+      "target_declaring_type": "System.Exception"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "call",
+      "target_token": "0x0a000052",
+      "target_kind": "member-ref",
+      "target_name": "DeviceErrorLog",
+      "target_declaring_type": "Olympus.Mis.Core.Logging.Logger"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "newobj",
+      "target_token": "0x0a000053",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.Events.DeviceExceptionEventArgs"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0600000d",
+      "target_kind": "method-def",
+      "target_name": "RaiseDeviceExceptionCathcedEvent",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.ACommonHardware"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a000054",
+      "target_kind": "member-ref",
+      "target_name": "GetType",
+      "target_declaring_type": "System.Exception"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a000029",
+      "target_kind": "member-ref",
+      "target_name": "get_Name",
+      "target_declaring_type": "System.Reflection.MemberInfo"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0a000055",
+      "target_kind": "member-ref",
+      "target_name": "get_StackTrace",
+      "target_declaring_type": "System.Exception"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "call",
+      "target_token": "0x0a000056",
+      "target_kind": "member-ref",
+      "target_name": "Format",
+      "target_declaring_type": "System.String"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "call",
+      "target_token": "0x0a000052",
+      "target_kind": "member-ref",
+      "target_name": "DeviceErrorLog",
+      "target_declaring_type": "Olympus.Mis.Core.Logging.Logger"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "newobj",
+      "target_token": "0x0a000057",
+      "target_kind": "member-ref",
+      "target_name": ".ctor",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Exception.Events.SystemExceptionEventArgs"
+    },
+    {
+      "caller_token": "0x06000026",
+      "caller": "Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc",
+      "opcode": "callvirt",
+      "target_token": "0x0600000e",
+      "target_kind": "method-def",
+      "target_name": "RaiseSystemExceptionCathcedEvent",
+      "target_declaring_type": "Olympus.LI.Triumph.Device.Device.ACommonHardware"
+    }
+  ]
+}

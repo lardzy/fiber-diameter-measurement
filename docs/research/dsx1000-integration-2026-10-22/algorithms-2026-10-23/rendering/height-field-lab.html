@@ -1,0 +1,74 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DSX 研究 · 高度场实验</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif;color:#dce6ee;background:#101923;color-scheme:dark}*{box-sizing:border-box}body{margin:0}header{padding:24px 30px 16px;border-bottom:1px solid #314151}h1{font-size:23px;margin:0 0 8px}p{color:#9cabb9;line-height:1.65;margin:4px 0}main{display:grid;grid-template-columns:minmax(500px,1fr) 320px;min-height:calc(100vh - 140px)}#scene{width:100%;height:calc(100vh - 140px);min-height:450px;touch-action:none;cursor:grab}aside{padding:26px;border-left:1px solid #314151;background:#14212c}label{display:block;margin:0 0 22px;font-size:14px}input[type=range]{width:100%;margin-top:12px;accent-color:#65d4bc}select,button{background:#243745;border:1px solid #4b6273;border-radius:6px;padding:9px;color:inherit;font-size:14px;width:100%;margin-top:8px}button{cursor:pointer}output{float:right;color:#7ae1c5}small{font-size:12px;color:#9cabb9;line-height:1.7;display:block}.metric{padding:13px 0;border-top:1px solid #314151}.metric strong{color:#7ae1c5;font-size:21px;display:block}#status{font-size:12px;color:#aac1d2;padding-top:16px}.tag{font-size:11px;letter-spacing:2px;color:#75d4bf;margin-bottom:9px}.note{border-left:3px solid #d6b66d;padding:10px 13px;margin-top:22px;color:#c9ba96;font-size:13px;line-height:1.65}@media(max-width:860px){main{display:flex;flex-direction:column}#scene{height:56vh;min-height:350px}aside{border-left:0;border-top:1px solid #314151;padding:22px}header{padding:22px}h1{font-size:20px}}
+</style>
+<header><div class="tag">INDEPENDENT RESEARCH PROTOTYPE</div><h1>高度图，怎样变成三维表面？</h1><p>独立合成数据演示：高度夸张、曲面扣除、无效区与光照。拖动画面旋转，滚轮缩放；不运行 DSX、不连接设备。</p></header>
+<main><canvas id="scene" aria-label="可旋转的合成高度场三维网格"></canvas><aside>
+<label>处理状态<select id="mode"><option value="raw">原始高度：弯曲基底 + 局部结构</option><option value="flat">扣除已知二次基底</option></select></label>
+<label>显示高度倍数 <output id="factorLabel">1.0×</output><input id="factor" type="range" min="1" max="8" step="0.1" value="1"></label>
+<label>灯光强度等级 <output id="lightLabel">4</output><input id="light" type="range" min="1" max="10" step="1" value="4"></label>
+<label>无效区域<select id="invalid"><option value="color">保留网格、标记无效区</option><option value="hole">删除无效三角形（本原型改进）</option></select></label>
+<label><input id="wire" type="checkbox"> 叠加三角网格</label>
+<div class="metric"><small>原始数据的高度跨度</small><strong id="heightMetric"></strong><small>切换显示倍数不会改变此数值。</small></div>
+<div class="metric"><small>有效三角形 / 网格总数</small><strong id="meshMetric"></strong></div>
+<button id="reset">恢复观察角度</button>
+<div class="note">这是一张每个 XY 对应一个 Z 的高度场，不是体积断层。显示更陡、光照更强、表面更平，不等于新增测量信息。</div>
+<div id="status" role="status"></div><small style="margin-top:16px">已复用逆向确认的规则网格、单位法线与强度映射思路；本页配色、相机交互和去基底按钮为独立实现，非原厂界面或逐位复刻。</small>
+</aside></main>
+<script>
+'use strict';
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
+const q=id=>document.getElementById(id),N=49,M=65,dx=2,dy=2;
+let ax=.88,az=-.65,zoom=1,drag=null,scheduled=false,frameCount=0,triangles=[];
+const points=[];let low=Infinity,high=-Infinity;
+for(let r=0;r<N;r++)for(let c=0;c<M;c++){
+ const x=c*dx,y=r*dy,cx=x-64,cy=y-48;
+ const base=.0018*cx*cx+.0009*cy*cy+.02*cx;
+ const fiber=4*Math.exp(-((cy-7*Math.sin(cx/24))**2)/30);
+ const step=cx>8&&cx<31&&cy>10&&cy<30?2.5:0;
+ const h=base+fiber+step;low=Math.min(low,h);high=Math.max(high,h);
+ points.push({x:cx,y:cy,h,base,valid:((cx+28)**2+(cy-22)**2)>100});
+}
+for(let r=0;r<N-1;r++)for(let c=0;c<M-1;c++){
+ const a=r*M+c,b=a+1,d=a+M+1,e=a+M;
+ triangles.push([a,b,d],[a,d,e]);
+}
+q('heightMetric').textContent=(high-low).toFixed(3)+' μm';
+const unit=v=>{let s=Math.hypot(...v)||1;return v.map(x=>x/s)};
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const sub=(a,b)=>a.map((v,i)=>v-b[i]);
+function rotate([x,y,z]){let x1=Math.cos(az)*x-Math.sin(az)*y,y1=Math.sin(az)*x+Math.cos(az)*y;return [x1,Math.cos(ax)*y1-Math.sin(ax)*z,Math.sin(ax)*y1+Math.cos(ax)*z]}
+function redraw(){scheduled=false;frameCount++;
+ const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),w=rect.width,h=rect.height;
+ canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.fillStyle='#101923';ctx.fillRect(0,0,w,h);
+ const f=Number(q('factor').value),level=Number(q('light').value),diff=(level-1)/9,ambient=.2+.8*(1-diff),flat=q('mode').value==='flat',hole=q('invalid').value==='hole';
+ q('factorLabel').textContent=f.toFixed(1)+'×';q('lightLabel').textContent=level;
+ const scale=Math.min(w/195,h/150)*zoom;
+ const vertices=points.map(p=>[p.x,p.y,((flat?p.h-p.base:p.h)-3)*f]);
+ const rotated=vertices.map(rotate),project=v=>[w/2+v[0]*scale,h*.52-v[1]*scale];
+ const light=unit([.3,-.45,1]),visible=[];
+ for(const t of triangles){let valid=t.every(i=>points[i].valid);if(hole&&!valid)continue;
+ const norm=unit(cross(sub(vertices[t[1]],vertices[t[0]]),sub(vertices[t[2]],vertices[t[0]])));
+ const strength=Math.min(1,ambient+diff*Math.max(0,norm.reduce((s,v,i)=>s+v*light[i],0)));
+ const mean=t.reduce((s,i)=>s+(flat?points[i].h-points[i].base:points[i].h),0)/3;
+ const hue=190-150*Math.max(0,Math.min(1,mean/12));
+ visible.push({t,depth:t.reduce((s,i)=>s+rotated[i][2],0)/3,valid,color:valid?`hsl(${hue} 46% ${24+strength*25}%)`:'#b69c63'});
+ }
+ visible.sort((a,b)=>a.depth-b.depth);
+ for(const face of visible){const v=face.t.map(i=>project(rotated[i]));ctx.beginPath();ctx.moveTo(...v[0]);ctx.lineTo(...v[1]);ctx.lineTo(...v[2]);ctx.closePath();ctx.fillStyle=face.color;ctx.fill();ctx.strokeStyle=q('wire').checked?'rgba(6,17,25,.4)':face.color;ctx.lineWidth=q('wire').checked?.45:.6;ctx.stroke()}
+ q('meshMetric').textContent=`${visible.length} / ${triangles.length}`;
+ ctx.fillStyle='#a6bbc9';ctx.font='12px system-ui';ctx.fillText('XY：128 × 96 μm · 合成样本 · 颜色区 = 无效数据标记',20,h-24);
+ ctx.fillStyle='#78d5bd';ctx.fillText(flat?'已扣除已知二次基底':'原始高度场',20,28);
+ q('status').textContent=`${flat?'派生高度':'原始高度'} · 显示倍率 ${f.toFixed(1)}× · 网格 ${M}×${N}`;
+ window.labState={frameCount,mode:flat?'flat':'raw',factor:f,sourceRange:high-low,triangles:visible.length,totalTriangles:triangles.length,canvasWidth:canvas.width,canvasHeight:canvas.height};
+}
+function schedule(){if(!scheduled){scheduled=true;requestAnimationFrame(redraw)}}
+for(const id of ['factor','light','mode','invalid','wire'])q(id).addEventListener('input',schedule);
+q('reset').onclick=()=>{ax=.88;az=-.65;zoom=1;schedule()};
+canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId)};
+canvas.onpointermove=e=>{if(drag){az+=(e.clientX-drag.x)*.007;ax=Math.max(.1,Math.min(1.55,ax+(e.clientY-drag.y)*.007));drag={x:e.clientX,y:e.clientY};schedule()}};
+canvas.onpointerup=()=>{drag=null};canvas.onpointercancel=()=>{drag=null};
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.4,Math.min(3,zoom*Math.exp(-e.deltaY*.001)));schedule()},{passive:false});
+window.addEventListener('resize',schedule);schedule();
+</script></html>

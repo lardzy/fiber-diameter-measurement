@@ -1,0 +1,51 @@
+{
+  "authority": "analyst-derived, static file bytes only",
+  "parent_evidence_id": "ev_855f51c173d088e2d3819fc4f1397ad027a52731108f639331e3ebd35228f1e1",
+  "artifact": {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiUtility.dll",
+    "sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c",
+    "byte_length": 95744,
+    "format": "pe"
+  },
+  "method_header": "fat; code begins after 4 * header high nibble bytes",
+  "switch_opcode": "0x45; relative offsets based at end of switch table",
+  "switches": [
+    {
+      "method_token": "0x060000f2",
+      "file_offset": 26764,
+      "switch_il_offset": 3,
+      "case_il_targets": [
+        34,
+        44,
+        54,
+        64,
+        74,
+        84
+      ]
+    },
+    {
+      "method_token": "0x060000f7",
+      "file_offset": 26940,
+      "switch_il_offset": 12,
+      "case_il_targets": [
+        62,
+        43,
+        62,
+        62,
+        50,
+        57
+      ]
+    },
+    {
+      "method_token": "0x06000114",
+      "file_offset": 27976,
+      "switch_il_offset": 32,
+      "case_il_targets": [
+        55,
+        70,
+        85,
+        101
+      ]
+    }
+  ]
+}

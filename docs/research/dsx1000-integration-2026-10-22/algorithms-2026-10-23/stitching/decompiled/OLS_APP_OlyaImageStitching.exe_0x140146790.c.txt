@@ -1,0 +1,284 @@
+Evidence: ev_5c78ad1c71d3ab0254067cf0fe843b8f7f30252254481cb1214e35263c083021
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined8 FUN_140146790(longlong param_1,int param_2,int param_3,int param_4)
+
+{
+  code *pcVar1;
+  int iVar2;
+  int iVar3;
+  ulonglong *puVar4;
+  longlong lVar5;
+  ulonglong uVar6;
+  longlong *plVar7;
+  int iVar8;
+  undefined8 uVar9;
+  int iVar10;
+  char *pcVar11;
+  char *pcVar12;
+  undefined4 uVar13;
+  undefined4 uVar14;
+  undefined1 auStackY_248 [32];
+  undefined **local_218;
+  longlong local_210;
+  undefined4 local_208;
+  undefined4 uStack_204;
+  ulonglong local_200 [3];
+  undefined1 *local_1e8;
+  undefined8 local_1e0;
+  undefined *local_1d8;
+  basic_streambuf<char,std::char_traits<char>_> local_1d0 [8];
+  basic_ostream<char,std::char_traits<char>_> local_1c8 [120];
+  basic_ios<char,std::char_traits<char>_> local_150 [104];
+  ulonglong local_e8 [2];
+  undefined8 local_d8;
+  ulonglong local_d0;
+  longlong local_c8 [2];
+  undefined8 local_b8;
+  ulonglong local_b0;
+  undefined1 local_a8;
+  undefined7 uStack_a7;
+  undefined8 local_98;
+  ulonglong local_90;
+  undefined1 local_88;
+  undefined7 uStack_87;
+  undefined8 local_78;
+  ulonglong local_70;
+  longlong local_68 [3];
+  ulonglong local_50;
+  ulonglong local_48;
+  
+  local_1e0 = 0xfffffffffffffffe;
+  local_48 = DAT_1401c7000 ^ (ulonglong)auStackY_248;
+  local_1e8 = (undefined1 *)CONCAT44(local_1e8._4_4_,param_4);
+  uVar9 = 0;
+  local_208 = 0;
+  iVar2 = param_2 / param_3;
+  iVar8 = param_2 % param_3;
+  iVar10 = param_3 * iVar2 + iVar8;
+  if (param_4 == 3) {
+    uVar13 = 8;
+    uVar14 = 3;
+  }
+  else {
+    uVar13 = 0x10;
+    uVar14 = 1;
+  }
+  puVar4 = FUN_14014a620((undefined8 *)&local_88,iVar10);
+  puVar4 = FUN_140006600(local_e8,"[Stitch_C++]create & save ",puVar4);
+  FUN_140001c70(local_68,puVar4," block image.");
+  if (0xf < local_d0) {
+    Ordinal_1486(CONCAT71(local_e8[0]._1_7_,(undefined1)local_e8[0]));
+  }
+  local_d0 = 0xf;
+  local_d8 = 0;
+  local_e8[0]._0_1_ = 0;
+  if (0xf < local_70) {
+    Ordinal_1486(CONCAT71(uStack_87,local_88));
+  }
+  local_70 = 0xf;
+  local_78 = 0;
+  local_88 = 0;
+  local_90 = 0xf;
+  local_98 = 0;
+  local_a8 = 0;
+  plVar7 = (longlong *)&local_a8;
+  FUN_140001830(plVar7,local_68,0,0xffffffffffffffff);
+  FUN_14014a3d0(plVar7,(longlong *)&local_a8);
+  local_218 = AutoIplImage::vftable;
+  uVar6 = 0;
+  local_210 = 0;
+  pcVar11 = *(char **)(param_1 + 0x68);
+  local_d0 = 0xf;
+  local_d8 = 0;
+  local_e8[0]._0_1_ = 0;
+  if (*pcVar11 != '\0') {
+    uVar6 = 0xffffffffffffffff;
+    do {
+      uVar6 = uVar6 + 1;
+    } while (pcVar11[uVar6] != '\0');
+  }
+  FUN_1400021b0(local_e8,pcVar11,uVar6);
+  FUN_1400092f0(local_c8,(longlong *)local_e8,(undefined8 *)(param_1 + 0x340));
+  if (0xf < local_d0) {
+    Ordinal_1486(CONCAT71(local_e8[0]._1_7_,(undefined1)local_e8[0]));
+  }
+  local_d0 = 0xf;
+  local_d8 = 0;
+  local_e8[0]._0_1_ = 0;
+  local_1d8 = &DAT_1401a1bb0;
+  std::basic_ios<char,std::char_traits<char>_>::basic_ios<char,std::char_traits<char>_>(local_150);
+  local_208 = 1;
+  std::basic_ostream<char,std::char_traits<char>_>::basic_ostream<char,std::char_traits<char>_>
+            ((basic_ostream<char,std::char_traits<char>_> *)&local_1d8,local_1d0,false);
+  *(undefined ***)(local_1d0 + (longlong)*(int *)(local_1d8 + 4) + -8) =
+       std::basic_ostringstream<char,std::char_traits<char>,std::allocator<char>_>::vftable;
+  *(int *)((longlong)&local_1e0 + (longlong)*(int *)(local_1d8 + 4) + 4) =
+       *(int *)(local_1d8 + 4) + -0x88;
+  FUN_1400071e0(local_1d0,2);
+  local_200[0] = 0;
+  local_200[2] = 0;
+  local_200[1] = 0;
+  local_208 = *(undefined4 *)(param_1 + 0x228);
+  uStack_204 = *(undefined4 *)(param_1 + 0x22c);
+  lVar5 = cvCreateImage(*(undefined8 *)(param_1 + 0x228),uVar13,uVar14);
+  if (local_210 != 0) {
+    cvReleaseImage(&local_210);
+    iVar3 = cvGetErrStatus();
+    if (iVar3 < 0) {
+      cvError(0xffffffff,s_release_1401c7038,"Inner function failed.","ImageManager.cpp");
+    }
+  }
+  local_210 = lVar5;
+  iVar3 = cvGetErrStatus();
+  if (iVar3 < 0) {
+    pcVar12 = "ImageTStitching.cpp";
+    pcVar11 = "Inner function failed.";
+LAB_140146a66:
+    cvError(0xffffffff,s_CreateAndSaveBlock_1401c7350,pcVar11,pcVar12);
+LAB_140146d2c:
+    iVar2 = cvGetErrStatus();
+    if (iVar2 != 0) {
+      uVar9 = 0x1f5;
+      goto LAB_140146d85;
+    }
+  }
+  else {
+    cvSetZero(local_210);
+    iVar3 = cvGetErrStatus();
+    if (iVar3 < 0) {
+      pcVar12 = "ImageTStitching.cpp";
+      pcVar11 = "Inner function failed.";
+      goto LAB_140146a66;
+    }
+    if ((((iVar8 < 0) || (iVar2 < 0)) || (*(int *)(param_1 + 0x224) < iVar2)) ||
+       (*(int *)(param_1 + 0x220) < iVar8)) {
+      puVar4 = (ulonglong *)0x0;
+    }
+    else {
+      puVar4 = (ulonglong *)
+               FUN_140017560((longlong *)(param_1 + 0x208),
+                             (longlong)(*(int *)(param_1 + 0x220) * iVar2 + iVar8));
+    }
+    iVar3 = (int)local_1e8;
+    uVar6 = FUN_140145b60(param_1,puVar4,local_200,(int)local_1e8);
+    if ((char)uVar6 == '\0') {
+      uVar9 = 0x12d;
+      goto LAB_140146d85;
+    }
+    uVar6 = FUN_1401459e0(param_1,iVar3,iVar8,iVar2,local_200,&local_210);
+    if ((char)uVar6 != '\0') {
+      std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                ((basic_ostream<char,std::char_traits<char>_> *)&local_1d8,iVar10);
+      plVar7 = FUN_140006540((longlong)&local_1d8,(undefined8 *)&local_a8);
+      puVar4 = FUN_140017ed0(local_e8,local_c8,plVar7);
+      plVar7 = FUN_140001c70((undefined8 *)&local_88,puVar4,".tmp");
+      if (local_c8 != plVar7) {
+        if (0xf < local_b0) {
+          Ordinal_1486(CONCAT71(local_c8[0]._1_7_,(undefined1)local_c8[0]));
+        }
+        local_b0 = 0xf;
+        local_b8 = 0;
+        local_c8[0]._0_1_ = 0;
+        FUN_140001f90(local_c8,plVar7);
+      }
+      if (0xf < local_70) {
+        Ordinal_1486(CONCAT71(uStack_87,local_88));
+      }
+      local_70 = 0xf;
+      local_78 = 0;
+      local_88 = 0;
+      if (0xf < local_d0) {
+        Ordinal_1486(CONCAT71(local_e8[0]._1_7_,(undefined1)local_e8[0]));
+      }
+      local_d0 = 0xf;
+      local_d8 = 0;
+      local_e8[0]._0_1_ = 0;
+      if (0xf < local_90) {
+        Ordinal_1486(CONCAT71(uStack_a7,local_a8));
+      }
+      if ((ulonglong)(*(longlong *)(param_1 + 0x1f8) - *(longlong *)(param_1 + 0x1f0) >> 5) <=
+          (ulonglong)(longlong)iVar10) {
+        std::_Xout_of_range("invalid vector<T> subscript");
+        pcVar1 = (code *)swi(3);
+        uVar9 = (*pcVar1)();
+        return uVar9;
+      }
+      plVar7 = (longlong *)((longlong)iVar10 * 0x20 + *(longlong *)(param_1 + 0x1f0));
+      if (plVar7 != local_c8) {
+        FUN_140001830(plVar7,local_c8,0,0xffffffffffffffff);
+      }
+      local_d0 = 0xf;
+      local_d8 = 0;
+      local_e8[0]._0_1_ = 0;
+      FUN_140001830((longlong *)local_e8,local_c8,0,0xffffffffffffffff);
+      local_1e8 = (undefined1 *)local_e8;
+      local_90 = 0xf;
+      local_98 = 0;
+      local_a8 = 0;
+      FUN_140001830((longlong *)&local_a8,(longlong *)local_e8,0,0xffffffffffffffff);
+      uVar6 = FUN_140127d50((longlong)&local_218,(longlong *)&local_a8);
+      if ((char)uVar6 == '\0') {
+        if (0xf < local_d0) {
+          Ordinal_1486(CONCAT71(local_e8[0]._1_7_,(undefined1)local_e8[0]));
+        }
+        uVar9 = 0x1f6;
+        goto LAB_140146d3d;
+      }
+      if (0xf < local_d0) {
+        Ordinal_1486(CONCAT71(local_e8[0]._1_7_,(undefined1)local_e8[0]));
+      }
+      goto LAB_140146d2c;
+    }
+    uVar9 = 0x1f5;
+  }
+LAB_140146d3d:
+  if (local_210 != 0) {
+    cvReleaseImage(&local_210);
+    iVar2 = cvGetErrStatus();
+    if (iVar2 < 0) {
+      cvError(0xffffffff,s_release_1401c7038,"Inner function failed.","ImageManager.cpp");
+    }
+  }
+  local_210 = 0;
+LAB_140146d85:
+  FUN_14014d700((longlong *)local_200);
+  if (local_200[0] != 0) {
+    std::_Container_base0::_Orphan_all((_Container_base0 *)local_200);
+    Ordinal_1486(local_200[0]);
+    local_200[0] = 0;
+    local_200[1] = 0;
+    local_200[2] = 0;
+  }
+  *(undefined ***)(local_1d0 + (longlong)*(int *)(local_1d8 + 4) + -8) =
+       std::basic_ostringstream<char,std::char_traits<char>,std::allocator<char>_>::vftable;
+  *(int *)((longlong)&local_1e0 + (longlong)*(int *)(local_1d8 + 4) + 4) =
+       *(int *)(local_1d8 + 4) + -0x88;
+  FUN_140007830(local_1d0);
+  std::basic_ostream<char,std::char_traits<char>_>::~basic_ostream<char,std::char_traits<char>_>
+            (local_1c8);
+  std::basic_ios<char,std::char_traits<char>_>::~basic_ios<char,std::char_traits<char>_>(local_150);
+  if (0xf < local_b0) {
+    Ordinal_1486(CONCAT71(local_c8[0]._1_7_,(undefined1)local_c8[0]));
+  }
+  local_b0 = 0xf;
+  local_b8 = 0;
+  local_c8[0]._0_1_ = 0;
+  local_218 = AutoIplImage::vftable;
+  if (local_210 != 0) {
+    cvReleaseImage(&local_210);
+    iVar2 = cvGetErrStatus();
+    if (iVar2 < 0) {
+      cvError(0xffffffff,s_release_1401c7038,"Inner function failed.","ImageManager.cpp");
+    }
+  }
+  if (0xf < local_50) {
+    Ordinal_1486(local_68[0]);
+  }
+  return uVar9;
+}
+

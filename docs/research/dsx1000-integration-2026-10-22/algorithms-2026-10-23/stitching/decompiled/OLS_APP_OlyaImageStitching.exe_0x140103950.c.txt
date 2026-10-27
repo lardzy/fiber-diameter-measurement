@@ -1,0 +1,45 @@
+Evidence: ev_cda839d905ee6265ab1a9bed832096913dd4fd20e91e5fa4133acc7384c77aa6
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Removing unreachable block (ram,0x000140103a12) */
+/* WARNING: Removing unreachable block (ram,0x00014010398b) */
+
+void FUN_140103950(longlong param_1,undefined8 param_2,undefined8 param_3,longlong *param_4)
+
+{
+  undefined8 uVar1;
+  undefined1 auStack_118 [32];
+  undefined8 local_f8;
+  longlong local_e8 [14];
+  ulonglong local_78 [2];
+  undefined8 local_68;
+  undefined8 local_60;
+  ulonglong local_18;
+  
+  local_f8 = 0xfffffffffffffffe;
+  local_18 = DAT_1401c7000 ^ (ulonglong)auStack_118;
+  FUN_140049f00(local_e8);
+  do {
+    while( true ) {
+      uVar1 = FUN_140106710(*(ulonglong **)(param_1 + 8),local_e8,param_3,param_4);
+      if ((char)uVar1 == '\0') {
+        FUN_140049fd0((longlong)local_e8);
+        return;
+      }
+      if (**(char **)(param_1 + 0x28) == '\0') break;
+      param_3 = 0;
+      FUN_140125190(param_1 + 0x188,param_1 + 0x48);
+    }
+  } while (**(char **)(param_1 + 0x38) != '\0');
+  local_60 = 0xf;
+  local_68 = 0;
+  local_78[0]._0_1_ = 0;
+  FUN_1400021b0(local_78,"ALGLIB: error in \'minlmoptimize\' (some derivatives were not provided?)",
+                0x46);
+                    /* WARNING: Subroutine does not return */
+  _CxxThrowException(local_78,(ThrowInfo *)&DAT_1401c31b0);
+}
+

@@ -1,0 +1,77 @@
+EVIDENCE ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94 SHA256 f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD 0x060051a3 Olympus.LI.Triumph.Application.ViewModel.Focus _UpdateZInfo IL_SHA256 a300746b617561db28a98e31cd1416e8404a3628b8ee974ad69ca7a059860108 DECODE_ISSUE null
+0000: nop            
+0001: call          0x0a000118 Olympus.LI.Triumph.Application.UiData.UiResultData.get_FocusData
+0006: callvirt      0x0a000119 Olympus.LI.Triumph.Application.UiData.FocusResultData.get_ZInfo
+000b: stloc.0        
+000c: ldarg.0        
+000d: ldloc.0        
+000e: callvirt      0x0a0014a7 Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZMoveType
+0013: call          0x0600515e Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZMoveType
+0018: nop            
+0019: ldarg.0        
+001a: ldfld         0x04000834 Olympus.LI.Triumph.Application.ViewModel.Focus._ui32ZCurrentPos
+001f: ldloc.0        
+0020: callvirt      0x0a00011a Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZCurrentPos
+0025: ceq            
+0027: stloc.1        
+0028: ldloc.1        
+0029: brtrue.s      58 
+002b: nop            
+002c: ldarg.0        
+002d: ldloc.0        
+002e: callvirt      0x0a00011a Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZCurrentPos
+0033: call          0x0600515f Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZCurrentPos
+0038: nop            
+0039: nop            
+003a: ldarg.0        
+003b: ldfld         0x04000836 Olympus.LI.Triumph.Application.ViewModel.Focus._blnZHomePosEnable
+0040: ldloc.0        
+0041: callvirt      0x0a0014a8 Olympus.LI.Triumph.Application.UiData.ZInfo.get_EnableZHomePos
+0046: ceq            
+0048: stloc.1        
+0049: ldloc.1        
+004a: brtrue.s      91 
+004c: nop            
+004d: ldarg.0        
+004e: ldloc.0        
+004f: callvirt      0x0a0014a8 Olympus.LI.Triumph.Application.UiData.ZInfo.get_EnableZHomePos
+0054: call          0x06005160 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZHomePosEnable
+0059: nop            
+005a: nop            
+005b: ldarg.0        
+005c: ldloc.0        
+005d: callvirt      0x0a0014a9 Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZContinuousMoveSpeedType
+0062: call          0x06005169 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZContinuousMoveSpeedType
+0067: nop            
+0068: ldarg.0        
+0069: ldloc.0        
+006a: callvirt      0x0a0014aa Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZHomePos
+006f: call          0x06005161 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZHomePos
+0074: nop            
+0075: ldarg.0        
+0076: ldloc.0        
+0077: callvirt      0x0a001284 Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZNearSampleLimitPos
+007c: call          0x06005162 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZNearSampleLimitPos
+0081: nop            
+0082: ldarg.0        
+0083: ldloc.0        
+0084: callvirt      0x0a001283 Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZNearSampleLimitSwitch
+0089: call          0x06005163 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZNearSampleLimitSwitch
+008e: nop            
+008f: ldarg.0        
+0090: ldloc.0        
+0091: call          0x06005165 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZNearSampleLimitWarningVisible
+0096: nop            
+0097: ldarg.0        
+0098: ldloc.0        
+0099: callvirt      0x0a000bfb Olympus.LI.Triumph.Application.UiData.ZInfo.get_ZAdapterStatus
+009e: call          0x06005167 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateZAdapterStatus
+00a3: nop            
+00a4: ldarg.0        
+00a5: ldloc.0        
+00a6: callvirt      0x0a0014ab Olympus.LI.Triumph.Application.UiData.ZInfo.get_DiffusionAdapterStatus
+00ab: call          0x06005168 Olympus.LI.Triumph.Application.ViewModel.Focus.set_UpdateDiffusionAdapterStatus
+00b0: nop            
+00b1: ret            

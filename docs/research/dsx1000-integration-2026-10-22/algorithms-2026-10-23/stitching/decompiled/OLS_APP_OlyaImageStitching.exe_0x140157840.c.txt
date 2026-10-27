@@ -1,0 +1,111 @@
+Evidence: ev_0ec34c89eadde0055fd77a2926d39eef5383ff295eb527d77ab548c0390e5d6d
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_140157840(undefined8 *param_1,double param_2)
+
+{
+  uint uVar1;
+  uint uVar2;
+  double dVar3;
+  longlong lVar4;
+  undefined8 *puVar5;
+  int iVar6;
+  int iVar7;
+  longlong lVar8;
+  ulonglong uVar9;
+  ulonglong uVar10;
+  longlong lVar11;
+  double dVar12;
+  undefined1 auStack_b8 [32];
+  Mat local_98 [16];
+  longlong local_88;
+  int *local_80;
+  undefined8 local_78;
+  undefined8 local_70;
+  undefined8 local_68;
+  uint *local_58;
+  longlong *local_50;
+  longlong local_48 [2];
+  ulonglong local_38;
+  
+  local_38 = DAT_1401c7000 ^ (ulonglong)auStack_b8;
+  dVar3 = 1.0;
+  if (param_2 < 1.0) {
+    dVar12 = 0.1;
+    dVar3 = 0.1;
+    if (0.1 < param_2) goto LAB_140157897;
+  }
+  param_2 = dVar3;
+  dVar12 = param_2;
+LAB_140157897:
+  (**(code **)*param_1)(dVar12,local_98,0xffffffff);
+  uVar1 = local_58[1];
+  uVar2 = *local_58;
+  uVar10 = (ulonglong)uVar2;
+  lVar11 = 0;
+  iVar7 = (int)((double)(int)uVar1 * param_2 * 0.5);
+  iVar6 = (int)((double)(int)uVar2 * param_2 * 0.5);
+  if (((byte)local_98[0] & 7) == 5) {
+    lVar8 = lVar11;
+    if (0 < (int)uVar2) {
+      do {
+        lVar4 = lVar11;
+        uVar9 = (ulonglong)uVar1;
+        if (0 < (int)uVar1) {
+          do {
+            if (((iVar7 <= lVar4) && (lVar4 < (int)(uVar1 - iVar7))) ||
+               ((iVar6 <= lVar8 && (lVar8 < (int)(uVar2 - iVar6))))) {
+              *(undefined8 *)(local_48[0] * lVar8 + local_88 + lVar4 * 8) = 0;
+            }
+            uVar9 = uVar9 - 1;
+            lVar4 = lVar4 + 1;
+          } while (uVar9 != 0);
+        }
+        uVar10 = uVar10 - 1;
+        lVar8 = lVar8 + 1;
+      } while (uVar10 != 0);
+    }
+  }
+  else {
+    lVar8 = lVar11;
+    if (0 < (int)uVar2) {
+      do {
+        puVar5 = (undefined8 *)(lVar8 * local_48[0] + local_88);
+        lVar4 = lVar11;
+        uVar9 = (ulonglong)uVar1;
+        if (0 < (int)uVar1) {
+          do {
+            if (((iVar7 <= lVar4) && (lVar4 < (int)(uVar1 - iVar7))) ||
+               ((iVar6 <= lVar8 && (lVar8 < (int)(uVar2 - iVar6))))) {
+              *puVar5 = 0;
+              puVar5[1] = 0;
+            }
+            puVar5 = puVar5 + 2;
+            uVar9 = uVar9 - 1;
+            lVar4 = lVar4 + 1;
+          } while (uVar9 != 0);
+        }
+        uVar10 = uVar10 - 1;
+        lVar8 = lVar8 + 1;
+      } while (uVar10 != 0);
+    }
+  }
+  if ((local_80 != (int *)0x0) && (iVar6 = cv::_interlockedExchangeAdd(local_80,-1), iVar6 == 1)) {
+    cv::Mat::deallocate(local_98);
+  }
+  local_68 = 0;
+  local_70 = 0;
+  local_78 = 0;
+  local_88 = 0;
+  *local_58 = 0;
+  local_80 = (int *)0x0;
+  if (local_50 != local_48) {
+    cv::fastFree(local_50);
+  }
+  return;
+}
+

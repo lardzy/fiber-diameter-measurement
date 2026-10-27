@@ -1,0 +1,125 @@
+{
+  "schema": "dsx-independent-algorithm-replay-v1",
+  "utc": "2026-10-22T18:23:16.506908+00:00",
+  "scope": "Fresh temporary source copies and generated synthetic fixtures; no vendor DLL or hardware execution",
+  "python": "3.13.12",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "dependencies": {
+    "numpy": "2.4.3",
+    "scipy": "1.18.1",
+    "opencv": "4.13.0"
+  },
+  "runner_sha256": "dd56a1c0df9d09c64348416f5cc70cb09e7d7593e337b2db2b5738341e80e879",
+  "suites": [
+    {
+      "suite": "surface",
+      "exit_code": 0,
+      "checks": 21,
+      "passed": 21,
+      "success": true,
+      "elapsed_seconds": 0.10324875000515021,
+      "source_sha256": {
+        "validate_reference.py": "31d145f4eac9c0cb417ab2cd3b395b028aeb8515a19134e69e8bc247735291f2",
+        "reference.py": "cffa971b81fb5095def4360d6bffabc8184f63d4429b32182df58a0172075dab"
+      },
+      "stdout": "{\"status\": \"passed\", \"checks\": 21, \"failures\": []}\n",
+      "stderr": "",
+      "result_path": "validation-suite/surface.json"
+    },
+    {
+      "suite": "rendering",
+      "exit_code": 0,
+      "checks": 15,
+      "passed": 15,
+      "success": true,
+      "elapsed_seconds": 0.09638654100126587,
+      "source_sha256": {
+        "validate_reference.py": "95986f64be923a6eb6b557109e02ed4f6fc9b273433d2937ad25b63e35b2096c",
+        "reference.py": "723d83553f566f7f445f59a82b3ea81ee6a4373fc12a8e1a758b1806fddb5fdb"
+      },
+      "stdout": "{\"status\": \"passed\", \"checks\": 15, \"failures\": []}\n",
+      "stderr": "",
+      "result_path": "validation-suite/rendering.json"
+    },
+    {
+      "suite": "height-contract",
+      "exit_code": 0,
+      "checks": 13,
+      "passed": 13,
+      "success": true,
+      "elapsed_seconds": 0.052520166005706415,
+      "source_sha256": {
+        "validate_reference.py": "7a11fb4967973785e8aac11686c4ed1745b7f9ee0699f0e4f0f9ca2c2a9c6162",
+        "reference.py": "cd0785fc9a434e0742cda1cff2d1408a9ea7ae6c8b9c8157dd0e50f512954483"
+      },
+      "stdout": "{\"status\": \"passed\", \"checks\": 13, \"failures\": []}\n",
+      "stderr": "",
+      "result_path": "validation-suite/height-contract.json"
+    },
+    {
+      "suite": "efi-3d",
+      "exit_code": 0,
+      "checks": 37,
+      "passed": 37,
+      "success": true,
+      "elapsed_seconds": 0.43334654200589284,
+      "source_sha256": {
+        "validate_reference.py": "00e93c27355908cac40b3917a975e341d5f6bdadd60bdc6c3c829600f55cd0fa",
+        "reference_efi.py": "98a134a6cd6175a83be72989aff763ee686a18c0bfc7af1b83c0f31161f5fcbd"
+      },
+      "stdout": "{\n  \"passed\": 37,\n  \"total\": 37,\n  \"failed\": [],\n  \"scene\": [\n    {\n      \"name\": \"end_to_end_two_plane_synthetic_scene\",\n      \"passed\": true,\n      \"raw_height_mae\": 0.06323958188295364,\n      \"post_height_mae\": 0.12073105573654175,\n      \"efi_pixel_mae\": 7.625662326812744,\n      \"center_slice_pixel_mae\": 26.133136749267578,\n      \"elapsed_seconds\": 0.005512375006219372,\n      \"note\": \"Synthetic scene only; thresholds are test acceptance, not DSX measurement specifications.\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "result_path": "validation-suite/efi-3d.json"
+    },
+    {
+      "suite": "stabilization",
+      "exit_code": 0,
+      "checks": 26,
+      "passed": 26,
+      "success": true,
+      "elapsed_seconds": 0.47881241599679925,
+      "source_sha256": {
+        "run_validation.py": "683301054b5c7efc21fe260df2ce697515fb0b3d52e0ecd59f40db6931a1f6c9",
+        "nmv_reference.py": "bdb066e1bf5dffda7fd6be4d5186ac34e80a535765f22094b259dd41228dcc14",
+        "fft-sizes.json": "e653f2d27bfe1a6847c3a02be77b024f6c4536c5dcf2f70b534663a86d366fe6"
+      },
+      "stdout": "{\"cases\": 12, \"checks\": 26, \"passed\": 26}\n",
+      "stderr": "",
+      "result_path": "validation-suite/stabilization.json"
+    },
+    {
+      "suite": "stabilization/hdr",
+      "exit_code": 0,
+      "checks": 37,
+      "passed": 37,
+      "success": true,
+      "elapsed_seconds": 1.0807367079833057,
+      "source_sha256": {
+        "run_validation.py": "c9144f727441e47d3cbeaa06ff0d956edcf5e88db5110286c2ff56a224da6f91",
+        "hamal8_reference.py": "3939a4e63e8f798fd01ef2924a63a7b3ed482cd716e84773b80930a85f39009b",
+        "native-tables.json": "7c42d8f032364903ed08a262160bd4c9d6b7a219aaffea234cd5e16fb5d39186"
+      },
+      "stdout": "{'cases': 5, 'checks': 37, 'passed': 37}\n",
+      "stderr": "",
+      "result_path": "validation-suite/stabilization-hdr.json"
+    },
+    {
+      "suite": "stitching",
+      "exit_code": 0,
+      "checks": 39,
+      "passed": 39,
+      "success": true,
+      "elapsed_seconds": 0.4157518330030143,
+      "source_sha256": {
+        "run_reference_tests.py": "9e7069b6a3960225f541553c2ba4ea35720f9fd7622e244a149b5a8c9db74816",
+        "reference_prototype.py": "4b679dd972ecff3081c8627dfcb1e4042f096f5d2ce814ed5cdc5de0a9600b63"
+      },
+      "stdout": "39/39 passed; /private/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/dsx-algorithm-replay-78zom14n/stitching/test-results.json\n",
+      "stderr": "",
+      "result_path": "validation-suite/stitching.json"
+    }
+  ],
+  "checks": 188,
+  "passed": 188,
+  "status": "passed"
+}

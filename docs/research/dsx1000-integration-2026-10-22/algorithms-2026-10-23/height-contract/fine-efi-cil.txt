@@ -1,0 +1,269 @@
+EVIDENCE ev_9608f5546b072cfe45109c88ec2a520edaec01fb7864c17feeaacd091a863d73 SHA256 03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b
+
+METHOD 0x060001c7 Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter ExecuteExtendFocusImageSG IL_SHA256 09859e94eea8ea99cfdd55e989ea9a84267198bb687bb45679130e8f7778e7c5 DECODE_ISSUE null
+0000: call          0x0a000305 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExceptionNotifierDao
+0005: ldarg.0        
+0006: ldftn         0x060001ca Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._ReceiveExceptionBuildingStop
+000c: newobj        0x0a0004c4 System.EventHandler`1..ctor
+0011: callvirt      0x0a0004c5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.add_EntityUpdateHandler
+0016: call          0x0a0000e4 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+001b: callvirt      0x0a0001a5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0020: stloc.0        
+0021: ldarg.0        
+0022: ldc.i4.0       
+0023: stfld         0x040000e7 Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._emStopState
+0028: call          0x0a0004c6 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SGLibraryDataDao
+002d: callvirt      0x0a0004c7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0032: stloc.1        
+0033: call          0x0a0001b3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+0038: ldc.i4.8       
+0039: callvirt      0x0a0001b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+003e: ldarg.0        
+003f: ldftn         0x060001cf Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._SGConstructCallback
+0045: newobj        0x0a0004c8 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.dgtConstructCallback..ctor
+004a: stloc.2        
+004b: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+0050: callvirt      0x0a0004c9 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendOutEfi
+0055: stloc.3        
+0056: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+005b: ldloc.3        
+005c: ldstr         0x700082a0 "_SGProcessBuild"
+0061: callvirt      0x0a000162 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Attach
+0066: stloc.s       4 
+0068: ldloc.s       4 
+006a: callvirt      0x0a000040 Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+006f: stloc.s       5 
+0071: ldloc.1        
+0072: callvirt      0x0a0004ca Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIParam
+0077: ldfld         0x0a0004cb Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nWidth
+007c: ldloc.1        
+007d: callvirt      0x0a0004ca Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIParam
+0082: ldfld         0x0a0004cc Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIParam.nHeight
+0087: mul            
+0088: newarr        0x010000b2 
+008d: stloc.s       6 
+008f: ldloc.1        
+0090: callvirt      0x0a0004cd Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIContext
+0095: ldloc.1        
+0096: callvirt      0x0a0004ce Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_MVContext
+009b: ldloc.s       5 
+009d: ldloc.s       6 
+009f: ldloc.2        
+00a0: ldsfld        0x0a0001d7 System.IntPtr.Zero
+00a5: call          0x0a0004cf Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_Construct
+00aa: stloc.s       7 
+00ac: ldstr         0x700082c0 "EFIMV_Construct() has done. EFIMV_ERROR_CODE = {0}."
+00b1: ldloc.s       7 
+00b3: box           0x01000047 
+00b8: call          0x0a0000ce System.String.Format
+00bd: call          0x0a000038 Olympus.Mis.Core.Logging.Logger.StepLog
+00c2: ldloc.s       7 
+00c4: ldc.i4.1       
+00c5: bne.un.s      301 
+00c7: ldloc.1        
+00c8: callvirt      0x0a0004cd Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIContext
+00cd: ldloc.1        
+00ce: callvirt      0x0a0004ce Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_MVContext
+00d3: ldloc.0        
+00d4: callvirt      0x0a0000eb Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_CurrentStep
+00d9: ldloc.1        
+00da: callvirt      0x0a0004d0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_InputImageList
+00df: call          0x0a0004d1 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_InputImageForConstruct
+00e4: stloc.s       7 
+00e6: ldstr         0x70008328 "EFIMV_InputImageForConstruct() has done. EFIMV_ERROR_CODE = {0}."
+00eb: ldloc.s       7 
+00ed: box           0x01000047 
+00f2: call          0x0a0000ce System.String.Format
+00f7: call          0x0a000038 Olympus.Mis.Core.Logging.Logger.StepLog
+00fc: ldloc.s       7 
+00fe: brtrue.s      301 
+0100: ldloc.1        
+0101: callvirt      0x0a0004cd Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_EFIContext
+0106: ldloc.1        
+0107: callvirt      0x0a0004ce Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.SGLibraryData.get_MVContext
+010c: ldloc.s       5 
+010e: ldloc.s       6 
+0110: call          0x0a0004d2 Olympus.LI.Triumph.Image.ExtendFocusImageSGSharp.EFIMV.EFIMV_EndConstruct
+0115: stloc.s       7 
+0117: ldstr         0x700083ab "EFIMV_EndConstruct() has done. EFIMV_ERROR_CODE = {0}."
+011c: ldloc.s       7 
+011e: box           0x01000047 
+0123: call          0x0a0000ce System.String.Format
+0128: call          0x0a000038 Olympus.Mis.Core.Logging.Logger.StepLog
+012d: call          0x0a000305 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExceptionNotifierDao
+0132: ldarg.0        
+0133: ldftn         0x060001ca Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._ReceiveExceptionBuildingStop
+0139: newobj        0x0a0004c4 System.EventHandler`1..ctor
+013e: callvirt      0x0a0004d3 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.remove_EntityUpdateHandler
+0143: call          0x0a0003a4 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_LiveMonochromeModeDao
+0148: callvirt      0x0a0003a5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleXmlDao`2.Get
+014d: stloc.s       8 
+014f: ldloc.s       7 
+0151: brfalse.s     369 
+0153: ldloc.s       7 
+0155: ldc.i4.s      24 
+0157: beq.s         369 
+0159: ldstr         0x70008419 "EFIMV Construct failed. EFIMV_ERROR_CODE = {0}"
+015e: ldloc.s       7 
+0160: box           0x01000047 
+0165: call          0x0a0000ce System.String.Format
+016a: call          0x0a00001b Olympus.Mis.Core.Logging.Logger.ErrorLog
+016f: br.s          479 
+0171: ldloc.s       8 
+0173: callvirt      0x0a0003a6 Olympus.LI.Triumph.Workflow.MemoryDatabase.Live.LiveMonochromeMode.get_MonochromeModeEnable
+0178: brfalse.s     479 
+017a: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+017f: callvirt      0x0a0004d4 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendMonochromeOutEfi
+0184: stloc.s       9 
+0186: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+018b: ldloc.s       9 
+018d: callvirt      0x0a0000d4 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Attach
+0192: callvirt      0x0a000040 Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+0197: stloc.s       10 
+0199: ldarg.1        
+019a: callvirt      0x060000ef Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageSizeX
+019f: ldarg.1        
+01a0: callvirt      0x060000f0 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageSizeY
+01a5: mul            
+01a6: stloc.s       11 
+01a8: ldloc.s       10 
+01aa: ldloc.s       5 
+01ac: ldloc.s       11 
+01ae: ldarg.1        
+01af: callvirt      0x060000f1 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_CamByte
+01b4: call          0x0a00017a Olympus.LI.Triumph.Image.ImageDataManager.ImageUtility.ConvertMonochromeImage_1chTo3ch
+01b9: ldloc.s       5 
+01bb: ldloc.s       10 
+01bd: ldloc.s       11 
+01bf: ldarg.1        
+01c0: callvirt      0x060000f1 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_CamByte
+01c5: mul            
+01c6: call          0x0a000234 System.IntPtr.op_Explicit
+01cb: call          0x0a0001d6 Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.CopyMemory
+01d0: leave.s       479 
+01d2: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+01d7: ldloc.s       9 
+01d9: callvirt      0x0a000278 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Dettach
+01de: endfinally     
+01df: ldarg.0        
+01e0: ldfld         0x040000e7 Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._emStopState
+01e5: ldc.i4.1       
+01e6: bne.un.s      510 
+01e8: ldloc.s       7 
+01ea: brfalse.s     498 
+01ec: ldloc.s       7 
+01ee: ldc.i4.s      24 
+01f0: bne.un.s      510 
+01f2: ldarg.0        
+01f3: ldfld         0x040000eb Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._buildingStopWait
+01f8: callvirt      0x0a00003a System.Threading.WaitHandle.WaitOne
+01fd: pop            
+01fe: ldarg.0        
+01ff: ldfld         0x040000e7 Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._emStopState
+0204: ldc.i4.2       
+0205: bne.un.s      533 
+0207: ldloc.s       7 
+0209: brfalse.s     529 
+020b: ldloc.s       7 
+020d: ldc.i4.s      24 
+020f: bne.un.s      533 
+0211: ldc.i4.s      25 
+0213: stloc.s       7 
+0215: ldloc.s       7 
+0217: stloc.s       18 
+0219: ldloc.s       18 
+021b: ldc.i4.0       
+021c: beq.s         562 
+021e: ldloc.s       18 
+0220: ldc.i4.s      24 
+0222: sub            
+0223: switch        2  targets=562,656
+0230: br.s          670 
+0232: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+0237: callvirt      0x0a0001ab Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetExtendBufferList
+023c: stloc.s       12 
+023e: ldloc.s       12 
+0240: ldc.i4.1       
+0241: callvirt      0x0a00003e System.Collections.Generic.List`1.get_Item
+0246: stloc.s       13 
+0248: ldloc.s       12 
+024a: ldc.i4.3       
+024b: callvirt      0x0a00003e System.Collections.Generic.List`1.get_Item
+0250: stloc.s       14 
+0252: ldarg.0        
+0253: ldloc.s       13 
+0255: ldloc.s       5 
+0257: ldarg.1        
+0258: call          0x060001cb Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._GetExtendFocusImageSG
+025d: ldarg.0        
+025e: ldloc.s       14 
+0260: ldloc.s       6 
+0262: ldarg.1        
+0263: ldloc.0        
+0264: callvirt      0x0a0001c3 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zpitch
+0269: ldloc.0        
+026a: callvirt      0x0a0004d5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_BuildingCount
+026f: call          0x060001cc Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter._GetExtendHeightDataSG
+0274: stloc.s       15 
+0276: call          0x0a0001a8 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendFocusImageDataDao
+027b: ldloc.s       15 
+027d: callvirt      0x0a0004d6 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageDataDao.SyncUpdate
+0282: call          0x0a0001b3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+0287: ldc.i4.s      11 
+0289: callvirt      0x0a0001b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+028e: br.s          756 
+0290: call          0x0a0001b3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+0295: ldc.i4.s      10 
+0297: callvirt      0x0a0001b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+029c: br.s          756 
+029e: ldarg.1        
+029f: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+02a4: callvirt      0x0a0000fa Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeX
+02a9: ldarg.1        
+02aa: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+02af: callvirt      0x0a0000fc Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeY
+02b4: mul            
+02b5: ldarg.1        
+02b6: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+02bb: callvirt      0x0a0000f7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_CamByte
+02c0: mul            
+02c1: stloc.s       16 
+02c3: ldarg.1        
+02c4: callvirt      0x060000e9 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_DstPtr
+02c9: ldarg.1        
+02ca: callvirt      0x060000e7 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_SrcPtr
+02cf: ldloc.s       16 
+02d1: conv.u8        
+02d2: call          0x0a0001d5 System.IntPtr.op_Explicit
+02d7: call          0x0a0001d6 Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.CopyMemory
+02dc: ldarg.1        
+02dd: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+02e2: ldc.i4.1       
+02e3: callvirt      0x0a00014b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.set_IsBreakFilter
+02e8: call          0x0a0001b3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+02ed: ldc.i4.s      12 
+02ef: callvirt      0x0a0001b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+02f4: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+02f9: ldloc.3        
+02fa: ldstr         0x700082a0 "_SGProcessBuild"
+02ff: callvirt      0x0a00016a Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Dettach
+0304: ldstr         0x70008477 "ExecuteExtendFocusImageSG() was finished. EFI_ERROR_CODE = {0}. Built frame num = {1}"
+0309: ldloc.s       7 
+030b: box           0x01000047 
+0310: ldloc.0        
+0311: callvirt      0x0a0004d5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_BuildingCount
+0316: box           0x01000076 
+031b: call          0x0a000019 System.String.Format
+0320: call          0x0a000038 Olympus.Mis.Core.Logging.Logger.StepLog
+0325: leave.s       845 
+0327: stloc.s       17 
+0329: ldstr         0x70008524 "Exception has occurred in ExecuteExtendFocusImageSG(). Exception message : {0}"
+032e: ldloc.s       17 
+0330: callvirt      0x0a000018 System.Exception.get_Message
+0335: call          0x0a0000ce System.String.Format
+033a: call          0x0a00001b Olympus.Mis.Core.Logging.Logger.ErrorLog
+033f: call          0x0a0001b3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+0344: ldc.i4.s      12 
+0346: callvirt      0x0a0001b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+034b: leave.s       845 
+034d: ret            

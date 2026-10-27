@@ -1,0 +1,88 @@
+Evidence: ev_727b0a639b1b941678dacff1cd9f5285fa2fde6783e595040aafdbf505b83c69
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+undefined8 FUN_1800120b0(longlong param_1,int *param_2,int *param_3,double *param_4)
+
+{
+  ushort *puVar1;
+  ushort *puVar2;
+  ushort *puVar3;
+  ushort *puVar4;
+  ushort uVar5;
+  int iVar6;
+  uint uVar7;
+  int iVar8;
+  longlong lVar9;
+  ushort *puVar10;
+  longlong lVar11;
+  ulonglong uVar12;
+  longlong lVar13;
+  longlong lVar14;
+  longlong lVar15;
+  longlong lVar16;
+  double dVar17;
+  double dVar18;
+  double dVar19;
+  double dVar20;
+  double dVar21;
+  
+  iVar6 = param_2[2];
+  lVar16 = (longlong)iVar6;
+  uVar7 = param_2[3];
+  if ((iVar6 == param_3[2]) && (uVar7 == param_3[3])) {
+    dVar21 = 0.0;
+    if (0 < (int)uVar7) {
+      iVar8 = *(int *)(param_1 + 0x60);
+      uVar12 = (ulonglong)uVar7;
+      lVar15 = (longlong)(param_3[1] * iVar8) + *(longlong *)(param_1 + 0x58) +
+               (longlong)*param_3 * 2;
+      param_3 = (int *)(longlong)(param_2[1] * iVar8);
+      lVar14 = (longlong)param_3 + (longlong)*param_2 * 2 + *(longlong *)(param_1 + 0x58);
+      do {
+        lVar11 = 0;
+        if (3 < lVar16) {
+          lVar13 = lVar14 - lVar15;
+          lVar9 = (lVar16 - 4U >> 2) + 1;
+          puVar10 = (ushort *)(lVar15 + 2);
+          lVar11 = lVar9 * 4;
+          do {
+            dVar20 = (double)*(ushort *)((longlong)puVar10 + lVar13 + -2) - (double)puVar10[-1];
+            puVar3 = (ushort *)((longlong)puVar10 + lVar13 + 2);
+            puVar2 = puVar10 + 1;
+            dVar19 = (double)*(ushort *)((longlong)puVar10 + lVar13) - (double)*puVar10;
+            puVar4 = (ushort *)((longlong)puVar10 + lVar13 + 4);
+            puVar1 = puVar10 + 2;
+            param_3 = (int *)(ulonglong)*puVar1;
+            puVar10 = puVar10 + 4;
+            dVar18 = (double)*puVar3 - (double)*puVar2;
+            dVar17 = (double)*puVar4 - (double)*puVar1;
+            dVar21 = dVar20 * dVar20 + dVar21 + dVar19 * dVar19 + dVar18 * dVar18 + dVar17 * dVar17;
+            lVar9 = lVar9 + -1;
+          } while (lVar9 != 0);
+        }
+        if (lVar11 < lVar16) {
+          puVar10 = (ushort *)(lVar15 + lVar11 * 2);
+          lVar11 = lVar16 - lVar11;
+          do {
+            puVar2 = (ushort *)((lVar14 - lVar15) + (longlong)puVar10);
+            uVar5 = *puVar10;
+            param_3 = (int *)(ulonglong)uVar5;
+            puVar10 = puVar10 + 1;
+            dVar17 = (double)*puVar2 - (double)uVar5;
+            dVar21 = dVar21 + dVar17 * dVar17;
+            lVar11 = lVar11 + -1;
+          } while (lVar11 != 0);
+        }
+        lVar14 = lVar14 + iVar8;
+        lVar15 = lVar15 + iVar8;
+        uVar12 = uVar12 - 1;
+      } while (uVar12 != 0);
+    }
+    *param_4 = dVar21 / (double)(int)(uVar7 * iVar6);
+    return CONCAT71((int7)((ulonglong)param_3 >> 8),1);
+  }
+  return (ulonglong)param_3 & 0xffffffffffffff00;
+}
+

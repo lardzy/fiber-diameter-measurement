@@ -1,0 +1,280 @@
+EVIDENCE ev_08a3dac24f297294df03e83f0a0b6fd2bd1cc09ea7a261fcf4b1a35cbc77ab63 SHA256 677b02270d54a6c210ba30a3949e188e0994b18388e04f84dc2d7ea3bf63286c
+
+METHOD 0x0600009d Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade SetImage_CommonInfo IL_SHA256 46f1a5918909344d823fff3be7fab9fc46d7bcd04e831099d2543b131476129c DECODE_ISSUE null
+0000: ldarg.1        
+0001: call          0x06000008 Olympus.Mis.Imaging.TriumpServices.DataStoreService.DBHelper.GetImageEntityStartLog
+0006: call          0x0a000072 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.DatabaseLog
+000b: ldarg.0        
+000c: ldarg.0        
+000d: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0012: ldstr         0x70004a9b "OLYMIS.SAVE_IMAGE_COMMONINFO_PROC"
+0017: callvirt      0x0a000066 Microsoft.Practices.EnterpriseLibrary.Data.Database.GetStoredProcCommand
+001c: stfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0021: ldarg.0        
+0022: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0027: ldarg.0        
+0028: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+002d: ldstr         0x700030cd "p_in_imageID"
+0032: ldc.i4.s      11 
+0034: ldarg.1        
+0035: callvirt      0x0a0000d8 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_ImageId
+003a: box           0x0100005f 
+003f: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0044: ldarg.0        
+0045: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+004a: ldarg.0        
+004b: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0050: ldstr         0x70004adf "p_in_image_width"
+0055: ldc.i4.s      11 
+0057: ldarg.1        
+0058: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+005d: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0062: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0067: callvirt      0x0a0001b1 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageWidth
+006c: box           0x0100005f 
+0071: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0076: ldarg.0        
+0077: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+007c: ldarg.0        
+007d: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0082: ldstr         0x70004b01 "p_in_image_height"
+0087: ldc.i4.s      11 
+0089: ldarg.1        
+008a: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+008f: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0094: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0099: callvirt      0x0a0001b2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageHeight
+009e: box           0x0100005f 
+00a3: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+00a8: ldarg.0        
+00a9: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+00ae: ldarg.0        
+00af: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+00b4: ldstr         0x70004b25 "p_in_image_data"
+00b9: ldc.i4.s      11 
+00bb: ldarg.1        
+00bc: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+00c1: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00c6: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+00cb: callvirt      0x0a0001b3 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageData
+00d0: box           0x0100005f 
+00d5: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+00da: ldarg.0        
+00db: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+00e0: ldarg.0        
+00e1: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+00e6: ldstr         0x70004b45 "p_in_common_image_version"
+00eb: ldc.i4.s      11 
+00ed: ldarg.1        
+00ee: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+00f3: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00f8: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+00fd: callvirt      0x0a0001b4 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_CommonImageVersion
+0102: box           0x0100005f 
+0107: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+010c: ldarg.0        
+010d: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0112: ldarg.0        
+0113: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0118: ldstr         0x70004b79 "p_ch_image_rotation"
+011d: ldc.i4.s      16 
+011f: ldarg.1        
+0120: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0125: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+012a: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+012f: callvirt      0x0a0001b5 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageRotation
+0134: call          0x06000004 Olympus.Mis.Imaging.TriumpServices.DataStoreService.DBHelper.BoolToString
+0139: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+013e: ldarg.0        
+013f: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0144: ldarg.0        
+0145: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+014a: ldstr         0x70004ba1 "p_db_image_rotation_angle"
+014f: ldc.i4.8       
+0150: ldarg.1        
+0151: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0156: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+015b: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0160: callvirt      0x0a0001b6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageRotationAngle
+0165: box           0x01000089 
+016a: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+016f: ldarg.0        
+0170: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0175: ldarg.0        
+0176: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+017b: ldstr         0x70004bd5 "p_in_image_flip"
+0180: ldc.i4.s      11 
+0182: ldarg.1        
+0183: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0188: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+018d: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0192: callvirt      0x0a0001b7 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageFlip
+0197: box           0x0100005f 
+019c: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+01a1: ldarg.0        
+01a2: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+01a7: ldarg.0        
+01a8: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+01ad: ldstr         0x70004bf5 "p_db_image_data_perpixel_x"
+01b2: ldc.i4.8       
+01b3: ldarg.1        
+01b4: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+01b9: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+01be: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+01c3: callvirt      0x0a0001b8 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelX
+01c8: box           0x01000089 
+01cd: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+01d2: ldarg.0        
+01d3: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+01d8: ldarg.0        
+01d9: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+01de: ldstr         0x70004c2b "p_db_image_data_perpixel_y"
+01e3: ldc.i4.8       
+01e4: ldarg.1        
+01e5: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+01ea: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+01ef: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+01f4: callvirt      0x0a0001b9 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelY
+01f9: box           0x01000089 
+01fe: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0203: ldarg.0        
+0204: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0209: ldarg.0        
+020a: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+020f: ldstr         0x70004c61 "p_db_image_data_perpixel_z"
+0214: ldc.i4.8       
+0215: ldarg.1        
+0216: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+021b: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0220: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0225: callvirt      0x0a0001ba Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelZ
+022a: box           0x01000089 
+022f: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0234: ldarg.0        
+0235: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+023a: ldarg.0        
+023b: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0240: ldstr         0x70004c97 "p_db_calibration_value_x"
+0245: ldc.i4.8       
+0246: ldarg.1        
+0247: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+024c: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0251: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0256: callvirt      0x0a0001bb Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_CalibrationValueX
+025b: box           0x01000089 
+0260: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0265: ldarg.0        
+0266: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+026b: ldarg.0        
+026c: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0271: ldstr         0x70004cc9 "p_db_calibration_value_y"
+0276: ldc.i4.8       
+0277: ldarg.1        
+0278: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+027d: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0282: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0287: callvirt      0x0a0001bc Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_CalibrationValueY
+028c: box           0x01000089 
+0291: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0296: ldarg.0        
+0297: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+029c: ldarg.0        
+029d: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+02a2: ldstr         0x70004cfb "p_db_calibration_value_z"
+02a7: ldc.i4.8       
+02a8: ldarg.1        
+02a9: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+02ae: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+02b3: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+02b8: callvirt      0x0a0001bd Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_CalibrationValueZ
+02bd: box           0x01000089 
+02c2: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+02c7: ldarg.0        
+02c8: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+02cd: ldarg.0        
+02ce: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+02d3: ldstr         0x70004d2d "p_in_grr_mode"
+02d8: ldc.i4.s      11 
+02da: ldarg.1        
+02db: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+02e0: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+02e5: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+02ea: callvirt      0x0a0001be Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_GRRMode
+02ef: box           0x010000a9 
+02f4: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+02f9: ldarg.0        
+02fa: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+02ff: ldarg.0        
+0300: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0305: ldstr         0x70004d49 "p_vc_grr_operator"
+030a: ldc.i4.s      16 
+030c: ldarg.1        
+030d: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+0312: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0317: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+031c: callvirt      0x0a0001bf Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_GRROperator
+0321: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0326: ldarg.0        
+0327: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+032c: ldarg.0        
+032d: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0332: ldstr         0x70004d6d "p_vc_grr_sample"
+0337: ldc.i4.s      16 
+0339: ldarg.1        
+033a: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+033f: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0344: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0349: callvirt      0x0a0001c0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_GRRSample
+034e: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0353: ldarg.0        
+0354: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+0359: ldarg.0        
+035a: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+035f: ldstr         0x70004d8d "p_in_Image_Aspect_Ratio"
+0364: ldc.i4.s      11 
+0366: ldarg.1        
+0367: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+036c: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+0371: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+0376: callvirt      0x0a0001c1 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageAspectRatio
+037b: box           0x010000aa 
+0380: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+0385: ldarg.0        
+0386: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+038b: ldarg.0        
+038c: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0391: ldstr         0x70004dbd "p_in_Image_Trimming_SizeX"
+0396: ldc.i4.s      11 
+0398: ldarg.1        
+0399: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+039e: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+03a3: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+03a8: callvirt      0x0a0001c2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageTrimmingSizeX
+03ad: box           0x0100005f 
+03b2: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+03b7: ldarg.0        
+03b8: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+03bd: ldarg.0        
+03be: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+03c3: ldstr         0x70004df1 "p_in_Image_Trimming_SizeY"
+03c8: ldc.i4.s      11 
+03ca: ldarg.1        
+03cb: callvirt      0x0a00003f Olympus.Mis.Imaging.BusinessEntities.ImageEntity.Common.ImageEntity.get_AcquisitionInfo
+03d0: callvirt      0x0a000116 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+03d5: callvirt      0x0a0001b0 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ImageCommonInfomation
+03da: callvirt      0x0a0001c3 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageTrimmingSizeY
+03df: box           0x0100005f 
+03e4: callvirt      0x0a000073 Microsoft.Practices.EnterpriseLibrary.Data.Database.AddInParameter
+03e9: ldarg.0        
+03ea: ldfld         0x040002ec Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDatabase
+03ef: ldarg.0        
+03f0: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+03f5: ldarg.2        
+03f6: callvirt      0x0a000119 Microsoft.Practices.EnterpriseLibrary.Data.Database.ExecuteNonQuery
+03fb: stloc.0        
+03fc: ldarg.0        
+03fd: ldfld         0x040002ed Olympus.Mis.Imaging.TriumpServices.DataStoreService.ImageDBStoreFacade._clsDbCommand
+0402: ldloc.0        
+0403: call          0x06000007 Olympus.Mis.Imaging.TriumpServices.DataStoreService.DBHelper.GetEndDbCommandLogWithCount
+0408: call          0x0a000072 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.DatabaseLog
+040d: ret            

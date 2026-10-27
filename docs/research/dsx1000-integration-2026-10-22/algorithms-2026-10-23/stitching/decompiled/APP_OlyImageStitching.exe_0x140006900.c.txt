@@ -1,0 +1,199 @@
+Evidence: ev_2b3409379990ecc1ebd9dcc280b20c31a6ad712e153454ebce0080bcb38d0d51
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined8
+FUN_140006900(undefined8 param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  char cVar1;
+  WCHAR WVar2;
+  undefined1 auVar3 [16];
+  undefined1 auVar4 [16];
+  CompositeErr CVar5;
+  char *pcVar6;
+  undefined8 *puVar7;
+  __uint64 _Var8;
+  void *pvVar9;
+  CvPoint *pCVar10;
+  LPCWSTR lpFileName;
+  char *pcVar11;
+  undefined4 *puVar12;
+  WCHAR *pWVar13;
+  char *pcVar14;
+  WCHAR *pWVar15;
+  int iVar16;
+  uint uVar17;
+  char *pcVar18;
+  int iVar19;
+  int iVar20;
+  longlong lVar21;
+  ulonglong uVar22;
+  longlong lVar23;
+  undefined8 *puVar24;
+  undefined1 auStackY_8b8 [32];
+  int local_828;
+  int iStack_824;
+  int local_820;
+  int iStack_81c;
+  undefined8 local_818;
+  undefined8 local_810;
+  CCompositeDLL local_808 [464];
+  wchar_t local_638 [256];
+  WCHAR local_438 [256];
+  WCHAR local_238 [256];
+  ulonglong local_38;
+  
+  local_810 = 0xfffffffffffffffe;
+  local_38 = DAT_140030010 ^ (ulonglong)auStackY_8b8;
+  FUN_14000cc00(L"STCImageMatching\n",param_2,param_3,param_4);
+  if ((DAT_140030efc == 0) && (DAT_140030ef4 != 0)) {
+    pcVar18 = (char *)0x0;
+    pcVar6 = pcVar18;
+    if (DAT_140030e1c == 1) {
+      pcVar6 = operator_new__((longlong)(*(int *)(DAT_140030f08 + -0x10) + 1));
+      puVar7 = (undefined8 *)
+               ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+               CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                         ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)
+                          &local_820,(wchar_t *)DAT_140030f08);
+      pcVar11 = (char *)*puVar7;
+      pcVar14 = pcVar6;
+      do {
+        cVar1 = *pcVar11;
+        *pcVar14 = cVar1;
+        pcVar11 = pcVar11 + 1;
+        pcVar14 = pcVar14 + 1;
+      } while (cVar1 != '\0');
+      ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+      ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)&local_820);
+    }
+    iVar16 = 6;
+    if (DAT_140030dec - 4U < 3) {
+      iVar16 = DAT_140030dec;
+    }
+    CCompositeDLL::CCompositeDLL(local_808);
+    iVar20 = (int)((double)(DAT_140030ee8 * 100) / (double)DAT_140030f00);
+    iVar19 = (int)((double)(DAT_140030eec * 100) / (double)DAT_140030f04);
+    CCompositeDLL::SetDialogData
+              (local_808,iVar16,iVar19,iVar20,
+               (int)((double)(DAT_1400300bc * 100) / (double)DAT_140030f04),
+               (int)((double)(DAT_1400300bc * 100) / (double)DAT_140030f00),DAT_140030df0,0.0,
+               DAT_140030df8,iVar19,iVar20,DAT_140030e00,DAT_140030e08,(bool)DAT_140030e0c,
+               DAT_140030e1c,pcVar6,1);
+    puVar7 = (undefined8 *)0x0;
+    if (DAT_140030e1c == 0) {
+      auVar3._8_8_ = 0;
+      auVar3._0_8_ = (longlong)(DAT_1400300d4 * DAT_1400300d0);
+      _Var8 = SUB168(ZEXT816(8) * auVar3,0);
+      if (SUB168(ZEXT816(8) * auVar3,8) != 0) {
+        _Var8 = 0xffffffffffffffff;
+      }
+      puVar7 = operator_new__(_Var8);
+      memset(local_638,0,0x200);
+      pcVar11 = pcVar18;
+      puVar24 = puVar7;
+      if (0 < DAT_1400300d4 * DAT_1400300d0) {
+        do {
+          pvVar9 = operator_new__((longlong)(DAT_140030f04 * DAT_140030f00 * 3));
+          *puVar24 = pvVar9;
+          FUN_14000c4a0(local_638,L"%s\\imageC_%03d.img",DAT_140030f08,pcVar11);
+          _wfopen_s((FILE **)&local_828,local_638,L"rb");
+          if ((FILE *)CONCAT44(iStack_824,local_828) != (FILE *)0x0) {
+            fread((void *)*puVar24,1,(longlong)(DAT_140030f04 * DAT_140030f00 * 3),
+                  (FILE *)CONCAT44(iStack_824,local_828));
+            fclose((FILE *)CONCAT44(iStack_824,local_828));
+          }
+          uVar17 = (int)pcVar11 + 1;
+          pcVar11 = (char *)(ulonglong)uVar17;
+          puVar24 = puVar24 + 1;
+        } while ((int)uVar17 < DAT_1400300d4 * DAT_1400300d0);
+      }
+    }
+    local_818 = 0;
+    local_820 = DAT_140030f04;
+    iStack_81c = DAT_140030f00;
+    local_828 = DAT_1400300d4;
+    iStack_824 = DAT_1400300d0;
+    CVar5 = CCompositeDLL::CompositeMatch(local_808,puVar7,CONCAT44(DAT_140030f00,DAT_140030f04),8);
+    if (CVar5 != 0) {
+      CCompositeDLL::~CCompositeDLL(local_808);
+      return 0;
+    }
+    pCVar10 = CCompositeDLL::GetMatchPos(local_808);
+    iVar19 = DAT_1400300d4;
+    iVar16 = DAT_1400300d0;
+    lVar23 = (longlong)(DAT_1400300d4 * DAT_1400300d0);
+    if (0 < DAT_1400300d4 * DAT_1400300d0) {
+      puVar12 = (undefined4 *)(DAT_140030ec0 + 4);
+      lVar21 = (longlong)pCVar10 - DAT_140030ec0;
+      do {
+        puVar12[-1] = *(undefined4 *)(lVar21 + -4 + (longlong)puVar12);
+        *puVar12 = *(undefined4 *)(lVar21 + (longlong)puVar12);
+        puVar12 = puVar12 + 2;
+        lVar23 = lVar23 + -1;
+      } while (lVar23 != 0);
+    }
+    DAT_140030ed4 = (undefined4)local_818;
+    DAT_140030ed0 = local_818._4_4_;
+    if (DAT_140030e18 == 1) {
+      auVar4._8_8_ = 0;
+      auVar4._0_8_ = (longlong)(*(int *)(DAT_140030f10 + -8) + 1);
+      _Var8 = SUB168(ZEXT816(2) * auVar4,0);
+      if (SUB168(ZEXT816(2) * auVar4,8) != 0) {
+        _Var8 = 0xffffffffffffffff;
+      }
+      lpFileName = operator_new__(_Var8);
+      pWVar13 = DAT_140030f10;
+      pWVar15 = lpFileName;
+      do {
+        WVar2 = *pWVar13;
+        *pWVar15 = WVar2;
+        pWVar13 = pWVar13 + 1;
+        pWVar15 = pWVar15 + 1;
+      } while (WVar2 != L'\0');
+      pCVar10 = CCompositeDLL::GetMatchPos(local_808);
+      memset(local_438,0,0x200);
+      memset(local_238,0,0x200);
+      iVar20 = DAT_1400300d4 * DAT_1400300d0;
+      pcVar11 = pcVar18;
+      iVar19 = DAT_1400300d4;
+      iVar16 = DAT_1400300d0;
+      if (0 < iVar20) {
+        do {
+          uVar22 = (ulonglong)*(uint *)(pCVar10 + 4);
+          FUN_14000c4a0(local_438,L"%d,%d",(ulonglong)*(uint *)pCVar10,uVar22);
+          FUN_14000c4a0(local_238,L"%03d",pcVar11,uVar22);
+          WritePrivateProfileStringW(L"out",local_238,local_438,lpFileName);
+          pCVar10 = pCVar10 + 8;
+          uVar17 = (int)pcVar11 + 1;
+          pcVar11 = (char *)(ulonglong)uVar17;
+          iVar19 = DAT_1400300d4;
+          iVar16 = DAT_1400300d0;
+        } while ((int)uVar17 < iVar20);
+      }
+    }
+    if ((puVar7 != (undefined8 *)0x0) && (0 < iVar19 * iVar16)) {
+      do {
+        if ((void *)*puVar7 != (void *)0x0) {
+          operator_delete__((void *)*puVar7);
+          iVar19 = DAT_1400300d4;
+          iVar16 = DAT_1400300d0;
+        }
+        uVar17 = (int)pcVar18 + 1;
+        pcVar18 = (char *)(ulonglong)uVar17;
+        puVar7 = puVar7 + 1;
+      } while ((int)uVar17 < iVar19 * iVar16);
+    }
+    if (pcVar6 != (char *)0x0) {
+      operator_delete__(pcVar6);
+    }
+    CCompositeDLL::~CCompositeDLL(local_808);
+  }
+  return 1;
+}
+

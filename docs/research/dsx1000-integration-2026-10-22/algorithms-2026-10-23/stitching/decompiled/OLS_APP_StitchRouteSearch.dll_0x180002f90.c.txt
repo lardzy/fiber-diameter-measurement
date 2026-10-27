@@ -1,0 +1,75 @@
+Evidence: ev_f711bb25b43f6066bc4609969610c8fcb6bbe9314244ce365b611cd99fcac7bd
+Subject SHA256: 1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4
+Bundle: route-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_180002f90(longlong param_1,int *param_2,ulonglong *param_3)
+
+{
+  int iVar1;
+  int iVar2;
+  void **ppvVar3;
+  longlong lVar4;
+  uint uVar5;
+  ulonglong uVar6;
+  longlong *plVar7;
+  undefined1 auStack_98 [32];
+  undefined8 *local_78;
+  undefined8 *local_70;
+  undefined8 local_68;
+  void *local_60;
+  undefined8 uStack_58;
+  undefined8 local_50;
+  ulonglong local_48;
+  
+  local_68 = 0xfffffffffffffffe;
+  local_48 = DAT_180007000 ^ (ulonglong)auStack_98;
+  iVar1 = param_2[2];
+  iVar2 = *param_2;
+  uVar6 = (ulonglong)param_2[1];
+  if (param_2[1] <= param_2[3]) {
+    plVar7 = (longlong *)(param_1 + uVar6 * 8);
+    do {
+      local_60 = (void *)0x0;
+      uStack_58 = 0;
+      local_50 = 0;
+      FUN_180003690(&local_60,(void *)((longlong)*param_2 + *plVar7),
+                    (longlong)(param_2[2] + 1) + *plVar7);
+      FUN_1800031f0((longlong *)&local_60,(longlong)((iVar1 - iVar2) + 1));
+      ppvVar3 = (void **)param_3[1];
+      if ((&local_60 < ppvVar3) && ((void **)*param_3 <= &local_60)) {
+        lVar4 = (longlong)&local_60 - (longlong)*param_3;
+        lVar4 = lVar4 / 6 + (lVar4 >> 0x3f);
+        if (ppvVar3 == (void **)param_3[2]) {
+          FUN_1800032b0((longlong *)param_3);
+        }
+        local_78 = (undefined8 *)param_3[1];
+        local_70 = local_78;
+        if (local_78 != (undefined8 *)0x0) {
+          FUN_1800035f0(local_78,(longlong *)(*param_3 + ((lVar4 >> 2) - (lVar4 >> 0x3f)) * 0x18));
+        }
+      }
+      else {
+        if (ppvVar3 == (void **)param_3[2]) {
+          FUN_1800032b0((longlong *)param_3);
+        }
+        local_78 = (undefined8 *)param_3[1];
+        local_70 = local_78;
+        if (local_78 != (undefined8 *)0x0) {
+          FUN_1800035f0(local_78,(longlong *)&local_60);
+        }
+      }
+      param_3[1] = param_3[1] + 0x18;
+      if (local_60 != (void *)0x0) {
+        operator_delete(local_60);
+      }
+      uVar5 = (int)uVar6 + 1;
+      uVar6 = (ulonglong)uVar5;
+      plVar7 = plVar7 + 1;
+    } while ((int)uVar5 <= param_2[3]);
+  }
+  return;
+}
+

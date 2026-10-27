@@ -1,0 +1,130 @@
+Evidence: ev_efa2ff116acb1b398edcc58d5a453a8672210ea5bb98c1a6823f6fcfcd91c13a
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-evidence.json.gz
+
+
+ulonglong FUN_180006ad0(undefined8 param_1,undefined4 *param_2,undefined4 *param_3,
+                       undefined8 *param_4,undefined8 *param_5,undefined8 *param_6,longlong param_7,
+                       int param_8,longlong *param_9,longlong param_10)
+
+{
+  undefined4 uVar1;
+  uint extraout_EAX;
+  undefined8 uVar2;
+  ulonglong uVar3;
+  ulonglong uVar4;
+  undefined4 local_168;
+  undefined4 uStack_164;
+  undefined4 uStack_160;
+  undefined4 uStack_15c;
+  undefined8 local_158;
+  undefined8 local_138;
+  undefined8 uStack_130;
+  undefined8 local_128;
+  undefined8 uStack_120;
+  undefined8 local_118;
+  undefined8 uStack_110;
+  undefined8 local_108;
+  undefined8 uStack_100;
+  undefined8 local_f8;
+  undefined8 uStack_f0;
+  undefined8 local_e8;
+  undefined8 uStack_e0;
+  undefined8 local_d8;
+  undefined8 uStack_d0;
+  undefined8 local_c8;
+  undefined8 uStack_c0;
+  undefined8 local_b8;
+  undefined8 uStack_b0;
+  undefined8 local_a8;
+  undefined8 uStack_a0;
+  undefined8 local_98;
+  undefined8 uStack_90;
+  undefined8 local_88;
+  undefined8 uStack_80;
+  undefined8 local_78;
+  undefined8 uStack_70;
+  undefined8 local_68;
+  undefined8 uStack_60;
+  undefined8 local_58;
+  undefined8 uStack_50;
+  undefined8 local_48;
+  undefined8 uStack_40;
+  undefined8 local_38;
+  undefined8 uStack_30;
+  undefined8 local_28;
+  undefined8 uStack_20;
+  
+  uVar2 = _log_info_id(0);
+  LogTraceStdF(L"[Stitch_C++]set OpneCV mode.",uVar2,
+               L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+               ,0x37);
+  uVar1 = cvGetErrMode();
+  *param_2 = uVar1;
+  cvSetErrMode(2);
+  cvSetErrStatus(0);
+  FUN_180009e80((longlong)param_2,(char *)param_4[0xd]);
+  local_138 = *param_6;
+  uStack_130 = param_6[1];
+  local_128 = param_6[2];
+  uStack_120 = param_6[3];
+  local_118 = *param_5;
+  uStack_110 = param_5[1];
+  local_108 = param_5[2];
+  uStack_100 = param_5[3];
+  local_f8 = param_5[4];
+  uStack_f0 = param_5[5];
+  local_e8 = param_5[6];
+  uStack_e0 = param_5[7];
+  local_d8 = param_5[8];
+  uStack_d0 = param_5[9];
+  local_c8 = param_5[10];
+  uStack_c0 = param_5[0xb];
+  local_b8 = param_5[0xc];
+  uStack_b0 = param_5[0xd];
+  local_a8 = param_5[0xe];
+  uStack_a0 = param_5[0xf];
+  local_98 = *param_4;
+  uStack_90 = param_4[1];
+  local_88 = param_4[2];
+  uStack_80 = param_4[3];
+  local_78 = param_4[4];
+  uStack_70 = param_4[5];
+  local_68 = param_4[6];
+  uStack_60 = param_4[7];
+  local_58 = param_4[8];
+  uStack_50 = param_4[9];
+  local_48 = param_4[10];
+  uStack_40 = param_4[0xb];
+  local_38 = param_4[0xc];
+  uStack_30 = param_4[0xd];
+  local_28 = param_4[0xe];
+  uStack_20 = param_4[0xf];
+  local_168 = *param_3;
+  uStack_164 = param_3[1];
+  uStack_160 = param_3[2];
+  uStack_15c = param_3[3];
+  local_158 = *(undefined8 *)(param_3 + 4);
+  uVar2 = _log_info_id(0);
+  LogTraceStdF(L"[Stitch_C++]set parameter.",uVar2,
+               L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+               ,0x37);
+  if (param_7 == 0) {
+    uVar4 = 0x68;
+  }
+  else {
+    uVar3 = FUN_180009bf0((longlong)param_2,(ulonglong *)&local_168,&local_98,&local_118,&local_138,
+                          param_7,param_8,param_9);
+    uVar4 = uVar3 & 0xffffffff;
+    if ((int)uVar3 == 0) {
+      FUN_180009f70((longlong)param_2,param_10);
+      uVar4 = (ulonglong)extraout_EAX;
+      uVar2 = _log_info_id(0);
+      LogTraceStdF(L"[Stitch_C++]finish stitching dll",uVar2,
+                   L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                   ,0x37);
+    }
+  }
+  return uVar4;
+}
+

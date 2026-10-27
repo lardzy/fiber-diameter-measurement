@@ -1,0 +1,508 @@
+Evidence: ev_f358e75a4fb3a68e478952f023c231ddf2bebe9ebd8428237e2a7d4906ae8f4c
+Artifact: /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybStageDomain.dll
+SHA256: 2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff
+Static CIL, not source C#, not runtime observation.
+
+0x06000042 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveRelativelyTask
+signature: {"raw_length":5,"raw_sha256":"548db6d1e90e6d4c9319ac21a7a4766c9daf968dce25edd1c70d409070e938e2","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:25"],"field_type":null,"issue":null}
+body offset: 11188; IL sha256: 64545c8a279dc72bc6155ca134ea57738f1fb45f8374b1d036278fff8dff3aaf; normalized IL sha256: bcf31b27ef5f718634987f2779a70d06783ef2f79d7a43e14cb1bb29203aa56d
+0: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+5: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+10: callvirt 0x0a00015d Olympus.LI.Triumph.Device.Stage.IStage.DecelerationStop
+15: call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+20: callvirt 0x0a000049 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+25: callvirt 0x0a00015e Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSpeed
+30: stloc.0  
+31: call 0x0a00015f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageAngleDao
+36: callvirt 0x0a000160 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+41: callvirt 0x0a000161 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageAngleEntity.get_StageAngle
+46: stloc.1  
+47: ldarg.1  
+48: castclass 0x01000097 
+53: stloc.2  
+54: ldarg.0  
+55: ldloc.0  
+56: ldloc.2  
+57: callvirt 0x0a000162 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageRelativePositionParam.get_RelativePositionX
+62: ldloc.2  
+63: callvirt 0x0a000163 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageRelativePositionParam.get_RelativePositionY
+68: ldloc.2  
+69: callvirt 0x0a000164 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageRelativePositionParam.get_EnableAlignment
+74: ldloc.1  
+75: call 0x06000066 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveRelatively
+80: leave.s 123 
+82: stloc.3  
+83: ldarg.0  
+84: ldloc.3  
+85: call 0x0600006c Olympus.LI.Triumph.Workflow.Stage.StageService.IsErrorForStageHardwareException
+90: brfalse.s 110 
+92: ldloc.3  
+93: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+98: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+103: ldloc.3  
+104: newobj 0x0a000166 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowStageHardwareException..ctor
+109: throw  
+110: ldloc.3  
+111: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+116: call 0x0a000167 Olympus.Mis.Core.Logging.Logger.WarningLog
+121: leave.s 123 
+123: ret  
+
+0x06000044 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutelyTask
+signature: {"raw_length":5,"raw_sha256":"548db6d1e90e6d4c9319ac21a7a4766c9daf968dce25edd1c70d409070e938e2","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:25"],"field_type":null,"issue":null}
+body offset: 11344; IL sha256: 7f74edeec6cef4d2ae194cdeb711c39bcd595374fb50ddb3ea3b7ce921897533; normalized IL sha256: e098c7b839bed66df41cbd1fb1cd6bb19baa14032b3883d173f90ba18be82e8d
+0: call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+5: callvirt 0x0a000049 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+10: stloc.0  
+11: ldloc.0  
+12: callvirt 0x0a00015e Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSpeed
+17: stloc.1  
+18: call 0x0a00015f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageAngleDao
+23: callvirt 0x0a000160 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+28: callvirt 0x0a000161 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageAngleEntity.get_StageAngle
+33: stloc.2  
+34: ldarg.1  
+35: isinst 0x0100000d 
+40: brfalse.s 140 
+42: ldarg.1  
+43: castclass 0x0100000d 
+48: callvirt 0x0a000168 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_IsConsiderStartMoveAxis
+53: brtrue.s 85 
+55: ldarg.1  
+56: castclass 0x0100000d 
+61: stloc.3  
+62: ldarg.0  
+63: ldloc.1  
+64: ldloc.3  
+65: callvirt 0x0a000151 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_AbsolutePositionX
+70: ldloc.3  
+71: callvirt 0x0a000153 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_AbsolutePositionY
+76: ldc.i4.1  
+77: ldloc.2  
+78: call 0x06000062 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutely
+83: br.s 210 
+85: ldarg.0  
+86: ldloc.1  
+87: ldarg.1  
+88: castclass 0x0100000d 
+93: callvirt 0x0a000151 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_AbsolutePositionX
+98: ldarg.1  
+99: castclass 0x0100000d 
+104: callvirt 0x0a000153 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_AbsolutePositionY
+109: ldloc.0  
+110: callvirt 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentHardCoordinate
+115: ldfld 0x0a00016a DCoordinate.X
+120: ldloc.0  
+121: callvirt 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentHardCoordinate
+126: ldfld 0x0a00016b DCoordinate.Y
+131: ldc.i4.1  
+132: ldloc.2  
+133: call 0x06000063 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutely
+138: br.s 210 
+140: ldarg.1  
+141: isinst 0x0100009b 
+146: brfalse.s 195 
+148: ldarg.1  
+149: castclass 0x0100009b 
+154: stloc.s 4 
+156: ldarg.0  
+157: ldloc.1  
+158: ldloc.s 4 
+160: callvirt 0x0a00016c Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionWithRotationAxisParam.get_AbsolutePositionX
+165: ldloc.s 4 
+167: callvirt 0x0a00016d Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionWithRotationAxisParam.get_AbsolutePositionY
+172: ldloc.s 4 
+174: callvirt 0x0a00016e Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionWithRotationAxisParam.get_AngleCorrectionBasePositionX
+179: ldloc.s 4 
+181: callvirt 0x0a00016f Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionWithRotationAxisParam.get_AngleCorrectionBasePositionY
+186: ldc.i4.1  
+187: ldloc.2  
+188: call 0x06000063 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutely
+193: br.s 210 
+195: ldstr 0x700007fb "MoveAbsolutelyTask parameter invalid."
+200: newobj 0x0a000170 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowParameterException..ctor
+205: stloc.s 5 
+207: ldloc.s 5 
+209: throw  
+210: leave.s 258 
+212: stloc.s 6 
+214: ldarg.0  
+215: ldloc.s 6 
+217: call 0x0600006c Olympus.LI.Triumph.Workflow.Stage.StageService.IsErrorForStageHardwareException
+222: brfalse.s 244 
+224: ldloc.s 6 
+226: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+231: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+236: ldloc.s 6 
+238: newobj 0x0a000166 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowStageHardwareException..ctor
+243: throw  
+244: ldloc.s 6 
+246: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+251: call 0x0a000167 Olympus.Mis.Core.Logging.Logger.WarningLog
+256: leave.s 258 
+258: ret  
+
+0x06000049 Olympus.LI.Triumph.Workflow.Stage.StageService.StageDecelerationStopTask
+signature: {"raw_length":5,"raw_sha256":"548db6d1e90e6d4c9319ac21a7a4766c9daf968dce25edd1c70d409070e938e2","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:25"],"field_type":null,"issue":null}
+body offset: 12236; IL sha256: 51823434ae449255bffb82e9e70d7f4bbcb7eb364e025533e828f4de2cd548ba; normalized IL sha256: ea68f41a0316cbc1407094092a02d45cb7da29a2abd76f280b626cc8a919b3ab
+0: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+5: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+10: callvirt 0x0a00015d Olympus.LI.Triumph.Device.Stage.IStage.DecelerationStop
+15: leave.s 58 
+17: stloc.0  
+18: ldarg.0  
+19: ldloc.0  
+20: call 0x0600006c Olympus.LI.Triumph.Workflow.Stage.StageService.IsErrorForStageHardwareException
+25: brfalse.s 45 
+27: ldloc.0  
+28: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+33: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+38: ldloc.0  
+39: newobj 0x0a000166 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowStageHardwareException..ctor
+44: throw  
+45: ldloc.0  
+46: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+51: call 0x0a000167 Olympus.Mis.Core.Logging.Logger.WarningLog
+56: leave.s 58 
+58: ret  
+
+0x0600004d Olympus.LI.Triumph.Workflow.Stage.StageService.GetStagePositionTask
+signature: {"raw_length":5,"raw_sha256":"548db6d1e90e6d4c9319ac21a7a4766c9daf968dce25edd1c70d409070e938e2","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:25"],"field_type":null,"issue":null}
+body offset: 12827; IL sha256: f1957cab40c95ba2fad2d8cd0e7ba24390b97a58b2c7a3efd18ca52c3493c580; normalized IL sha256: c60306cae58033c290efe52b447235507fa7474aa4a890507ca2b0c2ca4c2a1a
+0: ldarg.0  
+1: call 0x0600005a Olympus.LI.Triumph.Workflow.Stage.StageService.GetStagePosition
+6: ret  
+
+0x0600005a Olympus.LI.Triumph.Workflow.Stage.StageService.GetStagePosition
+signature: {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+body offset: 15128; IL sha256: 7e5c8622b0915de5835d99802e7222e061cfe99bdb16290653d4f75a3681a974; normalized IL sha256: e8e1355f9b3aaa68a4519e58e79ff650e5833f33aa00126711dae0d8b497483f
+0: ldc.r8 0 
+9: stloc.0  
+10: ldc.r8 0 
+19: stloc.1  
+20: ldc.r8 0 
+29: stloc.2  
+30: ldc.r8 0 
+39: stloc.3  
+40: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+45: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+50: ldloca.s 0 
+52: ldloca.s 1 
+54: callvirt 0x0a00019e Olympus.LI.Triumph.Device.Stage.IStage.GetCoodinates
+59: call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+64: callvirt 0x0a000049 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+69: stloc.s 4 
+71: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+76: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+81: ldloc.0  
+82: ldloc.1  
+83: ldloca.s 2 
+85: ldloca.s 3 
+87: callvirt 0x0a00019f Olympus.LI.Triumph.Device.Stage.IStage.ConvertAbsoluteCoordinatesFromHardToSoft
+92: ldloc.s 4 
+94: callvirt 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentHardCoordinate
+99: ldfld 0x0a00016a DCoordinate.X
+104: stloc.s 7 
+106: ldloca.s 7 
+108: ldloc.0  
+109: call 0x0a0001a0 System.Double.CompareTo
+114: brtrue.s 188 
+116: ldloc.s 4 
+118: callvirt 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentHardCoordinate
+123: ldfld 0x0a00016b DCoordinate.Y
+128: stloc.s 8 
+130: ldloca.s 8 
+132: ldloc.1  
+133: call 0x0a0001a0 System.Double.CompareTo
+138: brtrue.s 188 
+140: ldloc.s 4 
+142: callvirt 0x0a0001a1 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSoftCoordinate
+147: ldfld 0x0a00016a DCoordinate.X
+152: stloc.s 9 
+154: ldloca.s 9 
+156: ldloc.2  
+157: call 0x0a0001a0 System.Double.CompareTo
+162: brtrue.s 188 
+164: ldloc.s 4 
+166: callvirt 0x0a0001a1 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSoftCoordinate
+171: ldfld 0x0a00016b DCoordinate.Y
+176: stloc.s 10 
+178: ldloca.s 10 
+180: ldloc.3  
+181: call 0x0a0001a0 System.Double.CompareTo
+186: brfalse.s 266 
+188: ldloca.s 5 
+190: initobj 0x0100009a 
+196: ldloca.s 6 
+198: initobj 0x0100009a 
+204: ldloca.s 5 
+206: ldloc.0  
+207: stfld 0x0a00016a DCoordinate.X
+212: ldloca.s 5 
+214: ldloc.1  
+215: stfld 0x0a00016b DCoordinate.Y
+220: ldloc.s 4 
+222: ldloc.s 5 
+224: callvirt 0x0a0001a2 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.set_CurrentHardCoordinate
+229: ldloca.s 6 
+231: ldloc.2  
+232: stfld 0x0a00016a DCoordinate.X
+237: ldloca.s 6 
+239: ldloc.3  
+240: stfld 0x0a00016b DCoordinate.Y
+245: ldloc.s 4 
+247: ldloc.s 6 
+249: callvirt 0x0a0001a3 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.set_CurrentSoftCoordinate
+254: call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+259: ldloc.s 4 
+261: callvirt 0x0a00004b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+266: ret  
+
+0x06000062 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutely
+signature: {"raw_length":8,"raw_sha256":"692d0b559baf259bb2cf8aa00a3703aa3a165719a4288b5d462fb410782cb87d","resolved_sha256":"692d0b559baf259bb2cf8aa00a3703aa3a165719a4288b5d462fb410782cb87d","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":5,"return_type":"void","parameter_types":["u4","r8","r8","bool","i4"],"field_type":null,"issue":null}
+body offset: 16920; IL sha256: c838a7465241a0186a3646ca22dc10bafae8d818fdb2362085d0851dc4ad9ca4; normalized IL sha256: 50f9ff6713ae3e34962a541b01130300100d74927944cf6e1e1e8819044bf6af
+0: ldarg.0  
+1: call 0x0600006b Olympus.LI.Triumph.Workflow.Stage.StageService.IsExecutableMoveStage
+6: brtrue.s 26 
+8: call 0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+13: ldc.i4.s 21 
+15: callvirt 0x0a000044 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitRelease
+20: newobj 0x0a0001bc Olympus.LI.Triumph.Workflow.ExceptionObject.StatusException..ctor
+25: throw  
+26: call 0x06000027 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.get_Instance
+31: ldsfld 0x0400000c Olympus.LI.Triumph.Workflow.Stage.StageState.STAGE_MOVING
+36: callvirt 0x06000029 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.set_CurrentState
+41: ldc.i4.0  
+42: stloc.0  
+43: ldarg.s 4 
+45: brtrue.s 51 
+47: ldarg.s 5 
+49: brfalse.s 53 
+51: ldc.i4.1  
+52: stloc.0  
+53: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+58: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+63: ldarg.1  
+64: ldarg.2  
+65: ldarg.3  
+66: ldloc.0  
+67: ldarg.s 5 
+69: callvirt 0x0a0001bd Olympus.LI.Triumph.Device.Stage.IStage.MoveAbsolutely
+74: leave.s 104 
+76: call 0x06000027 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.get_Instance
+81: ldsfld 0x0400000b Olympus.LI.Triumph.Workflow.Stage.StageState.STAGE_IDLE
+86: callvirt 0x06000029 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.set_CurrentState
+91: call 0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+96: ldc.i4.s 21 
+98: callvirt 0x0a000044 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitRelease
+103: endfinally  
+104: ret  
+
+0x06000064 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutelyWithoutRetry
+signature: {"raw_length":5,"raw_sha256":"cd5f4f9cc35b1a4613847dbd7872f6e8074500e969ce3d14478ee646436791f6","resolved_sha256":"cd5f4f9cc35b1a4613847dbd7872f6e8074500e969ce3d14478ee646436791f6","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["r8","r8"],"field_type":null,"issue":null}
+body offset: 17172; IL sha256: d0f9bad99756cd98cc9fce060760d82255badbd6b1e3393776c843ad2c7d26ff; normalized IL sha256: f7b10d3f3d2e410fc625c2e36d75932d70f0e8cb72aac0ed3aa568f275074d49
+0: ldarg.0  
+1: call 0x0600006b Olympus.LI.Triumph.Workflow.Stage.StageService.IsExecutableMoveStage
+6: brtrue.s 14 
+8: newobj 0x0a0001bc Olympus.LI.Triumph.Workflow.ExceptionObject.StatusException..ctor
+13: throw  
+14: call 0x06000027 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.get_Instance
+19: ldsfld 0x0400000c Olympus.LI.Triumph.Workflow.Stage.StageState.STAGE_MOVING
+24: callvirt 0x06000029 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.set_CurrentState
+29: leave.s 47 
+31: call 0x06000027 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.get_Instance
+36: ldsfld 0x0400000b Olympus.LI.Triumph.Workflow.Stage.StageState.STAGE_IDLE
+41: callvirt 0x06000029 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.set_CurrentState
+46: endfinally  
+47: ret  
+
+0x0600006b Olympus.LI.Triumph.Workflow.Stage.StageService.IsExecutableMoveStage
+signature: {"raw_length":3,"raw_sha256":"59a9a8765c535212b9ad71c5c8e1e24ffadbd3331fd04b3bbe1b121ecf6004cc","resolved_sha256":"59a9a8765c535212b9ad71c5c8e1e24ffadbd3331fd04b3bbe1b121ecf6004cc","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"bool","parameter_types":[],"field_type":null,"issue":null}
+body offset: 18080; IL sha256: cd2a042cc3b58d1f758214c1a052ab43759025bbe8d4232a0330d8327dc651ce; normalized IL sha256: 06704692697201f4f048c6d86710b29ea4eec1930e9a200600835f247715260c
+0: call 0x0a000118 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_MicroscopeStatusDao
+5: callvirt 0x0a0001cc Olympus.LI.Triumph.Workflow.MemoryDatabase.MicroscopeStatusDao.GetMicroscopeStatus
+10: callvirt 0x0a0001cd Olympus.LI.Triumph.Workflow.MemoryDatabase.MicroscopeStatusEntity.get_Status
+15: stloc.0  
+16: ldloc.0  
+17: ldc.i4.2  
+18: bne.un.s 22 
+20: ldc.i4.0  
+21: ret  
+22: ldc.i4.1  
+23: ret  
+
+0x0600006d Olympus.LI.Triumph.Workflow.Stage.StageService.AsyncWaitStageCommand
+signature: {"raw_length":7,"raw_sha256":"46bd8f25eb7d4fa7d63c109a1a6c07158c50b103454d4f5ae4011ac547a052d2","resolved_sha256":"f74c6e7281f4ec598da8b1b80318064e01f82eb09a8eeda2c67b15ff1eb0d76d","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["class:61","class:32"],"field_type":null,"issue":null}
+body offset: 18184; IL sha256: 80cff307bb31dfe155bc8e4b34bc65b098142b217e36a160f826227a6786f31a; normalized IL sha256: f12cb7989eb93edb0f246fd07275cb428332b46498ed94952397910091081b6d
+0: ldarg.2  
+1: ldftn 0x06000099 AsyncWaitStageCommandDelegate.Invoke
+7: newobj 0x06000098 AsyncWaitStageCommandDelegate..ctor
+12: stloc.0  
+13: ldloc.0  
+14: ldarg.1  
+15: ldnull  
+16: ldnull  
+17: callvirt 0x0600009a AsyncWaitStageCommandDelegate.BeginInvoke
+22: pop  
+23: ret  
+
+0x06000073 Olympus.LI.Triumph.Workflow.Stage.StageService.WaitForStageAbsoluteLocomotionWithEightWay
+signature: {"raw_length":5,"raw_sha256":"ddfb6422aaf89f1451d5fa4f56850619e83ef09878a15f100e8dcdc724e00bd4","resolved_sha256":"387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:61"],"field_type":null,"issue":null}
+body offset: 18580; IL sha256: 14c4fb5041438b0b148b40394cc414aa7ef3eed03d475329cb329a652c76323f; normalized IL sha256: 9d107cae547ff5aeea3450f40c5c0c7bf4ca2749f0c4dc6e7579a29b39624f8a
+0: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+5: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+10: ldarg.1  
+11: callvirt 0x0a0001d8 Olympus.LI.Triumph.Device.Stage.IStage.WaitForAsyncCommandResponse
+16: leave.s 112 
+18: stloc.0  
+19: ldloc.0  
+20: callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+25: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+30: ldarg.0  
+31: ldloc.0  
+32: call 0x0600006c Olympus.LI.Triumph.Workflow.Stage.StageService.IsErrorForStageHardwareException
+37: brfalse.s 89 
+39: ldloc.0  
+40: callvirt 0x0a0001d9 Olympus.LI.Triumph.Device.Exception.HardwareException.get_IsFatal
+45: brfalse.s 77 
+47: call 0x0a000115 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemStatusDao
+52: callvirt 0x0a00017a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+57: stloc.1  
+58: ldloc.1  
+59: ldc.i4.s 34 
+61: callvirt 0x0a000182 Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemStatusEntity.set_SystemStatus
+66: call 0x0a000115 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemStatusDao
+71: ldloc.1  
+72: callvirt 0x0a000183 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+77: ldarg.0  
+78: ldloc.0  
+79: newobj 0x0a000166 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowStageHardwareException..ctor
+84: call 0x0a0001b1 Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+89: leave.s 112 
+91: stloc.2  
+92: ldloc.2  
+93: callvirt 0x0a000141 System.Exception.get_Message
+98: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+103: ldarg.0  
+104: ldloc.2  
+105: call 0x0a0001b1 Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+110: leave.s 112 
+112: leave.s 152 
+114: ldarg.1  
+115: callvirt 0x0a0001da Olympus.LI.Triumph.Device.Device.Command.CommandHandle.Close
+120: leave.s 136 
+122: stloc.3  
+123: ldloc.3  
+124: callvirt 0x0a000141 System.Exception.get_Message
+129: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+134: leave.s 136 
+136: call 0x06000027 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.get_Instance
+141: ldsfld 0x0400000b Olympus.LI.Triumph.Workflow.Stage.StageState.STAGE_IDLE
+146: callvirt 0x06000029 Olympus.LI.Triumph.Workflow.Stage.StageStateManager.set_CurrentState
+151: endfinally  
+152: ret  
+
+0x0600007b Olympus.LI.Triumph.Workflow.Stage.StageService._ReceiveXYCoordinateUpdate
+signature: {"raw_length":6,"raw_sha256":"d6c3f5a3b66e8c0de0ef313af40b1f70bfbb40d992d376b2621687dcefe05a12","resolved_sha256":"0b7486565220757642ff95783835bbef024cd09ee3e724130db3461a5d4af48c","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["object","class:89"],"field_type":null,"issue":null}
+body offset: 19268; IL sha256: 5db5cec41e2f5b1d3a6ef990556e8b1467cff34ba728f5f90abb4601d400cf8c; normalized IL sha256: 58572ef1f02fadbdb5ccb44e34f143c1f56ac8e432005606cd15bfb5b574760e
+0: ldloca.s 0 
+2: initobj 0x0100009a 
+8: call 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+13: callvirt 0x0a000026 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Stage
+18: ldarg.2  
+19: callvirt 0x0a0001eb Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_X
+24: conv.r8  
+25: ldarg.2  
+26: callvirt 0x0a0001ec Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_Y
+31: conv.r8  
+32: ldloca.s 0 
+34: ldflda 0x0a00016a DCoordinate.X
+39: ldloca.s 0 
+41: ldflda 0x0a00016b DCoordinate.Y
+46: callvirt 0x0a00019f Olympus.LI.Triumph.Device.Stage.IStage.ConvertAbsoluteCoordinatesFromHardToSoft
+51: call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+56: callvirt 0x0a000049 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+61: stloc.1  
+62: ldarg.2  
+63: callvirt 0x0a0001eb Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_X
+68: ldc.i4 1000 
+73: div  
+74: ldloc.1  
+75: callvirt 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentHardCoordinate
+80: ldfld 0x0a00016a DCoordinate.X
+85: ldc.r8 1000 
+94: div  
+95: conv.i4  
+96: bne.un.s 218 
+98: ldarg.2  
+99: callvirt 0x0a0001ec Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_Y
+104: ldc.i4 1000 
+109: div  
+110: ldloc.1  
+111: callvirt 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentHardCoordinate
+116: ldfld 0x0a00016b DCoordinate.Y
+121: ldc.r8 1000 
+130: div  
+131: conv.i4  
+132: bne.un.s 218 
+134: ldloca.s 0 
+136: ldfld 0x0a00016a DCoordinate.X
+141: ldc.r8 1000 
+150: div  
+151: conv.i4  
+152: ldloc.1  
+153: callvirt 0x0a0001a1 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSoftCoordinate
+158: ldfld 0x0a00016a DCoordinate.X
+163: ldc.r8 1000 
+172: div  
+173: conv.i4  
+174: bne.un.s 218 
+176: ldloca.s 0 
+178: ldfld 0x0a00016b DCoordinate.Y
+183: ldc.r8 1000 
+192: div  
+193: conv.i4  
+194: ldloc.1  
+195: callvirt 0x0a0001a1 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSoftCoordinate
+200: ldfld 0x0a00016b DCoordinate.Y
+205: ldc.r8 1000 
+214: div  
+215: conv.i4  
+216: beq.s 261 
+218: ldloc.1  
+219: ldarg.2  
+220: callvirt 0x0a0001eb Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_X
+225: conv.r8  
+226: ldarg.2  
+227: callvirt 0x0a0001ec Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_Y
+232: conv.r8  
+233: newobj 0x0a0001ed DCoordinate..ctor
+238: callvirt 0x0a0001a2 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.set_CurrentHardCoordinate
+243: ldloc.1  
+244: ldloc.0  
+245: callvirt 0x0a0001a3 Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.set_CurrentSoftCoordinate
+250: call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+255: ldloc.1  
+256: callvirt 0x0a00014b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+261: ldarg.0  
+262: ldfld 0x04000021 Olympus.LI.Triumph.Workflow.Stage.StageService._blnLoopForDragActive
+267: brfalse.s 293 
+269: ldarg.0  
+270: ldarg.2  
+271: callvirt 0x0a0001eb Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_X
+276: stfld 0x04000026 Olympus.LI.Triumph.Workflow.Stage.StageService.CoordinateXForCompare
+281: ldarg.0  
+282: ldarg.2  
+283: callvirt 0x0a0001ec Olympus.LI.Triumph.Device.Stage.StageXYCoordinateEventArgs.get_Y
+288: stfld 0x04000027 Olympus.LI.Triumph.Workflow.Stage.StageService.CoordinateYForCompare
+293: leave.s 316 
+295: stloc.2  
+296: ldloc.2  
+297: callvirt 0x0a000141 System.Exception.get_Message
+302: call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+307: ldarg.0  
+308: ldloc.2  
+309: call 0x0a0001b1 Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+314: leave.s 316 
+316: ret  
+

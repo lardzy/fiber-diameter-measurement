@@ -1,0 +1,1043 @@
+Evidence: ev_8a1d2a1a382d16fb79f914c50837e789cf8fa654e8ed058ee30020fa68e67ebe
+Artifact: /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydStage.dll
+SHA256: 2b81ecb535e5e9f8b96b2dfdf7e871a2a9310ffbf3d59e36fdb8300130ff6194
+Static CIL, not source C#, not runtime observation.
+
+0x06000002 Olympus.LI.Triumph.Device.Stage.AStageHardware.SendRequest
+signature: {"raw_length":5,"raw_sha256":"9fa3188ed493439b6c8d5a7b6ba31a157ab7a4e80562217c90d3767723c57645","resolved_sha256":"605999529bde6f65d215da9dfcc56b113f99d70e6f737680cc6d073db156ba39","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"i4","parameter_types":["class:41"],"field_type":null,"issue":null}
+body offset: 648; IL sha256: 167341cc510d91f306954099e82377a8d580cf75569228c44df62248c0a3c6e0; normalized IL sha256: 3b56803c19813679bd20a7efd7d333b0f89c24c89c2f8f17472a5fe690494e9b
+0: ldarg.0  
+1: ldarg.1  
+2: call 0x0a000015 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+7: stloc.0  
+8: ldloc.0  
+9: brfalse.s 24 
+11: ldarg.1  
+12: callvirt 0x0a000016 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+17: ldloc.0  
+18: newobj 0x0a000017 Olympus.LI.Triumph.Device.Exception.StageHardwareException..ctor
+23: throw  
+24: ldc.i4.0  
+25: ret  
+
+0x06000003 Olympus.LI.Triumph.Device.Stage.AStageHardware.SendRequest
+signature: {"raw_length":6,"raw_sha256":"3a24805dd3c5e32af59cc4291dcf0ce744ca297f18189a23313ca2a1d3322f60","resolved_sha256":"ad12f9b2190bbf2e968d20c547bed707178019bdca0c1788ec93909902f93cf1","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"i4","parameter_types":["class:41","i4"],"field_type":null,"issue":null}
+body offset: 688; IL sha256: 84acb1231d728cb148387e4ea1ba2c7b407250fcbe8a62ad2c011b3ce3f71c08; normalized IL sha256: 927b1bb63c1e49240690a2811d487164deda9d788fbd842a11916cf74d3b5e76
+0: ldarg.0  
+1: ldarg.1  
+2: ldarg.2  
+3: call 0x0a000018 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+8: stloc.0  
+9: ldloc.0  
+10: brfalse.s 25 
+12: ldarg.1  
+13: callvirt 0x0a000016 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+18: ldloc.0  
+19: newobj 0x0a000017 Olympus.LI.Triumph.Device.Exception.StageHardwareException..ctor
+24: throw  
+25: ldc.i4.0  
+26: ret  
+
+0x06000055 Olympus.LI.Triumph.Device.Stage.SsuStage.MoveAbsolutely
+signature: {"raw_length":8,"raw_sha256":"692d0b559baf259bb2cf8aa00a3703aa3a165719a4288b5d462fb410782cb87d","resolved_sha256":"692d0b559baf259bb2cf8aa00a3703aa3a165719a4288b5d462fb410782cb87d","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":5,"return_type":"void","parameter_types":["u4","r8","r8","bool","i4"],"field_type":null,"issue":null}
+body offset: 3664; IL sha256: 1fd32ac527c4c261155f7a8b3b83e96beb9d5a7d6b7278f031f33855150f1450; normalized IL sha256: cd10d2265a169449de0484f20dc71b5db42af8139ef5906893928772564f3b9b
+0: ldstr 0x700001dc "<S> {0}(x={1}, y={2}, angle={3})"
+5: ldc.i4.4  
+6: newarr 0x01000004 
+11: stloc.2  
+12: ldloc.2  
+13: ldc.i4.0  
+14: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+19: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+24: stelem.ref  
+25: ldloc.2  
+26: ldc.i4.1  
+27: ldarg.2  
+28: box 0x0100003a 
+33: stelem.ref  
+34: ldloc.2  
+35: ldc.i4.2  
+36: ldarg.3  
+37: box 0x0100003a 
+42: stelem.ref  
+43: ldloc.2  
+44: ldc.i4.3  
+45: ldarg.s 5 
+47: box 0x01000028 
+52: stelem.ref  
+53: ldloc.2  
+54: call 0x0a000037 System.String.Format
+59: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+64: ldarg.2  
+65: ldc.i4.1  
+66: call 0x0a000049 System.Math.Round
+71: conv.i4  
+72: stloc.0  
+73: ldarg.3  
+74: ldc.i4.1  
+75: call 0x0a000049 System.Math.Round
+80: conv.i4  
+81: stloc.1  
+82: ldarg.s 4 
+84: brfalse.s 100 
+86: ldarg.0  
+87: ldarg.2  
+88: ldarg.3  
+89: ldloca.s 0 
+91: ldloca.s 1 
+93: ldarg.s 5 
+95: call 0x0600006b Olympus.LI.Triumph.Device.Stage.SsuStage.ConvertAbsoluteCoordinatesFromSoftToHard
+100: ldarg.0  
+101: ldarg.1  
+102: ldloc.0  
+103: ldloc.1  
+104: call 0x0600007a Olympus.LI.Triumph.Device.Stage.SsuStage.SubMoveAbsolutely
+109: leave.s 137 
+111: ldstr 0x700000c4 "<E> {0}"
+116: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+121: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+126: call 0x0a000039 System.String.Format
+131: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+136: endfinally  
+137: ret  
+
+0x06000057 Olympus.LI.Triumph.Device.Stage.SsuStage.AsyncMoveAbsolutely
+signature: {"raw_length":8,"raw_sha256":"502d97127fc67468151bbb120e1edad5a5244a0e69fb1e23244bf0210eefdf2f","resolved_sha256":"672184d4e73d0c381bd8578ed4ad39c3f9966484819f364c1782bfc6429c1688","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":4,"return_type":"class:45","parameter_types":["u4","r8","r8","i4"],"field_type":null,"issue":null}
+body offset: 3968; IL sha256: 6cb6d95b53006a6ececa3824edbd5b103acf23c6bbcdd3392bdb1bf66c6fa429; normalized IL sha256: 17819f401c0e695494d01e099c04893f7b88d580c54ef02839a13da9b56aa4db
+0: ldstr 0x7000021e "<S> {0}(x={1}, y={2})"
+5: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+10: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+15: ldarg.2  
+16: box 0x0100003a 
+21: ldarg.3  
+22: box 0x0100003a 
+27: call 0x0a00004a System.String.Format
+32: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+37: ldc.i4.0  
+38: stloc.0  
+39: ldc.i4.0  
+40: stloc.1  
+41: ldarg.0  
+42: ldarg.2  
+43: ldarg.3  
+44: ldloca.s 0 
+46: ldloca.s 1 
+48: ldarg.s 4 
+50: call 0x0600006b Olympus.LI.Triumph.Device.Stage.SsuStage.ConvertAbsoluteCoordinatesFromSoftToHard
+55: ldarg.0  
+56: ldarg.1  
+57: ldloc.0  
+58: ldloc.1  
+59: call 0x0600007b Olympus.LI.Triumph.Device.Stage.SsuStage.SubAsyncMoveAbsolutely
+64: stloc.2  
+65: leave.s 93 
+67: ldstr 0x700000c4 "<E> {0}"
+72: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+77: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+82: call 0x0a000039 System.String.Format
+87: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+92: endfinally  
+93: ldloc.2  
+94: ret  
+
+0x06000059 Olympus.LI.Triumph.Device.Stage.SsuStage.MoveRelatively
+signature: {"raw_length":8,"raw_sha256":"692d0b559baf259bb2cf8aa00a3703aa3a165719a4288b5d462fb410782cb87d","resolved_sha256":"692d0b559baf259bb2cf8aa00a3703aa3a165719a4288b5d462fb410782cb87d","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":5,"return_type":"void","parameter_types":["u4","r8","r8","bool","i4"],"field_type":null,"issue":null}
+body offset: 4704; IL sha256: 462633330aa590456be6324ee0caed9091d7c97e52c10a55c2d655ca0b432d61; normalized IL sha256: eeef1475449cbfc11ad72c9eb78ed7ac45359ef8a3b99e8f294d2b1845fc1149
+0: ldstr 0x70000278 "<S> {0}(x={1}, y={2}, blnEnableAliginment={3})"
+5: ldc.i4.4  
+6: newarr 0x01000004 
+11: stloc.s 8 
+13: ldloc.s 8 
+15: ldc.i4.0  
+16: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+21: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+26: stelem.ref  
+27: ldloc.s 8 
+29: ldc.i4.1  
+30: ldarg.2  
+31: box 0x0100003a 
+36: stelem.ref  
+37: ldloc.s 8 
+39: ldc.i4.2  
+40: ldarg.3  
+41: box 0x0100003a 
+46: stelem.ref  
+47: ldloc.s 8 
+49: ldc.i4.3  
+50: ldarg.s 4 
+52: box 0x01000035 
+57: stelem.ref  
+58: ldloc.s 8 
+60: call 0x0a000037 System.String.Format
+65: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+70: ldarg.2  
+71: ldc.r8 0 
+80: bne.un.s 99 
+82: ldarg.3  
+83: ldc.r8 0 
+92: bne.un.s 99 
+94: leave 241 
+99: ldarg.s 4 
+101: brfalse.s 121 
+103: ldarg.0  
+104: ldfld 0x0400001d Olympus.LI.Triumph.Device.Stage.SsuStage._StageAlignmentParam
+109: callvirt 0x06000089 StageAlignmentParam.get_AlignmentAngle
+114: ldarg.s 5 
+116: conv.r8  
+117: sub  
+118: stloc.0  
+119: br.s 126 
+121: ldarg.s 5 
+123: neg  
+124: conv.r8  
+125: stloc.0  
+126: ldloc.0  
+127: ldc.r8 3.141592653589793 
+136: mul  
+137: ldc.r8 180 
+146: div  
+147: stloc.1  
+148: ldloc.1  
+149: call 0x0a000053 System.Math.Sin
+154: stloc.2  
+155: ldloc.1  
+156: call 0x0a00004f System.Math.Cos
+161: stloc.3  
+162: ldloc.3  
+163: ldarg.2  
+164: mul  
+165: ldloc.2  
+166: ldarg.3  
+167: mul  
+168: sub  
+169: stloc.s 4 
+171: ldloc.2  
+172: ldarg.2  
+173: mul  
+174: ldloc.3  
+175: ldarg.3  
+176: mul  
+177: add  
+178: stloc.s 5 
+180: ldloc.s 4 
+182: ldc.i4.1  
+183: call 0x0a000049 System.Math.Round
+188: conv.i4  
+189: stloc.s 6 
+191: ldloc.s 5 
+193: ldc.i4.1  
+194: call 0x0a000049 System.Math.Round
+199: conv.i4  
+200: stloc.s 7 
+202: ldarg.0  
+203: ldarg.1  
+204: ldloc.s 6 
+206: ldloc.s 7 
+208: call 0x0600007c Olympus.LI.Triumph.Device.Stage.SsuStage.SubMoveRelatively
+213: leave.s 241 
+215: ldstr 0x700000c4 "<E> {0}"
+220: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+225: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+230: call 0x0a000039 System.String.Format
+235: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+240: endfinally  
+241: ret  
+
+0x0600005b Olympus.LI.Triumph.Device.Stage.SsuStage.DecelerationStop
+signature: {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+body offset: 5144; IL sha256: af67518164b1809bb81e529e231ae1070a3886622a859500f0c973bb983eeac4; normalized IL sha256: 47b1c50fe62f3d1f534a531b24e1e72cd6f7965d0f12300ebcbd95626416dbd0
+0: ldstr 0x700000d4 "<S> {0}()"
+5: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+10: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+15: call 0x0a000039 System.String.Format
+20: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+25: call 0x0600009b Olympus.LI.Triumph.Device.Stage.StageCommandFactory.get_Instance
+30: ldstr 0x70000330 "XYSTP"
+35: callvirt 0x0a00003b Olympus.LI.Triumph.Device.Device.Command.ACommandFactory.CreateRequestCommand
+40: stloc.0  
+41: ldarg.0  
+42: ldloc.0  
+43: ldc.i4 20000 
+48: callvirt 0x0a000018 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+53: pop  
+54: leave.s 82 
+56: ldstr 0x700000c4 "<E> {0}"
+61: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+66: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+71: call 0x0a000039 System.String.Format
+76: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+81: endfinally  
+82: ret  
+
+0x0600005f Olympus.LI.Triumph.Device.Stage.SsuStage.GetCoodinates
+signature: {"raw_length":7,"raw_sha256":"7be5b92ad5b0663632f31dfe4f30f07d394f7636fc7b494ef128b02011c576ba","resolved_sha256":"7be5b92ad5b0663632f31dfe4f30f07d394f7636fc7b494ef128b02011c576ba","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["r8&","r8&"],"field_type":null,"issue":null}
+body offset: 5924; IL sha256: f56609ae9bd777f83fcafe0143491f9ed5a77f943d2e83a7a5feb9af3a785a47; normalized IL sha256: 4ad956ba164093a22f4d5fc0281a77fadf185b7ed446377cc1687b18438ed897
+0: ldarg.1  
+1: ldc.r8 0 
+10: stind.r8  
+11: ldarg.2  
+12: ldc.r8 0 
+21: stind.r8  
+22: ldstr 0x700000d4 "<S> {0}()"
+27: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+32: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+37: call 0x0a000039 System.String.Format
+42: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+47: call 0x0600009b Olympus.LI.Triumph.Device.Stage.StageCommandFactory.get_Instance
+52: ldstr 0x7000038e "XYP?"
+57: callvirt 0x0a000043 Olympus.LI.Triumph.Device.Device.Command.ACommandFactory.CreateQueryCommand
+62: stloc.0  
+63: ldarg.0  
+64: ldloc.0  
+65: ldc.i4 5000 
+70: callvirt 0x0a000044 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendQuery
+75: stloc.1  
+76: ldloc.1  
+77: ldlen  
+78: conv.i4  
+79: ldc.i4.2  
+80: beq.s 112 
+82: ldstr 0x7000038e "XYP?"
+87: ldloc.1  
+88: call 0x0a000029 Olympus.LI.Triumph.Device.Port.Command.ACommand.ChainParametersArray
+93: call 0x0a00002a Olympus.LI.Triumph.Device.Exception.CommandParameterException.CreateMessage
+98: stloc.2  
+99: ldloc.2  
+100: call 0x0a000059 Olympus.Mis.Core.Logging.Logger.ErrorLog
+105: ldloc.2  
+106: newobj 0x0a00002b Olympus.LI.Triumph.Device.Exception.CommandParameterException..ctor
+111: throw  
+112: ldarg.1  
+113: ldarg.0  
+114: ldloc.1  
+115: ldc.i4.0  
+116: ldelem.ref  
+117: call 0x0a000045 System.Int32.Parse
+122: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+127: conv.r8  
+128: stind.r8  
+129: ldarg.2  
+130: ldarg.0  
+131: ldloc.1  
+132: ldc.i4.1  
+133: ldelem.ref  
+134: call 0x0a000045 System.Int32.Parse
+139: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+144: conv.r8  
+145: stind.r8  
+146: leave.s 188 
+148: ldstr 0x70000398 "<E> {0}(x={1}, y={2})"
+153: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+158: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+163: ldarg.1  
+164: ldind.r8  
+165: box 0x0100003a 
+170: ldarg.2  
+171: ldind.r8  
+172: box 0x0100003a 
+177: call 0x0a00004a System.String.Format
+182: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+187: endfinally  
+188: ret  
+
+0x0600006a Olympus.LI.Triumph.Device.Stage.SsuStage.ConvertAbsoluteCoordinatesFromSoftToHard
+signature: {"raw_length":12,"raw_sha256":"ba3a171605b317d7a7bec9ad9b02edd10879dab645b5861e406bdfd000f3ada3","resolved_sha256":"ba3a171605b317d7a7bec9ad9b02edd10879dab645b5861e406bdfd000f3ada3","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":7,"return_type":"void","parameter_types":["r8","r8","r8","r8","i4&","i4&","i4"],"field_type":null,"issue":null}
+body offset: 7164; IL sha256: 6f104ceb938abcc525874bdb58ef665f4df19cc6f03b061d324c702258bfcec9; normalized IL sha256: df4b83b50baeb452925690e83c63d30b973a0da43cd03bffe8b63d25e3dbe180
+0: ldarg.s 5 
+2: ldarg.1  
+3: ldc.i4.1  
+4: call 0x0a000049 System.Math.Round
+9: conv.i4  
+10: stind.i4  
+11: ldarg.s 6 
+13: ldarg.2  
+14: ldc.i4.1  
+15: call 0x0a000049 System.Math.Round
+20: conv.i4  
+21: stind.i4  
+22: ldarg.3  
+23: ldc.i4.1  
+24: call 0x0a000049 System.Math.Round
+29: conv.i4  
+30: stloc.0  
+31: ldarg.s 4 
+33: ldc.i4.1  
+34: call 0x0a000049 System.Math.Round
+39: conv.i4  
+40: stloc.1  
+41: ldarg.0  
+42: ldarg.1  
+43: ldarg.3  
+44: sub  
+45: ldarg.2  
+46: ldarg.s 4 
+48: sub  
+49: ldarg.s 5 
+51: ldarg.s 6 
+53: ldarg.s 7 
+55: call 0x0600006b Olympus.LI.Triumph.Device.Stage.SsuStage.ConvertAbsoluteCoordinatesFromSoftToHard
+60: ldarg.s 5 
+62: ldarg.s 5 
+64: ldind.i4  
+65: ldloc.0  
+66: add  
+67: stind.i4  
+68: ldarg.s 6 
+70: ldarg.s 6 
+72: ldind.i4  
+73: ldloc.1  
+74: add  
+75: stind.i4  
+76: leave.s 104 
+78: ldstr 0x700000c4 "<E> {0}"
+83: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+88: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+93: call 0x0a000039 System.String.Format
+98: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+103: endfinally  
+104: ret  
+
+0x0600006d Olympus.LI.Triumph.Device.Stage.SsuStage.ConvertAbsoluteCoordinatesFromHardToSoft
+signature: {"raw_length":9,"raw_sha256":"66276889669c0fabf10c1a7fa6cd84b2d53ab90de5a81b60871fa97169b5065d","resolved_sha256":"66276889669c0fabf10c1a7fa6cd84b2d53ab90de5a81b60871fa97169b5065d","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":4,"return_type":"void","parameter_types":["r8","r8","r8&","r8&"],"field_type":null,"issue":null}
+body offset: 7488; IL sha256: 91a3f4308ccf09aac579f2b03319908c3c10b464e7ab36bece05f7ad5af6de26; normalized IL sha256: d04db64b8593e8e3b8eb68b3dbe06351f6fb4808fd90f11ca8df51df47b0978f
+0: ldc.i4.2  
+1: newarr 0x0100003a 
+6: stloc.s 5 
+8: ldloc.s 5 
+10: stloc.0  
+11: ldstr 0x700003f2 "Change HardX = "
+16: ldarga.s 1 
+18: call 0x0a00005c System.Double.ToString
+23: ldstr 0x70000412 ",HardY = "
+28: ldarga.s 2 
+30: call 0x0a00005c System.Double.ToString
+35: call 0x0a00005d System.String.Concat
+40: call 0x0a00005b Olympus.Mis.Core.Logging.Logger.StepLog
+45: ldc.r8 0 
+54: stloc.3  
+55: ldc.r8 0 
+64: stloc.s 4 
+66: ldarg.0  
+67: ldfld 0x0400001d Olympus.LI.Triumph.Device.Stage.SsuStage._StageAlignmentParam
+72: callvirt 0x06000089 StageAlignmentParam.get_AlignmentAngle
+77: stloc.3  
+78: ldloc.3  
+79: ldloca.s 4 
+81: call 0x06000069 Olympus.LI.Triumph.Device.Stage.SsuStage.AngleChangeFromSoftToHard
+86: ldloc.s 4 
+88: ldc.r8 3.141592653589793 
+97: mul  
+98: ldc.r8 180 
+107: div  
+108: stloc.s 4 
+110: ldarg.1  
+111: ldarg.0  
+112: ldfld 0x0400001d Olympus.LI.Triumph.Device.Stage.SsuStage._StageAlignmentParam
+117: callvirt 0x06000085 StageAlignmentParam.get_AlignmentX
+122: sub  
+123: stloc.1  
+124: ldarg.2  
+125: ldarg.0  
+126: ldfld 0x0400001d Olympus.LI.Triumph.Device.Stage.SsuStage._StageAlignmentParam
+131: callvirt 0x06000087 StageAlignmentParam.get_AlignmentY
+136: sub  
+137: stloc.2  
+138: ldloc.0  
+139: ldc.i4.0  
+140: ldloc.1  
+141: ldloc.s 4 
+143: call 0x0a00004f System.Math.Cos
+148: mul  
+149: ldloc.2  
+150: ldloc.s 4 
+152: call 0x0a000053 System.Math.Sin
+157: mul  
+158: add  
+159: stelem.r8  
+160: ldloc.0  
+161: ldc.i4.1  
+162: ldloc.s 4 
+164: call 0x0a000053 System.Math.Sin
+169: neg  
+170: ldloc.1  
+171: mul  
+172: ldloc.2  
+173: ldloc.s 4 
+175: call 0x0a00004f System.Math.Cos
+180: mul  
+181: add  
+182: stelem.r8  
+183: ldarg.3  
+184: ldloc.0  
+185: ldc.i4.0  
+186: ldelem.r8  
+187: ldc.i4.1  
+188: call 0x0a000049 System.Math.Round
+193: conv.i4  
+194: conv.r8  
+195: stind.r8  
+196: ldarg.s 4 
+198: ldloc.0  
+199: ldc.i4.1  
+200: ldelem.r8  
+201: ldc.i4.1  
+202: call 0x0a000049 System.Math.Round
+207: conv.i4  
+208: conv.r8  
+209: stind.r8  
+210: ldstr 0x70000426 "Changed HardXToSoftX = "
+215: ldloc.0  
+216: ldc.i4.0  
+217: ldelema 0x0100003a 
+222: call 0x0a00005c System.Double.ToString
+227: ldstr 0x70000456 ",HardXToSoftX = "
+232: ldloc.0  
+233: ldc.i4.1  
+234: ldelema 0x0100003a 
+239: call 0x0a00005c System.Double.ToString
+244: call 0x0a00005d System.String.Concat
+249: call 0x0a00005b Olympus.Mis.Core.Logging.Logger.StepLog
+254: leave.s 267 
+256: ldstr 0x70000478 "Leave the ConvertCoordinatesFromHardToSoft method"
+261: call 0x0a00005b Olympus.Mis.Core.Logging.Logger.StepLog
+266: endfinally  
+267: ret  
+
+0x0600006f Olympus.LI.Triumph.Device.Stage.SsuStage.EnableNotifyXYPosition
+signature: {"raw_length":4,"raw_sha256":"7366e2ddae008ee5e5ba63f1c2504e9a452ccd8cc0f40fdd3d8d03430bae9e33","resolved_sha256":"7366e2ddae008ee5e5ba63f1c2504e9a452ccd8cc0f40fdd3d8d03430bae9e33","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["bool"],"field_type":null,"issue":null}
+body offset: 7928; IL sha256: 15170a404b5d864ecca2426e4b2ec50ac106f8cf0c62f3405b5f0d66b31637e7; normalized IL sha256: 05674f7d3ce9e6059d22bad5a875747c3bee332277f0a4fcf10b28129a5c6945
+0: ldstr 0x700000e8 "<S> {0}(enable={1})"
+5: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+10: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+15: ldarg.1  
+16: box 0x01000035 
+21: call 0x0a00003a System.String.Format
+26: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+31: call 0x0600009b Olympus.LI.Triumph.Device.Stage.StageCommandFactory.get_Instance
+36: ldstr 0x70000001 "NXYP"
+41: callvirt 0x0a00003b Olympus.LI.Triumph.Device.Device.Command.ACommandFactory.CreateRequestCommand
+46: stloc.0  
+47: ldloc.0  
+48: callvirt 0x0a00003c Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendParameter
+53: ldarg.1  
+54: call 0x0a00003d System.Convert.ToInt32
+59: stloc.1  
+60: ldloca.s 1 
+62: call 0x0a00003e System.Int32.ToString
+67: callvirt 0x0a00003f System.Collections.Generic.List`1.Add
+72: ldarg.0  
+73: ldloc.0  
+74: callvirt 0x0a000015 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+79: pop  
+80: leave.s 108 
+82: ldstr 0x700000c4 "<E> {0}"
+87: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+92: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+97: call 0x0a000039 System.String.Format
+102: call 0x0a000038 Olympus.Mis.Core.Logging.Logger.DeviceInfoLog
+107: endfinally  
+108: ret  
+
+0x06000071 Olympus.LI.Triumph.Device.Stage.SsuStage.CallbackReceivedNotifyCommand
+signature: {"raw_length":5,"raw_sha256":"d78c826b388ad027b33759be585a89d95b5cb28fca73d9bffee4366a3200097f","resolved_sha256":"77d37335b5f0cd3a1e1c95fca51a77746cb51681ac115401d80df05dc157e8cc","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:49"],"field_type":null,"issue":null}
+body offset: 8208; IL sha256: 59c3084ae91e74d423a96eac0a790220b41fc4adcfd263c8401f47ee73ca6aef; normalized IL sha256: ef92b8bbdb3bb3df92d259cae6912fdc51b81c38a48aa56a68662e26b3e78b71
+0: ldarg.1  
+1: callvirt 0x0a000027 Olympus.LI.Triumph.Device.Port.Command.ACommand.get_Name
+6: ldstr 0x70000001 "NXYP"
+11: call 0x0a00005f System.String.op_Equality
+16: brfalse.s 108 
+18: ldarg.1  
+19: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+24: ldc.i4.0  
+25: ldarg.0  
+26: ldarg.1  
+27: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+32: ldc.i4.0  
+33: callvirt 0x0a000024 System.Collections.Generic.List`1.get_Item
+38: call 0x0a000045 System.Int32.Parse
+43: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+48: stloc.s 12 
+50: ldloca.s 12 
+52: call 0x0a00003e System.Int32.ToString
+57: callvirt 0x0a000060 System.Collections.Generic.List`1.set_Item
+62: ldarg.1  
+63: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+68: ldc.i4.1  
+69: ldarg.0  
+70: ldarg.1  
+71: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+76: ldc.i4.1  
+77: callvirt 0x0a000024 System.Collections.Generic.List`1.get_Item
+82: call 0x0a000045 System.Int32.Parse
+87: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+92: stloc.s 13 
+94: ldloca.s 13 
+96: call 0x0a00003e System.Int32.ToString
+101: callvirt 0x0a000060 System.Collections.Generic.List`1.set_Item
+106: br.s 162 
+108: ldarg.1  
+109: callvirt 0x0a000027 Olympus.LI.Triumph.Device.Port.Command.ACommand.get_Name
+114: ldstr 0x70000015 "NJS"
+119: call 0x0a00005f System.String.op_Equality
+124: brfalse.s 162 
+126: ldarg.1  
+127: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+132: ldc.i4.0  
+133: callvirt 0x0a000024 System.Collections.Generic.List`1.get_Item
+138: call 0x0a000061 System.Convert.ToInt32
+143: ldc.i4.1  
+144: bne.un.s 155 
+146: ldarg.0  
+147: ldc.i4.0  
+148: stfld 0x04000020 Olympus.LI.Triumph.Device.Stage.SsuStage._bJoyStickNotify
+153: br.s 162 
+155: ldarg.0  
+156: ldc.i4.1  
+157: stfld 0x04000020 Olympus.LI.Triumph.Device.Stage.SsuStage._bJoyStickNotify
+162: call 0x06000005 Olympus.LI.Triumph.Device.Stage.StageEventArgsFactory.get_Instance
+167: ldc.i4.0  
+168: ldarg.1  
+169: callvirt 0x0a000062 Olympus.LI.Triumph.Device.Device.Events.AEventArgsFactory.GetNotifyEventArgs
+174: stloc.0  
+175: ldloc.0  
+176: call 0x0a000063 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.OutputReceiveNotifyLog
+181: ldloc.0  
+182: isinst 0x0200000f 
+187: stloc.1  
+188: ldloc.0  
+189: isinst 0x02000010 
+194: stloc.2  
+195: ldloc.0  
+196: isinst 0x02000005 
+201: stloc.3  
+202: ldloc.0  
+203: isinst 0x02000004 
+208: stloc.s 4 
+210: ldloc.0  
+211: isinst 0x02000007 
+216: stloc.s 5 
+218: ldloc.1  
+219: brfalse.s 246 
+221: ldarg.0  
+222: ldfld 0x04000024 Olympus.LI.Triumph.Device.Stage.SsuStage.StageAbnormalEventHandler
+227: stloc.s 6 
+229: ldloc.s 6 
+231: brfalse 527 
+236: ldloc.s 6 
+238: ldarg.0  
+239: ldloc.1  
+240: callvirt 0x0a000064 System.EventHandler`1.Invoke
+245: ret  
+246: ldloc.2  
+247: brfalse.s 274 
+249: ldarg.0  
+250: ldfld 0x04000025 Olympus.LI.Triumph.Device.Stage.SsuStage.StageXYCoordinateEventHandler
+255: stloc.s 7 
+257: ldloc.s 7 
+259: brfalse 527 
+264: ldloc.s 7 
+266: ldarg.0  
+267: ldloc.2  
+268: callvirt 0x0a000065 System.EventHandler`1.Invoke
+273: ret  
+274: ldloc.3  
+275: brfalse.s 350 
+277: ldarg.0  
+278: ldfld 0x0400001e Olympus.LI.Triumph.Device.Stage.SsuStage._bStageAngleMoving
+283: brtrue.s 321 
+285: ldarg.0  
+286: ldfld 0x04000028 Olympus.LI.Triumph.Device.Stage.SsuStage.StageXYAngleMovingEventHandler
+291: stloc.s 8 
+293: ldloc.s 8 
+295: brfalse.s 307 
+297: ldloc.s 8 
+299: ldarg.0  
+300: ldloc.s 5 
+302: callvirt 0x0a000066 System.EventHandler`1.Invoke
+307: ldarg.0  
+308: ldloc.0  
+309: call 0x06000074 Olympus.LI.Triumph.Device.Stage.SsuStage.StartUpTimerThreadForStageAngle
+314: ldarg.0  
+315: ldc.i4.1  
+316: stfld 0x0400001e Olympus.LI.Triumph.Device.Stage.SsuStage._bStageAngleMoving
+321: ldarg.0  
+322: ldfld 0x04000026 Olympus.LI.Triumph.Device.Stage.SsuStage.StageXYAngleEventHandler
+327: stloc.s 9 
+329: ldloc.s 9 
+331: brfalse.s 342 
+333: ldloc.s 9 
+335: ldarg.0  
+336: ldloc.3  
+337: callvirt 0x0a000067 System.EventHandler`1.Invoke
+342: ldarg.0  
+343: ldc.i4.1  
+344: stfld 0x0400001f Olympus.LI.Triumph.Device.Stage.SsuStage._bStageAngleContinuousMoving
+349: ret  
+350: ldloc.s 4 
+352: brfalse 501 
+357: ldarg.0  
+358: ldc.i4.1  
+359: stfld 0x04000022 Olympus.LI.Triumph.Device.Stage.SsuStage._njsContinuousDoing
+364: ldarg.0  
+365: ldfld 0x04000021 Olympus.LI.Triumph.Device.Stage.SsuStage._njsProcessing
+370: brtrue.s 463 
+372: ldarg.1  
+373: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+378: ldc.i4.0  
+379: callvirt 0x0a000024 System.Collections.Generic.List`1.get_Item
+384: ldc.i4.1  
+385: stloc.s 14 
+387: ldloca.s 14 
+389: call 0x0a00003e System.Int32.ToString
+394: call 0x0a00005f System.String.op_Equality
+399: brfalse.s 463 
+401: ldc.i4.0  
+402: stloc.s 11 
+404: ldarg.0  
+405: ldfld 0x04000023 Olympus.LI.Triumph.Device.Stage.SsuStage._waitNjsDoingObject
+410: dup  
+411: stloc.s 15 
+413: ldloca.s 11 
+415: call 0x0a000068 System.Threading.Monitor.Enter
+420: ldarg.0  
+421: ldc.i4.1  
+422: stfld 0x04000021 Olympus.LI.Triumph.Device.Stage.SsuStage._njsProcessing
+427: ldarg.0  
+428: ldfld 0x04000027 Olympus.LI.Triumph.Device.Stage.SsuStage.StageJSStatusEventHandler
+433: stloc.s 10 
+435: ldloc.s 10 
+437: brfalse.s 449 
+439: ldloc.s 10 
+441: ldarg.0  
+442: ldloc.s 4 
+444: callvirt 0x0a000069 System.EventHandler`1.Invoke
+449: leave.s 527 
+451: ldloc.s 11 
+453: brfalse.s 462 
+455: ldloc.s 15 
+457: call 0x0a00006a System.Threading.Monitor.Exit
+462: endfinally  
+463: ldarg.1  
+464: callvirt 0x0a000023 Olympus.LI.Triumph.Device.Port.Command.NotifyCommand.get_NotifiedParameter
+469: ldc.i4.0  
+470: callvirt 0x0a000024 System.Collections.Generic.List`1.get_Item
+475: ldc.i4.1  
+476: stloc.s 16 
+478: ldloca.s 16 
+480: call 0x0a00003e System.Int32.ToString
+485: call 0x0a00006b System.String.op_Inequality
+490: brfalse.s 527 
+492: ldarg.0  
+493: ldloc.s 4 
+495: call 0x06000072 Olympus.LI.Triumph.Device.Stage.SsuStage.StartUpTimerThreadForNJS
+500: ret  
+501: ldstr 0x700004dc "Not found any events for arguments of '{0}'."
+506: ldloc.0  
+507: callvirt 0x0a00006c System.Object.GetType
+512: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+517: call 0x0a000039 System.String.Format
+522: call 0x0a000059 Olympus.Mis.Core.Logging.Logger.ErrorLog
+527: ret  
+
+0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+signature: {"raw_length":4,"raw_sha256":"4b9e7ad1d9b0e78ee86739644805850eaa8d714505339182128f46c75c223327","resolved_sha256":"4b9e7ad1d9b0e78ee86739644805850eaa8d714505339182128f46c75c223327","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"i4","parameter_types":["i4"],"field_type":null,"issue":null}
+body offset: 9080; IL sha256: 2754ee2ef70010110936a1713265d726b92d454513089c14575426600cb17749; normalized IL sha256: 65e9b46272b95b8a9392b3370424c4d16abbbba259549d2f61b8aa76954430a7
+0: ldarg.0  
+1: ldarg.1  
+2: conv.r8  
+3: ldc.r8 312.5 
+12: mul  
+13: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+18: stloc.0  
+19: ldstr 0x70000536 "<S> {0}(NanoMeter={1}, Pulse={2})"
+24: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+29: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+34: ldloc.0  
+35: box 0x01000028 
+40: ldarg.1  
+41: box 0x01000028 
+46: call 0x0a00004a System.String.Format
+51: call 0x0a000072 Olympus.Mis.Core.Logging.Logger.DebugLog
+56: ldloc.0  
+57: ret  
+
+0x06000077 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeAbsoluteNanoPosToPulse
+signature: {"raw_length":4,"raw_sha256":"4b9e7ad1d9b0e78ee86739644805850eaa8d714505339182128f46c75c223327","resolved_sha256":"4b9e7ad1d9b0e78ee86739644805850eaa8d714505339182128f46c75c223327","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"i4","parameter_types":["i4"],"field_type":null,"issue":null}
+body offset: 9152; IL sha256: 1db52b6bafe31d88607020b407aca55bc7ac5801a78432440a7fe80d4598eb0e; normalized IL sha256: 015154191fc7360073ebd8bfd5fcae0126ad65e555c193f26d515f77d22abaf6
+0: ldarg.0  
+1: ldarg.1  
+2: conv.r8  
+3: ldc.r8 0.001 
+12: mul  
+13: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+18: stloc.0  
+19: ldarg.0  
+20: ldarg.1  
+21: conv.r8  
+22: ldc.r8 312.5 
+31: div  
+32: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+37: stloc.1  
+38: ldarg.0  
+39: ldloc.1  
+40: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+45: stloc.2  
+46: ldloc.2  
+47: conv.r8  
+48: ldc.r8 0.001 
+57: mul  
+58: stloc.3  
+59: ldarg.0  
+60: ldloc.3  
+61: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+66: stloc.s 4 
+68: ldloc.0  
+69: ldloc.s 4 
+71: sub  
+72: ldc.i4.m1  
+73: bne.un.s 81 
+75: ldloc.1  
+76: ldc.i4.1  
+77: sub  
+78: stloc.1  
+79: br.s 92 
+81: ldloc.0  
+82: ldloc.s 4 
+84: sub  
+85: ldc.i4.1  
+86: bne.un.s 92 
+88: ldloc.1  
+89: ldc.i4.1  
+90: add  
+91: stloc.1  
+92: ldstr 0x70000536 "<S> {0}(NanoMeter={1}, Pulse={2})"
+97: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+102: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+107: ldarg.1  
+108: box 0x01000028 
+113: ldloc.1  
+114: box 0x01000028 
+119: call 0x0a00004a System.String.Format
+124: call 0x0a000072 Olympus.Mis.Core.Logging.Logger.DebugLog
+129: ldloc.1  
+130: ret  
+
+0x0600007a Olympus.LI.Triumph.Device.Stage.SsuStage.SubMoveAbsolutely
+signature: {"raw_length":6,"raw_sha256":"9ea99f85b0317bcf0e7ad7bc3ad179c89abc637d8682b1ce53cbb4fc1d99ed13","resolved_sha256":"9ea99f85b0317bcf0e7ad7bc3ad179c89abc637d8682b1ce53cbb4fc1d99ed13","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":3,"return_type":"void","parameter_types":["u4","i4","i4"],"field_type":null,"issue":null}
+body offset: 10676; IL sha256: 4ed36812a44d2624df6b135aec72e992ce1c05c3a4927826fe296bb75c243fde; normalized IL sha256: 78816cd92281dbdf48adf4761d551650715cff8cbefb4f330f2325f79fc9dc48
+0: ldarg.0  
+1: ldarg.1  
+2: ldarg.2  
+3: ldarg.3  
+4: call 0x0600007b Olympus.LI.Triumph.Device.Stage.SsuStage.SubAsyncMoveAbsolutely
+9: stloc.0  
+10: ldarg.0  
+11: ldloc.0  
+12: call 0x0a000078 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+17: ret  
+
+0x0600007b Olympus.LI.Triumph.Device.Stage.SsuStage.SubAsyncMoveAbsolutely
+signature: {"raw_length":7,"raw_sha256":"073eafcd9b1390808b8be4aa5d6641c438554d0938a601b039d9c3d9a324f516","resolved_sha256":"7c67cd1da95ef1d8ed3c0a1067b19257744fb5d356d443899a7342afd98d16e3","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":3,"return_type":"class:45","parameter_types":["u4","i4","i4"],"field_type":null,"issue":null}
+body offset: 10708; IL sha256: 6b5d08bb62bb29908276bed84afa2d73e212d35c95ed4525a203324d1d45dd58; normalized IL sha256: 3929c9f257cc16db7d91d45f858b3ebcc2606ed79e1f5362b889d480437a3734
+0: call 0x0600009b Olympus.LI.Triumph.Device.Stage.StageCommandFactory.get_Instance
+5: ldstr 0x7000057a "XYG"
+10: callvirt 0x0a00003b Olympus.LI.Triumph.Device.Device.Command.ACommandFactory.CreateRequestCommand
+15: stloc.0  
+16: ldstr 0x7000021e "<S> {0}(x={1}, y={2})"
+21: ldstr 0x70000582 "XYG NM Number"
+26: ldarg.2  
+27: box 0x01000028 
+32: ldarg.3  
+33: box 0x01000028 
+38: call 0x0a00004a System.String.Format
+43: call 0x0a000072 Olympus.Mis.Core.Logging.Logger.DebugLog
+48: ldloc.0  
+49: callvirt 0x0a00003c Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendParameter
+54: ldarga.s 1 
+56: call 0x0a000058 System.UInt32.ToString
+61: callvirt 0x0a00003f System.Collections.Generic.List`1.Add
+66: ldloc.0  
+67: callvirt 0x0a00003c Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendParameter
+72: ldarg.0  
+73: ldarg.2  
+74: call 0x06000077 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeAbsoluteNanoPosToPulse
+79: stloc.1  
+80: ldloca.s 1 
+82: call 0x0a00003e System.Int32.ToString
+87: callvirt 0x0a00003f System.Collections.Generic.List`1.Add
+92: ldloc.0  
+93: callvirt 0x0a00003c Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendParameter
+98: ldarg.0  
+99: ldarg.3  
+100: call 0x06000077 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeAbsoluteNanoPosToPulse
+105: stloc.2  
+106: ldloca.s 2 
+108: call 0x0a00003e System.Int32.ToString
+113: callvirt 0x0a00003f System.Collections.Generic.List`1.Add
+118: ldarg.0  
+119: ldloc.0  
+120: ldc.i4 4500000 
+125: call 0x0a000079 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand
+130: ret  
+
+0x06000081 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeRelativeNanoPosToPulse
+signature: {"raw_length":9,"raw_sha256":"744ffacc2c70b55562c7785c260ae2ea07e56653707ebb6c2e983ebcaf5e2e77","resolved_sha256":"744ffacc2c70b55562c7785c260ae2ea07e56653707ebb6c2e983ebcaf5e2e77","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":4,"return_type":"void","parameter_types":["i4","i4","i4&","i4&"],"field_type":null,"issue":null}
+body offset: 11260; IL sha256: eb6b7fd9049d090eae17c02ef0f449459e2cf0ce02f8d57dc0c255e425158f9c; normalized IL sha256: 0732366cb8a0741c1a615a02b710be6e5d85733b06940b90665bdd34742291e0
+0: ldc.r8 0 
+9: stloc.0  
+10: ldc.r8 0 
+19: stloc.1  
+20: ldarg.0  
+21: ldloca.s 0 
+23: ldloca.s 1 
+25: call 0x0600005f Olympus.LI.Triumph.Device.Stage.SsuStage.GetCoodinates
+30: ldloc.0  
+31: ldarg.1  
+32: conv.r8  
+33: add  
+34: stloc.2  
+35: ldloc.1  
+36: ldarg.2  
+37: conv.r8  
+38: add  
+39: stloc.3  
+40: ldarg.0  
+41: ldloc.2  
+42: ldc.r8 0.001 
+51: mul  
+52: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+57: stloc.s 4 
+59: ldarg.0  
+60: ldloc.3  
+61: ldc.r8 0.001 
+70: mul  
+71: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+76: stloc.s 5 
+78: ldarg.3  
+79: ldarg.0  
+80: ldarg.1  
+81: conv.r8  
+82: ldc.r8 312.5 
+91: div  
+92: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+97: stind.i4  
+98: ldarg.s 4 
+100: ldarg.0  
+101: ldarg.2  
+102: conv.r8  
+103: ldc.r8 312.5 
+112: div  
+113: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+118: stind.i4  
+119: ldarg.0  
+120: ldarg.3  
+121: ldind.i4  
+122: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+127: stloc.s 6 
+129: ldarg.0  
+130: ldarg.s 4 
+132: ldind.i4  
+133: call 0x06000076 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangePulseToNano
+138: stloc.s 7 
+140: ldloc.s 6 
+142: conv.r8  
+143: ldloc.0  
+144: add  
+145: stloc.s 8 
+147: ldloc.s 7 
+149: conv.r8  
+150: ldloc.1  
+151: add  
+152: stloc.s 9 
+154: ldloc.s 8 
+156: ldc.r8 0.001 
+165: mul  
+166: stloc.s 10 
+168: ldloc.s 9 
+170: ldc.r8 0.001 
+179: mul  
+180: stloc.s 11 
+182: ldarg.0  
+183: ldloc.s 10 
+185: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+190: stloc.s 12 
+192: ldarg.0  
+193: ldloc.s 11 
+195: call 0x06000082 Olympus.LI.Triumph.Device.Stage.SsuStage.ChangeNumRounding
+200: stloc.s 13 
+202: ldloc.s 4 
+204: ldloc.s 12 
+206: sub  
+207: ldc.i4.m1  
+208: bne.un.s 218 
+210: ldarg.3  
+211: ldarg.3  
+212: ldind.i4  
+213: ldc.i4.1  
+214: sub  
+215: stind.i4  
+216: br.s 232 
+218: ldloc.s 4 
+220: ldloc.s 12 
+222: sub  
+223: ldc.i4.1  
+224: bne.un.s 232 
+226: ldarg.3  
+227: ldarg.3  
+228: ldind.i4  
+229: ldc.i4.1  
+230: add  
+231: stind.i4  
+232: ldloc.s 5 
+234: ldloc.s 13 
+236: sub  
+237: ldc.i4.m1  
+238: bne.un.s 250 
+240: ldarg.s 4 
+242: ldarg.s 4 
+244: ldind.i4  
+245: ldc.i4.1  
+246: sub  
+247: stind.i4  
+248: br.s 266 
+250: ldloc.s 5 
+252: ldloc.s 13 
+254: sub  
+255: ldc.i4.1  
+256: bne.un.s 266 
+258: ldarg.s 4 
+260: ldarg.s 4 
+262: ldind.i4  
+263: ldc.i4.1  
+264: add  
+265: stind.i4  
+266: ldstr 0x70000536 "<S> {0}(NanoMeter={1}, Pulse={2})"
+271: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+276: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+281: ldarg.1  
+282: box 0x01000028 
+287: ldarg.3  
+288: ldind.i4  
+289: box 0x01000028 
+294: call 0x0a00004a System.String.Format
+299: call 0x0a000072 Olympus.Mis.Core.Logging.Logger.DebugLog
+304: ldstr 0x70000536 "<S> {0}(NanoMeter={1}, Pulse={2})"
+309: call 0x0a000035 System.Reflection.MethodBase.GetCurrentMethod
+314: callvirt 0x0a000036 System.Reflection.MemberInfo.get_Name
+319: ldarg.2  
+320: box 0x01000028 
+325: ldarg.s 4 
+327: ldind.i4  
+328: box 0x01000028 
+333: call 0x0a00004a System.String.Format
+338: call 0x0a000072 Olympus.Mis.Core.Logging.Logger.DebugLog
+343: ret  
+
+0x06000083 Olympus.LI.Triumph.Device.Stage.SsuStage.Olympus.LI.Triumph.Device.Stage.IStage.WaitForAsyncCommandResponse
+signature: {"raw_length":5,"raw_sha256":"382ef190fb12d40416737e91f1e899d3b6049d4c8c9b5297b3f28251c9afe2b7","resolved_sha256":"387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:45"],"field_type":null,"issue":null}
+body offset: 11681; IL sha256: 6fbf55a176b9940050a9a765e7c5a25418ef8f64134c2c7bd4362db6fdd456ba; normalized IL sha256: 50c3437118f73e1380113a87f86aabb5d4430dd367ca003b8e737f778ef975a6
+0: ldarg.0  
+1: ldarg.1  
+2: call 0x0a000078 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+7: ret  
+

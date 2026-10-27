@@ -1,0 +1,943 @@
+EVIDENCE ev_95a59d69a896d27afe8d1e8c4ba34dfe1f7c23ae235ddafbb2a8d2d5aa4689f2 SHA256 0bac697fb85805b24d20362a0bc03f56989c03c3cebef74a2c54caf1a056ea63
+
+METHOD 0x060000e4 OpenCVWrapper.WImageWrapper InclineX IL_SHA256 6da8dcc824760579acc7ef638d416a906b7230e55ff092e1131abd916ce26e9d DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldc.i4.0       
+0002: ldelema       0x01000038 
+0007: stloc.3        
+0008: ldarg.3        
+0009: ldc.i4.0       
+000a: ldelema       0x01000038 
+000f: stloc.2        
+0010: ldloca.s      6 
+0012: ldarg.2        
+0013: ldarg.1        
+0014: ldc.i4.5       
+0015: ldloc.3        
+0016: ldc.i4        2147483647 
+001b: call          0x0600005b <Module>.cvInitMatHeader
+0020: pop            
+0021: ldloca.s      5 
+0023: ldc.i4.1       
+0024: ldarg.1        
+0025: ldc.i4.5       
+0026: ldloc.2        
+0027: ldc.i4        2147483647 
+002c: call          0x0600005b <Module>.cvInitMatHeader
+0031: pop            
+0032: ldc.i4.0       
+0033: stloc.0        
+0034: ldc.i4.0       
+0035: ldarg.2        
+0036: bge.s         111 
+0038: ldloc.0        
+0039: ldc.i4.1       
+003a: add            
+003b: stloc.1        
+003c: ldloca.s      6 
+003e: ldloca.s      4 
+0040: ldloc.0        
+0041: ldloc.1        
+0042: ldc.i4.1       
+0043: call          0x0600007b <Module>.cvGetRows
+0048: pop            
+0049: ldarg.s       4 
+004b: brfalse.s     92 
+004d: ldloca.s      4 
+004f: ldloca.s      5 
+0051: ldloca.s      4 
+0053: ldc.i4.0       
+0054: conv.i8        
+0055: call          0x0600006d <Module>.cvSub
+005a: br.s          105 
+005c: ldloca.s      4 
+005e: ldloca.s      5 
+0060: ldloca.s      4 
+0062: ldc.i4.0       
+0063: conv.i8        
+0064: call          0x0600006f <Module>.cvAdd
+0069: ldloc.1        
+006a: stloc.0        
+006b: ldloc.0        
+006c: ldarg.2        
+006d: blt.s         56 
+006f: ret            
+
+METHOD 0x060000e5 OpenCVWrapper.WImageWrapper InclineX IL_SHA256 147046068687af331930f7298c12eab5a852dab7ba7f36575a2c7b602df03792 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: ldarg.2        
+0003: ldarg.3        
+0004: ldc.i4.0       
+0005: call          0x060000e4 OpenCVWrapper.WImageWrapper.InclineX
+000a: ret            
+
+METHOD 0x060000e6 OpenCVWrapper.WImageWrapper InclineY IL_SHA256 437e2199086c035b68f659ebe2bb73204322c9edc2add15d91506399bfd7dd83 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldc.i4.0       
+0002: ldelema       0x01000038 
+0007: stloc.3        
+0008: ldarg.3        
+0009: ldc.i4.0       
+000a: ldelema       0x01000038 
+000f: stloc.2        
+0010: ldloca.s      6 
+0012: ldarg.2        
+0013: ldarg.1        
+0014: ldc.i4.5       
+0015: ldloc.3        
+0016: ldc.i4        2147483647 
+001b: call          0x0600005b <Module>.cvInitMatHeader
+0020: pop            
+0021: ldloca.s      5 
+0023: ldarg.2        
+0024: ldc.i4.1       
+0025: ldc.i4.5       
+0026: ldloc.2        
+0027: ldc.i4        2147483647 
+002c: call          0x0600005b <Module>.cvInitMatHeader
+0031: pop            
+0032: ldc.i4.0       
+0033: stloc.0        
+0034: ldc.i4.0       
+0035: ldarg.1        
+0036: bge.s         110 
+0038: ldloc.0        
+0039: ldc.i4.1       
+003a: add            
+003b: stloc.1        
+003c: ldloca.s      6 
+003e: ldloca.s      4 
+0040: ldloc.0        
+0041: ldloc.1        
+0042: call          0x0600007e <Module>.cvGetCols
+0047: pop            
+0048: ldarg.s       4 
+004a: brfalse.s     91 
+004c: ldloca.s      4 
+004e: ldloca.s      5 
+0050: ldloca.s      4 
+0052: ldc.i4.0       
+0053: conv.i8        
+0054: call          0x0600006d <Module>.cvSub
+0059: br.s          104 
+005b: ldloca.s      4 
+005d: ldloca.s      5 
+005f: ldloca.s      4 
+0061: ldc.i4.0       
+0062: conv.i8        
+0063: call          0x0600006f <Module>.cvAdd
+0068: ldloc.1        
+0069: stloc.0        
+006a: ldloc.0        
+006b: ldarg.1        
+006c: blt.s         56 
+006e: ret            
+
+METHOD 0x060000e7 OpenCVWrapper.WImageWrapper InclineY IL_SHA256 b9b7b0b2cf0b125e7a8aadc2c80c10f9d486c16d295f37b27e297055624407d1 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: ldarg.2        
+0003: ldarg.3        
+0004: ldc.i4.0       
+0005: call          0x060000e6 OpenCVWrapper.WImageWrapper.InclineY
+000a: ret            
+
+METHOD 0x060000e8 OpenCVWrapper.WImageWrapper OffsetHeightFor3Points IL_SHA256 80388f0dfce5fb35094c02f4106f274f7465eb5aa7e8de50e85541be3606899d DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldc.i4.0       
+0002: ldelema       0x01000038 
+0007: stloc.s       6 
+0009: ldc.r8        0 
+0012: stloc.1        
+0013: ldloca.s      7 
+0015: ldarg.2        
+0016: ldarg.1        
+0017: ldc.i4.5       
+0018: ldloc.s       6 
+001a: ldc.i4        2147483647 
+001f: call          0x0600005b <Module>.cvInitMatHeader
+0024: pop            
+0025: ldloca.s      7 
+0027: ldloca.s      0 
+0029: ldloca.s      2 
+002b: ldc.i4.0       
+002c: conv.i8        
+002d: ldc.i4.0       
+002e: conv.i8        
+002f: ldc.i4.0       
+0030: conv.i8        
+0031: call          0x0600005e <Module>.cvMinMaxLoc
+0036: ldloc.2        
+0037: ldloc.0        
+0038: sub            
+0039: stloc.3        
+003a: ldloc.3        
+003b: ldc.r8        65535 
+0044: ble.un.s      96 
+0046: ldloc.3        
+0047: ldc.r8        65535 
+0050: sub            
+0051: ldc.r8        0.5 
+005a: mul            
+005b: ldloc.0        
+005c: add            
+005d: stloc.1        
+005e: br.s          138 
+0060: ldloc.0        
+0061: ldc.r8        0 
+006a: bge.un.s      113 
+006c: ldloc.0        
+006d: neg            
+006e: stloc.1        
+006f: br.s          138 
+0071: ldloc.2        
+0072: ldc.r8        65535 
+007b: ble.un.s      138 
+007d: ldloc.2        
+007e: ldc.r8        65535 
+0087: sub            
+0088: neg            
+0089: stloc.1        
+008a: ldloca.s      5 
+008c: ldloc.1        
+008d: stind.r8       
+008e: ldloca.s      5 
+0090: ldc.i4.8       
+0091: add            
+0092: ldc.r8        0 
+009b: stind.r8       
+009c: ldloca.s      5 
+009e: ldc.i4.s      16 
+00a0: add            
+00a1: ldc.r8        0 
+00aa: stind.r8       
+00ab: ldloca.s      5 
+00ad: ldc.i4.s      24 
+00af: add            
+00b0: ldc.r8        0 
+00b9: stind.r8       
+00ba: ldloc.s       5 
+00bc: stloc.s       4 
+00be: ldloca.s      7 
+00c0: ldloc.s       4 
+00c2: ldloca.s      7 
+00c4: ldc.i4.0       
+00c5: conv.i8        
+00c6: call          0x0600005a <Module>.cvAddS
+00cb: ret            
+
+METHOD 0x060000e9 OpenCVWrapper.WImageWrapper RescaleInclinedHeightData IL_SHA256 cb898187fd35bc96d6906c440219bbe2fa7ad69dc17f9c5588f295e950f1bf1c DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: conv.i8        
+0002: stloc.2        
+0003: ldarg.0        
+0004: ldc.i4.0       
+0005: ldelema       0x01000038 
+000a: stloc.s       14 
+000c: ldarg.s       5 
+000e: ldc.i4.0       
+000f: ldelema       0x01000026 
+0014: stloc.s       13 
+0016: ldloca.s      17 
+0018: ldarg.2        
+0019: ldarg.1        
+001a: ldc.i4.5       
+001b: ldloc.s       14 
+001d: ldc.i4        2147483647 
+0022: call          0x0600005b <Module>.cvInitMatHeader
+0027: pop            
+0028: ldloca.s      16 
+002a: ldarg.2        
+002b: ldarg.1        
+002c: ldc.i4.2       
+002d: ldloc.s       13 
+002f: ldc.i4        2147483647 
+0034: call          0x0600005b <Module>.cvInitMatHeader
+0039: pop            
+003a: ldarg.1        
+003b: stloc.1        
+003c: ldarg.2        
+003d: stloc.0        
+003e: ldarg.3        
+003f: ldarg.1        
+0040: ble.s         89 
+0042: ldarg.1        
+0043: conv.r8        
+0044: stloc.s       8 
+0046: ldloc.s       8 
+0048: ldarg.3        
+0049: conv.r8        
+004a: div            
+004b: ldloc.s       8 
+004d: mul            
+004e: conv.i4        
+004f: stloc.1        
+0050: ldloc.1        
+0051: ldc.i4.1       
+0052: blt.s         87 
+0054: ldloc.1        
+0055: br.s          88 
+0057: ldc.i4.1       
+0058: stloc.1        
+0059: ldarg.s       4 
+005b: ldarg.2        
+005c: ble.s         118 
+005e: ldarg.2        
+005f: conv.r8        
+0060: stloc.s       7 
+0062: ldloc.s       7 
+0064: ldarg.s       4 
+0066: conv.r8        
+0067: div            
+0068: ldloc.s       7 
+006a: mul            
+006b: conv.i4        
+006c: stloc.0        
+006d: ldloc.0        
+006e: ldc.i4.1       
+006f: blt.s         116 
+0071: ldloc.0        
+0072: br.s          117 
+0074: ldc.i4.1       
+0075: stloc.0        
+0076: ldloc.1        
+0077: ldarg.1        
+0078: bne.un.s      135 
+007a: ldloc.0        
+007b: ldarg.2        
+007c: bne.un.s      135 
+007e: ldloca.s      17 
+0080: stloc.s       6 
+0082: ldloca.s      16 
+0084: stloc.2        
+0085: br.s          184 
+0087: ldloca.s      12 
+0089: ldc.i4.0       
+008a: stind.i4       
+008b: ldloca.s      12 
+008d: ldc.i4.4       
+008e: add            
+008f: ldc.i4.0       
+0090: stind.i4       
+0091: ldloca.s      12 
+0093: ldc.i4.8       
+0094: add            
+0095: ldloc.1        
+0096: stind.i4       
+0097: ldloca.s      12 
+0099: ldc.i4.s      12 
+009b: add            
+009c: ldloc.0        
+009d: stind.i4       
+009e: ldloc.s       12 
+00a0: stloc.s       11 
+00a2: ldloca.s      17 
+00a4: ldloca.s      15 
+00a6: ldloc.s       11 
+00a8: call          0x06000060 <Module>.cvGetSubRect
+00ad: stloc.s       6 
+00af: ldloc.0        
+00b0: ldloc.1        
+00b1: ldc.i4.2       
+00b2: call          0x06000064 <Module>.cvCreateMat
+00b7: stloc.2        
+00b8: ldc.r8        1 
+00c1: stloc.s       5 
+00c3: ldloc.s       6 
+00c5: ldloca.s      4 
+00c7: ldloca.s      3 
+00c9: ldc.i4.0       
+00ca: conv.i8        
+00cb: ldc.i4.0       
+00cc: conv.i8        
+00cd: ldc.i4.0       
+00ce: conv.i8        
+00cf: call          0x0600005e <Module>.cvMinMaxLoc
+00d4: ldloc.s       4 
+00d6: ldc.r8        0 
+00df: bgt.un.s      316 
+00e1: ldloca.s      10 
+00e3: ldc.r8        1 
+00ec: ldloc.s       4 
+00ee: sub            
+00ef: stind.r8       
+00f0: ldloca.s      10 
+00f2: ldc.i4.8       
+00f3: add            
+00f4: ldc.r8        0 
+00fd: stind.r8       
+00fe: ldloca.s      10 
+0100: ldc.i4.s      16 
+0102: add            
+0103: ldc.r8        0 
+010c: stind.r8       
+010d: ldloca.s      10 
+010f: ldc.i4.s      24 
+0111: add            
+0112: ldc.r8        0 
+011b: stind.r8       
+011c: ldloc.s       10 
+011e: stloc.s       9 
+0120: ldloca.s      17 
+0122: ldloc.s       9 
+0124: ldloca.s      17 
+0126: ldc.i4.0       
+0127: conv.i8        
+0128: call          0x0600005a <Module>.cvAddS
+012d: ldc.r8        1 
+0136: ldloc.s       4 
+0138: sub            
+0139: ldloc.3        
+013a: add            
+013b: stloc.3        
+013c: ldloc.3        
+013d: ldc.r8        65535 
+0146: ble.un.s      341 
+0148: ldc.r8        65535 
+0151: ldloc.3        
+0152: div            
+0153: stloc.s       5 
+0155: ldloc.s       6 
+0157: ldloc.2        
+0158: ldloc.s       5 
+015a: ldc.r8        0 
+0163: call          0x06000055 <Module>.cvConvertScale
+0168: ldloc.2        
+0169: ldloca.s      16 
+016b: beq.s         381 
+016d: ldloc.2        
+016e: ldloca.s      16 
+0170: ldc.i4.1       
+0171: call          0x0600005f <Module>.cvResize
+0176: ldloca.s      2 
+0178: call          0x06000071 <Module>.cvReleaseMat
+017d: ldloc.s       5 
+017f: ret            
+
+METHOD 0x060001e3 OpenCVWrapper.ImageProcessingCommonWrapper InclineX IL_SHA256 c631118a3c7fc1f3e663d9a19d6d2c6abe25909992246035d66a051895f90cb1 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.1        
+0014: ldarg.2        
+0015: ldarg.3        
+0016: ldarg.s       4 
+0018: ldarg.s       5 
+001a: call          0x060000e4 OpenCVWrapper.WImageWrapper.InclineX
+001f: ret            
+
+METHOD 0x060001e4 OpenCVWrapper.ImageProcessingCommonWrapper InclineX IL_SHA256 076b40d3941c031bf28a12b5a34737f5567e285aa37f13d935ac52c8970c7230 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.1        
+0014: ldarg.2        
+0015: ldarg.3        
+0016: ldarg.s       4 
+0018: call          0x060000e5 OpenCVWrapper.WImageWrapper.InclineX
+001d: ret            
+
+METHOD 0x060001e5 OpenCVWrapper.ImageProcessingCommonWrapper InclineY IL_SHA256 00fa4cd23601cfe22730dfec425409ed8399e9f4ab1dba1b14b60a3d0b839ff3 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.1        
+0014: ldarg.2        
+0015: ldarg.3        
+0016: ldarg.s       4 
+0018: ldarg.s       5 
+001a: call          0x060000e6 OpenCVWrapper.WImageWrapper.InclineY
+001f: ret            
+
+METHOD 0x060001e6 OpenCVWrapper.ImageProcessingCommonWrapper InclineY IL_SHA256 ac4c828ca96245b46ecedb52c73a7e2db32b38403d4366195f0ce74d181f9396 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.1        
+0014: ldarg.2        
+0015: ldarg.3        
+0016: ldarg.s       4 
+0018: call          0x060000e7 OpenCVWrapper.WImageWrapper.InclineY
+001d: ret            
+
+METHOD 0x060001e7 OpenCVWrapper.ImageProcessingCommonWrapper OffsetHeightFor3Points IL_SHA256 9c2494b85a2f55e12d4e33307b9d3a5505c204a82e6ff1b6e7fb73a607f5fca4 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.1        
+0014: ldarg.2        
+0015: ldarg.3        
+0016: call          0x060000e8 OpenCVWrapper.WImageWrapper.OffsetHeightFor3Points
+001b: ret            
+
+METHOD 0x060001e8 OpenCVWrapper.ImageProcessingCommonWrapper RescaleInclinedHeightData IL_SHA256 47de912ac41b31566ce7e0152b201bf1ca1d1d5a537799f31e87fab8646277b2 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.1        
+0014: ldarg.2        
+0015: ldarg.3        
+0016: ldarg.s       4 
+0018: ldarg.s       5 
+001a: ldarg.s       6 
+001c: call          0x060000e9 OpenCVWrapper.WImageWrapper.RescaleInclinedHeightData
+0021: ret            
+
+METHOD 0x060001f6 OpenCVWrapper.SphereCorrection CorrectSphereImage IL_SHA256 77434ba7129cd61b3f969b2eba372c1b4240a0c76470b736cd55c006aa01eaf8 DECODE_ISSUE null
+0000: ldarg.s       9 
+0002: ldlen          
+0003: stloc.s       6 
+0005: ldnull         
+0006: stloc.s       11 
+0008: ldnull         
+0009: stloc.s       10 
+000b: ldnull         
+000c: stloc.s       9 
+000e: ldnull         
+000f: stloc.s       5 
+0011: ldloc.s       6 
+0013: newarr        0x01000033 
+0018: stloc.s       11 
+001a: ldloc.s       6 
+001c: newarr        0x01000033 
+0021: stloc.s       10 
+0023: ldloc.s       6 
+0025: newarr        0x01000033 
+002a: stloc.s       9 
+002c: ldc.i4.3       
+002d: newarr        0x01000033 
+0032: stloc.s       5 
+0034: leave.s       63 
+0036: pop            
+0037: newobj        0x0a000013 System.OutOfMemoryException..ctor
+003c: throw          
+003d: leave.s       63 
+003f: ldc.i4.0       
+0040: conv.i8        
+0041: stloc.s       13 
+0043: ldarg.2        
+0044: ldlen          
+0045: ldc.i4.0       
+0046: ble.s         81 
+0048: ldarg.2        
+0049: ldc.i4.0       
+004a: ldelema       0x1b000001 
+004f: stloc.s       13 
+0051: ldloc.s       13 
+0053: stloc.s       18 
+0055: ldloca.s      21 
+0057: ldarg.s       4 
+0059: ldarg.s       5 
+005b: ldc.i4.2       
+005c: ldloc.s       18 
+005e: ldc.i4        2147483647 
+0063: call          0x0600005b <Module>.cvInitMatHeader
+0068: pop            
+0069: ldarg.s       13 
+006b: ldc.i4.1       
+006c: beq.s         153 
+006e: ldarg.s       13 
+0070: ldc.i4.3       
+0071: beq.s         146 
+0073: ldarg.s       13 
+0075: ldc.i4.5       
+0076: beq.s         139 
+0078: ldarg.s       13 
+007a: ldc.i4.7       
+007b: beq.s         132 
+007d: ldc.i4.1       
+007e: stloc.s       4 
+0080: ldc.i4.0       
+0081: stloc.0        
+0082: br.s          158 
+0084: ldc.i4.7       
+0085: stloc.s       4 
+0087: ldc.i4.3       
+0088: stloc.0        
+0089: br.s          158 
+008b: ldc.i4.5       
+008c: stloc.s       4 
+008e: ldc.i4.2       
+008f: stloc.0        
+0090: br.s          158 
+0092: ldc.i4.3       
+0093: stloc.s       4 
+0095: ldc.i4.1       
+0096: stloc.0        
+0097: br.s          158 
+0099: ldc.i4.1       
+009a: stloc.s       4 
+009c: ldc.i4.0       
+009d: stloc.0        
+009e: ldc.i4.0       
+009f: stloc.1        
+00a0: ldc.i4.0       
+00a1: ldloc.s       6 
+00a3: bge           458 
+00a8: ldarg.s       9 
+00aa: ldloc.1        
+00ab: ldelema       0x0100001f 
+00b0: call          0x0a000015 System.Windows.Point.get_X
+00b5: ldc.r8        1 
+00be: add            
+00bf: ldarg.s       6 
+00c1: mul            
+00c2: stloc.s       17 
+00c4: ldloc.s       11 
+00c6: ldloc.1        
+00c7: ldloc.s       17 
+00c9: stelem.r8      
+00ca: ldarg.s       9 
+00cc: ldloc.1        
+00cd: ldelema       0x0100001f 
+00d2: call          0x0a000016 System.Windows.Point.get_Y
+00d7: ldc.r8        1 
+00e0: add            
+00e1: ldarg.s       7 
+00e3: mul            
+00e4: stloc.s       16 
+00e6: ldloc.s       10 
+00e8: ldloc.1        
+00e9: ldloc.s       16 
+00eb: stelem.r8      
+00ec: ldarg.s       9 
+00ee: ldloc.1        
+00ef: ldelema       0x0100001f 
+00f4: call          0x0a000015 System.Windows.Point.get_X
+00f9: conv.i4        
+00fa: ldloc.0        
+00fb: sub            
+00fc: stloc.3        
+00fd: ldarg.s       9 
+00ff: ldloc.1        
+0100: ldelema       0x0100001f 
+0105: call          0x0a000016 System.Windows.Point.get_Y
+010a: conv.i4        
+010b: ldloc.0        
+010c: sub            
+010d: stloc.2        
+010e: ldloc.s       4 
+0110: stloc.s       8 
+0112: ldloc.s       4 
+0114: stloc.s       7 
+0116: ldloc.3        
+0117: ldc.i4.0       
+0118: bge.s         291 
+011a: ldc.i4.0       
+011b: stloc.3        
+011c: ldloc.0        
+011d: ldc.i4.1       
+011e: add            
+011f: stloc.s       8 
+0121: br.s          331 
+0123: ldloc.3        
+0124: ldarg.s       5 
+0126: ldc.i4.1       
+0127: sub            
+0128: ble.s         312 
+012a: ldarg.s       5 
+012c: ldloc.0        
+012d: sub            
+012e: ldc.i4.1       
+012f: sub            
+0130: stloc.3        
+0131: ldloc.0        
+0132: ldc.i4.1       
+0133: add            
+0134: stloc.s       8 
+0136: br.s          331 
+0138: ldloc.3        
+0139: ldarg.s       5 
+013b: ldloc.s       4 
+013d: sub            
+013e: ble.s         331 
+0140: ldloc.3        
+0141: ldarg.s       5 
+0143: bge.s         331 
+0145: ldarg.s       5 
+0147: ldloc.3        
+0148: sub            
+0149: stloc.s       8 
+014b: ldloc.2        
+014c: ldc.i4.0       
+014d: bge.s         344 
+014f: ldc.i4.0       
+0150: stloc.2        
+0151: ldloc.0        
+0152: ldc.i4.1       
+0153: add            
+0154: stloc.s       7 
+0156: br.s          384 
+0158: ldloc.2        
+0159: ldarg.s       4 
+015b: ldc.i4.1       
+015c: sub            
+015d: ble.s         365 
+015f: ldarg.s       4 
+0161: ldloc.0        
+0162: sub            
+0163: ldc.i4.1       
+0164: sub            
+0165: stloc.2        
+0166: ldloc.0        
+0167: ldc.i4.1       
+0168: add            
+0169: stloc.s       7 
+016b: br.s          384 
+016d: ldloc.2        
+016e: ldarg.s       4 
+0170: ldloc.s       4 
+0172: sub            
+0173: ble.s         384 
+0175: ldloc.2        
+0176: ldarg.s       4 
+0178: bge.s         384 
+017a: ldarg.s       4 
+017c: ldloc.2        
+017d: sub            
+017e: stloc.s       7 
+0180: ldloca.s      15 
+0182: ldloc.3        
+0183: stind.i4       
+0184: ldloca.s      15 
+0186: ldc.i4.4       
+0187: add            
+0188: ldloc.2        
+0189: stind.i4       
+018a: ldloca.s      15 
+018c: ldc.i4.8       
+018d: add            
+018e: ldloc.s       8 
+0190: stind.i4       
+0191: ldloca.s      15 
+0193: ldc.i4.s      12 
+0195: add            
+0196: ldloc.s       7 
+0198: stind.i4       
+0199: ldloc.s       15 
+019b: stloc.s       14 
+019d: ldloca.s      21 
+019f: ldloca.s      20 
+01a1: ldloc.s       14 
+01a3: call          0x06000060 <Module>.cvGetSubRect
+01a8: pop            
+01a9: ldloca.s      20 
+01ab: ldc.i4.0       
+01ac: conv.i8        
+01ad: call          0x0600007a <Module>.cvAvg
+01b2: stloc.s       19 
+01b4: ldloc.s       9 
+01b6: ldloc.1        
+01b7: ldloca.s      19 
+01b9: ldind.r8       
+01ba: ldarg.s       8 
+01bc: mul            
+01bd: stelem.r8      
+01be: ldloc.1        
+01bf: ldc.i4.1       
+01c0: add            
+01c1: stloc.1        
+01c2: ldloc.1        
+01c3: ldloc.s       6 
+01c5: blt           168 
+01ca: ldarg.0        
+01cb: ldloc.s       11 
+01cd: ldloc.s       10 
+01cf: ldloc.s       9 
+01d1: ldarg.1        
+01d2: call          0x060001f9 OpenCVWrapper.SphereCorrection.CalculateSphereCenter
+01d7: stloc.s       5 
+01d9: ldarg.0        
+01da: ldloc.s       5 
+01dc: ldc.i4.0       
+01dd: ldelem.r8      
+01de: stfld         0x0400018c OpenCVWrapper.SphereCorrection.sphereCenterX
+01e3: ldarg.0        
+01e4: ldloc.s       5 
+01e6: ldc.i4.1       
+01e7: ldelem.r8      
+01e8: stfld         0x0400018d OpenCVWrapper.SphereCorrection.sphereCenterY
+01ed: ldarg.0        
+01ee: ldloc.s       5 
+01f0: ldc.i4.2       
+01f1: ldelem.r8      
+01f2: stfld         0x0400018e OpenCVWrapper.SphereCorrection.sphereCenterZ
+01f7: ldarg.0        
+01f8: ldloc.s       11 
+01fa: ldc.i4.0       
+01fb: ldelem.r8      
+01fc: ldloc.s       10 
+01fe: ldc.i4.0       
+01ff: ldelem.r8      
+0200: ldloc.s       9 
+0202: ldc.i4.0       
+0203: ldelem.r8      
+0204: ldloc.s       5 
+0206: call          0x060001fa OpenCVWrapper.SphereCorrection.CalculateSphereRadius
+020b: stloc.s       12 
+020d: ldarg.0        
+020e: ldloc.s       12 
+0210: stfld         0x0400018f OpenCVWrapper.SphereCorrection.sphereRadius
+0215: ldarg.1        
+0216: ldc.i4.0       
+0217: ldarg.0        
+0218: ldfld         0x0400018c OpenCVWrapper.SphereCorrection.sphereCenterX
+021d: stelem.r8      
+021e: ldarg.1        
+021f: ldc.i4.1       
+0220: ldarg.0        
+0221: ldfld         0x0400018d OpenCVWrapper.SphereCorrection.sphereCenterY
+0226: stelem.r8      
+0227: ldarg.1        
+0228: ldc.i4.2       
+0229: ldarg.0        
+022a: ldfld         0x0400018e OpenCVWrapper.SphereCorrection.sphereCenterZ
+022f: stelem.r8      
+0230: ldarg.1        
+0231: ldc.i4.3       
+0232: ldarg.0        
+0233: ldfld         0x0400018f OpenCVWrapper.SphereCorrection.sphereRadius
+0238: stelem.r8      
+0239: ldarg.0        
+023a: ldarg.1        
+023b: ldarg.2        
+023c: ldarg.3        
+023d: ldarg.s       4 
+023f: ldarg.s       5 
+0241: ldarg.s       6 
+0243: ldarg.s       7 
+0245: ldarg.s       8 
+0247: ldloc.s       5 
+0249: ldloc.s       12 
+024b: ldarg.s       10 
+024d: ldarg.s       11 
+024f: ldarg.s       12 
+0251: call          0x2b00002f OpenCVWrapper.SphereCorrection.CreateSphereCorrectedImage
+0256: ret            
+
+METHOD 0x060001f7 OpenCVWrapper.SphereCorrection CorrectSphereImage IL_SHA256 1d6505bbbcecba31232b3084d7e32f19f6243a3deeb3c58e8a3cdbbdf62b56d5 DECODE_ISSUE null
+0000: ldc.i4.3       
+0001: stloc.0        
+0002: ldarg.s       10 
+0004: ldc.i4.1       
+0005: bne.un.s      11 
+0007: ldc.i4.1       
+0008: stloc.0        
+0009: br.s          50 
+000b: ldarg.s       10 
+000d: ldc.i4.3       
+000e: bne.un.s      20 
+0010: ldc.i4.3       
+0011: stloc.0        
+0012: br.s          50 
+0014: ldarg.s       10 
+0016: ldc.i4.5       
+0017: bne.un.s      29 
+0019: ldc.i4.5       
+001a: stloc.0        
+001b: br.s          50 
+001d: ldarg.s       10 
+001f: ldc.i4.7       
+0020: bne.un.s      38 
+0022: ldc.i4.7       
+0023: stloc.0        
+0024: br.s          50 
+0026: ldarg.s       10 
+0028: ldc.i4.s      11 
+002a: beq.s         47 
+002c: ldloc.0        
+002d: br.s          49 
+002f: ldc.i4.s      11 
+0031: stloc.0        
+0032: ldarg.0        
+0033: ldarg.1        
+0034: ldarg.2        
+0035: ldarg.3        
+0036: ldarg.s       4 
+0038: ldarg.s       5 
+003a: ldarg.s       6 
+003c: ldarg.s       7 
+003e: ldarg.s       8 
+0040: ldarg.s       9 
+0042: ldc.i4.2       
+0043: ldc.i4.1       
+0044: ldc.i4.1       
+0045: ldloc.0        
+0046: call          0x2b00002e OpenCVWrapper.SphereCorrection.CorrectSphereImage
+004b: ret            
+
+METHOD 0x060001fa OpenCVWrapper.SphereCorrection CalculateSphereRadius IL_SHA256 154dd96c5a04cf94e3a8d1fc637d7a304626526618e2d1a8508bf8e2719e7e80 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldarg.s       4 
+0003: ldc.i4.0       
+0004: ldelem.r8      
+0005: sub            
+0006: stloc.2        
+0007: ldarg.2        
+0008: ldarg.s       4 
+000a: ldc.i4.1       
+000b: ldelem.r8      
+000c: sub            
+000d: stloc.1        
+000e: ldarg.3        
+000f: ldarg.s       4 
+0011: ldc.i4.2       
+0012: ldelem.r8      
+0013: sub            
+0014: stloc.0        
+0015: ldloc.1        
+0016: dup            
+0017: mul            
+0018: ldloc.2        
+0019: dup            
+001a: mul            
+001b: add            
+001c: ldloc.0        
+001d: dup            
+001e: mul            
+001f: add            
+0020: call          0x0a000019 System.Math.Sqrt
+0025: ret            
+
+METHOD 0x0600022f OpenCVWrapper.ImageProcessingFilterWrapper CorrectSphereImage IL_SHA256 3a24df291145ca9ddce8d7e4bb896566467a1e8de2a713b29db0f946eb99b642 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x040001a1 OpenCVWrapper.ImageProcessingFilterWrapper._clsSphereCorrection
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060001fb OpenCVWrapper.SphereCorrection..ctor
+000e: stfld         0x040001a1 OpenCVWrapper.ImageProcessingFilterWrapper._clsSphereCorrection
+0013: ldarg.0        
+0014: ldfld         0x040001a1 OpenCVWrapper.ImageProcessingFilterWrapper._clsSphereCorrection
+0019: ldarg.1        
+001a: ldarg.2        
+001b: ldarg.3        
+001c: ldarg.s       4 
+001e: ldarg.s       5 
+0020: ldarg.s       6 
+0022: ldarg.s       7 
+0024: ldarg.s       8 
+0026: ldarg.s       9 
+0028: ldarg.s       10 
+002a: ldarg.s       11 
+002c: ldarg.s       12 
+002e: call          0x2b00000b OpenCVWrapper.SphereCorrection.CorrectSphereImage
+0033: ret            

@@ -1,0 +1,124 @@
+Evidence: ev_632f41592daa2d469b557d45a8ef06bd19c5805b0dcc2839aa648b1d91853227
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+void FUN_140008080(undefined4 *param_1,undefined8 *param_2,undefined8 *param_3,undefined8 *param_4,
+                  undefined8 *param_5,longlong param_6,int param_7,longlong *param_8,
+                  longlong param_9)
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  undefined8 local_1a8;
+  undefined8 uStack_1a0;
+  undefined8 local_198;
+  undefined8 local_188;
+  undefined8 uStack_180;
+  undefined8 local_178;
+  undefined8 uStack_170;
+  undefined8 local_168;
+  undefined8 uStack_160;
+  undefined8 local_158;
+  undefined8 uStack_150;
+  undefined8 local_148;
+  undefined8 uStack_140;
+  undefined8 local_138;
+  undefined8 uStack_130;
+  undefined8 local_128;
+  undefined8 uStack_120;
+  undefined8 local_118;
+  undefined8 uStack_110;
+  undefined8 local_108;
+  undefined8 uStack_100;
+  undefined8 local_f8;
+  undefined8 uStack_f0;
+  undefined8 local_e8;
+  undefined8 uStack_e0;
+  undefined8 local_d8;
+  undefined8 local_c8;
+  undefined8 uStack_c0;
+  undefined8 local_b8;
+  undefined8 uStack_b0;
+  undefined8 local_a8;
+  undefined8 uStack_a0;
+  undefined8 local_98;
+  undefined8 uStack_90;
+  undefined8 local_88;
+  undefined8 uStack_80;
+  undefined8 local_78;
+  undefined8 uStack_70;
+  undefined8 local_68;
+  undefined8 uStack_60;
+  undefined8 local_58;
+  undefined8 uStack_50;
+  undefined8 local_48;
+  undefined8 uStack_40;
+  undefined8 local_38;
+  undefined8 uStack_30;
+  undefined8 local_28;
+  undefined8 uStack_20;
+  undefined8 local_18;
+  
+  uVar1 = cvGetErrMode();
+  *param_1 = uVar1;
+  cvSetErrMode(2);
+  cvSetErrStatus(0);
+  FUN_140010950((longlong)param_1,(void *)param_3[0x10]);
+  local_188 = *param_5;
+  uStack_180 = param_5[1];
+  local_178 = param_5[2];
+  uStack_170 = param_5[3];
+  local_c8 = *param_4;
+  uStack_c0 = param_4[1];
+  local_b8 = param_4[2];
+  uStack_b0 = param_4[3];
+  local_a8 = param_4[4];
+  uStack_a0 = param_4[5];
+  local_98 = param_4[6];
+  uStack_90 = param_4[7];
+  local_88 = param_4[8];
+  uStack_80 = param_4[9];
+  local_78 = param_4[10];
+  uStack_70 = param_4[0xb];
+  local_68 = param_4[0xc];
+  uStack_60 = param_4[0xd];
+  local_58 = param_4[0xe];
+  uStack_50 = param_4[0xf];
+  local_48 = param_4[0x10];
+  uStack_40 = param_4[0x11];
+  local_38 = param_4[0x12];
+  uStack_30 = param_4[0x13];
+  local_28 = param_4[0x14];
+  uStack_20 = param_4[0x15];
+  local_18 = param_4[0x16];
+  local_168 = *param_3;
+  uStack_160 = param_3[1];
+  local_158 = param_3[2];
+  uStack_150 = param_3[3];
+  local_148 = param_3[4];
+  uStack_140 = param_3[5];
+  local_138 = param_3[6];
+  uStack_130 = param_3[7];
+  local_128 = param_3[8];
+  uStack_120 = param_3[9];
+  local_118 = param_3[10];
+  uStack_110 = param_3[0xb];
+  local_108 = param_3[0xc];
+  uStack_100 = param_3[0xd];
+  local_f8 = param_3[0xe];
+  uStack_f0 = param_3[0xf];
+  local_e8 = param_3[0x10];
+  uStack_e0 = param_3[0x11];
+  local_d8 = param_3[0x12];
+  local_1a8 = *param_2;
+  uStack_1a0 = param_2[1];
+  local_198 = param_2[2];
+  iVar2 = FUN_1400104e0((longlong)param_1,&local_1a8,&local_168,&local_c8,&local_188,param_6,param_7
+                        ,param_8);
+  if (iVar2 == 0) {
+    FUN_140010a90((ulonglong)param_1,param_9);
+  }
+  return;
+}
+

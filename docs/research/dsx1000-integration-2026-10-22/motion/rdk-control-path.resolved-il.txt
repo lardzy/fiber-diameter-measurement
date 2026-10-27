@@ -1,0 +1,772 @@
+Selected CIL interpreted statically; no target execution. Tokens scoped to artifact SHA-256 + MVID.
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuMicroscope.dll
+SHA256 f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+MVID 6800ce31-c557-472a-9993-8b8c0a52a6b6
+EVIDENCE ev_8a7b1da07c5ca25204fabb45c2361af6782e97fd30d6c3db2a409eb5fd86dd94
+
+METHOD 0x060012fd Olympus.LI.Triumph.Application.ViewModel.Stage.GetDisplayStagePotionForRDK
+SIGNATURE {"raw_length":3,"raw_sha256":"df29f5ab2554df47369dafce3bc8630f16eabc3f72c21bbd24c5e73c286f650f","resolved_sha256":"df29f5ab2554df47369dafce3bc8630f16eabc3f72c21bbd24c5e73c286f650f","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"string","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 nop  
+IL_0001 ldc.r8 0 
+IL_000a stloc.0  
+IL_000b ldc.r8 0 
+IL_0014 stloc.1  
+IL_0015 call 0x0a000245 Olympus.LI.Triumph.Application.UiData.UiResultData.get_StageData
+IL_001a callvirt 0x0a0010da Olympus.LI.Triumph.Application.UiData.StageResultData.get_MovePositionXY
+IL_001f stloc.2  
+IL_0020 ldsfld 0x0a00005f System.String.Empty
+IL_0025 stloc.3  
+IL_0026 ldsfld 0x0a00005f System.String.Empty
+IL_002b stloc.s 4 
+IL_002d ldloc.2  
+IL_002e ldc.i4.0  
+IL_002f ldelem.r8  
+IL_0030 ldc.i4.3  
+IL_0031 ldc.i4.0  
+IL_0032 call 0x0a000102 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_0037 stloc.0  
+IL_0038 ldloc.2  
+IL_0039 ldc.i4.1  
+IL_003a ldelem.r8  
+IL_003b ldc.i4.3  
+IL_003c ldc.i4.0  
+IL_003d call 0x0a000102 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_0042 stloc.1  
+IL_0043 ldstr 0x70020eb7 {0},{1}
+IL_0048 ldloc.0  
+IL_0049 ldc.i4.0  
+IL_004a ldc.i4.0  
+IL_004b ldc.i4.0  
+IL_004c ldc.i4.3  
+IL_004d call 0x0a000406 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_0052 call 0x0a000100 Olympus.LI.Triumph.Infrastructure.LocalizeUtil.StringConversionUtil.DoubleToString
+IL_0057 ldloc.1  
+IL_0058 ldc.i4.0  
+IL_0059 ldc.i4.0  
+IL_005a ldc.i4.0  
+IL_005b ldc.i4.3  
+IL_005c call 0x0a000406 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_0061 call 0x0a000100 Olympus.LI.Triumph.Infrastructure.LocalizeUtil.StringConversionUtil.DoubleToString
+IL_0066 call 0x0a0000fc System.String.Format
+IL_006b stloc.s 6 
+IL_006d br.s 111 
+IL_006f ldloc.s 6 
+IL_0071 ret  
+
+METHOD 0x06001312 Olympus.LI.Triumph.Application.ViewModel.Stage.StageMoveAbsolutelyCheckRangeWithoutAngle
+SIGNATURE {"raw_length":6,"raw_sha256":"dd989a0c7a34980944b04dbc1370311aa537ee4e31313ea5efd21f40daf8ed6a","resolved_sha256":"c733c43686ea0cf77aa3851e4c73126efbf6307a37b920e730e29b76879c78ff","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["valuetype:249"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 nop  
+IL_0001 ldarg.0  
+IL_0002 ldfld 0x040006e1 
+IL_0007 stloc.0  
+IL_0008 ldloc.0  
+IL_0009 brtrue.s 32 
+IL_000b nop  
+IL_000c call 0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_0011 callvirt 0x0a000090 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+IL_0016 stloc.0  
+IL_0017 ldloc.0  
+IL_0018 brtrue.s 29 
+IL_001a nop  
+IL_001b br.s 40 
+IL_001d nop  
+IL_001e nop  
+IL_001f nop  
+IL_0020 ldarg.0  
+IL_0021 ldarg.1  
+IL_0022 call 0x06001340 Olympus.LI.Triumph.Application.ViewModel.Stage._ExecStageMoveAbsolutelyCheckRangeWithoutAngle
+IL_0027 nop  
+IL_0028 ret  
+
+METHOD 0x06001340 Olympus.LI.Triumph.Application.ViewModel.Stage._ExecStageMoveAbsolutelyCheckRangeWithoutAngle
+SIGNATURE {"raw_length":6,"raw_sha256":"dd989a0c7a34980944b04dbc1370311aa537ee4e31313ea5efd21f40daf8ed6a","resolved_sha256":"c733c43686ea0cf77aa3851e4c73126efbf6307a37b920e730e29b76879c78ff","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["valuetype:249"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 nop  
+IL_0001 ldstr 0x70021c33 [Stage]-[MoveAbsolutelyCheckRangeWithoutAngle] X:{0}, Y:{1}
+IL_0006 ldarga.s 1 
+IL_0008 call 0x0a000200 System.Windows.Point.get_X
+IL_000d box 0x010001b6 
+IL_0012 ldarga.s 1 
+IL_0014 call 0x0a000201 System.Windows.Point.get_Y
+IL_0019 box 0x010001b6 
+IL_001e call 0x0a0000fc System.String.Format
+IL_0023 call 0x0a000137 Olympus.Mis.Core.Logging.Logger.UILog
+IL_0028 nop  
+IL_0029 ldarg.0  
+IL_002a call 0x06004bc5 
+IL_002f call 0x06000006 
+IL_0034 nop  
+IL_0035 call 0x060053b7 
+IL_003a callvirt 0x060053cc 
+IL_003f call 0x06004bb0 
+IL_0044 callvirt 0x0600058e 
+IL_0049 nop  
+IL_004a call 0x0a0001a9 Olympus.LI.Triumph.Application.UiData.UiParameter.get_StageParameter
+IL_004f ldarga.s 1 
+IL_0051 call 0x0a000200 System.Windows.Point.get_X
+IL_0056 callvirt 0x0a00103a Olympus.LI.Triumph.Application.UiData.StageParameter.set_TargetPosX
+IL_005b nop  
+IL_005c call 0x0a0001a9 Olympus.LI.Triumph.Application.UiData.UiParameter.get_StageParameter
+IL_0061 ldarga.s 1 
+IL_0063 call 0x0a000201 System.Windows.Point.get_Y
+IL_0068 callvirt 0x0a00103b Olympus.LI.Triumph.Application.UiData.StageParameter.set_TargetPosY
+IL_006d nop  
+IL_006e ldarg.0  
+IL_006f ldfld 0x040006de 
+IL_0074 callvirt 0x0a00103c Olympus.LI.Triumph.Application.DomainManager.Interface.InfStage.StageMoveAbsolutelyCheckRangeWithoutAngle
+IL_0079 nop  
+IL_007a ret  
+
+METHOD 0x06005180 Olympus.LI.Triumph.Application.ViewModel.Focus.ExecuteZLengthMove
+SIGNATURE {"raw_length":4,"raw_sha256":"c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a","resolved_sha256":"c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["i4"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 nop  
+IL_0001 ldarg.1  
+IL_0002 ldarg.0  
+IL_0003 ldfld 0x04000834 
+IL_0008 call 0x0a000103 Olympus.LI.Triumph.Application.UiData.UiResultData.get_InitializeData
+IL_000d callvirt 0x0a000104 Olympus.LI.Triumph.Application.UiData.InitializeResultData.get_HawdwareInfo
+IL_0012 callvirt 0x0a000105 Olympus.LI.Triumph.Application.UiData.HawdwareInfo.get_ZMoveRange
+IL_0017 call 0x0a000be9 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.FocusCalculator.ConvertZPosToUMForDisp
+IL_001c call 0x0a00148c Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate.SubtractForInt32
+IL_0021 stloc.0  
+IL_0022 ldloc.0  
+IL_0023 ldc.i4.0  
+IL_0024 cgt  
+IL_0026 ldc.i4.0  
+IL_0027 ceq  
+IL_0029 stloc.1  
+IL_002a ldloc.1  
+IL_002b brtrue.s 61 
+IL_002d nop  
+IL_002e call 0x0a00113e Olympus.LI.Triumph.Application.UiData.UiParameter.get_FocusData
+IL_0033 ldc.i4.2  
+IL_0034 callvirt 0x0a001145 Olympus.LI.Triumph.Application.UiData.FocusParameter.set_ZMoveDirection
+IL_0039 nop  
+IL_003a nop  
+IL_003b br.s 75 
+IL_003d nop  
+IL_003e call 0x0a00113e Olympus.LI.Triumph.Application.UiData.UiParameter.get_FocusData
+IL_0043 ldc.i4.1  
+IL_0044 callvirt 0x0a001145 Olympus.LI.Triumph.Application.UiData.FocusParameter.set_ZMoveDirection
+IL_0049 nop  
+IL_004a nop  
+IL_004b call 0x0a00113e Olympus.LI.Triumph.Application.UiData.UiParameter.get_FocusData
+IL_0050 ldloc.0  
+IL_0051 ldc.i4.0  
+IL_0052 ldc.i4.3  
+IL_0053 call 0x0a001039 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+IL_0058 call 0x0a0002f9 System.Math.Abs
+IL_005d conv.u4  
+IL_005e callvirt 0x0a00148d Olympus.LI.Triumph.Application.UiData.FocusParameter.set_ZLength
+IL_0063 nop  
+IL_0064 ldarg.0  
+IL_0065 ldfld 0x0400086c 
+IL_006a callvirt 0x0a00148e Olympus.LI.Triumph.Application.DomainManager.Interface.InfFocus.StartZLengthMove
+IL_006f nop  
+IL_0070 ret  
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainManager.dll
+SHA256 c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00
+MVID ca294a94-db18-4a18-a4c5-54474ffb20ff
+EVIDENCE ev_39d30b0eff53f7d043487746bef513de6c267af445646e80a6f5de31b297ba7c
+
+METHOD 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+SIGNATURE {"raw_length":6,"raw_sha256":"68207e7cfb9b894ee020a39e92e7047514d98c8f8ff3172c7f831a9fc294ebb9","resolved_sha256":"660cba2d323c6c5d8fb919af80c0ddd5b845ff6317a23af39372fb74c163ad73","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:232"],"field_type":null,"issue":null}
+EXCEPTIONS [{"flags":0,"try_offset":0,"try_length":143,"handler_offset":143,"handler_length":30,"class_token":"0x01000028","filter_offset":null}]
+IL_0000 ldstr 0x70000001 Execute ScenarioTable. WaitHandleName[ 
+IL_0005 ldarg.0  
+IL_0006 ldfld 0x04000001 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._strWaitHandleName
+IL_000b ldstr 0x70000051  ]
+IL_0010 call 0x0a000014 System.String.Concat
+IL_0015 call 0x0a000015 Olympus.Mis.Core.Logging.Logger.DebugLog
+IL_001a ldarg.1  
+IL_001b callvirt 0x060002f7 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehaviorTable.ResetBehavior
+IL_0020 ldarg.1  
+IL_0021 ldsfld 0x04000007 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.sCurrentState
+IL_0026 callvirt 0x060002f5 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehaviorTable.GetBehavior
+IL_002b stloc.0  
+IL_002c ldloc.0  
+IL_002d brfalse.s 55 
+IL_002f ldloc.0  
+IL_0030 callvirt 0x060002fa StateList.get_RegisterCount
+IL_0035 brtrue.s 85 
+IL_0037 ldstr 0x70000057 StateList is nothing. ScenarioController.sCurrentState:[
+IL_003c ldsfld 0x04000007 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.sCurrentState
+IL_0041 box 0x0200003e 
+IL_0046 ldstr 0x700000c9 ]
+IL_004b call 0x0a000016 System.String.Concat
+IL_0050 call 0x0a000017 Olympus.Mis.Core.Logging.Logger.WarningLog
+IL_0055 ldarg.0  
+IL_0056 ldfld 0x04000001 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._strWaitHandleName
+IL_005b call 0x06000015 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.Get
+IL_0060 ldarg.0  
+IL_0061 ldfld 0x04000002 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._dgtScenarioResultEventRaise
+IL_0066 stfld 0x04000008 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.dgtScenarioResultEventRaise
+IL_006b ldarg.0  
+IL_006c ldfld 0x04000001 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._strWaitHandleName
+IL_0071 call 0x06000015 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.Get
+IL_0076 ldloc.0  
+IL_0077 callvirt 0x06000014 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.set_StateList
+IL_007c ldarg.0  
+IL_007d ldfld 0x04000001 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._strWaitHandleName
+IL_0082 call 0x06000015 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.Get
+IL_0087 callvirt 0x06000016 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.ReleaseEvent
+IL_008c pop  
+IL_008d leave.s 173 
+IL_008f stloc.1  
+IL_0090 ldloc.1  
+IL_0091 callvirt 0x0a000018 System.Exception.get_Message
+IL_0096 call 0x0a000019 Olympus.Mis.Core.Logging.Logger.ErrorLog
+IL_009b ldloc.1  
+IL_009c callvirt 0x0a00001a System.Exception.get_StackTrace
+IL_00a1 callvirt 0x0a00001b System.Object.ToString
+IL_00a6 call 0x0a000019 Olympus.Mis.Core.Logging.Logger.ErrorLog
+IL_00ab ldloc.1  
+IL_00ac throw  
+IL_00ad ret  
+
+METHOD 0x06000016 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.ReleaseEvent
+SIGNATURE {"raw_length":3,"raw_sha256":"59a9a8765c535212b9ad71c5c8e1e24ffadbd3331fd04b3bbe1b121ecf6004cc","resolved_sha256":"59a9a8765c535212b9ad71c5c8e1e24ffadbd3331fd04b3bbe1b121ecf6004cc","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"bool","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldfld 0x0400000e Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._ewhWaitHandle
+IL_0006 callvirt 0x0a00002d System.Threading.EventWaitHandle.Set
+IL_000b ret  
+
+METHOD 0x06000017 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.RunScenarioTable
+SIGNATURE {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 br 165 
+IL_0005 ldc.i4.0  
+IL_0006 stloc.0  
+IL_0007 ldc.i4.m1  
+IL_0008 stloc.1  
+IL_0009 ldc.i4.1  
+IL_000a stloc.2  
+IL_000b ldarg.0  
+IL_000c ldfld 0x0400000e Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._ewhWaitHandle
+IL_0011 callvirt 0x0a00002e System.Threading.WaitHandle.WaitOne
+IL_0016 pop  
+IL_0017 ldsfld 0x0400000b Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._bExit
+IL_001c brfalse.s 122 
+IL_001e ret  
+IL_001f ldarg.0  
+IL_0020 ldfld 0x0400000d Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._stateList
+IL_0025 callvirt 0x060002fb StateList.get_CurrentFlg
+IL_002a stloc.2  
+IL_002b ldarg.0  
+IL_002c ldfld 0x0400000d Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._stateList
+IL_0031 callvirt 0x060002fe StateList.Get
+IL_0036 stloc.1  
+IL_0037 ldloc.1  
+IL_0038 call 0x06000019 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._GetControlStateTable
+IL_003d stsfld 0x04000007 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.sCurrentState
+IL_0042 ldloc.1  
+IL_0043 call 0x0600001b Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._GetScenarioList
+IL_0048 callvirt 0x06000302 DgtStateBehavior.Invoke
+IL_004d stloc.0  
+IL_004e ldarg.0  
+IL_004f ldfld 0x04000008 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.dgtScenarioResultEventRaise
+IL_0054 ldloc.1  
+IL_0055 ldloc.0  
+IL_0056 callvirt 0x0a00002f ControllerEventRaise`2.Invoke
+IL_005b ldloc.0  
+IL_005c ldc.i4.2  
+IL_005d beq.s 146 
+IL_005f ldloc.0  
+IL_0060 ldc.i4.1  
+IL_0061 beq.s 146 
+IL_0063 ldloc.0  
+IL_0064 ldc.i4.3  
+IL_0065 beq.s 146 
+IL_0067 ldloc.0  
+IL_0068 ldc.i4.8  
+IL_0069 beq.s 146 
+IL_006b ldloc.2  
+IL_006c brtrue.s 122 
+IL_006e ldarg.0  
+IL_006f ldfld 0x0400000e Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._ewhWaitHandle
+IL_0074 callvirt 0x0a00002e System.Threading.WaitHandle.WaitOne
+IL_0079 pop  
+IL_007a ldarg.0  
+IL_007b ldfld 0x0400000d Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._stateList
+IL_0080 callvirt 0x060002f9 StateList.get_CurrentCount
+IL_0085 ldarg.0  
+IL_0086 ldfld 0x0400000d Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._stateList
+IL_008b callvirt 0x060002fa StateList.get_RegisterCount
+IL_0090 blt.s 31 
+IL_0092 ldsfld 0x04000007 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.sCurrentState
+IL_0097 ldc.i4.m1  
+IL_0098 bne.un.s 165 
+IL_009a ldc.i4.1  
+IL_009b stsfld 0x0400000b Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._bExit
+IL_00a0 call 0x06000018 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController._CloseHandle
+IL_00a5 ldsfld 0x04000007 Olympus.LI.Triumph.Application.DomainManager.Behavior.ScenarioController.sCurrentState
+IL_00aa ldc.i4.m1  
+IL_00ab bne.un 5 
+IL_00b0 ret  
+
+METHOD 0x06000072 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior.Olympus.LI.Triumph.Application.DomainManager.Interface.InfAcquisition.StartStandardModeSnap
+SIGNATURE {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 call 0x0a00018f Olympus.LI.Triumph.Application.UiData.UiResultData.get_ImageProcessData
+IL_0005 callvirt 0x0a000190 Olympus.LI.Triumph.Application.UiData.ImageProcessResultData.get_HdrResultData
+IL_000a callvirt 0x0a000191 Olympus.LI.Triumph.Application.UiData.HdrResultData.get_HdrEnableStatus
+IL_000f callvirt 0x0a000192 Olympus.LI.Triumph.Application.UiData.HdrEnableStatusInfo.get_HdrEnable
+IL_0014 brfalse.s 124 
+IL_0016 call 0x0a000195 Olympus.LI.Triumph.Application.UiData.UICommonData.get_AcquisitionData
+IL_001b callvirt 0x0a000196 Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData.get_LiveStitchingEnable
+IL_0020 brfalse.s 79 
+IL_0022 call 0x0a00018f Olympus.LI.Triumph.Application.UiData.UiResultData.get_ImageProcessData
+IL_0027 callvirt 0x0a000190 Olympus.LI.Triumph.Application.UiData.ImageProcessResultData.get_HdrResultData
+IL_002c callvirt 0x0a000197 Olympus.LI.Triumph.Application.UiData.HdrResultData.get_HdrFastEnable
+IL_0031 brfalse.s 65 
+IL_0033 ldarg.0  
+IL_0034 ldarg.0  
+IL_0035 ldfld 0x04000032 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsHdrFastSnapStartForLiveStitchingBehaviorTable
+IL_003a callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_003f br.s 146 
+IL_0041 ldarg.0  
+IL_0042 ldarg.0  
+IL_0043 ldfld 0x04000031 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsHdrSnapStartForLiveStitchingBehaviorTable
+IL_0048 callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_004d br.s 146 
+IL_004f call 0x0a00018f Olympus.LI.Triumph.Application.UiData.UiResultData.get_ImageProcessData
+IL_0054 callvirt 0x0a000190 Olympus.LI.Triumph.Application.UiData.ImageProcessResultData.get_HdrResultData
+IL_0059 callvirt 0x0a000197 Olympus.LI.Triumph.Application.UiData.HdrResultData.get_HdrFastEnable
+IL_005e brfalse.s 110 
+IL_0060 ldarg.0  
+IL_0061 ldarg.0  
+IL_0062 ldfld 0x04000033 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsHdrFastSnapStartBehaviorTable
+IL_0067 callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_006c br.s 146 
+IL_006e ldarg.0  
+IL_006f ldarg.0  
+IL_0070 ldfld 0x04000030 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsHdrSnapStartBehaviorTable
+IL_0075 callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_007a br.s 146 
+IL_007c ldstr 0x7000015f AutoSave=Shot Execute
+IL_0081 call 0x0a000015 Olympus.Mis.Core.Logging.Logger.DebugLog
+IL_0086 ldarg.0  
+IL_0087 ldarg.0  
+IL_0088 ldfld 0x04000013 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsStandardModeSnapStartBehaviorTable
+IL_008d callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_0092 call 0x0a000021 Olympus.LI.Triumph.Application.UiData.UiParameter.get_ProcessJoinData
+IL_0097 callvirt 0x0a000022 Olympus.LI.Triumph.Application.UiData.ProcessJoinParameter.get_MicroscopeMainState
+IL_009c brfalse.s 197 
+IL_009e call 0x0a000023 Olympus.LI.Triumph.Application.UiData.UiResultData.get_RevolverInfoData
+IL_00a3 callvirt 0x0a000024 Olympus.LI.Triumph.Application.UiData.RevolverInfoResultData.get_CurrentRevolverInfo
+IL_00a8 ldfld 0x0a000025 REVOLVER_INFO.emRevolverPos
+IL_00ad brtrue.s 197 
+IL_00af call 0x0a000021 Olympus.LI.Triumph.Application.UiData.UiParameter.get_ProcessJoinData
+IL_00b4 ldc.i4.0  
+IL_00b5 callvirt 0x0a000026 Olympus.LI.Triumph.Application.UiData.ProcessJoinParameter.set_MicroscopeMainState
+IL_00ba call 0x0a000027 Olympus.LI.Triumph.Application.DomainController.ProcessJoin.ProcessJoinController.get_Instance
+IL_00bf callvirt 0x0a000028 Olympus.LI.Triumph.Application.DomainController.ProcessJoin.ProcessJoinController.SendMicroscopeStateNotify
+IL_00c4 pop  
+IL_00c5 ret  
+
+METHOD 0x06000073 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior.Olympus.LI.Triumph.Application.DomainManager.Interface.InfAcquisition.StartFullModeSnap
+SIGNATURE {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 call 0x0a00018f Olympus.LI.Triumph.Application.UiData.UiResultData.get_ImageProcessData
+IL_0005 callvirt 0x0a000190 Olympus.LI.Triumph.Application.UiData.ImageProcessResultData.get_HdrResultData
+IL_000a callvirt 0x0a000191 Olympus.LI.Triumph.Application.UiData.HdrResultData.get_HdrEnableStatus
+IL_000f callvirt 0x0a000192 Olympus.LI.Triumph.Application.UiData.HdrEnableStatusInfo.get_HdrEnable
+IL_0014 brfalse.s 67 
+IL_0016 call 0x0a00018f Olympus.LI.Triumph.Application.UiData.UiResultData.get_ImageProcessData
+IL_001b callvirt 0x0a000190 Olympus.LI.Triumph.Application.UiData.ImageProcessResultData.get_HdrResultData
+IL_0020 callvirt 0x0a000197 Olympus.LI.Triumph.Application.UiData.HdrResultData.get_HdrFastEnable
+IL_0025 brfalse.s 53 
+IL_0027 ldarg.0  
+IL_0028 ldarg.0  
+IL_0029 ldfld 0x04000033 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsHdrFastSnapStartBehaviorTable
+IL_002e callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_0033 br.s 79 
+IL_0035 ldarg.0  
+IL_0036 ldarg.0  
+IL_0037 ldfld 0x04000030 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsHdrSnapStartBehaviorTable
+IL_003c callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_0041 br.s 79 
+IL_0043 ldarg.0  
+IL_0044 ldarg.0  
+IL_0045 ldfld 0x04000014 Olympus.LI.Triumph.Application.DomainManager.Behavior.AcquisitionBehavior._clsFullModeSnapStartBehaviorTable
+IL_004a callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_004f call 0x0a000021 Olympus.LI.Triumph.Application.UiData.UiParameter.get_ProcessJoinData
+IL_0054 callvirt 0x0a000022 Olympus.LI.Triumph.Application.UiData.ProcessJoinParameter.get_MicroscopeMainState
+IL_0059 brfalse.s 130 
+IL_005b call 0x0a000023 Olympus.LI.Triumph.Application.UiData.UiResultData.get_RevolverInfoData
+IL_0060 callvirt 0x0a000024 Olympus.LI.Triumph.Application.UiData.RevolverInfoResultData.get_CurrentRevolverInfo
+IL_0065 ldfld 0x0a000025 REVOLVER_INFO.emRevolverPos
+IL_006a brtrue.s 130 
+IL_006c call 0x0a000021 Olympus.LI.Triumph.Application.UiData.UiParameter.get_ProcessJoinData
+IL_0071 ldc.i4.0  
+IL_0072 callvirt 0x0a000026 Olympus.LI.Triumph.Application.UiData.ProcessJoinParameter.set_MicroscopeMainState
+IL_0077 call 0x0a000027 Olympus.LI.Triumph.Application.DomainController.ProcessJoin.ProcessJoinController.get_Instance
+IL_007c callvirt 0x0a000028 Olympus.LI.Triumph.Application.DomainController.ProcessJoin.ProcessJoinController.SendMicroscopeStateNotify
+IL_0081 pop  
+IL_0082 ret  
+
+METHOD 0x0600018a Olympus.LI.Triumph.Application.DomainManager.Behavior.StageBehavior.Olympus.LI.Triumph.Application.DomainManager.Interface.InfStage.StageMoveAbsolutelyCheckRangeWithoutAngle
+SIGNATURE {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldarg.0  
+IL_0002 ldfld 0x040000ca Olympus.LI.Triumph.Application.DomainManager.Behavior.StageBehavior._clsStageMoveAbsolutelyCheckRangeWithoutAngleBehaviorTable
+IL_0007 callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_000c ret  
+
+METHOD 0x06000249 Olympus.LI.Triumph.Application.DomainManager.Behavior.FocusBehavior.Olympus.LI.Triumph.Application.DomainManager.Interface.InfFocus.StartZLengthMove
+SIGNATURE {"raw_length":3,"raw_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","resolved_sha256":"0c9373898d2dd1c85902837a9e979cb88484e2548a008ad2b2176cc7119d09df","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"void","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldarg.0  
+IL_0002 ldfld 0x04000142 Olympus.LI.Triumph.Application.DomainManager.Behavior.FocusBehavior._clsZMoveLengthStartBehaviorTable
+IL_0007 callvirt 0x06000003 Olympus.LI.Triumph.Application.DomainManager.Behavior.ControlBehavior._ExecuteScenarioTable
+IL_000c ret  
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll
+SHA256 509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a
+MVID 634ab81e-15f5-4f07-aadd-d59983ef1f5c
+EVIDENCE ev_56533c7dcccb747a2f1b084724aaacd10ee1d5dfab1f8430b29b947475aaa542
+
+METHOD 0x06000108 Olympus.LI.Triumph.Application.DomainController.Focus.FocusController.StartZLengthMove
+SIGNATURE {"raw_length":3,"raw_sha256":"19e1bd1daf2ae492b895802f55c905ef2d25aea509c6010868e218adb408c010","resolved_sha256":"19e1bd1daf2ae492b895802f55c905ef2d25aea509c6010868e218adb408c010","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"i4","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS [{"flags":0,"try_offset":2,"try_length":64,"handler_offset":66,"handler_length":25,"class_token":"0x01000166","filter_offset":null}]
+IL_0000 ldc.i4.0  
+IL_0001 stloc.0  
+IL_0002 call 0x0a0005b6 Olympus.LI.Triumph.Application.UiData.UiParameter.get_FocusData
+IL_0007 callvirt 0x0a0005bb Olympus.LI.Triumph.Application.UiData.FocusParameter.get_ZMoveDirection
+IL_000c call 0x0a0005bc Olympus.LI.Triumph.Application.UiBusiness.UiUtility.Convert.ConvertZMoveDirectionForWorkflow
+IL_0011 stloc.1  
+IL_0012 newobj 0x0a00012e Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams..ctor
+IL_0017 stloc.2  
+IL_0018 ldloc.2  
+IL_0019 ldsfld 0x0a0005cc Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstMicroscopeTaskCommands.TSK_MIC_Z_MOVE_BY_SPECIFIEDLENGTH
+IL_001e ldloc.1  
+IL_001f call 0x0a0005b6 Olympus.LI.Triumph.Application.UiData.UiParameter.get_FocusData
+IL_0024 callvirt 0x0a0005cd Olympus.LI.Triumph.Application.UiData.FocusParameter.get_ZLength
+IL_0029 newobj 0x0a0005ce Olympus.LI.Triumph.Workflow.ScenarioDefinition.MoveZWithLengthParam..ctor
+IL_002e callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_0033 ldarg.0  
+IL_0034 ldc.i4 807 
+IL_0039 ldloc.2  
+IL_003a call 0x06000003 
+IL_003f stloc.0  
+IL_0040 leave.s 91 
+IL_0042 stloc.3  
+IL_0043 ldloc.3  
+IL_0044 callvirt 0x0a00015b System.Exception.get_Message
+IL_0049 call 0x0a00015c Olympus.Mis.Core.Logging.Logger.ErrorLog
+IL_004e call 0x0a00015d Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager.get_Instance
+IL_0053 ldloc.3  
+IL_0054 callvirt 0x0a00015e Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager.UiExceptionNortifier
+IL_0059 leave.s 91 
+IL_005b ldloc.0  
+IL_005c ret  
+
+METHOD 0x0600024b Olympus.LI.Triumph.Application.DomainController.Stage.StageController.StageMoveAbsolutelyCheckRangeWithoutAngle
+SIGNATURE {"raw_length":3,"raw_sha256":"19e1bd1daf2ae492b895802f55c905ef2d25aea509c6010868e218adb408c010","resolved_sha256":"19e1bd1daf2ae492b895802f55c905ef2d25aea509c6010868e218adb408c010","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":0,"return_type":"i4","parameter_types":[],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 newobj 0x0a00012e Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams..ctor
+IL_0005 stloc.0  
+IL_0006 newobj 0x0a00019e Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetDummyParam..ctor
+IL_000b stloc.1  
+IL_000c ldc.i4.s 15 
+IL_000e newobj 0x0a00088c Olympus.LI.Triumph.Workflow.ScenarioDefinition.StageMoveSpeedParam..ctor
+IL_0013 stloc.2  
+IL_0014 call 0x0a0002ae Olympus.LI.Triumph.Application.UiData.UiParameter.get_StageParameter
+IL_0019 callvirt 0x0a000c6a Olympus.LI.Triumph.Application.UiData.StageParameter.get_TargetPosX
+IL_001e call 0x0a0002ae Olympus.LI.Triumph.Application.UiData.UiParameter.get_StageParameter
+IL_0023 callvirt 0x0a000c6c Olympus.LI.Triumph.Application.UiData.StageParameter.get_TargetPosY
+IL_0028 newobj 0x0a000c8a Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam..ctor
+IL_002d stloc.3  
+IL_002e call 0x0a000c98 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_0033 callvirt 0x0a000c99 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+IL_0038 brfalse.s 125 
+IL_003a call 0x0a000c98 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_003f callvirt 0x0a000c9a Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_MVSTGSetSpeed
+IL_0044 stloc.s 5 
+IL_0046 ldloc.s 5 
+IL_0048 switch 3 
+IL_0059 br.s 118 
+IL_005b ldc.i4.1  
+IL_005c newobj 0x0a00088c Olympus.LI.Triumph.Workflow.ScenarioDefinition.StageMoveSpeedParam..ctor
+IL_0061 stloc.2  
+IL_0062 br.s 125 
+IL_0064 ldc.i4.2  
+IL_0065 newobj 0x0a00088c Olympus.LI.Triumph.Workflow.ScenarioDefinition.StageMoveSpeedParam..ctor
+IL_006a stloc.2  
+IL_006b br.s 125 
+IL_006d ldc.i4.3  
+IL_006e newobj 0x0a00088c Olympus.LI.Triumph.Workflow.ScenarioDefinition.StageMoveSpeedParam..ctor
+IL_0073 stloc.2  
+IL_0074 br.s 125 
+IL_0076 ldc.i4.3  
+IL_0077 newobj 0x0a00088c Olympus.LI.Triumph.Workflow.ScenarioDefinition.StageMoveSpeedParam..ctor
+IL_007c stloc.2  
+IL_007d ldloc.0  
+IL_007e ldsfld 0x0a000c9b Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstStageTaskCommands.TSK_STAGE_CHECK_RANGE_STAGE_COORDINATE
+IL_0083 ldloc.3  
+IL_0084 callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_0089 ldloc.0  
+IL_008a ldsfld 0x0a00088d Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstStageTaskCommands.TSK_STAGE_SPEED_SET
+IL_008f ldloc.2  
+IL_0090 callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_0095 ldloc.0  
+IL_0096 ldsfld 0x0a000c97 Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstStageTaskCommands.TSK_STAGE_MOVE_ABSOLUTELY_WITHOUT_ANGLE
+IL_009b ldloc.3  
+IL_009c callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_00a1 ldloc.0  
+IL_00a2 ldsfld 0x0a000c7a Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstStageTaskCommands.TSK_STAGE_POSITION_GET
+IL_00a7 ldloc.1  
+IL_00a8 callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_00ad ldloc.0  
+IL_00ae ldsfld 0x0a000c80 Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstStageTaskCommands.TSK_STAGE_RESTORE_SPEED
+IL_00b3 ldloc.1  
+IL_00b4 callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_00b9 ldloc.0  
+IL_00ba ldsfld 0x0a000c81 Olympus.LI.Triumph.Workflow.ScenarioDefinition.CstStageTaskCommands.TSK_STAGE_MAGNIFICATION_SET
+IL_00bf ldloc.1  
+IL_00c0 callvirt 0x0a000131 Olympus.LI.Triumph.Workflow.ScenarioDefinition.ScenarioParams.AddTaskCommandParam
+IL_00c5 call 0x0a00012b Olympus.LI.Triumph.Application.UiBusiness.UiUtility.ScenarioParameterHelper.get_Instance
+IL_00ca ldloc.0  
+IL_00cb callvirt 0x0a00012d Olympus.LI.Triumph.Application.UiBusiness.UiUtility.ScenarioParameterHelper.AddConsoleTaskParameter
+IL_00d0 stloc.0  
+IL_00d1 ldarg.0  
+IL_00d2 ldc.i4 721 
+IL_00d7 ldloc.0  
+IL_00d8 call 0x06000003 
+IL_00dd stloc.s 4 
+IL_00df ldloc.s 4 
+IL_00e1 ret  
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuDomainController.dll
+SHA256 509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a
+MVID 634ab81e-15f5-4f07-aadd-d59983ef1f5c
+EVIDENCE ev_3d05d5ee1dc51fdeb1c788d1de1e8bbe252d3a87e2c72888509acbce51f029f5
+
+METHOD 0x06000003 Olympus.LI.Triumph.Application.DomainController.Controller._ExecuteRunScenario
+SIGNATURE {"raw_length":9,"raw_sha256":"00cec50b399f23a84ebb8cbd11066e0b20b2398c1e4ee8826d7575dcbba01e45","resolved_sha256":"5797ed4c56ac3974731ab69a9a885826cb33574114484469b99e1de2991c1e7d","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"i4","parameter_types":["valuetype:585","class:589"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldc.i4 4131 
+IL_0006 ldarg.1  
+IL_0007 ldarg.2  
+IL_0008 call 0x06000006 Olympus.LI.Triumph.Application.DomainController.Controller._Execute
+IL_000d ret  
+
+METHOD 0x06000006 Olympus.LI.Triumph.Application.DomainController.Controller._Execute
+SIGNATURE {"raw_length":10,"raw_sha256":"5d8f949ecb2c64f80f23429927bb84a28aa15f6fe65a4805b5e52f308f6fc18b","resolved_sha256":"505398eb663e6e85fca0b4e7943e2557d5bb4836b520c22b0e455f26d6568ac7","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":3,"return_type":"i4","parameter_types":["i4","valuetype:585","class:589"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 newobj 0x0a0000a8 Olympus.Mis.Core.Interface.Generic.ActionArg`1..ctor
+IL_0005 stloc.0  
+IL_0006 ldloc.0  
+IL_0007 ldarg.0  
+IL_0008 ldfld 0x04000004 Olympus.LI.Triumph.Application.DomainController.Controller._objGenerationIdentifier
+IL_000d callvirt 0x0a0000a9 Olympus.Mis.Core.Interface.Generic.ActionArg`1.set_GenerationIdentifier
+IL_0012 ldloc.0  
+IL_0013 ldarg.1  
+IL_0014 callvirt 0x0a0000aa Olympus.Mis.Core.Interface.Generic.ActionArg`1.set_Command
+IL_0019 ldloc.0  
+IL_001a ldarg.2  
+IL_001b callvirt 0x0a0000ab Olympus.Mis.Core.Interface.Generic.ActionArg`1.set_ScenarioNo
+IL_0020 ldloc.0  
+IL_0021 ldarg.3  
+IL_0022 callvirt 0x0a0000ac Olympus.Mis.Core.Interface.Generic.ActionArg`1.set_Data
+IL_0027 ldstr 0x70000001 <S>[{0}]
+IL_002c ldarg.2  
+IL_002d box 0x01000092 
+IL_0032 callvirt 0x0a0000ad System.Object.ToString
+IL_0037 call 0x0a0000ae System.String.Format
+IL_003c call 0x0a0000af Olympus.Mis.Core.Logging.Logger.ScenarioLog
+IL_0041 ldarg.0  
+IL_0042 ldfld 0x04000002 Olympus.LI.Triumph.Application.DomainController.Controller._dgtCoreCommandAction
+IL_0047 ldloc.0  
+IL_0048 callvirt 0x0a0000b0 Olympus.Mis.Core.Delegates.DispatcherHandler.Invoke
+IL_004d ldloc.0  
+IL_004e callvirt 0x0a0000b1 Olympus.Mis.Core.Interface.Generic.ActionArg`1.get_ReturnValue
+IL_0053 brfalse.s 98 
+IL_0055 ldloc.0  
+IL_0056 callvirt 0x0a0000b1 Olympus.Mis.Core.Interface.Generic.ActionArg`1.get_ReturnValue
+IL_005b unbox.any 0x01000122 
+IL_0060 br.s 99 
+IL_0062 ldc.i4.0  
+IL_0063 stloc.1  
+IL_0064 ldstr 0x70000013 <E>[{0}] Return is {1}.
+IL_0069 ldarg.2  
+IL_006a box 0x01000092 
+IL_006f callvirt 0x0a0000ad System.Object.ToString
+IL_0074 ldloc.1  
+IL_0075 box 0x01000122 
+IL_007a call 0x0a0000b2 System.String.Format
+IL_007f call 0x0a0000af Olympus.Mis.Core.Logging.Logger.ScenarioLog
+IL_0084 ldloc.1  
+IL_0085 ret  
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybStageDomain.dll
+SHA256 2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff
+MVID 48b64101-7167-42dd-89eb-78403d18ef94
+EVIDENCE ev_f358e75a4fb3a68e478952f023c231ddf2bebe9ebd8428237e2a7d4906ae8f4c
+
+METHOD 0x06000045 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutelyWithoutAngleTask
+SIGNATURE {"raw_length":5,"raw_sha256":"548db6d1e90e6d4c9319ac21a7a4766c9daf968dce25edd1c70d409070e938e2","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:25"],"field_type":null,"issue":null}
+EXCEPTIONS [{"flags":0,"try_offset":0,"try_length":48,"handler_offset":48,"handler_length":41,"class_token":"0x01000012","filter_offset":null}]
+IL_0000 ldarg.1  
+IL_0001 castclass 0x0100000d 
+IL_0006 stloc.0  
+IL_0007 call 0x0a000048 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_StageXYDao
+IL_000c callvirt 0x0a000049 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+IL_0011 callvirt 0x0a00015e Olympus.LI.Triumph.Workflow.MemoryDatabase.StageXY.get_CurrentSpeed
+IL_0016 stloc.1  
+IL_0017 ldc.i4.0  
+IL_0018 stloc.2  
+IL_0019 ldarg.0  
+IL_001a ldloc.1  
+IL_001b ldloc.0  
+IL_001c callvirt 0x0a000151 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_AbsolutePositionX
+IL_0021 ldloc.0  
+IL_0022 callvirt 0x0a000153 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetStageAbsolutePositionParam.get_AbsolutePositionY
+IL_0027 ldc.i4.1  
+IL_0028 ldloc.2  
+IL_0029 call 0x06000062 Olympus.LI.Triumph.Workflow.Stage.StageService.MoveAbsolutely
+IL_002e leave.s 89 
+IL_0030 stloc.3  
+IL_0031 ldarg.0  
+IL_0032 ldloc.3  
+IL_0033 call 0x0600006c Olympus.LI.Triumph.Workflow.Stage.StageService.IsErrorForStageHardwareException
+IL_0038 brfalse.s 76 
+IL_003a ldloc.3  
+IL_003b callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+IL_0040 call 0x0a000159 Olympus.Mis.Core.Logging.Logger.ErrorLog
+IL_0045 ldloc.3  
+IL_0046 newobj 0x0a000166 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowStageHardwareException..ctor
+IL_004b throw  
+IL_004c ldloc.3  
+IL_004d callvirt 0x0a000165 Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+IL_0052 call 0x0a000167 Olympus.Mis.Core.Logging.Logger.WarningLog
+IL_0057 leave.s 89 
+IL_0059 ret  
+
+METHOD 0x0600006c Olympus.LI.Triumph.Workflow.Stage.StageService.IsErrorForStageHardwareException
+SIGNATURE {"raw_length":5,"raw_sha256":"5d3cd372bccaf3900ad8185b0554a88fad54ed58edbb7db44b17fce98684f328","resolved_sha256":"778b35dfd6f5f51b16e1c328ce389e1f500a34a12edb45c921b38773409d1522","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"bool","parameter_types":["class:73"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.1  
+IL_0001 callvirt 0x0a0001ce Olympus.LI.Triumph.Device.Exception.HardwareException.get_ErrorType
+IL_0006 stloc.0  
+IL_0007 ldloc.0  
+IL_0008 ldc.i4.0  
+IL_0009 beq.s 51 
+IL_000b ldloc.0  
+IL_000c ldc.i4.s 10 
+IL_000e beq.s 51 
+IL_0010 ldloc.0  
+IL_0011 ldc.i4.s 28 
+IL_0013 sub  
+IL_0014 switch 6 
+IL_0031 br.s 53 
+IL_0033 ldc.i4.0  
+IL_0034 ret  
+IL_0035 ldc.i4.1  
+IL_0036 ret  
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMicroscopeDomain.dll
+SHA256 7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e
+MVID 0efcd9fc-47d6-4f4a-842d-2763a044ebbd
+EVIDENCE ev_3a11f4f672b22c536ff4a0b883514fbf5e6f5de8288ae07abde4955e5183cc74
+
+METHOD 0x06000149 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.MoveZBySpecifiedLength
+SIGNATURE {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.1  
+IL_0001 castclass 0x0100017d 
+IL_0006 stloc.0  
+IL_0007 ldc.i4.3  
+IL_0008 stloc.1  
+IL_0009 ldarg.0  
+IL_000a ldloc.1  
+IL_000b ldloc.0  
+IL_000c callvirt 0x0a000416 Olympus.LI.Triumph.Workflow.ScenarioDefinition.MoveZWithLengthParam.get_MoveDirection
+IL_0011 ldloc.0  
+IL_0012 callvirt 0x0a000417 Olympus.LI.Triumph.Workflow.ScenarioDefinition.MoveZWithLengthParam.get_Length
+IL_0017 call 0x0600015d Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.MoveRelatively
+IL_001c ret  
+
+METHOD 0x06000162 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsErrorForZHardwareException
+SIGNATURE {"raw_length":6,"raw_sha256":"48458f472fc4216f76308de59dd01bf8a38e2bcb134d135993d46231fa63e972","resolved_sha256":"8d372ed4c1c5e4bc10de8de49a1a96cb5e0c7f89e4be53dd463ac5d5a933038e","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"bool","parameter_types":["class:321"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.1  
+IL_0001 callvirt 0x0a000180 Olympus.LI.Triumph.Device.Exception.HardwareException.get_ErrorType
+IL_0006 stloc.0  
+IL_0007 ldloc.0  
+IL_0008 ldc.i4.0  
+IL_0009 beq 204 
+IL_000e ldloc.0  
+IL_000f ldc.i4.7  
+IL_0010 sub  
+IL_0011 switch 3 
+IL_0022 br 247 
+IL_0027 ldstr 0x70005835 Stopped to arrive at near limit point.
+IL_002c call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+IL_0031 call 0x0a00043e Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZLimitInfoDao
+IL_0036 ldc.i4.1  
+IL_0037 callvirt 0x0a00043f Olympus.LI.Triumph.Workflow.MemoryDatabase.ZLimitInfoDao.Update
+IL_003c call 0x0a0001e0 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_0041 callvirt 0x0a000248 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+IL_0046 brfalse.s 82 
+IL_0048 ldstr 0x70005883 [DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] Near limit point was detected. but DSX-BSW-RDK does not handle this as an error.
+IL_004d call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+IL_0052 ldc.i4.1  
+IL_0053 ret  
+IL_0054 ldstr 0x70005974 Stopped to arrive at far limit point.
+IL_0059 call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+IL_005e call 0x0a00043e Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZLimitInfoDao
+IL_0063 ldc.i4.0  
+IL_0064 callvirt 0x0a00043f Olympus.LI.Triumph.Workflow.MemoryDatabase.ZLimitInfoDao.Update
+IL_0069 call 0x0a0001e0 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_006e callvirt 0x0a000248 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+IL_0073 brfalse 249 
+IL_0078 ldstr 0x700059c0 [DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] Far limit point was detected. but DSX-BSW-RDK does not handle this as an error.
+IL_007d call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+IL_0082 call 0x0a00005d Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemStatusDao
+IL_0087 callvirt 0x0a00005e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+IL_008c callvirt 0x0a00005f Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemStatusEntity.get_SystemStatus
+IL_0091 ldc.i4.s 39 
+IL_0093 beq.s 249 
+IL_0095 ldc.i4.1  
+IL_0096 ret  
+IL_0097 ldstr 0x70001413 Stop by command.
+IL_009c call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+IL_00a1 call 0x0a0001e0 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_00a6 callvirt 0x0a000248 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+IL_00ab brfalse.s 249 
+IL_00ad ldstr 0x70005aaf [DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] STOP command was detected. but DSX-BSW-RDK does not handle this as an error.
+IL_00b2 call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+IL_00b7 call 0x0a00005d Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemStatusDao
+IL_00bc callvirt 0x0a00005e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+IL_00c1 callvirt 0x0a00005f Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemStatusEntity.get_SystemStatus
+IL_00c6 ldc.i4.s 39 
+IL_00c8 beq.s 249 
+IL_00ca ldc.i4.1  
+IL_00cb ret  
+IL_00cc call 0x0a0001e0 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+IL_00d1 callvirt 0x0a000248 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+IL_00d6 brfalse.s 249 
+IL_00d8 ldstr 0x70005aaf [DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] STOP command was detected. but DSX-BSW-RDK does not handle this as an error.
+IL_00dd call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+IL_00e2 call 0x0a00005d Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_SystemStatusDao
+IL_00e7 callvirt 0x0a00005e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+IL_00ec callvirt 0x0a00005f Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemStatusEntity.get_SystemStatus
+IL_00f1 ldc.i4.s 39 
+IL_00f3 beq.s 249 
+IL_00f5 ldc.i4.1  
+IL_00f6 ret  
+IL_00f7 ldc.i4.1  
+IL_00f8 ret  
+IL_00f9 ldc.i4.0  
+IL_00fa ret  
+

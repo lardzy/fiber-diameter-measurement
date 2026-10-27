@@ -1,0 +1,225 @@
+EVIDENCE ev_95a59d69a896d27afe8d1e8c4ba34dfe1f7c23ae235ddafbb2a8d2d5aa4689f2 SHA256 0bac697fb85805b24d20362a0bc03f56989c03c3cebef74a2c54caf1a056ea63
+
+METHOD 0x060000c8 OpenCVWrapper.WImageWrapper ResizeArray IL_SHA256 e3b9c489c67597ff28c27d7eb6eed4d4846a3a46c0ce3aa79bd23b7a01f4f885 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.0       
+0002: ldelema       0x01000022 
+0007: stloc.1        
+0008: ldarg.s       4 
+000a: ldc.i4.0       
+000b: ldelema       0x01000022 
+0010: stloc.0        
+0011: ldloca.s      3 
+0013: ldarg.3        
+0014: ldarg.2        
+0015: ldc.i4.s      16 
+0017: ldloc.1        
+0018: ldc.i4        2147483647 
+001d: call          0x0600005b <Module>.cvInitMatHeader
+0022: pop            
+0023: ldloca.s      2 
+0025: ldarg.s       6 
+0027: ldarg.s       5 
+0029: ldc.i4.s      16 
+002b: ldloc.0        
+002c: ldc.i4        2147483647 
+0031: call          0x0600005b <Module>.cvInitMatHeader
+0036: pop            
+0037: ldloca.s      3 
+0039: ldloca.s      2 
+003b: ldc.i4.1       
+003c: call          0x0600005f <Module>.cvResize
+0041: ldc.i4.0       
+0042: conv.i8        
+0043: stloc.1        
+0044: ldc.i4.0       
+0045: conv.i8        
+0046: stloc.0        
+0047: ret            
+
+METHOD 0x060000c9 OpenCVWrapper.WImageWrapper ResizeArray IL_SHA256 3ecd6c677848907d0e4eff219754a13ece2750ee066ab910619cc7f85195066e DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.0       
+0002: ldelema       0x01000026 
+0007: stloc.1        
+0008: ldarg.s       4 
+000a: ldc.i4.0       
+000b: ldelema       0x01000026 
+0010: stloc.0        
+0011: ldloca.s      3 
+0013: ldarg.3        
+0014: ldarg.2        
+0015: ldc.i4.2       
+0016: ldloc.1        
+0017: ldc.i4        2147483647 
+001c: call          0x0600005b <Module>.cvInitMatHeader
+0021: pop            
+0022: ldloca.s      2 
+0024: ldarg.s       6 
+0026: ldarg.s       5 
+0028: ldc.i4.2       
+0029: ldloc.0        
+002a: ldc.i4        2147483647 
+002f: call          0x0600005b <Module>.cvInitMatHeader
+0034: pop            
+0035: ldloca.s      3 
+0037: ldloca.s      2 
+0039: ldc.i4.1       
+003a: call          0x0600005f <Module>.cvResize
+003f: ldc.i4.0       
+0040: conv.i8        
+0041: stloc.1        
+0042: ldc.i4.0       
+0043: conv.i8        
+0044: stloc.0        
+0045: ret            
+
+METHOD 0x060000ca OpenCVWrapper.WImageWrapper ResizeArray1 IL_SHA256 117c6103482060c1e8d490be9659795002866cbba37860f0dab37ced88e39906 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.0       
+0002: ldelema       0x01000022 
+0007: stloc.1        
+0008: ldarg.s       4 
+000a: ldc.i4.0       
+000b: ldelema       0x01000022 
+0010: stloc.0        
+0011: ldloca.s      3 
+0013: ldarg.3        
+0014: ldarg.2        
+0015: ldc.i4.0       
+0016: ldloc.1        
+0017: ldc.i4        2147483647 
+001c: call          0x0600005b <Module>.cvInitMatHeader
+0021: pop            
+0022: ldloca.s      2 
+0024: ldarg.s       6 
+0026: ldarg.s       5 
+0028: ldc.i4.0       
+0029: ldloc.0        
+002a: ldc.i4        2147483647 
+002f: call          0x0600005b <Module>.cvInitMatHeader
+0034: pop            
+0035: ldloca.s      3 
+0037: ldloca.s      2 
+0039: ldc.i4.1       
+003a: call          0x0600005f <Module>.cvResize
+003f: ldc.i4.0       
+0040: conv.i8        
+0041: stloc.1        
+0042: ldc.i4.0       
+0043: conv.i8        
+0044: stloc.0        
+0045: ret            
+
+METHOD 0x060001c4 OpenCVWrapper.ImageProcessingCommonWrapper ResizeArray IL_SHA256 d742cec3ce1fd80b44f5275d2f6e393f6c18336a6a109eb73b18a8a24de3c994 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.0        
+0014: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0019: ldarg.1        
+001a: ldarg.2        
+001b: ldarg.3        
+001c: ldarg.s       4 
+001e: ldarg.s       5 
+0020: ldarg.s       6 
+0022: call          0x060000c8 OpenCVWrapper.WImageWrapper.ResizeArray
+0027: ret            
+
+METHOD 0x060001c5 OpenCVWrapper.ImageProcessingCommonWrapper ResizeArray IL_SHA256 ec5c704305a9589a978dd49bee08d38bd599e636e534620b3656191cf0ec6888 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.0        
+0014: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0019: ldarg.1        
+001a: ldarg.2        
+001b: ldarg.3        
+001c: ldarg.s       4 
+001e: ldarg.s       5 
+0020: ldarg.s       6 
+0022: call          0x060000c9 OpenCVWrapper.WImageWrapper.ResizeArray
+0027: ret            
+
+METHOD 0x060001c6 OpenCVWrapper.ImageProcessingCommonWrapper ResizeArray1 IL_SHA256 4f4e7195bdee02391cf51a079c2c04a0661300316550342cd02da95e0b52c333 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0006: brtrue.s      19 
+0008: ldarg.0        
+0009: newobj        0x060000b7 OpenCVWrapper.WImageWrapper..ctor
+000e: stfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0013: ldarg.0        
+0014: ldfld         0x0400018a OpenCVWrapper.ImageProcessingCommonWrapper._clsWImageWrapper
+0019: ldarg.1        
+001a: ldarg.2        
+001b: ldarg.3        
+001c: ldarg.s       4 
+001e: ldarg.s       5 
+0020: ldarg.s       6 
+0022: call          0x060000ca OpenCVWrapper.WImageWrapper.ResizeArray1
+0027: ret            
+
+METHOD 0x060001ee OpenCVWrapper.SphereCorrection ConvertZScale IL_SHA256 c3bea6ef25cbd048135235c09664543a99b2245f105f2a40c254bb8d1aa8be40 DECODE_ISSUE null
+0000: ldarg.3        
+0001: ldc.r8        1 
+000a: bge.un.s      23 
+000c: ldc.r8        1 
+0015: starg.s       3 
+0017: ldc.r8        65520 
+0020: ldarg.3        
+0021: sub            
+0022: stloc.3        
+0023: ldarg.1        
+0024: ldloca.s      1 
+0026: ldloca.s      5 
+0028: ldc.i4.0       
+0029: conv.i8        
+002a: ldc.i4.0       
+002b: conv.i8        
+002c: ldc.i4.0       
+002d: conv.i8        
+002e: call          0x0600005e <Module>.cvMinMaxLoc
+0033: ldloc.1        
+0034: ldc.r8        0 
+003d: beq.s         79 
+003f: ldloca.s      4 
+0041: ldloc.1        
+0042: neg            
+0043: stind.r8       
+0044: ldarg.1        
+0045: ldloc.s       4 
+0047: ldarg.1        
+0048: ldc.i4.0       
+0049: conv.i8        
+004a: call          0x0600005a <Module>.cvAddS
+004f: ldloc.s       5 
+0051: ldloc.1        
+0052: sub            
+0053: stloc.2        
+0054: ldloc.2        
+0055: ldloc.3        
+0056: ldarg.s       4 
+0058: mul            
+0059: ble.un.s      97 
+005b: ldloc.2        
+005c: ldloc.3        
+005d: div            
+005e: stloc.0        
+005f: br.s          100 
+0061: ldarg.s       4 
+0063: stloc.0        
+0064: ldarg.1        
+0065: ldarg.2        
+0066: ldc.r8        1 
+006f: ldloc.0        
+0070: div            
+0071: ldarg.3        
+0072: call          0x06000055 <Module>.cvConvertScale
+0077: ldloc.0        
+0078: ret            

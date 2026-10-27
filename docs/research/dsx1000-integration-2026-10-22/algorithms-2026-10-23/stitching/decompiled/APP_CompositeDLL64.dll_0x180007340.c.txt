@@ -1,0 +1,343 @@
+Evidence: ev_2570b06edadd7de9248f2552b75911b9085e2c0ba6124e40ff10aef5f32e7e9b
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* private: enum CompositeErr __cdecl CCompositeDLL::InitMemoryComposite(void * __ptr64 const *
+   __ptr64,class ctool::matrix<struct _IplImage * __ptr64> & __ptr64,int,int,int,int) __ptr64 */
+
+CompositeErr __thiscall
+CCompositeDLL::InitMemoryComposite
+          (CCompositeDLL *this,void **param_1,matrix<_IplImage*___ptr64> *param_2,int param_3,
+          int param_4,int param_5,int param_6)
+
+{
+  longlong lVar1;
+  uint uVar2;
+  basic_iostream<char,std::char_traits<char>_> *pbVar3;
+  ulonglong uVar4;
+  basic_ostream<char,std::char_traits<char>_> *pbVar5;
+  basic_ostream<char,struct_std::char_traits<char>_> *pbVar6;
+  undefined8 uVar7;
+  _IplImage **pp_Var8;
+  _IplImage *p_Var9;
+  _IplImage **pp_Var10;
+  basic_iostream<char,std::char_traits<char>_> *pbVar11;
+  longlong *plVar12;
+  undefined **ppuVar13;
+  int iVar14;
+  ulonglong uVar15;
+  undefined8 *puVar16;
+  int iVar17;
+  ulonglong uVar18;
+  ulonglong uVar19;
+  undefined8 *puVar20;
+  void **ppvVar21;
+  int iVar22;
+  undefined4 uVar23;
+  undefined4 uVar24;
+  double dVar25;
+  double dVar26;
+  undefined4 uVar27;
+  undefined4 uVar28;
+  undefined1 auStack_258 [32];
+  char *local_238;
+  undefined8 local_230;
+  undefined8 uStack_228;
+  uint local_218;
+  double local_210;
+  double local_208;
+  undefined **local_200;
+  longlong local_1f8;
+  undefined **local_1f0;
+  longlong local_1e8;
+  void **local_1e0;
+  undefined8 local_1d8;
+  undefined **local_1d0;
+  longlong local_1c8 [4];
+  basic_iostream<char,std::char_traits<char>_> local_1a8 [256];
+  ulonglong local_a8;
+  
+                    /* 0x7340  65
+                       ?InitMemoryComposite@CCompositeDLL@@AEAA?AW4CompositeErr@@PEBQEAXAEAV?$matrix@PEAU_IplImage@@@ctool@@HHHH@Z
+                        */
+  local_1d8 = 0xfffffffffffffffe;
+  local_a8 = DAT_180023010 ^ (ulonglong)auStack_258;
+  uVar15 = (ulonglong)(uint)param_3;
+  local_208 = (double)CONCAT44(local_208._4_4_,param_3);
+  local_1c8[1] = 0;
+  local_1c8[2] = 0xf;
+  local_1d0 = (undefined **)((ulonglong)local_1d0 & 0xffffffffffffff00);
+  local_1e0 = param_1;
+  FUN_180015be0((longlong *)&local_1d0," 2 InitMemoryComposite() [start]",0x20);
+  pbVar11 = local_1a8;
+  pbVar3 = FUN_180010310(pbVar11,&local_1d0);
+  FUN_1800035c0(pbVar11,(longlong *)pbVar3);
+  if (0xf < (ulonglong)local_1c8[2]) {
+    ppuVar13 = local_1d0;
+    if ((0xfff < local_1c8[2] + 1U) &&
+       (ppuVar13 = (undefined **)local_1d0[-1],
+       0x1f < (ulonglong)((longlong)local_1d0 + (-8 - (longlong)ppuVar13)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(ppuVar13);
+  }
+  uVar19 = 0;
+  uVar4 = uVar19;
+  if (0 < param_3 * param_4) {
+    do {
+      if (param_1[uVar4] == (void *)0x0) {
+        if (DAT_180023ce0[0x15] != 0) {
+          pbVar5 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)(DAT_180023ce0 + 4),
+                                 "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                                );
+          pbVar5 = FUN_180011340(pbVar5," (");
+          pbVar6 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar5,0xc5);
+          pbVar5 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar6,
+                                 ") : error no = ");
+          pbVar6 = std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                             (pbVar5,(void *)0xf101);
+          std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                    ((basic_ostream<char,std::char_traits<char>_> *)pbVar6,FUN_180011510);
+        }
+        DAT_180023ce8 = 0xf100;
+        return 0xf100;
+      }
+      uVar4 = uVar4 + 1;
+    } while ((longlong)uVar4 < (longlong)(param_3 * param_4));
+  }
+  if ((param_6 - 8U & 0xfffffff7) != 0) {
+    if (DAT_180023ce0[0x15] != 0) {
+      pbVar5 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)(DAT_180023ce0 + 4),
+                             "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                            );
+      pbVar5 = FUN_180011340(pbVar5," (");
+      pbVar6 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar5,0xcb);
+      pbVar5 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar6,") : error no = "
+                            );
+      pbVar6 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar5,(void *)0xf013);
+      std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                ((basic_ostream<char,std::char_traits<char>_> *)pbVar6,FUN_180011510);
+    }
+    DAT_180023ce8 = 0xf010;
+    return 0xf010;
+  }
+  local_200 = AutoIplImage::vftable;
+  local_1f8 = 0;
+  if (param_6 == 8) {
+    local_1f8 = cvCreateImage(*(undefined8 *)(this + 0x58),0x10,3);
+    uVar7 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                          ,0xd2);
+    if ((char)uVar7 == '\0') {
+LAB_180007abb:
+      uVar15 = (ulonglong)DAT_180023ce8;
+      goto LAB_180007aca;
+    }
+  }
+  if (0 < param_4) {
+    local_218 = 0;
+    uVar4 = uVar19;
+    do {
+      uVar18 = 0;
+      iVar22 = (int)uVar4;
+      uVar2 = (uint)uVar19;
+      if (0 < (int)uVar15) {
+        ppvVar21 = local_1e0 + (int)(uint)uVar19;
+        uVar4 = uVar18;
+        do {
+          iVar17 = (int)uVar18;
+          if (*(int *)(param_2 + 0x20) == 1) {
+            pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                (param_2,*(int *)(param_2 + 0xc) * iVar22 + iVar17);
+          }
+          else {
+            pp_Var8 = (_IplImage **)
+                      (*(longlong *)(param_2 + 0x18) +
+                      (longlong)(*(int *)(param_2 + 0xc) * iVar22 + iVar17) * 8);
+          }
+          p_Var9 = (_IplImage *)cvCreateImage(*(undefined8 *)(this + 0x58),0x10,1);
+          *pp_Var8 = p_Var9;
+          uVar7 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                                ,0xda);
+          if ((char)uVar7 == '\0') goto LAB_180007abb;
+          if (param_6 == 0x10) {
+            local_1e8 = cvCreateImageHeader(*(undefined8 *)(this + 0x58),0x10);
+            local_1f0 = AutoIplImageHeader::vftable;
+            cvSetData(local_1e8,*ppvVar21,param_5);
+            lVar1 = local_1e8;
+            if (this[0xb9] != (CCompositeDLL)0x0) {
+              uVar7 = cvGetSize(local_1e8);
+              local_210 = (double)cvCreateImage(uVar7,8,*(undefined4 *)(lVar1 + 8));
+              cvConvertScale(lVar1,local_210,0x3f70101010101010,0);
+              FUN_180003a00(local_210,local_218 + iVar17);
+              cvReleaseImage(&local_210);
+            }
+            if (*(int *)(param_2 + 0x20) == 1) {
+              pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                  (param_2,*(int *)(param_2 + 0xc) * iVar22 + iVar17);
+            }
+            else {
+              pp_Var8 = (_IplImage **)
+                        (*(longlong *)(param_2 + 0x18) +
+                        (longlong)(*(int *)(param_2 + 0xc) * iVar22 + iVar17) * 8);
+            }
+            cvCvtColor(local_1e8,*pp_Var8,7);
+            local_1f0 = AutoIplImageHeader::vftable;
+            if (local_1e8 != 0) {
+              plVar12 = &local_1e8;
+LAB_180007854:
+              cvReleaseImageHeader(plVar12);
+            }
+          }
+          else {
+            local_1c8[0] = cvCreateImageHeader(*(undefined8 *)(this + 0x58),8);
+            local_1d0 = AutoIplImageHeader::vftable;
+            cvSetData(local_1c8[0],*ppvVar21,param_5);
+            lVar1 = local_1c8[0];
+            if (this[0xb9] != (CCompositeDLL)0x0) {
+              memset(local_1a8,0,0x100);
+              puVar20 = DAT_180023ce0;
+              if (0xf < (ulonglong)DAT_180023ce0[3]) {
+                puVar20 = (undefined8 *)*DAT_180023ce0;
+              }
+              local_238 = "InputImage";
+              FUN_180015b50(local_1a8,"%s(%02d)%s.tif",puVar20,(ulonglong)(local_218 + iVar17));
+              cvSaveImage(local_1a8,lVar1,0);
+            }
+            cvConvertScale(local_1c8[0],local_1f8,0x4070000000000000,0);
+            if (*(int *)(param_2 + 0x20) == 1) {
+              pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                  (param_2,*(int *)(param_2 + 0xc) * iVar22 + iVar17);
+            }
+            else {
+              pp_Var8 = (_IplImage **)
+                        (*(longlong *)(param_2 + 0x18) +
+                        (longlong)(*(int *)(param_2 + 0xc) * iVar22 + iVar17) * 8);
+            }
+            cvCvtColor(local_1f8,*pp_Var8,7);
+            local_1d0 = AutoIplImageHeader::vftable;
+            if (local_1c8[0] != 0) {
+              plVar12 = local_1c8;
+              goto LAB_180007854;
+            }
+          }
+          if (this[0xb8] != (CCompositeDLL)0x0) {
+            iVar14 = *(int *)(param_2 + 0x20);
+            if (iVar14 == 1) {
+              pp_Var8 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                  (param_2,*(int *)(param_2 + 0xc) * iVar22 + iVar17);
+              iVar14 = *(int *)(param_2 + 0x20);
+            }
+            else {
+              pp_Var8 = (_IplImage **)
+                        (*(longlong *)(param_2 + 0x18) +
+                        (longlong)(*(int *)(param_2 + 0xc) * iVar22 + iVar17) * 8);
+            }
+            if (iVar14 == 1) {
+              pp_Var10 = ctool::matrix<_IplImage*___ptr64>::_readimage
+                                   (param_2,*(int *)(param_2 + 0xc) * iVar22 + iVar17);
+            }
+            else {
+              pp_Var10 = (_IplImage **)
+                         (*(longlong *)(param_2 + 0x18) +
+                         (longlong)(*(int *)(param_2 + 0xc) * iVar22 + iVar17) * 8);
+            }
+            local_230 = 0;
+            uStack_228 = 0;
+            local_238 = (char *)((ulonglong)local_238 & 0xffffffff00000000);
+            cvSmooth(*pp_Var10,*pp_Var8,2);
+          }
+          uVar7 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                                ,0xf9);
+          if ((char)uVar7 == '\0') goto LAB_180007abb;
+          uVar18 = (ulonglong)(iVar17 + 1);
+          uVar4 = uVar4 + 1;
+          ppvVar21 = ppvVar21 + 1;
+          uVar15 = (ulonglong)local_208._0_4_;
+          uVar2 = local_218;
+        } while ((longlong)uVar4 < (longlong)uVar15);
+      }
+      uVar4 = (ulonglong)(iVar22 + 1U);
+      local_218 = uVar2 + (int)uVar15;
+      uVar19 = (ulonglong)local_218;
+    } while ((int)(iVar22 + 1U) < param_4);
+  }
+  uVar15 = 0;
+  uVar23 = 0xffffffff;
+  uVar24 = 0x7fefffff;
+  uVar27 = 0;
+  uVar28 = 0;
+  puVar16 = *(undefined8 **)(param_2 + 0x18);
+  puVar20 = puVar16 + *(int *)(param_2 + 0x10);
+  if (puVar16 != puVar20) {
+    do {
+      local_210 = 0.0;
+      local_208 = 0.0;
+      local_230 = 0;
+      local_238 = (char *)0x0;
+      cvMinMaxLoc(*puVar16,&local_210,&local_208,0);
+      uVar7 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\imagingtools.h"
+                            ,0xd0);
+      if ((char)uVar7 == '\0') goto LAB_180007a44;
+      dVar25 = local_210;
+      if ((double)CONCAT44(uVar24,uVar23) <= local_210) {
+        dVar25 = (double)CONCAT44(uVar24,uVar23);
+      }
+      uVar23 = SUB84(dVar25,0);
+      uVar24 = (undefined4)((ulonglong)dVar25 >> 0x20);
+      dVar25 = local_208;
+      if (local_208 <= (double)CONCAT44(uVar28,uVar27)) {
+        dVar25 = (double)CONCAT44(uVar28,uVar27);
+      }
+      uVar27 = SUB84(dVar25,0);
+      uVar28 = (undefined4)((ulonglong)dVar25 >> 0x20);
+      puVar16 = puVar16 + 1;
+    } while (puVar16 != puVar20);
+    puVar16 = *(undefined8 **)(param_2 + 0x18);
+  }
+  uVar4 = (ulonglong)((longlong)puVar20 + (7 - (longlong)puVar16)) >> 3;
+  if (puVar20 < puVar16) {
+    uVar4 = uVar15;
+  }
+  if (uVar4 != 0) {
+    dVar25 = (double)CONCAT44(uVar28,uVar27) - (double)CONCAT44(uVar24,uVar23);
+    uVar19 = uVar15;
+    do {
+      if (0.0 < dVar25) {
+        dVar26 = 65535.0 / dVar25;
+        cvConvertScale(*puVar16,*puVar16,dVar26,-(dVar26 * (double)CONCAT44(uVar24,uVar23)));
+        FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\imagingtools.h"
+                      ,0xa0);
+      }
+      puVar16 = puVar16 + 1;
+      uVar19 = uVar19 + 1;
+    } while (uVar19 != uVar4);
+  }
+LAB_180007a44:
+  local_1c8[1] = 0;
+  local_1c8[2] = 0xf;
+  local_1d0 = (undefined **)((ulonglong)local_1d0 & 0xffffffffffffff00);
+  FUN_180015be0((longlong *)&local_1d0," 2 InitMemoryComposite() [end]",0x1e);
+  pbVar11 = local_1a8;
+  pbVar3 = FUN_180010310(pbVar11,&local_1d0);
+  FUN_1800035c0(pbVar11,(longlong *)pbVar3);
+  if (0xf < (ulonglong)local_1c8[2]) {
+    ppuVar13 = local_1d0;
+    if ((0xfff < local_1c8[2] + 1U) &&
+       (ppuVar13 = (undefined **)local_1d0[-1],
+       0x1f < (ulonglong)((longlong)local_1d0 + (-8 - (longlong)ppuVar13)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(ppuVar13);
+  }
+LAB_180007aca:
+  local_200 = AutoIplImage::vftable;
+  if (local_1f8 != 0) {
+    cvReleaseImage(&local_1f8);
+  }
+  return (CompositeErr)uVar15;
+}
+

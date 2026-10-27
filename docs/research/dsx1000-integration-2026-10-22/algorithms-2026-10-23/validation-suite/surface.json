@@ -1,0 +1,156 @@
+{
+  "scope": "Independent synthetic mathematical tests; no DSX binaries or hardware executed",
+  "numpy": "2.4.3",
+  "python": "3.13.12",
+  "checks": [
+    {
+      "name": "two_profile_linear_flatten",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-10,
+      "description": "Remove independently supplied x/y linear trends"
+    },
+    {
+      "name": "two_profile_quadratic_flatten",
+      "passed": true,
+      "value": 1.4779288903810084e-12,
+      "limit": 1e-08,
+      "description": "ALGLIB-equivalent least-squares mathematical core, different solver"
+    },
+    {
+      "name": "local_step_retained",
+      "passed": true,
+      "value": 2.2737367544323206e-13,
+      "limit": 1e-08,
+      "description": "Background-only reference profiles preserve local step"
+    },
+    {
+      "name": "three_point_plane_flatten",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-09,
+      "description": "Cross-product slopes and centered corrections"
+    },
+    {
+      "name": "clamped_corner_mean",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-12,
+      "description": "Clamps out-of-range coordinates as observed"
+    },
+    {
+      "name": "degenerate_pick_guard",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Reference guard, not claimed as vendor behavior"
+    },
+    {
+      "name": "vendor_C_zero_branch",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Observed denominator fallback selectable for research"
+    },
+    {
+      "name": "height_affine_roundtrip",
+      "passed": true,
+      "value": 1.5967650873571984,
+      "limit": 1.597630417349508,
+      "description": "Bounded by half an output quantization step"
+    },
+    {
+      "name": "wide_range_offset_branch",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-12,
+      "description": "Retains the unusual original add-offset expression"
+    },
+    {
+      "name": "sphere_center",
+      "passed": true,
+      "value": 1.071718936103022e-13,
+      "limit": 1e-09,
+      "description": "Non-coplanar four-point sphere solve"
+    },
+    {
+      "name": "sphere_radius",
+      "passed": true,
+      "value": 8.526512829121202e-14,
+      "limit": 1e-09,
+      "description": "Radius from point-to-center distance"
+    },
+    {
+      "name": "sphere_preserves_local_step",
+      "passed": true,
+      "value": 4.263256414560601e-14,
+      "limit": 1e-08,
+      "description": "Subtract fitted curved baseline; no GUI clipping or code conversion"
+    },
+    {
+      "name": "sphere_invalid_domain",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Explicit validity result of the reference API"
+    },
+    {
+      "name": "profile_edge_band_shift",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Top edge start clamps then end derives from start, no replicated pixels"
+    },
+    {
+      "name": "profile_bottom_band_shrink",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Bottom band shrinks at last row and u16 mean truncates"
+    },
+    {
+      "name": "single_column_profile",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Width zero axis-aligned path"
+    },
+    {
+      "name": "manual_curve_is_quadratic",
+      "passed": true,
+      "value": 7.105427357601002e-15,
+      "limit": 1e-10,
+      "description": "Three point interpolation, not natural cubic spline"
+    },
+    {
+      "name": "manual_close_x_nudging",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Observed sequential x-coordinate adjustment"
+    },
+    {
+      "name": "manual_vertical_reversal",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-10,
+      "description": "UI vertical controls reverse before correction; direct image-row slope would have wrong sign"
+    },
+    {
+      "name": "top_left_projected_crop",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Crop width=floor(W^2/projectedW), anchored at zero"
+    },
+    {
+      "name": "projected_encode_resize_shape",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0,
+      "description": "Converted crop resized back to original matrix dimensions"
+    }
+  ],
+  "status": "passed",
+  "source_sha256": "cffa971b81fb5095def4360d6bffabc8184f63d4429b32182df58a0172075dab"
+}

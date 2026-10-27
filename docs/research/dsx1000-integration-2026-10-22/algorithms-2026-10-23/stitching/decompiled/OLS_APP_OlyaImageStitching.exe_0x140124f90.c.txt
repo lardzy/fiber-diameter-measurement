@@ -1,0 +1,94 @@
+Evidence: ev_3b3cc2110093b8e1155af243ac29efb3cacbfd4d353ff6219d1a877a8010e6a3
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+void FUN_140124f90(longlong param_1,double *param_2)
+
+{
+  int *piVar1;
+  longlong lVar2;
+  longlong lVar3;
+  longlong lVar4;
+  int iVar5;
+  longlong lVar6;
+  uint uVar7;
+  longlong lVar8;
+  int iVar9;
+  double *pdVar10;
+  double *pdVar11;
+  int *piVar12;
+  longlong lVar13;
+  ulonglong uVar14;
+  longlong lVar15;
+  double dVar16;
+  double dVar17;
+  
+  lVar6 = DAT_1401c9a30;
+  lVar15 = DAT_1401c9a28;
+  iVar5 = DAT_1401c9a24;
+  lVar4 = DAT_1401c9a18;
+  lVar3 = DAT_1401c9a10;
+  iVar9 = 0;
+  *param_2 = 0.0;
+  if (3 < iVar5) {
+    lVar2 = *(longlong *)(param_1 + 8);
+    dVar17 = *param_2;
+    lVar8 = lVar6 - lVar15;
+    lVar13 = lVar3 - lVar4;
+    uVar7 = (iVar5 - 4U >> 2) + 1;
+    iVar9 = uVar7 * 4;
+    uVar14 = (ulonglong)uVar7;
+    pdVar11 = (double *)(lVar4 + 8);
+    piVar12 = (int *)(lVar15 + 4);
+    do {
+      pdVar10 = pdVar11 + 4;
+      dVar16 = (*(double *)
+                 (*(longlong *)(lVar2 + 0x30) +
+                 (longlong)*(int *)((longlong)piVar12 + lVar8 + -4) * 8) -
+               *(double *)(*(longlong *)(lVar2 + 0x30) + (longlong)piVar12[-1] * 8)) - pdVar11[-1];
+      dVar17 = dVar17 + dVar16 * *(double *)(lVar13 + -0x28 + (longlong)pdVar10) * dVar16;
+      *param_2 = dVar17;
+      dVar16 = (*(double *)
+                 (*(longlong *)(lVar2 + 0x30) + (longlong)*(int *)((longlong)piVar12 + lVar8) * 8) -
+               *(double *)(*(longlong *)(lVar2 + 0x30) + (longlong)*piVar12 * 8)) - *pdVar11;
+      dVar17 = dVar16 * *(double *)(lVar13 + -0x20 + (longlong)pdVar10) * dVar16 + dVar17;
+      *param_2 = dVar17;
+      dVar16 = (*(double *)
+                 (*(longlong *)(lVar2 + 0x30) +
+                 (longlong)*(int *)((longlong)piVar12 + lVar8 + 4) * 8) -
+               *(double *)(*(longlong *)(lVar2 + 0x30) + (longlong)piVar12[1] * 8)) - pdVar11[1];
+      dVar17 = dVar16 * *(double *)(lVar13 + -0x18 + (longlong)pdVar10) * dVar16 + dVar17;
+      *param_2 = dVar17;
+      dVar16 = (*(double *)
+                 (*(longlong *)(lVar2 + 0x30) +
+                 (longlong)*(int *)((longlong)piVar12 + lVar8 + 8) * 8) -
+               *(double *)(*(longlong *)(lVar2 + 0x30) + (longlong)piVar12[2] * 8)) - pdVar11[2];
+      dVar17 = dVar16 * *(double *)(lVar13 + -0x10 + (longlong)pdVar10) * dVar16 + dVar17;
+      *param_2 = dVar17;
+      uVar14 = uVar14 - 1;
+      pdVar11 = pdVar10;
+      piVar12 = piVar12 + 4;
+      lVar15 = DAT_1401c9a28;
+    } while (uVar14 != 0);
+  }
+  if (iVar9 < iVar5) {
+    lVar2 = *(longlong *)(param_1 + 8);
+    uVar14 = (ulonglong)(uint)(iVar5 - iVar9);
+    piVar12 = (int *)(lVar15 + (longlong)iVar9 * 4);
+    pdVar11 = (double *)(lVar4 + (longlong)iVar9 * 8);
+    do {
+      lVar8 = *(longlong *)(lVar2 + 0x30);
+      piVar1 = (int *)((longlong)piVar12 + (lVar6 - lVar15));
+      iVar9 = *piVar12;
+      piVar12 = piVar12 + 1;
+      dVar17 = (*(double *)(lVar8 + (longlong)*piVar1 * 8) -
+               *(double *)(lVar8 + (longlong)iVar9 * 8)) - *pdVar11;
+      *param_2 = dVar17 * *(double *)((longlong)pdVar11 + (lVar3 - lVar4)) * dVar17 + *param_2;
+      uVar14 = uVar14 - 1;
+      pdVar11 = pdVar11 + 1;
+    } while (uVar14 != 0);
+  }
+  return;
+}
+

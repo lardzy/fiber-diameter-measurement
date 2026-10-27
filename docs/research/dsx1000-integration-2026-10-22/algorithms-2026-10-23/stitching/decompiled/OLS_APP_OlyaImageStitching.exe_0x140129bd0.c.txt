@@ -1,0 +1,92 @@
+Evidence: ev_abfcdd30f2a95df16b879c358259d3e1e3edf28bb1063b0546ff0ec2b28615ba
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ushort FUN_140129bd0(Mat *param_1,double param_2)
+
+{
+  int iVar1;
+  Mat *pMVar2;
+  longlong lVar3;
+  ushort uVar4;
+  undefined1 auStack_158 [32];
+  undefined8 local_138;
+  _OutputArray local_130 [32];
+  _InputArray local_110 [32];
+  Mat *local_f0;
+  Mat local_e8 [12];
+  int local_dc;
+  longlong local_d8;
+  int *local_d0;
+  undefined8 local_c8;
+  undefined8 local_c0;
+  undefined8 local_b8;
+  undefined4 *local_a8;
+  undefined1 *local_a0;
+  undefined1 local_98 [16];
+  Mat local_88 [16];
+  undefined8 local_78;
+  int *local_70;
+  undefined8 local_68;
+  undefined8 local_60;
+  undefined8 local_58;
+  undefined4 *local_48;
+  undefined1 *local_40;
+  undefined1 local_38 [16];
+  ulonglong local_28;
+  
+  local_138 = 0xfffffffffffffffe;
+  local_28 = DAT_1401c7000 ^ (ulonglong)auStack_158;
+  local_f0 = param_1;
+  FUN_1400134d0(param_1,local_e8);
+  pMVar2 = (Mat *)cv::Mat::reshape(local_e8,(int)local_88,0);
+  if (local_e8 != pMVar2) {
+    FUN_140013570(local_e8,pMVar2);
+  }
+  if (local_70 != (int *)0x0) {
+    iVar1 = cv::_interlockedExchangeAdd(local_70,-1);
+    if (iVar1 == 1) {
+      cv::Mat::deallocate(local_88);
+    }
+  }
+  local_58 = 0;
+  local_60 = 0;
+  local_68 = 0;
+  local_78 = 0;
+  *local_48 = 0;
+  local_70 = (int *)0x0;
+  if (local_40 != local_38) {
+    cv::fastFree(local_40);
+  }
+  cv::_OutputArray::_OutputArray(local_130,local_e8);
+  cv::_InputArray::_InputArray(local_110,local_e8);
+  cv::sort(local_110,local_130,0);
+  lVar3 = (longlong)(int)(((double)(local_dc + -1) * param_2) / 100.0);
+  if (((byte)local_e8[0] & 7) == 2) {
+    uVar4 = *(ushort *)(local_d8 + lVar3 * 2);
+  }
+  else {
+    uVar4 = (ushort)*(byte *)(lVar3 + local_d8);
+  }
+  if (local_d0 != (int *)0x0) {
+    iVar1 = cv::_interlockedExchangeAdd(local_d0,-1);
+    if (iVar1 == 1) {
+      cv::Mat::deallocate(local_e8);
+    }
+  }
+  local_b8 = 0;
+  local_c0 = 0;
+  local_c8 = 0;
+  local_d8 = 0;
+  *local_a8 = 0;
+  local_d0 = (int *)0x0;
+  if (local_a0 != local_98) {
+    cv::fastFree(local_a0);
+  }
+  FUN_140006470(param_1);
+  return uVar4;
+}
+

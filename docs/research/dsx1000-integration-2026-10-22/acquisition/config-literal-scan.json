@@ -1,0 +1,1001 @@
+{
+  "scope": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL",
+  "date": "2026-10-22",
+  "operation": "Read-only byte-literal scan of .dll/.exe/.config/.ini/.xml files recursively",
+  "limitations": [
+    "Literal match absence does not exclude dynamically constructed names or another runtime path.",
+    "Does not show configuration values or runtime usage."
+  ],
+  "file_count": 191,
+  "hits": [
+    {
+      "path": "DSX-BSW-CTRL.exe.config",
+      "literal": "ZSTACK_IMAGE_SAVE",
+      "encodings": [
+        "utf-8"
+      ],
+      "sha256": "0608e498b5a40f11b12331e8ba0f9ecc030ae2f4e11a326fc7b300bcade62467"
+    },
+    {
+      "path": "OlybAcquisitionDomain.dll",
+      "literal": "SaveStackImagePath",
+      "encodings": [
+        "utf-8"
+      ],
+      "sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302"
+    },
+    {
+      "path": "OlyiExtendFocusImageSGSharp64.dll",
+      "literal": "SaveStackImagePath",
+      "encodings": [
+        "utf-8"
+      ],
+      "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+    },
+    {
+      "path": "OlyiExtendFocusImageSGSharp64.dll",
+      "literal": "EFIParamDefault.ini",
+      "encodings": [
+        "utf-16le"
+      ],
+      "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+    }
+  ],
+  "files": [
+    {
+      "path": "CSharpLogging.dll",
+      "bytes": 10752,
+      "sha256": "6b612929eb6e9b5e5d19d166a7123c1ffe9c431cd8ac63ec52615806f285f6f8"
+    },
+    {
+      "path": "CSharpLogging64.dll",
+      "bytes": 10240,
+      "sha256": "184cb0cbc70215c56732372775839dbd2a0f74eb795b8d7bc3307f8fb99d8844"
+    },
+    {
+      "path": "CUDACommon.dll",
+      "bytes": 14336,
+      "sha256": "448bc53effd5cd1d0b723e8c60b9c8473ab0255a948c0e98c74c100cbff53e7e"
+    },
+    {
+      "path": "CUDADeviceQuery.ini",
+      "bytes": 254,
+      "sha256": "1318c159eeb692dc375d0e1dc7b02943c21148e8bd3fcc9047abef74e6908038"
+    },
+    {
+      "path": "CamBoard64.dll",
+      "bytes": 251904,
+      "sha256": "2414397002f029be53ecd8c5dba88c7c04446b51df450cb15d7490d88f1763d0"
+    },
+    {
+      "path": "CamDriver64.dll",
+      "bytes": 3476992,
+      "sha256": "2a5469f216345909be66d8bfe59a9a3ab03f05ba962d075440980336729566d1"
+    },
+    {
+      "path": "Common/ImageProcessing/LoggingLibrary64.dll",
+      "bytes": 23040,
+      "sha256": "0652df7786a9e01e1c2b291e2344f24a4b2ea255b13bcf745b80aea01572a68f"
+    },
+    {
+      "path": "Common/ImageProcessing/NoiseReduction_30301.ini",
+      "bytes": 2491,
+      "sha256": "0e85fc2c8d1f57098d1b8e5274c6e10c302f328e904f0a6bd6459da50aed81d6"
+    },
+    {
+      "path": "Common/ImageProcessing/NoiseReduction_30302.ini",
+      "bytes": 3111,
+      "sha256": "989bc5e0932cc355008b0a0012ad7db58e2c3366599d31b263310c0f5c412a11"
+    },
+    {
+      "path": "Common/ImageProcessing/NoiseReduction_30303.ini",
+      "bytes": 2449,
+      "sha256": "842af99ba05e46aaef9c0e2ddf4541529ca590af4c17fc97e18f44affd6fe01c"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyAntiHalation.exe",
+      "bytes": 9216,
+      "sha256": "c5a7b2cef4b4fa7a683f07b776ef7ce026c4806ccfe8b739921d9ca6cf0832a1"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyAntiHalation.exe.config",
+      "bytes": 219,
+      "sha256": "56da4c5b1ff010d4f344c5fee93670c428d130a73b36f052e8b3ea5eb97f3545"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyHamal64.dll",
+      "bytes": 102912,
+      "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyIPCommon64.dll",
+      "bytes": 74240,
+      "sha256": "51bc753b77f73cfb9cceb5d8c68214232ee263aea7bfed1334899acdba4dfaaa"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyREFCMP.exe",
+      "bytes": 14336,
+      "sha256": "fddeff59041125875addf5300820cc801474d4bdf7646012bdc88efc7b0b7d2b"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyREFCMP.exe.config",
+      "bytes": 163,
+      "sha256": "7b84aa908160faca0a5caee9cfedac336398a522ed44f494b371b187abbfec20"
+    },
+    {
+      "path": "Common/ImageProcessing/OlySpica.ini",
+      "bytes": 351,
+      "sha256": "082b1c9f50f454dc129c78c410e83d9be4c7eca9bf80cf620fd23ee18c6a3715"
+    },
+    {
+      "path": "Common/ImageProcessing/OlySpica64.dll",
+      "bytes": 112128,
+      "sha256": "053398062c10a61ba3c8b0ed4fcc8c4657b4f8b303a098d848a2126252f88ad5"
+    },
+    {
+      "path": "Common/ImageProcessing/OlycLogging.dll",
+      "bytes": 23552,
+      "sha256": "203134d25b6a4b7bd1eaf4ba8ee8c735bb227185d923e333354326901fe3ed59"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyiAntiHalationWrapper64.dll",
+      "bytes": 80384,
+      "sha256": "ee667ccabc2398a65f01377a124281663f65004b5085c38668aefcad7e86db7e"
+    },
+    {
+      "path": "Common/ImageProcessing/OlyiREFLibraryWrapper.dll",
+      "bytes": 44032,
+      "sha256": "8fab0a99d5033ebef881d66c6c4cf85d8e071f321cc515900594251e38a20c7e"
+    },
+    {
+      "path": "Common/ImageProcessing/OlymApiWin32CSharp.dll",
+      "bytes": 30208,
+      "sha256": "d5c7894e54d12cf8df2d4796bc079fa2fb7f174a10ad0e06861504da3d36d69d"
+    },
+    {
+      "path": "Common/ImageProcessing/OlymInterProcessImaging.dll",
+      "bytes": 20480,
+      "sha256": "47b5dc62dd2e1dca912c02bc9ec3d1bdbfe245b63b07b19ba92f2866e66bd33f"
+    },
+    {
+      "path": "Common/ImageProcessing/ipREFCMP64.dll",
+      "bytes": 693248,
+      "sha256": "0a9d30d30ca911a9ede842adb976531a3c8e40e6a1c6bfac6308da02e395aefd"
+    },
+    {
+      "path": "Common/ImageProcessing/ipREFMRG64.dll",
+      "bytes": 566784,
+      "sha256": "6fff3b30569859770441f287d4aac3d84766470c74c55ccd3765135a0e89fb82"
+    },
+    {
+      "path": "Common/ImageProcessing/ipREFTN64.dll",
+      "bytes": 976384,
+      "sha256": "6c2c95b6f9ca251e1a31d7f60dbb3a98924bf4291759af31ec51212b89a64426"
+    },
+    {
+      "path": "CommonUtility.dll",
+      "bytes": 196608,
+      "sha256": "333c9b04c46ded9d0f9661c92924c54f687e99bd746813bff7278ab48594cfaa"
+    },
+    {
+      "path": "DP1394API64.dll",
+      "bytes": 50688,
+      "sha256": "1d600c477814eb2c3257856623f59d276aafb9ec5e095944f526aecbc46b77eb"
+    },
+    {
+      "path": "DP1394UTL64.dll",
+      "bytes": 10752,
+      "sha256": "e03c65c3876da1cbf2dec206c3b2d2b9c596adf3284e8084e3df192f0bc40e0e"
+    },
+    {
+      "path": "DSX-BSW-CTRL.exe",
+      "bytes": 34816,
+      "sha256": "99927e1185bcb7fee71d3ed6a497637600e7b9dfe459825e1429746c853aa7aa"
+    },
+    {
+      "path": "DSX-BSW-CTRL.exe.config",
+      "bytes": 7850,
+      "sha256": "0608e498b5a40f11b12331e8ba0f9ecc030ae2f4e11a326fc7b300bcade62467"
+    },
+    {
+      "path": "DSX-BSW-CTRL.xml",
+      "bytes": 2069,
+      "sha256": "9c780b6f692f0f8c9e9ddd0d62a24e78641a633696c155a62923cb5420be4a61"
+    },
+    {
+      "path": "DeviceQuery64.dll",
+      "bytes": 60416,
+      "sha256": "6576ceaa55d7309835f27cae9cdb0ab5611039ace472c5130737670fefa69be6"
+    },
+    {
+      "path": "DustReduction64.dll",
+      "bytes": 18432,
+      "sha256": "8faddf1b56dfc8adfad531e50749e10e0a28fc2631d785732246e777ddcbf447"
+    },
+    {
+      "path": "EFCalculater64.dll",
+      "bytes": 37888,
+      "sha256": "3a83e67accfa03b4428049301a219d635607aeb44ba2f3d4fce09e0ad54bece7"
+    },
+    {
+      "path": "ExportImageFile.dll",
+      "bytes": 12288,
+      "sha256": "507fb2b125657ec40a75ce2c14ec7ce1f3cad4489cfdb4fbc43953b0f9b53b8b"
+    },
+    {
+      "path": "FastExtendEvaluation.ini",
+      "bytes": 406,
+      "sha256": "f7e7b5bc8cb4d426dadb7b289552b181393d655a4c445df4fd35df8f3a009b0f"
+    },
+    {
+      "path": "FileFormatWrapper.dll",
+      "bytes": 467968,
+      "sha256": "1a377b5f734f36e77ffc13f4ddb7de7211b7d7e1a99893248d41d330f3852c5c"
+    },
+    {
+      "path": "GMAuxilaryParts.dll",
+      "bytes": 29696,
+      "sha256": "aeed048d989439e5afeb4d5d00bf0cbfc9987e28c946002b3fddd4fee4a08334"
+    },
+    {
+      "path": "GainMapCalibration_Get64.exe",
+      "bytes": 31744,
+      "sha256": "305f79c22867f6d0ed7f65140553866bc817d92fff5d74ca2497f48938384547"
+    },
+    {
+      "path": "GainMapMeasure_Get64.exe",
+      "bytes": 37376,
+      "sha256": "d55ae57e813f9687c1344e81fbbbabbb5558ef3fb48374c1be1b9811013fbc5a"
+    },
+    {
+      "path": "GeometricMeasurmentModule.dll",
+      "bytes": 214016,
+      "sha256": "857a203b131d31791ba3293c2960f0e6447cb1bc2a8876d612e7532a9c19ec64"
+    },
+    {
+      "path": "HemulenVirtualCamera.dll",
+      "bytes": 53760,
+      "sha256": "dc6c5f5ec7d7423c747bd0c273d9934a4b2da4e1f30c0ad9bb50228b17e5755f"
+    },
+    {
+      "path": "IBM.Data.DB2.dll",
+      "bytes": 1542352,
+      "sha256": "e1eca11886db80a6958d4e08660c41f0f01dcbeb6ea9d3436175e0742f0216ed"
+    },
+    {
+      "path": "ImageFileMgr64.dll",
+      "bytes": 285696,
+      "sha256": "06c95ac9f7e2fa2dc599b21ac3170dbbd85514b1e79013493012b4334d6f554a"
+    },
+    {
+      "path": "ImageProcessingWrapper.dll",
+      "bytes": 141824,
+      "sha256": "11f8c154d92b44abdf4550ce33032667656d6efa5592db1573b1189e8c5873aa"
+    },
+    {
+      "path": "ImageStitching.ini",
+      "bytes": 1584,
+      "sha256": "a7581fb87042312b5eec8a0ef713c392adc7ba67fca0be75b643c94afa44d3bd"
+    },
+    {
+      "path": "ImageStitchingEasy.ini",
+      "bytes": 188,
+      "sha256": "263866e980f63fb07c4a5673b51cb8d64bbeed4744c63663ce76756b672da868"
+    },
+    {
+      "path": "JigLib64.dll",
+      "bytes": 163840,
+      "sha256": "9533e79d23155c33406953097755dc4f29f4f9346bce99d1682264a7ee2049c9"
+    },
+    {
+      "path": "LoadSaveModule.dll",
+      "bytes": 35328,
+      "sha256": "de35556ad0bed91ff07b3eaf48f0c7e5b042b8e6edbdacf7883fa2d977378251"
+    },
+    {
+      "path": "LocalizationManager.dll",
+      "bytes": 427520,
+      "sha256": "25bcfeba2034fd42dfc82db39565d1d4811fb03d9976d60cca4439e3eae9d938"
+    },
+    {
+      "path": "LoggingLibrary64.dll",
+      "bytes": 23040,
+      "sha256": "0652df7786a9e01e1c2b291e2344f24a4b2ea255b13bcf745b80aea01572a68f"
+    },
+    {
+      "path": "MALPCI64.dll",
+      "bytes": 129024,
+      "sha256": "5d40a5b845f7cee59cc7a1d629dc98ff7022b5912ca0820370865764d9f7efad"
+    },
+    {
+      "path": "NoiseReduction_30301.ini",
+      "bytes": 2491,
+      "sha256": "0e85fc2c8d1f57098d1b8e5274c6e10c302f328e904f0a6bd6459da50aed81d6"
+    },
+    {
+      "path": "NoiseReduction_30302.ini",
+      "bytes": 3111,
+      "sha256": "989bc5e0932cc355008b0a0012ad7db58e2c3366599d31b263310c0f5c412a11"
+    },
+    {
+      "path": "NoiseReduction_30303.ini",
+      "bytes": 2449,
+      "sha256": "842af99ba05e46aaef9c0e2ddf4541529ca590af4c17fc97e18f44affd6fe01c"
+    },
+    {
+      "path": "OMMctrl64.dll",
+      "bytes": 22528,
+      "sha256": "3b02b789c4f9d08fc107077fdd97641bcdd1f9447c812802db3407258c53abf3"
+    },
+    {
+      "path": "OMMctrlNative64.dll",
+      "bytes": 16384,
+      "sha256": "1b7d1cc8157bab769a5e66cb3bb667cdc5dbf1b9b91a6bb11badc509143e84a2"
+    },
+    {
+      "path": "OlyAlnath64.dll",
+      "bytes": 72192,
+      "sha256": "1580011bbc8c546f4e272082155862c21eb67813baafc3ad9a75cfcb197d570c"
+    },
+    {
+      "path": "OlyAltair64.dll",
+      "bytes": 37376,
+      "sha256": "573d743a235acb269e362676031c3d1259e980d5c7511ca9179b8fe922fe98a9"
+    },
+    {
+      "path": "OlyAtlas64.dll",
+      "bytes": 93696,
+      "sha256": "07fcdeef1592ddc38f24063c2a242852c63acaeb4154075a34ce5618d02c81a7"
+    },
+    {
+      "path": "OlyDeneb64.dll",
+      "bytes": 28672,
+      "sha256": "04adee3eacd0544665d1ad67b72dd8569fab117ccb0366d82aa5a1d9c3c71421"
+    },
+    {
+      "path": "OlyExtendFocusImageSG64.dll",
+      "bytes": 1007104,
+      "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+    },
+    {
+      "path": "OlyExtendFocusImageSGmv64.dll",
+      "bytes": 30208,
+      "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+    },
+    {
+      "path": "OlyHamal64.dll",
+      "bytes": 102912,
+      "sha256": "5223c273499b132712a148f2f03237f5c32102185265563eeb1f301c93d1f27b"
+    },
+    {
+      "path": "OlyHardF64.dll",
+      "bytes": 2281472,
+      "sha256": "ec07ea1a6ab6d260a254aed02b1a21f3d0f3555a9dabd0dde217e97ea39c36a7"
+    },
+    {
+      "path": "OlyHardT64.dll",
+      "bytes": 48128,
+      "sha256": "5a7424e3a73bb985230c9c4f3625510fae109dc6d77add82f7cdce53dc37a9e1"
+    },
+    {
+      "path": "OlyIPCommon64.dll",
+      "bytes": 74240,
+      "sha256": "51bc753b77f73cfb9cceb5d8c68214232ee263aea7bfed1334899acdba4dfaaa"
+    },
+    {
+      "path": "OlyIPCommonCLI64.dll",
+      "bytes": 141312,
+      "sha256": "0bcde42fe359258e4dcb319cf87e62370f8b60942c168ba8a515b2a139004015"
+    },
+    {
+      "path": "OlyImageFileLoader.exe",
+      "bytes": 15360,
+      "sha256": "4c1814033c46499e2538ebe8cd8bd88dce21358a90bc0ba3e7a228c7d34375e2"
+    },
+    {
+      "path": "OlyImageFileLoader.exe.config",
+      "bytes": 1715,
+      "sha256": "4137ff6cc4540bfa23c9e850002375f4b7ac578b1785b9859b0375bc2ba1a6e9"
+    },
+    {
+      "path": "OlyImageStitching.exe",
+      "bytes": 5632,
+      "sha256": "87f1910bce9e275aaca3b0de4c0141eeaf455c98281e4caceeb0504e850752d4"
+    },
+    {
+      "path": "OlyImageStitching.exe.config",
+      "bytes": 163,
+      "sha256": "7b84aa908160faca0a5caee9cfedac336398a522ed44f494b371b187abbfec20"
+    },
+    {
+      "path": "OlyImageStitchingEasy.exe",
+      "bytes": 32256,
+      "sha256": "0715b339411a3785f7bbe340c5ab6d0ec1b4aa8246c2b1cc41f0baa17063c207"
+    },
+    {
+      "path": "OlyImageStitchingEasy.exe.config",
+      "bytes": 1715,
+      "sha256": "4137ff6cc4540bfa23c9e850002375f4b7ac578b1785b9859b0375bc2ba1a6e9"
+    },
+    {
+      "path": "OlyMirfak64.dll",
+      "bytes": 46080,
+      "sha256": "2d49c5a67b1755b3669470b4c832182105bcbd78bda5fba536d6858cfffa1a8c"
+    },
+    {
+      "path": "OlyNaos64.dll",
+      "bytes": 130560,
+      "sha256": "623de9b4114d9b9f196d6ccfcfe85725fb1ec1253c1511604fe1aac88128d3ca"
+    },
+    {
+      "path": "OlyNmv.dll",
+      "bytes": 105472,
+      "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+    },
+    {
+      "path": "OlyNmv.ini",
+      "bytes": 108,
+      "sha256": "5427160ee68904753c55ceed6e4e9ba5e337bb4e91839659460b518ee5b038af"
+    },
+    {
+      "path": "OlyShadingCorrection64.dll",
+      "bytes": 416256,
+      "sha256": "324eefab2cf99a3184dd36627b14a0ce17140a8b9f1019ed2b6665114abaf26e"
+    },
+    {
+      "path": "OlySpica.ini",
+      "bytes": 351,
+      "sha256": "082b1c9f50f454dc129c78c410e83d9be4c7eca9bf80cf620fd23ee18c6a3715"
+    },
+    {
+      "path": "OlySpica64.dll",
+      "bytes": 112128,
+      "sha256": "053398062c10a61ba3c8b0ed4fcc8c4657b4f8b303a098d848a2126252f88ad5"
+    },
+    {
+      "path": "OlyVega64.dll",
+      "bytes": 3278336,
+      "sha256": "665dab355e8712f7e719516b56890d381dec0f8dae8a881142be6446d139b973"
+    },
+    {
+      "path": "OlybAcquisitionDomain.dll",
+      "bytes": 173056,
+      "sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302"
+    },
+    {
+      "path": "OlybApplicationDomain.dll",
+      "bytes": 37888,
+      "sha256": "3cc9c9fce7439430d426b0dc1dc28e3ca6d3545e3c1976683f260541629394ba"
+    },
+    {
+      "path": "OlybBusinessObject.dll",
+      "bytes": 271360,
+      "sha256": "414a588d2343d6c84b2a52006fd17978f485585d4bea50cf8cd7ab64efb968f2"
+    },
+    {
+      "path": "OlybCalibrationDomain.dll",
+      "bytes": 46080,
+      "sha256": "219f41b3ab2c7b57a33113f963d50f266e113a9938e41d0857b2ac8daf497b8b"
+    },
+    {
+      "path": "OlybCameraDomain.dll",
+      "bytes": 105984,
+      "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988"
+    },
+    {
+      "path": "OlybConsoleDomain.dll",
+      "bytes": 26624,
+      "sha256": "03158b239979decd3647322e61191cd846a6746d9137c113bc604de92fad9f26"
+    },
+    {
+      "path": "OlybDisplayDomain.dll",
+      "bytes": 7168,
+      "sha256": "6c9ecc58cf5be586a039b3eeb7af919e87cdc15672b45805602030ca40c3a9b8"
+    },
+    {
+      "path": "OlybDomain.dll",
+      "bytes": 16896,
+      "sha256": "3d4af25ce547be4e9f711892f33dd516d421690b151b6ee7e23d1a0cba42d6f5"
+    },
+    {
+      "path": "OlybImageProcessDomain.dll",
+      "bytes": 178176,
+      "sha256": "03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b"
+    },
+    {
+      "path": "OlybMeasurementDomain.dll",
+      "bytes": 8192,
+      "sha256": "f163deea5407243f6e874337d69bad70b147466338dc6c6ee3ae2b32124db847"
+    },
+    {
+      "path": "OlybMemoryDatabase.dll",
+      "bytes": 724480,
+      "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+    },
+    {
+      "path": "OlybMicroscopeDomain.dll",
+      "bytes": 148480,
+      "sha256": "7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e"
+    },
+    {
+      "path": "OlybObservationConfDomain.dll",
+      "bytes": 30208,
+      "sha256": "ae8c864911e345e1f4a65165986138b4c1d35ff845d6ddc4be9a702c80007f4d"
+    },
+    {
+      "path": "OlybPreviewDomain.dll",
+      "bytes": 74752,
+      "sha256": "421e3bf6c1303ba5eab8bc8b6241079e66b139d8544e4d202ead00505d4da38e"
+    },
+    {
+      "path": "OlybProcessJoinDomain.dll",
+      "bytes": 106496,
+      "sha256": "0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d"
+    },
+    {
+      "path": "OlybScenarioDefinition.dll",
+      "bytes": 371200,
+      "sha256": "3adada8987b382a8fd4397690fc39cccc7ab06128db86fceccfc400d315cfd98"
+    },
+    {
+      "path": "OlybStageDomain.dll",
+      "bytes": 62464,
+      "sha256": "2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff"
+    },
+    {
+      "path": "OlybStateControlDomain.dll",
+      "bytes": 13824,
+      "sha256": "16c984dc70750cab05f98f4fef49cb1233db7b00b500dd7d2ba4d2d668f5487e"
+    },
+    {
+      "path": "OlybStatusManage.dll",
+      "bytes": 17920,
+      "sha256": "6af382533e2ed8bed86ac01fc40fadc805266538fdcc5ee95dd1549bd48bdea4"
+    },
+    {
+      "path": "OlybWorkflowException.dll",
+      "bytes": 30208,
+      "sha256": "daf2ed053ea40c6cc6cb7f21eb19c30915d5725d3577a3729b67efdeb4cd12d8"
+    },
+    {
+      "path": "OlycLogging.dll",
+      "bytes": 23552,
+      "sha256": "203134d25b6a4b7bd1eaf4ba8ee8c735bb227185d923e333354326901fe3ed59"
+    },
+    {
+      "path": "OlycSdkCore.dll",
+      "bytes": 182272,
+      "sha256": "5903e108d1e65494b2bcd5959d9634cad1fba3b1359e0ba559653f5ee387d8e1"
+    },
+    {
+      "path": "OlydCamera.dll",
+      "bytes": 160768,
+      "sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955"
+    },
+    {
+      "path": "OlydConsole.dll",
+      "bytes": 19456,
+      "sha256": "b585b8d8fe58c0dfc28bf62527d3d74076d2a25ee116ba5b75d6accdf4cd3737"
+    },
+    {
+      "path": "OlydDevice.dll",
+      "bytes": 14336,
+      "sha256": "5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d"
+    },
+    {
+      "path": "OlydDeviceControl.dll",
+      "bytes": 19456,
+      "sha256": "b3b8ef0270606b2af3605b527e8d3b8e968085860424e77a3572cc152365141a"
+    },
+    {
+      "path": "OlydDeviceException.dll",
+      "bytes": 15872,
+      "sha256": "df5fff554b22940e58bd0ff5a7564531743c0ee7335ad4991eb6384d41f0af10"
+    },
+    {
+      "path": "OlydMicroscope.dll",
+      "bytes": 36352,
+      "sha256": "f3d42e588a5ea19570db681ec1886b05da8e7a69d858ff04d6698d58a654d810"
+    },
+    {
+      "path": "OlydPort.dll",
+      "bytes": 24576,
+      "sha256": "5f1c56f28a6f5c6a0ca5a0dc1918133bc4404b13fd5aa186fa909ed9e9ce804b"
+    },
+    {
+      "path": "OlydStage.dll",
+      "bytes": 34304,
+      "sha256": "2b81ecb535e5e9f8b96b2dfdf7e871a2a9310ffbf3d59e36fdb8300130ff6194"
+    },
+    {
+      "path": "OlyiBlurringCorrectionSharp64.dll",
+      "bytes": 8704,
+      "sha256": "45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486"
+    },
+    {
+      "path": "OlyiDeviceQueryWrapper.dll",
+      "bytes": 10752,
+      "sha256": "00b273c40283bedefba5b0739954464358fd6607a4e92dbc5b47b0d0f390cae5"
+    },
+    {
+      "path": "OlyiDustReductionSharp64.dll",
+      "bytes": 6144,
+      "sha256": "c9af8f97206c3d41815254f1bff3024a7075eda9005f7fab5ae779626551f4d9"
+    },
+    {
+      "path": "OlyiEFCalculaterAPI.dll",
+      "bytes": 12800,
+      "sha256": "d364bb460d77f70be5982144979f90574d27df81f9e1684ce555e23f871eee5a"
+    },
+    {
+      "path": "OlyiExtendFocusImage64.dll",
+      "bytes": 141312,
+      "sha256": "0cc45691720b295dfd8c4c984935cb0cc5aa539b1dae088a1ddb35878a4c9975"
+    },
+    {
+      "path": "OlyiExtendFocusImageCore64.dll",
+      "bytes": 57344,
+      "sha256": "a919c0da7a2d65aff8de9b554a15146e57ebd9f7b2ba9a583dc2794ca39ae5ab"
+    },
+    {
+      "path": "OlyiExtendFocusImageSGSharp64.dll",
+      "bytes": 30720,
+      "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+    },
+    {
+      "path": "OlyiImageCorrection64.dll",
+      "bytes": 71680,
+      "sha256": "0bfefe29c8b7fec4d217361277eac3bef3345de6291c272252ba1ad1670d2712"
+    },
+    {
+      "path": "OlyiImageDataManager.dll",
+      "bytes": 28160,
+      "sha256": "6d5ad1cf87c56db67719214f56324e186ca8f3da58b3d3570625c7088f28319b"
+    },
+    {
+      "path": "OlyiImageMatching64.dll",
+      "bytes": 60928,
+      "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+    },
+    {
+      "path": "OlyiImageStitching64.dll",
+      "bytes": 144384,
+      "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+    },
+    {
+      "path": "OlyiImageStitchingAPI.dll",
+      "bytes": 22016,
+      "sha256": "0baac6955622d2cfa7155664162820a19ff737217485a4c182a0c74c11527a8c"
+    },
+    {
+      "path": "OlyiREFLibraryWrapper.dll",
+      "bytes": 44032,
+      "sha256": "8fab0a99d5033ebef881d66c6c4cf85d8e071f321cc515900594251e38a20c7e"
+    },
+    {
+      "path": "OlyiShadingCorrectionSharp64.dll",
+      "bytes": 22528,
+      "sha256": "e41374b5e2d19af652253bd1730e22b974c0efcb566e716cdaee46361e0cbb7f"
+    },
+    {
+      "path": "OlyiStitchingParameterIO64.dll",
+      "bytes": 29184,
+      "sha256": "209acf390680898421d466aae86705c8ad2896b91bc15fa0183d6c23fb2930b2"
+    },
+    {
+      "path": "OlymApiDpDefinition64.dll",
+      "bytes": 50688,
+      "sha256": "b878d9a9e9dc3687d11914f50d860e9dab84c750e17afb00057b99f87ea73584"
+    },
+    {
+      "path": "OlymApiWin32CSharp.dll",
+      "bytes": 30208,
+      "sha256": "d5c7894e54d12cf8df2d4796bc079fa2fb7f174a10ad0e06861504da3d36d69d"
+    },
+    {
+      "path": "OlymAsyncSocket.dll",
+      "bytes": 40448,
+      "sha256": "5e90594310b01392a700a30a7763980943317559f0fe7240f8dc5ba1d6d05bd8"
+    },
+    {
+      "path": "OlymInterProcessImaging.dll",
+      "bytes": 20480,
+      "sha256": "47b5dc62dd2e1dca912c02bc9ec3d1bdbfe245b63b07b19ba92f2866e66bd33f"
+    },
+    {
+      "path": "OlymOpenCvWrapperMicroscope64.dll",
+      "bytes": 75776,
+      "sha256": "8426b3bfa1d9a2ca0274b98b652ec915c99042b97b50171b4217b8ead07a4b91"
+    },
+    {
+      "path": "OlymRdkData.dll",
+      "bytes": 20992,
+      "sha256": "f7967dd314463b582c3419e90f1b83268b249d3213a5eb3ad04a5b09b62a398e"
+    },
+    {
+      "path": "OlypInterProcessCommon.dll",
+      "bytes": 60928,
+      "sha256": "649cd7647d8dc4de4cbe619b2a1e0f9e028576a74f70d3ed45c0baf278396803"
+    },
+    {
+      "path": "OlypInterProcessCommunication.dll",
+      "bytes": 16896,
+      "sha256": "c7078c1d780a88773edbbf75fd2fe988615af13f9031ce78c2765a93c4443047"
+    },
+    {
+      "path": "OlypInterProcessCommunication.dll.config",
+      "bytes": 980,
+      "sha256": "fd43e8e92ba3901ec6d5998ddcda337d26c823087431cbae1cc125b0998f63f4"
+    },
+    {
+      "path": "OlyuDomainController.dll",
+      "bytes": 287232,
+      "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a"
+    },
+    {
+      "path": "OlyuDomainManager.dll",
+      "bytes": 129536,
+      "sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00"
+    },
+    {
+      "path": "OlyuImageDisplay.dll",
+      "bytes": 40960,
+      "sha256": "037fb816adaa7f326a23ca3c338c1377cfa06fde1f855b53a1a95ea590b9f065"
+    },
+    {
+      "path": "OlyuMicroScopeUI.dll",
+      "bytes": 1892864,
+      "sha256": "6cf3acf137422712d87ad28082571929211955fb6274f1ac2ac421f925333126"
+    },
+    {
+      "path": "OlyuMicroscope.dll",
+      "bytes": 2549760,
+      "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+    },
+    {
+      "path": "OlyuRdkMicroscopeControl.dll",
+      "bytes": 43520,
+      "sha256": "842a81dbb38f2a1e73528d1c07fbff5a3f5e9351ef7d4b6fbc6a99d9c46dabb3"
+    },
+    {
+      "path": "OlyuUiCalculator.dll",
+      "bytes": 41472,
+      "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+    },
+    {
+      "path": "OlyuUiData.dll",
+      "bytes": 385024,
+      "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+    },
+    {
+      "path": "OlyuUiException.dll",
+      "bytes": 13312,
+      "sha256": "3634e4eb4bf63d858b01d0a7ca99a9086e8fbfeedbdc38892f0b351cf803f19b"
+    },
+    {
+      "path": "OlyuUiResource.dll",
+      "bytes": 439808,
+      "sha256": "bd64393a09287e2292f40482cef443adeadd33734533ed0682273f4672bccc65"
+    },
+    {
+      "path": "OlyuUiUtility.dll",
+      "bytes": 95744,
+      "sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c"
+    },
+    {
+      "path": "TestRunner64.dll",
+      "bytes": 154112,
+      "sha256": "b7ef457f177915ff7e8b4fcadc374f21a3a601e5ae03b5d53e1e6792675656d5"
+    },
+    {
+      "path": "ViewMFC64.dll",
+      "bytes": 53760,
+      "sha256": "b587925a0ba524a671f4c0860e14afaacddb2abebca4ad760c7e23186b2d063a"
+    },
+    {
+      "path": "avcodec-55.dll",
+      "bytes": 691712,
+      "sha256": "65e4e0dec65b6c74036f705eae5b902863c4cbbf5f75086876cc8953f40dd624"
+    },
+    {
+      "path": "avformat-55.dll",
+      "bytes": 233472,
+      "sha256": "2877239880f0c4d47395eba536eddf8aa6bfda4f53b7180a939c5fb9d35b4155"
+    },
+    {
+      "path": "avutil-52.dll",
+      "bytes": 339456,
+      "sha256": "4520908acd4447eb783bb9cb0e45dcac193a66d0f1f46b929ac4208086cac16a"
+    },
+    {
+      "path": "cs-CZ/OlyuUiResource.resources.dll",
+      "bytes": 247808,
+      "sha256": "5b9e1970ceb11960b2fb791b6b29691e335b25a7d54c7f6f8c3fafe519ebd60c"
+    },
+    {
+      "path": "cudart64_65.dll",
+      "bytes": 305152,
+      "sha256": "09c485db14d44ff5e962a777c67f34530c226a512db05cff6ec1ba12f284fd74"
+    },
+    {
+      "path": "cudart64_70.dll",
+      "bytes": 349000,
+      "sha256": "3159348a861c6a87c8f216a822febcb7874006e8aefd12707fc99bf032ef51b7"
+    },
+    {
+      "path": "cudart64_91.dll",
+      "bytes": 374272,
+      "sha256": "452e720ca1352c3c4a1686733524c2e8cb5fc7c0e6d0bb350f77928b14e5b1a3"
+    },
+    {
+      "path": "cufft64_65.dll",
+      "bytes": 39874560,
+      "sha256": "11457b6d4c752e37c8b3734f43fde7146ecfa1698988096b1a458e7a1cf19947"
+    },
+    {
+      "path": "de-DE/OlyuUiResource.resources.dll",
+      "bytes": 251904,
+      "sha256": "8386957b164c818ad5b0ef82bacb98971ca7f2d26b7d645653113f0c4f441a0b"
+    },
+    {
+      "path": "ipREFCMP64.dll",
+      "bytes": 693248,
+      "sha256": "0a9d30d30ca911a9ede842adb976531a3c8e40e6a1c6bfac6308da02e395aefd"
+    },
+    {
+      "path": "ipREFMRG64.dll",
+      "bytes": 566784,
+      "sha256": "6fff3b30569859770441f287d4aac3d84766470c74c55ccd3765135a0e89fb82"
+    },
+    {
+      "path": "ipREFTN64.dll",
+      "bytes": 976384,
+      "sha256": "6c2c95b6f9ca251e1a31d7f60dbb3a98924bf4291759af31ec51212b89a64426"
+    },
+    {
+      "path": "ja-JP/OlyuUiResource.resources.dll",
+      "bytes": 259072,
+      "sha256": "fe24bc4e9ca05df2af57b99dd4c377f6a16369b442d9fc486b0c4428fd312bfc"
+    },
+    {
+      "path": "ko-KR/OlyuUiResource.resources.dll",
+      "bytes": 251904,
+      "sha256": "9cff9df4bc35e24b23f70a40983fe1dd168e9a077e1b98964ecf00c0453e2169"
+    },
+    {
+      "path": "libavformat.dll",
+      "bytes": 1029899,
+      "sha256": "2ad39826dffadac4737ecb3dd34ef2e9969ebe943659854afe877f720274ae34"
+    },
+    {
+      "path": "msvcp120.dll",
+      "bytes": 660128,
+      "sha256": "2abf0aab5a3c5ae9424b64e9d19d9d6d4aebc67814d7e92e4927b9798fef2848"
+    },
+    {
+      "path": "msvcr120.dll",
+      "bytes": 963232,
+      "sha256": "ad32240bb1de55c3f5fcac8789f583a17057f9d14914c538c2a7a5ad346b341c"
+    },
+    {
+      "path": "nppc64_65.dll",
+      "bytes": 179712,
+      "sha256": "24c8f894cb18ea88fa220f3663b8fb2acb7cfb81d3ec0036cd377e2d5fdb5ea2"
+    },
+    {
+      "path": "nppi64_65.dll",
+      "bytes": 64498688,
+      "sha256": "c9d4addbada1bed59c9748670ba4e4def511731e46faf27c18347ce9b7e054bd"
+    },
+    {
+      "path": "opencv_calib3d220.dll",
+      "bytes": 664576,
+      "sha256": "937a7d34e37a1364a0e24de981a3fb62e0c01ff69955e7c156d9752b8b253608"
+    },
+    {
+      "path": "opencv_contrib220.dll",
+      "bytes": 670720,
+      "sha256": "fc0e7daf520266a09c2625bdf74eef6e3fe52ab9072afd5e8d93528f89cfb74f"
+    },
+    {
+      "path": "opencv_core220.dll",
+      "bytes": 3327488,
+      "sha256": "c164a320dd31570f996c6b2eddec7d12e8cfbfbe72d4ced35bf9023fdbb119dd"
+    },
+    {
+      "path": "opencv_core249.dll",
+      "bytes": 2536960,
+      "sha256": "d1a63f372527141685d9b5255f61becf38a242a77223b20e5bc86e1cc8424ff8"
+    },
+    {
+      "path": "opencv_core310.dll",
+      "bytes": 12535808,
+      "sha256": "5875d0476052696c84f39c78254335e2b3caeacf24444412f2c60059ed88434f"
+    },
+    {
+      "path": "opencv_cudaarithm310.dll",
+      "bytes": 30599680,
+      "sha256": "3dcea6f38a8bce5cc02ef92e07f2ee6d34a63994eeec1d9d14dd8af9bdc1e60d"
+    },
+    {
+      "path": "opencv_features2d220.dll",
+      "bytes": 1254912,
+      "sha256": "a482693ab939007dbb26f22375e45208f3d5e97c79c2bd279a06a8d5a7bb3790"
+    },
+    {
+      "path": "opencv_flann220.dll",
+      "bytes": 40960,
+      "sha256": "462724b23d76128545a42901bb2cf4a8c3b3f811ed2f2fb0d17bdbfb8ae6dd8d"
+    },
+    {
+      "path": "opencv_gpu220.dll",
+      "bytes": 212480,
+      "sha256": "0dd83a1c4ca35e87a92f2d9f7f0b23930aa14bdd51076637d15825fb1e5b1357"
+    },
+    {
+      "path": "opencv_highgui220.dll",
+      "bytes": 1111552,
+      "sha256": "c7033f120562fb91d51c5cf1b47a2baf235594ccccd825a19045e8f33497df47"
+    },
+    {
+      "path": "opencv_highgui249.dll",
+      "bytes": 2407936,
+      "sha256": "f38df6c35e4b8bbcb200c6385f14cd12dccf91eb0b7381e7befac797f97937db"
+    },
+    {
+      "path": "opencv_imgcodecs310.dll",
+      "bytes": 2519040,
+      "sha256": "4e3f2b5308ccb342514c9f312ede7e1de8bde7c5ea29478f488c95cdc079178b"
+    },
+    {
+      "path": "opencv_imgproc220.dll",
+      "bytes": 2231296,
+      "sha256": "1eecf1da5ac6aab0635a9f966f51880fe7fdb950dd3e8fb8d54786607b71902f"
+    },
+    {
+      "path": "opencv_imgproc249.dll",
+      "bytes": 2192384,
+      "sha256": "58af5dc0bab1e74b093b1db9b97340d24b334111a5a9a262083744d95b7c26b9"
+    },
+    {
+      "path": "opencv_imgproc310.dll",
+      "bytes": 25076736,
+      "sha256": "c91d9ca987a7ab8b59204f9fd068c2faaeebe6145ec74fae374a436ca4cc57f1"
+    },
+    {
+      "path": "opencv_legacy220.dll",
+      "bytes": 968704,
+      "sha256": "00f96819f6a146e49e56480336d9f072ed22fbf09a8f3909dc3badd2b932f7b3"
+    },
+    {
+      "path": "opencv_ml220.dll",
+      "bytes": 519680,
+      "sha256": "71a9c447c8725412b9b5124b6819413b87a1caed2ced82f213b180515ccb0fcd"
+    },
+    {
+      "path": "opencv_objdetect220.dll",
+      "bytes": 492544,
+      "sha256": "18ae22e411c700d007fab75106518fb84f8205a724ed56cdba5e0d2185abfda5"
+    },
+    {
+      "path": "opencv_ts220.dll",
+      "bytes": 215552,
+      "sha256": "2e170aea902f3b441779e3127996d609ff1d7611504f594712ca8a79afe9c0fa"
+    },
+    {
+      "path": "opencv_video220.dll",
+      "bytes": 358912,
+      "sha256": "ce7d41173974f4eec784c4a57d98865ca1f40250537f59508ddfa08c8c622976"
+    },
+    {
+      "path": "pl-PL/OlyuUiResource.resources.dll",
+      "bytes": 247808,
+      "sha256": "811f65d411540356b4c84800fcf84b3537fc79a7c9baf56fd44835ee34af9bad"
+    },
+    {
+      "path": "zh-CN/OlyuUiResource.resources.dll",
+      "bytes": 239104,
+      "sha256": "4944ed53c83bd5a90f1aed77fff220b02fdcf6392ff01093782a220527398a72"
+    }
+  ]
+}

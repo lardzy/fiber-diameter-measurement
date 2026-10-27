@@ -1,0 +1,129 @@
+Evidence: ev_3ff6a34ad97f156d26d757a57a637582b6b53a8186c374bf042e6748c4124d8d
+Subject SHA256: 8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94
+Bundle: matching-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined8
+FUN_180007d40(longlong param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4,int *param_5
+             ,int *param_6)
+
+{
+  undefined1 auVar1 [16];
+  undefined1 auVar2 [16];
+  undefined1 auVar3 [16];
+  undefined1 auVar4 [16];
+  undefined8 *puVar5;
+  int iVar6;
+  int iVar7;
+  int *piVar8;
+  undefined8 uVar9;
+  int iVar10;
+  int iVar11;
+  uint uVar12;
+  int iVar13;
+  int iVar14;
+  int iVar15;
+  int iVar16;
+  int iVar17;
+  int iVar18;
+  int iVar19;
+  int iVar20;
+  double dVar21;
+  undefined8 local_58;
+  undefined8 local_50;
+  int local_48 [12];
+  
+  iVar7 = (int)param_3;
+  local_58 = param_2;
+  iVar19 = (int)param_2;
+  local_50 = param_3;
+  piVar8 = (int *)&local_50;
+  if (iVar7 <= iVar19) {
+    piVar8 = (int *)&local_58;
+  }
+  iVar17 = *piVar8;
+  iVar16 = (int)((ulonglong)param_3 >> 0x20);
+  iVar15 = (int)((ulonglong)param_2 >> 0x20);
+  puVar5 = &local_50;
+  if (iVar16 <= iVar15) {
+    puVar5 = &local_58;
+  }
+  iVar13 = *(int *)((longlong)puVar5 + 4);
+  uVar12 = iVar7 - iVar19 >> 0x1f;
+  iVar20 = (int)param_4 - ((iVar7 - iVar19 ^ uVar12) - uVar12);
+  uVar12 = iVar16 - iVar15 >> 0x1f;
+  iVar6 = (iVar16 - iVar15 ^ uVar12) - uVar12;
+  iVar18 = (int)((ulonglong)param_4 >> 0x20) - iVar6;
+  if ((iVar20 < 1) || (iVar18 < 1)) {
+    uVar9 = 0x12f;
+  }
+  else {
+    dVar21 = (double)*(int *)(param_1 + 0x50) * *(double *)(param_1 + 0x60);
+    local_48[0] = (int)ROUND(dVar21);
+    auVar1._8_8_ = 0;
+    auVar1._0_8_ = -(ulonglong)(dVar21 < (double)local_48[0]);
+    iVar6 = movmskpd(iVar6,auVar1);
+    local_48[0] = local_48[0] - iVar6;
+    dVar21 = (double)*(int *)(param_1 + 0x54) * *(double *)(param_1 + 0x60);
+    iVar14 = (int)ROUND(dVar21);
+    auVar2._8_8_ = 0;
+    auVar2._0_8_ = -(ulonglong)(dVar21 < (double)iVar14);
+    iVar6 = movmskpd(iVar6,auVar2);
+    iVar14 = iVar14 - iVar6;
+    local_50 = CONCAT44(iVar16,iVar14);
+    dVar21 = (double)iVar20 * *(double *)(param_1 + 0xf8);
+    iVar10 = (int)ROUND(dVar21);
+    auVar3._8_8_ = 0;
+    auVar3._0_8_ = -(ulonglong)(dVar21 < (double)iVar10);
+    iVar6 = movmskpd(iVar6,auVar3);
+    iVar6 = (iVar10 + iVar20) - iVar6;
+    local_58 = CONCAT44(iVar15,iVar6);
+    dVar21 = (double)iVar18 * *(double *)(param_1 + 0xf8);
+    piVar8 = local_48;
+    if (iVar6 <= local_48[0]) {
+      piVar8 = (int *)&local_58;
+    }
+    iVar11 = (int)ROUND(dVar21);
+    iVar6 = *piVar8;
+    auVar4._8_8_ = 0;
+    auVar4._0_8_ = -(ulonglong)(dVar21 < (double)iVar11);
+    iVar10 = movmskpd((int)piVar8,auVar4);
+    iVar10 = (iVar11 + iVar18) - iVar10;
+    local_58 = CONCAT44(iVar15,iVar10);
+    piVar8 = (int *)&local_50;
+    if (iVar10 <= iVar14) {
+      piVar8 = (int *)&local_58;
+    }
+    iVar10 = *piVar8;
+    iVar14 = iVar17;
+    if ((iVar19 < iVar17) && (iVar11 = (iVar17 - iVar6) + iVar20, iVar14 = iVar19, iVar19 <= iVar11)
+       ) {
+      iVar14 = iVar11;
+    }
+    iVar19 = iVar13;
+    if ((iVar15 < iVar13) &&
+       (iVar11 = (iVar18 - iVar10) + iVar13, iVar19 = iVar15, iVar15 <= iVar11)) {
+      iVar19 = iVar11;
+    }
+    *param_5 = iVar14;
+    param_5[1] = iVar19;
+    param_5[2] = iVar6;
+    param_5[3] = iVar10;
+    if ((iVar7 < iVar17) && (iVar20 = (iVar17 - iVar6) + iVar20, iVar17 = iVar7, iVar7 <= iVar20)) {
+      iVar17 = iVar20;
+    }
+    if ((iVar16 < iVar13) && (iVar7 = (iVar18 - iVar10) + iVar13, iVar13 = iVar16, iVar16 <= iVar7))
+    {
+      iVar13 = iVar7;
+    }
+    param_6[3] = iVar10;
+    *param_6 = iVar17;
+    param_6[1] = iVar13;
+    param_6[2] = iVar6;
+    uVar9 = 0;
+  }
+  return uVar9;
+}
+

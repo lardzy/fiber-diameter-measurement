@@ -1,0 +1,86 @@
+EVIDENCE ev_b28983bf89a6f28ecaeb257f439dfe93b1e867e246a0d32a22aa3ce7e959c88f SHA256 0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d
+
+METHOD 0x0600005e Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService _GetHeightImageDataInfo IL_SHA256 a6635619dad822d595baa9b990b9b747fc4897d9d49fddf101a3dd1921398818 DECODE_ISSUE null
+0000: newobj        0x0a00051d Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo..ctor
+0005: stloc.0        
+0006: call          0x0a00001a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_TransferImageInfoDao
+000b: callvirt      0x0a00001b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0010: callvirt      0x0a00052f Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.TransferImageInfoEntity.get_AcquisitionImageType
+0015: ldc.i4.3       
+0016: bne.un        167 
+001b: ldloc.0        
+001c: ldc.i4.s      16 
+001e: callvirt      0x0a00051e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_Bits
+0023: ldloc.0        
+0024: ldc.i4.1       
+0025: callvirt      0x0a00051f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_Channels
+002a: ldloc.0        
+002b: ldarg.1        
+002c: callvirt      0x0a00033f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageWidth
+0031: callvirt      0x0a000520 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_ImageWidth
+0036: ldloc.0        
+0037: ldarg.1        
+0038: callvirt      0x0a000521 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageHeight
+003d: callvirt      0x0a000522 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_ImageHeight
+0042: ldloc.0        
+0043: ldc.r8        0 
+004c: callvirt      0x0a000524 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MaxValue
+0051: ldloc.0        
+0052: ldc.r8        0 
+005b: callvirt      0x0a000525 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MinValue
+0060: ldloc.0        
+0061: ldc.r8        0 
+006a: callvirt      0x0a000526 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MaxScalingValue
+006f: ldloc.0        
+0070: ldc.r8        0 
+0079: callvirt      0x0a000527 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MinScalingValue
+007e: ldloc.0        
+007f: ldarg.1        
+0080: callvirt      0x0a000528 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelX
+0085: callvirt      0x0a000529 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelX
+008a: ldloc.0        
+008b: ldarg.1        
+008c: callvirt      0x0a00052a Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelY
+0091: callvirt      0x0a00052b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelY
+0096: ldloc.0        
+0097: ldarg.1        
+0098: callvirt      0x0a000530 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelZ
+009d: callvirt      0x0a00052c Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelZ
+00a2: br            295 
+00a7: ldloc.0        
+00a8: ldc.i4.s      16 
+00aa: callvirt      0x0a00051e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_Bits
+00af: ldloc.0        
+00b0: ldc.i4.1       
+00b1: callvirt      0x0a00051f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_Channels
+00b6: ldloc.0        
+00b7: ldc.i4.0       
+00b8: callvirt      0x0a000520 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_ImageWidth
+00bd: ldloc.0        
+00be: ldc.i4.0       
+00bf: callvirt      0x0a000522 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_ImageHeight
+00c4: ldloc.0        
+00c5: ldc.r8        0 
+00ce: callvirt      0x0a000524 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MaxValue
+00d3: ldloc.0        
+00d4: ldc.r8        0 
+00dd: callvirt      0x0a000525 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MinValue
+00e2: ldloc.0        
+00e3: ldc.r8        0 
+00ec: callvirt      0x0a000526 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MaxScalingValue
+00f1: ldloc.0        
+00f2: ldc.r8        0 
+00fb: callvirt      0x0a000527 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_MinScalingValue
+0100: ldloc.0        
+0101: ldarg.1        
+0102: callvirt      0x0a000528 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelX
+0107: callvirt      0x0a000529 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelX
+010c: ldloc.0        
+010d: ldarg.1        
+010e: callvirt      0x0a00052a Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.get_ImageDataPerPixelY
+0113: callvirt      0x0a00052b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelY
+0118: ldloc.0        
+0119: ldc.r8        1 
+0122: callvirt      0x0a00052c Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelZ
+0127: ldloc.0        
+0128: ret            

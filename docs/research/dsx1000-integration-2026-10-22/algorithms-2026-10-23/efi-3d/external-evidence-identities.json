@@ -1,0 +1,8 @@
+{
+  "scope": "linked E11 source artifacts; vendor never executed",
+  "files": {
+    "../stabilization/efi-loader-e11-evidence.json.gz": "0db0d3c89e1e8fb0f796c3c4fddbcb5fa8375304f62a8c7e96ff5d940c1dfc34",
+    "../stabilization/efi-loader-e11-evidence.md": "c4ec40703a57d467b72105d40a3ca62172a92d1466cbb56371dfb3180c0faf5b",
+    "../stabilization/efi-loader-e11-findings.md": "96f5d10f93afb4e82a9db4b4e26c280bea21dafbbd44c4eb97b65420d86aa5eb"
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "evidence_id": "ev_ab4c9dfc8c4d80c6181d149812c55fbcc068492e556cef0810e0a965394752b4",
+  "subject": {
+    "name": "DSX-BSW",
+    "digest": {
+      "sha256": "16526401d942169f9b50d452e5849dc33f3e45e2e93b539be248277d17163813"
+    },
+    "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW",
+    "format": "directory",
+    "architecture": null
+  },
+  "provider": {
+    "id": "rea-analysis-view",
+    "name": "REA analysis view projection",
+    "version": "1"
+  },
+  "analysis_profile": null,
+  "predicate_type": "rea.analysis-view",
+  "operation": "inspect_analysis_view",
+  "parameters": {
+    "parent_evidence_id": "ev_8377653c45d854ad75f894205a27039426cdb9a9c67c7352158f05635bef5d01",
+    "view": {
+      "kind": "summary"
+    }
+  },
+  "raw_result": null,
+  "normalized_result": {
+    "kind": "summary",
+    "view": {
+      "kind": "summary"
+    },
+    "parent_evidence_id": "ev_8377653c45d854ad75f894205a27039426cdb9a9c67c7352158f05635bef5d01",
+    "parent_operation": "inspect_desktop_application",
+    "parent_digest": "8377653c45d854ad75f894205a27039426cdb9a9c67c7352158f05635bef5d01",
+    "view_digest": "3c5fcf1aa6888a8d293ee7f9e9a03c350e5cbad6b0c82b19101382ce98c07b40",
+    "artifact": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW",
+      "sha256": "16526401d942169f9b50d452e5849dc33f3e45e2e93b539be248277d17163813"
+    },
+    "coverage": {
+      "status": "complete-within-view",
+      "examined": 558,
+      "total": 558,
+      "next_offset": null,
+      "exhausted": true
+    },
+    "limitations": [
+      "Runtime candidates and component markers do not establish loaded code, execution, or build correspondence.",
+      "The directory SHA-256 commits only to retained paths, omission kinds, available filesystem metadata and read-range digests, not to every file's contents. Unread bytes are unknown.",
+      "Special-entry payloads are not read. Their paths and kinds are retained; other special-entry metadata is unavailable in this report.",
+      "Child symlinks are not followed. Executable section-embedded PCKs without a trailer and encrypted contents remain unexamined.",
+      "This is a sequence of stable entry observations, not an atomic snapshot of the entire directory.",
+      "Unity reference decoding stops after a witness in each Data/Managed directory; other assemblies' references are unexamined. Header facts remain per-file."
+    ],
+    "unknowns": [
+      "Runtime behavior and unread bytes remain unknown."
+    ],
+    "summary": {
+      "root": {
+        "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW",
+        "canonical_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW",
+        "namespace_id": "dsr_3f713166868db23b870b65736dc5c739234c6eb11df2e02765ff399c1e8464c1",
+        "identity": {
+          "device": "16777237",
+          "inode": "3022491"
+        },
+        "snapshot_sha256": "16526401d942169f9b50d452e5849dc33f3e45e2e93b539be248277d17163813",
+        "identity_scope": "examined-metadata-and-read-ranges"
+      },
+      "source_coverage": {
+        "status": "complete-within-scan",
+        "entries_examined": 558,
+        "files_probed": 527,
+        "bytes_read": 130055,
+        "symlinks_not_followed": 0,
+        "special_entries_omitted": 0,
+        "limits": {
+          "max_entries": 20000,
+          "max_probe_bytes": 8388608
+        }
+      },
+      "available_counts": {
+        "files": 558,
+        "omissions": 0,
+        "candidates": 1,
+        "components": 0,
+        "next_probes": 235
+      },
+      "probe_issues": {
+        "file_count": 0,
+        "issue_count": 0,
+        "preview": [],
+        "preview_truncated": false
+      },
+      "candidates": [
+        {
+          "candidate_id": "dsc_26ceae46477a330e41744c653a23a98b7913e22bf0db4c58c1f2b8f75ba9e8d4",
+          "family": "dotnet",
+          "confidence": "derived",
+          "rationale": "PE optional headers declare nonempty CLI directories; CLR execution and metadata validity remain unverified.",
+          "basis_file_count": 235,
+          "basis_path_preview": [
+            "DSX-BSW-CTRL/OlypInterProcessCommon.dll",
+            "DSX-BSW-CTRL/Common/ImageProcessing/OlymInterProcessImaging.dll"
+          ]
+        }
+      ],
+      "components": [],
+      "next_probe_groups": [
+        {
+          "operation": "inspect_managed_artifact",
+          "count": 235,
+          "example": {
+            "probe_id": "dsp_e3480c24ecaf07af23e93403e4fd40838547f946dc9f4073fcbbcc439b07ff4e",
+            "operation": "inspect_managed_artifact",
+            "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/Common/ImageProcessing/OlyAntiHalation.exe",
+            "file_id": "dsf_6884581366bc7131ae78bfc7762f54a929d0797961917d0bc33825d5aa4dcffb",
+            "rationale": "Inspect the declared managed metadata and references.",
+            "confidence": "inferred"
+          }
+        }
+      ]
+    }
+  },
+  "confidence": "derived",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "Runtime candidates and component markers do not establish loaded code, execution, or build correspondence.",
+    "The directory SHA-256 commits only to retained paths, omission kinds, available filesystem metadata and read-range digests, not to every file's contents. Unread bytes are unknown.",
+    "Special-entry payloads are not read. Their paths and kinds are retained; other special-entry metadata is unavailable in this report.",
+    "Child symlinks are not followed. Executable section-embedded PCKs without a trailer and encrypted contents remain unexamined.",
+    "This is a sequence of stable entry observations, not an atomic snapshot of the entire directory.",
+    "Unity reference decoding stops after a witness in each Data/Managed directory; other assemblies' references are unexamined. Header facts remain per-file."
+  ],
+  "relationship_coverage": null,
+  "locations": [
+    {
+      "kind": "artifact-path",
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW"
+    }
+  ],
+  "evidence_links": [
+    "ev_8377653c45d854ad75f894205a27039426cdb9a9c67c7352158f05635bef5d01"
+  ]
+}

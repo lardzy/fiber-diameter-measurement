@@ -1,0 +1,2288 @@
+{
+  "purpose": "Independent synthetic reconstruction; no vendor/device execution",
+  "seed": 20261023,
+  "settings": {
+    "divider": 8,
+    "use_lpf": true,
+    "cutoff": 0.5,
+    "subpixel": true,
+    "reliability_threshold": 0.35,
+    "stable_ratio": false
+  },
+  "versions": {
+    "python": "3.13.12",
+    "numpy": "2.4.3",
+    "scipy": "1.18.1",
+    "opencv": "4.13.0",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "source_sha256": {
+    "nmv_reference.py": "bdb066e1bf5dffda7fd6be4d5186ac34e80a535765f22094b259dd41228dcc14",
+    "run_validation.py": "683301054b5c7efc21fe260df2ce697515fb0b3d52e0ecd59f40db6931a1f6c9",
+    "fft-sizes.json": "e653f2d27bfe1a6847c3a02be77b024f6c4536c5dcf2f70b534663a86d366fe6"
+  },
+  "fixtures_sha256": "c7933f3ffcd0ad8f02c265c44ca18b7e729385b768f6eefc27af05031c17c6c7",
+  "cases": [
+    {
+      "name": "identity",
+      "known_synthetic_translation": [
+        0,
+        0
+      ],
+      "note": "same pixels; finite-ratio caveat",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          -2.8156279086033464e-07,
+          0.0
+        ],
+        "managed_shift": [
+          2.8156279086033464e-07,
+          -0.0
+        ],
+        "reliability": 0.975,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1248.0,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.00000003519535,
+            32.0
+          ],
+          "initial": [
+            -3.519534790706992e-08,
+            0.0,
+            1.0
+          ],
+          "fitted": [
+            -3.519534790706992e-08,
+            0.0,
+            1.0
+          ],
+          "solver_code": 4,
+          "nfev": 4,
+          "residual_finite": false,
+          "solver_message": "The cosine of the angle between func(x) and any column of the\n  Jacobian is at most 0.000000 in absolute value"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          -1.8059358808386605e-07,
+          -3.3638798413448967e-09
+        ],
+        "managed_shift": [
+          1.8059358808386605e-07,
+          3.3638798413448967e-09
+        ],
+        "reliability": 0.975,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1248.0,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.0000000225742,
+            32.000000000420485
+          ],
+          "initial": [
+            -3.519534790706992e-08,
+            0.0,
+            1.0
+          ],
+          "fitted": [
+            -2.2574200900448223e-08,
+            -4.2048792145032886e-10,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 5,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          0.0,
+          0.0
+        ],
+        "response": 1.0,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        2.8156279086033464e-07,
+        0.0
+      ]
+    },
+    {
+      "name": "integer_shift",
+      "known_synthetic_translation": [
+        5,
+        -3
+      ],
+      "note": "translation positive",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          4.765069682383569,
+          -2.6456148088397526
+        ],
+        "managed_shift": [
+          -4.765069682383569,
+          2.6456148088397526
+        ],
+        "reliability": 0.7467508316040039,
+        "integer_peak": [
+          39,
+          32
+        ],
+        "peak_value": 955.841064453125,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.404366289702054,
+            32.33070185110497
+          ],
+          "initial": [
+            -0.3785867326336786,
+            -0.29617621945388906,
+            1.0
+          ],
+          "fitted": [
+            -0.4043662897020534,
+            -0.33070185110496925,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          -4.766,
+          2.645
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          4.76506971558598,
+          -2.6456147378622745
+        ],
+        "managed_shift": [
+          -4.76506971558598,
+          2.6456147378622745
+        ],
+        "reliability": 0.7467508316040039,
+        "integer_peak": [
+          39,
+          32
+        ],
+        "peak_value": 955.841064453125,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.40436628555175,
+            32.330701842232784
+          ],
+          "initial": [
+            -0.3785867326336786,
+            -0.29617621945388906,
+            1.0
+          ],
+          "fitted": [
+            -0.40436628555175463,
+            -0.3307018422327808,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          0.6566738549385462,
+          -0.5284850347879413
+        ],
+        "response": 0.9337847750633955,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        0.23493031761643124,
+        0.35438519116024736
+      ]
+    },
+    {
+      "name": "fractional_shift",
+      "known_synthetic_translation": [
+        1.5,
+        2.5
+      ],
+      "note": "subpixel positive",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          1.3115038817043114,
+          2.2598569814651626
+        ],
+        "managed_shift": [
+          -1.3115038817043114,
+          -2.2598569814651626
+        ],
+        "reliability": 0.8206310272216797,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1050.40771484375,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.83606201478696,
+            31.717517877316855
+          ],
+          "initial": [
+            0.13540330268158993,
+            0.2746865294599341,
+            1.0
+          ],
+          "fitted": [
+            0.1639379852130361,
+            0.28248212268314526,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          -1.312,
+          -2.26
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          1.3115038916481012,
+          2.2598570679763554
+        ],
+        "managed_shift": [
+          -1.3115038916481012,
+          -2.2598570679763554
+        ],
+        "reliability": 0.8206310272216797,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1050.40771484375,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.83606201354399,
+            31.717517866502956
+          ],
+          "initial": [
+            0.13540330268158993,
+            0.2746865294599341,
+            1.0
+          ],
+          "fitted": [
+            0.16393798645601523,
+            0.28248213349704526,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          0.15439873298612383,
+          0.3009493499487377
+        ],
+        "response": 0.9996171477017924,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        0.18849611829568858,
+        0.24014301853483744
+      ]
+    },
+    {
+      "name": "brightness_gain",
+      "known_synthetic_translation": [
+        5,
+        -3
+      ],
+      "note": "gain and offset",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          4.757056272199577,
+          -2.6475711854632777
+        ],
+        "managed_shift": [
+          -4.757056272199577,
+          2.6475711854632777
+        ],
+        "reliability": 0.7465364933013916,
+        "integer_peak": [
+          39,
+          32
+        ],
+        "peak_value": 955.5667114257812,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.40536796597505,
+            32.33094639818291
+          ],
+          "initial": [
+            -0.38016804075261634,
+            -0.29657694329271744,
+            1.0
+          ],
+          "fitted": [
+            -0.4053679659750535,
+            -0.3309463981829074,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          -4.758,
+          2.647
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          4.757056102311367,
+          -2.647571236018109
+        ],
+        "managed_shift": [
+          -4.757056102311367,
+          2.647571236018109
+        ],
+        "reliability": 0.7465364933013916,
+        "integer_peak": [
+          39,
+          32
+        ],
+        "peak_value": 955.5667114257812,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.40536798721108,
+            32.330946404502264
+          ],
+          "initial": [
+            -0.38016804075261634,
+            -0.29657694329271744,
+            1.0
+          ],
+          "fitted": [
+            -0.4053679872110762,
+            -0.33094640450226176,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          0.6573276567760828,
+          -0.5286359486255421
+        ],
+        "response": 0.9334016162902117,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        0.24294372780042295,
+        0.35242881453672226
+      ]
+    },
+    {
+      "name": "threshold_large_16",
+      "known_synthetic_translation": [
+        16,
+        0
+      ],
+      "note": "managed >15 reset",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          15.535791943071217,
+          0.009782283014260429
+        ],
+        "managed_shift": [
+          -15.535791943071217,
+          -0.009782283014260429
+        ],
+        "reliability": 0.907289695739746,
+        "integer_peak": [
+          38,
+          32
+        ],
+        "peak_value": 1161.330810546875,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            38.0580260071161,
+            31.998777214623217
+          ],
+          "initial": [
+            -0.04145747787650203,
+            0.0030970924702099886,
+            1.0
+          ],
+          "fitted": [
+            -0.058026007116099634,
+            0.0012227853767824497,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 21,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": true,
+        "reason": "blur_shift_gt15",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          15.535791626067862,
+          0.009790095385852737
+        ],
+        "managed_shift": [
+          -15.535791626067862,
+          -0.009790095385852737
+        ],
+        "reliability": 0.907289695739746,
+        "integer_peak": [
+          38,
+          32
+        ],
+        "peak_value": 1161.330810546875,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            38.05802604674152,
+            31.99877623807677
+          ],
+          "initial": [
+            -0.04145747787650203,
+            0.0030970924702099886,
+            1.0
+          ],
+          "fitted": [
+            -0.05802604674152037,
+            0.001223761923231741,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 21,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          2.01400095963065,
+          0.05772182563095285
+        ],
+        "response": 0.9329023066908121,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        0.46420805692878275,
+        0.009782283014260429
+      ]
+    },
+    {
+      "name": "threshold_large_24",
+      "known_synthetic_translation": [
+        24,
+        3
+      ],
+      "note": "managed >20 reset",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          23.948395988565608,
+          3.192783611222467
+        ],
+        "managed_shift": [
+          -23.948395988565608,
+          -3.192783611222467
+        ],
+        "reliability": 0.7417761802673339,
+        "integer_peak": [
+          37,
+          32
+        ],
+        "peak_value": 949.4735107421875,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            37.0064505014293,
+            31.60090204859719
+          ],
+          "initial": [
+            -0.018460435455830638,
+            0.3454581128672025,
+            1.0
+          ],
+          "fitted": [
+            -0.006450501429301704,
+            0.3990979514028093,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 33,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": true,
+        "reason": "stage_shift_gt20",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          23.94839708660504,
+          3.192783534383551
+        ],
+        "managed_shift": [
+          -23.94839708660504,
+          -3.192783534383551
+        ],
+        "reliability": 0.7417761802673339,
+        "integer_peak": [
+          37,
+          32
+        ],
+        "peak_value": 949.4735107421875,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            37.00645036417437,
+            31.600902058202056
+          ],
+          "initial": [
+            -0.018460435455830638,
+            0.3454581128672025,
+            1.0
+          ],
+          "fitted": [
+            -0.006450364174369967,
+            0.39909794179794467,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 33,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          3.014260071038862,
+          0.3453602090916519
+        ],
+        "response": 0.8941151274368166,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        0.051604011434392305,
+        0.1927836112224668
+      ]
+    },
+    {
+      "name": "black_zero",
+      "known_synthetic_translation": null,
+      "note": "no texture; zero correlation",
+      "result": {
+        "status": -4,
+        "native_shift": [
+          0.0,
+          0.0
+        ],
+        "managed_shift": [
+          -0.0,
+          -0.0
+        ],
+        "reliability": 0.0,
+        "integer_peak": [
+          0,
+          0
+        ],
+        "peak_value": 0.0,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": -4,
+          "peak": [
+            0.0,
+            0.0
+          ],
+          "reason": "peak_border"
+        }
+      },
+      "gate": {
+        "reset": true,
+        "reason": "reliability_le_threshold",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": -4,
+        "native_shift": [
+          0.0,
+          0.0
+        ],
+        "managed_shift": [
+          -0.0,
+          -0.0
+        ],
+        "reliability": 0.0,
+        "integer_peak": [
+          0,
+          0
+        ],
+        "peak_value": 0.0,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": -4,
+          "peak": [
+            0.0,
+            0.0
+          ],
+          "reason": "peak_border"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          40.0,
+          32.0
+        ],
+        "response": 0.0,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": null
+    },
+    {
+      "name": "flat_nonzero",
+      "known_synthetic_translation": null,
+      "note": "window-induced confidence; no recoverable motion",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          -5.631259227811825e-07,
+          0.0
+        ],
+        "managed_shift": [
+          5.631259227811825e-07,
+          -0.0
+        ],
+        "reliability": 0.9749997138977051,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1247.9996337890625,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.00000007039074,
+            32.0
+          ],
+          "initial": [
+            -7.03907404078186e-08,
+            0.0,
+            1.0
+          ],
+          "fitted": [
+            -7.03907404078186e-08,
+            0.0,
+            1.0
+          ],
+          "solver_code": 4,
+          "nfev": 4,
+          "residual_finite": false,
+          "solver_message": "The cosine of the angle between func(x) and any column of the\n  Jacobian is at most 0.000000 in absolute value"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          -3.204281711077783e-07,
+          -9.522068467049394e-09
+        ],
+        "managed_shift": [
+          3.204281711077783e-07,
+          9.522068467049394e-09
+        ],
+        "reliability": 0.9749997138977051,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1247.9996337890625,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.00000004005352,
+            32.00000000119026
+          ],
+          "initial": [
+            -7.03907404078186e-08,
+            0.0,
+            1.0
+          ],
+          "fitted": [
+            -4.0053524844198474e-08,
+            -1.1902594481089866e-09,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 5,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          39.0,
+          31.0
+        ],
+        "response": 0.0017578125,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": null
+    },
+    {
+      "name": "periodic_hidden_32",
+      "known_synthetic_translation": [
+        32,
+        0
+      ],
+      "note": "period shift indistinguishable from identity",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          -2.8156279086033464e-07,
+          0.0
+        ],
+        "managed_shift": [
+          2.8156279086033464e-07,
+          -0.0
+        ],
+        "reliability": 0.975,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1248.0,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.00000003519535,
+            32.0
+          ],
+          "initial": [
+            -3.519534790706992e-08,
+            0.0,
+            1.0
+          ],
+          "fitted": [
+            -3.519534790706992e-08,
+            0.0,
+            1.0
+          ],
+          "solver_code": 4,
+          "nfev": 4,
+          "residual_finite": false,
+          "solver_message": "The cosine of the angle between func(x) and any column of the\n  Jacobian is at most 0.000000 in absolute value"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          -1.8059358808386605e-07,
+          -3.3638798413448967e-09
+        ],
+        "managed_shift": [
+          1.8059358808386605e-07,
+          3.3638798413448967e-09
+        ],
+        "reliability": 0.975,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1248.0,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.0000000225742,
+            32.000000000420485
+          ],
+          "initial": [
+            -3.519534790706992e-08,
+            0.0,
+            1.0
+          ],
+          "fitted": [
+            -2.2574200900448223e-08,
+            -4.2048792145032886e-10,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 5,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          5.235896338717794e-08,
+          33.19609399789719
+        ],
+        "response": 0.0017787262098863722,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        32.00000028156279,
+        0.0
+      ]
+    },
+    {
+      "name": "unrelated_frames",
+      "known_synthetic_translation": null,
+      "note": "wrong frame / unrelated texture",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          0.0,
+          -8.0
+        ],
+        "managed_shift": [
+          -0.0,
+          8.0
+        ],
+        "reliability": 0.1586536645889282,
+        "integer_peak": [
+          41,
+          32
+        ],
+        "peak_value": 203.07669067382812,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.0,
+            33.0
+          ],
+          "initial": [
+            0.36315170906045835,
+            -0.41483143594027416,
+            1.0
+          ],
+          "fitted": [
+            3.2523499348126244,
+            -3.233932805022906,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 62,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": true,
+        "reason": "reliability_le_threshold",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          0.0,
+          -8.0
+        ],
+        "managed_shift": [
+          -0.0,
+          8.0
+        ],
+        "reliability": 0.1586536645889282,
+        "integer_peak": [
+          41,
+          32
+        ],
+        "peak_value": 203.07669067382812,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.0,
+            33.0
+          ],
+          "initial": [
+            0.36315170906045835,
+            -0.41483143594027416,
+            1.0
+          ],
+          "fitted": [
+            3.2523499331412533,
+            -3.2339328064968145,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 62,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          -10.262417000520252,
+          28.536536331067726
+        ],
+        "response": 0.02826590146869421,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": null
+    },
+    {
+      "name": "rotation_2deg",
+      "known_synthetic_translation": null,
+      "note": "translation model cannot represent rotation",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          -0.251172040959716,
+          -0.4802263308642978
+        ],
+        "managed_shift": [
+          0.251172040959716,
+          0.4802263308642978
+        ],
+        "reliability": 0.714501428604126,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 914.5618286132812,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.031396505119965,
+            32.06002829135804
+          ],
+          "initial": [
+            -0.022569484483667,
+            -0.0592339009491823,
+            1.0
+          ],
+          "fitted": [
+            -0.031396505119963815,
+            -0.060028291358034454,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          0.251,
+          0.48
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          -0.251171988493752,
+          -0.48022637895070375
+        ],
+        "managed_shift": [
+          0.251171988493752,
+          0.48022637895070375
+        ],
+        "reliability": 0.714501428604126,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 914.5618286132812,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            40.03139649856172,
+            32.06002829736884
+          ],
+          "initial": [
+            -0.022569484483667,
+            -0.0592339009491823,
+            1.0
+          ],
+          "fitted": [
+            -0.03139649856171931,
+            -0.06002829736883756,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          -0.04437773939411471,
+          -0.11218736976758237
+        ],
+        "response": 0.8857051962055266,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": null
+    },
+    {
+      "name": "exposure_blur",
+      "known_synthetic_translation": [
+        5,
+        -3
+      ],
+      "note": "shift estimate does not deblur pixels",
+      "result": {
+        "status": 0,
+        "native_shift": [
+          4.7021665200519465,
+          -2.5205330831207107
+        ],
+        "managed_shift": [
+          -4.7021665200519465,
+          2.5205330831207107
+        ],
+        "reliability": 0.7791473865509033,
+        "integer_peak": [
+          39,
+          32
+        ],
+        "peak_value": 997.3086547851562,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.41222918499351,
+            32.31506663539009
+          ],
+          "initial": [
+            -0.36999361896658706,
+            -0.28132922515994835,
+            1.0
+          ],
+          "fitted": [
+            -0.41222918499350547,
+            -0.3150666353900862,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          -4.703,
+          2.52
+        ]
+      },
+      "stable_ratio_improvement_result": {
+        "status": 0,
+        "native_shift": [
+          4.702166450868219,
+          -2.5205331045796697
+        ],
+        "managed_shift": [
+          -4.702166450868219,
+          2.5205331045796697
+        ],
+        "reliability": 0.7791473865509033,
+        "integer_peak": [
+          39,
+          32
+        ],
+        "peak_value": 997.3086547851562,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.41222919364147,
+            32.31506663807246
+          ],
+          "initial": [
+            -0.36999361896658706,
+            -0.28132922515994835,
+            1.0
+          ],
+          "fitted": [
+            -0.41222919364147115,
+            -0.3150666380724613,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 25,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "opencv_builtin_comparison_only": {
+        "shift_downsampled": [
+          0.7473838793369154,
+          -0.5073011679136243
+        ],
+        "response": 0.9027501743286848,
+        "not_the_vendor_metric": true
+      },
+      "absolute_xy_error": [
+        0.29783347994805354,
+        0.47946691687928933
+      ]
+    }
+  ],
+  "gate_boundaries": [
+    {
+      "x": 15,
+      "reliability": 0.36,
+      "result": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          15.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "x": 15.001,
+      "reliability": 0.36,
+      "result": {
+        "reset": true,
+        "reason": "blur_shift_gt15",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "x": 20,
+      "reliability": 0.36,
+      "result": {
+        "reset": true,
+        "reason": "blur_shift_gt15",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "x": 20.001,
+      "reliability": 0.36,
+      "result": {
+        "reset": true,
+        "reason": "stage_shift_gt20",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "x": 0.0012,
+      "reliability": 0.35,
+      "result": {
+        "reset": true,
+        "reason": "reliability_le_threshold",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "x": -0.0012,
+      "reliability": 0.36,
+      "result": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          -0.002,
+          0.0
+        ]
+      }
+    }
+  ],
+  "state_timeline": [
+    {
+      "frame": 0,
+      "truth_from_first": [
+        0,
+        0
+      ],
+      "state": {
+        "estimate": null,
+        "gate": {
+          "reset": true,
+          "reason": "new_base",
+          "shift": [
+            0.0,
+            0.0
+          ]
+        },
+        "accumulated_pixels": [
+          0.0,
+          0.0
+        ],
+        "display_offset": [
+          0.0,
+          0.0
+        ],
+        "pixels_modified": false
+      }
+    },
+    {
+      "frame": 1,
+      "truth_from_first": [
+        6,
+        0
+      ],
+      "state": {
+        "estimate": {
+          "status": 0,
+          "native_shift": [
+            5.7577364821832475,
+            -0.07620180694760847
+          ],
+          "managed_shift": [
+            -5.7577364821832475,
+            0.07620180694760847
+          ],
+          "reliability": 0.8789355278015136,
+          "integer_peak": [
+            39,
+            32
+          ],
+          "peak_value": 1125.0374755859375,
+          "downsample_shape": [
+            64,
+            80
+          ],
+          "fft_shape": [
+            64,
+            80
+          ],
+          "fit": {
+            "status": 0,
+            "peak": [
+              39.280282939727094,
+              32.00952522586845
+            ],
+            "initial": [
+              -0.2590734875430708,
+              -0.0005885823609070047,
+              1.0
+            ],
+            "fitted": [
+              -0.2802829397270942,
+              -0.009525225868451285,
+              1.0
+            ],
+            "solver_code": 1,
+            "nfev": 21,
+            "residual_finite": true,
+            "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+          }
+        },
+        "gate": {
+          "reset": false,
+          "reason": "accepted",
+          "shift": [
+            -5.758,
+            0.076
+          ]
+        },
+        "accumulated_pixels": [
+          -5.758,
+          0.076
+        ],
+        "display_offset": [
+          -2.879,
+          0.038
+        ],
+        "pixels_modified": false
+      }
+    },
+    {
+      "frame": 2,
+      "truth_from_first": [
+        12,
+        0
+      ],
+      "state": {
+        "estimate": {
+          "status": 0,
+          "native_shift": [
+            5.785467135488602,
+            0.035001027056011935
+          ],
+          "managed_shift": [
+            -5.785467135488602,
+            -0.035001027056011935
+          ],
+          "reliability": 0.8860801696777344,
+          "integer_peak": [
+            39,
+            32
+          ],
+          "peak_value": 1134.1826171875,
+          "downsample_shape": [
+            64,
+            80
+          ],
+          "fft_shape": [
+            64,
+            80
+          ],
+          "fit": {
+            "status": 0,
+            "peak": [
+              39.276816608063925,
+              31.995624871618
+            ],
+            "initial": [
+              -0.2546753448755923,
+              0.014807089449676946,
+              1.0
+            ],
+            "fitted": [
+              -0.27681660806392777,
+              0.0043751283820007165,
+              1.0
+            ],
+            "solver_code": 1,
+            "nfev": 21,
+            "residual_finite": true,
+            "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+          }
+        },
+        "gate": {
+          "reset": false,
+          "reason": "accepted",
+          "shift": [
+            -5.786,
+            -0.036
+          ]
+        },
+        "accumulated_pixels": [
+          -11.544,
+          0.04
+        ],
+        "display_offset": [
+          -5.772,
+          0.02
+        ],
+        "pixels_modified": false
+      }
+    },
+    {
+      "frame": 3,
+      "truth_from_first": [
+        18,
+        0
+      ],
+      "state": {
+        "estimate": {
+          "status": 0,
+          "native_shift": [
+            6.00704337220003,
+            0.21973269989555888
+          ],
+          "managed_shift": [
+            -6.00704337220003,
+            -0.21973269989555888
+          ],
+          "reliability": 0.8871708869934082,
+          "integer_peak": [
+            39,
+            32
+          ],
+          "peak_value": 1135.5787353515625,
+          "downsample_shape": [
+            64,
+            80
+          ],
+          "fft_shape": [
+            64,
+            80
+          ],
+          "fit": {
+            "status": 0,
+            "peak": [
+              39.249119578474996,
+              31.972533412513055
+            ],
+            "initial": [
+              -0.24041212150769828,
+              0.030738961551304757,
+              1.0
+            ],
+            "fitted": [
+              -0.2491195784749984,
+              0.02746658748694613,
+              1.0
+            ],
+            "solver_code": 1,
+            "nfev": 21,
+            "residual_finite": true,
+            "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+          }
+        },
+        "gate": {
+          "reset": false,
+          "reason": "accepted",
+          "shift": [
+            -6.008,
+            -0.22
+          ]
+        },
+        "accumulated_pixels": [
+          -17.552,
+          -0.18
+        ],
+        "display_offset": [
+          -8.776,
+          -0.09
+        ],
+        "pixels_modified": false
+      }
+    },
+    {
+      "frame": 4,
+      "truth_from_first": [
+        24,
+        0
+      ],
+      "state": {
+        "estimate": {
+          "status": 0,
+          "native_shift": [
+            5.939584212873569,
+            0.0536763334555701
+          ],
+          "managed_shift": [
+            -5.939584212873569,
+            -0.0536763334555701
+          ],
+          "reliability": 0.8905346870422364,
+          "integer_peak": [
+            39,
+            32
+          ],
+          "peak_value": 1139.8843994140625,
+          "downsample_shape": [
+            64,
+            80
+          ],
+          "fft_shape": [
+            64,
+            80
+          ],
+          "fit": {
+            "status": 0,
+            "peak": [
+              39.257551973390804,
+              31.993290458318054
+            ],
+            "initial": [
+              -0.24482976239103624,
+              0.009711712294988977,
+              1.0
+            ],
+            "fitted": [
+              -0.2575519733908011,
+              0.006709541681947794,
+              1.0
+            ],
+            "solver_code": 1,
+            "nfev": 21,
+            "residual_finite": true,
+            "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+          }
+        },
+        "gate": {
+          "reset": false,
+          "reason": "accepted",
+          "shift": [
+            -5.94,
+            -0.054
+          ]
+        },
+        "accumulated_pixels": [
+          0.0,
+          -0.23399999999999999
+        ],
+        "display_offset": [
+          0.0,
+          -0.11699999999999999
+        ],
+        "pixels_modified": false
+      }
+    },
+    {
+      "frame": 5,
+      "truth_from_first": [
+        30,
+        0
+      ],
+      "state": {
+        "estimate": {
+          "status": 0,
+          "native_shift": [
+            5.725579846234439,
+            -0.1913355327709496
+          ],
+          "managed_shift": [
+            -5.725579846234439,
+            0.1913355327709496
+          ],
+          "reliability": 0.8798589706420898,
+          "integer_peak": [
+            39,
+            32
+          ],
+          "peak_value": 1126.219482421875,
+          "downsample_shape": [
+            64,
+            80
+          ],
+          "fft_shape": [
+            64,
+            80
+          ],
+          "fit": {
+            "status": 0,
+            "peak": [
+              39.284302519220695,
+              32.02391694159637
+            ],
+            "initial": [
+              -0.26036991848207075,
+              -0.011358076092710894,
+              1.0
+            ],
+            "fitted": [
+              -0.28430251922069694,
+              -0.02391694159637019,
+              1.0
+            ],
+            "solver_code": 1,
+            "nfev": 21,
+            "residual_finite": true,
+            "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+          }
+        },
+        "gate": {
+          "reset": false,
+          "reason": "accepted",
+          "shift": [
+            -5.726,
+            0.191
+          ]
+        },
+        "accumulated_pixels": [
+          -5.726,
+          -0.04299999999999998
+        ],
+        "display_offset": [
+          -2.863,
+          -0.02149999999999999
+        ],
+        "pixels_modified": false
+      }
+    },
+    {
+      "frame": 6,
+      "truth_from_first": [
+        36,
+        0
+      ],
+      "state": {
+        "estimate": {
+          "status": 0,
+          "native_shift": [
+            5.769681134158191,
+            0.026618661714422842
+          ],
+          "managed_shift": [
+            -5.769681134158191,
+            -0.026618661714422842
+          ],
+          "reliability": 0.8892217636108398,
+          "integer_peak": [
+            39,
+            32
+          ],
+          "peak_value": 1138.203857421875,
+          "downsample_shape": [
+            64,
+            80
+          ],
+          "fft_shape": [
+            64,
+            80
+          ],
+          "fit": {
+            "status": 0,
+            "peak": [
+              39.278789858230226,
+              31.996672667285697
+            ],
+            "initial": [
+              -0.2524989950620837,
+              0.012928841033633193,
+              1.0
+            ],
+            "fitted": [
+              -0.2787898582302278,
+              0.003327332714303425,
+              1.0
+            ],
+            "solver_code": 1,
+            "nfev": 21,
+            "residual_finite": true,
+            "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+          }
+        },
+        "gate": {
+          "reset": false,
+          "reason": "accepted",
+          "shift": [
+            -5.77,
+            -0.027
+          ]
+        },
+        "accumulated_pixels": [
+          -11.495999999999999,
+          -0.06999999999999998
+        ],
+        "display_offset": [
+          -5.747999999999999,
+          -0.03499999999999999
+        ],
+        "pixels_modified": false
+      }
+    }
+  ],
+  "explicit_base_reset": {
+    "estimate": null,
+    "gate": {
+      "reset": true,
+      "reason": "new_base",
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    "accumulated_pixels": [
+      0.0,
+      0.0
+    ],
+    "display_offset": [
+      0.0,
+      0.0
+    ],
+    "pixels_modified": false
+  },
+  "size_change_reset": {
+    "estimate": null,
+    "gate": {
+      "reset": true,
+      "reason": "new_base",
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    "accumulated_pixels": [
+      0.0,
+      0.0
+    ],
+    "display_offset": [
+      0.0,
+      0.0
+    ],
+    "pixels_modified": false
+  },
+  "rejected_reference_sequence": [
+    {
+      "estimate": null,
+      "gate": {
+        "reset": true,
+        "reason": "new_base",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "accumulated_pixels": [
+        0.0,
+        0.0
+      ],
+      "display_offset": [
+        0.0,
+        0.0
+      ],
+      "pixels_modified": false
+    },
+    {
+      "estimate": {
+        "status": 0,
+        "native_shift": [
+          23.948395988565608,
+          3.192783611222467
+        ],
+        "managed_shift": [
+          -23.948395988565608,
+          -3.192783611222467
+        ],
+        "reliability": 0.7417761802673339,
+        "integer_peak": [
+          37,
+          32
+        ],
+        "peak_value": 949.4735107421875,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            37.0064505014293,
+            31.60090204859719
+          ],
+          "initial": [
+            -0.018460435455830638,
+            0.3454581128672025,
+            1.0
+          ],
+          "fitted": [
+            -0.006450501429301704,
+            0.3990979514028093,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 33,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": true,
+        "reason": "stage_shift_gt20",
+        "shift": [
+          0.0,
+          0.0
+        ]
+      },
+      "accumulated_pixels": [
+        0.0,
+        0.0
+      ],
+      "display_offset": [
+        0.0,
+        0.0
+      ],
+      "pixels_modified": false
+    },
+    {
+      "estimate": {
+        "status": 0,
+        "native_shift": [
+          1.6601613806680575,
+          0.6396922941665366
+        ],
+        "managed_shift": [
+          -1.6601613806680575,
+          -0.6396922941665366
+        ],
+        "reliability": 0.8781347274780273,
+        "integer_peak": [
+          40,
+          32
+        ],
+        "peak_value": 1124.012451171875,
+        "downsample_shape": [
+          64,
+          80
+        ],
+        "fft_shape": [
+          64,
+          80
+        ],
+        "fit": {
+          "status": 0,
+          "peak": [
+            39.79247982741649,
+            31.920038463229183
+          ],
+          "initial": [
+            0.19123467177004372,
+            0.06409988932747662,
+            1.0
+          ],
+          "fitted": [
+            0.20752017258350655,
+            0.07996153677081666,
+            1.0
+          ],
+          "solver_code": 1,
+          "nfev": 21,
+          "residual_finite": true,
+          "solver_message": "Both actual and predicted relative reductions in the sum of squares\n  are at most 0.000000"
+        }
+      },
+      "gate": {
+        "reset": false,
+        "reason": "accepted",
+        "shift": [
+          -1.661,
+          -0.64
+        ]
+      },
+      "accumulated_pixels": [
+        -1.661,
+        -0.64
+      ],
+      "display_offset": [
+        -1.661,
+        -0.64
+      ],
+      "pixels_modified": false
+    }
+  ],
+  "checks": [
+    {
+      "name": "integer_shift_subpixel_recovery",
+      "passed": true,
+      "detail": "Synthetic error <1 original pixel, accepted; not a device tolerance"
+    },
+    {
+      "name": "fractional_shift_subpixel_recovery",
+      "passed": true,
+      "detail": "Synthetic error <1 original pixel, accepted; not a device tolerance"
+    },
+    {
+      "name": "brightness_gain_subpixel_recovery",
+      "passed": true,
+      "detail": "Synthetic error <1 original pixel, accepted; not a device tolerance"
+    },
+    {
+      "name": "large_16_reset",
+      "passed": true,
+      "detail": "Gate after successful estimate"
+    },
+    {
+      "name": "large_24_reset",
+      "passed": true,
+      "detail": "Gate after successful estimate"
+    },
+    {
+      "name": "black_rejected",
+      "passed": true,
+      "detail": "Zero peak leads boundary/low-reliability failure"
+    },
+    {
+      "name": "flat_false_confidence_demonstrated",
+      "passed": true,
+      "detail": "Counterexample intentionally ACCEPTED despite no texture"
+    },
+    {
+      "name": "periodic_alias_demonstrated",
+      "passed": true,
+      "detail": "Counterexample intentionally ACCEPTED despite 32-pixel ambiguity"
+    },
+    {
+      "name": "unrelated_rejected",
+      "passed": true,
+      "detail": "Specific seeded unrelated pair; not universal detection"
+    },
+    {
+      "name": "thresholds_strict",
+      "passed": true,
+      "detail": "15 accepted; 15.001 rejected; exactly20 reaches >15 branch"
+    },
+    {
+      "name": "reliability_equal_rejected",
+      "passed": true,
+      "detail": "Threshold requires > .35"
+    },
+    {
+      "name": "negative_floor",
+      "passed": true,
+      "detail": "Negative values floor, not round to nearest"
+    },
+    {
+      "name": "block_conversion",
+      "passed": true,
+      "detail": "4ch/16bit; alpha ignored; trailing rows/columns dropped"
+    },
+    {
+      "name": "even_fft_table",
+      "passed": true,
+      "detail": "Exact shipped table, not generic FFT size helper"
+    },
+    {
+      "name": "frame_0_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "frame_1_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "frame_2_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "frame_3_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "frame_4_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "frame_5_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "frame_6_unchanged",
+      "passed": true,
+      "detail": "No pixel resampling"
+    },
+    {
+      "name": "first_frame_reset",
+      "passed": true,
+      "detail": "Reference creation resets display"
+    },
+    {
+      "name": "accumulation_boundary_reset",
+      "passed": true,
+      "detail": "Four ~6px incremental motions overflow 20px display buffer"
+    },
+    {
+      "name": "explicit_base_reset",
+      "passed": true,
+      "detail": "Base request consumed"
+    },
+    {
+      "name": "size_change_reset",
+      "passed": true,
+      "detail": "Dimension change recreates reference"
+    },
+    {
+      "name": "rejected_gate_advances_reference",
+      "passed": true,
+      "detail": "Rejection does not freeze previous frame"
+    }
+  ],
+  "counts": {
+    "cases": 12,
+    "checks": 26,
+    "passed": 26
+  },
+  "limits": [
+    "No vendor numeric oracle",
+    "Synthetic successes do not validate hardware/real-frame freshness",
+    "SciPy solver is not proved bit-equivalent",
+    "Stable ratio is an analyst change",
+    "Nonfinite numbers are JSON null; residual_finite remains explicit"
+  ]
+}

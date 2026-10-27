@@ -1,0 +1,87 @@
+Evidence: ev_bc28e0d4d0819c476575a620c4a8d2521058e429554c9c0593e3636088d7aae4
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+undefined4 * FUN_14000f9b0(undefined4 *param_1)
+
+{
+  *(undefined8 *)(param_1 + 2) = 0;
+  *(undefined8 *)(param_1 + 4) = 0;
+  *(undefined8 *)(param_1 + 6) = 0x3ff0000000000000;
+  *(undefined8 *)(param_1 + 0x5e) = 0;
+  param_1[0x60] = 1;
+  param_1[0x61] = 0x65;
+  param_1[0x62] = 10;
+  *(undefined8 *)(param_1 + 100) = 0;
+  *(undefined8 *)(param_1 + 0x68) = 0;
+  *(undefined8 *)(param_1 + 0x6a) = 0;
+  *(undefined8 *)(param_1 + 0x6c) = 0;
+  *(undefined8 *)(param_1 + 0x70) = 0;
+  *(undefined8 *)(param_1 + 0x72) = 0;
+  *(undefined8 *)(param_1 + 0x74) = 0;
+  *(undefined8 *)(param_1 + 0x76) = 0;
+  *(undefined8 *)(param_1 + 0x78) = 0;
+  *(undefined8 *)(param_1 + 0x7a) = 0;
+  *(undefined8 *)(param_1 + 0x7c) = 0;
+  *(undefined8 *)(param_1 + 0x7e) = 0;
+  *(undefined8 *)(param_1 + 0x80) = 0;
+  *(undefined8 *)(param_1 + 0x82) = 0;
+  *(undefined8 *)(param_1 + 0x84) = 0;
+  *(undefined8 *)(param_1 + 0x86) = 0;
+  FUN_14001e8d0((longlong *)0x0,(longlong *)0x0);
+  *(undefined8 *)(param_1 + 0x84) = *(undefined8 *)(param_1 + 0x82);
+  *(undefined8 *)(param_1 + 0x90) = 0;
+  *(undefined8 *)(param_1 + 0x92) = 0x7fffffffffffffff;
+  *(undefined8 *)(param_1 + 0x94) = 0;
+  *(undefined8 *)(param_1 + 0x96) = 0x7fffffffffffffff;
+  *(undefined ***)(param_1 + 0x9a) = AutoIplImage::vftable;
+  *(undefined8 *)(param_1 + 0x9c) = 0;
+  *(undefined1 *)(param_1 + 0x9e) = 0;
+  *(undefined1 *)(param_1 + 0xa0) = 0;
+  param_1[0xac] = 0x1e;
+  param_1[0xad] = 0x19;
+  param_1[0xae] = 10;
+  param_1[0xaf] = 10;
+  *(undefined8 *)(param_1 + 0xb4) = 0;
+  *(undefined8 *)(param_1 + 0xb6) = 0xf;
+  *(undefined1 *)(param_1 + 0xb0) = 0;
+  *(undefined8 *)(param_1 + 0xbc) = 0;
+  *(undefined8 *)(param_1 + 0xbe) = 0xf;
+  *(undefined1 *)(param_1 + 0xb8) = 0;
+  *(undefined8 *)(param_1 + 0xc4) = 0;
+  *(undefined8 *)(param_1 + 0xc6) = 0xf;
+  *(undefined1 *)(param_1 + 0xc0) = 0;
+  *(undefined8 *)(param_1 + 0xcc) = 0;
+  *(undefined8 *)(param_1 + 0xce) = 0xf;
+  *(undefined1 *)(param_1 + 200) = 0;
+  *(undefined8 *)(param_1 + 0xd4) = 0;
+  *(undefined8 *)(param_1 + 0xd6) = 0xf;
+  *(undefined1 *)(param_1 + 0xd0) = 0;
+  *(undefined8 *)(param_1 + 0xdc) = 0;
+  *(undefined8 *)(param_1 + 0xde) = 0xf;
+  *(undefined1 *)(param_1 + 0xd8) = 0;
+  FUN_14000cca0((longlong *)(param_1 + 0xb0),"Stitching_Tmp_BlockImage_",0x19);
+  FUN_14000cca0((longlong *)(param_1 + 0xb8),"Stitching_Tmp_BlockImage_Z_",0x1b);
+  FUN_14000cca0((longlong *)(param_1 + 0xc0),"_StitcSrc.raw",0xd);
+  FUN_14000cca0((longlong *)(param_1 + 200),"_StitchSrc.raw",0xe);
+  FUN_14000cca0((longlong *)(param_1 + 0xd8),"Stitching_Tmp_FitedZImage",0x19);
+  FUN_14000cca0((longlong *)(param_1 + 0xd0),"_StitchSrc.raw",0xe);
+  param_1[0xe0] = 100;
+  *(undefined8 *)(param_1 + 0xe4) = 0;
+  *(undefined8 *)(param_1 + 0xe6) = 0;
+  *(undefined8 *)(param_1 + 0xe8) = 0;
+  *(undefined8 *)(param_1 + 0xea) = 0;
+  *(undefined8 *)(param_1 + 0xec) = 0;
+  *(undefined8 *)(param_1 + 0xee) = 0;
+  *param_1 = 0;
+  *(undefined8 *)(param_1 + 0x8a) = 0;
+  *(undefined8 *)(param_1 + 0x98) = 0;
+  *(undefined8 *)(param_1 + 0x8e) = 0;
+  *(undefined8 *)(param_1 + 8) = 0;
+  *(undefined8 *)(param_1 + 0x6e) = 0;
+  cvSetErrMode(0);
+  cvSetErrStatus(0);
+  return param_1;
+}
+

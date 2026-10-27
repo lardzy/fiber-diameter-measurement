@@ -1,0 +1,41 @@
+Evidence: ev_e9c3f4e157126a8f63b540a4e853812a5de8e95c8904f95143b26680848f4941
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+undefined8 FUN_14001a440(int *param_1,undefined8 *param_2,longlong *param_3)
+
+{
+  double *pdVar1;
+  longlong lVar2;
+  longlong lVar3;
+  int iVar4;
+  longlong lVar5;
+  double dVar6;
+  double dVar7;
+  double dVar8;
+  double dVar9;
+  
+  iVar4 = 0;
+  if (0 < param_1[0xb]) {
+    pdVar1 = (double *)*param_2;
+    lVar2 = *param_3;
+    lVar5 = 0;
+    do {
+      dVar8 = *(double *)(param_1 + 2);
+      lVar3 = *(longlong *)(param_1 + 8);
+      dVar7 = *(double *)(*(longlong *)(param_1 + 6) + lVar5) + pdVar1[1];
+      dVar9 = *(double *)(lVar5 + *(longlong *)(param_1 + 4)) + *pdVar1;
+      dVar6 = sin(dVar7 * dVar8 * 3.141592653589793);
+      dVar7 = sin((dVar7 * 3.141592653589793) / (double)param_1[1]);
+      dVar8 = sin(dVar9 * dVar8 * 3.141592653589793);
+      dVar9 = sin((dVar9 * 3.141592653589793) / (double)*param_1);
+      iVar4 = iVar4 + 1;
+      *(double *)(lVar5 + lVar2) =
+           *(double *)(lVar3 + -8 + lVar5 + 8) - (dVar6 / dVar7) * (dVar8 / dVar9) * pdVar1[2];
+      lVar5 = lVar5 + 8;
+    } while (iVar4 < param_1[0xb]);
+  }
+  return 0;
+}
+

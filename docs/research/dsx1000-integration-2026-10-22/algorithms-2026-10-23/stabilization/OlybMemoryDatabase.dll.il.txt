@@ -1,0 +1,937 @@
+// ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d
+// 1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::.ctor 0x060005ab
+0000 ldarg.0  
+0001 call 0x060000b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SequentialEntity::.ctor
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ImageBufferHeader 0x060005ac
+0000 ldarg.0  
+0001 ldfld 0x04000207 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_imageHeader
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageBufferHeader 0x060005ad
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000207 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_imageHeader
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ImageSizeX 0x060005ae
+0000 ldarg.0  
+0001 ldfld 0x04000201 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_imageSizeX
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageSizeX 0x060005af
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000201 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_imageSizeX
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ImageSizeY 0x060005b0
+0000 ldarg.0  
+0001 ldfld 0x04000202 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_imageSizeY
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageSizeY 0x060005b1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000202 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_imageSizeY
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ConvertType 0x060005b2
+0000 ldarg.0  
+0001 ldfld 0x04000203 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_convertType
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ConvertType 0x060005b3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000203 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_convertType
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_CamByte 0x060005b4
+0000 ldarg.0  
+0001 ldfld 0x04000204 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_camByte
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_CamByte 0x060005b5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000204 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_camByte
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ShiftX 0x060005b6
+0000 ldarg.0  
+0001 ldfld 0x04000208 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_dblShiftX
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ShiftX 0x060005b7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000208 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_dblShiftX
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ShiftY 0x060005b8
+0000 ldarg.0  
+0001 ldfld 0x04000209 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_dblShiftY
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ShiftY 0x060005b9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000209 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_dblShiftY
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_SumShiftX 0x060005ba
+0000 ldarg.0  
+0001 ldfld 0x0400020a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_sumShiftX
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_SumShiftX 0x060005bb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400020a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_sumShiftX
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_SumShiftY 0x060005bc
+0000 ldarg.0  
+0001 ldfld 0x0400020b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_sumShiftY
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_SumShiftY 0x060005bd
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400020b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_sumShiftY
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_IsOverLimitShift 0x060005be
+0000 ldarg.0  
+0001 ldfld 0x0400020c Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnOverLimitShift
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_IsOverLimitShift 0x060005bf
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400020c Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnOverLimitShift
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_IsOverPasteFeeLimit 0x060005c0
+0000 ldarg.0  
+0001 ldfld 0x0400020d Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnOverPasteFeeLimit
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_IsOverPasteFeeLimit 0x060005c1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400020d Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnOverPasteFeeLimit
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_IsOverImageSize 0x060005c2
+0000 ldarg.0  
+0001 ldfld 0x0400020e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnOverImageSize
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_IsOverImageSize 0x060005c3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400020e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnOverImageSize
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_Reliability 0x060005c4
+0000 ldarg.0  
+0001 ldfld 0x0400020f Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_reliability
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_Reliability 0x060005c5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400020f Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_reliability
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ResetAccShiftFlag 0x060005c6
+0000 ldarg.0  
+0001 ldfld 0x04000210 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnResetAccShiftFlag
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ResetAccShiftFlag 0x060005c7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000210 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnResetAccShiftFlag
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_RotationCount 0x060005c8
+0000 ldarg.0  
+0001 ldfld 0x04000211 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_uiRotationCount
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_RotationCount 0x060005c9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000211 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_uiRotationCount
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_IsFiltered 0x060005ca
+0000 ldarg.0  
+0001 ldfld 0x04000205 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_isFiltered
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_IsFiltered 0x060005cb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000205 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_isFiltered
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_IsBreakFilter 0x060005cc
+0000 ldarg.0  
+0001 ldfld 0x04000212 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_isBreakFilter
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_IsBreakFilter 0x060005cd
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000212 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_isBreakFilter
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_FilterProcessName 0x060005ce
+0000 ldarg.0  
+0001 ldfld 0x04000213 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_filterProcessName
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_FilterProcessName 0x060005cf
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000213 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_filterProcessName
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_Denominator 0x060005d0
+0000 ldarg.0  
+0001 ldfld 0x04000214 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_ui32ExpDenominator
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_Denominator 0x060005d1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000214 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_ui32ExpDenominator
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_Numerator 0x060005d2
+0000 ldarg.0  
+0001 ldfld 0x04000215 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_ui32ExpNumerator
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_Numerator 0x060005d3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000215 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_ui32ExpNumerator
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_ImageFrameType 0x060005d4
+0000 ldarg.0  
+0001 ldfld 0x04000206 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_iImageFrameType
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageFrameType 0x060005d5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000206 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_iImageFrameType
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_StageX 0x060005d6
+0000 ldarg.0  
+0001 ldfld 0x04000216 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_stageX
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_StageX 0x060005d7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000216 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_stageX
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_StageY 0x060005d8
+0000 ldarg.0  
+0001 ldfld 0x04000217 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_stageY
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_StageY 0x060005d9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000217 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_stageY
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_IsLiveStitchingImage 0x060005da
+0000 ldarg.0  
+0001 ldfld 0x04000218 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnIsLiveStitchingImage
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_IsLiveStitchingImage 0x060005db
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000218 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::_blnIsLiveStitchingImage
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::.ctor 0x060006df
+0000 ldarg.0  
+0001 ldc.i4.1  
+0002 stfld 0x04000278 Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsCerateBaseImage
+0007 ldarg.0  
+0008 ldc.i4.8  
+0009 stfld 0x04000279 Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_ui32DividerValue
+0014 ldarg.0  
+0015 ldc.i4.1  
+0016 stfld 0x0400027a Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsUseLpf
+0021 ldarg.0  
+0022 ldc.r8 0.5 
+0031 stfld 0x0400027b Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_dblLpfCutOff
+0036 ldarg.0  
+0037 ldc.i4.1  
+0038 stfld 0x0400027c Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsEstimationSubPx
+0043 ldarg.0  
+0044 ldc.r8 0.35 
+0053 stfld 0x0400027d Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_dReliabilityThresh
+0058 ldarg.0  
+0059 call 0x0600007d Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleEntity::.ctor
+0064 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::get_IsCreateBaseImage 0x060006e0
+0000 ldarg.0  
+0001 ldfld 0x04000278 Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsCerateBaseImage
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::set_IsCreateBaseImage 0x060006e1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000278 Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsCerateBaseImage
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::get_DividerValue 0x060006e2
+0000 ldarg.0  
+0001 ldfld 0x04000279 Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_ui32DividerValue
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::set_DividerValue 0x060006e3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000279 Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_ui32DividerValue
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::get_IsUseLpf 0x060006e4
+0000 ldarg.0  
+0001 ldfld 0x0400027a Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsUseLpf
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::set_IsUseLpf 0x060006e5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400027a Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsUseLpf
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::get_LpfCutOff 0x060006e6
+0000 ldarg.0  
+0001 ldfld 0x0400027b Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_dblLpfCutOff
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::set_LpfCutOff 0x060006e7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400027b Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_dblLpfCutOff
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::get_IsEstimationSubPx 0x060006e8
+0000 ldarg.0  
+0001 ldfld 0x0400027c Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsEstimationSubPx
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::set_IsEstimationSubPx 0x060006e9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400027c Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_blnIsEstimationSubPx
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::get_ReliabilityThresh 0x060006ea
+0000 ldarg.0  
+0001 ldfld 0x0400027d Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_dReliabilityThresh
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::set_ReliabilityThresh 0x060006eb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400027d Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerEntity::_dReliabilityThresh
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.NmvStateManagerDao::.ctor 0x060006ec
+0000 ldarg.0  
+0001 call 0x0a00017b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2::.ctor
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::.ctor 0x06000ab7
+0000 ldarg.0  
+0001 ldc.i4 1920 
+0006 stfld 0x04000405 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iImageWidth
+0011 ldarg.0  
+0012 ldc.i4 1200 
+0017 stfld 0x04000406 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iImageHeight
+0022 ldarg.0  
+0023 ldc.i4.s 50 
+0025 stfld 0x04000407 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamIter3D
+0030 ldarg.0  
+0031 ldc.r8 50 
+0040 stfld 0x04000408 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamL
+0045 ldarg.0  
+0046 ldc.r8 130 
+0055 stfld 0x04000409 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamM
+0060 ldarg.0  
+0061 ldc.r8 0.1 
+0070 stfld 0x0400040a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamN
+0075 ldarg.0  
+0076 ldc.i4.s 30 
+0078 stfld 0x0400040b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamDivSize
+0083 ldarg.0  
+0084 ldc.i4.7  
+0085 stfld 0x0400040e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamBaseRank
+0090 ldarg.0  
+0091 ldc.i4.s 10 
+0093 stfld 0x0400040f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamXLimit
+0098 ldarg.0  
+0099 ldc.i4.s 10 
+0101 stfld 0x04000410 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamYLimit
+0106 ldarg.0  
+0107 ldc.i4.s 60 
+0109 stfld 0x04000411 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamThresholdReliability
+0114 ldarg.0  
+0115 ldc.r8 0.002 
+0124 stfld 0x04000413 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamPostHpfCutOff
+0129 ldarg.0  
+0130 ldc.r8 0.002 
+0139 stfld 0x04000414 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamPreHpfCutOff
+0144 ldarg.0  
+0145 ldc.i4.8  
+0146 stfld 0x04000417 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iDepth
+0151 ldarg.0  
+0152 ldstr 0x700043c0 'upper'
+0157 stfld 0x0400041a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strInputBit
+0162 ldarg.0  
+0163 ldstr 0x700043c0 'upper'
+0168 stfld 0x0400041b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strOutputBit
+0173 ldarg.0  
+0174 ldstr 0x700043cc 'telecentric'
+0179 stfld 0x0400041e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strTelecentric
+0184 ldarg.0  
+0185 ldstr 0x700043e4 'ON'
+0190 stfld 0x0400041f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strStabilize
+0195 ldarg.0  
+0196 ldstr 0x700043ea 'OFF'
+0201 stfld 0x04000420 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strLog
+0206 ldarg.0  
+0207 ldstr 0x700043e4 'ON'
+0212 stfld 0x04000421 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strLockBaseIndex
+0217 ldarg.0  
+0218 ldc.i4.5  
+0219 stfld 0x04000428 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_ui32WL
+0224 ldarg.0  
+0225 ldc.i4.4  
+0226 stfld 0x04000429 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_ui32MRFL
+0231 ldarg.0  
+0232 ldc.r8 2 
+0241 stfld 0x0400042b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblGEFI
+0246 ldarg.0  
+0247 ldc.r8 2 
+0256 stfld 0x0400042c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblG3D
+0261 ldarg.0  
+0262 ldc.i4.s 31 
+0264 stfld 0x0400042d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamBlurSize
+0269 ldarg.0  
+0270 ldc.i4.1  
+0271 stfld 0x0400042e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamIsStabilizer
+0276 ldarg.0  
+0277 call 0x060000b4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SequentialEntity::.ctor
+0282 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamWidth 0x06000ab8
+0000 ldarg.0  
+0001 ldfld 0x04000405 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iImageWidth
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamWidth 0x06000ab9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000405 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iImageWidth
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamHeight 0x06000aba
+0000 ldarg.0  
+0001 ldfld 0x04000406 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iImageHeight
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamHeight 0x06000abb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000406 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iImageHeight
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamIter3D 0x06000abc
+0000 ldarg.0  
+0001 ldfld 0x04000407 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamIter3D
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamIter3D 0x06000abd
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000407 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamIter3D
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamL 0x06000abe
+0000 ldarg.0  
+0001 ldfld 0x04000408 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamL
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamL 0x06000abf
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000408 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamL
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamM 0x06000ac0
+0000 ldarg.0  
+0001 ldfld 0x04000409 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamM
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamM 0x06000ac1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000409 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamM
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamN 0x06000ac2
+0000 ldarg.0  
+0001 ldfld 0x0400040a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamN
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamN 0x06000ac3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400040a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamN
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDivSize 0x06000ac4
+0000 ldarg.0  
+0001 ldfld 0x0400040b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamDivSize
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDivSize 0x06000ac5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400040b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamDivSize
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamBaseIndex 0x06000ac6
+0000 ldarg.0  
+0001 ldfld 0x0400040c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_fParamBaseIndex
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamBaseIndex 0x06000ac7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400040c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_fParamBaseIndex
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamLfe 0x06000ac8
+0000 ldarg.0  
+0001 ldfld 0x0400040d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamLfe
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamLfe 0x06000ac9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400040d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamLfe
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamBaseRank 0x06000aca
+0000 ldarg.0  
+0001 ldfld 0x0400040e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamBaseRank
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamBaseRank 0x06000acb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400040e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamBaseRank
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamXLimit 0x06000acc
+0000 ldarg.0  
+0001 ldfld 0x0400040f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamXLimit
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamXLimit 0x06000acd
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400040f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamXLimit
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamYLimit 0x06000ace
+0000 ldarg.0  
+0001 ldfld 0x04000410 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamYLimit
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamYLimit 0x06000acf
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000410 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamYLimit
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamThresholdReliability 0x06000ad0
+0000 ldarg.0  
+0001 ldfld 0x04000411 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamThresholdReliability
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamThresholdReliability 0x06000ad1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000411 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamThresholdReliability
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamHpfEnable 0x06000ad2
+0000 ldarg.0  
+0001 ldfld 0x04000412 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamHpfEnable
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamHpfEnable 0x06000ad3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000412 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamHpfEnable
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamPostHpfCutOff 0x06000ad4
+0000 ldarg.0  
+0001 ldfld 0x04000413 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamPostHpfCutOff
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamPostHpfCutOff 0x06000ad5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000413 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamPostHpfCutOff
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamPreHpfCutOff 0x06000ad6
+0000 ldarg.0  
+0001 ldfld 0x04000414 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamPreHpfCutOff
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamPreHpfCutOff 0x06000ad7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000414 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dParamPreHpfCutOff
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDebugSliceImagePath 0x06000ad8
+0000 ldarg.0  
+0001 ldfld 0x04000415 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugSliceImagePath
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDebugSliceImagePath 0x06000ad9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000415 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugSliceImagePath
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDebugZmapPath 0x06000ada
+0000 ldarg.0  
+0001 ldfld 0x04000416 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugZmapPath
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDebugZmapPath 0x06000adb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000416 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugZmapPath
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDepth 0x06000adc
+0000 ldarg.0  
+0001 ldfld 0x04000417 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iDepth
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDepth 0x06000add
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000417 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iDepth
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamImageFilePath 0x06000ade
+0000 ldarg.0  
+0001 ldfld 0x04000418 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strImageFilePath
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamImageFilePath 0x06000adf
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000418 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strImageFilePath
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamStep 0x06000ae0
+0000 ldarg.0  
+0001 ldfld 0x04000419 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iStep
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamStep 0x06000ae1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000419 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iStep
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamSliceImagePath 0x06000ae2
+0000 ldarg.0  
+0001 ldfld 0x04000422 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strSliceImagePath
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamSliceImagePath 0x06000ae3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000422 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strSliceImagePath
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamExtendImageFile2D 0x06000ae4
+0000 ldarg.0  
+0001 ldfld 0x04000423 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strExtendImageFile2D
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamExtendImageFile2D 0x06000ae5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000423 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strExtendImageFile2D
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamExtendImageFile3D 0x06000ae6
+0000 ldarg.0  
+0001 ldfld 0x04000424 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strExtendImageFile3D
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamExtendImageFile3D 0x06000ae7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000424 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strExtendImageFile3D
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamInputBit 0x06000ae8
+0000 ldarg.0  
+0001 ldfld 0x0400041a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strInputBit
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamInputBit 0x06000ae9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400041a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strInputBit
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamOutputBit 0x06000aea
+0000 ldarg.0  
+0001 ldfld 0x0400041b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strOutputBit
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamOutputBit 0x06000aeb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400041b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strOutputBit
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamPitch 0x06000aec
+0000 ldarg.0  
+0001 ldfld 0x0400041c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dPitch
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamPitch 0x06000aed
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400041c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dPitch
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamResolution 0x06000aee
+0000 ldarg.0  
+0001 ldfld 0x0400041d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dResolution
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamResolution 0x06000aef
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400041d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dResolution
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamTelecentric 0x06000af0
+0000 ldarg.0  
+0001 ldfld 0x0400041e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strTelecentric
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamTelecentric 0x06000af1
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400041e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strTelecentric
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamStabilize 0x06000af2
+0000 ldarg.0  
+0001 ldfld 0x0400041f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strStabilize
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamStabilize 0x06000af3
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400041f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strStabilize
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamLog 0x06000af4
+0000 ldarg.0  
+0001 ldfld 0x04000420 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strLog
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamLog 0x06000af5
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000420 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strLog
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamLockBaseIndex 0x06000af6
+0000 ldarg.0  
+0001 ldfld 0x04000421 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strLockBaseIndex
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamLockBaseIndex 0x06000af7
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000421 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strLockBaseIndex
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamLPF 0x06000af8
+0000 ldarg.0  
+0001 ldfld 0x04000425 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dLPF
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamLPF 0x06000af9
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000425 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dLPF
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamWL 0x06000afa
+0000 ldarg.0  
+0001 ldfld 0x04000428 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_ui32WL
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamWL 0x06000afb
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000428 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_ui32WL
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamMRFL 0x06000afc
+0000 ldarg.0  
+0001 ldfld 0x04000429 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_ui32MRFL
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamMRFL 0x06000afd
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000429 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_ui32MRFL
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamPDT 0x06000afe
+0000 ldarg.0  
+0001 ldfld 0x0400042a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblPDT
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamPDT 0x06000aff
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400042a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblPDT
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamGEFI 0x06000b00
+0000 ldarg.0  
+0001 ldfld 0x0400042b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblGEFI
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamGEFI 0x06000b01
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400042b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblGEFI
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamG3D 0x06000b02
+0000 ldarg.0  
+0001 ldfld 0x0400042c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblG3D
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamG3D 0x06000b03
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400042c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_dblG3D
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDebugSaveSliceImage 0x06000b04
+0000 ldarg.0  
+0001 ldfld 0x04000426 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugSaveSliceImage
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDebugSaveSliceImage 0x06000b05
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000426 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugSaveSliceImage
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDebugSaveZmap 0x06000b06
+0000 ldarg.0  
+0001 ldfld 0x04000427 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugSaveZmap
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDebugSaveZmap 0x06000b07
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000427 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_strDebugSaveZmap
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamBlurSize 0x06000b08
+0000 ldarg.0  
+0001 ldfld 0x0400042d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamBlurSize
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamBlurSize 0x06000b09
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400042d Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_iParamBlurSize
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamIsStabilizer 0x06000b0a
+0000 ldarg.0  
+0001 ldfld 0x0400042e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamIsStabilizer
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamIsStabilizer 0x06000b0b
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400042e Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamIsStabilizer
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDebugIsSaveSliceImage 0x06000b0c
+0000 ldarg.0  
+0001 ldfld 0x0400042f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamDebugSaveSliceImage
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDebugIsSaveSliceImage 0x06000b0d
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x0400042f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamDebugSaveSliceImage
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::get_ParamDebugIsSaveZmap 0x06000b0e
+0000 ldarg.0  
+0001 ldfld 0x04000430 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamDebugSaveZmap
+0006 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::set_ParamDebugIsSaveZmap 0x06000b0f
+0000 ldarg.0  
+0001 ldarg.1  
+0002 stfld 0x04000430 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParam::_blnParamDebugSaveZmap
+0007 ret  
+
+METHOD Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageParamDao::.ctor 0x06000b10
+0000 ldarg.0  
+0001 call 0x0a000385 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::.ctor
+0006 ret  

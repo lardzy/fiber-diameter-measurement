@@ -1,0 +1,76 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "name": "optical_not_display_magnification",
+      "passed": true,
+      "detail": "NA .3, objective20, optical1, wavelength550 gives cutoff54.54545"
+    },
+    {
+      "name": "optical_zoom_changes_weight_driver",
+      "passed": true,
+      "detail": "Cutoff varies inversely with optical zoom at fixed NA"
+    },
+    {
+      "name": "integer_bins_per_layer",
+      "passed": true,
+      "detail": "65535//5, not a separately rounded float step"
+    },
+    {
+      "name": "buffer_type_boundary",
+      "passed": true,
+      "detail": "32-bit elements contain 16-bit bounded code values"
+    },
+    {
+      "name": "quantization_error",
+      "passed": true,
+      "detail": {
+        "max_error": 0.1497424840927124,
+        "step": 0.15259021520614624
+      }
+    },
+    {
+      "name": "first_nominal_height_is_nonzero",
+      "passed": true,
+      "detail": "Fine acquisition starts nominal Z at pitch*1, not at zero"
+    },
+    {
+      "name": "wire_and_buffer_units_differ",
+      "passed": true,
+      "detail": "Outgoing common-info scalar approximately1000 times depth-unit/code"
+    },
+    {
+      "name": "saturation_explicit",
+      "passed": true,
+      "detail": "Clamping loses out-of-range height information"
+    },
+    {
+      "name": "absolute_origin_not_inferred",
+      "passed": true,
+      "detail": "Explicit first absolute position, sign and nm-to-um scale supplied by caller"
+    },
+    {
+      "name": "guard_count_0",
+      "passed": true,
+      "detail": "Independent guard, not claimed as original behavior"
+    },
+    {
+      "name": "guard_count_65536",
+      "passed": true,
+      "detail": "Independent guard, not claimed as original behavior"
+    },
+    {
+      "name": "nonfinite_optics",
+      "passed": true,
+      "detail": "Independent input guard prevents plausible-looking NaN metadata"
+    },
+    {
+      "name": "nonfinite_origin",
+      "passed": true,
+      "detail": "Independent input guard prevents plausible-looking NaN metadata"
+    }
+  ],
+  "scope": "Scalar CIL formulas and proposed explicit coordinate contract; no device or original runtime",
+  "numpy": "2.4.3",
+  "source_sha256": "cd0785fc9a434e0742cda1cff2d1408a9ea7ae6c8b9c8157dd0e50f512954483"
+}

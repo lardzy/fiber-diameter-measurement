@@ -1,0 +1,41 @@
+{
+  "git_head": "04eda270f6071a212bb0dd4438033a27cbafad74",
+  "product_code_changed_by_this_analysis": false,
+  "files": [
+    {
+      "path": "src/fdm/services/motion_control.py",
+      "sha256": "fce3bbd0a159ea251c4c6160b50509ef449a13717cd3ae70ba0949d68b1a2329",
+      "bytes": 8975
+    },
+    {
+      "path": "src/fdm/services/capture.py",
+      "sha256": "5688721cb70200e86aa508378ad4ee7d1e7163dd31b4f92fbeb1e3aba098df77",
+      "bytes": 106788
+    },
+    {
+      "path": "src/fdm/ui/main_window.py",
+      "sha256": "bb401f328a0a33654839d97cca5b6a335c6b7c10ce716b5b9972c67d9d742fe4",
+      "bytes": 1324250
+    },
+    {
+      "path": "src/fdm/settings.py",
+      "sha256": "537db440adb4600b3eb2d2c86cb8c605f86b49a9572145c7dcad90e9e2963e83",
+      "bytes": 106313
+    },
+    {
+      "path": "src/fdm/services/digital_slide_store.py",
+      "sha256": "6ae6fc010ade1f76a4443b244cafe8fee76ddf2e5305f0fa1c52d338b9d392cc",
+      "bytes": 49613
+    },
+    {
+      "path": "src/fdm/services/device_image_io.py",
+      "sha256": "ed67461c1a504636f60c049dc537c11c0469780fb20468d5ea61f3b1ede59da8",
+      "bytes": 13516
+    },
+    {
+      "path": "src/fdm/version.py",
+      "sha256": "c80ea8ecad508c9b13858d9045ec43105b990b13b6d7085d2b4fe32780359ea6",
+      "bytes": 95
+    }
+  ]
+}

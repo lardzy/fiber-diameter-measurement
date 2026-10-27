@@ -1,0 +1,81 @@
+EVIDENCE ev_d7dbd43d2f0023c5080a8597d697e5890582641af43fba882388cf806865b7b3 SHA256 f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD 0x06000415 Olympus.LI.Triumph.Application.ViewModel.Acquisition set_ExtendMode IL_SHA256 a1efab2e224a2a3e85d7a10545e68b153adee73946ea0c91f3064ff791bdf1e2 DECODE_ISSUE null
+0000: nop            
+0001: ldc.i4        128 
+0006: newobj        0x0a000134 System.Text.StringBuilder..ctor
+000b: stloc.0        
+000c: ldloc.0        
+000d: ldstr         0x70005eca "[Extend]-[ExtendMode] Selected value Changed ({0})"
+0012: ldarg.1        
+0013: box           0x0100005a 
+0018: callvirt      0x0a00001b System.Object.ToString
+001d: callvirt      0x0a000136 System.Text.StringBuilder.AppendFormat
+0022: pop            
+0023: ldloc.0        
+0024: callvirt      0x0a00001b System.Object.ToString
+0029: call          0x0a000137 Olympus.Mis.Core.Logging.Logger.UILog
+002e: nop            
+002f: ldarg.0        
+0030: ldfld         0x04000196 Olympus.LI.Triumph.Application.ViewModel.Acquisition._extendMode
+0035: stloc.1        
+0036: ldarg.0        
+0037: ldfld         0x040001a3 Olympus.LI.Triumph.Application.ViewModel.Acquisition._dblZPitch
+003c: ldloc.1        
+003d: ldarg.1        
+003e: call          0x0a000402 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.AcquisitionCalculator.CalculatePitch
+0043: stloc.2        
+0044: ldarg.0        
+0045: ldarg.1        
+0046: stfld         0x04000196 Olympus.LI.Triumph.Application.ViewModel.Acquisition._extendMode
+004b: ldarg.0        
+004c: ldstr         0x70005f30 "ExtendMode"
+0051: ldarg.0        
+0052: ldfld         0x04000196 Olympus.LI.Triumph.Application.ViewModel.Acquisition._extendMode
+0057: call          0x2b000025 Olympus.LI.Triumph.Application.ViewModel.UiControllerBase._OnPropertyChanged
+005c: nop            
+005d: ldarg.0        
+005e: ldloc.2        
+005f: call          0x0600048e Olympus.LI.Triumph.Application.ViewModel.Acquisition.SetZDistanceByDistance
+0064: nop            
+0065: ret            
+
+METHOD 0x0600048d Olympus.LI.Triumph.Application.ViewModel.Acquisition SetZDistanceByDistance IL_SHA256 d114e9f662eb82f9e530def4a4f76408094d3d9a0bfd177ee0bf0e6a49759c8d DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldarg.0        
+0003: ldfld         0x040001a3 Olympus.LI.Triumph.Application.ViewModel.Acquisition._dblZPitch
+0008: call          0x0600048e Olympus.LI.Triumph.Application.ViewModel.Acquisition.SetZDistanceByDistance
+000d: nop            
+000e: ret            
+
+METHOD 0x0600048e Olympus.LI.Triumph.Application.ViewModel.Acquisition SetZDistanceByDistance IL_SHA256 5cfa860a56f7c2501dc6d73dd8de684db4bc1f804dc26271023f36b0f13b2eec DECODE_ISSUE null
+0000: nop            
+0001: ldc.r8        0 
+000a: stloc.0        
+000b: ldc.i4.0       
+000c: stloc.1        
+000d: ldarg.0        
+000e: ldfld         0x0400019e Olympus.LI.Triumph.Application.ViewModel.Acquisition._ui32ZDistanceByDistance
+0013: ldc.i4.3       
+0014: ldc.i4.0       
+0015: call          0x0a000106 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+001a: stloc.2        
+001b: ldarg.1        
+001c: ldarg.0        
+001d: ldfld         0x04000196 Olympus.LI.Triumph.Application.ViewModel.Acquisition._extendMode
+0022: ldarg.0        
+0023: call          0x0600042c Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_DistanceRangeType
+0028: ldloca.s      1 
+002a: ldloc.2        
+002b: call          0x0a000417 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.AcquisitionCalculator.CalculateZDistanceByDistance
+0030: stloc.0        
+0031: ldarg.0        
+0032: ldloc.0        
+0033: ldc.i4.0       
+0034: call          0x0a0000fd Olympus.LI.Triumph.Application.UiData.UICommonData.get_UserCommonData
+0039: callvirt      0x0a0000fe Olympus.LI.Triumph.Application.UiData.UserCommonData.get_Unit
+003e: call          0x0a000102 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+0043: call          0x06000421 Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_ZDistanceByDistance
+0048: nop            
+0049: ret            

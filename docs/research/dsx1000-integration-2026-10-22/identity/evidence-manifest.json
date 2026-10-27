@@ -1,0 +1,55 @@
+{
+  "compressed_path": "rea-evidence-bundle.json.gz",
+  "compressed_bytes": 148976,
+  "compressed_sha256": "c3d92401667aa95891cc80a391c080c354f00376bba82ab4301fe44c22641715",
+  "uncompressed_bytes": 925356,
+  "uncompressed_sha256": "30ca948ede62a67286c20a62faa551d1b501de3da8d78bda932c33d64b7d4a76",
+  "records": [
+    {
+      "evidence_id": "ev_162cc29bad4ff36982869d4223217b0f41cd4a5436503780ed4beac1f9e78d01",
+      "operation": "inspect_analysis_view"
+    },
+    {
+      "evidence_id": "ev_232c16b6bdca12bd1f3a6d372acd864e1b31955c078b2a77aa9e53fb484cbe4b",
+      "operation": "inspect_managed_artifact"
+    },
+    {
+      "evidence_id": "ev_43e28cad204953dc0f9546bc3c919ddf2d4a2694c825e29617d64c3fe67e6337",
+      "operation": "inspect_analysis_view"
+    },
+    {
+      "evidence_id": "ev_8377653c45d854ad75f894205a27039426cdb9a9c67c7352158f05635bef5d01",
+      "operation": "inspect_desktop_application"
+    },
+    {
+      "evidence_id": "ev_9f8dbdde3fd7b44578f750e7303507672484bea2ebf5e11c4fc5052af0befa80",
+      "operation": "inspect_managed_members"
+    },
+    {
+      "evidence_id": "ev_ab4c9dfc8c4d80c6181d149812c55fbcc068492e556cef0810e0a965394752b4",
+      "operation": "inspect_analysis_view"
+    },
+    {
+      "evidence_id": "ev_b1fbc8745bfa7d2d36142506271d627dc4c5e3edc1e8dd098e76f0558da03988",
+      "operation": "inspect_analysis_view"
+    },
+    {
+      "evidence_id": "ev_c874ac163fe1d8050a84f597da6093e7ea9983f085ba05d21ead3abc38182abd",
+      "operation": "inspect_managed_artifact"
+    },
+    {
+      "evidence_id": "ev_cfca8102d146a1e8f664cfd22185767d43a61489a3b2aeccfc46212e5955e500",
+      "operation": "inspect_managed_artifact"
+    },
+    {
+      "evidence_id": "ev_d8e37e4a9f269c12ccce4f27c33d82b9b6c903123c0a28b4f6d5b158447f98d1",
+      "operation": "inspect_analysis_view"
+    },
+    {
+      "evidence_id": "ev_dc57e0f00476b3cc208440bc97aa4af9c55db856ea6329c8365c01052dfd87af",
+      "operation": "inspect_managed_artifact"
+    }
+  ],
+  "roundtrip_verified": true,
+  "scope": "Static copy analysis; no vendor execution or device connection."
+}

@@ -1,0 +1,61 @@
+Evidence: ev_9f1856a71fcfa41f1c91a5fa1cdac619742432ccbf69b7d3ba56dba57eaa45d0
+Subject SHA256: 8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94
+Bundle: matching-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_180001280(undefined8 *param_1,char *param_2)
+
+{
+  int iVar1;
+  HMODULE hModule;
+  undefined4 extraout_var;
+  FARPROC pFVar2;
+  ulonglong uVar3;
+  undefined1 auStack_438 [32];
+  wchar_t local_418 [512];
+  ulonglong local_18;
+  undefined4 extraout_var_00;
+  
+  local_18 = DAT_18000f000 ^ (ulonglong)auStack_438;
+  setlocale(0,"jpn");
+  mbstowcs(local_418,param_2,0x200);
+  hModule = LoadLibraryW(local_418);
+  param_1[7] = hModule;
+  if (hModule == (HMODULE)0x0) {
+    iVar1 = printf("LoadLibrary\n");
+    uVar3 = CONCAT44(extraout_var,iVar1);
+  }
+  else {
+    pFVar2 = GetProcAddress(hModule,"OLYNMV_Initialize");
+    *param_1 = pFVar2;
+    if (pFVar2 != (FARPROC)0x0) {
+      pFVar2 = GetProcAddress((HMODULE)param_1[7],"OLYNMV_Uninitialize");
+      param_1[1] = pFVar2;
+      if (pFVar2 != (FARPROC)0x0) {
+        pFVar2 = GetProcAddress((HMODULE)param_1[7],"OLYNMV_CalcDstImageInfo");
+        param_1[2] = pFVar2;
+        if (pFVar2 != (FARPROC)0x0) {
+          pFVar2 = GetProcAddress((HMODULE)param_1[7],"OLYNMV_ConvertToDstImage");
+          param_1[3] = pFVar2;
+          if (pFVar2 != (FARPROC)0x0) {
+            pFVar2 = GetProcAddress((HMODULE)param_1[7],"OLYNMV_CreateWindow");
+            param_1[4] = pFVar2;
+            if (pFVar2 != (FARPROC)0x0) {
+              pFVar2 = GetProcAddress((HMODULE)param_1[7],"OLYNMV_EstimateMV");
+              param_1[5] = pFVar2;
+              if (pFVar2 != (FARPROC)0x0) {
+                return CONCAT71((int7)((ulonglong)pFVar2 >> 8),1);
+              }
+            }
+          }
+        }
+      }
+    }
+    iVar1 = printf("OLYNMV_INITIALIZE\n");
+    uVar3 = CONCAT44(extraout_var_00,iVar1);
+  }
+  return uVar3 & 0xffffffffffffff00;
+}
+

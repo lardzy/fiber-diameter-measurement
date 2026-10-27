@@ -1,0 +1,330 @@
+EVIDENCE ev_3d4eafea998ffcddb9c26de4668733e0390c5d1267223ecec9dc200575a7ffd7 SHA256 82180eddd2ab0ef88cd744b7e9af26162356d932c2037ed2dd3d7f8018ab07fa
+
+METHOD 0x060001f2 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager CalculateAutoDepthFactor IL_SHA256 0003ff058e5c8513f7cf0fa6a81259cd42ec641f567aaaa6772bc63220d2491a DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.0        
+0002: call          0x060001f3 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._GetAutoDepthFactor
+0007: call          0x060001e4 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager.set_AutoHeightCoefficient
+000c: ret            
+
+METHOD 0x060001f3 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _GetAutoDepthFactor IL_SHA256 d5a57140166aaa0ef3cbd790ee86715a9d9b9666a82a01a38f19b2594474d9e3 DECODE_ISSUE null
+0000: ldc.r8        1 
+0009: stloc.0        
+000a: ldarg.0        
+000b: ldfld         0x04000146 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsImageEntity
+0010: ldc.i4.2       
+0011: callvirt      0x0a00014d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0016: conv.i2        
+0017: stloc.1        
+0018: ldc.r8        4 
+0021: stloc.2        
+0022: call          0x0a0000e8 System.Configuration.ConfigurationManager.get_AppSettings
+0027: ldstr         0x70000b9e "ThreeDAutoDepthFactor"
+002c: callvirt      0x0a0000e9 System.Collections.Specialized.NameValueCollection.get_Item
+0031: ldloca.s      2 
+0033: call          0x0a00014e System.Double.TryParse
+0038: brtrue.s      68 
+003a: ldc.r8        4 
+0043: stloc.2        
+0044: ldarg.0        
+0045: ldfld         0x04000146 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsImageEntity
+004a: ldc.i4.2       
+004b: callvirt      0x0a00014d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0050: stloc.3        
+0051: ldarg.0        
+0052: ldfld         0x04000146 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsImageEntity
+0057: ldc.i4.2       
+0058: callvirt      0x0a00014f Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+005d: stloc.s       4 
+005f: ldloc.s       4 
+0061: ldloc.3        
+0062: ble.s         104 
+0064: ldloc.s       4 
+0066: conv.i2        
+0067: stloc.1        
+0068: ldloc.1        
+0069: conv.r8        
+006a: ldarg.0        
+006b: ldfld         0x04000146 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsImageEntity
+0070: ldc.i4.2       
+0071: callvirt      0x0a000150 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+0076: mul            
+0077: ldloc.2        
+0078: ldarg.0        
+0079: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+007e: callvirt      0x0600040a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_MaximumScaleHeight
+0083: ldarg.0        
+0084: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0089: callvirt      0x0600040c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_MinimumScaleHeight
+008e: sub            
+008f: mul            
+0090: div            
+0091: stloc.0        
+0092: ldarg.0        
+0093: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0098: ldloc.0        
+0099: ldc.i4.1       
+009a: call          0x0a0000a9 System.Math.Round
+009f: conv.r4        
+00a0: conv.r8        
+00a1: callvirt      0x060003ef Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.set_AutoHeightCoefficient
+00a6: ldloc.0        
+00a7: ret            
+
+METHOD 0x06000204 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _SetImageWidtAndHeight IL_SHA256 21abb3f00ec95c355aa9f24a7ca977a9d35d927c64d192814851dff0be05969f DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: call          0x06000202 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._SetWireInterval
+0007: ldarg.0        
+0008: ldarg.0        
+0009: ldfld         0x04000126 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_WIDTH
+000e: ldarg.0        
+000f: ldfld         0x04000126 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_WIDTH
+0014: ldarg.0        
+0015: ldfld         0x0400012d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32W
+001a: rem            
+001b: sub            
+001c: stfld         0x04000126 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_WIDTH
+0021: ldarg.0        
+0022: ldarg.0        
+0023: ldfld         0x04000127 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_LENGTH
+0028: ldarg.0        
+0029: ldfld         0x04000127 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_LENGTH
+002e: ldarg.0        
+002f: ldfld         0x0400012e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32H
+0034: rem            
+0035: sub            
+0036: stfld         0x04000127 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Image_LENGTH
+003b: ret            
+
+METHOD 0x06000215 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _ModelToWorldXform IL_SHA256 cc841efdd7295732d12b685c809c7516c523a1427ce81f807d167b24e753a0d7 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4        256 
+0006: ldarg.0        
+0007: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+000c: callvirt      0x060004ee Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.get_worldMatrix
+0011: ldarg.0        
+0012: ldfld         0x04000170 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._euler
+0017: callvirt      0x0600042f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Euler.get_matrix
+001c: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0021: ldarg.0        
+0022: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+0027: callvirt      0x06000398 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_TranslationMatrix3DObject
+002c: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0031: callvirt      0x0a000188 SlimDX.Direct3D9.Device.SetTransform
+0036: pop            
+0037: ldarg.0        
+0038: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+003d: ldarg.0        
+003e: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0043: callvirt      0x060004ee Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.get_worldMatrix
+0048: ldarg.0        
+0049: ldfld         0x04000170 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._euler
+004e: callvirt      0x0600042f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Euler.get_matrix
+0053: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0058: ldarg.0        
+0059: ldfld         0x04000192 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsDisplayThreeD
+005e: callvirt      0x06000398 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Display3D.get_TranslationMatrix3DObject
+0063: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0068: stfld         0x04000369 DeviceParameterForPureDevice.stTransformWordMatrix
+006d: ret            
+
+METHOD 0x06000216 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _WorldToViewXform IL_SHA256 175f4785461f3a52074748ca51bfd26c67531c821af9d7b7b05c4a07486cc3ae DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.2       
+0002: ldarg.0        
+0003: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0008: callvirt      0x060004ef Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.get_viewMatrix
+000d: callvirt      0x0a000188 SlimDX.Direct3D9.Device.SetTransform
+0012: pop            
+0013: ldarg.0        
+0014: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0019: ldarg.0        
+001a: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+001f: callvirt      0x060004ef Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.get_viewMatrix
+0024: stfld         0x0400036a DeviceParameterForPureDevice.stTransformViewMatrix
+0029: ldarg.1        
+002a: ldc.i4.s      22 
+002c: ldc.i4.1       
+002d: callvirt      0x2b000015 SlimDX.Direct3D9.Device.SetRenderState
+0032: pop            
+0033: ret            
+
+METHOD 0x06000217 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _SetupPerspective IL_SHA256 6fd0eeca2a2915bea193881a3b4dd25e3a089ca30e82ee439ecca3ef6039a5f1 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.3       
+0002: ldarg.0        
+0003: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+0008: callvirt      0x060004f0 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.get_projectionMatrix
+000d: callvirt      0x0a000188 SlimDX.Direct3D9.Device.SetTransform
+0012: pop            
+0013: ldarg.0        
+0014: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0019: ldarg.0        
+001a: ldfld         0x04000176 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._transform
+001f: callvirt      0x060004f0 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.get_projectionMatrix
+0024: stfld         0x0400036b DeviceParameterForPureDevice.stTransformProjectionMatrix
+0029: ret            
+
+METHOD 0x0600021a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _DrawObject IL_SHA256 9ca1c4d0ee38d19279d2fbd39c48b6938cb9e17fc83ef10f44b3b9b500c02d27 DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x0600023e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._NoOfVertexForOnlyObject
+0006: ldarg.0        
+0007: ldfld         0x04000131 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._blnDrawaxis
+000c: brtrue.s      46 
+000e: ldarg.0        
+000f: ldfld         0x04000137 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsD3Ddevice
+0014: ldc.i4.4       
+0015: ldc.i4.0       
+0016: ldc.i4.0       
+0017: ldarg.0        
+0018: ldfld         0x04000123 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32VerticesForImage
+001d: ldc.i4.0       
+001e: ldarg.0        
+001f: ldfld         0x04000130 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._i32Indices
+0024: ldlen          
+0025: conv.i4        
+0026: ldc.i4.3       
+0027: div            
+0028: callvirt      0x0a00018a SlimDX.Direct3D9.Device.DrawIndexedPrimitives
+002d: pop            
+002e: ret            
+
+METHOD 0x06000252 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _LightSetupSetting IL_SHA256 dc39f59ed5414fc29318fd41c1df2ce1fce1d07c2c70a7c050068f92daf6ec14 DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x06000206 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._LightSetup
+0006: ret            
+
+METHOD 0x06000268 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager _RayIntersectionOnObject IL_SHA256 07a3865b268450555ebcc1752081e399a0969f82af6c59da478b8f46ab83a720 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldflda        0x0400014a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._ptMouseMovePos
+0006: call          0x0a00015a System.Drawing.Point.get_X
+000b: conv.r4        
+000c: ldarg.0        
+000d: ldflda        0x0400014a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._ptMouseMovePos
+0012: call          0x0a000159 System.Drawing.Point.get_Y
+0017: conv.r4        
+0018: ldc.r4        0 
+001d: newobj        0x0a000153 SlimDX.Vector3..ctor
+0022: ldarg.0        
+0023: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+0028: call          0x0a0001be SlimDX.Direct3D9.Viewport.get_X
+002d: conv.r4        
+002e: ldarg.0        
+002f: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+0034: call          0x0a0001bf SlimDX.Direct3D9.Viewport.get_Y
+0039: conv.r4        
+003a: ldarg.0        
+003b: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+0040: call          0x0a0001c0 SlimDX.Direct3D9.Viewport.get_Width
+0045: conv.r4        
+0046: ldarg.0        
+0047: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+004c: call          0x0a0001c1 SlimDX.Direct3D9.Viewport.get_Height
+0051: conv.r4        
+0052: ldarg.0        
+0053: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+0058: call          0x0a0001c2 SlimDX.Direct3D9.Viewport.get_MinZ
+005d: ldarg.0        
+005e: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+0063: call          0x0a0001c3 SlimDX.Direct3D9.Viewport.get_MaxZ
+0068: ldarg.0        
+0069: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+006e: ldfld         0x0400036b DeviceParameterForPureDevice.stTransformProjectionMatrix
+0073: ldarg.0        
+0074: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0079: ldfld         0x0400036a DeviceParameterForPureDevice.stTransformViewMatrix
+007e: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0083: ldarg.0        
+0084: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0089: ldfld         0x04000369 DeviceParameterForPureDevice.stTransformWordMatrix
+008e: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0093: call          0x0a0001c4 SlimDX.Vector3.Unproject
+0098: stloc.0        
+0099: ldarg.0        
+009a: ldflda        0x0400014a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._ptMouseMovePos
+009f: call          0x0a00015a System.Drawing.Point.get_X
+00a4: conv.r4        
+00a5: ldarg.0        
+00a6: ldflda        0x0400014a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._ptMouseMovePos
+00ab: call          0x0a000159 System.Drawing.Point.get_Y
+00b0: conv.r4        
+00b1: ldc.r4        1 
+00b6: newobj        0x0a000153 SlimDX.Vector3..ctor
+00bb: ldarg.0        
+00bc: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+00c1: call          0x0a0001be SlimDX.Direct3D9.Viewport.get_X
+00c6: conv.r4        
+00c7: ldarg.0        
+00c8: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+00cd: call          0x0a0001bf SlimDX.Direct3D9.Viewport.get_Y
+00d2: conv.r4        
+00d3: ldarg.0        
+00d4: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+00d9: call          0x0a0001c0 SlimDX.Direct3D9.Viewport.get_Width
+00de: conv.r4        
+00df: ldarg.0        
+00e0: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+00e5: call          0x0a0001c1 SlimDX.Direct3D9.Viewport.get_Height
+00ea: conv.r4        
+00eb: ldarg.0        
+00ec: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+00f1: call          0x0a0001c2 SlimDX.Direct3D9.Viewport.get_MinZ
+00f6: ldarg.0        
+00f7: ldflda        0x04000156 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsViewport
+00fc: call          0x0a0001c3 SlimDX.Direct3D9.Viewport.get_MaxZ
+0101: ldarg.0        
+0102: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0107: ldfld         0x0400036b DeviceParameterForPureDevice.stTransformProjectionMatrix
+010c: ldarg.0        
+010d: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0112: ldfld         0x0400036a DeviceParameterForPureDevice.stTransformViewMatrix
+0117: call          0x0a000171 SlimDX.Matrix.op_Multiply
+011c: ldarg.0        
+011d: ldflda        0x0400018a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._stDeviceParameterForPureDevice
+0122: ldfld         0x04000369 DeviceParameterForPureDevice.stTransformWordMatrix
+0127: call          0x0a000171 SlimDX.Matrix.op_Multiply
+012c: call          0x0a0001c4 SlimDX.Vector3.Unproject
+0131: ldloc.0        
+0132: call          0x0a0001c5 SlimDX.Vector3.Subtract
+0137: stloc.1        
+0138: ldloc.0        
+0139: ldloc.1        
+013a: newobj        0x0a0001c8 SlimDX.Ray..ctor
+013f: ldarg.0        
+0140: ldfld         0x0400015d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsLstV3SliderMovePoint
+0145: ldc.i4.0       
+0146: callvirt      0x0a0001b0 System.Collections.Generic.List`1.get_Item
+014b: ldarg.0        
+014c: ldfld         0x0400015d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsLstV3SliderMovePoint
+0151: ldc.i4.1       
+0152: callvirt      0x0a0001b0 System.Collections.Generic.List`1.get_Item
+0157: ldarg.0        
+0158: ldfld         0x0400015d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsLstV3SliderMovePoint
+015d: ldc.i4.2       
+015e: callvirt      0x0a0001b0 System.Collections.Generic.List`1.get_Item
+0163: ldloca.s      2 
+0165: call          0x0a0001c9 SlimDX.Ray.Intersects
+016a: brtrue.s      416 
+016c: ldloc.0        
+016d: ldloc.1        
+016e: newobj        0x0a0001c8 SlimDX.Ray..ctor
+0173: ldarg.0        
+0174: ldfld         0x0400015d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsLstV3SliderMovePoint
+0179: ldc.i4.1       
+017a: callvirt      0x0a0001b0 System.Collections.Generic.List`1.get_Item
+017f: ldarg.0        
+0180: ldfld         0x0400015d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsLstV3SliderMovePoint
+0185: ldc.i4.2       
+0186: callvirt      0x0a0001b0 System.Collections.Generic.List`1.get_Item
+018b: ldarg.0        
+018c: ldfld         0x0400015d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.BL3DManager._clsLstV3SliderMovePoint
+0191: ldc.i4.3       
+0192: callvirt      0x0a0001b0 System.Collections.Generic.List`1.get_Item
+0197: ldloca.s      2 
+0199: call          0x0a0001c9 SlimDX.Ray.Intersects
+019e: brfalse.s     418 
+01a0: ldc.i4.1       
+01a1: ret            
+01a2: ldc.i4.0       
+01a3: ret            

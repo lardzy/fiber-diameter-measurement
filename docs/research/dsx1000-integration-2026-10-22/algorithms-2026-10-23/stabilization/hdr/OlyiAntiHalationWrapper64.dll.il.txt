@@ -1,0 +1,5614 @@
+// ev_ca952e910b1bd40a71994de244b1f3302d45fa27134a724849e81bc5f6b9adcc
+
+METHOD <Module>::delete 0x06000001
+0000 ret None 
+
+METHOD <Module>::std.error_category.{dtor} 0x06000002
+0000 ldarg.0 None 
+0001 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0006 stind.i8 None 
+0007 ret None 
+
+METHOD <Module>::std.error_category.__vecDelDtor 0x06000003
+0000 ldarg.1 None 
+0001 ldc.i4.2 None 
+0002 and None 
+0003 brfalse.s 39 
+0005 ldarg.0 None 
+0006 ldc.i4.8 None 
+0007 conv.i8 None 
+0008 sub None 
+0009 stloc.0 None 
+0010 ldarg.0 None 
+0011 ldc.i4.8 None 
+0012 conv.i8 None 
+0013 ldloc.0 None 
+0014 ldind.i4 None 
+0015 ldftn 0x06000002 <Module>::std.error_category.{dtor}
+0021 call 0x06000081 <Module>::__ehvec_dtor
+0026 ldarg.1 None 
+0027 ldc.i4.1 None 
+0028 and None 
+0029 brfalse.s 37 
+0031 ldloc.0 None 
+0032 call 0x060000b7 <Module>::delete[]
+0037 ldloc.0 None 
+0038 ret None 
+0039 ldarg.0 None 
+0040 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0045 stind.i8 None 
+0046 ldarg.1 None 
+0047 ldc.i4.1 None 
+0048 and None 
+0049 brfalse.s 57 
+0051 ldarg.0 None 
+0052 call 0x060000b9 <Module>::delete
+0057 ldarg.0 None 
+0058 ret None 
+
+METHOD <Module>::std.error_condition.== 0x06000004
+0000 ldarg.0 None 
+0001 ldc.i4.8 None 
+0002 conv.i8 None 
+0003 add None 
+0004 ldind.i8 None 
+0005 ldarg.1 None 
+0006 ldc.i4.8 None 
+0007 conv.i8 None 
+0008 add None 
+0009 ldind.i8 None 
+0010 ceq None 
+0012 conv.u1 None 
+0013 brfalse.s 25 
+0015 ldarg.0 None 
+0016 ldind.i4 None 
+0017 ldarg.1 None 
+0018 ldind.i4 None 
+0019 bne.un.s 25 
+0021 ldc.i4.1 None 
+0022 stloc.0 None 
+0023 br.s 27 
+0025 ldc.i4.0 None 
+0026 stloc.0 None 
+0027 ldloc.0 None 
+0028 conv.u1 None 
+0029 ret None 
+
+METHOD <Module>::std.error_category.default_error_condition 0x06000005
+0000 ldarg.1 None 
+0001 ldarg.2 None 
+0002 stind.i4 None 
+0003 ldarg.1 None 
+0004 ldc.i4.8 None 
+0005 conv.i8 None 
+0006 add None 
+0007 ldarg.0 None 
+0008 stind.i8 None 
+0009 ldarg.1 None 
+0010 ret None 
+
+METHOD <Module>::std.error_category.equivalent 0x06000006
+0000 ldarg.0 None 
+0001 ldloca.s 0 
+0003 ldarg.1 None 
+0004 ldarg.0 None 
+0005 ldind.i8 None 
+0006 ldc.i4.s 24 
+0008 conv.i8 None 
+0009 add None 
+0010 ldind.i8 None 
+0011 calli 0x11000011 
+0016 ldarg.2 None 
+0017 call 0x06000004 <Module>::std.error_condition.==
+0022 ret None 
+
+METHOD <Module>::std.error_category.equivalent 0x06000007
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 ldc.i4.8 None 
+0003 conv.i8 None 
+0004 add None 
+0005 ldind.i8 None 
+0006 ceq None 
+0008 conv.u1 None 
+0009 brfalse.s 20 
+0011 ldarg.1 None 
+0012 ldind.i4 None 
+0013 ldarg.2 None 
+0014 bne.un.s 20 
+0016 ldc.i4.1 None 
+0017 stloc.0 None 
+0018 br.s 22 
+0020 ldc.i4.0 None 
+0021 stloc.0 None 
+0022 ldloc.0 None 
+0023 conv.u1 None 
+0024 ret None 
+
+METHOD <Module>::std._Generic_error_category.name 0x06000008
+0000 ldsflda 0x04000001 <Module>::??_C@_07DCLBNMLN@generic?$AA@
+0005 ret None 
+
+METHOD <Module>::std._Generic_error_category.message 0x06000009
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldarg.2 None 
+0003 call 0x060000af <Module>::std._Syserror_map
+0008 stloc.1 None 
+0009 ldloc.1 None 
+0010 ldc.i4.0 None 
+0011 conv.i8 None 
+0012 bne.un.s 21 
+0014 ldsflda 0x04000002 <Module>::??_C@_0O@BFJCFAAK@unknown?5error?$AA@
+0019 br.s 22 
+0021 ldloc.1 None 
+0022 stloc.3 None 
+0023 ldarg.1 None 
+0024 ldloc.3 None 
+0025 call 0x0600003d <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{ctor}
+0030 pop None 
+0031 ldc.i4.1 None 
+0032 stloc.0 None 
+0033 ldarg.1 None 
+0034 stloc.2 None 
+0035 leave.s 60 
+0037 ldloc.0 None 
+0038 ldc.i4.1 None 
+0039 and None 
+0040 brfalse.s 59 
+0042 ldloc.0 None 
+0043 ldc.i4.s -2 
+0045 and None 
+0046 stloc.0 None 
+0047 ldftn 0x0600003e <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{dtor}
+0053 ldarg.1 None 
+0054 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0059 endfinally None 
+0060 ldloc.2 None 
+0061 ret None 
+
+METHOD <Module>::std._Generic_error_category.__vecDelDtor 0x0600000a
+0000 ldarg.1 None 
+0001 ldc.i4.2 None 
+0002 and None 
+0003 brfalse.s 39 
+0005 ldarg.0 None 
+0006 ldc.i4.8 None 
+0007 conv.i8 None 
+0008 sub None 
+0009 stloc.0 None 
+0010 ldarg.0 None 
+0011 ldc.i4.8 None 
+0012 conv.i8 None 
+0013 ldloc.0 None 
+0014 ldind.i4 None 
+0015 ldftn 0x0600000b <Module>::std._Generic_error_category.{dtor}
+0021 call 0x06000081 <Module>::__ehvec_dtor
+0026 ldarg.1 None 
+0027 ldc.i4.1 None 
+0028 and None 
+0029 brfalse.s 37 
+0031 ldloc.0 None 
+0032 call 0x060000b7 <Module>::delete[]
+0037 ldloc.0 None 
+0038 ret None 
+0039 ldarg.0 None 
+0040 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0045 stind.i8 None 
+0046 ldarg.1 None 
+0047 ldc.i4.1 None 
+0048 and None 
+0049 brfalse.s 57 
+0051 ldarg.0 None 
+0052 call 0x060000b9 <Module>::delete
+0057 ldarg.0 None 
+0058 ret None 
+
+METHOD <Module>::std._Generic_error_category.{dtor} 0x0600000b
+0000 ldarg.0 None 
+0001 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0006 stind.i8 None 
+0007 ret None 
+
+METHOD <Module>::std._Iostream_error_category.name 0x0600000c
+0000 ldsflda 0x04000003 <Module>::??_C@_08LLGCOLLL@iostream?$AA@
+0005 ret None 
+
+METHOD <Module>::std._Iostream_error_category.message 0x0600000d
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldarg.2 None 
+0003 ldc.i4.1 None 
+0004 bne.un.s 47 
+0006 ldarg.1 None 
+0007 ldsflda 0x04000004 <Module>::??_C@_0BG@PADBLCHM@iostream?5stream?5error?$AA@
+0012 call 0x0600003d <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{ctor}
+0017 pop None 
+0018 ldc.i4.1 None 
+0019 stloc.0 None 
+0020 ldarg.1 None 
+0021 stloc.1 None 
+0022 leave.s 85 
+0024 ldloc.0 None 
+0025 ldc.i4.1 None 
+0026 and None 
+0027 brfalse.s 46 
+0029 ldloc.0 None 
+0030 ldc.i4.s -2 
+0032 and None 
+0033 stloc.0 None 
+0034 ldftn 0x0600003e <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{dtor}
+0040 ldarg.1 None 
+0041 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0046 endfinally None 
+0047 ldarg.0 None 
+0048 ldarg.1 None 
+0049 ldarg.2 None 
+0050 call 0x06000009 <Module>::std._Generic_error_category.message
+0055 pop None 
+0056 ldc.i4.1 None 
+0057 stloc.0 None 
+0058 ldarg.1 None 
+0059 stloc.1 None 
+0060 leave.s 85 
+0062 ldloc.0 None 
+0063 ldc.i4.1 None 
+0064 and None 
+0065 brfalse.s 84 
+0067 ldloc.0 None 
+0068 ldc.i4.s -2 
+0070 and None 
+0071 stloc.0 None 
+0072 ldftn 0x0600003e <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{dtor}
+0078 ldarg.1 None 
+0079 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0084 endfinally None 
+0085 ldloc.1 None 
+0086 ret None 
+
+METHOD <Module>::std._Iostream_error_category.__vecDelDtor 0x0600000e
+0000 ldarg.1 None 
+0001 ldc.i4.2 None 
+0002 and None 
+0003 brfalse.s 39 
+0005 ldarg.0 None 
+0006 ldc.i4.8 None 
+0007 conv.i8 None 
+0008 sub None 
+0009 stloc.0 None 
+0010 ldarg.0 None 
+0011 ldc.i4.8 None 
+0012 conv.i8 None 
+0013 ldloc.0 None 
+0014 ldind.i4 None 
+0015 ldftn 0x0600000f <Module>::std._Iostream_error_category.{dtor}
+0021 call 0x06000081 <Module>::__ehvec_dtor
+0026 ldarg.1 None 
+0027 ldc.i4.1 None 
+0028 and None 
+0029 brfalse.s 37 
+0031 ldloc.0 None 
+0032 call 0x060000b7 <Module>::delete[]
+0037 ldloc.0 None 
+0038 ret None 
+0039 ldarg.0 None 
+0040 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0045 stind.i8 None 
+0046 ldarg.1 None 
+0047 ldc.i4.1 None 
+0048 and None 
+0049 brfalse.s 57 
+0051 ldarg.0 None 
+0052 call 0x060000b9 <Module>::delete
+0057 ldarg.0 None 
+0058 ret None 
+
+METHOD <Module>::std._Iostream_error_category.{dtor} 0x0600000f
+0000 ldarg.0 None 
+0001 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0006 stind.i8 None 
+0007 ret None 
+
+METHOD <Module>::std._System_error_category.name 0x06000010
+0000 ldsflda 0x04000005 <Module>::??_C@_06FHFOAHML@system?$AA@
+0005 ret None 
+
+METHOD <Module>::std._System_error_category.message 0x06000011
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldarg.2 None 
+0003 call 0x060000ae <Module>::std._Winerror_map
+0008 stloc.1 None 
+0009 ldloc.1 None 
+0010 ldc.i4.0 None 
+0011 conv.i8 None 
+0012 bne.un.s 21 
+0014 ldsflda 0x04000002 <Module>::??_C@_0O@BFJCFAAK@unknown?5error?$AA@
+0019 br.s 22 
+0021 ldloc.1 None 
+0022 stloc.3 None 
+0023 ldarg.1 None 
+0024 ldloc.3 None 
+0025 call 0x0600003d <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{ctor}
+0030 pop None 
+0031 ldc.i4.1 None 
+0032 stloc.0 None 
+0033 ldarg.1 None 
+0034 stloc.2 None 
+0035 leave.s 60 
+0037 ldloc.0 None 
+0038 ldc.i4.1 None 
+0039 and None 
+0040 brfalse.s 59 
+0042 ldloc.0 None 
+0043 ldc.i4.s -2 
+0045 and None 
+0046 stloc.0 None 
+0047 ldftn 0x0600003e <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{dtor}
+0053 ldarg.1 None 
+0054 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0059 endfinally None 
+0060 ldloc.2 None 
+0061 ret None 
+
+METHOD <Module>::std._System_error_category.default_error_condition 0x06000012
+0000 ldarg.2 None 
+0001 call 0x060000af <Module>::std._Syserror_map
+0006 brfalse.s 23 
+0008 ldarg.1 None 
+0009 ldarg.2 None 
+0010 stind.i4 None 
+0011 ldarg.1 None 
+0012 ldc.i4.8 None 
+0013 conv.i8 None 
+0014 add None 
+0015 ldsflda 0x04000024 <Module>::?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A
+0020 stind.i8 None 
+0021 ldarg.1 None 
+0022 ret None 
+0023 ldarg.1 None 
+0024 ldarg.2 None 
+0025 stind.i4 None 
+0026 ldarg.1 None 
+0027 ldc.i4.8 None 
+0028 conv.i8 None 
+0029 add None 
+0030 ldsflda 0x04000020 <Module>::?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A
+0035 stind.i8 None 
+0036 ldarg.1 None 
+0037 ret None 
+
+METHOD <Module>::std._System_error_category.__vecDelDtor 0x06000013
+0000 ldarg.1 None 
+0001 ldc.i4.2 None 
+0002 and None 
+0003 brfalse.s 39 
+0005 ldarg.0 None 
+0006 ldc.i4.8 None 
+0007 conv.i8 None 
+0008 sub None 
+0009 stloc.0 None 
+0010 ldarg.0 None 
+0011 ldc.i4.8 None 
+0012 conv.i8 None 
+0013 ldloc.0 None 
+0014 ldind.i4 None 
+0015 ldftn 0x06000014 <Module>::std._System_error_category.{dtor}
+0021 call 0x06000081 <Module>::__ehvec_dtor
+0026 ldarg.1 None 
+0027 ldc.i4.1 None 
+0028 and None 
+0029 brfalse.s 37 
+0031 ldloc.0 None 
+0032 call 0x060000b7 <Module>::delete[]
+0037 ldloc.0 None 
+0038 ret None 
+0039 ldarg.0 None 
+0040 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0045 stind.i8 None 
+0046 ldarg.1 None 
+0047 ldc.i4.1 None 
+0048 and None 
+0049 brfalse.s 57 
+0051 ldarg.0 None 
+0052 call 0x060000b9 <Module>::delete
+0057 ldarg.0 None 
+0058 ret None 
+
+METHOD <Module>::std._System_error_category.{dtor} 0x06000014
+0000 ldarg.0 None 
+0001 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0006 stind.i8 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@D@ATL@@2QEQtagVARIANT@@DEQ3@@@YMXXZ 0x06000015
+0000 ldsflda 0x0400006b <Module>::?pmField@?$CVarTypeInfo@D@ATL@@2QEQtagVARIANT@@DEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@E@ATL@@2QEQtagVARIANT@@EEQ3@@@YMXXZ 0x06000016
+0000 ldsflda 0x04000069 <Module>::?pmField@?$CVarTypeInfo@E@ATL@@2QEQtagVARIANT@@EEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAD@ATL@@2QEQtagVARIANT@@PEADEQ3@@@YMXXZ 0x06000017
+0000 ldsflda 0x04000067 <Module>::?pmField@?$CVarTypeInfo@PEAD@ATL@@2QEQtagVARIANT@@PEADEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAE@ATL@@2QEQtagVARIANT@@PEAEEQ3@@@YMXXZ 0x06000018
+0000 ldsflda 0x04000065 <Module>::?pmField@?$CVarTypeInfo@PEAE@ATL@@2QEQtagVARIANT@@PEAEEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@F@ATL@@2QEQtagVARIANT@@FEQ3@@@YMXXZ 0x06000019
+0000 ldsflda 0x04000063 <Module>::?pmField@?$CVarTypeInfo@F@ATL@@2QEQtagVARIANT@@FEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAF@ATL@@2QEQtagVARIANT@@PEAFEQ3@@@YMXXZ 0x0600001a
+0000 ldsflda 0x04000061 <Module>::?pmField@?$CVarTypeInfo@PEAF@ATL@@2QEQtagVARIANT@@PEAFEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@G@ATL@@2QEQtagVARIANT@@GEQ3@@@YMXXZ 0x0600001b
+0000 ldsflda 0x0400005f <Module>::?pmField@?$CVarTypeInfo@G@ATL@@2QEQtagVARIANT@@GEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAG@ATL@@2QEQtagVARIANT@@PEAGEQ3@@@YMXXZ 0x0600001c
+0000 ldsflda 0x0400005d <Module>::?pmField@?$CVarTypeInfo@PEAG@ATL@@2QEQtagVARIANT@@PEAGEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@H@ATL@@2QEQtagVARIANT@@HEQ3@@@YMXXZ 0x0600001d
+0000 ldsflda 0x0400005b <Module>::?pmField@?$CVarTypeInfo@H@ATL@@2QEQtagVARIANT@@HEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAH@ATL@@2QEQtagVARIANT@@PEAHEQ3@@@YMXXZ 0x0600001e
+0000 ldsflda 0x04000059 <Module>::?pmField@?$CVarTypeInfo@PEAH@ATL@@2QEQtagVARIANT@@PEAHEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@I@ATL@@2QEQtagVARIANT@@IEQ3@@@YMXXZ 0x0600001f
+0000 ldsflda 0x04000057 <Module>::?pmField@?$CVarTypeInfo@I@ATL@@2QEQtagVARIANT@@IEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAI@ATL@@2QEQtagVARIANT@@PEAIEQ3@@@YMXXZ 0x06000020
+0000 ldsflda 0x04000055 <Module>::?pmField@?$CVarTypeInfo@PEAI@ATL@@2QEQtagVARIANT@@PEAIEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@J@ATL@@2QEQtagVARIANT@@JEQ3@@@YMXXZ 0x06000021
+0000 ldsflda 0x04000053 <Module>::?pmField@?$CVarTypeInfo@J@ATL@@2QEQtagVARIANT@@JEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAJ@ATL@@2QEQtagVARIANT@@PEAJEQ3@@@YMXXZ 0x06000022
+0000 ldsflda 0x04000051 <Module>::?pmField@?$CVarTypeInfo@PEAJ@ATL@@2QEQtagVARIANT@@PEAJEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@K@ATL@@2QEQtagVARIANT@@KEQ3@@@YMXXZ 0x06000023
+0000 ldsflda 0x0400004f <Module>::?pmField@?$CVarTypeInfo@K@ATL@@2QEQtagVARIANT@@KEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAK@ATL@@2QEQtagVARIANT@@PEAKEQ3@@@YMXXZ 0x06000024
+0000 ldsflda 0x0400004d <Module>::?pmField@?$CVarTypeInfo@PEAK@ATL@@2QEQtagVARIANT@@PEAKEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@_J@ATL@@2QEQtagVARIANT@@_JEQ3@@@YMXXZ 0x06000025
+0000 ldsflda 0x0400004b <Module>::?pmField@?$CVarTypeInfo@_J@ATL@@2QEQtagVARIANT@@_JEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEA_J@ATL@@2QEQtagVARIANT@@PEA_JEQ3@@@YMXXZ 0x06000026
+0000 ldsflda 0x04000049 <Module>::?pmField@?$CVarTypeInfo@PEA_J@ATL@@2QEQtagVARIANT@@PEA_JEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@_K@ATL@@2QEQtagVARIANT@@_KEQ3@@@YMXXZ 0x06000027
+0000 ldsflda 0x04000047 <Module>::?pmField@?$CVarTypeInfo@_K@ATL@@2QEQtagVARIANT@@_KEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEA_K@ATL@@2QEQtagVARIANT@@PEA_KEQ3@@@YMXXZ 0x06000028
+0000 ldsflda 0x04000045 <Module>::?pmField@?$CVarTypeInfo@PEA_K@ATL@@2QEQtagVARIANT@@PEA_KEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@M@ATL@@2QEQtagVARIANT@@MEQ3@@@YMXXZ 0x06000029
+0000 ldsflda 0x04000043 <Module>::?pmField@?$CVarTypeInfo@M@ATL@@2QEQtagVARIANT@@MEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAM@ATL@@2QEQtagVARIANT@@PEAMEQ3@@@YMXXZ 0x0600002a
+0000 ldsflda 0x04000041 <Module>::?pmField@?$CVarTypeInfo@PEAM@ATL@@2QEQtagVARIANT@@PEAMEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@N@ATL@@2QEQtagVARIANT@@NEQ3@@@YMXXZ 0x0600002b
+0000 ldsflda 0x0400003f <Module>::?pmField@?$CVarTypeInfo@N@ATL@@2QEQtagVARIANT@@NEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAN@ATL@@2QEQtagVARIANT@@PEANEQ3@@@YMXXZ 0x0600002c
+0000 ldsflda 0x0400003d <Module>::?pmField@?$CVarTypeInfo@PEAN@ATL@@2QEQtagVARIANT@@PEANEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEA_W@ATL@@2QEQtagVARIANT@@PEA_WEQ3@@@YMXXZ 0x0600002d
+0000 ldsflda 0x0400003b <Module>::?pmField@?$CVarTypeInfo@PEA_W@ATL@@2QEQtagVARIANT@@PEA_WEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAPEA_W@ATL@@2QEQtagVARIANT@@PEAPEA_WEQ3@@@YMXXZ 0x0600002e
+0000 ldsflda 0x04000039 <Module>::?pmField@?$CVarTypeInfo@PEAPEA_W@ATL@@2QEQtagVARIANT@@PEAPEA_WEQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAUIUnknown@@@ATL@@2QEQtagVARIANT@@PEAUIUnknown@@EQ3@@@YMXXZ 0x0600002f
+0000 ldsflda 0x04000037 <Module>::?pmField@?$CVarTypeInfo@PEAUIUnknown@@@ATL@@2QEQtagVARIANT@@PEAUIUnknown@@EQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAPEAUIUnknown@@@ATL@@2QEQtagVARIANT@@PEAPEAUIUnknown@@EQ3@@@YMXXZ 0x06000030
+0000 ldsflda 0x04000035 <Module>::?pmField@?$CVarTypeInfo@PEAPEAUIUnknown@@@ATL@@2QEQtagVARIANT@@PEAPEAUIUnknown@@EQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAUIDispatch@@@ATL@@2QEQtagVARIANT@@PEAUIDispatch@@EQ3@@@YMXXZ 0x06000031
+0000 ldsflda 0x04000033 <Module>::?pmField@?$CVarTypeInfo@PEAUIDispatch@@@ATL@@2QEQtagVARIANT@@PEAUIDispatch@@EQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEAPEAUIDispatch@@@ATL@@2QEQtagVARIANT@@PEAPEAUIDispatch@@EQ3@@@YMXXZ 0x06000032
+0000 ldsflda 0x04000031 <Module>::?pmField@?$CVarTypeInfo@PEAPEAUIDispatch@@@ATL@@2QEQtagVARIANT@@PEAPEAUIDispatch@@EQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@TtagCY@@@ATL@@2QEQtagVARIANT@@TtagCY@@EQ3@@@YMXXZ 0x06000033
+0000 ldsflda 0x0400002f <Module>::?pmField@?$CVarTypeInfo@TtagCY@@@ATL@@2QEQtagVARIANT@@TtagCY@@EQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?pmField@?$CVarTypeInfo@PEATtagCY@@@ATL@@2QEQtagVARIANT@@PEATtagCY@@EQ3@@@YMXXZ 0x06000034
+0000 ldsflda 0x0400002d <Module>::?pmField@?$CVarTypeInfo@PEATtagCY@@@ATL@@2QEQtagVARIANT@@PEATtagCY@@EQ3@
+0005 ldc.i4.8 None 
+0006 stind.i4 None 
+0007 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E_AtlComModule@ATL@@YMXXZ 0x06000035
+0000 ldsflda 0x04000029 <Module>::ATL._AtlComModule
+0005 call 0x060000a2 <Module>::ATL.CAtlComModule.{ctor}
+0010 pop None 
+0011 ldftn 0x06000036 <Module>::?A0x39088e81.??__F_AtlComModule@ATL@@YMXXZ
+0017 call 0x06000095 <Module>::_atexit_m
+0022 pop None 
+0023 ret None 
+
+METHOD <Module>::?A0x39088e81.??__F_AtlComModule@ATL@@YMXXZ 0x06000036
+0000 ldsflda 0x04000029 <Module>::ATL._AtlComModule
+0005 call 0x060000a3 <Module>::ATL.CAtlComModule.{dtor}
+0010 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E_AtlReleaseManagedClassFactories@ATL@@YMXXZ 0x06000037
+0000 ldftn 0x06000038 <Module>::?A0x39088e81.??__F_AtlReleaseManagedClassFactories@ATL@@YMXXZ
+0006 call 0x06000095 <Module>::_atexit_m
+0011 pop None 
+0012 ret None 
+
+METHOD <Module>::?A0x39088e81.??__F_AtlReleaseManagedClassFactories@ATL@@YMXXZ 0x06000038
+0000 ldsflda 0x04000029 <Module>::ATL._AtlComModule
+0005 call 0x060000a4 <Module>::ATL.CAtlComModule.Term
+0010 ret None 
+
+METHOD <Module>::COlyImageCreator.CalcBuffSize 0x06000039
+0000 ldarg.0 None 
+0001 brtrue.s 9 
+0003 ldc.i4 -2147024809 
+0008 ret None 
+0009 ldarg.1 None 
+0010 brtrue.s 22 
+0012 ldarg.0 None 
+0013 ldc.i4.0 None 
+0014 conv.i8 None 
+0015 stind.i8 None 
+0016 ldc.i4 -2147024809 
+0021 ret None 
+0022 ldarg.2 None 
+0023 brtrue.s 35 
+0025 ldarg.0 None 
+0026 ldc.i4.0 None 
+0027 conv.i8 None 
+0028 stind.i8 None 
+0029 ldc.i4 -2147024809 
+0034 ret None 
+0035 ldarg.3 None 
+0036 brtrue.s 48 
+0038 ldarg.0 None 
+0039 ldc.i4.0 None 
+0040 conv.i8 None 
+0041 stind.i8 None 
+0042 ldc.i4 -2147024809 
+0047 ret None 
+0048 ldc.i4.0 None 
+0049 ldarg.3 None 
+0050 bge.un.s 61 
+0052 ldarg.3 None 
+0053 ldc.i4.8 None 
+0054 bgt.un.s 65 
+0056 ldc.i4.8 None 
+0057 starg.s 3 
+0059 br.s 106 
+0061 ldc.i4.8 None 
+0062 ldarg.3 None 
+0063 bge.un.s 76 
+0065 ldarg.3 None 
+0066 ldc.i4.s 16 
+0068 bgt.un.s 81 
+0070 ldc.i4.s 16 
+0072 starg.s 3 
+0074 br.s 106 
+0076 ldc.i4.s 16 
+0078 ldarg.3 None 
+0079 bge.un.s 92 
+0081 ldarg.3 None 
+0082 ldc.i4.s 32 
+0084 bgt.un.s 97 
+0086 ldc.i4.s 32 
+0088 starg.s 3 
+0090 br.s 106 
+0092 ldc.i4.s 32 
+0094 ldarg.3 None 
+0095 bge.un.s 166 
+0097 ldarg.3 None 
+0098 ldc.i4.s 64 
+0100 bgt.un.s 166 
+0102 ldc.i4.s 64 
+0104 starg.s 3 
+0106 ldarg.s 4 
+0108 brtrue.s 120 
+0110 ldarg.0 None 
+0111 ldc.i4.0 None 
+0112 conv.i8 None 
+0113 stind.i8 None 
+0114 ldc.i4 -2147024809 
+0119 ret None 
+0120 ldarg.3 None 
+0121 conv.u8 None 
+0122 ldc.i4.3 None 
+0123 conv.i8 None 
+0124 shr.un None 
+0125 ldarg.1 None 
+0126 conv.u8 None 
+0127 mul None 
+0128 ldarg.2 None 
+0129 conv.u8 None 
+0130 mul None 
+0131 ldarg.s 4 
+0133 conv.u8 None 
+0134 mul None 
+0135 stloc.0 None 
+0136 ldloc.0 None 
+0137 ldc.i8 -4294967296 
+0146 and None 
+0147 ldc.i4.0 None 
+0148 conv.i8 None 
+0149 ble.un.s 161 
+0151 ldarg.0 None 
+0152 ldc.i4.0 None 
+0153 conv.i8 None 
+0154 stind.i8 None 
+0155 ldc.i4 -2147467259 
+0160 ret None 
+0161 ldarg.0 None 
+0162 ldloc.0 None 
+0163 stind.i8 None 
+0164 ldc.i4.0 None 
+0165 ret None 
+0166 ldarg.0 None 
+0167 ldc.i4.0 None 
+0168 conv.i8 None 
+0169 stind.i8 None 
+0170 ldc.i4 -2147024809 
+0175 ret None 
+
+METHOD <Module>::ATL.CComPtr<IOlyImage>.{dtor} 0x0600003a
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::ATL.CComPtr<IOlyImageContainer>.{dtor} 0x0600003b
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::ATL.CComPtr<IOlyIPBuffer>.{dtor} 0x0600003c
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{ctor} 0x0600003d
+0000 ldarg.0 None 
+0001 ldc.i4.s 16 
+0003 conv.i8 None 
+0004 add None 
+0005 ldc.i4.0 None 
+0006 conv.i8 None 
+0007 stind.i8 None 
+0008 ldarg.0 None 
+0009 ldc.i4.s 24 
+0011 conv.i8 None 
+0012 add None 
+0013 ldc.i4.0 None 
+0014 conv.i8 None 
+0015 stind.i8 None 
+0016 ldarg.0 None 
+0017 ldc.i4.0 None 
+0018 ldc.i4.0 None 
+0019 conv.i8 None 
+0020 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0025 ldarg.1 None 
+0026 ldind.i1 None 
+0027 brtrue.s 34 
+0029 ldc.i4.0 None 
+0030 conv.i8 None 
+0031 stloc.1 None 
+0032 br.s 49 
+0034 ldarg.1 None 
+0035 stloc.0 None 
+0036 ldloc.0 None 
+0037 ldc.i4.1 None 
+0038 conv.i8 None 
+0039 add None 
+0040 stloc.0 None 
+0041 ldloc.0 None 
+0042 ldind.i1 None 
+0043 brtrue.s 36 
+0045 ldloc.0 None 
+0046 ldarg.1 None 
+0047 sub None 
+0048 stloc.1 None 
+0049 ldarg.0 None 
+0050 ldarg.1 None 
+0051 ldloc.1 None 
+0052 call 0x06000041 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.assign
+0057 pop None 
+0058 ldarg.0 None 
+0059 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.{dtor} 0x0600003e
+0000 ldarg.0 None 
+0001 ldc.i4.1 None 
+0002 ldc.i4.0 None 
+0003 conv.i8 None 
+0004 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0009 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.assign 0x0600003f
+0000 ldarg.1 None 
+0001 ldc.i4.s 16 
+0003 conv.i8 None 
+0004 add None 
+0005 ldind.i8 None 
+0006 stloc.s 4 
+0008 ldloc.s 4 
+0010 ldarg.2 None 
+0011 bge.un.s 23 
+0013 ldsflda 0x04000007 <Module>::??_C@_0BI@CFPLBAOH@invalid?5string?5position?$AA@
+0018 call 0x060000ad <Module>::std._Xout_of_range
+0023 ldloc.s 4 
+0025 ldarg.2 None 
+0026 sub None 
+0027 stloc.0 None 
+0028 ldarg.3 None 
+0029 ldloc.0 None 
+0030 blt.un.s 35 
+0032 ldloc.0 None 
+0033 br.s 36 
+0035 ldarg.3 None 
+0036 stloc.0 None 
+0037 ldarg.0 None 
+0038 ldarg.1 None 
+0039 bne.un.s 103 
+0041 ldloc.0 None 
+0042 ldarg.2 None 
+0043 add None 
+0044 stloc.1 None 
+0045 ldarg.0 None 
+0046 ldc.i4.s 16 
+0048 conv.i8 None 
+0049 add None 
+0050 ldind.i8 None 
+0051 ldloc.1 None 
+0052 bge.un.s 64 
+0054 ldsflda 0x04000007 <Module>::??_C@_0BI@CFPLBAOH@invalid?5string?5position?$AA@
+0059 call 0x060000ad <Module>::std._Xout_of_range
+0064 ldarg.0 None 
+0065 ldc.i4.s 16 
+0067 conv.i8 None 
+0068 add None 
+0069 ldloc.1 None 
+0070 stind.i8 None 
+0071 ldc.i4.s 16 
+0073 conv.i8 None 
+0074 ldarg.0 None 
+0075 ldc.i4.s 24 
+0077 conv.i8 None 
+0078 add None 
+0079 ldind.i8 None 
+0080 bgt.un.s 86 
+0082 ldarg.0 None 
+0083 ldind.i8 None 
+0084 br.s 87 
+0086 ldarg.0 None 
+0087 ldloc.1 None 
+0088 add None 
+0089 ldc.i4.0 None 
+0090 stind.i1 None 
+0091 ldarg.0 None 
+0092 ldc.i4.0 None 
+0093 conv.i8 None 
+0094 ldarg.2 None 
+0095 call 0x06000042 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.erase
+0100 pop None 
+0101 br.s 189 
+0103 ldarg.0 None 
+0104 ldloc.0 None 
+0105 ldc.i4.0 None 
+0106 call 0x06000043 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Grow
+0111 brfalse.s 189 
+0113 ldc.i4.s 16 
+0115 conv.i8 None 
+0116 ldarg.1 None 
+0117 ldc.i4.s 24 
+0119 conv.i8 None 
+0120 add None 
+0121 ldind.i8 None 
+0122 bgt.un.s 129 
+0124 ldarg.1 None 
+0125 ldind.i8 None 
+0126 stloc.3 None 
+0127 br.s 131 
+0129 ldarg.1 None 
+0130 stloc.3 None 
+0131 ldc.i4.s 16 
+0133 conv.i8 None 
+0134 ldarg.0 None 
+0135 ldc.i4.s 24 
+0137 conv.i8 None 
+0138 add None 
+0139 ldind.i8 None 
+0140 bgt.un.s 147 
+0142 ldarg.0 None 
+0143 ldind.i8 None 
+0144 stloc.2 None 
+0145 br.s 149 
+0147 ldarg.0 None 
+0148 stloc.2 None 
+0149 ldloc.0 None 
+0150 brfalse.s 162 
+0152 ldloc.2 None 
+0153 ldloc.3 None 
+0154 ldarg.2 None 
+0155 add None 
+0156 ldloc.0 None 
+0157 unaligned. 1 
+0160 cpblk None 
+0162 ldarg.0 None 
+0163 ldc.i4.s 16 
+0165 conv.i8 None 
+0166 add None 
+0167 ldloc.0 None 
+0168 stind.i8 None 
+0169 ldc.i4.s 16 
+0171 conv.i8 None 
+0172 ldarg.0 None 
+0173 ldc.i4.s 24 
+0175 conv.i8 None 
+0176 add None 
+0177 ldind.i8 None 
+0178 bgt.un.s 184 
+0180 ldarg.0 None 
+0181 ldind.i8 None 
+0182 br.s 185 
+0184 ldarg.0 None 
+0185 ldloc.0 None 
+0186 add None 
+0187 ldc.i4.0 None 
+0188 stind.i1 None 
+0189 ldarg.0 None 
+0190 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy 0x06000040
+0000 ldarg.1 None 
+0001 brfalse.s 36 
+0003 ldc.i4.s 16 
+0005 conv.i8 None 
+0006 ldarg.0 None 
+0007 ldc.i4.s 24 
+0009 conv.i8 None 
+0010 add None 
+0011 ldind.i8 None 
+0012 bgt.un.s 36 
+0014 ldarg.0 None 
+0015 ldind.i8 None 
+0016 stloc.0 None 
+0017 ldc.i4.0 None 
+0018 conv.i8 None 
+0019 ldarg.2 None 
+0020 bge.un.s 30 
+0022 ldarg.0 None 
+0023 ldloc.0 None 
+0024 ldarg.2 None 
+0025 unaligned. 1 
+0028 cpblk None 
+0030 ldloc.0 None 
+0031 call 0x060000b9 <Module>::delete
+0036 ldarg.0 None 
+0037 ldc.i4.s 24 
+0039 conv.i8 None 
+0040 add None 
+0041 ldc.i4.s 15 
+0043 conv.i8 None 
+0044 stind.i8 None 
+0045 ldarg.0 None 
+0046 ldc.i4.s 16 
+0048 conv.i8 None 
+0049 add None 
+0050 ldarg.2 None 
+0051 stind.i8 None 
+0052 ldarg.2 None 
+0053 ldarg.0 None 
+0054 add None 
+0055 ldc.i4.0 None 
+0056 stind.i1 None 
+0057 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.assign 0x06000041
+0000 ldarg.1 None 
+0001 brfalse.s 79 
+0003 ldarg.0 None 
+0004 ldc.i4.s 24 
+0006 conv.i8 None 
+0007 add None 
+0008 ldind.i8 None 
+0009 stloc.0 None 
+0010 ldc.i4.s 16 
+0012 conv.i8 None 
+0013 ldloc.0 None 
+0014 bgt.un.s 22 
+0016 ldarg.0 None 
+0017 ldind.i8 None 
+0018 stloc.s 4 
+0020 br.s 25 
+0022 ldarg.0 None 
+0023 stloc.s 4 
+0025 ldarg.1 None 
+0026 ldloc.s 4 
+0028 blt.un.s 79 
+0030 ldc.i4.s 16 
+0032 conv.i8 None 
+0033 ldloc.0 None 
+0034 bgt.un.s 41 
+0036 ldarg.0 None 
+0037 ldind.i8 None 
+0038 stloc.3 None 
+0039 br.s 43 
+0041 ldarg.0 None 
+0042 stloc.3 None 
+0043 ldarg.0 None 
+0044 ldc.i4.s 16 
+0046 conv.i8 None 
+0047 add None 
+0048 ldind.i8 None 
+0049 ldloc.3 None 
+0050 add None 
+0051 ldarg.1 None 
+0052 ble.un.s 79 
+0054 ldc.i4.s 16 
+0056 conv.i8 None 
+0057 ldloc.0 None 
+0058 bgt.un.s 65 
+0060 ldarg.0 None 
+0061 ldind.i8 None 
+0062 stloc.2 None 
+0063 br.s 67 
+0065 ldarg.0 None 
+0066 stloc.2 None 
+0067 ldarg.0 None 
+0068 dup None 
+0069 ldarg.1 None 
+0070 ldloc.2 None 
+0071 sub None 
+0072 ldarg.2 None 
+0073 call 0x0600003f <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.assign
+0078 ret None 
+0079 ldarg.0 None 
+0080 ldarg.2 None 
+0081 ldc.i4.0 None 
+0082 call 0x06000043 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Grow
+0087 brfalse.s 145 
+0089 ldc.i4.s 16 
+0091 conv.i8 None 
+0092 ldarg.0 None 
+0093 ldc.i4.s 24 
+0095 conv.i8 None 
+0096 add None 
+0097 ldind.i8 None 
+0098 bgt.un.s 105 
+0100 ldarg.0 None 
+0101 ldind.i8 None 
+0102 stloc.1 None 
+0103 br.s 107 
+0105 ldarg.0 None 
+0106 stloc.1 None 
+0107 ldarg.2 None 
+0108 brfalse.s 118 
+0110 ldloc.1 None 
+0111 ldarg.1 None 
+0112 ldarg.2 None 
+0113 unaligned. 1 
+0116 cpblk None 
+0118 ldarg.0 None 
+0119 ldc.i4.s 16 
+0121 conv.i8 None 
+0122 add None 
+0123 ldarg.2 None 
+0124 stind.i8 None 
+0125 ldc.i4.s 16 
+0127 conv.i8 None 
+0128 ldarg.0 None 
+0129 ldc.i4.s 24 
+0131 conv.i8 None 
+0132 add None 
+0133 ldind.i8 None 
+0134 bgt.un.s 140 
+0136 ldarg.0 None 
+0137 ldind.i8 None 
+0138 br.s 141 
+0140 ldarg.0 None 
+0141 ldarg.2 None 
+0142 add None 
+0143 ldc.i4.0 None 
+0144 stind.i1 None 
+0145 ldarg.0 None 
+0146 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.erase 0x06000042
+0000 ldarg.0 None 
+0001 ldc.i4.s 16 
+0003 conv.i8 None 
+0004 add None 
+0005 ldind.i8 None 
+0006 stloc.1 None 
+0007 ldloc.1 None 
+0008 ldarg.1 None 
+0009 bge.un.s 21 
+0011 ldsflda 0x04000007 <Module>::??_C@_0BI@CFPLBAOH@invalid?5string?5position?$AA@
+0016 call 0x060000ad <Module>::std._Xout_of_range
+0021 ldloc.1 None 
+0022 ldarg.1 None 
+0023 sub None 
+0024 ldarg.2 None 
+0025 bgt.un.s 56 
+0027 ldarg.0 None 
+0028 ldc.i4.s 16 
+0030 conv.i8 None 
+0031 add None 
+0032 ldarg.1 None 
+0033 stind.i8 None 
+0034 ldc.i4.s 16 
+0036 conv.i8 None 
+0037 ldarg.0 None 
+0038 ldc.i4.s 24 
+0040 conv.i8 None 
+0041 add None 
+0042 ldind.i8 None 
+0043 bgt.un.s 49 
+0045 ldarg.0 None 
+0046 ldind.i8 None 
+0047 br.s 50 
+0049 ldarg.0 None 
+0050 ldarg.1 None 
+0051 add None 
+0052 ldc.i4.0 None 
+0053 stind.i1 None 
+0054 br.s 129 
+0056 ldc.i4.0 None 
+0057 conv.i8 None 
+0058 ldarg.2 None 
+0059 bge.un.s 129 
+0061 ldc.i4.s 16 
+0063 conv.i8 None 
+0064 ldarg.0 None 
+0065 ldc.i4.s 24 
+0067 conv.i8 None 
+0068 add None 
+0069 ldind.i8 None 
+0070 bgt.un.s 76 
+0072 ldarg.0 None 
+0073 ldind.i8 None 
+0074 br.s 77 
+0076 ldarg.0 None 
+0077 ldarg.1 None 
+0078 add None 
+0079 stloc.3 None 
+0080 ldloc.1 None 
+0081 ldarg.2 None 
+0082 sub None 
+0083 stloc.0 None 
+0084 ldloc.0 None 
+0085 ldarg.1 None 
+0086 sub None 
+0087 stloc.2 None 
+0088 ldloc.2 None 
+0089 brfalse.s 102 
+0091 ldloc.3 None 
+0092 dup None 
+0093 ldarg.2 None 
+0094 add None 
+0095 ldloc.2 None 
+0096 call 0x060000b8 <Module>::memmove
+0101 pop None 
+0102 ldarg.0 None 
+0103 ldc.i4.s 16 
+0105 conv.i8 None 
+0106 add None 
+0107 ldloc.0 None 
+0108 stind.i8 None 
+0109 ldc.i4.s 16 
+0111 conv.i8 None 
+0112 ldarg.0 None 
+0113 ldc.i4.s 24 
+0115 conv.i8 None 
+0116 add None 
+0117 ldind.i8 None 
+0118 bgt.un.s 124 
+0120 ldarg.0 None 
+0121 ldind.i8 None 
+0122 br.s 125 
+0124 ldarg.0 None 
+0125 ldloc.0 None 
+0126 add None 
+0127 ldc.i4.0 None 
+0128 stind.i1 None 
+0129 ldarg.0 None 
+0130 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Grow 0x06000043
+0000 ldc.i8 -2 
+0009 ldarg.1 None 
+0010 bge.un.s 22 
+0012 ldsflda 0x04000006 <Module>::??_C@_0BA@JFNIOLAK@string?5too?5long?$AA@
+0017 call 0x060000a6 <Module>::std._Xlength_error
+0022 ldarg.0 None 
+0023 ldc.i4.s 24 
+0025 conv.i8 None 
+0026 add None 
+0027 ldind.i8 None 
+0028 stloc.2 None 
+0029 ldloc.2 None 
+0030 ldarg.1 None 
+0031 bge.un.s 48 
+0033 ldarg.0 None 
+0034 ldarg.1 None 
+0035 ldarg.0 None 
+0036 ldc.i4.s 16 
+0038 conv.i8 None 
+0039 add None 
+0040 ldind.i8 None 
+0041 call 0x06000044 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Copy
+0046 br.s 109 
+0048 ldarg.2 None 
+0049 brfalse.s 83 
+0051 ldarg.1 None 
+0052 ldc.i4.s 16 
+0054 conv.i8 None 
+0055 bge.un.s 83 
+0057 ldarg.0 None 
+0058 ldc.i4.s 16 
+0060 conv.i8 None 
+0061 add None 
+0062 ldind.i8 None 
+0063 stloc.1 None 
+0064 ldarg.1 None 
+0065 ldloc.1 None 
+0066 blt.un.s 71 
+0068 ldloc.1 None 
+0069 br.s 72 
+0071 ldarg.1 None 
+0072 stloc.3 None 
+0073 ldarg.0 None 
+0074 ldc.i4.1 None 
+0075 ldloc.3 None 
+0076 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0081 br.s 109 
+0083 ldarg.1 None 
+0084 brtrue.s 109 
+0086 ldarg.0 None 
+0087 ldc.i4.s 16 
+0089 conv.i8 None 
+0090 add None 
+0091 ldc.i4.0 None 
+0092 conv.i8 None 
+0093 stind.i8 None 
+0094 ldc.i4.s 16 
+0096 conv.i8 None 
+0097 ldloc.2 None 
+0098 bgt.un.s 104 
+0100 ldarg.0 None 
+0101 ldind.i8 None 
+0102 br.s 105 
+0104 ldarg.0 None 
+0105 ldc.i4.0 None 
+0106 stind.i1 None 
+0107 br.s 118 
+0109 ldc.i4.0 None 
+0110 conv.i8 None 
+0111 ldarg.1 None 
+0112 bge.un.s 118 
+0114 ldc.i4.1 None 
+0115 stloc.0 None 
+0116 br.s 120 
+0118 ldc.i4.0 None 
+0119 stloc.0 None 
+0120 ldloc.0 None 
+0121 conv.u1 None 
+0122 ret None 
+
+METHOD <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Copy 0x06000044
+0000 call 0x060000b2 <Module>::__CxxQueryExceptionSize
+0005 stloc.s 13 
+0007 ldloc.s 13 
+0009 ldc.i4.2 None 
+0010 conv.i8 None 
+0011 mul None 
+0012 localloc None 
+0014 stloc.s 10 
+0016 ldarg.1 None 
+0017 ldc.i4.s 15 
+0019 conv.i8 None 
+0020 or None 
+0021 stloc.0 None 
+0022 ldc.i8 -2 
+0031 ldloc.0 None 
+0032 bge.un.s 38 
+0034 ldarg.1 None 
+0035 stloc.0 None 
+0036 br.s 94 
+0038 ldarg.0 None 
+0039 ldc.i4.s 24 
+0041 conv.i8 None 
+0042 add None 
+0043 ldind.i8 None 
+0044 stloc.s 9 
+0046 ldloc.s 9 
+0048 ldc.i4.1 None 
+0049 shr.un None 
+0050 stloc.s 8 
+0052 ldloc.s 8 
+0054 ldloc.0 None 
+0055 ldc.i4.3 None 
+0056 conv.i8 None 
+0057 div.un None 
+0058 ble.un.s 94 
+0060 ldloc.s 9 
+0062 ldc.i8 -2 
+0071 ldloc.s 8 
+0073 sub None 
+0074 bgt.un.s 84 
+0076 ldloc.s 8 
+0078 ldloc.s 9 
+0080 add None 
+0081 stloc.0 None 
+0082 br.s 94 
+0084 ldc.i8 -2 
+0093 stloc.0 None 
+0094 nop None 
+0095 ldloc.s 10 
+0097 ldloc.s 13 
+0099 add None 
+0100 stloc.s 12 
+0102 ldloc.0 None 
+0103 ldc.i4.1 None 
+0104 conv.i8 None 
+0105 add None 
+0106 stloc.s 7 
+0108 ldc.i4.0 None 
+0109 conv.i8 None 
+0110 stloc.2 None 
+0111 ldloc.s 7 
+0113 brfalse.s 139 
+0115 ldc.i8 -1 
+0124 ldloc.s 7 
+0126 blt.un.s 156 
+0128 ldloc.s 7 
+0130 call 0x060000b0 <Module>::new
+0135 stloc.2 None 
+0136 ldloc.2 None 
+0137 brfalse.s 156 
+0139 ldloc.2 None 
+0140 stloc.s 22 
+0142 ldloc.2 None 
+0143 stloc.s 21 
+0145 ldloc.2 None 
+0146 stloc.s 20 
+0148 ldloc.2 None 
+0149 stloc.s 6 
+0151 leave 407 
+0156 call 0x060000a5 <Module>::std._Xbad_alloc
+0161 leave 407 
+0166 pop None 
+0167 call 0x0a000011 System.Runtime.InteropServices.Marshal::GetExceptionCode
+0172 stloc.s 19 
+0174 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0179 ldc.i4.0 None 
+0180 conv.i8 None 
+0181 ldc.i4.0 None 
+0182 ldc.i4.0 None 
+0183 conv.i8 None 
+0184 call 0x060000b5 <Module>::__CxxExceptionFilter
+0189 endfilter None 
+0191 pop None 
+0192 ldc.i4.0 None 
+0193 stloc.s 4 
+0195 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0200 ldloc.s 12 
+0202 call 0x060000b4 <Module>::__CxxRegisterExceptionObject
+0207 pop None 
+0208 ldarg.1 None 
+0209 stloc.0 None 
+0210 ldarg.1 None 
+0211 ldc.i4.1 None 
+0212 conv.i8 None 
+0213 add None 
+0214 stloc.s 5 
+0216 ldc.i4.0 None 
+0217 conv.i8 None 
+0218 stloc.1 None 
+0219 ldloc.s 5 
+0221 brtrue.s 225 
+0223 br.s 249 
+0225 ldc.i8 -1 
+0234 ldloc.s 5 
+0236 blt.un.s 263 
+0238 ldloc.s 5 
+0240 call 0x060000b0 <Module>::new
+0245 stloc.1 None 
+0246 ldloc.1 None 
+0247 brfalse.s 263 
+0249 ldloc.1 None 
+0250 stloc.s 18 
+0252 ldloc.1 None 
+0253 stloc.s 17 
+0255 ldloc.1 None 
+0256 stloc.s 16 
+0258 ldloc.1 None 
+0259 stloc.s 6 
+0261 leave.s 365 
+0263 call 0x060000a5 <Module>::std._Xbad_alloc
+0268 leave.s 365 
+0270 pop None 
+0271 call 0x0a000011 System.Runtime.InteropServices.Marshal::GetExceptionCode
+0276 stloc.s 15 
+0278 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0283 ldc.i4.0 None 
+0284 conv.i8 None 
+0285 ldc.i4.0 None 
+0286 ldc.i4.0 None 
+0287 conv.i8 None 
+0288 call 0x060000b5 <Module>::__CxxExceptionFilter
+0293 endfilter None 
+0295 pop None 
+0296 ldc.i4.0 None 
+0297 stloc.3 None 
+0298 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0303 ldloc.s 10 
+0305 call 0x060000b4 <Module>::__CxxRegisterExceptionObject
+0310 pop None 
+0311 ldarg.0 None 
+0312 ldc.i4.1 None 
+0313 ldc.i4.0 None 
+0314 conv.i8 None 
+0315 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0320 ldc.i4.0 None 
+0321 ldc.i4.0 None 
+0322 call 0x060000b6 <Module>::_CxxThrowException
+0327 leave.s 347 
+0329 pop None 
+0330 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0335 call 0x060000b3 <Module>::__CxxDetectRethrow
+0340 stloc.3 None 
+0341 ldloc.3 None 
+0342 endfilter None 
+0344 pop None 
+0345 leave.s 347 
+0347 ldloc.3 None 
+0348 brfalse.s 352 
+0350 rethrow None 
+0352 leave.s 363 
+0354 ldloc.s 10 
+0356 ldloc.3 None 
+0357 call 0x060000b1 <Module>::__CxxUnregisterExceptionObject
+0362 endfinally None 
+0363 leave.s 365 
+0365 leave.s 407 
+0367 pop None 
+0368 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0373 call 0x060000b3 <Module>::__CxxDetectRethrow
+0378 stloc.s 4 
+0380 ldloc.s 4 
+0382 endfilter None 
+0384 pop None 
+0385 leave.s 387 
+0387 ldloc.s 4 
+0389 brfalse.s 393 
+0391 rethrow None 
+0393 leave.s 405 
+0395 ldloc.s 12 
+0397 ldloc.s 4 
+0399 call 0x060000b1 <Module>::__CxxUnregisterExceptionObject
+0404 endfinally None 
+0405 leave.s 407 
+0407 ldc.i4.0 None 
+0408 conv.i8 None 
+0409 ldarg.2 None 
+0410 bge.un.s 445 
+0412 ldc.i4.s 16 
+0414 conv.i8 None 
+0415 ldarg.0 None 
+0416 ldc.i4.s 24 
+0418 conv.i8 None 
+0419 add None 
+0420 ldind.i8 None 
+0421 bgt.un.s 429 
+0423 ldarg.0 None 
+0424 ldind.i8 None 
+0425 stloc.s 11 
+0427 br.s 432 
+0429 ldarg.0 None 
+0430 stloc.s 11 
+0432 ldarg.2 None 
+0433 brfalse.s 445 
+0435 ldloc.s 6 
+0437 ldloc.s 11 
+0439 ldarg.2 None 
+0440 unaligned. 1 
+0443 cpblk None 
+0445 ldarg.0 None 
+0446 ldc.i4.1 None 
+0447 ldc.i4.0 None 
+0448 conv.i8 None 
+0449 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0454 ldarg.0 None 
+0455 stloc.s 14 
+0457 ldarg.0 None 
+0458 brtrue.s 462 
+0460 leave.s 477 
+0462 ldarg.0 None 
+0463 ldloc.s 6 
+0465 stind.i8 None 
+0466 leave.s 477 
+0468 ldloc.s 14 
+0470 ldarg.0 None 
+0471 call 0x06000001 <Module>::delete
+0476 endfinally None 
+0477 ldarg.0 None 
+0478 ldc.i4.s 24 
+0480 conv.i8 None 
+0481 add None 
+0482 ldloc.0 None 
+0483 stind.i8 None 
+0484 ldarg.0 None 
+0485 ldc.i4.s 16 
+0487 conv.i8 None 
+0488 add None 
+0489 ldarg.2 None 
+0490 stind.i8 None 
+0491 ldc.i4.s 16 
+0493 conv.i8 None 
+0494 ldloc.0 None 
+0495 bgt.un.s 501 
+0497 ldarg.0 None 
+0498 ldind.i8 None 
+0499 br.s 502 
+0501 ldarg.0 None 
+0502 ldarg.2 None 
+0503 add None 
+0504 ldc.i4.0 None 
+0505 stind.i1 None 
+0506 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A@@YMXXZ 0x06000045
+0000 ldsflda 0x04000024 <Module>::?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A
+0005 ldsflda 0x04000070 <Module>::??_7_Generic_error_category@std@@6B@
+0010 stind.i8 None 
+0011 leave.s 30 
+0013 ldftn 0x06000002 <Module>::std.error_category.{dtor}
+0019 ldsflda 0x04000024 <Module>::?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A
+0024 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0029 endfinally None 
+0030 ldftn 0x0600004a <Module>::?A0x39088e81.??__F?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A@@YMXXZ
+0036 call 0x06000095 <Module>::_atexit_m
+0041 pop None 
+0042 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A@@YMXXZ 0x06000046
+0000 ldsflda 0x04000022 <Module>::?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A
+0005 ldsflda 0x04000070 <Module>::??_7_Generic_error_category@std@@6B@
+0010 stind.i8 None 
+0011 leave.s 30 
+0013 ldftn 0x06000002 <Module>::std.error_category.{dtor}
+0019 ldsflda 0x04000022 <Module>::?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A
+0024 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0029 endfinally None 
+0030 nop None 
+0031 ldsflda 0x04000022 <Module>::?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A
+0036 ldsflda 0x0400006f <Module>::??_7_Iostream_error_category@std@@6B@
+0041 stind.i8 None 
+0042 leave.s 61 
+0044 ldftn 0x0600000b <Module>::std._Generic_error_category.{dtor}
+0050 ldsflda 0x04000022 <Module>::?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A
+0055 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0060 endfinally None 
+0061 ldftn 0x06000049 <Module>::?A0x39088e81.??__F?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A@@YMXXZ
+0067 call 0x06000095 <Module>::_atexit_m
+0072 pop None 
+0073 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A@@YMXXZ 0x06000047
+0000 ldsflda 0x04000020 <Module>::?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A
+0005 ldsflda 0x04000070 <Module>::??_7_Generic_error_category@std@@6B@
+0010 stind.i8 None 
+0011 leave.s 30 
+0013 ldftn 0x06000002 <Module>::std.error_category.{dtor}
+0019 ldsflda 0x04000020 <Module>::?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A
+0024 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0029 endfinally None 
+0030 nop None 
+0031 ldsflda 0x04000020 <Module>::?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A
+0036 ldsflda 0x0400006e <Module>::??_7_System_error_category@std@@6B@
+0041 stind.i8 None 
+0042 leave.s 61 
+0044 ldftn 0x0600000b <Module>::std._Generic_error_category.{dtor}
+0050 ldsflda 0x04000020 <Module>::?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A
+0055 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0060 endfinally None 
+0061 ldftn 0x06000048 <Module>::?A0x39088e81.??__F?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A@@YMXXZ
+0067 call 0x06000095 <Module>::_atexit_m
+0072 pop None 
+0073 ret None 
+
+METHOD <Module>::?A0x39088e81.??__F?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A@@YMXXZ 0x06000048
+0000 ldsflda 0x04000020 <Module>::?_System_object@?$_Error_objects@H@std@@2V_System_error_category@2@A
+0005 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0010 stind.i8 None 
+0011 ret None 
+
+METHOD <Module>::?A0x39088e81.??__F?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A@@YMXXZ 0x06000049
+0000 ldsflda 0x04000022 <Module>::?_Iostream_object@?$_Error_objects@H@std@@2V_Iostream_error_category@2@A
+0005 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0010 stind.i8 None 
+0011 ret None 
+
+METHOD <Module>::?A0x39088e81.??__F?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A@@YMXXZ 0x0600004a
+0000 ldsflda 0x04000024 <Module>::?_Generic_object@?$_Error_objects@H@std@@2V_Generic_error_category@2@A
+0005 ldsflda 0x04000071 <Module>::??_7error_category@std@@6B@
+0010 stind.i8 None 
+0011 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?id@?$num_put@DV?$back_insert_iterator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@std@@@std@@2V0locale@2@A@@YMXXZ 0x0600004b
+0000 ldsflda 0x0400001e <Module>::?id@?$num_put@DV?$back_insert_iterator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@std@@@std@@2V0locale@2@A
+0005 ldc.i4.0 None 
+0006 conv.i8 None 
+0007 call 0x060000a0 <Module>::std.locale.id.{ctor}
+0012 pop None 
+0013 ret None 
+
+METHOD <Module>::?A0x39088e81.??__E?id@?$num_put@_WV?$back_insert_iterator@V?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@@std@@@std@@2V0locale@2@A@@YMXXZ 0x0600004c
+0000 ldsflda 0x0400001c <Module>::?id@?$num_put@_WV?$back_insert_iterator@V?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@@std@@@std@@2V0locale@2@A
+0005 ldc.i4.0 None 
+0006 conv.i8 None 
+0007 call 0x060000a0 <Module>::std.locale.id.{ctor}
+0012 pop None 
+0013 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYHAMAL::IHalationRejectionService>.__dflt_ctor_closure 0x0600004d
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 conv.i8 None 
+0003 stind.i8 None 
+0004 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYHAMAL::ICustomHalationRejectionCmd>.__dflt_ctor_closure 0x0600004e
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 conv.i8 None 
+0003 stind.i8 None 
+0004 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYHAMAL::IHalationRejectionService>.{dtor} 0x0600004f
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYHAMAL::ICustomHalationRejectionCmd>.{dtor} 0x06000050
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYSPICA::INoiseReductionService>.__dflt_ctor_closure 0x06000051
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 conv.i8 None 
+0003 stind.i8 None 
+0004 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYSPICA::ICustomNoiseReductionCmd>.__dflt_ctor_closure 0x06000052
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 conv.i8 None 
+0003 stind.i8 None 
+0004 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYSPICA::INoiseReductionService>.{dtor} 0x06000053
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::ou.CRefPtr<OLYSPICA::ICustomNoiseReductionCmd>.{dtor} 0x06000054
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 stloc.0 None 
+0003 ldloc.0 None 
+0004 brfalse.s 19 
+0006 ldloc.0 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldc.i4.8 None 
+0010 conv.i8 None 
+0011 add None 
+0012 ldind.i8 None 
+0013 calli 0x1100000b 
+0018 pop None 
+0019 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.NativeDll.IsSafeForManagedCode 0x06000055
+0000 volatile. None 
+0002 ldsfld 0x040000bf <Module>::__native_dllmain_reason
+0007 ldc.i4.m1 None 
+0008 bne.un.s 13 
+0010 ldc.i4.0 None 
+0011 br.s 14 
+0013 ldc.i4.1 None 
+0014 conv.u1 None 
+0015 brtrue.s 19 
+0017 ldc.i4.1 None 
+0018 ret None 
+0019 volatile. None 
+0021 ldsfld 0x040000bf <Module>::__native_dllmain_reason
+0026 ldc.i4.1 None 
+0027 ceq None 
+0029 conv.u1 None 
+0030 brtrue.s 49 
+0032 volatile. None 
+0034 ldsfld 0x040000bf <Module>::__native_dllmain_reason
+0039 ldc.i4.0 None 
+0040 ceq None 
+0042 conv.u1 None 
+0043 brtrue.s 49 
+0045 ldc.i4.1 None 
+0046 stloc.0 None 
+0047 br.s 51 
+0049 ldc.i4.0 None 
+0050 stloc.0 None 
+0051 ldloc.0 None 
+0052 conv.u1 None 
+0053 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.ThrowNestedModuleLoadException 0x06000056
+0000 ldstr 0x70000001 'A nested exception occurred after the primary exception that caused the C++ module to fail to load.\n'
+0005 ldarg.0 None 
+0006 ldarg.1 None 
+0007 newobj 0x06000113 <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::.ctor
+0012 throw None 
+0013 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.ThrowModuleLoadException 0x06000057
+0000 ldarg.0 None 
+0001 newobj 0x06000111 <CrtImplementationDetails>.ModuleLoadException::.ctor
+0006 throw None 
+0007 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.ThrowModuleLoadException 0x06000058
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 newobj 0x06000110 <CrtImplementationDetails>.ModuleLoadException::.ctor
+0007 throw None 
+0008 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.RegisterModuleUninitializer 0x06000059
+0000 ldsfld 0x04000120 <CrtImplementationDetails>.ModuleUninitializer::_ModuleUninitializer
+0005 ldarg.0 None 
+0006 call 0x06000118 <CrtImplementationDetails>.ModuleUninitializer::AddHandler
+0011 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.FromGUID 0x0600005a
+0000 ldloca.s 0 
+0002 ldarg.0 None 
+0003 ldind.i4 None 
+0004 ldarg.0 None 
+0005 ldc.i4.4 None 
+0006 conv.i8 None 
+0007 add None 
+0008 ldind.u2 None 
+0009 ldarg.0 None 
+0010 ldc.i4.6 None 
+0011 conv.i8 None 
+0012 add None 
+0013 ldind.u2 None 
+0014 ldarg.0 None 
+0015 ldc.i4.8 None 
+0016 conv.i8 None 
+0017 add None 
+0018 ldind.u1 None 
+0019 ldarg.0 None 
+0020 ldc.i4.s 9 
+0022 conv.i8 None 
+0023 add None 
+0024 ldind.u1 None 
+0025 ldarg.0 None 
+0026 ldc.i4.s 10 
+0028 conv.i8 None 
+0029 add None 
+0030 ldind.u1 None 
+0031 ldarg.0 None 
+0032 ldc.i4.s 11 
+0034 conv.i8 None 
+0035 add None 
+0036 ldind.u1 None 
+0037 ldarg.0 None 
+0038 ldc.i4.s 12 
+0040 conv.i8 None 
+0041 add None 
+0042 ldind.u1 None 
+0043 ldarg.0 None 
+0044 ldc.i4.s 13 
+0046 conv.i8 None 
+0047 add None 
+0048 ldind.u1 None 
+0049 ldarg.0 None 
+0050 ldc.i4.s 14 
+0052 conv.i8 None 
+0053 add None 
+0054 ldind.u1 None 
+0055 ldarg.0 None 
+0056 ldc.i4.s 15 
+0058 conv.i8 None 
+0059 add None 
+0060 ldind.u1 None 
+0061 call 0x0a000025 System.Guid::.ctor
+0066 ldloc.0 None 
+0067 ret None 
+
+METHOD <Module>::__get_default_appdomain 0x0600005b
+0000 ldc.i4.0 None 
+0001 conv.i8 None 
+0002 stloc.0 None 
+0003 ldsflda 0x0400008c <Module>::_GUID_cb2f6722_ab3a_11d2_9c40_00c04fa30a3e
+0008 call 0x0600005a <Module>::<CrtImplementationDetails>.FromGUID
+0013 stloc.3 None 
+0014 ldloc.3 None 
+0015 stloc.s 6 
+0017 ldsflda 0x0400009a <Module>::_GUID_cb2f6723_ab3a_11d2_9c40_00c04fa30a3e
+0022 call 0x0600005a <Module>::<CrtImplementationDetails>.FromGUID
+0027 stloc.2 None 
+0028 ldloc.2 None 
+0029 stloc.s 5 
+0031 ldloc.2 None 
+0032 ldloc.3 None 
+0033 call 0x0a000035 System.Runtime.InteropServices.RuntimeEnvironment::GetRuntimeInterfaceAsIntPtr
+0038 stloc.s 4 
+0040 ldloca.s 4 
+0042 call 0x0a00000c System.IntPtr::ToPointer
+0047 stloc.0 None 
+0048 leave.s 62 
+0050 call 0x0a00003d System.Runtime.InteropServices.Marshal::GetHRForException
+0055 stloc.1 None 
+0056 leave.s 58 
+0058 ldloc.1 None 
+0059 ldc.i4.0 None 
+0060 blt.s 91 
+0062 ldloc.0 None 
+0063 ldarg.0 None 
+0064 ldloc.0 None 
+0065 ldind.i8 None 
+0066 ldc.i4.s 104 
+0068 conv.i8 None 
+0069 add None 
+0070 ldind.i8 None 
+0071 calli 0x11000073 
+0076 stloc.1 None 
+0077 ldloc.0 None 
+0078 dup None 
+0079 ldind.i8 None 
+0080 ldc.i4.s 16 
+0082 conv.i8 None 
+0083 add None 
+0084 ldind.i8 None 
+0085 calli 0x1100000b 
+0090 pop None 
+0091 ldloc.1 None 
+0092 ret None 
+
+METHOD <Module>::__release_appdomain 0x0600005c
+0000 ldarg.0 None 
+0001 dup None 
+0002 ldind.i8 None 
+0003 ldc.i4.s 16 
+0005 conv.i8 None 
+0006 add None 
+0007 ldind.i8 None 
+0008 calli 0x1100000b 
+0013 pop None 
+0014 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.GetDefaultDomain 0x0600005d
+0000 ldc.i4.0 None 
+0001 conv.i8 None 
+0002 stloc.1 None 
+0003 ldloca.s 1 
+0005 call 0x0600005b <Module>::__get_default_appdomain
+0010 stloc.0 None 
+0011 ldloc.0 None 
+0012 ldc.i4.0 None 
+0013 blt.s 44 
+0015 ldloca.s 3 
+0017 ldloc.1 None 
+0018 call 0x0a00000d System.IntPtr::.ctor
+0023 ldloc.3 None 
+0024 call 0x0a00003e System.Runtime.InteropServices.Marshal::GetObjectForIUnknown
+0029 castclass 0x0100002f 
+0034 stloc.2 None 
+0035 leave.s 52 
+0037 ldloc.1 None 
+0038 call 0x0600005c <Module>::__release_appdomain
+0043 endfinally None 
+0044 ldloc.0 None 
+0045 call 0x0a00003c System.Runtime.InteropServices.Marshal::ThrowExceptionForHR
+0050 ldnull None 
+0051 ret None 
+0052 ldloc.2 None 
+0053 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DoCallBackInDefaultDomain 0x0600005e
+0000 ldsflda 0x040000a8 <Module>::_GUID_90f1a06c_7712_4762_86b5_7a5eba6bdb02
+0005 call 0x0600005a <Module>::<CrtImplementationDetails>.FromGUID
+0010 stloc.3 None 
+0011 ldsflda 0x0400008b <Module>::_GUID_90f1a06e_7712_4762_86b5_7a5eba6bdb02
+0016 call 0x0600005a <Module>::<CrtImplementationDetails>.FromGUID
+0021 ldloc.3 None 
+0022 call 0x0a000035 System.Runtime.InteropServices.RuntimeEnvironment::GetRuntimeInterfaceAsIntPtr
+0027 stloc.s 4 
+0029 ldloca.s 4 
+0031 call 0x0a00000c System.IntPtr::ToPointer
+0036 stloc.0 None 
+0037 call 0x0600005d <Module>::<CrtImplementationDetails>.GetDefaultDomain
+0042 stloc.2 None 
+0043 ldloc.0 None 
+0044 ldloc.2 None 
+0045 call 0x0a00002d System.AppDomain::get_Id
+0050 ldarg.0 None 
+0051 ldarg.1 None 
+0052 ldloc.0 None 
+0053 ldind.i8 None 
+0054 ldc.i4.s 64 
+0056 conv.i8 None 
+0057 add None 
+0058 ldind.i8 None 
+0059 calli 0x11000074 
+0064 stloc.1 None 
+0065 ldloc.1 None 
+0066 ldc.i4.0 None 
+0067 bge.s 75 
+0069 ldloc.1 None 
+0070 call 0x0a00003c System.Runtime.InteropServices.Marshal::ThrowExceptionForHR
+0075 leave.s 92 
+0077 ldloc.0 None 
+0078 dup None 
+0079 ldind.i8 None 
+0080 ldc.i4.s 16 
+0082 conv.i8 None 
+0083 add None 
+0084 ldind.i8 None 
+0085 calli 0x1100000b 
+0090 pop None 
+0091 endfinally None 
+0092 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DefaultDomain.DoNothing 0x0600005f
+0000 ldc.i4 2147483647 
+0005 box 0x01000030 
+0010 call 0x0a000024 System.GC::KeepAlive
+0015 ldc.i4.0 None 
+0016 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DefaultDomain.HasPerProcess 0x06000060
+0000 ldsfld 0x040000a5 <Module>::?hasPerProcess@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0005 ldc.i4.2 None 
+0006 bne.un.s 61 
+0008 ldsflda 0x040000a7 <Module>::?A0xbc95cda3.__xc_mp_a
+0013 stloc.0 None 
+0014 ldsflda 0x040000a7 <Module>::?A0xbc95cda3.__xc_mp_a
+0019 ldsflda 0x0400008d <Module>::?A0xbc95cda3.__xc_mp_z
+0024 bge.un.s 53 
+0026 ldloc.0 None 
+0027 ldind.i8 None 
+0028 brtrue.s 45 
+0030 ldloc.0 None 
+0031 ldc.i4.8 None 
+0032 conv.i8 None 
+0033 add None 
+0034 stloc.0 None 
+0035 ldloc.0 None 
+0036 ldsflda 0x0400008d <Module>::?A0xbc95cda3.__xc_mp_z
+0041 blt.un.s 26 
+0043 br.s 53 
+0045 ldc.i4.m1 None 
+0046 stsfld 0x040000a5 <Module>::?hasPerProcess@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0051 ldc.i4.1 None 
+0052 ret None 
+0053 ldc.i4.0 None 
+0054 stsfld 0x040000a5 <Module>::?hasPerProcess@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0059 ldc.i4.0 None 
+0060 ret None 
+0061 ldsfld 0x040000a5 <Module>::?hasPerProcess@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0066 ldc.i4.m1 None 
+0067 ceq None 
+0069 conv.u1 None 
+0070 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DefaultDomain.HasNative 0x06000061
+0000 ldsfld 0x040000a4 <Module>::?hasNative@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0005 ldc.i4.2 None 
+0006 bne.un.s 106 
+0008 ldsflda 0x040000bb <Module>::__xi_a
+0013 stloc.1 None 
+0014 ldsflda 0x040000bb <Module>::__xi_a
+0019 ldsflda 0x040000bd <Module>::__xi_z
+0024 bge.un.s 53 
+0026 ldloc.1 None 
+0027 ldind.i8 None 
+0028 brtrue.s 45 
+0030 ldloc.1 None 
+0031 ldc.i4.8 None 
+0032 conv.i8 None 
+0033 add None 
+0034 stloc.1 None 
+0035 ldloc.1 None 
+0036 ldsflda 0x040000bd <Module>::__xi_z
+0041 blt.un.s 26 
+0043 br.s 53 
+0045 ldc.i4.m1 None 
+0046 stsfld 0x040000a4 <Module>::?hasNative@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0051 ldc.i4.1 None 
+0052 ret None 
+0053 ldsflda 0x040000ba <Module>::__xc_a
+0058 stloc.0 None 
+0059 ldsflda 0x040000ba <Module>::__xc_a
+0064 ldsflda 0x040000b9 <Module>::__xc_z
+0069 bge.un.s 98 
+0071 ldloc.0 None 
+0072 ldind.i8 None 
+0073 brtrue.s 90 
+0075 ldloc.0 None 
+0076 ldc.i4.8 None 
+0077 conv.i8 None 
+0078 add None 
+0079 stloc.0 None 
+0080 ldloc.0 None 
+0081 ldsflda 0x040000b9 <Module>::__xc_z
+0086 blt.un.s 71 
+0088 br.s 98 
+0090 ldc.i4.m1 None 
+0091 stsfld 0x040000a4 <Module>::?hasNative@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0096 ldc.i4.1 None 
+0097 ret None 
+0098 ldc.i4.0 None 
+0099 stsfld 0x040000a4 <Module>::?hasNative@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0104 ldc.i4.0 None 
+0105 ret None 
+0106 ldsfld 0x040000a4 <Module>::?hasNative@DefaultDomain@<CrtImplementationDetails>@@0W4State@TriBool@2@A
+0111 ldc.i4.m1 None 
+0112 ceq None 
+0114 conv.u1 None 
+0115 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DefaultDomain.NeedsInitialization 0x06000062
+0000 call 0x06000060 <Module>::<CrtImplementationDetails>.DefaultDomain.HasPerProcess
+0005 brfalse.s 14 
+0007 ldsfld 0x0400009f <Module>::?InitializedPerProcess@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0012 brfalse.s 37 
+0014 call 0x06000061 <Module>::<CrtImplementationDetails>.DefaultDomain.HasNative
+0019 brfalse.s 41 
+0021 ldsfld 0x040000a2 <Module>::?InitializedNative@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0026 brtrue.s 41 
+0028 volatile. None 
+0030 ldsfld 0x040000bc <Module>::__native_startup_state
+0035 brtrue.s 41 
+0037 ldc.i4.1 None 
+0038 stloc.0 None 
+0039 br.s 43 
+0041 ldc.i4.0 None 
+0042 stloc.0 None 
+0043 ldloc.0 None 
+0044 conv.u1 None 
+0045 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DefaultDomain.NeedsUninitialization 0x06000063
+0000 ldsfld 0x040000a1 <Module>::?Entered@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0005 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.DefaultDomain.Initialize 0x06000064
+0000 ldsfld 0x040000ac <Module>::__unep@?DoNothing@DefaultDomain@<CrtImplementationDetails>@@$$FCAJPEAX@Z
+0005 ldc.i4.0 None 
+0006 conv.i8 None 
+0007 call 0x0600005e <Module>::<CrtImplementationDetails>.DoCallBackInDefaultDomain
+0012 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?Initialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA@@YMXXZ 0x06000065
+0000 ldc.i4.0 None 
+0001 stsfld 0x0400009d <Module>::?Initialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA
+0006 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?Uninitialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA@@YMXXZ 0x06000066
+0000 ldc.i4.0 None 
+0001 stsfld 0x0400009b <Module>::?Uninitialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA
+0006 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?IsDefaultDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2_NA@@YMXXZ 0x06000067
+0000 ldc.i4.0 None 
+0001 stsfld 0x04000091 <Module>::?IsDefaultDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2_NA
+0006 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?InitializedVtables@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A@@YMXXZ 0x06000068
+0000 ldc.i4.0 None 
+0001 stsfld 0x0400008f <Module>::?InitializedVtables@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0006 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?InitializedNative@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A@@YMXXZ 0x06000069
+0000 ldc.i4.0 None 
+0001 stsfld 0x04000097 <Module>::?InitializedNative@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0006 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?InitializedPerProcess@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A@@YMXXZ 0x0600006a
+0000 ldc.i4.0 None 
+0001 stsfld 0x040000a0 <Module>::?InitializedPerProcess@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0006 ret None 
+
+METHOD <Module>::?A0xbc95cda3.??__E?InitializedPerAppDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A@@YMXXZ 0x0600006b
+0000 ldc.i4.0 None 
+0001 stsfld 0x04000094 <Module>::?InitializedPerAppDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0006 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeVtables 0x0600006c
+0000 ldarg.0 None 
+0001 ldstr 0x70000221 'The C++ module failed to load during vtable initialization.\n'
+0006 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0011 pop None 
+0012 ldc.i4.1 None 
+0013 stsfld 0x0400008f <Module>::?InitializedVtables@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0018 ldsflda 0x0400008e <Module>::?A0xbc95cda3.__xi_vt_a
+0023 ldsflda 0x04000099 <Module>::?A0xbc95cda3.__xi_vt_z
+0028 call 0x0600009e <Module>::_initterm_m
+0033 ldc.i4.2 None 
+0034 stsfld 0x0400008f <Module>::?InitializedVtables@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0039 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeDefaultAppDomain 0x0600006d
+0000 ldarg.0 None 
+0001 ldstr 0x7000029b 'The C++ module failed to load while attempting to initialize the default appdomain.\n'
+0006 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0011 pop None 
+0012 call 0x06000064 <Module>::<CrtImplementationDetails>.DefaultDomain.Initialize
+0017 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeNative 0x0600006e
+0000 ldarg.0 None 
+0001 ldstr 0x70000346 'The C++ module failed to load during native initialization.\n'
+0006 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0011 pop None 
+0012 call 0x060000c0 <Module>::__security_init_cookie
+0017 ldc.i4.1 None 
+0018 stsfld 0x040000a2 <Module>::?InitializedNative@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0023 call 0x06000055 <Module>::<CrtImplementationDetails>.NativeDll.IsSafeForManagedCode
+0028 brtrue.s 37 
+0030 ldc.i4.s 33 
+0032 call 0x060000bf <Module>::_amsg_exit
+0037 volatile. None 
+0039 ldsfld 0x040000bc <Module>::__native_startup_state
+0044 ldc.i4.1 None 
+0045 bne.un.s 56 
+0047 ldc.i4.s 33 
+0049 call 0x060000bf <Module>::_amsg_exit
+0054 br.s 142 
+0056 volatile. None 
+0058 ldsfld 0x040000bc <Module>::__native_startup_state
+0063 brtrue.s 142 
+0065 ldc.i4.1 None 
+0066 stsfld 0x04000097 <Module>::?InitializedNative@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0071 ldc.i4.1 None 
+0072 volatile. None 
+0074 stsfld 0x040000bc <Module>::__native_startup_state
+0079 ldsflda 0x040000bb <Module>::__xi_a
+0084 ldsflda 0x040000bd <Module>::__xi_z
+0089 call 0x0600009b <Module>::_initterm_e
+0094 brfalse.s 107 
+0096 ldarg.0 None 
+0097 call 0x0600007f <Module>::gcroot<System::String ^>..PE$AAVString@System@@
+0102 call 0x06000057 <Module>::<CrtImplementationDetails>.ThrowModuleLoadException
+0107 ldsflda 0x040000ba <Module>::__xc_a
+0112 ldsflda 0x040000b9 <Module>::__xc_z
+0117 call 0x0600009c <Module>::_initterm
+0122 ldc.i4.2 None 
+0123 volatile. None 
+0125 stsfld 0x040000bc <Module>::__native_startup_state
+0130 ldc.i4.1 None 
+0131 stsfld 0x040000a6 <Module>::?InitializedNativeFromCCTOR@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0136 ldc.i4.2 None 
+0137 stsfld 0x04000097 <Module>::?InitializedNative@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0142 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.InitializePerProcess 0x0600006f
+0000 ldarg.0 None 
+0001 ldstr 0x700003c0 'The C++ module failed to load during process initialization.\n'
+0006 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0011 pop None 
+0012 ldc.i4.1 None 
+0013 stsfld 0x040000a0 <Module>::?InitializedPerProcess@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0018 call 0x06000094 <Module>::_initatexit_m
+0023 pop None 
+0024 ldsflda 0x040000a7 <Module>::?A0xbc95cda3.__xc_mp_a
+0029 ldsflda 0x0400008d <Module>::?A0xbc95cda3.__xc_mp_z
+0034 call 0x0600009e <Module>::_initterm_m
+0039 ldc.i4.2 None 
+0040 stsfld 0x040000a0 <Module>::?InitializedPerProcess@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0045 ldc.i4.1 None 
+0046 stsfld 0x0400009f <Module>::?InitializedPerProcess@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0051 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.InitializePerAppDomain 0x06000070
+0000 ldarg.0 None 
+0001 ldstr 0x7000043c 'The C++ module failed to load during appdomain initialization.\n'
+0006 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0011 pop None 
+0012 ldc.i4.1 None 
+0013 stsfld 0x04000094 <Module>::?InitializedPerAppDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0018 call 0x06000096 <Module>::_initatexit_app_domain
+0023 pop None 
+0024 ldsflda 0x04000093 <Module>::?A0xbc95cda3.__xc_ma_a
+0029 ldsflda 0x04000096 <Module>::?A0xbc95cda3.__xc_ma_z
+0034 call 0x0600009e <Module>::_initterm_m
+0039 ldc.i4.2 None 
+0040 stsfld 0x04000094 <Module>::?InitializedPerAppDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2W4State@Progress@2@A
+0045 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeUninitializer 0x06000071
+0000 ldarg.0 None 
+0001 ldstr 0x700004bc 'The C++ module failed to load during registration for the unload events.\n'
+0006 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0011 pop None 
+0012 ldnull None 
+0013 ldftn 0x06000076 <Module>::<CrtImplementationDetails>.LanguageSupport.DomainUnload
+0019 newobj 0x0a000031 System.EventHandler::.ctor
+0024 call 0x06000059 <Module>::<CrtImplementationDetails>.RegisterModuleUninitializer
+0029 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport._Initialize 0x06000072
+0000 call 0x0a00002c System.AppDomain::get_CurrentDomain
+0005 call 0x0a00002b System.AppDomain::IsDefaultAppDomain
+0010 stsfld 0x04000091 <Module>::?IsDefaultDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2_NA
+0015 ldsfld 0x04000091 <Module>::?IsDefaultDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2_NA
+0020 ldc.i4.0 None 
+0021 bne.un.s 30 
+0023 ldsfld 0x040000a1 <Module>::?Entered@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0028 br.s 31 
+0030 ldc.i4.1 None 
+0031 stsfld 0x040000a1 <Module>::?Entered@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0036 call 0x060000be <Module>::_getFiberPtrId
+0041 stloc.s 4 
+0043 ldc.i4.0 None 
+0044 stloc.3 None 
+0045 ldc.i4.0 None 
+0046 stloc.0 None 
+0047 ldc.i4.0 None 
+0048 stloc.1 None 
+0049 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0054 ldloc.0 None 
+0055 brtrue.s 106 
+0057 leave.s 91 
+0059 ldsflda 0x040000be <Module>::__native_startup_lock
+0064 ldloc.s 4 
+0066 ldc.i4.0 None 
+0067 conv.i8 None 
+0068 call 0x0a00004e System.Threading.Interlocked::CompareExchange
+0073 stloc.2 None 
+0074 ldloc.2 None 
+0075 brtrue.s 81 
+0077 ldc.i4.1 None 
+0078 stloc.0 None 
+0079 br.s 90 
+0081 ldloc.2 None 
+0082 ldloc.s 4 
+0084 bne.un.s 90 
+0086 ldc.i4.1 None 
+0087 stloc.3 None 
+0088 ldc.i4.1 None 
+0089 stloc.0 None 
+0090 endfinally None 
+0091 ldloc.0 None 
+0092 brtrue.s 104 
+0094 ldc.i4 1000 
+0099 call 0x060000c1 <Module>::Sleep
+0104 br.s 54 
+0106 ldarg.0 None 
+0107 call 0x0600006c <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeVtables
+0112 ldsfld 0x04000091 <Module>::?IsDefaultDomain@CurrentDomain@<CrtImplementationDetails>@@$$Q2_NA
+0117 brfalse.s 133 
+0119 ldarg.0 None 
+0120 call 0x0600006e <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeNative
+0125 ldarg.0 None 
+0126 call 0x0600006f <Module>::<CrtImplementationDetails>.LanguageSupport.InitializePerProcess
+0131 br.s 146 
+0133 call 0x06000062 <Module>::<CrtImplementationDetails>.DefaultDomain.NeedsInitialization
+0138 ldc.i4.0 None 
+0139 bne.un.s 144 
+0141 ldloc.1 None 
+0142 br.s 145 
+0144 ldc.i4.1 None 
+0145 stloc.1 None 
+0146 leave.s 165 
+0148 ldloc.3 None 
+0149 brtrue.s 164 
+0151 ldsflda 0x040000be <Module>::__native_startup_lock
+0156 ldc.i4.0 None 
+0157 conv.i8 None 
+0158 call 0x0a00004c System.Threading.Interlocked::Exchange
+0163 pop None 
+0164 endfinally None 
+0165 ldloc.1 None 
+0166 brfalse.s 174 
+0168 ldarg.0 None 
+0169 call 0x0600006d <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeDefaultAppDomain
+0174 ldarg.0 None 
+0175 call 0x06000070 <Module>::<CrtImplementationDetails>.LanguageSupport.InitializePerAppDomain
+0180 ldc.i4.1 None 
+0181 stsfld 0x0400009d <Module>::?Initialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA
+0186 ldarg.0 None 
+0187 call 0x06000071 <Module>::<CrtImplementationDetails>.LanguageSupport.InitializeUninitializer
+0192 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.UninitializeAppDomain 0x06000073
+0000 call 0x06000097 <Module>::_app_exit_callback
+0005 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport._UninitializeDefaultDomain 0x06000074
+0000 call 0x06000093 <Module>::_exit_callback
+0005 ldc.i4.0 None 
+0006 stsfld 0x0400009f <Module>::?InitializedPerProcess@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0011 ldsfld 0x040000a6 <Module>::?InitializedNativeFromCCTOR@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0016 brfalse.s 37 
+0018 call 0x060000c2 <Module>::_cexit
+0023 ldc.i4.0 None 
+0024 volatile. None 
+0026 stsfld 0x040000bc <Module>::__native_startup_state
+0031 ldc.i4.0 None 
+0032 stsfld 0x040000a6 <Module>::?InitializedNativeFromCCTOR@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0037 ldc.i4.0 None 
+0038 stsfld 0x040000a2 <Module>::?InitializedNative@DefaultDomain@<CrtImplementationDetails>@@2_NA
+0043 ldc.i4.0 None 
+0044 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.UninitializeDefaultDomain 0x06000075
+0000 call 0x06000063 <Module>::<CrtImplementationDetails>.DefaultDomain.NeedsUninitialization
+0005 brfalse.s 41 
+0007 call 0x0a00002c System.AppDomain::get_CurrentDomain
+0012 call 0x0a00002b System.AppDomain::IsDefaultAppDomain
+0017 brfalse.s 29 
+0019 ldc.i4.0 None 
+0020 conv.i8 None 
+0021 call 0x06000074 <Module>::<CrtImplementationDetails>.LanguageSupport._UninitializeDefaultDomain
+0026 pop None 
+0027 br.s 41 
+0029 ldsfld 0x040000ad <Module>::__unep@?_UninitializeDefaultDomain@LanguageSupport@<CrtImplementationDetails>@@$$FCAJPEAX@Z
+0034 ldc.i4.0 None 
+0035 conv.i8 None 
+0036 call 0x0600005e <Module>::<CrtImplementationDetails>.DoCallBackInDefaultDomain
+0041 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.DomainUnload 0x06000076
+0000 ldsfld 0x0400009d <Module>::?Initialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA
+0005 brfalse.s 46 
+0007 ldsflda 0x0400009b <Module>::?Uninitialized@CurrentDomain@<CrtImplementationDetails>@@$$Q2HA
+0012 ldc.i4.1 None 
+0013 call 0x0a00004d System.Threading.Interlocked::Exchange
+0018 brtrue.s 46 
+0020 ldsflda 0x040000a3 <Module>::?Count@AllDomains@<CrtImplementationDetails>@@2HA
+0025 call 0x0a00004b System.Threading.Interlocked::Decrement
+0030 ldc.i4.0 None 
+0031 ceq None 
+0033 call 0x06000073 <Module>::<CrtImplementationDetails>.LanguageSupport.UninitializeAppDomain
+0038 conv.u1 None 
+0039 brfalse.s 46 
+0041 call 0x06000075 <Module>::<CrtImplementationDetails>.LanguageSupport.UninitializeDefaultDomain
+0046 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.Cleanup 0x06000077
+0000 ldsflda 0x040000a3 <Module>::?Count@AllDomains@<CrtImplementationDetails>@@2HA
+0005 call 0x0a00004b System.Threading.Interlocked::Decrement
+0010 ldc.i4.0 None 
+0011 ceq None 
+0013 conv.u1 None 
+0014 stloc.1 None 
+0015 call 0x06000073 <Module>::<CrtImplementationDetails>.LanguageSupport.UninitializeAppDomain
+0020 ldloc.1 None 
+0021 brfalse.s 28 
+0023 call 0x06000075 <Module>::<CrtImplementationDetails>.LanguageSupport.UninitializeDefaultDomain
+0028 leave.s 50 
+0030 stloc.0 None 
+0031 ldarg.1 None 
+0032 ldloc.0 None 
+0033 call 0x06000056 <Module>::<CrtImplementationDetails>.ThrowNestedModuleLoadException
+0038 leave.s 50 
+0040 stloc.2 None 
+0041 ldarg.1 None 
+0042 ldnull None 
+0043 call 0x06000056 <Module>::<CrtImplementationDetails>.ThrowNestedModuleLoadException
+0048 leave.s 50 
+0050 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.{ctor} 0x06000078
+0000 ldarg.0 None 
+0001 call 0x0600007c <Module>::gcroot<System::String ^>.{ctor}
+0006 pop None 
+0007 ldarg.0 None 
+0008 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.{dtor} 0x06000079
+0000 ldarg.0 None 
+0001 call 0x0600007d <Module>::gcroot<System::String ^>.{dtor}
+0006 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.LanguageSupport.Initialize 0x0600007a
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0007 ldarg.0 None 
+0008 ldstr 0x70000551 'The C++ module failed to load.\n'
+0013 call 0x0600007e <Module>::gcroot<System::String ^>.=
+0018 pop None 
+0019 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0024 leave.s 40 
+0026 ldsflda 0x040000a3 <Module>::?Count@AllDomains@<CrtImplementationDetails>@@2HA
+0031 call 0x0a00004a System.Threading.Interlocked::Increment
+0036 pop None 
+0037 ldc.i4.1 None 
+0038 stloc.0 None 
+0039 endfinally None 
+0040 ldarg.0 None 
+0041 call 0x06000072 <Module>::<CrtImplementationDetails>.LanguageSupport._Initialize
+0046 leave.s 98 
+0048 stloc.1 None 
+0049 ldloc.0 None 
+0050 brfalse.s 59 
+0052 ldarg.0 None 
+0053 ldloc.1 None 
+0054 call 0x06000077 <Module>::<CrtImplementationDetails>.LanguageSupport.Cleanup
+0059 ldarg.0 None 
+0060 call 0x0600007f <Module>::gcroot<System::String ^>..PE$AAVString@System@@
+0065 ldloc.1 None 
+0066 call 0x06000058 <Module>::<CrtImplementationDetails>.ThrowModuleLoadException
+0071 leave.s 98 
+0073 stloc.2 None 
+0074 ldloc.0 None 
+0075 brfalse.s 84 
+0077 ldarg.0 None 
+0078 ldnull None 
+0079 call 0x06000077 <Module>::<CrtImplementationDetails>.LanguageSupport.Cleanup
+0084 ldarg.0 None 
+0085 call 0x0600007f <Module>::gcroot<System::String ^>..PE$AAVString@System@@
+0090 ldnull None 
+0091 call 0x06000058 <Module>::<CrtImplementationDetails>.ThrowModuleLoadException
+0096 leave.s 98 
+0098 ret None 
+
+METHOD <Module>::.cctor 0x0600007b
+0000 ldloca.s 0 
+0002 call 0x06000078 <Module>::<CrtImplementationDetails>.LanguageSupport.{ctor}
+0007 pop None 
+0008 ldloca.s 0 
+0010 call 0x0600007a <Module>::<CrtImplementationDetails>.LanguageSupport.Initialize
+0015 leave.s 31 
+0017 ldftn 0x06000079 <Module>::<CrtImplementationDetails>.LanguageSupport.{dtor}
+0023 ldloca.s 0 
+0025 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0030 endfinally None 
+0031 ldloca.s 0 
+0033 call 0x06000079 <Module>::<CrtImplementationDetails>.LanguageSupport.{dtor}
+0038 ret None 
+
+METHOD <Module>::gcroot<System::String ^>.{ctor} 0x0600007c
+0000 ldnull None 
+0001 call 0x0a000036 System.Runtime.InteropServices.GCHandle::Alloc
+0006 call 0x0a000039 System.Runtime.InteropServices.GCHandle::op_Explicit
+0011 stloc.0 None 
+0012 ldarg.0 None 
+0013 ldloca.s 0 
+0015 call 0x0a00000c System.IntPtr::ToPointer
+0020 stind.i8 None 
+0021 ldarg.0 None 
+0022 ret None 
+
+METHOD <Module>::gcroot<System::String ^>.{dtor} 0x0600007d
+0000 ldloca.s 0 
+0002 ldarg.0 None 
+0003 ldind.i8 None 
+0004 call 0x0a00000d System.IntPtr::.ctor
+0009 ldloc.0 None 
+0010 call 0x0a000038 System.Runtime.InteropServices.GCHandle::op_Explicit
+0015 stloc.1 None 
+0016 ldloca.s 1 
+0018 call 0x0a000037 System.Runtime.InteropServices.GCHandle::Free
+0023 ldarg.0 None 
+0024 ldc.i4.0 None 
+0025 conv.i8 None 
+0026 stind.i8 None 
+0027 ret None 
+
+METHOD <Module>::gcroot<System::String ^>.= 0x0600007e
+0000 ldloca.s 0 
+0002 ldarg.0 None 
+0003 ldind.i8 None 
+0004 call 0x0a00000d System.IntPtr::.ctor
+0009 ldloc.0 None 
+0010 call 0x0a000038 System.Runtime.InteropServices.GCHandle::op_Explicit
+0015 stloc.1 None 
+0016 ldloca.s 1 
+0018 ldarg.1 None 
+0019 call 0x0a00003b System.Runtime.InteropServices.GCHandle::set_Target
+0024 ldarg.0 None 
+0025 ret None 
+
+METHOD <Module>::gcroot<System::String ^>..PE$AAVString@System@@ 0x0600007f
+0000 ldloca.s 0 
+0002 ldarg.0 None 
+0003 ldind.i8 None 
+0004 call 0x0a00000d System.IntPtr::.ctor
+0009 ldloc.0 None 
+0010 call 0x0a000038 System.Runtime.InteropServices.GCHandle::op_Explicit
+0015 stloc.1 None 
+0016 ldloca.s 1 
+0018 call 0x0a00003a System.Runtime.InteropServices.GCHandle::get_Target
+0023 ret None 
+
+METHOD <Module>::___CxxCallUnwindDtor 0x06000080
+0000 ldarg.1 None 
+0001 ldarg.0 None 
+0002 calli 0x1100009b 
+0007 leave.s 25 
+0009 pop None 
+0010 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0015 call 0x060000c3 <Module>::__FrameUnwindFilter
+0020 endfilter None 
+0022 pop None 
+0023 leave.s 25 
+0025 ret None 
+
+METHOD <Module>::__ehvec_dtor 0x06000081
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldarg.2 None 
+0003 conv.i8 None 
+0004 ldarg.1 None 
+0005 mul None 
+0006 ldarg.0 None 
+0007 add None 
+0008 starg.s 0 
+0010 ldarg.2 None 
+0011 ldc.i4.m1 None 
+0012 add None 
+0013 starg.s 2 
+0015 ldarg.2 None 
+0016 ldc.i4.0 None 
+0017 blt.s 33 
+0019 ldarg.0 None 
+0020 ldarg.1 None 
+0021 sub None 
+0022 starg.s 0 
+0024 ldarg.0 None 
+0025 ldarg.3 None 
+0026 calli 0x1100009b 
+0031 br.s 10 
+0033 ldc.i4.1 None 
+0034 stloc.0 None 
+0035 leave.s 50 
+0037 ldloc.0 None 
+0038 brtrue.s 49 
+0040 ldarg.0 None 
+0041 ldarg.1 None 
+0042 ldarg.2 None 
+0043 ldarg.3 None 
+0044 call 0x06000083 <Module>::__ArrayUnwind
+0049 endfinally None 
+0050 ret None 
+
+METHOD <Module>::?A0xc73ec4b2.ArrayUnwindFilter 0x06000082
+0000 ldarg.0 None 
+0001 ldind.i8 None 
+0002 ldind.i4 None 
+0003 ldc.i4 -529697949 
+0008 beq.s 12 
+0010 ldc.i4.0 None 
+0011 ret None 
+0012 call 0x060000c4 <Module>::terminate
+0017 ldc.i4.0 None 
+0018 ret None 
+
+METHOD <Module>::__ArrayUnwind 0x06000083
+0000 ldarg.2 None 
+0001 ldc.i4.m1 None 
+0002 add None 
+0003 starg.s 2 
+0005 ldarg.2 None 
+0006 ldc.i4.0 None 
+0007 blt.s 23 
+0009 ldarg.0 None 
+0010 ldarg.1 None 
+0011 sub None 
+0012 starg.s 0 
+0014 ldarg.0 None 
+0015 ldarg.3 None 
+0016 calli 0x1100009b 
+0021 br.s 0 
+0023 leave.s 41 
+0025 pop None 
+0026 call 0x0a000010 System.Runtime.InteropServices.Marshal::GetExceptionPointers
+0031 call 0x06000082 <Module>::?A0xc73ec4b2.ArrayUnwindFilter
+0036 endfilter None 
+0038 pop None 
+0039 leave.s 41 
+0041 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock._handle 0x06000084
+0000 ldsfld 0x040000b5 <Module>::?_lock@AtExitLock@<CrtImplementationDetails>@@$$Q0PEAXEA
+0005 brfalse.s 31 
+0007 ldloca.s 0 
+0009 ldsfld 0x040000b5 <Module>::?_lock@AtExitLock@<CrtImplementationDetails>@@$$Q0PEAXEA
+0014 call 0x0a00000d System.IntPtr::.ctor
+0019 ldloc.0 None 
+0020 call 0x0a000055 System.Runtime.InteropServices.GCHandle::FromIntPtr
+0025 box 0x01000036 
+0030 ret None 
+0031 ldnull None 
+0032 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock._lock_Construct 0x06000085
+0000 ldc.i4.0 None 
+0001 conv.i8 None 
+0002 stsfld 0x040000b5 <Module>::?_lock@AtExitLock@<CrtImplementationDetails>@@$$Q0PEAXEA
+0007 ldarg.0 None 
+0008 call 0x06000086 <Module>::<CrtImplementationDetails>.AtExitLock._lock_Set
+0013 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock._lock_Set 0x06000086
+0000 call 0x06000084 <Module>::<CrtImplementationDetails>.AtExitLock._handle
+0005 stloc.0 None 
+0006 ldloc.0 None 
+0007 brtrue.s 52 
+0009 ldarg.0 None 
+0010 call 0x0a000036 System.Runtime.InteropServices.GCHandle::Alloc
+0015 box 0x01000036 
+0020 stloc.0 None 
+0021 ldloc.0 None 
+0022 unbox 0x01000036 
+0027 ldobj 0x01000036 
+0032 call 0x0a000056 System.Runtime.InteropServices.GCHandle::ToIntPtr
+0037 stloc.1 None 
+0038 ldloca.s 1 
+0040 call 0x0a00000c System.IntPtr::ToPointer
+0045 stsfld 0x040000b5 <Module>::?_lock@AtExitLock@<CrtImplementationDetails>@@$$Q0PEAXEA
+0050 br.s 64 
+0052 ldloc.0 None 
+0053 unbox 0x01000036 
+0058 ldarg.0 None 
+0059 call 0x0a00003b System.Runtime.InteropServices.GCHandle::set_Target
+0064 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock._lock_Get 0x06000087
+0000 call 0x06000084 <Module>::<CrtImplementationDetails>.AtExitLock._handle
+0005 stloc.0 None 
+0006 ldloc.0 None 
+0007 brfalse.s 21 
+0009 ldloc.0 None 
+0010 unbox 0x01000036 
+0015 call 0x0a00003a System.Runtime.InteropServices.GCHandle::get_Target
+0020 ret None 
+0021 ldnull None 
+0022 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock._lock_Destruct 0x06000088
+0000 call 0x06000084 <Module>::<CrtImplementationDetails>.AtExitLock._handle
+0005 stloc.0 None 
+0006 ldloc.0 None 
+0007 brfalse.s 27 
+0009 ldloc.0 None 
+0010 unbox 0x01000036 
+0015 call 0x0a000037 System.Runtime.InteropServices.GCHandle::Free
+0020 ldc.i4.0 None 
+0021 conv.i8 None 
+0022 stsfld 0x040000b5 <Module>::?_lock@AtExitLock@<CrtImplementationDetails>@@$$Q0PEAXEA
+0027 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock.IsInitialized 0x06000089
+0000 call 0x06000087 <Module>::<CrtImplementationDetails>.AtExitLock._lock_Get
+0005 ldnull None 
+0006 bne.un.s 11 
+0008 ldc.i4.0 None 
+0009 br.s 12 
+0011 ldc.i4.1 None 
+0012 conv.u1 None 
+0013 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock.AddRef 0x0600008a
+0000 call 0x06000089 <Module>::<CrtImplementationDetails>.AtExitLock.IsInitialized
+0005 brtrue.s 23 
+0007 newobj 0x0a00000e System.Object::.ctor
+0012 call 0x06000085 <Module>::<CrtImplementationDetails>.AtExitLock._lock_Construct
+0017 ldc.i4.0 None 
+0018 stsfld 0x040000b4 <Module>::?_ref_count@AtExitLock@<CrtImplementationDetails>@@$$Q0HA
+0023 ldsfld 0x040000b4 <Module>::?_ref_count@AtExitLock@<CrtImplementationDetails>@@$$Q0HA
+0028 ldc.i4.1 None 
+0029 add None 
+0030 stsfld 0x040000b4 <Module>::?_ref_count@AtExitLock@<CrtImplementationDetails>@@$$Q0HA
+0035 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock.RemoveRef 0x0600008b
+0000 ldsfld 0x040000b4 <Module>::?_ref_count@AtExitLock@<CrtImplementationDetails>@@$$Q0HA
+0005 ldc.i4.m1 None 
+0006 add None 
+0007 stsfld 0x040000b4 <Module>::?_ref_count@AtExitLock@<CrtImplementationDetails>@@$$Q0HA
+0012 ldsfld 0x040000b4 <Module>::?_ref_count@AtExitLock@<CrtImplementationDetails>@@$$Q0HA
+0017 brtrue.s 24 
+0019 call 0x06000088 <Module>::<CrtImplementationDetails>.AtExitLock._lock_Destruct
+0024 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock.Enter 0x0600008c
+0000 call 0x06000087 <Module>::<CrtImplementationDetails>.AtExitLock._lock_Get
+0005 call 0x0a00005a System.Threading.Monitor::Enter
+0010 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.AtExitLock.Exit 0x0600008d
+0000 call 0x06000087 <Module>::<CrtImplementationDetails>.AtExitLock._lock_Get
+0005 call 0x0a000050 System.Threading.Monitor::Exit
+0010 ret None 
+
+METHOD <Module>::?A0x88e84184.__global_lock 0x0600008e
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 call 0x06000089 <Module>::<CrtImplementationDetails>.AtExitLock.IsInitialized
+0007 brfalse.s 16 
+0009 call 0x0600008c <Module>::<CrtImplementationDetails>.AtExitLock.Enter
+0014 ldc.i4.1 None 
+0015 stloc.0 None 
+0016 ldloc.0 None 
+0017 ret None 
+
+METHOD <Module>::?A0x88e84184.__global_unlock 0x0600008f
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 call 0x06000089 <Module>::<CrtImplementationDetails>.AtExitLock.IsInitialized
+0007 brfalse.s 16 
+0009 call 0x0600008d <Module>::<CrtImplementationDetails>.AtExitLock.Exit
+0014 ldc.i4.1 None 
+0015 stloc.0 None 
+0016 ldloc.0 None 
+0017 ret None 
+
+METHOD <Module>::?A0x88e84184.__alloc_global_lock 0x06000090
+0000 call 0x0600008a <Module>::<CrtImplementationDetails>.AtExitLock.AddRef
+0005 call 0x06000089 <Module>::<CrtImplementationDetails>.AtExitLock.IsInitialized
+0010 ret None 
+
+METHOD <Module>::?A0x88e84184.__dealloc_global_lock 0x06000091
+0000 call 0x0600008b <Module>::<CrtImplementationDetails>.AtExitLock.RemoveRef
+0005 ret None 
+
+METHOD <Module>::_atexit_helper 0x06000092
+0000 ldc.i4.0 None 
+0001 conv.i8 None 
+0002 stloc.s 8 
+0004 ldarg.0 None 
+0005 brtrue.s 9 
+0007 ldc.i4.m1 None 
+0008 ret None 
+0009 call 0x0600008e <Module>::?A0x88e84184.__global_lock
+0014 ldc.i4.1 None 
+0015 bne.un 291 
+0020 ldarg.3 None 
+0021 ldind.i8 None 
+0022 call 0x06000098 <Module>::DecodePointer
+0027 stloc.1 None 
+0028 ldarg.2 None 
+0029 ldind.i8 None 
+0030 call 0x06000098 <Module>::DecodePointer
+0035 stloc.0 None 
+0036 ldloc.0 None 
+0037 ldloc.1 None 
+0038 sub None 
+0039 stloc.s 7 
+0041 ldarg.1 None 
+0042 ldind.i8 None 
+0043 ldc.i4.1 None 
+0044 conv.i8 None 
+0045 sub None 
+0046 ldloc.s 7 
+0048 ldc.i4.3 None 
+0049 shr.un None 
+0050 bge.un 244 
+0055 ldarg.1 None 
+0056 ldind.i8 None 
+0057 ldc.i4.8 None 
+0058 conv.i8 None 
+0059 mul None 
+0060 stloc.3 None 
+0061 ldloc.3 None 
+0062 ldc.i4 4096 
+0067 conv.i8 None 
+0068 blt.un.s 78 
+0070 ldc.i4 4096 
+0075 conv.i8 None 
+0076 br.s 79 
+0078 ldloc.3 None 
+0079 stloc.s 14 
+0081 ldloca.s 13 
+0083 ldloc.3 None 
+0084 ldloc.s 14 
+0086 add None 
+0087 conv.i4 None 
+0088 call 0x0a000054 System.IntPtr::.ctor
+0093 ldloca.s 12 
+0095 ldloc.1 None 
+0096 call 0x0a00000d System.IntPtr::.ctor
+0101 ldloc.s 12 
+0103 ldloc.s 13 
+0105 call 0x0a000059 System.Runtime.InteropServices.Marshal::ReAllocHGlobal
+0110 stloc.s 6 
+0112 ldloc.s 6 
+0114 stloc.s 18 
+0116 ldloc.s 6 
+0118 stloc.s 17 
+0120 ldloca.s 17 
+0122 call 0x0a00000c System.IntPtr::ToPointer
+0127 ldloc.s 7 
+0129 add None 
+0130 stloc.0 None 
+0131 ldloca.s 17 
+0133 call 0x0a00000c System.IntPtr::ToPointer
+0138 stloc.1 None 
+0139 ldarg.1 None 
+0140 ldind.i8 None 
+0141 stloc.2 None 
+0142 ldc.i4 512 
+0147 conv.i8 None 
+0148 ldloc.2 None 
+0149 blt.un.s 154 
+0151 ldloc.2 None 
+0152 br.s 160 
+0154 ldc.i4 512 
+0159 conv.i8 None 
+0160 stloc.s 11 
+0162 ldarg.1 None 
+0163 ldloc.2 None 
+0164 ldloc.s 11 
+0166 add None 
+0167 stind.i8 None 
+0168 leave.s 244 
+0170 pop None 
+0171 ldloca.s 10 
+0173 ldarg.1 None 
+0174 ldind.i8 None 
+0175 ldc.i4.8 None 
+0176 conv.i8 None 
+0177 mul None 
+0178 ldc.i4.s 12 
+0180 conv.i8 None 
+0181 add None 
+0182 conv.i4 None 
+0183 call 0x0a000054 System.IntPtr::.ctor
+0188 ldloca.s 9 
+0190 ldloc.1 None 
+0191 call 0x0a00000d System.IntPtr::.ctor
+0196 ldloc.s 9 
+0198 ldloc.s 10 
+0200 call 0x0a000059 System.Runtime.InteropServices.Marshal::ReAllocHGlobal
+0205 stloc.s 5 
+0207 ldloc.s 5 
+0209 stloc.s 16 
+0211 ldloc.s 5 
+0213 stloc.s 15 
+0215 ldloca.s 15 
+0217 call 0x0a00000c System.IntPtr::ToPointer
+0222 ldloc.1 None 
+0223 sub None 
+0224 ldloc.0 None 
+0225 add None 
+0226 stloc.0 None 
+0227 ldloca.s 15 
+0229 call 0x0a00000c System.IntPtr::ToPointer
+0234 stloc.1 None 
+0235 ldarg.1 None 
+0236 dup None 
+0237 ldind.i8 None 
+0238 ldc.i4.4 None 
+0239 conv.i8 None 
+0240 add None 
+0241 stind.i8 None 
+0242 leave.s 244 
+0244 ldloc.0 None 
+0245 ldarg.0 None 
+0246 stind.i8 None 
+0247 ldloc.0 None 
+0248 ldc.i4.8 None 
+0249 conv.i8 None 
+0250 add None 
+0251 stloc.0 None 
+0252 ldarg.0 None 
+0253 stloc.s 8 
+0255 ldarg.3 None 
+0256 ldloc.1 None 
+0257 call 0x06000099 <Module>::EncodePointer
+0262 stind.i8 None 
+0263 ldarg.2 None 
+0264 ldloc.0 None 
+0265 call 0x06000099 <Module>::EncodePointer
+0270 stind.i8 None 
+0271 leave.s 278 
+0273 pop None 
+0274 leave.s 276 
+0276 leave.s 287 
+0278 leave.s 287 
+0280 call 0x0600008f <Module>::?A0x88e84184.__global_unlock
+0285 pop None 
+0286 endfinally None 
+0287 ldloc.s 8 
+0289 brtrue.s 296 
+0291 ldc.i4.m1 None 
+0292 stloc.s 4 
+0294 br.s 299 
+0296 ldc.i4.0 None 
+0297 stloc.s 4 
+0299 ldloc.s 4 
+0301 ret None 
+
+METHOD <Module>::_exit_callback 0x06000093
+0000 ldsfld 0x040000b0 <Module>::?A0x88e84184.__exit_list_size
+0005 brfalse 161 
+0010 ldsfld 0x040000b2 <Module>::?A0x88e84184.__onexitbegin_m
+0015 call 0x06000098 <Module>::DecodePointer
+0020 stloc.1 None 
+0021 ldsfld 0x040000b3 <Module>::?A0x88e84184.__onexitend_m
+0026 call 0x06000098 <Module>::DecodePointer
+0031 stloc.0 None 
+0032 ldloc.1 None 
+0033 ldc.i8 -1 
+0042 beq.s 156 
+0044 ldloc.1 None 
+0045 brfalse.s 156 
+0047 ldloc.0 None 
+0048 brfalse.s 156 
+0050 ldloc.1 None 
+0051 stloc.s 5 
+0053 ldloc.0 None 
+0054 stloc.s 4 
+0056 ldloc.0 None 
+0057 ldc.i4.8 None 
+0058 conv.i8 None 
+0059 sub None 
+0060 stloc.0 None 
+0061 ldloc.0 None 
+0062 ldloc.1 None 
+0063 blt.un.s 141 
+0065 ldloc.0 None 
+0066 ldind.i8 None 
+0067 ldc.i4.0 None 
+0068 conv.i8 None 
+0069 call 0x06000099 <Module>::EncodePointer
+0074 beq.s 56 
+0076 ldloc.0 None 
+0077 ldind.i8 None 
+0078 call 0x06000098 <Module>::DecodePointer
+0083 ldloc.0 None 
+0084 ldc.i4.0 None 
+0085 conv.i8 None 
+0086 call 0x06000099 <Module>::EncodePointer
+0091 stind.i8 None 
+0092 calli 0x1100009e 
+0097 ldsfld 0x040000b2 <Module>::?A0x88e84184.__onexitbegin_m
+0102 call 0x06000098 <Module>::DecodePointer
+0107 stloc.3 None 
+0108 ldsfld 0x040000b3 <Module>::?A0x88e84184.__onexitend_m
+0113 call 0x06000098 <Module>::DecodePointer
+0118 stloc.2 None 
+0119 ldloc.s 5 
+0121 ldloc.3 None 
+0122 bne.un.s 129 
+0124 ldloc.s 4 
+0126 ldloc.2 None 
+0127 beq.s 56 
+0129 ldloc.3 None 
+0130 stloc.s 5 
+0132 ldloc.3 None 
+0133 stloc.1 None 
+0134 ldloc.2 None 
+0135 stloc.s 4 
+0137 ldloc.2 None 
+0138 stloc.0 None 
+0139 br.s 56 
+0141 ldloca.s 6 
+0143 ldloc.1 None 
+0144 call 0x0a00000d System.IntPtr::.ctor
+0149 ldloc.s 6 
+0151 call 0x0a000058 System.Runtime.InteropServices.Marshal::FreeHGlobal
+0156 call 0x06000091 <Module>::?A0x88e84184.__dealloc_global_lock
+0161 ret None 
+
+METHOD <Module>::_initatexit_m 0x06000094
+0000 ldc.i4.0 None 
+0001 call 0x06000090 <Module>::?A0x88e84184.__alloc_global_lock
+0006 ldc.i4.1 None 
+0007 bne.un.s 57 
+0009 pop None 
+0010 ldc.i4 256 
+0015 call 0x0a000057 System.Runtime.InteropServices.Marshal::AllocHGlobal
+0020 stloc.0 None 
+0021 ldloca.s 0 
+0023 call 0x0a00000c System.IntPtr::ToPointer
+0028 call 0x06000099 <Module>::EncodePointer
+0033 stsfld 0x040000b2 <Module>::?A0x88e84184.__onexitbegin_m
+0038 ldsfld 0x040000b2 <Module>::?A0x88e84184.__onexitbegin_m
+0043 stsfld 0x040000b3 <Module>::?A0x88e84184.__onexitend_m
+0048 ldc.i4.s 32 
+0050 conv.i8 None 
+0051 stsfld 0x040000b0 <Module>::?A0x88e84184.__exit_list_size
+0056 ldc.i4.1 None 
+0057 ret None 
+
+METHOD <Module>::_atexit_m 0x06000095
+0000 ldarg.0 None 
+0001 call 0x06000099 <Module>::EncodePointer
+0006 ldsflda 0x040000b0 <Module>::?A0x88e84184.__exit_list_size
+0011 ldsflda 0x040000b3 <Module>::?A0x88e84184.__onexitend_m
+0016 ldsflda 0x040000b2 <Module>::?A0x88e84184.__onexitbegin_m
+0021 call 0x06000092 <Module>::_atexit_helper
+0026 ret None 
+
+METHOD <Module>::_initatexit_app_domain 0x06000096
+0000 call 0x06000090 <Module>::?A0x88e84184.__alloc_global_lock
+0005 ldc.i4.1 None 
+0006 bne.un.s 54 
+0008 ldc.i4 256 
+0013 call 0x0a000057 System.Runtime.InteropServices.Marshal::AllocHGlobal
+0018 stloc.0 None 
+0019 ldloca.s 0 
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 call 0x06000099 <Module>::EncodePointer
+0031 stsfld 0x040000af <Module>::__onexitbegin_app_domain
+0036 ldsfld 0x040000af <Module>::__onexitbegin_app_domain
+0041 stsfld 0x040000b1 <Module>::__onexitend_app_domain
+0046 ldc.i4.s 32 
+0048 conv.i8 None 
+0049 stsfld 0x040000ae <Module>::__exit_list_size_app_domain
+0054 ldc.i4.1 None 
+0055 ret None 
+
+METHOD <Module>::_app_exit_callback 0x06000097
+0000 ldsfld 0x040000ae <Module>::__exit_list_size_app_domain
+0005 brfalse 192 
+0010 ldsfld 0x040000af <Module>::__onexitbegin_app_domain
+0015 call 0x06000098 <Module>::DecodePointer
+0020 stloc.1 None 
+0021 ldsfld 0x040000b1 <Module>::__onexitend_app_domain
+0026 call 0x06000098 <Module>::DecodePointer
+0031 stloc.0 None 
+0032 ldloc.1 None 
+0033 ldc.i8 -1 
+0042 beq 169 
+0047 ldloc.1 None 
+0048 brfalse 169 
+0053 ldloc.0 None 
+0054 brfalse.s 169 
+0056 ldc.i4.0 None 
+0057 conv.i8 None 
+0058 stloc.s 6 
+0060 ldloc.1 None 
+0061 stloc.s 5 
+0063 ldloc.0 None 
+0064 stloc.s 4 
+0066 ldc.i4.0 None 
+0067 conv.i8 None 
+0068 stloc.s 9 
+0070 ldc.i4.0 None 
+0071 conv.i8 None 
+0072 stloc.s 8 
+0074 ldloc.0 None 
+0075 ldc.i4.8 None 
+0076 conv.i8 None 
+0077 sub None 
+0078 stloc.0 None 
+0079 ldloc.0 None 
+0080 ldloc.1 None 
+0081 blt.un.s 96 
+0083 ldloc.0 None 
+0084 ldind.i8 None 
+0085 ldc.i4.0 None 
+0086 conv.i8 None 
+0087 call 0x06000099 <Module>::EncodePointer
+0092 bne.un.s 96 
+0094 br.s 74 
+0096 ldloc.0 None 
+0097 ldloc.1 None 
+0098 blt.un.s 169 
+0100 ldloc.0 None 
+0101 ldind.i8 None 
+0102 call 0x06000098 <Module>::DecodePointer
+0107 stloc.s 6 
+0109 ldloc.0 None 
+0110 ldc.i4.0 None 
+0111 conv.i8 None 
+0112 call 0x06000099 <Module>::EncodePointer
+0117 stind.i8 None 
+0118 ldloc.s 6 
+0120 calli 0x1100009e 
+0125 ldsfld 0x040000af <Module>::__onexitbegin_app_domain
+0130 call 0x06000098 <Module>::DecodePointer
+0135 stloc.3 None 
+0136 ldsfld 0x040000b1 <Module>::__onexitend_app_domain
+0141 call 0x06000098 <Module>::DecodePointer
+0146 stloc.2 None 
+0147 ldloc.s 5 
+0149 ldloc.3 None 
+0150 bne.un.s 157 
+0152 ldloc.s 4 
+0154 ldloc.2 None 
+0155 beq.s 167 
+0157 ldloc.3 None 
+0158 stloc.s 5 
+0160 ldloc.3 None 
+0161 stloc.1 None 
+0162 ldloc.2 None 
+0163 stloc.s 4 
+0165 ldloc.2 None 
+0166 stloc.0 None 
+0167 br.s 66 
+0169 leave.s 192 
+0171 ldloca.s 7 
+0173 ldloc.1 None 
+0174 call 0x0a00000d System.IntPtr::.ctor
+0179 ldloc.s 7 
+0181 call 0x0a000058 System.Runtime.InteropServices.Marshal::FreeHGlobal
+0186 call 0x06000091 <Module>::?A0x88e84184.__dealloc_global_lock
+0191 endfinally None 
+0192 ret None 
+
+METHOD <Module>::DecodePointer 0x06000098
+
+METHOD <Module>::EncodePointer 0x06000099
+
+METHOD <Module>::__ehvec_ctor 0x0600009a
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldc.i4.0 None 
+0003 stloc.1 None 
+0004 ldloc.0 None 
+0005 ldarg.2 None 
+0006 bge.s 26 
+0008 ldarg.0 None 
+0009 ldarg.3 None 
+0010 calli 0x1100009b 
+0015 ldarg.1 None 
+0016 ldarg.0 None 
+0017 add None 
+0018 starg.s 0 
+0020 ldloc.0 None 
+0021 ldc.i4.1 None 
+0022 add None 
+0023 stloc.0 None 
+0024 br.s 4 
+0026 ldc.i4.1 None 
+0027 stloc.1 None 
+0028 leave.s 44 
+0030 ldloc.1 None 
+0031 brtrue.s 43 
+0033 ldarg.0 None 
+0034 ldarg.1 None 
+0035 ldloc.0 None 
+0036 ldarg.s 4 
+0038 call 0x06000083 <Module>::__ArrayUnwind
+0043 endfinally None 
+0044 ret None 
+
+METHOD <Module>::_initterm_e 0x0600009b
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldarg.0 None 
+0003 ldarg.1 None 
+0004 bge.un.s 32 
+0006 ldloc.0 None 
+0007 brtrue.s 32 
+0009 ldarg.0 None 
+0010 ldind.i8 None 
+0011 stloc.1 None 
+0012 ldloc.1 None 
+0013 brfalse.s 22 
+0015 ldloc.1 None 
+0016 calli 0x110000ab 
+0021 stloc.0 None 
+0022 ldarg.0 None 
+0023 ldc.i4.8 None 
+0024 conv.i8 None 
+0025 add None 
+0026 starg.s 0 
+0028 ldarg.0 None 
+0029 ldarg.1 None 
+0030 blt.un.s 6 
+0032 ldloc.0 None 
+0033 ret None 
+
+METHOD <Module>::_initterm 0x0600009c
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 bge.un.s 26 
+0004 ldarg.0 None 
+0005 ldind.i8 None 
+0006 stloc.0 None 
+0007 ldloc.0 None 
+0008 brfalse.s 16 
+0010 ldloc.0 None 
+0011 calli 0x110000aa 
+0016 ldarg.0 None 
+0017 ldc.i4.8 None 
+0018 conv.i8 None 
+0019 add None 
+0020 starg.s 0 
+0022 ldarg.0 None 
+0023 ldarg.1 None 
+0024 blt.un.s 4 
+0026 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.ThisModule.Handle 0x0600009d
+0000 ldtoken 0x0200006e 
+0005 call 0x0a000030 System.Type::GetTypeFromHandle
+0010 callvirt 0x0a00005b System.Type::get_Module
+0015 call 0x0a00005e System.Reflection.Module::get_ModuleHandle
+0020 ret None 
+
+METHOD <Module>::_initterm_m 0x0600009e
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 bge.un.s 32 
+0004 ldarg.0 None 
+0005 ldind.i8 None 
+0006 stloc.0 None 
+0007 ldloc.0 None 
+0008 brfalse.s 22 
+0010 ldloc.0 None 
+0011 call 0x0600009f <Module>::<CrtImplementationDetails>.ThisModule.ResolveMethod<void const * __clrcall(void)>
+0016 calli 0x110000a9 
+0021 pop None 
+0022 ldarg.0 None 
+0023 ldc.i4.8 None 
+0024 conv.i8 None 
+0025 add None 
+0026 starg.s 0 
+0028 ldarg.0 None 
+0029 ldarg.1 None 
+0030 blt.un.s 4 
+0032 ret None 
+
+METHOD <Module>::<CrtImplementationDetails>.ThisModule.ResolveMethod<void const * __clrcall(void)> 0x0600009f
+0000 call 0x0600009d <Module>::<CrtImplementationDetails>.ThisModule.Handle
+0005 stloc.2 None 
+0006 ldloca.s 2 
+0008 ldarg.0 None 
+0009 conv.i4 None 
+0010 call 0x0a00005d System.ModuleHandle::ResolveMethodHandle
+0015 stloc.1 None 
+0016 ldloca.s 1 
+0018 call 0x0a00005c System.RuntimeMethodHandle::GetFunctionPointer
+0023 stloc.0 None 
+0024 ldloca.s 0 
+0026 call 0x0a00000c System.IntPtr::ToPointer
+0031 ret None 
+
+METHOD <Module>::std.locale.id.{ctor} 0x060000a0
+
+METHOD <Module>::ATL._AtlInitializeCriticalSectionEx 0x060000a1
+
+METHOD <Module>::ATL.CAtlComModule.{ctor} 0x060000a2
+
+METHOD <Module>::ATL.CAtlComModule.{dtor} 0x060000a3
+
+METHOD <Module>::ATL.CAtlComModule.Term 0x060000a4
+
+METHOD <Module>::std._Xbad_alloc 0x060000a5
+
+METHOD <Module>::std._Xlength_error 0x060000a6
+
+METHOD <Module>::OlyIPCommon_CreateBuffer 0x060000a7
+
+METHOD <Module>::OlyIPCommon_CreateImage2_1 0x060000a8
+
+METHOD <Module>::OlyIPCommon_CreateImageContainer1 0x060000a9
+
+METHOD <Module>::OlyIPCommon_CreateImage1_3 0x060000aa
+
+METHOD <Module>::OlyIPCommon_CreateImage1_2 0x060000ab
+
+METHOD <Module>::OlyIPCommon_CreateImage1_1 0x060000ac
+
+METHOD <Module>::std._Xout_of_range 0x060000ad
+
+METHOD <Module>::std._Winerror_map 0x060000ae
+
+METHOD <Module>::std._Syserror_map 0x060000af
+
+METHOD <Module>::new 0x060000b0
+
+METHOD <Module>::__CxxUnregisterExceptionObject 0x060000b1
+
+METHOD <Module>::__CxxQueryExceptionSize 0x060000b2
+
+METHOD <Module>::__CxxDetectRethrow 0x060000b3
+
+METHOD <Module>::__CxxRegisterExceptionObject 0x060000b4
+
+METHOD <Module>::__CxxExceptionFilter 0x060000b5
+
+METHOD <Module>::_CxxThrowException 0x060000b6
+
+METHOD <Module>::delete[] 0x060000b7
+
+METHOD <Module>::memmove 0x060000b8
+
+METHOD <Module>::delete 0x060000b9
+
+METHOD <Module>::free 0x060000ba
+
+METHOD <Module>::OlyHamalCreateServiceInstance 0x060000bb
+
+METHOD <Module>::new[] 0x060000bc
+
+METHOD <Module>::OlySpicaCreateServiceInstance 0x060000bd
+
+METHOD <Module>::_getFiberPtrId 0x060000be
+
+METHOD <Module>::_amsg_exit 0x060000bf
+
+METHOD <Module>::__security_init_cookie 0x060000c0
+
+METHOD <Module>::Sleep 0x060000c1
+
+METHOD <Module>::_cexit 0x060000c2
+
+METHOD <Module>::__FrameUnwindFilter 0x060000c3
+
+METHOD <Module>::terminate 0x060000c4
+
+METHOD OlyIPCommonCLI.COlyErrCode::.ctor 0x060000c5
+0000 ldarg.0 None 
+0001 call 0x0a00000e System.Object::.ctor
+0006 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageType::.ctor 0x060000c6
+0000 ldarg.0 None 
+0001 call 0x0a00000e System.Object::.ctor
+0006 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::.ctor 0x060000c7
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 ldarg.1 None 
+0007 call 0x0a00000d System.IntPtr::.ctor
+0012 ldarg.0 None 
+0013 call 0x0a00000e System.Object::.ctor
+0018 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetBuffSize 0x060000c8
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 16 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000005 
+0038 conv.u4 None 
+0039 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::CopyBits 0x060000c9
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 stloc.0 None 
+0031 ldloc.0 None 
+0032 ldarg.1 None 
+0033 call 0x0a00000c System.IntPtr::ToPointer
+0038 ldarg.2 None 
+0039 ldarg.3 None 
+0040 ldloc.0 None 
+0041 ldind.i8 None 
+0042 ldc.i4.s 24 
+0044 conv.i8 None 
+0045 add None 
+0046 ldind.i8 None 
+0047 calli 0x11000010 
+0052 pop None 
+0053 ldc.i4.0 None 
+0054 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Clone 0x060000ca
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brfalse.s 49 
+0013 ldarg.0 None 
+0014 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0019 call 0x0a00000c System.IntPtr::ToPointer
+0024 stloc.0 None 
+0025 ldloc.0 None 
+0026 ldloca.s 1 
+0028 ldloc.0 None 
+0029 ldind.i8 None 
+0030 ldc.i4.s 32 
+0032 conv.i8 None 
+0033 add None 
+0034 ldind.i8 None 
+0035 calli 0x1100000f 
+0040 pop None 
+0041 ldarg.1 None 
+0042 ldloc.1 None 
+0043 newobj 0x060000c7 OlyIPCommonCLI.COlyImageCLI::.ctor
+0048 stind.ref None 
+0049 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetImageType 0x060000cb
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 40 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000001 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetWidth 0x060000cc
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 48 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x1100000e 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetHeight 0x060000cd
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 56 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x1100000e 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetBitPerChannel 0x060000ce
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 64 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x1100000e 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetChannelPerPel 0x060000cf
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 72 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x1100000e 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetEffectiveBits 0x060000d0
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 80 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x1100000e 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetBytePerLine 0x060000d1
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 96 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x1100000e 
+0038 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::SetBits 0x060000d2
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarga.s 1 
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 stloc.1 None 
+0027 ldarg.0 None 
+0028 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0033 call 0x0a00000c System.IntPtr::ToPointer
+0038 stloc.0 None 
+0039 ldloc.0 None 
+0040 ldloc.1 None 
+0041 ldarg.2 None 
+0042 ldarg.3 None 
+0043 ldloc.0 None 
+0044 ldind.i8 None 
+0045 ldc.i4.s 104 
+0047 conv.i8 None 
+0048 add None 
+0049 ldind.i8 None 
+0050 calli 0x1100000d 
+0055 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::GetBits 0x060000d3
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldsfld 0x0a00000b System.IntPtr::Zero
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 stloc.1 None 
+0031 ldloca.s 0 
+0033 ldloc.1 None 
+0034 dup None 
+0035 ldind.i8 None 
+0036 ldc.i4.s 120 
+0038 conv.i8 None 
+0039 add None 
+0040 ldind.i8 None 
+0041 calli 0x1100000c 
+0046 call 0x0a00000d System.IntPtr::.ctor
+0051 ldloc.0 None 
+0052 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::CreateInstance 0x060000d4
+0000 ldloca.s 3 
+0002 ldc.i4.0 None 
+0003 conv.i8 None 
+0004 stind.i8 None 
+0005 ldarga.s 7 
+0007 call 0x0a00000c System.IntPtr::ToPointer
+0012 stloc.2 None 
+0013 ldloca.s 3 
+0015 ldarg.1 None 
+0016 ldarg.2 None 
+0017 ldarg.3 None 
+0018 ldarg.s 4 
+0020 ldarg.s 5 
+0022 ldarg.s 6 
+0024 ldloc.2 None 
+0025 call 0x060000a8 <Module>::OlyIPCommon_CreateImage2_1
+0030 stloc.0 None 
+0031 ldloc.0 None 
+0032 brtrue.s 60 
+0034 ldloca.s 3 
+0036 ldind.i8 None 
+0037 stloc.1 None 
+0038 ldloca.s 3 
+0040 ldind.i8 None 
+0041 ldloca.s 3 
+0043 ldind.i8 None 
+0044 ldind.i8 None 
+0045 ldind.i8 None 
+0046 calli 0x1100000b 
+0051 pop None 
+0052 ldarg.0 None 
+0053 ldloc.1 None 
+0054 newobj 0x060000c7 OlyIPCommonCLI.COlyImageCLI::.ctor
+0059 stind.ref None 
+0060 leave.s 76 
+0062 ldftn 0x0600003a <Module>::ATL.CComPtr<IOlyImage>.{dtor}
+0068 ldloca.s 3 
+0070 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0075 endfinally None 
+0076 ldloca.s 3 
+0078 ldind.i8 None 
+0079 brfalse.s 98 
+0081 ldloca.s 3 
+0083 ldind.i8 None 
+0084 ldloca.s 3 
+0086 ldind.i8 None 
+0087 ldind.i8 None 
+0088 ldc.i4.8 None 
+0089 conv.i8 None 
+0090 add None 
+0091 ldind.i8 None 
+0092 calli 0x1100000b 
+0097 pop None 
+0098 ldloc.0 None 
+0099 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::CreateInstance 0x060000d5
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brfalse.s 15 
+0009 ldc.i4 -2147024809 
+0014 ret None 
+0015 ldloca.s 3 
+0017 ldc.i4.0 None 
+0018 conv.i8 None 
+0019 stind.i8 None 
+0020 ldarg.1 None 
+0021 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0026 call 0x0a00000c System.IntPtr::ToPointer
+0031 stloc.2 None 
+0032 ldloca.s 3 
+0034 ldloc.2 None 
+0035 ldarg.2 None 
+0036 ldarg.3 None 
+0037 call 0x060000aa <Module>::OlyIPCommon_CreateImage1_3
+0042 stloc.0 None 
+0043 ldloc.0 None 
+0044 brtrue.s 72 
+0046 ldloca.s 3 
+0048 ldind.i8 None 
+0049 stloc.1 None 
+0050 ldloca.s 3 
+0052 ldind.i8 None 
+0053 ldloca.s 3 
+0055 ldind.i8 None 
+0056 ldind.i8 None 
+0057 ldind.i8 None 
+0058 calli 0x1100000b 
+0063 pop None 
+0064 ldarg.0 None 
+0065 ldloc.1 None 
+0066 newobj 0x060000c7 OlyIPCommonCLI.COlyImageCLI::.ctor
+0071 stind.ref None 
+0072 leave.s 88 
+0074 ldftn 0x0600003a <Module>::ATL.CComPtr<IOlyImage>.{dtor}
+0080 ldloca.s 3 
+0082 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0087 endfinally None 
+0088 ldloca.s 3 
+0090 ldind.i8 None 
+0091 brfalse.s 110 
+0093 ldloca.s 3 
+0095 ldind.i8 None 
+0096 ldloca.s 3 
+0098 ldind.i8 None 
+0099 ldind.i8 None 
+0100 ldc.i4.8 None 
+0101 conv.i8 None 
+0102 add None 
+0103 ldind.i8 None 
+0104 calli 0x1100000b 
+0109 pop None 
+0110 ldloc.0 None 
+0111 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::CreateInstance 0x060000d6
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brfalse.s 15 
+0009 ldc.i4 -2147024809 
+0014 ret None 
+0015 ldloca.s 3 
+0017 ldc.i4.0 None 
+0018 conv.i8 None 
+0019 stind.i8 None 
+0020 ldarg.1 None 
+0021 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0026 call 0x0a00000c System.IntPtr::ToPointer
+0031 stloc.2 None 
+0032 ldloca.s 3 
+0034 ldloc.2 None 
+0035 call 0x060000ab <Module>::OlyIPCommon_CreateImage1_2
+0040 stloc.0 None 
+0041 ldloc.0 None 
+0042 brtrue.s 70 
+0044 ldloca.s 3 
+0046 ldind.i8 None 
+0047 stloc.1 None 
+0048 ldloca.s 3 
+0050 ldind.i8 None 
+0051 ldloca.s 3 
+0053 ldind.i8 None 
+0054 ldind.i8 None 
+0055 ldind.i8 None 
+0056 calli 0x1100000b 
+0061 pop None 
+0062 ldarg.0 None 
+0063 ldloc.1 None 
+0064 newobj 0x060000c7 OlyIPCommonCLI.COlyImageCLI::.ctor
+0069 stind.ref None 
+0070 leave.s 86 
+0072 ldftn 0x0600003a <Module>::ATL.CComPtr<IOlyImage>.{dtor}
+0078 ldloca.s 3 
+0080 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0085 endfinally None 
+0086 ldloca.s 3 
+0088 ldind.i8 None 
+0089 brfalse.s 108 
+0091 ldloca.s 3 
+0093 ldind.i8 None 
+0094 ldloca.s 3 
+0096 ldind.i8 None 
+0097 ldind.i8 None 
+0098 ldc.i4.8 None 
+0099 conv.i8 None 
+0100 add None 
+0101 ldind.i8 None 
+0102 calli 0x1100000b 
+0107 pop None 
+0108 ldloc.0 None 
+0109 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::CreateInstance 0x060000d7
+0000 ldloca.s 2 
+0002 ldc.i4.0 None 
+0003 conv.i8 None 
+0004 stind.i8 None 
+0005 ldloca.s 2 
+0007 ldarg.1 None 
+0008 ldarg.2 None 
+0009 ldarg.3 None 
+0010 ldarg.s 4 
+0012 ldarg.s 5 
+0014 ldarg.s 6 
+0016 call 0x060000ac <Module>::OlyIPCommon_CreateImage1_1
+0021 stloc.0 None 
+0022 ldloc.0 None 
+0023 brtrue.s 51 
+0025 ldloca.s 2 
+0027 ldind.i8 None 
+0028 stloc.1 None 
+0029 ldloca.s 2 
+0031 ldind.i8 None 
+0032 ldloca.s 2 
+0034 ldind.i8 None 
+0035 ldind.i8 None 
+0036 ldind.i8 None 
+0037 calli 0x1100000b 
+0042 pop None 
+0043 ldarg.0 None 
+0044 ldloc.1 None 
+0045 newobj 0x060000c7 OlyIPCommonCLI.COlyImageCLI::.ctor
+0050 stind.ref None 
+0051 leave.s 67 
+0053 ldftn 0x0600003a <Module>::ATL.CComPtr<IOlyImage>.{dtor}
+0059 ldloca.s 2 
+0061 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0066 endfinally None 
+0067 ldloca.s 2 
+0069 ldind.i8 None 
+0070 brfalse.s 89 
+0072 ldloca.s 2 
+0074 ldind.i8 None 
+0075 ldloca.s 2 
+0077 ldind.i8 None 
+0078 ldind.i8 None 
+0079 ldc.i4.8 None 
+0080 conv.i8 None 
+0081 add None 
+0082 ldind.i8 None 
+0083 calli 0x1100000b 
+0088 pop None 
+0089 ldloc.0 None 
+0090 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Attach 0x060000d8
+0000 ldarg.1 None 
+0001 dup None 
+0002 ldind.i8 None 
+0003 ldind.i8 None 
+0004 calli 0x1100000b 
+0009 pop None 
+0010 ldarg.0 None 
+0011 ldarg.1 None 
+0012 newobj 0x060000c7 OlyIPCommonCLI.COlyImageCLI::.ctor
+0017 stind.ref None 
+0018 ldc.i4.0 None 
+0019 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::~COlyImageCLI 0x060000d9
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brfalse.s 52 
+0013 ldarg.0 None 
+0014 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0019 call 0x0a00000c System.IntPtr::ToPointer
+0024 dup None 
+0025 ldind.i8 None 
+0026 ldc.i4.8 None 
+0027 conv.i8 None 
+0028 add None 
+0029 ldind.i8 None 
+0030 calli 0x1100000b 
+0035 pop None 
+0036 ldloca.s 0 
+0038 ldc.i4.0 None 
+0039 conv.i8 None 
+0040 call 0x0a00000d System.IntPtr::.ctor
+0045 ldarg.0 None 
+0046 ldloc.0 None 
+0047 stfld 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0052 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::!COlyImageCLI 0x060000da
+0000 ldarg.0 None 
+0001 callvirt 0x0a000009 System.IDisposable::Dispose
+0006 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::op_Implicit 0x060000db
+0000 ldarg.0 None 
+0001 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 16 
+0013 ldc.i4.0 None 
+0014 conv.i8 None 
+0015 ret None 
+0016 ldarg.0 None 
+0017 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0022 call 0x0a00000c System.IntPtr::ToPointer
+0027 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Equals 0x060000dc
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brfalse.s 11 
+0009 ldc.i4.0 None 
+0010 ret None 
+0011 ldarg.0 None 
+0012 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0017 call 0x0a00000c System.IntPtr::ToPointer
+0022 brtrue.s 26 
+0024 ldc.i4.0 None 
+0025 ret None 
+0026 ldarg.0 None 
+0027 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0032 call 0x0a00000c System.IntPtr::ToPointer
+0037 ldarg.1 None 
+0038 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0043 call 0x0a00000c System.IntPtr::ToPointer
+0048 ceq None 
+0050 conv.u1 None 
+0051 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Substitute 0x060000dd
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brtrue.s 82 
+0009 ldarg.0 None 
+0010 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0015 call 0x0a00000c System.IntPtr::ToPointer
+0020 brfalse.s 82 
+0022 ldarg.0 None 
+0023 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0028 call 0x0a00000c System.IntPtr::ToPointer
+0033 dup None 
+0034 ldind.i8 None 
+0035 ldc.i4.8 None 
+0036 conv.i8 None 
+0037 add None 
+0038 ldind.i8 None 
+0039 calli 0x1100000b 
+0044 pop None 
+0045 ldarg.0 None 
+0046 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0051 ldarg.1 None 
+0052 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0057 cpobj 0x0100000c 
+0062 ldarg.0 None 
+0063 ldflda 0x040000ec OlyIPCommonCLI.COlyImageCLI::m_Image
+0068 call 0x0a00000c System.IntPtr::ToPointer
+0073 dup None 
+0074 ldind.i8 None 
+0075 ldind.i8 None 
+0076 calli 0x1100000b 
+0081 pop None 
+0082 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::CalcBuffSize 0x060000de
+0000 ldloca.s 0 
+0002 ldarg.1 None 
+0003 ldarg.2 None 
+0004 ldarg.3 None 
+0005 ldarg.s 4 
+0007 call 0x06000039 <Module>::COlyImageCreator.CalcBuffSize
+0012 ldarg.0 None 
+0013 ldloc.0 None 
+0014 conv.u4 None 
+0015 stind.i4 None 
+0016 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Dispose 0x060000df
+0000 ldarg.1 None 
+0001 brfalse.s 11 
+0003 ldarg.0 None 
+0004 call 0x060000d9 OlyIPCommonCLI.COlyImageCLI::~COlyImageCLI
+0009 br.s 27 
+0011 nop None 
+0012 ldarg.0 None 
+0013 call 0x060000da OlyIPCommonCLI.COlyImageCLI::!COlyImageCLI
+0018 leave.s 27 
+0020 ldarg.0 None 
+0021 call 0x0a000007 System.Object::Finalize
+0026 endfinally None 
+0027 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Dispose 0x060000e0
+0000 ldarg.0 None 
+0001 ldc.i4.1 None 
+0002 callvirt 0x060000df OlyIPCommonCLI.COlyImageCLI::Dispose
+0007 ldarg.0 None 
+0008 call 0x0a000008 System.GC::SuppressFinalize
+0013 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageCLI::Finalize 0x060000e1
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 callvirt 0x060000df OlyIPCommonCLI.COlyImageCLI::Dispose
+0007 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::.ctor 0x060000e2
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 ldarg.1 None 
+0007 call 0x0a00000d System.IntPtr::.ctor
+0012 ldarg.0 None 
+0013 call 0x0a00000e System.Object::.ctor
+0018 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::PushBack 0x060000e3
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brfalse.s 44 
+0013 ldarg.0 None 
+0014 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0019 call 0x0a00000c System.IntPtr::ToPointer
+0024 stloc.0 None 
+0025 ldloc.0 None 
+0026 ldarg.1 None 
+0027 call 0x060000db OlyIPCommonCLI.COlyImageCLI::op_Implicit
+0032 ldloc.0 None 
+0033 ldind.i8 None 
+0034 ldc.i4.s 16 
+0036 conv.i8 None 
+0037 add None 
+0038 ldind.i8 None 
+0039 calli 0x1100000a 
+0044 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Size 0x060000e4
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 24 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000005 
+0038 conv.u4 None 
+0039 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::IsEmpty 0x060000e5
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.1 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 32 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000001 
+0038 ldc.i4.0 None 
+0039 bne.un.s 44 
+0041 ldc.i4.0 None 
+0042 br.s 45 
+0044 ldc.i4.1 None 
+0045 conv.u1 None 
+0046 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Clear 0x060000e6
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brfalse.s 36 
+0013 ldarg.0 None 
+0014 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0019 call 0x0a00000c System.IntPtr::ToPointer
+0024 dup None 
+0025 ldind.i8 None 
+0026 ldc.i4.s 40 
+0028 conv.i8 None 
+0029 add None 
+0030 ldind.i8 None 
+0031 calli 0x11000002 
+0036 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::At 0x060000e7
+0000 ldnull None 
+0001 stloc.3 None 
+0002 ldnull None 
+0003 stloc.2 None 
+0004 ldarg.0 None 
+0005 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0010 call 0x0a00000c System.IntPtr::ToPointer
+0015 brtrue.s 19 
+0017 ldloc.3 None 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 stloc.1 None 
+0031 ldloc.1 None 
+0032 ldarg.1 None 
+0033 conv.u8 None 
+0034 ldloc.1 None 
+0035 ldind.i8 None 
+0036 ldc.i4.s 48 
+0038 conv.i8 None 
+0039 add None 
+0040 ldind.i8 None 
+0041 calli 0x11000009 
+0046 stloc.0 None 
+0047 ldloc.0 None 
+0048 dup None 
+0049 ldind.i8 None 
+0050 ldind.i8 None 
+0051 calli 0x1100000b 
+0056 pop None 
+0057 ldloca.s 2 
+0059 ldloc.0 None 
+0060 call 0x060000d8 OlyIPCommonCLI.COlyImageCLI::Attach
+0065 pop None 
+0066 ldloc.2 None 
+0067 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::GetImage 0x060000e8
+0000 ldnull None 
+0001 stloc.3 None 
+0002 ldarg.0 None 
+0003 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0008 call 0x0a00000c System.IntPtr::ToPointer
+0013 brtrue.s 21 
+0015 ldc.i4 -2147467259 
+0020 ret None 
+0021 ldloca.s 4 
+0023 ldc.i4.0 None 
+0024 conv.i8 None 
+0025 stind.i8 None 
+0026 ldarg.0 None 
+0027 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0032 call 0x0a00000c System.IntPtr::ToPointer
+0037 stloc.2 None 
+0038 ldloc.2 None 
+0039 ldloca.s 4 
+0041 ldarg.2 None 
+0042 conv.u8 None 
+0043 ldloc.2 None 
+0044 ldind.i8 None 
+0045 ldc.i4.s 56 
+0047 conv.i8 None 
+0048 add None 
+0049 ldind.i8 None 
+0050 calli 0x11000008 
+0055 stloc.1 None 
+0056 ldloc.1 None 
+0057 brfalse.s 63 
+0059 ldloc.1 None 
+0060 stloc.0 None 
+0061 br.s 79 
+0063 ldloca.s 3 
+0065 ldloca.s 4 
+0067 ldind.i8 None 
+0068 call 0x060000d8 OlyIPCommonCLI.COlyImageCLI::Attach
+0073 pop None 
+0074 ldarg.1 None 
+0075 ldloc.3 None 
+0076 stind.ref None 
+0077 ldc.i4.0 None 
+0078 stloc.0 None 
+0079 leave.s 95 
+0081 ldftn 0x0600003a <Module>::ATL.CComPtr<IOlyImage>.{dtor}
+0087 ldloca.s 4 
+0089 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0094 endfinally None 
+0095 ldloca.s 4 
+0097 ldind.i8 None 
+0098 brfalse.s 117 
+0100 ldloca.s 4 
+0102 ldind.i8 None 
+0103 ldloca.s 4 
+0105 ldind.i8 None 
+0106 ldind.i8 None 
+0107 ldc.i4.8 None 
+0108 conv.i8 None 
+0109 add None 
+0110 ldind.i8 None 
+0111 calli 0x1100000b 
+0116 pop None 
+0117 ldloc.0 None 
+0118 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::CreateInstance 0x060000e9
+0000 ldloca.s 3 
+0002 ldc.i4.0 None 
+0003 conv.i8 None 
+0004 stind.i8 None 
+0005 ldloca.s 3 
+0007 call 0x060000a9 <Module>::OlyIPCommon_CreateImageContainer1
+0012 stloc.1 None 
+0013 ldloc.1 None 
+0014 brfalse.s 20 
+0016 ldloc.1 None 
+0017 stloc.0 None 
+0018 br.s 48 
+0020 ldloca.s 3 
+0022 ldind.i8 None 
+0023 stloc.2 None 
+0024 ldloca.s 3 
+0026 ldind.i8 None 
+0027 ldloca.s 3 
+0029 ldind.i8 None 
+0030 ldind.i8 None 
+0031 ldind.i8 None 
+0032 calli 0x1100000b 
+0037 pop None 
+0038 ldarg.0 None 
+0039 ldloc.2 None 
+0040 newobj 0x060000e2 OlyIPCommonCLI.COlyImageContainerCLI::.ctor
+0045 stind.ref None 
+0046 ldc.i4.0 None 
+0047 stloc.0 None 
+0048 leave.s 64 
+0050 ldftn 0x0600003b <Module>::ATL.CComPtr<IOlyImageContainer>.{dtor}
+0056 ldloca.s 3 
+0058 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0063 endfinally None 
+0064 ldloca.s 3 
+0066 ldind.i8 None 
+0067 brfalse.s 86 
+0069 ldloca.s 3 
+0071 ldind.i8 None 
+0072 ldloca.s 3 
+0074 ldind.i8 None 
+0075 ldind.i8 None 
+0076 ldc.i4.8 None 
+0077 conv.i8 None 
+0078 add None 
+0079 ldind.i8 None 
+0080 calli 0x1100000b 
+0085 pop None 
+0086 ldloc.0 None 
+0087 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Attach 0x060000ea
+0000 ldarg.1 None 
+0001 dup None 
+0002 ldind.i8 None 
+0003 ldind.i8 None 
+0004 calli 0x1100000b 
+0009 pop None 
+0010 ldarg.0 None 
+0011 ldarg.1 None 
+0012 newobj 0x060000e2 OlyIPCommonCLI.COlyImageContainerCLI::.ctor
+0017 stind.ref None 
+0018 ldc.i4.0 None 
+0019 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::~COlyImageContainerCLI 0x060000eb
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brfalse.s 52 
+0013 ldarg.0 None 
+0014 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0019 call 0x0a00000c System.IntPtr::ToPointer
+0024 dup None 
+0025 ldind.i8 None 
+0026 ldc.i4.8 None 
+0027 conv.i8 None 
+0028 add None 
+0029 ldind.i8 None 
+0030 calli 0x1100000b 
+0035 pop None 
+0036 ldloca.s 0 
+0038 ldc.i4.0 None 
+0039 conv.i8 None 
+0040 call 0x0a00000d System.IntPtr::.ctor
+0045 ldarg.0 None 
+0046 ldloc.0 None 
+0047 stfld 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0052 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::!COlyImageContainerCLI 0x060000ec
+0000 ldarg.0 None 
+0001 callvirt 0x0a000009 System.IDisposable::Dispose
+0006 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::op_Implicit 0x060000ed
+0000 ldarg.0 None 
+0001 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 16 
+0013 ldc.i4.0 None 
+0014 conv.i8 None 
+0015 ret None 
+0016 ldarg.0 None 
+0017 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0022 call 0x0a00000c System.IntPtr::ToPointer
+0027 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Equals 0x060000ee
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brfalse.s 11 
+0009 ldc.i4.0 None 
+0010 ret None 
+0011 ldarg.0 None 
+0012 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0017 call 0x0a00000c System.IntPtr::ToPointer
+0022 brtrue.s 26 
+0024 ldc.i4.0 None 
+0025 ret None 
+0026 ldarg.0 None 
+0027 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0032 call 0x0a00000c System.IntPtr::ToPointer
+0037 ldarg.1 None 
+0038 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0043 call 0x0a00000c System.IntPtr::ToPointer
+0048 ceq None 
+0050 conv.u1 None 
+0051 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Substitute 0x060000ef
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brtrue.s 82 
+0009 ldarg.0 None 
+0010 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0015 call 0x0a00000c System.IntPtr::ToPointer
+0020 brfalse.s 82 
+0022 ldarg.0 None 
+0023 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0028 call 0x0a00000c System.IntPtr::ToPointer
+0033 dup None 
+0034 ldind.i8 None 
+0035 ldc.i4.8 None 
+0036 conv.i8 None 
+0037 add None 
+0038 ldind.i8 None 
+0039 calli 0x1100000b 
+0044 pop None 
+0045 ldarg.0 None 
+0046 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0051 ldarg.1 None 
+0052 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0057 cpobj 0x0100000c 
+0062 ldarg.0 None 
+0063 ldflda 0x040000ed OlyIPCommonCLI.COlyImageContainerCLI::m_Container
+0068 call 0x0a00000c System.IntPtr::ToPointer
+0073 dup None 
+0074 ldind.i8 None 
+0075 ldind.i8 None 
+0076 calli 0x1100000b 
+0081 pop None 
+0082 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Dispose 0x060000f0
+0000 ldarg.1 None 
+0001 brfalse.s 11 
+0003 ldarg.0 None 
+0004 call 0x060000eb OlyIPCommonCLI.COlyImageContainerCLI::~COlyImageContainerCLI
+0009 br.s 27 
+0011 nop None 
+0012 ldarg.0 None 
+0013 call 0x060000ec OlyIPCommonCLI.COlyImageContainerCLI::!COlyImageContainerCLI
+0018 leave.s 27 
+0020 ldarg.0 None 
+0021 call 0x0a000007 System.Object::Finalize
+0026 endfinally None 
+0027 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Dispose 0x060000f1
+0000 ldarg.0 None 
+0001 ldc.i4.1 None 
+0002 callvirt 0x060000f0 OlyIPCommonCLI.COlyImageContainerCLI::Dispose
+0007 ldarg.0 None 
+0008 call 0x0a000008 System.GC::SuppressFinalize
+0013 ret None 
+
+METHOD OlyIPCommonCLI.COlyImageContainerCLI::Finalize 0x060000f2
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 callvirt 0x060000f0 OlyIPCommonCLI.COlyImageContainerCLI::Dispose
+0007 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::.ctor 0x060000f3
+0000 ldarg.0 None 
+0001 call 0x0a00000e System.Object::.ctor
+0006 ldarg.1 None 
+0007 dup None 
+0008 ldind.i8 None 
+0009 ldind.i8 None 
+0010 calli 0x1100000b 
+0015 pop None 
+0016 ldloca.s 0 
+0018 ldarg.1 None 
+0019 call 0x0a00000d System.IntPtr::.ctor
+0024 ldarg.0 None 
+0025 ldloc.0 None 
+0026 stfld 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0031 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::CreateInstance 0x060000f4
+0000 ldloca.s 1 
+0002 ldc.i4.0 None 
+0003 conv.i8 None 
+0004 stind.i8 None 
+0005 ldloca.s 1 
+0007 call 0x060000a7 <Module>::OlyIPCommon_CreateBuffer
+0012 stloc.0 None 
+0013 ldloc.0 None 
+0014 brtrue.s 26 
+0016 ldarg.0 None 
+0017 ldloca.s 1 
+0019 ldind.i8 None 
+0020 newobj 0x060000f3 OlyIPCommonCLI.COlyIPBufferCLI::.ctor
+0025 stind.ref None 
+0026 leave.s 42 
+0028 ldftn 0x0600003c <Module>::ATL.CComPtr<IOlyIPBuffer>.{dtor}
+0034 ldloca.s 1 
+0036 call 0x06000080 <Module>::___CxxCallUnwindDtor
+0041 endfinally None 
+0042 ldloca.s 1 
+0044 ldind.i8 None 
+0045 brfalse.s 64 
+0047 ldloca.s 1 
+0049 ldind.i8 None 
+0050 ldloca.s 1 
+0052 ldind.i8 None 
+0053 ldind.i8 None 
+0054 ldc.i4.8 None 
+0055 conv.i8 None 
+0056 add None 
+0057 ldind.i8 None 
+0058 calli 0x1100000b 
+0063 pop None 
+0064 ldloc.0 None 
+0065 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::PushBuffer 0x060000f5
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 stloc.0 None 
+0031 ldloc.0 None 
+0032 ldarg.1 None 
+0033 conv.u8 None 
+0034 ldarga.s 2 
+0036 call 0x0a00000c System.IntPtr::ToPointer
+0041 ldloc.0 None 
+0042 ldind.i8 None 
+0043 ldc.i4.s 16 
+0045 conv.i8 None 
+0046 add None 
+0047 ldind.i8 None 
+0048 calli 0x11000007 
+0053 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::ClearBuffer 0x060000f6
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 dup None 
+0031 ldind.i8 None 
+0032 ldc.i4.s 24 
+0034 conv.i8 None 
+0035 add None 
+0036 ldind.i8 None 
+0037 calli 0x11000006 
+0042 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::EnumBuffer 0x060000f7
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 dup None 
+0031 ldind.i8 None 
+0032 ldc.i4.s 32 
+0034 conv.i8 None 
+0035 add None 
+0036 ldind.i8 None 
+0037 calli 0x11000005 
+0042 conv.u4 None 
+0043 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::QueryBufferInfo 0x060000f8
+0000 ldc.i4.0 None 
+0001 conv.i8 None 
+0002 stloc.s 4 
+0004 ldc.i4.0 None 
+0005 conv.i8 None 
+0006 stloc.3 None 
+0007 ldc.i4.0 None 
+0008 conv.i8 None 
+0009 stloc.2 None 
+0010 ldc.i4.0 None 
+0011 conv.i8 None 
+0012 stloc.1 None 
+0013 ldc.i4 -2147467259 
+0018 ldarg.0 None 
+0019 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0024 call 0x0a00000c System.IntPtr::ToPointer
+0029 brfalse.s 67 
+0031 pop None 
+0032 ldarg.0 None 
+0033 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0038 call 0x0a00000c System.IntPtr::ToPointer
+0043 stloc.0 None 
+0044 ldloc.0 None 
+0045 ldarg.1 None 
+0046 conv.u8 None 
+0047 ldloca.s 4 
+0049 ldloca.s 3 
+0051 ldloca.s 2 
+0053 ldloca.s 1 
+0055 ldloc.0 None 
+0056 ldind.i8 None 
+0057 ldc.i4.s 40 
+0059 conv.i8 None 
+0060 add None 
+0061 ldind.i8 None 
+0062 calli 0x11000004 
+0067 ldarg.2 None 
+0068 ldloc.s 4 
+0070 conv.u4 None 
+0071 stind.i4 None 
+0072 ldarg.3 None 
+0073 ldloc.3 None 
+0074 conv.u4 None 
+0075 stind.i4 None 
+0076 ldarg.s 4 
+0078 ldloc.2 None 
+0079 conv.u4 None 
+0080 stind.i4 None 
+0081 ldarg.s 5 
+0083 ldloc.1 None 
+0084 conv.u4 None 
+0085 stind.i4 None 
+0086 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::SetBufferDivThreshold 0x060000f9
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 stloc.0 None 
+0031 ldloc.0 None 
+0032 ldarg.1 None 
+0033 conv.i8 None 
+0034 ldloc.0 None 
+0035 ldind.i8 None 
+0036 ldc.i4.s 48 
+0038 conv.i8 None 
+0039 add None 
+0040 ldind.i8 None 
+0041 calli 0x11000003 
+0046 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::GetBufferDivThreshold 0x060000fa
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.m1 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 56 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000005 
+0038 conv.i4 None 
+0039 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::IsUnoccupied 0x060000fb
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.1 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 64 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000001 
+0038 ldc.i4.0 None 
+0039 bne.un.s 44 
+0041 ldc.i4.0 None 
+0042 br.s 45 
+0044 ldc.i4.1 None 
+0045 conv.u1 None 
+0046 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Attach 0x060000fc
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 dup None 
+0031 ldind.i8 None 
+0032 ldc.i4.s 72 
+0034 conv.i8 None 
+0035 add None 
+0036 ldind.i8 None 
+0037 calli 0x11000006 
+0042 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Detach 0x060000fd
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 19 
+0013 ldc.i4 -2147467259 
+0018 ret None 
+0019 ldarg.0 None 
+0020 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0025 call 0x0a00000c System.IntPtr::ToPointer
+0030 dup None 
+0031 ldind.i8 None 
+0032 ldc.i4.s 80 
+0034 conv.i8 None 
+0035 add None 
+0036 ldind.i8 None 
+0037 calli 0x11000006 
+0042 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::IsAttached 0x060000fe
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 15 
+0013 ldc.i4.0 None 
+0014 ret None 
+0015 ldarg.0 None 
+0016 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0021 call 0x0a00000c System.IntPtr::ToPointer
+0026 dup None 
+0027 ldind.i8 None 
+0028 ldc.i4.s 88 
+0030 conv.i8 None 
+0031 add None 
+0032 ldind.i8 None 
+0033 calli 0x11000001 
+0038 ldc.i4.0 None 
+0039 bne.un.s 44 
+0041 ldc.i4.0 None 
+0042 br.s 45 
+0044 ldc.i4.1 None 
+0045 conv.u1 None 
+0046 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::~COlyIPBufferCLI 0x060000ff
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brfalse.s 52 
+0013 ldarg.0 None 
+0014 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0019 call 0x0a00000c System.IntPtr::ToPointer
+0024 dup None 
+0025 ldind.i8 None 
+0026 ldc.i4.8 None 
+0027 conv.i8 None 
+0028 add None 
+0029 ldind.i8 None 
+0030 calli 0x1100000b 
+0035 pop None 
+0036 ldloca.s 0 
+0038 ldc.i4.0 None 
+0039 conv.i8 None 
+0040 call 0x0a00000d System.IntPtr::.ctor
+0045 ldarg.0 None 
+0046 ldloc.0 None 
+0047 stfld 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0052 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::!COlyIPBufferCLI 0x06000100
+0000 ldarg.0 None 
+0001 callvirt 0x0a000009 System.IDisposable::Dispose
+0006 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::op_Implicit 0x06000101
+0000 ldarg.0 None 
+0001 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0006 call 0x0a00000c System.IntPtr::ToPointer
+0011 brtrue.s 16 
+0013 ldc.i4.0 None 
+0014 conv.i8 None 
+0015 ret None 
+0016 ldarg.0 None 
+0017 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0022 call 0x0a00000c System.IntPtr::ToPointer
+0027 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Equals 0x06000102
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brfalse.s 11 
+0009 ldc.i4.0 None 
+0010 ret None 
+0011 ldarg.0 None 
+0012 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0017 call 0x0a00000c System.IntPtr::ToPointer
+0022 brtrue.s 26 
+0024 ldc.i4.0 None 
+0025 ret None 
+0026 ldarg.0 None 
+0027 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0032 call 0x0a00000c System.IntPtr::ToPointer
+0037 ldarg.1 None 
+0038 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0043 call 0x0a00000c System.IntPtr::ToPointer
+0048 ceq None 
+0050 conv.u1 None 
+0051 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Substitute 0x06000103
+0000 ldarg.1 None 
+0001 ldnull None 
+0002 call 0x0a00000a System.Object::ReferenceEquals
+0007 brtrue.s 111 
+0009 ldarg.0 None 
+0010 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0015 call 0x0a00000c System.IntPtr::ToPointer
+0020 brfalse.s 111 
+0022 ldarg.0 None 
+0023 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0028 ldarg.1 None 
+0029 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0034 ldobj 0x0100000c 
+0039 box 0x0100000c 
+0044 call 0x0a000006 System.IntPtr::Equals
+0049 brtrue.s 111 
+0051 ldarg.0 None 
+0052 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0057 call 0x0a00000c System.IntPtr::ToPointer
+0062 dup None 
+0063 ldind.i8 None 
+0064 ldc.i4.8 None 
+0065 conv.i8 None 
+0066 add None 
+0067 ldind.i8 None 
+0068 calli 0x1100000b 
+0073 pop None 
+0074 ldarg.0 None 
+0075 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0080 ldarg.1 None 
+0081 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0086 cpobj 0x0100000c 
+0091 ldarg.0 None 
+0092 ldflda 0x040000ee OlyIPCommonCLI.COlyIPBufferCLI::m_Buffer
+0097 call 0x0a00000c System.IntPtr::ToPointer
+0102 dup None 
+0103 ldind.i8 None 
+0104 ldind.i8 None 
+0105 calli 0x1100000b 
+0110 pop None 
+0111 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Dispose 0x06000104
+0000 ldarg.1 None 
+0001 brfalse.s 11 
+0003 ldarg.0 None 
+0004 call 0x060000ff OlyIPCommonCLI.COlyIPBufferCLI::~COlyIPBufferCLI
+0009 br.s 27 
+0011 nop None 
+0012 ldarg.0 None 
+0013 call 0x06000100 OlyIPCommonCLI.COlyIPBufferCLI::!COlyIPBufferCLI
+0018 leave.s 27 
+0020 ldarg.0 None 
+0021 call 0x0a000007 System.Object::Finalize
+0026 endfinally None 
+0027 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Dispose 0x06000105
+0000 ldarg.0 None 
+0001 ldc.i4.1 None 
+0002 callvirt 0x06000104 OlyIPCommonCLI.COlyIPBufferCLI::Dispose
+0007 ldarg.0 None 
+0008 call 0x0a000008 System.GC::SuppressFinalize
+0013 ret None 
+
+METHOD OlyIPCommonCLI.COlyIPBufferCLI::Finalize 0x06000106
+0000 ldarg.0 None 
+0001 ldc.i4.0 None 
+0002 callvirt 0x06000104 OlyIPCommonCLI.COlyIPBufferCLI::Dispose
+0007 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::.ctor 0x06000107
+0000 ldarg.0 None 
+0001 call 0x0a00000e System.Object::.ctor
+0006 ldarg.1 None 
+0007 stloc.3 None 
+0008 ldloc.3 None 
+0009 brfalse.s 20 
+0011 call 0x0a000012 System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData
+0016 conv.u8 None 
+0017 ldloc.3 None 
+0018 add None 
+0019 stloc.3 None 
+0020 ldloc.3 None 
+0021 stloc.s 10 
+0023 ldarg.2 None 
+0024 stloc.2 None 
+0025 ldloc.2 None 
+0026 brfalse.s 37 
+0028 call 0x0a000012 System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData
+0033 conv.u8 None 
+0034 ldloc.2 None 
+0035 add None 
+0036 stloc.2 None 
+0037 ldloc.2 None 
+0038 stloc.s 9 
+0040 ldc.i4.s 16 
+0042 conv.i8 None 
+0043 call 0x060000bc <Module>::new[]
+0048 stloc.1 None 
+0049 ldloc.1 None 
+0050 brfalse.s 89 
+0052 ldloc.1 None 
+0053 ldc.i4.1 None 
+0054 stind.i4 None 
+0055 ldloc.1 None 
+0056 ldc.i4.8 None 
+0057 conv.i8 None 
+0058 add None 
+0059 stloc.s 8 
+0061 ldloc.s 8 
+0063 ldc.i4.8 None 
+0064 conv.i8 None 
+0065 ldc.i4.1 None 
+0066 ldftn 0x0600004d <Module>::ou.CRefPtr<OLYHAMAL::IHalationRejectionService>.__dflt_ctor_closure
+0072 ldftn 0x0600004f <Module>::ou.CRefPtr<OLYHAMAL::IHalationRejectionService>.{dtor}
+0078 call 0x0600009a <Module>::__ehvec_ctor
+0083 ldloc.s 8 
+0085 stloc.s 7 
+0087 leave.s 102 
+0089 ldc.i4.0 None 
+0090 conv.i8 None 
+0091 stloc.s 7 
+0093 leave.s 102 
+0095 ldloc.1 None 
+0096 call 0x060000b7 <Module>::delete[]
+0101 endfinally None 
+0102 ldarg.0 None 
+0103 ldloc.s 7 
+0105 stfld 0x040000f0 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pServiceInstance
+0110 ldc.i4.s 16 
+0112 conv.i8 None 
+0113 call 0x060000bc <Module>::new[]
+0118 stloc.0 None 
+0119 ldloc.0 None 
+0120 brfalse.s 159 
+0122 ldloc.0 None 
+0123 ldc.i4.1 None 
+0124 stind.i4 None 
+0125 ldloc.0 None 
+0126 ldc.i4.8 None 
+0127 conv.i8 None 
+0128 add None 
+0129 stloc.s 6 
+0131 ldloc.s 6 
+0133 ldc.i4.8 None 
+0134 conv.i8 None 
+0135 ldc.i4.1 None 
+0136 ldftn 0x0600004e <Module>::ou.CRefPtr<OLYHAMAL::ICustomHalationRejectionCmd>.__dflt_ctor_closure
+0142 ldftn 0x06000050 <Module>::ou.CRefPtr<OLYHAMAL::ICustomHalationRejectionCmd>.{dtor}
+0148 call 0x0600009a <Module>::__ehvec_ctor
+0153 ldloc.s 6 
+0155 stloc.s 5 
+0157 leave.s 172 
+0159 ldc.i4.0 None 
+0160 conv.i8 None 
+0161 stloc.s 5 
+0163 leave.s 172 
+0165 ldloc.0 None 
+0166 call 0x060000b7 <Module>::delete[]
+0171 endfinally None 
+0172 ldarg.0 None 
+0173 ldloc.s 5 
+0175 stfld 0x040000f1 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pCmdInstance
+0180 ldarg.0 None 
+0181 ldfld 0x040000f0 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pServiceInstance
+0186 ldloc.s 10 
+0188 ldloc.s 9 
+0190 call 0x060000bb <Module>::OlyHamalCreateServiceInstance
+0195 pop None 
+0196 ldarg.0 None 
+0197 ldfld 0x040000f0 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pServiceInstance
+0202 ldind.i8 None 
+0203 stloc.s 4 
+0205 ldloc.s 4 
+0207 ldsflda 0x04000084 <Module>::?A0x6f09d656.IID_ICustomHalationRejectionCmd
+0212 ldarg.0 None 
+0213 ldfld 0x040000f1 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pCmdInstance
+0218 ldloc.s 4 
+0220 ldind.i8 None 
+0221 ldc.i4.s 16 
+0223 conv.i8 None 
+0224 add None 
+0225 ldind.i8 None 
+0226 calli 0x11000063 
+0231 pop None 
+0232 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::QueryWorkBuffInfo 0x06000108
+0000 ldarg.0 None 
+0001 ldfld 0x040000f0 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pServiceInstance
+0006 ldind.i8 None 
+0007 stloc.0 None 
+0008 ldloc.0 None 
+0009 ldarg.1 None 
+0010 ldarg.2 None 
+0011 ldloc.0 None 
+0012 ldind.i8 None 
+0013 ldc.i4.s 24 
+0015 conv.i8 None 
+0016 add None 
+0017 ldind.i8 None 
+0018 calli 0x11000062 
+0023 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::Execute 0x06000109
+0000 ldc.i4.0 None 
+0001 stloc.s 5 
+0003 ldc.i4.0 None 
+0004 conv.i8 None 
+0005 stloc.2 None 
+0006 ldarg.s 6 
+0008 ldlen None 
+0009 conv.i8 None 
+0010 stloc.s 9 
+0012 ldc.i4.0 None 
+0013 conv.i8 None 
+0014 ldloc.s 9 
+0016 bge.s 47 
+0018 ldloc.2 None 
+0019 ldc.i4.4 None 
+0020 conv.i8 None 
+0021 mul None 
+0022 ldloca.s 10 
+0024 add None 
+0025 ldarg.s 6 
+0027 ldloc.s 5 
+0029 ldelem.i4 None 
+0030 stind.i4 None 
+0031 ldloc.s 5 
+0033 ldc.i4.1 None 
+0034 add None 
+0035 stloc.s 5 
+0037 ldloc.2 None 
+0038 ldc.i4.1 None 
+0039 conv.i8 None 
+0040 add None 
+0041 stloc.2 None 
+0042 ldloc.2 None 
+0043 ldloc.s 9 
+0045 blt.s 18 
+0047 ldc.i4.0 None 
+0048 stloc.s 4 
+0050 ldc.i4.0 None 
+0051 conv.i8 None 
+0052 stloc.1 None 
+0053 ldarg.s 7 
+0055 ldlen None 
+0056 conv.i8 None 
+0057 stloc.s 8 
+0059 ldc.i4.0 None 
+0060 conv.i8 None 
+0061 ldloc.s 8 
+0063 bge.s 97 
+0065 ldloc.1 None 
+0066 ldc.i4.4 None 
+0067 conv.i8 None 
+0068 mul None 
+0069 ldloca.s 10 
+0071 ldc.i4.s 32 
+0073 add None 
+0074 add None 
+0075 ldarg.s 7 
+0077 ldloc.s 4 
+0079 ldelem.i4 None 
+0080 stind.i4 None 
+0081 ldloc.s 4 
+0083 ldc.i4.1 None 
+0084 add None 
+0085 stloc.s 4 
+0087 ldloc.1 None 
+0088 ldc.i4.1 None 
+0089 conv.i8 None 
+0090 add None 
+0091 stloc.1 None 
+0092 ldloc.1 None 
+0093 ldloc.s 8 
+0095 blt.s 65 
+0097 ldc.i4.0 None 
+0098 stloc.3 None 
+0099 ldc.i4.0 None 
+0100 conv.i8 None 
+0101 stloc.0 None 
+0102 ldarg.s 8 
+0104 ldlen None 
+0105 conv.i8 None 
+0106 stloc.s 7 
+0108 ldc.i4.0 None 
+0109 conv.i8 None 
+0110 ldloc.s 7 
+0112 bge.s 143 
+0114 ldloc.0 None 
+0115 ldc.i4.4 None 
+0116 conv.i8 None 
+0117 mul None 
+0118 ldloca.s 10 
+0120 ldc.i4.s 64 
+0122 add None 
+0123 add None 
+0124 ldarg.s 8 
+0126 ldloc.3 None 
+0127 ldelem.i4 None 
+0128 stind.i4 None 
+0129 ldloc.3 None 
+0130 ldc.i4.1 None 
+0131 add None 
+0132 stloc.3 None 
+0133 ldloc.0 None 
+0134 ldc.i4.1 None 
+0135 conv.i8 None 
+0136 add None 
+0137 stloc.0 None 
+0138 ldloc.0 None 
+0139 ldloc.s 7 
+0141 blt.s 114 
+0143 ldarg.0 None 
+0144 ldfld 0x040000f1 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pCmdInstance
+0149 ldind.i8 None 
+0150 stloc.s 6 
+0152 ldloc.s 6 
+0154 ldarg.1 None 
+0155 call 0x060000db OlyIPCommonCLI.COlyImageCLI::op_Implicit
+0160 ldarg.2 None 
+0161 call 0x060000db OlyIPCommonCLI.COlyImageCLI::op_Implicit
+0166 ldarga.s 3 
+0168 ldarga.s 4 
+0170 ldarga.s 5 
+0172 ldloca.s 10 
+0174 ldloc.s 6 
+0176 ldind.i8 None 
+0177 ldc.i4.s 32 
+0179 conv.i8 None 
+0180 add None 
+0181 ldind.i8 None 
+0182 calli 0x11000061 
+0187 pop None 
+0188 ldarg.0 None 
+0189 ldfld 0x040000f1 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::_pCmdInstance
+0194 ldind.i8 None 
+0195 dup None 
+0196 ldind.i8 None 
+0197 ldc.i4.s 16 
+0199 conv.i8 None 
+0200 add None 
+0201 ldind.i8 None 
+0202 calli 0x11000006 
+0207 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::.ctor 0x0600010a
+0000 ldarg.0 None 
+0001 call 0x0a00000e System.Object::.ctor
+0006 ldarg.1 None 
+0007 stloc.3 None 
+0008 ldloc.3 None 
+0009 brfalse.s 20 
+0011 call 0x0a000012 System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData
+0016 conv.u8 None 
+0017 ldloc.3 None 
+0018 add None 
+0019 stloc.3 None 
+0020 ldloc.3 None 
+0021 stloc.s 10 
+0023 ldarg.2 None 
+0024 stloc.2 None 
+0025 ldloc.2 None 
+0026 brfalse.s 37 
+0028 call 0x0a000012 System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData
+0033 conv.u8 None 
+0034 ldloc.2 None 
+0035 add None 
+0036 stloc.2 None 
+0037 ldloc.2 None 
+0038 stloc.s 9 
+0040 ldc.i4.s 16 
+0042 conv.i8 None 
+0043 call 0x060000bc <Module>::new[]
+0048 stloc.1 None 
+0049 ldloc.1 None 
+0050 brfalse.s 89 
+0052 ldloc.1 None 
+0053 ldc.i4.1 None 
+0054 stind.i4 None 
+0055 ldloc.1 None 
+0056 ldc.i4.8 None 
+0057 conv.i8 None 
+0058 add None 
+0059 stloc.s 8 
+0061 ldloc.s 8 
+0063 ldc.i4.8 None 
+0064 conv.i8 None 
+0065 ldc.i4.1 None 
+0066 ldftn 0x06000051 <Module>::ou.CRefPtr<OLYSPICA::INoiseReductionService>.__dflt_ctor_closure
+0072 ldftn 0x06000053 <Module>::ou.CRefPtr<OLYSPICA::INoiseReductionService>.{dtor}
+0078 call 0x0600009a <Module>::__ehvec_ctor
+0083 ldloc.s 8 
+0085 stloc.s 7 
+0087 leave.s 102 
+0089 ldc.i4.0 None 
+0090 conv.i8 None 
+0091 stloc.s 7 
+0093 leave.s 102 
+0095 ldloc.1 None 
+0096 call 0x060000b7 <Module>::delete[]
+0101 endfinally None 
+0102 ldarg.0 None 
+0103 ldloc.s 7 
+0105 stfld 0x040000f2 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pServiceInstance
+0110 ldc.i4.s 16 
+0112 conv.i8 None 
+0113 call 0x060000bc <Module>::new[]
+0118 stloc.0 None 
+0119 ldloc.0 None 
+0120 brfalse.s 159 
+0122 ldloc.0 None 
+0123 ldc.i4.1 None 
+0124 stind.i4 None 
+0125 ldloc.0 None 
+0126 ldc.i4.8 None 
+0127 conv.i8 None 
+0128 add None 
+0129 stloc.s 6 
+0131 ldloc.s 6 
+0133 ldc.i4.8 None 
+0134 conv.i8 None 
+0135 ldc.i4.1 None 
+0136 ldftn 0x06000052 <Module>::ou.CRefPtr<OLYSPICA::ICustomNoiseReductionCmd>.__dflt_ctor_closure
+0142 ldftn 0x06000054 <Module>::ou.CRefPtr<OLYSPICA::ICustomNoiseReductionCmd>.{dtor}
+0148 call 0x0600009a <Module>::__ehvec_ctor
+0153 ldloc.s 6 
+0155 stloc.s 5 
+0157 leave.s 172 
+0159 ldc.i4.0 None 
+0160 conv.i8 None 
+0161 stloc.s 5 
+0163 leave.s 172 
+0165 ldloc.0 None 
+0166 call 0x060000b7 <Module>::delete[]
+0171 endfinally None 
+0172 ldarg.0 None 
+0173 ldloc.s 5 
+0175 stfld 0x040000f3 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pCmdInstance
+0180 ldarg.0 None 
+0181 ldfld 0x040000f2 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pServiceInstance
+0186 ldloc.s 10 
+0188 ldloc.s 9 
+0190 call 0x060000bd <Module>::OlySpicaCreateServiceInstance
+0195 pop None 
+0196 ldarg.0 None 
+0197 ldfld 0x040000f2 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pServiceInstance
+0202 ldind.i8 None 
+0203 stloc.s 4 
+0205 ldloc.s 4 
+0207 ldsflda 0x04000087 <Module>::?A0xbd67109b.IID_ICustomNoiseReductionCmd
+0212 ldarg.0 None 
+0213 ldfld 0x040000f3 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pCmdInstance
+0218 ldloc.s 4 
+0220 ldind.i8 None 
+0221 ldc.i4.s 16 
+0223 conv.i8 None 
+0224 add None 
+0225 ldind.i8 None 
+0226 calli 0x11000063 
+0231 pop None 
+0232 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::QueryWorkBuffInfo 0x0600010b
+0000 ldarg.0 None 
+0001 ldfld 0x040000f2 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pServiceInstance
+0006 ldind.i8 None 
+0007 stloc.0 None 
+0008 ldloc.0 None 
+0009 ldarg.1 None 
+0010 ldarg.2 None 
+0011 ldloc.0 None 
+0012 ldind.i8 None 
+0013 ldc.i4.s 24 
+0015 conv.i8 None 
+0016 add None 
+0017 ldind.i8 None 
+0018 calli 0x11000062 
+0023 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::Execute 0x0600010c
+0000 ldarg.0 None 
+0001 ldfld 0x040000f3 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pCmdInstance
+0006 ldind.i8 None 
+0007 stloc.1 None 
+0008 ldloc.1 None 
+0009 ldarg.1 None 
+0010 call 0x060000db OlyIPCommonCLI.COlyImageCLI::op_Implicit
+0015 ldarg.2 None 
+0016 call 0x060000db OlyIPCommonCLI.COlyImageCLI::op_Implicit
+0021 ldarg.3 None 
+0022 ldloc.1 None 
+0023 ldind.i8 None 
+0024 ldc.i4.s 32 
+0026 conv.i8 None 
+0027 add None 
+0028 ldind.i8 None 
+0029 calli 0x1100006d 
+0034 stloc.0 None 
+0035 ldloc.0 None 
+0036 brtrue.s 58 
+0038 ldarg.0 None 
+0039 ldfld 0x040000f3 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::_pCmdInstance
+0044 ldind.i8 None 
+0045 dup None 
+0046 ldind.i8 None 
+0047 ldc.i4.s 16 
+0049 conv.i8 None 
+0050 add None 
+0051 ldind.i8 None 
+0052 calli 0x11000006 
+0057 stloc.0 None 
+0058 ldloc.0 None 
+0059 ret None 
+
+METHOD std.basic_string<char,std::char_traits<char>,std::allocator<char> >::<MarshalCopy> 0x0600010d
+0000 ldarg.0 None 
+0001 ldc.i4.s 16 
+0003 conv.i8 None 
+0004 add None 
+0005 ldc.i4.0 None 
+0006 conv.i8 None 
+0007 stind.i8 None 
+0008 ldarg.0 None 
+0009 ldc.i4.s 24 
+0011 conv.i8 None 
+0012 add None 
+0013 ldc.i4.0 None 
+0014 conv.i8 None 
+0015 stind.i8 None 
+0016 ldarg.0 None 
+0017 ldc.i4.0 None 
+0018 ldc.i4.0 None 
+0019 conv.i8 None 
+0020 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0025 ldarg.0 None 
+0026 ldarg.1 None 
+0027 ldc.i4.0 None 
+0028 conv.i8 None 
+0029 ldc.i8 -1 
+0038 call 0x0600003f <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >.assign
+0043 pop None 
+0044 ret None 
+
+METHOD std.basic_string<char,std::char_traits<char>,std::allocator<char> >::<MarshalDestroy> 0x0600010e
+0000 ldarg.0 None 
+0001 ldc.i4.1 None 
+0002 ldc.i4.0 None 
+0003 conv.i8 None 
+0004 call 0x06000040 <Module>::std.basic_string<char,std::char_traits<char>,std::allocator<char> >._Tidy
+0009 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadException::.ctor 0x0600010f
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 ldarg.2 None 
+0003 call 0x0a000042 System.Exception::.ctor
+0008 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadException::.ctor 0x06000110
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 ldarg.2 None 
+0003 call 0x0a000043 System.Exception::.ctor
+0008 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadException::.ctor 0x06000111
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 call 0x0a000044 System.Exception::.ctor
+0007 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::.ctor 0x06000112
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 ldarg.2 None 
+0003 call 0x0600010f <CrtImplementationDetails>.ModuleLoadException::.ctor
+0008 ldarg.0 None 
+0009 ldarg.1 None 
+0010 ldstr 0x70000201 'NestedException'
+0015 ldtoken 0x01000025 
+0020 call 0x0a000030 System.Type::GetTypeFromHandle
+0025 call 0x0a000040 System.Runtime.Serialization.SerializationInfo::GetValue
+0030 castclass 0x01000025 
+0035 call 0x06000115 <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::set_NestedException
+0040 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::.ctor 0x06000113
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 ldarg.2 None 
+0003 call 0x06000110 <CrtImplementationDetails>.ModuleLoadException::.ctor
+0008 ldarg.0 None 
+0009 ldarg.3 None 
+0010 call 0x06000115 <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::set_NestedException
+0015 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::get_NestedException 0x06000114
+0000 ldarg.0 None 
+0001 ldfld 0x0400011e <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::<backing_store>NestedException
+0006 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::set_NestedException 0x06000115
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 stfld 0x0400011e <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::<backing_store>NestedException
+0007 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::ToString 0x06000116
+0000 ldarg.0 None 
+0001 callvirt 0x0a000048 System.Exception::get_InnerException
+0006 brfalse.s 22 
+0008 ldarg.0 None 
+0009 callvirt 0x0a000048 System.Exception::get_InnerException
+0014 callvirt 0x0a000045 System.Exception::ToString
+0019 stloc.2 None 
+0020 br.s 28 
+0022 ldsfld 0x0a000051 System.String::Empty
+0027 stloc.2 None 
+0028 ldarg.0 None 
+0029 call 0x06000114 <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::get_NestedException
+0034 brfalse.s 50 
+0036 ldarg.0 None 
+0037 call 0x06000114 <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::get_NestedException
+0042 callvirt 0x0a000045 System.Exception::ToString
+0047 stloc.1 None 
+0048 br.s 56 
+0050 ldsfld 0x0a000051 System.String::Empty
+0055 stloc.1 None 
+0056 ldc.i4.4 None 
+0057 newarr 0x01000009 
+0062 stloc.0 None 
+0063 ldloc.0 None 
+0064 ldc.i4.0 None 
+0065 ldarg.0 None 
+0066 callvirt 0x0a000047 System.Exception::GetType
+0071 stelem.ref None 
+0072 ldarg.0 None 
+0073 callvirt 0x0a000049 System.Exception::get_Message
+0078 brfalse.s 90 
+0080 ldarg.0 None 
+0081 callvirt 0x0a000049 System.Exception::get_Message
+0086 stloc.s 5 
+0088 br.s 97 
+0090 ldsfld 0x0a000051 System.String::Empty
+0095 stloc.s 5 
+0097 ldloc.0 None 
+0098 ldc.i4.1 None 
+0099 ldloc.s 5 
+0101 stelem.ref None 
+0102 ldloc.2 None 
+0103 brfalse.s 110 
+0105 ldloc.2 None 
+0106 stloc.s 4 
+0108 br.s 117 
+0110 ldsfld 0x0a000051 System.String::Empty
+0115 stloc.s 4 
+0117 ldloc.0 None 
+0118 ldc.i4.2 None 
+0119 ldloc.s 4 
+0121 stelem.ref None 
+0122 ldloc.1 None 
+0123 brfalse.s 129 
+0125 ldloc.1 None 
+0126 stloc.3 None 
+0127 br.s 135 
+0129 ldsfld 0x0a000051 System.String::Empty
+0134 stloc.3 None 
+0135 ldloc.0 None 
+0136 ldc.i4.3 None 
+0137 ldloc.3 None 
+0138 stelem.ref None 
+0139 ldstr 0x700000cc '\n{0}: {1}\n--- Start of primary exception ---\n{2}\n--- End of primary exception ---\n\n--- Start of nested exception ---\n{3}\n--- End of nested exception ---\n'
+0144 ldloc.0 None 
+0145 call 0x0a000041 System.String::Format
+0150 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::GetObjectData 0x06000117
+0000 ldarg.0 None 
+0001 ldarg.1 None 
+0002 ldarg.2 None 
+0003 call 0x0a000046 System.Exception::GetObjectData
+0008 ldarg.1 None 
+0009 ldstr 0x70000201 'NestedException'
+0014 ldarg.0 None 
+0015 call 0x06000114 <CrtImplementationDetails>.ModuleLoadExceptionHandlerException::get_NestedException
+0020 ldtoken 0x01000025 
+0025 call 0x0a000030 System.Type::GetTypeFromHandle
+0030 call 0x0a00003f System.Runtime.Serialization.SerializationInfo::AddValue
+0035 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleUninitializer::AddHandler 0x06000118
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0007 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0012 ldsfld 0x0400011f <CrtImplementationDetails>.ModuleUninitializer::lock
+0017 ldloca.s 0 
+0019 call 0x0a00004f System.Threading.Monitor::Enter
+0024 ldarg.1 None 
+0025 call 0x0a000033 System.Runtime.CompilerServices.RuntimeHelpers::PrepareDelegate
+0030 ldarg.0 None 
+0031 ldarg.1 None 
+0032 callvirt 0x0a00002a System.Collections.Stack::Push
+0037 leave.s 53 
+0039 ldloc.0 None 
+0040 brfalse.s 52 
+0042 ldsfld 0x0400011f <CrtImplementationDetails>.ModuleUninitializer::lock
+0047 call 0x0a000050 System.Threading.Monitor::Exit
+0052 endfinally None 
+0053 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleUninitializer::.cctor 0x06000119
+0000 newobj 0x0a00000e System.Object::.ctor
+0005 stsfld 0x0400011f <CrtImplementationDetails>.ModuleUninitializer::lock
+0010 newobj 0x0600011a <CrtImplementationDetails>.ModuleUninitializer::.ctor
+0015 stsfld 0x04000120 <CrtImplementationDetails>.ModuleUninitializer::_ModuleUninitializer
+0020 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleUninitializer::.ctor 0x0600011a
+0000 ldarg.0 None 
+0001 call 0x0a000028 System.Collections.Stack::.ctor
+0006 ldarg.0 None 
+0007 ldftn 0x0600011b <CrtImplementationDetails>.ModuleUninitializer::SingletonDomainUnload
+0013 newobj 0x0a000031 System.EventHandler::.ctor
+0018 stloc.0 None 
+0019 call 0x0a00002c System.AppDomain::get_CurrentDomain
+0024 ldloc.0 None 
+0025 callvirt 0x0a00002e System.AppDomain::add_DomainUnload
+0030 call 0x0a00002c System.AppDomain::get_CurrentDomain
+0035 ldloc.0 None 
+0036 callvirt 0x0a00002f System.AppDomain::add_ProcessExit
+0041 ret None 
+
+METHOD <CrtImplementationDetails>.ModuleUninitializer::SingletonDomainUnload 0x0600011b
+0000 ldc.i4.0 None 
+0001 stloc.2 None 
+0002 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0007 call 0x0a000034 System.Runtime.CompilerServices.RuntimeHelpers::PrepareConstrainedRegions
+0012 ldsfld 0x0400011f <CrtImplementationDetails>.ModuleUninitializer::lock
+0017 ldloca.s 2 
+0019 call 0x0a00004f System.Threading.Monitor::Enter
+0024 ldarg.0 None 
+0025 callvirt 0x0a000029 System.Collections.Stack::GetEnumerator
+0030 stloc.0 None 
+0031 ldloc.0 None 
+0032 callvirt 0x0a000026 System.Collections.IEnumerator::MoveNext
+0037 brfalse.s 59 
+0039 ldloc.0 None 
+0040 callvirt 0x0a000027 System.Collections.IEnumerator::get_Current
+0045 castclass 0x0100002a 
+0050 ldarg.1 None 
+0051 ldarg.2 None 
+0052 callvirt 0x0a000032 System.EventHandler::Invoke
+0057 br.s 31 
+0059 leave.s 80 
+0061 ldloc.0 None 
+0062 stloc.3 None 
+0063 ldloc.0 None 
+0064 isinst 0x0100000a 
+0069 stloc.1 None 
+0070 ldloc.1 None 
+0071 brfalse.s 79 
+0073 ldloc.1 None 
+0074 callvirt 0x0a000009 System.IDisposable::Dispose
+0079 endfinally None 
+0080 leave.s 96 
+0082 ldloc.2 None 
+0083 brfalse.s 95 
+0085 ldsfld 0x0400011f <CrtImplementationDetails>.ModuleUninitializer::lock
+0090 call 0x0a000050 System.Threading.Monitor::Exit
+0095 endfinally None 
+0096 ret None 

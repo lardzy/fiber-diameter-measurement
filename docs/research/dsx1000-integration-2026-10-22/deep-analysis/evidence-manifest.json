@@ -1,0 +1,166 @@
+{
+  "record_count": 12,
+  "uncompressed_sha256": "61c69a98c3752b4fb9879d6790974f6a4954b9f835b849575a76f64e9426085c",
+  "uncompressed_bytes": 27758687,
+  "gzip_sha256": "8bbac5c45dfae60ab182b98035c576c82cc3621b956c91518911042e950fdcf2",
+  "gzip_bytes": 1888423,
+  "round_trip_verified": true,
+  "records": [
+    {
+      "evidence_id": "ev_06e2960bc201588960f5c7f1982113f134d7c23bbc512f3e4426592dc381eb40",
+      "operation": "inspect_managed_members",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll",
+        "name": "OlyuUiData.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_08a3dac24f297294df03e83f0a0b6fd2bd1cc09ea7a261fcf4b1a35cbc77ab63",
+      "operation": "inspect_managed_members",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "677b02270d54a6c210ba30a3949e188e0994b18388e04f84dc2d7ea3bf63286c"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlysDataStoreService.dll",
+        "name": "OlysDataStoreService.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_32ac28f68b9eca705c1eff3de44286f194716b1f0621657ee873df32ff2a7753",
+      "operation": "inspect_managed_members",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "d810da9ba32ac0a19e2e967c49e519b184635fb36d6952852ecbb8830b5840e0"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageList.dll",
+        "name": "OlycImageList.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_5cc84ca4ffbb505c2fca022fcd99c6c0be706dd03aa243ea92748b8bfe4d4110",
+      "operation": "inspect_managed_members",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+        "name": "OlyuUiCalculator.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_61f8e501ad1ac58a9507804d3c5ab9b516be832069419b34611299ec3c250756",
+      "operation": "inspect_analysis_view",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiCalculator.dll",
+        "name": "OlyuUiCalculator.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_658fb48b7363ba0fbc02fd301d4dd270ba243d491e18bf655285eda41fafc34c",
+      "operation": "inspect_analysis_view",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyuUiData.dll",
+        "name": "OlyuUiData.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_88cea250eda14acd72d3df60a0c7c2696140d43759379452944d1b8bae67b433",
+      "operation": "inspect_analysis_view",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "ddc6de1658d9c79047a5cccabd3c5c1efb58d09382aa0d470e1675837078fa7e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/LoadSaveModule.dll",
+        "name": "LoadSaveModule.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_9bb4aacf448bfe2a72e8fe7aa6a0bf20410f360391e99d02978be9c26d000c8a",
+      "operation": "inspect_managed_members",
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "b5215aa9d54da8e2139470e54e2c9e666b6676592640250cc3a80c9469ff687e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageExporter.exe",
+        "name": "OlyImageExporter.exe"
+      }
+    },
+    {
+      "evidence_id": "ev_a7ef9504b811c091755a0d6654f2b56fd7ad061c7e4755849242fb4815ab34ac",
+      "operation": "inspect_analysis_view",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "677b02270d54a6c210ba30a3949e188e0994b18388e04f84dc2d7ea3bf63286c"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlysDataStoreService.dll",
+        "name": "OlysDataStoreService.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_bbc4a159bccf1bd07342ef719f428326a0be28b279fbff37df885a8020da356a",
+      "operation": "inspect_analysis_view",
+      "subject": {
+        "architecture": "x86_64",
+        "digest": {
+          "sha256": "b5215aa9d54da8e2139470e54e2c9e666b6676592640250cc3a80c9469ff687e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageExporter.exe",
+        "name": "OlyImageExporter.exe"
+      }
+    },
+    {
+      "evidence_id": "ev_c376108d9576ff2ecbe114a65b96dee68457fe56008ee26146a49b171e4ec9ff",
+      "operation": "inspect_managed_members",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "ddc6de1658d9c79047a5cccabd3c5c1efb58d09382aa0d470e1675837078fa7e"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/LoadSaveModule.dll",
+        "name": "LoadSaveModule.dll"
+      }
+    },
+    {
+      "evidence_id": "ev_ef9286b58a4c8c6d8a4fee6077528d8dfd18abf9cc6e9a06cd9a9b1a50e15512",
+      "operation": "inspect_analysis_view",
+      "subject": {
+        "architecture": "x86",
+        "digest": {
+          "sha256": "d810da9ba32ac0a19e2e967c49e519b184635fb36d6952852ecbb8830b5840e0"
+        },
+        "format": "pe",
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageList.dll",
+        "name": "OlycImageList.dll"
+      }
+    }
+  ]
+}

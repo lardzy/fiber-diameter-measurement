@@ -1,0 +1,184 @@
+Evidence: ev_74005e8e93ac327d8abbc39cf7641f6b29d045530a5df644eff191c0ab38a0ab
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+undefined8 FUN_14012a0c0(longlong param_1)
+
+{
+  undefined1 auVar1 [16];
+  undefined1 auVar2 [16];
+  bool bVar3;
+  int iVar4;
+  undefined4 uVar5;
+  uint uVar6;
+  LPWSTR pszPath;
+  undefined8 uVar7;
+  longlong lVar8;
+  undefined8 *puVar9;
+  double dVar10;
+  undefined1 local_res10 [8];
+  ushort local_res18 [4];
+  ushort local_res20 [4];
+  uint local_1b8;
+  undefined4 local_1b4;
+  int local_1b0;
+  undefined4 local_1ac;
+  undefined8 local_1a8;
+  undefined8 local_1a0;
+  undefined8 local_198;
+  longlong local_190;
+  undefined4 local_188;
+  undefined4 local_184;
+  undefined4 local_180 [2];
+  double local_178 [2];
+  double local_168;
+  double local_160;
+  undefined8 local_158;
+  undefined8 local_150;
+  undefined8 local_148 [2];
+  undefined1 local_138 [16];
+  UINT local_128 [2];
+  double local_120;
+  undefined8 local_118;
+  double dStack_110;
+  undefined8 local_108;
+  double dStack_100;
+  undefined8 local_f8;
+  undefined8 uStack_f0;
+  undefined8 local_e8;
+  double dStack_e0;
+  undefined8 local_d8;
+  longlong local_d0;
+  undefined8 local_c8;
+  undefined1 local_c0 [56];
+  undefined1 local_88 [128];
+  
+  local_c8 = 0xfffffffffffffffe;
+  local_1b8 = DAT_1401c9b50;
+  if ((int)DAT_1401c9b50 <= 0x7fffffff) {
+    local_1ac = DAT_1401c9b58;
+    local_1b4 = DAT_1401c9b54;
+    dVar10 = pow(2.0,(double)*(int *)(param_1 + 0x28));
+    local_1b0 = (int)(dVar10 - 1.0);
+    local_128[0] = 1;
+    local_120 = 0.0;
+    local_118 = 0;
+    dStack_110 = 0.0;
+    local_108 = 0;
+    dStack_100 = 0.0;
+    local_f8 = 0;
+    uStack_f0 = 0;
+    local_e8 = 0;
+    dStack_e0 = 0.0;
+    local_d8 = 0;
+    local_d0 = 0;
+    local_190 = 0;
+    local_168 = 1.0;
+    local_res18[0] = 0;
+    local_178[0] = 0.0;
+    local_res20[0] = 0x3e9;
+    local_160 = 0.0;
+    local_148[0] = 0;
+    Ordinal_286(&local_158,L"StitchingIntensityInfo.ini");
+    Ordinal_286(&local_150,L"HighVoltageSetValue");
+    Ordinal_280(&local_1a0,param_1 + 0x10);
+    pszPath = (LPWSTR)Ordinal_4856(&local_1a0);
+    PathRemoveFileSpecW(pszPath);
+    Ordinal_296(&local_1a8);
+    Ordinal_296(&local_198);
+    Ordinal_4612(&local_1a8,L"%s%s%s",local_1a0,&DAT_140176f14,local_158);
+    Ordinal_4612(&local_198,L"%s%s%s",local_1a0,&DAT_140176f3c,local_150);
+    Ordinal_491(local_c0);
+    Ordinal_491(local_88);
+    auVar1._8_8_ = 0;
+    auVar1._0_8_ = (longlong)(int)local_1b8;
+    uVar7 = SUB168(ZEXT816(2) * auVar1,0);
+    if (SUB168(ZEXT816(2) * auVar1,8) != 0) {
+      uVar7 = 0xffffffffffffffff;
+    }
+    local_d0 = Ordinal_265(uVar7);
+    auVar2._8_8_ = 0;
+    auVar2._0_8_ = (longlong)(int)local_1b8;
+    uVar7 = SUB168(ZEXT816(8) * auVar2,0);
+    if (SUB168(ZEXT816(8) * auVar2,8) != 0) {
+      uVar7 = 0xffffffffffffffff;
+    }
+    lVar8 = Ordinal_265(uVar7);
+    local_190 = lVar8;
+    iVar4 = Ordinal_4517(local_c0,local_1a8,0);
+    if (iVar4 != 0) {
+      iVar4 = Ordinal_4517(local_88,local_198,0);
+      if (iVar4 != 0) {
+        puVar9 = (undefined8 *)Ordinal_280(local_138,&local_1a8);
+        uVar5 = FUN_140139e00(puVar9,local_128);
+        if ((char)uVar5 == '\0') {
+          local_180[0] = 0xffffff9b;
+                    /* WARNING: Subroutine does not return */
+          _CxxThrowException(local_180,(ThrowInfo *)&DAT_1401c32e8);
+        }
+        puVar9 = (undefined8 *)Ordinal_280(local_138,&local_198);
+        bVar3 = FUN_140129e10(puVar9,local_1b8,(longlong)local_128,local_res18,local_res20);
+        if (!bVar3) {
+          local_184 = 0xffffff9b;
+                    /* WARNING: Subroutine does not return */
+          _CxxThrowException(&local_184,(ThrowInfo *)&DAT_1401c32e8);
+        }
+        if (local_res18[0] != local_res20[0]) {
+          uVar6 = (uint)local_res18[0];
+          dVar10 = local_120 * 0.7;
+          local_178[0] = pow(dStack_100 / dStack_e0,1.0 / dStack_110);
+          local_178[0] = local_178[0] * (((double)uVar6 * 0.7 + 100.0) - dVar10);
+          if (0.0 <= local_178[0]) {
+            if (800.0 < local_178[0]) {
+              local_178[0] = 800.0;
+            }
+          }
+          else {
+            local_178[0] = 0.0;
+          }
+          iVar4 = omp_get_num_procs();
+          _vcomp_set_num_threads(iVar4 / 2);
+          _vcomp_fork(1,8,FUN_14013de30,&local_160,local_178,lVar8,local_128,local_res10,&local_1b4,
+                      &local_1ac,&local_1b8);
+          DAT_1401c70a0 = ((double)local_1b0 - 1.0) / local_160;
+          if (1.0 <= DAT_1401c70a0) {
+            DAT_1401c70a0 = 1.0;
+          }
+          local_168 = DAT_1401c70a0;
+          iVar4 = omp_get_num_procs();
+          _vcomp_set_num_threads(iVar4 / 2);
+          _vcomp_fork(1,0xb,FUN_14013e160,local_148,local_178,local_res18,&local_168,lVar8,local_128
+                      ,local_res10,&local_1b0,&local_1b4,&local_1ac,&local_1b8);
+        }
+        puVar9 = (undefined8 *)Ordinal_280(local_res20,&local_1a8);
+        uVar7 = FUN_140139ba0(puVar9,local_res18[0],local_168);
+        if ((char)uVar7 == '\0') {
+          local_188 = 0xfffffe6f;
+                    /* WARNING: Subroutine does not return */
+          _CxxThrowException(&local_188,(ThrowInfo *)&DAT_1401c32e8);
+        }
+      }
+    }
+    Ordinal_2760(local_c0);
+    Ordinal_1119(local_88);
+    Ordinal_1119(local_c0);
+    Ordinal_1030(&local_198);
+    Ordinal_1030(&local_1a8);
+    Ordinal_1030(&local_1a0);
+    Ordinal_1030(&local_150);
+    Ordinal_1030(&local_158);
+    if (local_d0 != 0) {
+      Ordinal_266();
+    }
+    if (lVar8 != 0) {
+      Ordinal_266(lVar8);
+    }
+    uVar7 = 1;
+  }
+  else {
+    uVar7 = 0;
+  }
+  return uVar7;
+}
+

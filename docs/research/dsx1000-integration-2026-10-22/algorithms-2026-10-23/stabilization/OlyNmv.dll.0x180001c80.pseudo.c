@@ -1,0 +1,50 @@
+// ev_d1e522a5d30d9ab43b769a31ac29c91fe302b6edb85b971d127136b2abf8365d
+// 3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875
+
+undefined8 OLYNMV_ConvertToDstImage(int *param_1,uint *param_2,uint param_3)
+
+{
+  uint uVar1;
+  code *pcVar2;
+  uint uVar3;
+  uint *local_28;
+  int *local_20;
+  uint local_18;
+  
+                    /* 0x1c80  2  OLYNMV_ConvertToDstImage */
+  if (DAT_18001a758 == '\0') {
+    return 0xfffffffe;
+  }
+  local_18 = param_3;
+  if (param_3 == 0) {
+    local_18 = 1;
+  }
+  if ((((((*param_2 != 0) && (param_2[1] != 0)) && (uVar3 = param_2[2], uVar3 != 0)) &&
+       ((uVar1 = param_2[3], uVar1 != 0 && (param_2[4] != 0)))) &&
+      ((*(longlong *)(param_2 + 6) != 0 && (((uVar3 - 1 & 0xfffffffc) == 0 && (uVar3 != 2)))))) &&
+     (uVar1 - 1 < 2)) {
+    uVar3 = *param_2 / local_18;
+    if ((((uVar3 != 0) && (param_2[1] / local_18 != 0)) && (*param_1 == uVar3)) &&
+       (((param_1[1] == param_2[1] / local_18 && (param_1[2] == 1)) &&
+        ((param_1[3] == 4 && ((uVar3 * 4 <= (uint)param_1[4] && (*(longlong *)(param_1 + 6) != 0))))
+        )))) {
+      if (uVar1 == 1) {
+        pcVar2 = FUN_180001da0;
+      }
+      else {
+        if (uVar1 != 2) {
+          return 0xffffffff;
+        }
+        pcVar2 = FUN_180002010;
+      }
+      if (pcVar2 != (code *)0x0) {
+        local_28 = param_2;
+        local_20 = param_1;
+        FUN_1800013b0(pcVar2,&local_28);
+      }
+      return 0;
+    }
+  }
+  return 0xffffffff;
+}
+

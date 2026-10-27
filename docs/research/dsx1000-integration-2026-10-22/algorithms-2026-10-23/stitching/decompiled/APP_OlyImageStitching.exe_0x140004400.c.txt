@@ -1,0 +1,30 @@
+Evidence: ev_8463962138d22734e800d889faebf9f408ee1e9889c2c7aebd055a3e5b0af260
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+void FUN_140004400(void)
+
+{
+  DAT_140030e20 = operator_new__(0x104);
+  DAT_140030e28 = operator_new__(0x104);
+  DAT_140030e30 = operator_new__(0x104);
+  DAT_140030e38 = operator_new__(0x104);
+  DAT_140030e40 = operator_new__(0x104);
+  DAT_140030e48 = operator_new__(0x104);
+  DAT_140030e50 = operator_new__(0x104);
+  DAT_140030e60 = operator_new__(0x104);
+  DAT_140030e68 = operator_new__(0x104);
+  DAT_140030e70 = operator_new__(0x104);
+  DAT_140030e58 = operator_new__(0x104);
+  DAT_140030e78 = operator_new__(0x104);
+  DAT_140030e80 = operator_new__(0x104);
+  DAT_140030e88 = operator_new__(0x104);
+  DAT_140030e90 = operator_new__(0x104);
+  DAT_140030e98 = operator_new__(0x104);
+  DAT_140030ea0 = operator_new__(0x104);
+  DAT_140030ea8 = operator_new__(0x104);
+  DAT_140030eb0 = operator_new__(0x104);
+  return;
+}
+

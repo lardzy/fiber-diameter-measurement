@@ -1,0 +1,233 @@
+// ev_1882d5557f66a466e4a30b2c2ab4d2e1740d1524efd74fc8e1c7086bb12cb33c
+// 45c7952c06307aaa4dd5d742e7346b656249f4779259f4b4c4038261cb6a9486
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_Initialize 0x06000001
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_Uninitialize 0x06000002
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_CalcDstImageInfo 0x06000003
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_ConvertToDstImage 0x06000004
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_CreateWindow 0x06000005
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_EstimateMV 0x06000006
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVUtil::OlyNmvInitialize 0x06000007
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 ldc.i4.0  
+0003 call 0x06000001 Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_Initialize
+0008 stloc.0  
+0009 ldloc.0  
+0010 stloc.2  
+0011 ldloc.2  
+0012 ldc.i4.s -3 
+0014 sub  
+0015 switch 3 
+0032 br.s 68 
+0034 ldstr 0x70000001 '[OLYNMV_Initialize] Invalid Parameter.'
+0039 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0044 br.s 68 
+0046 ldstr 0x7000004f '[OLYNMV_Initialize] Not Initialized.'
+0051 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0056 br.s 68 
+0058 ldstr 0x70000099 '[OLYNMV_Initialize] Internal Error.'
+0063 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0068 leave.s 97 
+0070 stloc.1  
+0071 ldstr 0x700000e1 '[OLYNMV_Initialize] '
+0076 ldloc.1  
+0077 callvirt 0x0a000014 System.Exception::get_Message
+0082 call 0x0a000015 System.String::Concat
+0087 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0092 ldc.i4.s -5 
+0094 stloc.0  
+0095 leave.s 97 
+0097 ldloc.0  
+0098 ret  
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVUtil::OlyNmvUninitialize 0x06000008
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 call 0x06000002 Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_Uninitialize
+0007 stloc.0  
+0008 ldloc.0  
+0009 stloc.2  
+0010 ldloc.2  
+0011 ldc.i4.s -3 
+0013 sub  
+0014 switch 3 
+0031 br.s 67 
+0033 ldstr 0x7000010b '[OlyNmvUninitialize] Invalid Parameter.'
+0038 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0043 br.s 67 
+0045 ldstr 0x7000015b '[OlyNmvUninitialize] Not Initialized.'
+0050 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0055 br.s 67 
+0057 ldstr 0x700001a7 '[OlyNmvUninitialize] Internal Error.'
+0062 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0067 leave.s 96 
+0069 stloc.1  
+0070 ldstr 0x700001f1 '[OlyNmvUninitialize] '
+0075 ldloc.1  
+0076 callvirt 0x0a000014 System.Exception::get_Message
+0081 call 0x0a000015 System.String::Concat
+0086 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0091 ldc.i4.s -5 
+0093 stloc.0  
+0094 leave.s 96 
+0096 ldloc.0  
+0097 ret  
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVUtil::OlyNmvCalcDstImageInfo 0x06000009
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 ldarg.1  
+0003 ldarg.0  
+0004 ldarg.2  
+0005 call 0x06000003 Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_CalcDstImageInfo
+0010 stloc.0  
+0011 ldloc.0  
+0012 stloc.2  
+0013 ldloc.2  
+0014 ldc.i4.s -3 
+0016 sub  
+0017 switch 3 
+0034 br.s 70 
+0036 ldstr 0x7000021d '[OlyNmvCalcDstImageInfo] Invalid Parameter.'
+0041 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0046 br.s 70 
+0048 ldstr 0x70000275 '[OlyNmvCalcDstImageInfo] Not Initialized.'
+0053 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0058 br.s 70 
+0060 ldstr 0x700002c9 '[OlyNmvCalcDstImageInfo] Internal Error.'
+0065 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0070 leave.s 99 
+0072 stloc.1  
+0073 ldstr 0x7000031b '[OlyNmvCalcDstImageInfo] '
+0078 ldloc.1  
+0079 callvirt 0x0a000014 System.Exception::get_Message
+0084 call 0x0a000015 System.String::Concat
+0089 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0094 ldc.i4.s -5 
+0096 stloc.0  
+0097 leave.s 99 
+0099 ldloc.0  
+0100 ret  
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVUtil::OlyNmvCerateWindow 0x0600000a
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 ldarg.0  
+0003 call 0x06000005 Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_CreateWindow
+0008 stloc.0  
+0009 ldloc.0  
+0010 stloc.2  
+0011 ldloc.2  
+0012 ldc.i4.s -3 
+0014 sub  
+0015 switch 3 
+0032 br.s 68 
+0034 ldstr 0x7000034f '[OLYNMV_CreateWindow] Invalid Parameter.'
+0039 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0044 br.s 68 
+0046 ldstr 0x700003a1 '[OLYNMV_CreateWindow] Not Initialized.'
+0051 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0056 br.s 68 
+0058 ldstr 0x700003ef '[OLYNMV_CreateWindow] Internal Error.'
+0063 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0068 leave.s 97 
+0070 stloc.1  
+0071 ldstr 0x7000043b '[OLYNMV_CreateWindow] '
+0076 ldloc.1  
+0077 callvirt 0x0a000014 System.Exception::get_Message
+0082 call 0x0a000015 System.String::Concat
+0087 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0092 ldc.i4.s -5 
+0094 stloc.0  
+0095 leave.s 97 
+0097 ldloc.0  
+0098 ret  
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVUtil::OlyNmvConvertTemplateImage 0x0600000b
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 ldarg.1  
+0003 ldarg.0  
+0004 ldarg.2  
+0005 call 0x06000004 Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_ConvertToDstImage
+0010 stloc.0  
+0011 ldloc.0  
+0012 stloc.2  
+0013 ldloc.2  
+0014 ldc.i4.s -3 
+0016 sub  
+0017 switch 3 
+0034 br.s 70 
+0036 ldstr 0x70000469 '[OLYNMV_ConvertToDstImage] Invalid Parameter.'
+0041 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0046 br.s 70 
+0048 ldstr 0x700004c5 '[OLYNMV_ConvertToDstImage] Not Initialized.'
+0053 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0058 br.s 70 
+0060 ldstr 0x7000051d '[OLYNMV_ConvertToDstImage] Internal Error.'
+0065 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0070 leave.s 99 
+0072 stloc.1  
+0073 ldstr 0x70000573 '[OLYNMV_ConvertToDstImage] '
+0078 ldloc.1  
+0079 callvirt 0x0a000014 System.Exception::get_Message
+0084 call 0x0a000015 System.String::Concat
+0089 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0094 ldc.i4.s -5 
+0096 stloc.0  
+0097 leave.s 99 
+0099 ldloc.0  
+0100 ret  
+
+METHOD Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVUtil::OlyNmvExecuteShiftEstimation 0x0600000c
+0000 ldc.i4.0  
+0001 stloc.0  
+0002 ldarg.0  
+0003 ldarg.1  
+0004 ldarg.2  
+0005 ldarg.3  
+0006 ldarg.s 4 
+0008 ldarg.s 5 
+0010 ldarg.s 6 
+0012 ldarg.s 7 
+0014 ldarg.s 8 
+0016 ldarg.s 9 
+0018 call 0x06000006 Olympus.LI.Triumph.Image.BlurringCorrectionSharp.OLYNMVDefApi::OLYNMV_EstimateMV
+0023 stloc.0  
+0024 ldloc.0  
+0025 stloc.2  
+0026 ldloc.2  
+0027 ldc.i4.s -4 
+0029 sub  
+0030 switch 4 
+0051 br.s 99 
+0053 ldstr 0x700005ab '[OLYNMV_EstimateMV] Invalid Parameter.'
+0058 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0063 br.s 99 
+0065 ldstr 0x700005f9 '[OLYNMV_EstimateMV] Not Initialized.'
+0070 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0075 br.s 99 
+0077 ldstr 0x70000643 '[OLYNMV_EstimateMV] Internal Error.'
+0082 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0087 br.s 99 
+0089 ldstr 0x7000068b '[OLYNMV_EstimateMV] Estimate Error.'
+0094 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0099 leave.s 128 
+0101 stloc.1  
+0102 ldstr 0x700006d3 '[OLYNMV_EstimateMV] '
+0107 ldloc.1  
+0108 callvirt 0x0a000014 System.Exception::get_Message
+0113 call 0x0a000015 System.String::Concat
+0118 call 0x0a000013 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0123 ldc.i4.s -5 
+0125 stloc.0  
+0126 leave.s 128 
+0128 ldloc.0  
+0129 ret  

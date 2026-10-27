@@ -1,0 +1,317 @@
+EVIDENCE ev_b28983bf89a6f28ecaeb257f439dfe93b1e867e246a0d32a22aa3ce7e959c88f SHA256 0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d
+
+METHOD 0x06000050 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService _GetImageCommonInfo IL_SHA256 47217051912ec17e9b9393e9ed7e01bc9baa77098c8db2c9dd89df7f64793b8a DECODE_ISSUE null
+0000: newobj        0x0a0003a3 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation..ctor
+0005: stloc.0        
+0006: ldc.r8        0 
+000f: stloc.1        
+0010: ldc.r8        0 
+0019: stloc.2        
+001a: ldc.r8        0 
+0023: stloc.3        
+0024: newobj        0x0a0003a4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Snap.CurrentSnap..ctor
+0029: stloc.s       4 
+002b: call          0x0a00035b Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_CurrentSnapDao
+0030: callvirt      0x0a00035c Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0035: stloc.s       4 
+0037: newobj        0x0a0003a5 Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage..ctor
+003c: stloc.s       5 
+003e: call          0x0a000342 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_LiveStitchingImageDao
+0043: callvirt      0x0a000343 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0048: stloc.s       5 
+004a: ldarg.1        
+004b: callvirt      0x0a000040 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionConditionInfo.get_AcquistionCommonSettingInfo
+0050: callvirt      0x0a000341 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquistionCommonSettingInfo.get_Stitching
+0055: brfalse       268 
+005a: ldarg.1        
+005b: callvirt      0x0a00001f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionConditionInfo.get_StitchinSettingInfo
+0060: callvirt      0x0a000020 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchinSettingInfo.get_StitchingCommonSettingInfo
+0065: callvirt      0x0a000021 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingCommonSettingInfo.get_StitchingMode
+006a: ldc.i4.1       
+006b: bne.un        268 
+0070: ldloc.0        
+0071: ldloc.s       5 
+0073: callvirt      0x0a0003a6 Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_CompleteImageSizeX
+0078: call          0x0a0003a7 System.Convert.ToInt32
+007d: callvirt      0x0a0003a8 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageWidth
+0082: ldloc.0        
+0083: ldloc.s       5 
+0085: callvirt      0x0a0003a9 Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_CompleteImageSizeY
+008a: call          0x0a0003a7 System.Convert.ToInt32
+008f: callvirt      0x0a0003aa Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageHeight
+0094: ldarg.1        
+0095: callvirt      0x0a00001f Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionConditionInfo.get_StitchinSettingInfo
+009a: callvirt      0x0a000356 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchinSettingInfo.get_LiveStitchingSettingInfo
+009f: callvirt      0x0a000357 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.LiveStitchingSettingInfo.get_LiveStitchingMode
+00a4: brtrue.s      218 
+00a6: ldarg.0        
+00a7: call          0x0a00038a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCuttedLiveImageSize
+00ac: ldfld         0x0a0003ab CAM_IMG_SIZE._IWidth
+00b1: call          0x0a00038a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCuttedLiveImageSize
+00b6: ldfld         0x0a0003ac CAM_IMG_SIZE._IHeight
+00bb: ldloca.s      1 
+00bd: ldloca.s      2 
+00bf: call          0x06000080 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService._GetImageResolution
+00c4: ldloc.1        
+00c5: ldloc.s       5 
+00c7: callvirt      0x0a0003ad Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_ReductionRatio
+00cc: div            
+00cd: stloc.1        
+00ce: ldloc.2        
+00cf: ldloc.s       5 
+00d1: callvirt      0x0a0003ad Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_ReductionRatio
+00d6: div            
+00d7: stloc.2        
+00d8: br.s          251 
+00da: ldarg.0        
+00db: ldloca.s      1 
+00dd: ldloca.s      2 
+00df: ldloca.s      3 
+00e1: ldarg.1        
+00e2: call          0x0600007e Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService._ImageResolutionForImageProcess
+00e7: ldloc.1        
+00e8: ldloc.s       5 
+00ea: callvirt      0x0a0003ae Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_CompleteReductionRatio
+00ef: div            
+00f0: stloc.1        
+00f1: ldloc.2        
+00f2: ldloc.s       5 
+00f4: callvirt      0x0a0003ae Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_CompleteReductionRatio
+00f9: div            
+00fa: stloc.2        
+00fb: ldloc.s       5 
+00fd: callvirt      0x0a0003af Olympus.LI.Triumph.Workflow.MemoryDatabase.LiveStitching.LiveStitchingImage.get_ZResolution
+0102: ldc.r4        1000 
+0107: mul            
+0108: conv.r8        
+0109: stloc.3        
+010a: br.s          307 
+010c: ldloc.0        
+010d: ldloc.s       4 
+010f: callvirt      0x0a0003b0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeX
+0114: callvirt      0x0a0003a8 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageWidth
+0119: ldloc.0        
+011a: ldloc.s       4 
+011c: callvirt      0x0a0003b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeY
+0121: callvirt      0x0a0003aa Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageHeight
+0126: ldarg.0        
+0127: ldloca.s      1 
+0129: ldloca.s      2 
+012b: ldloca.s      3 
+012d: ldarg.1        
+012e: call          0x0600007e Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService._ImageResolutionForImageProcess
+0133: ldloc.0        
+0134: ldloc.1        
+0135: callvirt      0x0a0003b2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageDataPerPixelX
+013a: ldloc.0        
+013b: ldloc.2        
+013c: callvirt      0x0a0003b3 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageDataPerPixelY
+0141: ldloc.0        
+0142: ldloc.3        
+0143: callvirt      0x0a0003b4 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageDataPerPixelZ
+0148: ldloc.0        
+0149: ldc.i4.0       
+014a: callvirt      0x0a0003b5 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageRotation
+014f: ldloc.0        
+0150: ldc.r8        0 
+0159: callvirt      0x0a0003b6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageRotationAngle
+015e: ldloc.0        
+015f: ldc.i4.0       
+0160: callvirt      0x0a0003b7 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageFlip
+0165: ldc.i4.0       
+0166: stloc.s       6 
+0168: ldc.i4.0       
+0169: stloc.s       7 
+016b: ldloca.s      6 
+016d: ldloca.s      7 
+016f: call          0x0a0003b8 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCurrentTrimmingSize
+0174: ldloc.0        
+0175: ldloc.s       6 
+0177: callvirt      0x0a0003b9 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageTrimmingSizeX
+017c: ldloc.0        
+017d: ldloc.s       7 
+017f: callvirt      0x0a0003ba Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageTrimmingSizeY
+0184: call          0x0a0003bb Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCurrentAspectRatio
+0189: stloc.s       8 
+018b: ldloc.s       8 
+018d: stloc.s       11 
+018f: ldloc.s       11 
+0191: switch        2  targets=416,425
+019e: br.s          434 
+01a0: ldloc.0        
+01a1: ldc.i4.1       
+01a2: callvirt      0x0a0003bc Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageAspectRatio
+01a7: br.s          441 
+01a9: ldloc.0        
+01aa: ldc.i4.2       
+01ab: callvirt      0x0a0003bc Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageAspectRatio
+01b0: br.s          441 
+01b2: ldloc.0        
+01b3: ldc.i4.0       
+01b4: callvirt      0x0a0003bc Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_ImageAspectRatio
+01b9: call          0x0a0003bd Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetCalibrationValue
+01be: stloc.s       9 
+01c0: ldloc.0        
+01c1: ldloca.s      9 
+01c3: ldfld         0x0a0003be CALIBRATIONVALUES.X
+01c8: ldc.r8        1000000 
+01d1: mul            
+01d2: callvirt      0x0a0003bf Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_CalibrationValueX
+01d7: ldloc.0        
+01d8: ldloca.s      9 
+01da: ldfld         0x0a0003c0 CALIBRATIONVALUES.Y
+01df: ldc.r8        1000000 
+01e8: mul            
+01e9: callvirt      0x0a0003c1 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_CalibrationValueY
+01ee: ldloc.0        
+01ef: ldarg.0        
+01f0: ldfld         0x04000008 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService.Z_CAL_DIFFERENCE_VALUE
+01f5: conv.r8        
+01f6: callvirt      0x0a0003c2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_CalibrationValueZ
+01fb: call          0x0a0003c3 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_GRRInfoDao
+0200: callvirt      0x0a0003c4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleXmlDao`2.Get
+0205: stloc.s       10 
+0207: ldloc.s       10 
+0209: brfalse.s     532 
+020b: ldloc.s       10 
+020d: callvirt      0x0a0003c5 Olympus.LI.Triumph.Workflow.MemoryDatabase.GRRInfo.get_IsEnabled
+0212: brtrue.s      563 
+0214: ldloc.0        
+0215: ldc.i4.0       
+0216: callvirt      0x0a0003c6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRRMode
+021b: ldloc.0        
+021c: ldsfld        0x0a00036c System.String.Empty
+0221: callvirt      0x0a0003c7 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRROperator
+0226: ldloc.0        
+0227: ldsfld        0x0a00036c System.String.Empty
+022c: callvirt      0x0a0003c8 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRRSample
+0231: br.s          614 
+0233: ldloc.s       10 
+0235: callvirt      0x0a0003c5 Olympus.LI.Triumph.Workflow.MemoryDatabase.GRRInfo.get_IsEnabled
+023a: brfalse.s     581 
+023c: ldloc.0        
+023d: ldc.i4.1       
+023e: callvirt      0x0a0003c6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRRMode
+0243: br.s          588 
+0245: ldloc.0        
+0246: ldc.i4.0       
+0247: callvirt      0x0a0003c6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRRMode
+024c: ldloc.0        
+024d: ldloc.s       10 
+024f: callvirt      0x0a0003c9 Olympus.LI.Triumph.Workflow.MemoryDatabase.GRRInfo.get_CurrentOperator
+0254: callvirt      0x0a0003c7 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRROperator
+0259: ldloc.0        
+025a: ldloc.s       10 
+025c: callvirt      0x0a0003ca Olympus.LI.Triumph.Workflow.MemoryDatabase.GRRInfo.get_CurrentSample
+0261: callvirt      0x0a0003c8 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageCommonInfomation.set_GRRSample
+0266: ldloc.0        
+0267: ret            
+
+METHOD 0x0600007e Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService _ImageResolutionForImageProcess IL_SHA256 87203c64b083b0fce499130986aebaf9cb24ce87b4411ea1cb567a1882e5ebda DECODE_ISSUE null
+0000: call          0x0a00035b Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_CurrentSnapDao
+0005: callvirt      0x0a00035c Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+000a: stloc.2        
+000b: call          0x0a000557 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendFocusImageDataDao
+0010: callvirt      0x0a000558 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0015: stloc.3        
+0016: call          0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+001b: callvirt      0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0020: stloc.s       4 
+0022: ldarg.s       4 
+0024: callvirt      0x0a000040 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionConditionInfo.get_AcquistionCommonSettingInfo
+0029: callvirt      0x0a000206 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquistionCommonSettingInfo.get_ImageType
+002e: stloc.s       7 
+0030: ldloc.s       7 
+0032: ldc.i4.1       
+0033: sub            
+0034: switch        2  targets=236,70
+0041: br            272 
+0046: ldloc.3        
+0047: callvirt      0x0a0003b0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeX
+004c: stloc.0        
+004d: ldloc.3        
+004e: callvirt      0x0a0003b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeY
+0053: stloc.1        
+0054: ldarg.0        
+0055: ldloc.0        
+0056: ldloc.1        
+0057: ldarg.1        
+0058: ldarg.2        
+0059: call          0x0600007f Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService._GetExtendImageResolution
+005e: call          0x0a00032f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+0063: callvirt      0x0a000330 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0068: stloc.s       5 
+006a: ldloc.s       5 
+006c: callvirt      0x0a000333 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_ExtendMode
+0071: ldc.i4.2       
+0072: bne.un.s      193 
+0074: ldc.i4.1       
+0075: ldloc.s       5 
+0077: callvirt      0x0a000559 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_VRatio
+007c: bge.s         193 
+007e: ldloc.s       5 
+0080: callvirt      0x0a00055a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_BuildingCount
+0085: ldloc.s       5 
+0087: callvirt      0x0a000429 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zlower
+008c: ldloc.s       5 
+008e: callvirt      0x0a00042b Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zupper
+0093: call          0x0a00055b Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetExtendPitch
+0098: stloc.s       6 
+009a: ldarg.3        
+009b: ldloc.s       6 
+009d: conv.u4        
+009e: ldloc.s       4 
+00a0: callvirt      0x0a00055a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_BuildingCount
+00a5: call          0x0a00055c Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetExtendZResolution
+00aa: conv.r8        
+00ab: ldc.r8        1000 
+00b4: mul            
+00b5: ldc.r8        1000 
+00be: mul            
+00bf: stind.r8       
+00c0: ret            
+00c1: ldarg.3        
+00c2: ldloc.s       4 
+00c4: callvirt      0x0a000430 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zpitch
+00c9: ldloc.s       4 
+00cb: callvirt      0x0a00055a Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_BuildingCount
+00d0: call          0x0a00055c Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetExtendZResolution
+00d5: conv.r8        
+00d6: ldc.r8        1000 
+00df: mul            
+00e0: ldc.r8        1000 
+00e9: mul            
+00ea: stind.r8       
+00eb: ret            
+00ec: ldloc.2        
+00ed: callvirt      0x0a0003b0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeX
+00f2: stloc.0        
+00f3: ldloc.2        
+00f4: callvirt      0x0a0003b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeY
+00f9: stloc.1        
+00fa: ldarg.0        
+00fb: ldloc.0        
+00fc: ldloc.1        
+00fd: ldarg.1        
+00fe: ldarg.2        
+00ff: call          0x0600007f Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService._GetExtendImageResolution
+0104: ldarg.3        
+0105: ldc.r8        1 
+010e: stind.r8       
+010f: ret            
+0110: ldloc.2        
+0111: callvirt      0x0a0003b0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeX
+0116: stloc.0        
+0117: ldloc.2        
+0118: callvirt      0x0a0003b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_ImageSizeY
+011d: stloc.1        
+011e: ldarg.0        
+011f: ldloc.0        
+0120: ldloc.1        
+0121: ldarg.1        
+0122: ldarg.2        
+0123: call          0x06000080 Olympus.LI.Triumph.Workflow.ProcessJoinDomain.ProcessJoinDataConvertorService._GetImageResolution
+0128: ldarg.3        
+0129: ldc.r8        1 
+0132: stind.r8       
+0133: ret            

@@ -1,0 +1,77 @@
+Evidence: ev_41ff469eb835b552768f53eed5fc4e64f28daf6c6aa5c88b3f1be5addd5a8d7e
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* private: bool __cdecl CCompositeDLL::CorrectOutputImage(class ctool::matrix<struct _IplImage *
+   __ptr64> & __ptr64) __ptr64 */
+
+bool __thiscall
+CCompositeDLL::CorrectOutputImage(CCompositeDLL *this,matrix<_IplImage*___ptr64> *param_1)
+
+{
+  void *pvVar1;
+  bool bVar2;
+  basic_iostream<char,std::char_traits<char>_> *pbVar3;
+  basic_iostream<char,std::char_traits<char>_> *pbVar4;
+  void *pvVar5;
+  undefined1 auStack_158 [40];
+  undefined8 local_130;
+  basic_iostream<char,std::char_traits<char>_> local_128 [248];
+  undefined1 local_30;
+  undefined7 uStack_2f;
+  undefined8 local_20;
+  ulonglong uStack_18;
+  ulonglong local_10;
+  
+                    /* 0xbe10  55
+                       ?CorrectOutputImage@CCompositeDLL@@AEAA_NAEAV?$matrix@PEAU_IplImage@@@ctool@@@Z
+                        */
+  local_130 = 0xfffffffffffffffe;
+  local_10 = DAT_180023010 ^ (ulonglong)auStack_158;
+  local_20 = 0;
+  uStack_18 = 0xf;
+  local_30 = 0;
+  FUN_180015be0((longlong *)&local_30," 2 CorrectOutputImage() [start]",0x1f);
+  pbVar4 = local_128;
+  pbVar3 = FUN_180010310(pbVar4,(undefined8 *)&local_30);
+  FUN_1800035c0(pbVar4,(longlong *)pbVar3);
+  if (0xf < uStack_18) {
+    pvVar1 = (void *)CONCAT71(uStack_2f,local_30);
+    pvVar5 = pvVar1;
+    if ((0xfff < uStack_18 + 1) &&
+       (pvVar5 = *(void **)((longlong)pvVar1 + -8),
+       0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar5)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar5);
+  }
+  if (*(int *)(this + 0xb4) == 2) {
+    bVar2 = ShadingCorrect(this,param_1);
+  }
+  else {
+    local_20 = 0;
+    uStack_18 = 0xf;
+    local_30 = 0;
+    FUN_180015be0((longlong *)&local_30," 2 CorrectOutputImage() [end]",0x1d);
+    pbVar4 = local_128;
+    pbVar3 = FUN_180010310(pbVar4,(undefined8 *)&local_30);
+    FUN_1800035c0(pbVar4,(longlong *)pbVar3);
+    if (0xf < uStack_18) {
+      pvVar1 = (void *)CONCAT71(uStack_2f,local_30);
+      pvVar5 = pvVar1;
+      if ((0xfff < uStack_18 + 1) &&
+         (pvVar5 = *(void **)((longlong)pvVar1 + -8),
+         0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar5)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      free(pvVar5);
+    }
+    bVar2 = true;
+  }
+  return bVar2;
+}
+

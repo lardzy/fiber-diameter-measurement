@@ -1,0 +1,661 @@
+Evidence: ev_39dc87d9f7f21510430fd95f5ec509e724a6d175b5819c686b3c5c3ea1879fbc
+Subject SHA256: 3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875
+Bundle: nmv-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Removing unreachable block (ram,0x000180003e01) */
+/* WARNING: Removing unreachable block (ram,0x000180003fb4) */
+
+double * FUN_180003d10(double *param_1,undefined8 *param_2,undefined8 *param_3,undefined8 *param_4,
+                      char param_5,double param_6,char param_7,double *param_8,int *param_9)
+
+{
+  int iVar1;
+  uint uVar2;
+  uint uVar3;
+  uint uVar4;
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> *pbVar5;
+  char *****pppppcVar6;
+  Exception *pEVar7;
+  _OutputArray *p_Var8;
+  double *pdVar9;
+  longlong lVar10;
+  int *piVar11;
+  longlong lVar12;
+  ulonglong uVar13;
+  longlong lVar14;
+  double dVar15;
+  double dVar16;
+  undefined1 auStackY_5a8 [32];
+  int local_568 [3];
+  undefined4 local_55c;
+  double local_558 [2];
+  void *local_548;
+  undefined8 uStack_540;
+  undefined8 local_538;
+  ulonglong uStack_530;
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_528;
+  undefined7 uStack_527;
+  undefined8 local_518;
+  ulonglong uStack_510;
+  char ****local_508;
+  undefined2 uStack_500;
+  undefined1 uStack_4fe;
+  undefined8 local_4f8;
+  ulonglong local_4f0;
+  undefined8 local_4e8;
+  int local_4e0 [2];
+  longlong local_4d8;
+  undefined8 uStack_4d0;
+  undefined8 local_4c8;
+  undefined8 local_4c0;
+  undefined8 local_4b8;
+  undefined8 local_4b0;
+  int *local_4a8;
+  undefined8 *local_4a0;
+  undefined8 local_498;
+  undefined8 local_490;
+  undefined8 local_488;
+  undefined8 local_480;
+  undefined8 local_478;
+  undefined8 uStack_470;
+  undefined8 local_468;
+  undefined8 local_460;
+  undefined8 local_458;
+  undefined8 local_450;
+  undefined8 *local_448;
+  undefined8 *local_440;
+  undefined8 local_438;
+  undefined8 local_430;
+  undefined8 local_428;
+  undefined8 local_420;
+  undefined8 local_418;
+  undefined8 uStack_410;
+  undefined8 local_408;
+  undefined8 local_400;
+  undefined8 local_3f8;
+  undefined8 local_3f0;
+  undefined8 *local_3e8;
+  undefined8 *local_3e0;
+  undefined8 local_3d8;
+  undefined8 local_3d0;
+  undefined8 local_3c8;
+  undefined8 local_3c0;
+  undefined8 local_3b8;
+  undefined8 uStack_3b0;
+  undefined8 local_3a8;
+  undefined8 local_3a0;
+  undefined8 local_398;
+  undefined8 local_390;
+  undefined8 *local_388;
+  undefined8 *local_380;
+  undefined8 local_378;
+  undefined8 local_370;
+  undefined8 local_368;
+  undefined8 local_360;
+  undefined8 local_358;
+  undefined8 uStack_350;
+  undefined8 local_348;
+  undefined8 local_340;
+  undefined8 local_338;
+  undefined8 local_330;
+  undefined8 *local_328;
+  undefined8 *local_320;
+  undefined8 local_318;
+  undefined8 local_310;
+  uint local_308;
+  uint local_304;
+  int local_300;
+  int local_2fc;
+  longlong local_2f8;
+  int *local_2c8;
+  undefined8 local_2a8;
+  undefined8 local_2a0;
+  undefined8 local_298;
+  undefined8 uStack_290;
+  undefined8 local_288;
+  undefined8 local_280;
+  undefined8 local_278;
+  undefined8 local_270;
+  undefined8 *local_268;
+  undefined8 *local_260;
+  undefined8 local_258;
+  undefined8 local_250;
+  undefined8 local_248;
+  undefined8 local_240;
+  undefined8 local_238;
+  undefined8 uStack_230;
+  undefined8 local_228;
+  undefined8 local_220;
+  undefined8 local_218;
+  undefined8 local_210;
+  undefined8 *local_208;
+  undefined8 *local_200;
+  undefined8 local_1f8;
+  undefined8 local_1f0;
+  uint local_1e8 [2];
+  uint local_1e0;
+  uint local_1dc;
+  int *local_1a8;
+  uint local_188 [2];
+  int local_180;
+  int local_17c;
+  int *local_148;
+  Exception local_128 [176];
+  ulonglong local_78;
+  
+  local_558[1] = -NAN;
+  local_78 = DAT_18001a000 ^ (ulonglong)auStackY_5a8;
+  (**(code **)*param_2)(param_2,local_1e8);
+  (**(code **)*param_3)(param_3,local_188);
+  (**(code **)*param_4)(param_4,&local_308);
+  lVar10 = 0;
+  if (((local_188[0] ^ local_1e8[0]) & 0xfff) != 0) {
+    uStack_530 = 0xf;
+    local_548 = (void *)0x632e636f50766d4e;
+    uStack_540 = CONCAT62(uStack_540._2_6_,0x7070);
+    local_538 = 10;
+                    /* WARNING: Ignoring partial resolution of indirect */
+    uStack_540._2_1_ = 0;
+    uStack_510 = 0xf;
+    local_518 = 0;
+    local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1800057b0((undefined8 *)&local_528,0x25,0);
+    pbVar5 = &local_528;
+    if (0xf < uStack_510) {
+      pbVar5 = (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+               CONCAT71(uStack_527,local_528);
+    }
+    *(undefined8 *)pbVar5 = 0x6f6d796e6f6e6160;
+    *(undefined8 *)(pbVar5 + 8) = 0x73656d616e2d7375;
+    *(undefined8 *)(pbVar5 + 0x10) = 0x503a3a2765636170;
+    *(undefined8 *)(pbVar5 + 0x18) = 0x72726f4365736168;
+    *(undefined4 *)(pbVar5 + 0x20) = 0x74616c65;
+    pbVar5[0x24] = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x65;
+    local_518 = 0x25;
+    pbVar5 = &local_528;
+    if (0xf < uStack_510) {
+      pbVar5 = (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+               CONCAT71(uStack_527,local_528);
+    }
+    pbVar5[0x25] = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    local_4f0 = 0xf;
+    local_4f8 = 0;
+    local_508 = (char ****)((ulonglong)local_508 & 0xffffffffffffff00);
+    FUN_1800057b0(&local_508,0x1a,0);
+    pppppcVar6 = &local_508;
+    if (0xf < local_4f0) {
+      pppppcVar6 = (char *****)local_508;
+    }
+    *pppppcVar6 = (char ****)0x7079742e31637273;
+    pppppcVar6[1] = (char ****)0x73203d3d20292865;
+    pppppcVar6[2] = (char ****)0x657079742e326372;
+    *(undefined2 *)(pppppcVar6 + 3) = 0x2928;
+    local_4f8 = 0x1a;
+    pppppcVar6 = &local_508;
+    if (0xf < local_4f0) {
+      pppppcVar6 = (char *****)local_508;
+    }
+    *(char *)((longlong)pppppcVar6 + 0x1a) = '\0';
+    pEVar7 = (Exception *)
+             cv::Exception::Exception
+                       (local_128,-0xd7,
+                        (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                        &local_508,&local_528,
+                        (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                        &local_548,0x159);
+    cv::error(pEVar7);
+    cv::Exception::~Exception(local_128);
+    if (0xf < local_4f0) {
+      operator_delete(local_508);
+    }
+    local_4f0 = 0xf;
+    local_4f8 = 0;
+    local_508 = (char ****)((ulonglong)local_508 & 0xffffffffffffff00);
+    if (0xf < uStack_510) {
+      operator_delete((void *)CONCAT71(uStack_527,local_528));
+    }
+    uStack_510 = 0xf;
+    local_518 = 0;
+    local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < uStack_530) {
+      operator_delete(local_548);
+    }
+  }
+  if (1 < (local_1e8[0] & 0xfff) - 5) {
+    local_4f0 = 0xf;
+    local_508 = (char ****)0x632e636f50766d4e;
+    uStack_500 = 0x7070;
+    local_4f8 = 10;
+    uStack_4fe = 0;
+    uStack_510 = 0xf;
+    local_518 = 0;
+    local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1800054c0((ulonglong *)&local_528,"`anonymous-namespace\'::PhaseCorrelate",0x25);
+    uStack_530 = 0xf;
+    local_538 = 0;
+    local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+    FUN_1800054c0((ulonglong *)&local_548,"src1.type() == CV_32FC1 || src1.type() == CV_64FC1",0x32)
+    ;
+    pEVar7 = (Exception *)
+             cv::Exception::Exception
+                       (local_128,-0xd7,
+                        (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                        &local_548,&local_528,
+                        (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                        &local_508,0x15a);
+    cv::error(pEVar7);
+    cv::Exception::~Exception(local_128);
+    if (0xf < uStack_530) {
+      operator_delete(local_548);
+    }
+    uStack_530 = 0xf;
+    local_538 = 0;
+    local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+    if (0xf < uStack_510) {
+      operator_delete((void *)CONCAT71(uStack_527,local_528));
+    }
+    uStack_510 = 0xf;
+    local_518 = 0;
+    local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < local_4f0) {
+      operator_delete(local_508);
+    }
+  }
+  iVar1 = local_1a8[-1];
+  if (iVar1 == local_148[-1]) {
+    if (iVar1 == 2) {
+      if ((*local_1a8 != *local_148) || (local_1a8[1] != local_148[1])) goto LAB_1800040fc;
+    }
+    else if (0 < iVar1) {
+      piVar11 = local_1a8;
+      lVar14 = lVar10;
+      do {
+        if (*piVar11 != *(int *)(((longlong)local_148 - (longlong)local_1a8) + (longlong)piVar11))
+        goto LAB_1800040fc;
+        lVar14 = lVar14 + 1;
+        piVar11 = piVar11 + 1;
+      } while (lVar14 < iVar1);
+    }
+  }
+  else {
+LAB_1800040fc:
+    local_4f0 = 0xf;
+    local_4f8 = 0;
+    local_508 = (char ****)((ulonglong)local_508 & 0xffffffffffffff00);
+    FUN_1800054c0((ulonglong *)&local_508,&DAT_1800163b0,10);
+    uStack_510 = 0xf;
+    local_518 = 0;
+    local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1800054c0((ulonglong *)&local_528,"`anonymous-namespace\'::PhaseCorrelate",0x25);
+    uStack_530 = 0xf;
+    local_538 = 0;
+    local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+    FUN_1800054c0((ulonglong *)&local_548,"src1.size == src2.size",0x16);
+    pEVar7 = (Exception *)
+             cv::Exception::Exception
+                       (local_128,-0xd7,
+                        (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                        &local_548,&local_528,
+                        (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                        &local_508,0x15b);
+    cv::error(pEVar7);
+    cv::Exception::~Exception(local_128);
+    if (0xf < uStack_530) {
+      operator_delete(local_548);
+    }
+    uStack_530 = 0xf;
+    local_538 = 0;
+    local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+    if (0xf < uStack_510) {
+      operator_delete((void *)CONCAT71(uStack_527,local_528));
+    }
+    uStack_510 = 0xf;
+    local_518 = 0;
+    local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < local_4f0) {
+      operator_delete(local_508);
+    }
+  }
+  lVar14 = 1;
+  if (local_2f8 != 0) {
+    uVar13 = (ulonglong)local_304;
+    if ((int)local_304 < 3) {
+      lVar12 = (longlong)local_300 * (longlong)local_2fc;
+    }
+    else {
+      lVar12 = 1;
+      piVar11 = local_2c8;
+      if (0 < (int)local_304) {
+        do {
+          lVar12 = lVar12 * *piVar11;
+          uVar13 = uVar13 - 1;
+          piVar11 = piVar11 + 1;
+        } while (uVar13 != 0);
+      }
+    }
+    if (lVar12 != 0) {
+      if (((local_308 ^ local_1e8[0]) & 0xfff) != 0) {
+        local_4f0 = 0xf;
+        local_4f8 = 0;
+        local_508 = (char ****)((ulonglong)local_508 & 0xffffffffffffff00);
+        FUN_1800054c0((ulonglong *)&local_508,&DAT_1800163b0,10);
+        uStack_510 = 0xf;
+        local_518 = 0;
+        local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+        FUN_1800054c0((ulonglong *)&local_528,"`anonymous-namespace\'::PhaseCorrelate",0x25);
+        uStack_530 = 0xf;
+        local_538 = 0;
+        local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+        FUN_1800054c0((ulonglong *)&local_548,"src1.type() == window.type()",0x1c);
+        pEVar7 = (Exception *)
+                 cv::Exception::Exception
+                           (local_128,-0xd7,
+                            (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                            &local_548,&local_528,
+                            (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                            &local_508,0x15f);
+        cv::error(pEVar7);
+        cv::Exception::~Exception(local_128);
+        if (0xf < uStack_530) {
+          operator_delete(local_548);
+        }
+        uStack_530 = 0xf;
+        local_538 = 0;
+        local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+        if (0xf < uStack_510) {
+          operator_delete((void *)CONCAT71(uStack_527,local_528));
+        }
+        uStack_510 = 0xf;
+        local_518 = 0;
+        local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+        if (0xf < local_4f0) {
+          operator_delete(local_508);
+        }
+      }
+      iVar1 = local_1a8[-1];
+      if (iVar1 == local_2c8[-1]) {
+        if (iVar1 == 2) {
+          if ((*local_1a8 != *local_2c8) || (local_1a8[1] != local_2c8[1])) goto LAB_1800043df;
+        }
+        else if (0 < iVar1) {
+          lVar12 = (longlong)local_2c8 - (longlong)local_1a8;
+          do {
+            if (*local_1a8 != *(int *)(lVar12 + (longlong)local_1a8)) goto LAB_1800043df;
+            lVar10 = lVar10 + 1;
+            local_1a8 = local_1a8 + 1;
+          } while (lVar10 < iVar1);
+        }
+      }
+      else {
+LAB_1800043df:
+        local_4f0 = 0xf;
+        local_4f8 = 0;
+        local_508 = (char ****)((ulonglong)local_508 & 0xffffffffffffff00);
+        FUN_1800054c0((ulonglong *)&local_508,&DAT_1800163b0,10);
+        uStack_510 = 0xf;
+        local_518 = 0;
+        local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+        FUN_1800054c0((ulonglong *)&local_528,"`anonymous-namespace\'::PhaseCorrelate",0x25);
+        uStack_530 = 0xf;
+        local_538 = 0;
+        local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+        FUN_1800054c0((ulonglong *)&local_548,"src1.size == window.size",0x18);
+        pEVar7 = (Exception *)
+                 cv::Exception::Exception
+                           (local_128,-0xd7,
+                            (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                            &local_548,&local_528,
+                            (basic_string<char,std::char_traits<char>,std::allocator<char>_> *)
+                            &local_508,0x160);
+        cv::error(pEVar7);
+        cv::Exception::~Exception(local_128);
+        if (0xf < uStack_530) {
+          operator_delete(local_548);
+        }
+        uStack_530 = 0xf;
+        local_538 = 0;
+        local_548 = (void *)((ulonglong)local_548 & 0xffffffffffffff00);
+        if (0xf < uStack_510) {
+          operator_delete((void *)CONCAT71(uStack_527,local_528));
+        }
+        uStack_510 = 0xf;
+        local_518 = 0;
+        local_528 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+        if (0xf < local_4f0) {
+          operator_delete(local_508);
+        }
+      }
+    }
+  }
+  uVar3 = FUN_180002820(local_1e0);
+  uVar2 = local_1dc;
+  uVar4 = FUN_180002820(local_1dc);
+  local_448 = &local_480;
+  local_440 = &local_438;
+  local_430 = 0;
+  local_438 = 0;
+  local_488 = 0x42ff0000;
+  local_480 = 0;
+  local_458 = 0;
+  local_460 = 0;
+  local_468 = 0;
+  local_478 = 0;
+  uStack_470 = 0;
+  local_450 = 0;
+  local_3e8 = &local_420;
+  local_3e0 = &local_3d8;
+  local_3d0 = 0;
+  local_3d8 = 0;
+  local_428 = 0x42ff0000;
+  local_420 = 0;
+  local_3f8 = 0;
+  local_400 = 0;
+  local_408 = 0;
+  local_418 = 0;
+  uStack_410 = 0;
+  local_3f0 = 0;
+  local_4a8 = local_4e0;
+  local_4a0 = &local_498;
+  local_490 = 0;
+  local_498 = 0;
+  local_4e8 = 0x42ff0000;
+  local_4e0[0] = 0;
+  local_4e0[1] = 0;
+  local_4b8 = 0;
+  local_4c0 = 0;
+  local_4c8 = 0;
+  local_4d8 = 0;
+  uStack_4d0 = 0;
+  local_4b0 = 0;
+  if ((uVar3 == local_1e0) && (uVar4 == uVar2)) {
+    cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_488);
+    cv::Mat::copyTo((Mat *)local_1e8,(_OutputArray *)&local_548);
+    cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_428);
+    cv::Mat::copyTo((Mat *)local_188,(_OutputArray *)&local_548);
+    FUN_1800026b0((Mat *)&local_4e8,(Mat *)&local_308);
+  }
+  else {
+    cv::_OutputArray::_OutputArray((_OutputArray *)&local_528,(Mat *)&local_488);
+    cv::_InputArray::_InputArray((_InputArray *)&local_508,(Mat *)local_1e8);
+    local_548 = (void *)0x0;
+    uStack_540 = 0;
+    local_538 = 0;
+    uStack_530 = 0;
+    cv::copyMakeBorder((_InputArray *)&local_508,(_OutputArray *)&local_528,0,uVar3 - local_1e0,0,
+                       uVar4 - local_1dc,0,(Scalar_<double> *)&local_548);
+    cv::_OutputArray::_OutputArray((_OutputArray *)&local_528,(Mat *)&local_428);
+    cv::_InputArray::_InputArray((_InputArray *)&local_508,(Mat *)local_188);
+    local_548 = (void *)0x0;
+    uStack_540 = 0;
+    local_538 = 0;
+    uStack_530 = 0;
+    cv::copyMakeBorder((_InputArray *)&local_508,(_OutputArray *)&local_528,0,uVar3 - local_180,0,
+                       uVar4 - local_17c,0,(Scalar_<double> *)&local_548);
+    if (local_2f8 != 0) {
+      uVar13 = (ulonglong)local_304;
+      if ((int)local_304 < 3) {
+        lVar10 = (longlong)local_300 * (longlong)local_2fc;
+      }
+      else {
+        lVar10 = 1;
+        if (0 < (int)local_304) {
+          do {
+            lVar10 = lVar10 * *local_2c8;
+            local_2c8 = local_2c8 + 1;
+            uVar13 = uVar13 - 1;
+          } while (uVar13 != 0);
+        }
+      }
+      if (lVar10 != 0) {
+        cv::_OutputArray::_OutputArray((_OutputArray *)&local_528,(Mat *)&local_4e8);
+        cv::_InputArray::_InputArray((_InputArray *)&local_508,(Mat *)&local_308);
+        local_548 = (void *)0x0;
+        uStack_540 = 0;
+        local_538 = 0;
+        uStack_530 = 0;
+        cv::copyMakeBorder((_InputArray *)&local_508,(_OutputArray *)&local_528,0,uVar3 - local_300,
+                           0,uVar4 - local_2fc,0,(Scalar_<double> *)&local_548);
+      }
+    }
+  }
+  local_208 = &local_240;
+  local_200 = &local_1f8;
+  local_1f0 = 0;
+  local_1f8 = 0;
+  local_248 = 0x42ff0000;
+  local_240 = 0;
+  local_218 = 0;
+  local_220 = 0;
+  local_228 = 0;
+  local_238 = 0;
+  uStack_230 = 0;
+  local_210 = 0;
+  local_268 = &local_2a0;
+  local_260 = &local_258;
+  local_250 = 0;
+  local_258 = 0;
+  local_2a8 = 0x42ff0000;
+  local_2a0 = 0;
+  local_278 = 0;
+  local_280 = 0;
+  local_288 = 0;
+  local_298 = 0;
+  uStack_290 = 0;
+  local_270 = 0;
+  local_328 = &local_360;
+  local_320 = &local_318;
+  local_310 = 0;
+  local_318 = 0;
+  local_368 = 0x42ff0000;
+  local_360 = 0;
+  local_338 = 0;
+  local_340 = 0;
+  local_348 = 0;
+  local_358 = 0;
+  uStack_350 = 0;
+  local_330 = 0;
+  local_388 = &local_3c0;
+  local_380 = &local_378;
+  local_370 = 0;
+  local_378 = 0;
+  local_3c8 = 0x42ff0000;
+  local_3c0 = 0;
+  local_398 = 0;
+  local_3a0 = 0;
+  local_3a8 = 0;
+  local_3b8 = 0;
+  uStack_3b0 = 0;
+  local_390 = 0;
+  if (local_4d8 != 0) {
+    uVar13 = (ulonglong)local_4e8._4_4_;
+    if ((int)local_4e8._4_4_ < 3) {
+      lVar14 = (longlong)local_4e0[0] * (longlong)local_4e0[1];
+    }
+    else {
+      piVar11 = local_4a8;
+      if (0 < (int)local_4e8._4_4_) {
+        do {
+          lVar14 = lVar14 * *piVar11;
+          uVar13 = uVar13 - 1;
+          piVar11 = piVar11 + 1;
+        } while (uVar13 != 0);
+      }
+    }
+    if (lVar14 != 0) {
+      cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_488);
+      cv::_InputArray::_InputArray((_InputArray *)&local_528,(Mat *)&local_488);
+      cv::_InputArray::_InputArray((_InputArray *)&local_508,(Mat *)&local_4e8);
+      cv::multiply((_InputArray *)&local_508,(_InputArray *)&local_528,(_OutputArray *)&local_548,
+                   1.0,-1);
+      cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_428);
+      cv::_InputArray::_InputArray((_InputArray *)&local_528,(Mat *)&local_428);
+      cv::_InputArray::_InputArray((_InputArray *)&local_508,(Mat *)&local_4e8);
+      cv::multiply((_InputArray *)&local_508,(_InputArray *)&local_528,(_OutputArray *)&local_548,
+                   1.0,-1);
+    }
+  }
+  cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_248);
+  cv::_InputArray::_InputArray((_InputArray *)&local_528,(Mat *)&local_488);
+  cv::dft((_InputArray *)&local_528,(_OutputArray *)&local_548,0x10,0);
+  cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_2a8);
+  cv::_InputArray::_InputArray((_InputArray *)&local_528,(Mat *)&local_428);
+  cv::dft((_InputArray *)&local_528,(_OutputArray *)&local_548,0x10,0);
+  cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_368);
+  cv::_InputArray::_InputArray((_InputArray *)&local_528,(Mat *)&local_2a8);
+  cv::_InputArray::_InputArray((_InputArray *)&local_508,(Mat *)&local_248);
+  FUN_180002870(&local_508,(undefined8 *)&local_528,(longlong *)&local_548);
+  if (param_5 != '\0') {
+    cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_368);
+    FUN_180002ad0(&local_548,param_6);
+  }
+  cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_3c8);
+  cv::_InputArray::_InputArray((_InputArray *)&local_528,(Mat *)&local_368);
+  cv::idft((_InputArray *)&local_528,(_OutputArray *)&local_548,0x20,0);
+  cv::_OutputArray::_OutputArray((_OutputArray *)&local_548,(Mat *)&local_3c8);
+  FUN_180002cb0(&local_548);
+  local_558[0] = 0.0;
+  local_568[0] = 0;
+  local_568[1] = 0;
+  cv::_InputArray::_InputArray((_InputArray *)&local_548,(Mat *)&local_3c8);
+  p_Var8 = cv::noArray();
+  cv::minMaxLoc((_InputArray *)&local_548,(double *)0x0,local_558,(Point_<int> *)0x0,
+                (Point_<int> *)local_568,(_InputArray *)p_Var8);
+  dVar16 = (double)local_568[1];
+  dVar15 = (double)local_568[0];
+  if (param_7 != '\0') {
+    cv::_InputArray::_InputArray((_InputArray *)&local_548,(Mat *)&local_3c8);
+    local_568[2] = local_568[0];
+    local_55c = local_568[1];
+    pdVar9 = FUN_180003640((double *)&local_508,&local_548,local_568 + 2,param_6,param_9);
+    dVar15 = *pdVar9;
+    dVar16 = pdVar9[1];
+    if (*param_9 != 0) {
+      if (param_8 != (double *)0x0) {
+        *param_8 = 0.0;
+      }
+      *param_1 = 0.0;
+      param_1[1] = 0.0;
+      goto LAB_180004cba;
+    }
+  }
+  if (param_8 != (double *)0x0) {
+    *param_8 = ((1.0 / (param_6 * param_6)) * local_558[0]) / (double)(int)(uVar4 * uVar3);
+  }
+  *param_1 = (double)local_480._4_4_ * 0.5 - dVar15;
+  param_1[1] = (double)(int)local_480 * 0.5 - dVar16;
+LAB_180004cba:
+  FUN_180002640((Mat *)&local_3c8);
+  FUN_180002640((Mat *)&local_368);
+  FUN_180002640((Mat *)&local_2a8);
+  FUN_180002640((Mat *)&local_248);
+  FUN_180002640((Mat *)&local_4e8);
+  FUN_180002640((Mat *)&local_428);
+  FUN_180002640((Mat *)&local_488);
+  FUN_180002640((Mat *)&local_308);
+  FUN_180002640((Mat *)local_188);
+  FUN_180002640((Mat *)local_1e8);
+  return param_1;
+}
+

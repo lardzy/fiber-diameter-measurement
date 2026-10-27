@@ -1,0 +1,216 @@
+Evidence: ev_12165dff92870fe2dbc07c00fa11cd706ea62ab4a28bd3cafe8911f783a371f5
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_140018370(longlong param_1,ulonglong *param_2,undefined8 param_3,undefined2 *param_4)
+
+{
+  double dVar1;
+  int iVar2;
+  code *pcVar3;
+  double dVar4;
+  int iVar5;
+  longlong lVar6;
+  ulonglong *puVar7;
+  longlong lVar8;
+  uint uVar9;
+  ushort *puVar11;
+  int iVar12;
+  ulonglong uVar13;
+  int iVar14;
+  ulonglong uVar15;
+  ulonglong uVar16;
+  ulonglong uVar17;
+  undefined1 auStackY_138 [32];
+  ulonglong local_100;
+  int local_f8;
+  longlong local_f0;
+  ulonglong local_e8;
+  ulonglong *local_e0;
+  longlong local_d8;
+  longlong lStack_d0;
+  undefined8 local_c8;
+  ulonglong local_c0;
+  undefined8 local_b8;
+  ulonglong local_b0 [4];
+  ushort local_90 [4];
+  ulonglong local_88;
+  ulonglong uVar10;
+  
+  local_b8 = 0xfffffffffffffffe;
+  local_88 = DAT_1401c7000 ^ (ulonglong)auStackY_138;
+  local_d8 = 0;
+  lStack_d0 = 0;
+  uVar10 = 0;
+  local_c8 = 0;
+  iVar14 = (int)((ulonglong)param_3 >> 0x20);
+  iVar12 = (int)param_3;
+  local_f0 = param_1;
+  local_e0 = param_2;
+  lVar6 = FUN_140016fa0((ulonglong)&local_d8,iVar12,iVar14,param_2,(ulonglong *)&local_d8);
+  iVar5 = (int)lVar6;
+  if (iVar5 != 0) {
+    lVar6 = *(longlong *)(param_1 + 0x270);
+    if ((lVar6 != 0) && (*(char *)(param_1 + 0x278) != '\0')) {
+      *(undefined1 *)
+       ((longlong)(*(int *)(lVar6 + 0x60) * iVar14 + iVar12) + *(longlong *)(lVar6 + 0x58)) = 0xff;
+    }
+    uVar15 = *(ulonglong *)(param_1 + 0x248);
+    iVar2 = *(int *)(param_1 + 0x118);
+    local_90[0] = 0;
+    local_90[1] = 0;
+    local_90[2] = 0;
+    local_90[3] = 0;
+    local_c0 = lStack_d0 - local_d8 >> 2;
+    if (local_c0 <= (ulonglong)(longlong)(iVar5 + -1)) {
+      std::_Xout_of_range("invalid vector<T> subscript");
+      pcVar3 = (code *)swi(3);
+      (*pcVar3)();
+      return;
+    }
+    uVar16 = (ulonglong)*(int *)(local_d8 + (longlong)(iVar5 + -1) * 4);
+    if ((ulonglong)((longlong)(local_e0[1] - *local_e0) >> 3) <= uVar16) {
+      std::_Xout_of_range("invalid vector<T> subscript");
+      pcVar3 = (code *)swi(3);
+      (*pcVar3)();
+      return;
+    }
+    lVar6 = *(longlong *)(*local_e0 + uVar16 * 8);
+    local_100 = 0;
+    FUN_140018d10(local_f0,param_3,lVar6,local_90,(longlong *)&local_100);
+    if ((((iVar5 == 1) || (iVar2 == 1)) || (*(int *)(local_f0 + 0x100) == 0)) ||
+       (uVar15 < local_100)) {
+      if (0 < *(int *)(*(longlong *)(lVar6 + 8) + 8)) {
+        lVar8 = (longlong)local_90 - (longlong)param_4;
+        do {
+          *param_4 = *(undefined2 *)(lVar8 + (longlong)param_4);
+          uVar9 = (int)uVar10 + 1;
+          uVar10 = (ulonglong)uVar9;
+          param_4 = param_4 + 1;
+        } while ((int)uVar9 < *(int *)(*(longlong *)(lVar6 + 8) + 8));
+      }
+    }
+    else {
+      local_e8 = 0xffffffffffffffff;
+      if (*(int *)(local_f0 + 0x110) == 1) {
+        local_e8 = *(ulonglong *)
+                    (*(longlong *)(local_f0 + 0x240) +
+                    (longlong)
+                    (((iVar14 - *(int *)(lVar6 + 0xbc)) * *(int *)(*(longlong *)(lVar6 + 8) + 0x28)
+                     - *(int *)(lVar6 + 0xb8)) + iVar12) * 8);
+      }
+      local_b0[0] = 0;
+      local_b0[1] = 0;
+      local_b0[2] = 0;
+      local_b0[3] = 0;
+      lVar8 = *(longlong *)(lVar6 + 8);
+      uVar15 = local_100;
+      if (*(int *)(lVar8 + 8) == 1) {
+        uVar15 = uVar10;
+        if (local_90[0] != 0) {
+          local_b0[0] = local_90[0] * local_100;
+          uVar15 = local_100;
+        }
+      }
+      else if (0 < *(int *)(lVar8 + 8)) {
+        puVar7 = local_b0;
+        puVar11 = local_90;
+        uVar16 = (ulonglong)*(uint *)(lVar8 + 8);
+        do {
+          *puVar7 = *puVar7 + *puVar11 * local_100;
+          puVar11 = puVar11 + 1;
+          puVar7 = puVar7 + 1;
+          uVar16 = uVar16 - 1;
+        } while (uVar16 != 0);
+      }
+      dVar1 = *(double *)(local_f0 + 0x108);
+      local_f8 = 1;
+      uVar13 = (ulonglong)(iVar5 + -2);
+      uVar16 = local_b0[0];
+      if (-1 < iVar5 + -2) {
+        do {
+          if (local_f8 == iVar2) break;
+          if (local_c0 <= uVar13) {
+            std::_Xout_of_range("invalid vector<T> subscript");
+            pcVar3 = (code *)swi(3);
+            (*pcVar3)();
+            return;
+          }
+          uVar17 = (ulonglong)*(int *)(local_d8 + uVar13 * 4);
+          if ((ulonglong)((longlong)(local_e0[1] - *local_e0) >> 3) <= uVar17) {
+            std::_Xout_of_range("invalid vector<T> subscript");
+            pcVar3 = (code *)swi(3);
+            (*pcVar3)();
+            return;
+          }
+          lVar6 = *(longlong *)(*local_e0 + uVar17 * 8);
+          FUN_140018d10(local_f0,param_3,lVar6,local_90,(longlong *)&local_100);
+          puVar7 = &local_100;
+          if (local_e8 <= local_100) {
+            puVar7 = &local_e8;
+          }
+          dVar4 = (double)(longlong)*puVar7;
+          if ((longlong)*puVar7 < 0) {
+            dVar4 = dVar4 + 1.8446744073709552e+19;
+          }
+          dVar4 = dVar4 * dVar1;
+          lVar8 = 0;
+          if ((9.223372036854776e+18 <= dVar4) &&
+             (dVar4 = dVar4 - 9.223372036854776e+18, dVar4 < 9.223372036854776e+18)) {
+            lVar8 = -0x8000000000000000;
+          }
+          local_100 = (longlong)dVar4 + lVar8;
+          lVar8 = *(longlong *)(lVar6 + 8);
+          if (*(int *)(lVar8 + 8) == 1) {
+            if (local_90[0] != 0) {
+              local_b0[0] = uVar16 + local_90[0] * local_100;
+              uVar16 = local_b0[0];
+              goto LAB_1400186e4;
+            }
+          }
+          else {
+            if (0 < *(int *)(lVar8 + 8)) {
+              puVar7 = local_b0;
+              puVar11 = local_90;
+              uVar17 = (ulonglong)*(uint *)(lVar8 + 8);
+              do {
+                *puVar7 = *puVar7 + *puVar11 * local_100;
+                puVar11 = puVar11 + 1;
+                puVar7 = puVar7 + 1;
+                uVar17 = uVar17 - 1;
+                uVar16 = local_b0[0];
+              } while (uVar17 != 0);
+            }
+LAB_1400186e4:
+            uVar15 = uVar15 + local_100;
+          }
+          local_f8 = local_f8 + 1;
+          uVar13 = uVar13 - 1;
+        } while (-1 < (longlong)uVar13);
+      }
+      if (0 < *(int *)(*(longlong *)(lVar6 + 8) + 8)) {
+        puVar7 = local_b0;
+        do {
+          if (uVar15 == 0) {
+            *param_4 = 0;
+          }
+          else {
+            *param_4 = (short)(*puVar7 / uVar15);
+          }
+          uVar9 = (int)uVar10 + 1;
+          uVar10 = (ulonglong)uVar9;
+          puVar7 = puVar7 + 1;
+          param_4 = param_4 + 1;
+        } while ((int)uVar9 < *(int *)(*(longlong *)(lVar6 + 8) + 8));
+      }
+    }
+  }
+  if (local_d8 != 0) {
+    Ordinal_1486(local_d8);
+  }
+  return;
+}
+

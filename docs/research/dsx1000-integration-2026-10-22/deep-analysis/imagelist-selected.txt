@@ -1,0 +1,934 @@
+EVIDENCE ev_32ac28f68b9eca705c1eff3de44286f194716b1f0621657ee873df32ff2a7753 SHA256 d810da9ba32ac0a19e2e967c49e519b184635fb36d6952852ecbb8830b5840e0
+
+METHOD 0x06000240 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel LaunchProcess IL_SHA256 c8ea48b811f84a57b84e1a064bee690ddd273731eea90337fde87eb52bcaa300 DECODE_ISSUE null
+0000: newobj        0x0a000208 System.Text.StringBuilder..ctor
+0005: stloc.0        
+0006: ldnull         
+0007: stloc.1        
+0008: ldc.i4.1       
+0009: stloc.2        
+000a: ldloc.0        
+000b: call          0x0a000209 System.AppDomain.get_CurrentDomain
+0010: callvirt      0x0a00020a System.AppDomain.get_BaseDirectory
+0015: callvirt      0x0a00020b System.Text.StringBuilder.Append
+001a: pop            
+001b: ldloc.0        
+001c: ldstr         0x70001615 "OlyImageExporter.exe"
+0021: callvirt      0x0a00020b System.Text.StringBuilder.Append
+0026: pop            
+0027: ldstr         0x70000549 "0"
+002c: stloc.3        
+002d: ldarg.2        
+002e: ldc.i4.4       
+002f: bne.un.s      60 
+0031: ldstr         0x70000549 "0"
+0036: stloc.3        
+0037: br            222 
+003c: ldarg.2        
+003d: ldc.i4.3       
+003e: beq.s         77 
+0040: ldarg.2        
+0041: ldc.i4.s      15 
+0043: beq.s         77 
+0045: ldarg.2        
+0046: ldc.i4.s      16 
+0048: bne.un        212 
+004d: ldstr         0x7000163f "1"
+0052: stloc.3        
+0053: ldarg.1        
+0054: ldarg.s       5 
+0056: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+005b: ldarg.1        
+005c: ldarg.s       5 
+005e: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0063: mul            
+0064: ldc.i4        6000 
+0069: stloc.s       5 
+006b: ldc.i4        6000 
+0070: stloc.s       6 
+0072: ldloc.s       5 
+0074: ldloc.s       6 
+0076: mul            
+0077: bgt.s         222 
+0079: ldc.i4.1       
+007a: stloc.s       7 
+007c: ldarg.2        
+007d: ldc.i4.3       
+007e: bne.un.s      181 
+0080: call          0x0a00020c System.Configuration.ConfigurationManager.get_AppSettings
+0085: callvirt      0x0a00020d System.Collections.Specialized.NameValueCollection.get_AllKeys
+008a: ldstr         0x70001643 "JPEG_Quality"
+008f: call          0x2b00001a System.Linq.Enumerable.Contains
+0094: brfalse.s     199 
+0096: call          0x0a00020c System.Configuration.ConfigurationManager.get_AppSettings
+009b: ldstr         0x70001643 "JPEG_Quality"
+00a0: callvirt      0x0a00020e System.Collections.Specialized.NameValueCollection.get_Item
+00a5: callvirt      0x0a00008f System.Object.ToString
+00aa: ldc.i4.1       
+00ab: ldloca.s      7 
+00ad: call          0x2b00001b System.Enum.TryParse
+00b2: pop            
+00b3: br.s          199 
+00b5: ldarg.2        
+00b6: ldc.i4.s      15 
+00b8: bne.un.s      191 
+00ba: ldc.i4.1       
+00bb: stloc.s       7 
+00bd: br.s          199 
+00bf: ldarg.2        
+00c0: ldc.i4.s      16 
+00c2: bne.un.s      199 
+00c4: ldc.i4.0       
+00c5: stloc.s       7 
+00c7: ldloc.s       7 
+00c9: ldc.i4.1       
+00ca: bne.un.s      208 
+00cc: ldc.i4.2       
+00cd: stloc.2        
+00ce: br.s          222 
+00d0: ldc.i4.1       
+00d1: stloc.2        
+00d2: br.s          222 
+00d4: ldarg.2        
+00d5: ldc.i4.5       
+00d6: bne.un.s      222 
+00d8: ldstr         0x7000165d "2"
+00dd: stloc.3        
+00de: ldstr         0x70000549 "0"
+00e3: stloc.s       4 
+00e5: ldarg.s       4 
+00e7: brtrue.s      242 
+00e9: ldstr         0x70000549 "0"
+00ee: stloc.s       4 
+00f0: br.s          254 
+00f2: ldarg.s       4 
+00f4: ldc.i4.1       
+00f5: bne.un.s      254 
+00f7: ldstr         0x7000163f "1"
+00fc: stloc.s       4 
+00fe: newobj        0x0a000210 System.Diagnostics.Process..ctor
+0103: stloc.1        
+0104: ldloc.1        
+0105: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+010a: ldstr         0x70001661 "\""
+010f: ldloc.0        
+0110: callvirt      0x0a00008f System.Object.ToString
+0115: ldstr         0x70001661 "\""
+011a: call          0x0a0000f8 System.String.Concat
+011f: callvirt      0x0a000212 System.Diagnostics.ProcessStartInfo.set_FileName
+0124: ldloc.1        
+0125: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+012a: ldc.i4.s      16 
+012c: newarr        0x010000fc 
+0131: dup            
+0132: ldc.i4.0       
+0133: ldarg.1        
+0134: ldarg.s       5 
+0136: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+013b: stloc.s       8 
+013d: ldloca.s      8 
+013f: call          0x0a0000cf System.Globalization.CultureInfo.get_CurrentCulture
+0144: call          0x0a0000d0 System.Int32.ToString
+0149: stelem.ref     
+014a: dup            
+014b: ldc.i4.1       
+014c: ldstr         0x70001351 " "
+0151: stelem.ref     
+0152: dup            
+0153: ldc.i4.2       
+0154: ldarg.1        
+0155: ldarg.s       5 
+0157: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+015c: stloc.s       8 
+015e: ldloca.s      8 
+0160: call          0x0a0000cf System.Globalization.CultureInfo.get_CurrentCulture
+0165: call          0x0a0000d0 System.Int32.ToString
+016a: stelem.ref     
+016b: dup            
+016c: ldc.i4.3       
+016d: ldstr         0x70001351 " "
+0172: stelem.ref     
+0173: dup            
+0174: ldc.i4.4       
+0175: ldloc.3        
+0176: stelem.ref     
+0177: dup            
+0178: ldc.i4.5       
+0179: ldstr         0x70001665 " \""
+017e: stelem.ref     
+017f: dup            
+0180: ldc.i4.6       
+0181: ldarg.3        
+0182: stelem.ref     
+0183: dup            
+0184: ldc.i4.7       
+0185: ldstr         0x7000166b "\" "
+018a: stelem.ref     
+018b: dup            
+018c: ldc.i4.8       
+018d: ldc.i4.6       
+018e: call          0x0a000213 Olympus.Mis.Imaging.Utilities.Common.FileFolderPathHelper.GetPath
+0193: stelem.ref     
+0194: dup            
+0195: ldc.i4.s      9 
+0197: ldstr         0x70001351 " "
+019c: stelem.ref     
+019d: dup            
+019e: ldc.i4.s      10 
+01a0: ldc.i4.5       
+01a1: call          0x0a000213 Olympus.Mis.Imaging.Utilities.Common.FileFolderPathHelper.GetPath
+01a6: stelem.ref     
+01a7: dup            
+01a8: ldc.i4.s      11 
+01aa: ldstr         0x70001671 "\\ColorRawData1kX1k.data "
+01af: stelem.ref     
+01b0: dup            
+01b1: ldc.i4.s      12 
+01b3: ldloc.s       4 
+01b5: stelem.ref     
+01b6: dup            
+01b7: ldc.i4.s      13 
+01b9: ldstr         0x70001351 " "
+01be: stelem.ref     
+01bf: dup            
+01c0: ldc.i4.s      14 
+01c2: ldloca.s      2 
+01c4: call          0x0a000108 System.Globalization.CultureInfo.get_InvariantCulture
+01c9: call          0x0a0000d0 System.Int32.ToString
+01ce: stelem.ref     
+01cf: dup            
+01d0: ldc.i4.s      15 
+01d2: ldstr         0x70001351 " "
+01d7: stelem.ref     
+01d8: call          0x0a0001c5 System.String.Concat
+01dd: callvirt      0x0a000214 System.Diagnostics.ProcessStartInfo.set_Arguments
+01e2: ldloc.1        
+01e3: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+01e8: ldc.i4.1       
+01e9: callvirt      0x0a000215 System.Diagnostics.ProcessStartInfo.set_ErrorDialog
+01ee: ldloc.1        
+01ef: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+01f4: ldc.i4.0       
+01f5: callvirt      0x0a000216 System.Diagnostics.ProcessStartInfo.set_UseShellExecute
+01fa: ldloc.1        
+01fb: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+0200: ldc.i4.1       
+0201: callvirt      0x0a000217 System.Diagnostics.ProcessStartInfo.set_RedirectStandardError
+0206: ldloc.1        
+0207: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+020c: ldc.i4.1       
+020d: callvirt      0x0a000218 System.Diagnostics.ProcessStartInfo.set_RedirectStandardOutput
+0212: ldloc.1        
+0213: ldc.i4.1       
+0214: callvirt      0x0a000219 System.Diagnostics.Process.set_EnableRaisingEvents
+0219: ldloc.1        
+021a: ldarg.0        
+021b: ldftn         0x06000242 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.proc_Exited
+0221: newobj        0x0a00021a System.EventHandler..ctor
+0226: callvirt      0x0a00021b System.Diagnostics.Process.add_Exited
+022b: ldloc.1        
+022c: callvirt      0x0a000211 System.Diagnostics.Process.get_StartInfo
+0231: ldc.i4.1       
+0232: callvirt      0x0a00021c System.Diagnostics.ProcessStartInfo.set_WindowStyle
+0237: ldloc.1        
+0238: callvirt      0x0a00021d System.Diagnostics.Process.Start
+023d: brfalse.s     697 
+023f: ldloc.1        
+0240: callvirt      0x0a00021e System.Diagnostics.Process.get_StandardError
+0245: callvirt      0x0a00021f System.IO.TextReader.ReadToEnd
+024a: call          0x0a000033 System.String.IsNullOrEmpty
+024f: brtrue.s      687 
+0251: ldloc.1        
+0252: callvirt      0x0a000220 System.Diagnostics.Process.Kill
+0257: ldnull         
+0258: stloc.1        
+0259: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+025e: callvirt      0x2b000003 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+0263: stloc.s       9 
+0265: ldloc.s       9 
+0267: callvirt      0x0a0001e3 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.get_IsRdkRemoteMode
+026c: brfalse.s     631 
+026e: ldc.i4.7       
+026f: call          0x0a0001e4 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.WriteRdkErrorCode
+0274: pop            
+0275: br.s          697 
+0277: ldloc.s       9 
+0279: ldnull         
+027a: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+027f: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+0284: ldc.i4        524310 
+0289: callvirt      0x0a000039 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+028e: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+0293: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+0298: ldc.i4        805502989 
+029d: callvirt      0x0a00002c Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+02a2: ldc.i4.0       
+02a3: ldc.i4.0       
+02a4: callvirt      0x0a00003a Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+02a9: pop            
+02aa: ldnull         
+02ab: stloc.s       9 
+02ad: br.s          697 
+02af: ldloc.1        
+02b0: ldc.i4.s      100 
+02b2: callvirt      0x0a000221 System.Diagnostics.Process.WaitForExit
+02b7: brfalse.s     687 
+02b9: ldloc.1        
+02ba: callvirt      0x0a000222 System.Diagnostics.Process.get_ExitCode
+02bf: ldc.i4.m1      
+02c0: bne.un.s      825 
+02c2: ldstr         0x700005bb "Warning = "
+02c7: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+02cc: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+02d1: ldc.i4        524310 
+02d6: callvirt      0x0a000039 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+02db: call          0x0a0000e3 System.String.Concat
+02e0: call          0x0a0000e4 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.WarningLog
+02e5: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+02ea: callvirt      0x2b000003 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+02ef: stloc.s       10 
+02f1: ldloc.s       10 
+02f3: callvirt      0x0a0001e3 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.get_IsRdkRemoteMode
+02f8: brfalse.s     771 
+02fa: ldc.i4.7       
+02fb: call          0x0a0001e4 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.WriteRdkErrorCode
+0300: pop            
+0301: br.s          825 
+0303: ldloc.s       10 
+0305: ldnull         
+0306: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+030b: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+0310: ldc.i4        524310 
+0315: callvirt      0x0a000039 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+031a: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+031f: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+0324: ldc.i4        805502989 
+0329: callvirt      0x0a00002c Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+032e: ldc.i4.0       
+032f: ldc.i4.0       
+0330: callvirt      0x0a00003a Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+0335: pop            
+0336: ldnull         
+0337: stloc.s       10 
+0339: leave         998 
+033e: stloc.s       11 
+0340: ldc.i4.2       
+0341: newarr        0x010000fc 
+0346: dup            
+0347: ldc.i4.0       
+0348: ldstr         0x700005ab "Error: "
+034d: stelem.ref     
+034e: dup            
+034f: ldc.i4.1       
+0350: ldloc.s       11 
+0352: callvirt      0x0a00008f System.Object.ToString
+0357: stelem.ref     
+0358: call          0x0a000090 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+035d: call          0x0a000091 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FatalLog
+0362: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+0367: callvirt      0x2b000003 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+036c: stloc.s       12 
+036e: ldloc.s       12 
+0370: callvirt      0x0a0001e3 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.get_IsRdkRemoteMode
+0375: brfalse.s     896 
+0377: ldc.i4.7       
+0378: call          0x0a0001e4 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.WriteRdkErrorCode
+037d: pop            
+037e: br.s          950 
+0380: ldloc.s       12 
+0382: ldnull         
+0383: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+0388: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+038d: ldc.i4        524310 
+0392: callvirt      0x0a000039 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+0397: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+039c: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+03a1: ldc.i4        805502989 
+03a6: callvirt      0x0a00002c Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+03ab: ldc.i4.0       
+03ac: ldc.i4.0       
+03ad: callvirt      0x0a00003a Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+03b2: pop            
+03b3: ldnull         
+03b4: stloc.s       12 
+03b6: leave.s       998 
+03b8: ldloc.1        
+03b9: brfalse.s     997 
+03bb: ldloc.1        
+03bc: callvirt      0x0a000223 System.Diagnostics.Process.Close
+03c1: ldnull         
+03c2: stloc.1        
+03c3: ldarg.0        
+03c4: ldc.i4.5       
+03c5: call          0x0a000213 Olympus.Mis.Imaging.Utilities.Common.FileFolderPathHelper.GetPath
+03ca: ldstr         0x700016a3 ".data"
+03cf: call          0x06000243 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.DeleteAllFiles
+03d4: ldarg.0        
+03d5: ldc.i4.6       
+03d6: call          0x0a000213 Olympus.Mis.Imaging.Utilities.Common.FileFolderPathHelper.GetPath
+03db: ldstr         0x700016af ".cvs"
+03e0: call          0x06000243 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.DeleteAllFiles
+03e5: endfinally     
+03e6: ret            
+
+METHOD 0x06000288 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel GetUniqueFileName IL_SHA256 44e081a2c88eb24ebf5d1cc7f2ba848dff0a13fbda3bc549f9c04767c5f06e17 DECODE_ISSUE null
+0000: newobj        0x06000457 <>c__DisplayClass245_0..ctor
+0005: stloc.0        
+0006: ldloc.0        
+0007: ldarg.1        
+0008: stfld         0x040001dc <>c__DisplayClass245_0.strImageName
+000d: ldarg.0        
+000e: ldfld         0x04000110 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._ImageCollection
+0013: ldloc.0        
+0014: ldftn         0x06000458 <>c__DisplayClass245_0.<GetUniqueFileName>b__0
+001a: newobj        0x0a000068 System.Func`2..ctor
+001f: call          0x2b000005 System.Linq.Enumerable.Where
+0024: ldsfld        0x040001cf <>c.<>9__245_1
+0029: dup            
+002a: brtrue.s      67 
+002c: pop            
+002d: ldsfld        0x040001c6 <>c.<>9
+0032: ldftn         0x06000443 <>c.<GetUniqueFileName>b__245_1
+0038: newobj        0x0a0000a0 System.Func`2..ctor
+003d: dup            
+003e: stsfld        0x040001cf <>c.<>9__245_1
+0043: call          0x2b000007 System.Linq.Enumerable.Select
+0048: call          0x2b000008 System.Linq.Enumerable.ToList
+004d: callvirt      0x0a0000a3 System.Collections.Generic.List`1.get_Count
+0052: ldc.i4.0       
+0053: ble           237 
+0058: ldarg.0        
+0059: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+005e: ldc.i4.1       
+005f: bne.un.s      135 
+0061: ldloc.0        
+0062: ldloc.0        
+0063: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+0068: ldstr         0x70001821 "###1"
+006d: call          0x0a0000e3 System.String.Concat
+0072: stfld         0x040001dc <>c__DisplayClass245_0.strImageName
+0077: ldarg.0        
+0078: ldarg.0        
+0079: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+007e: ldc.i4.1       
+007f: add            
+0080: stfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0085: br.s          223 
+0087: ldloc.0        
+0088: ldloc.0        
+0089: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+008e: ldstr         0x7000182b "###"
+0093: ldarg.0        
+0094: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0099: ldc.i4.1       
+009a: sub            
+009b: stloc.1        
+009c: ldloca.s      1 
+009e: call          0x0a0000cf System.Globalization.CultureInfo.get_CurrentCulture
+00a3: call          0x0a0000d0 System.Int32.ToString
+00a8: call          0x0a0000e3 System.String.Concat
+00ad: ldstr         0x7000182b "###"
+00b2: ldarg.0        
+00b3: ldflda        0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+00b8: call          0x0a0000cf System.Globalization.CultureInfo.get_CurrentCulture
+00bd: call          0x0a0000d0 System.Int32.ToString
+00c2: call          0x0a0000e3 System.String.Concat
+00c7: callvirt      0x0a000286 System.String.Replace
+00cc: stfld         0x040001dc <>c__DisplayClass245_0.strImageName
+00d1: ldarg.0        
+00d2: ldarg.0        
+00d3: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+00d8: ldc.i4.1       
+00d9: add            
+00da: stfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+00df: ldarg.0        
+00e0: ldloc.0        
+00e1: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+00e6: ldarg.2        
+00e7: call          0x06000288 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.GetUniqueFileName
+00ec: ret            
+00ed: ldarg.2        
+00ee: brfalse       424 
+00f3: ldarg.2        
+00f4: ldloc.0        
+00f5: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+00fa: ldstr         0x7000182b "###"
+00ff: ldstr         0x70001833 "_"
+0104: callvirt      0x0a000286 System.String.Replace
+0109: callvirt      0x0a000287 System.Collections.Generic.Dictionary`2.ContainsKey
+010e: brfalse       424 
+0113: ldarg.0        
+0114: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0119: ldc.i4.1       
+011a: bne.un.s      322 
+011c: ldloc.0        
+011d: ldloc.0        
+011e: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+0123: ldstr         0x70001821 "###1"
+0128: call          0x0a0000e3 System.String.Concat
+012d: stfld         0x040001dc <>c__DisplayClass245_0.strImageName
+0132: ldarg.0        
+0133: ldarg.0        
+0134: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0139: ldc.i4.1       
+013a: add            
+013b: stfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0140: br.s          410 
+0142: ldloc.0        
+0143: ldloc.0        
+0144: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+0149: ldstr         0x7000182b "###"
+014e: ldarg.0        
+014f: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0154: ldc.i4.1       
+0155: sub            
+0156: stloc.1        
+0157: ldloca.s      1 
+0159: call          0x0a0000cf System.Globalization.CultureInfo.get_CurrentCulture
+015e: call          0x0a0000d0 System.Int32.ToString
+0163: call          0x0a0000e3 System.String.Concat
+0168: ldstr         0x7000182b "###"
+016d: ldarg.0        
+016e: ldflda        0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0173: call          0x0a0000cf System.Globalization.CultureInfo.get_CurrentCulture
+0178: call          0x0a0000d0 System.Int32.ToString
+017d: call          0x0a0000e3 System.String.Concat
+0182: callvirt      0x0a000286 System.String.Replace
+0187: stfld         0x040001dc <>c__DisplayClass245_0.strImageName
+018c: ldarg.0        
+018d: ldarg.0        
+018e: ldfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+0193: ldc.i4.1       
+0194: add            
+0195: stfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+019a: ldarg.0        
+019b: ldloc.0        
+019c: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+01a1: ldarg.2        
+01a2: call          0x06000288 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.GetUniqueFileName
+01a7: ret            
+01a8: ldarg.0        
+01a9: ldc.i4.1       
+01aa: stfld         0x04000155 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._i32IDuplicateCount
+01af: ldloc.0        
+01b0: ldfld         0x040001dc <>c__DisplayClass245_0.strImageName
+01b5: ldstr         0x7000182b "###"
+01ba: ldstr         0x70001833 "_"
+01bf: callvirt      0x0a000286 System.String.Replace
+01c4: ret            
+
+METHOD 0x060002cb Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel ExportImage IL_SHA256 07a406db2946f00f7a69941b3785c8b30dec91bb4691a8caf4383734a2c8776a DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldarg.1        
+0003: stloc.1        
+0004: ldloc.1        
+0005: ldc.i4.s      92 
+0007: call          0x2b000018 System.Linq.Enumerable.Contains
+000c: brfalse.s     21 
+000e: ldloc.1        
+000f: call          0x0a00017b System.IO.Path.GetFileNameWithoutExtension
+0014: stloc.1        
+0015: ldc.i4.m1      
+0016: stloc.2        
+0017: call          0x0a00002a Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+001c: callvirt      0x2b00000d Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+0021: ldc.i4.2       
+0022: callvirt      0x0a0001cc Olympus.Mis.Imaging.TriumpServices.DataStoreService.IDataStoreService.GetDataStoreFacade
+0027: castclass     0x010000ac 
+002c: stloc.3        
+002d: ldarg.1        
+002e: newobj        0x0a000200 System.IO.FileInfo..ctor
+0033: stloc.s       4 
+0035: ldarg.3        
+0036: callvirt      0x0a0001d4 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_ImageMemorySize
+003b: ldloc.s       4 
+003d: callvirt      0x0a000201 System.IO.FileInfo.get_DirectoryName
+0042: call          0x0a0001d6 Olympus.CF.CommonUtility.Common.CommonUtility.CheckIfFreeSpaceOnDisk
+0047: brfalse       647 
+004c: ldarg.2        
+004d: switch        17  targets=155,155,155,214,214,214,639,639,172,155,639,189,639,639,639,214,214
+0096: br            639 
+009b: ldloc.3        
+009c: ldarg.3        
+009d: ldarg.1        
+009e: ldarg.2        
+009f: ldarg.s       4 
+00a1: callvirt      0x0a000202 Olympus.Mis.Imaging.TriumpServices.DataStoreService.IImageFileStoreFacade.SaveImage
+00a6: stloc.2        
+00a7: br            639 
+00ac: ldloc.3        
+00ad: ldarg.3        
+00ae: ldarg.1        
+00af: ldarg.2        
+00b0: ldarg.s       4 
+00b2: callvirt      0x0a000202 Olympus.Mis.Imaging.TriumpServices.DataStoreService.IImageFileStoreFacade.SaveImage
+00b7: stloc.2        
+00b8: br            639 
+00bd: ldarg.0        
+00be: ldfld         0x04000148 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._clsExportCSVData
+00c3: ldarg.3        
+00c4: ldarg.1        
+00c5: ldc.i4.2       
+00c6: ldarg.0        
+00c7: call          0x0600021a Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.get_CurrentUnit
+00cc: callvirt      0x0600030d Olympus.Mis.Imaging.Capsules.ImageDataList.Model.ExportCSVData.SaveAsCSVImage
+00d1: br            639 
+00d6: call          0x0a0000d5 Olympus.CF.CommonUtility.Common.CommonUtility.get_ApplicationMode
+00db: ldc.i4.2       
+00dc: bne.un        639 
+00e1: ldc.i4.0       
+00e2: newobj        0x0a000311 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController..ctor
+00e7: stloc.s       5 
+00e9: ldloc.s       5 
+00eb: ldarg.0        
+00ec: call          0x06000230 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.get_LUTObject
+00f1: callvirt      0x0a000312 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.SetLUTDependent
+00f6: ldloc.s       5 
+00f8: ldarg.0        
+00f9: ldfld         0x0400014e Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._clsIHeightDataSettings
+00fe: callvirt      0x0a000313 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.SetHeightDataSettingsDependent
+0103: ldloc.s       5 
+0105: ldarg.3        
+0106: callvirt      0x0a0001bd Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationX
+010b: ldarg.3        
+010c: callvirt      0x0a0001c3 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationY
+0111: ldarg.3        
+0112: callvirt      0x0a00029b Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationZ
+0117: callvirt      0x0a000314 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.SetUserCalibration
+011c: ldloc.s       5 
+011e: ldarg.3        
+011f: callvirt      0x0a0001bc Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationX
+0124: ldarg.3        
+0125: callvirt      0x0a0001c2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationY
+012a: ldarg.3        
+012b: callvirt      0x0a000250 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationZ
+0130: callvirt      0x0a000315 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.SetMakerCalibration
+0135: ldarg.s       4 
+0137: ldc.i4.2       
+0138: bne.un.s      391 
+013a: ldloc.s       5 
+013c: ldarg.3        
+013d: callvirt      0x0a000298 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0142: ldarg.3        
+0143: ldc.i4.2       
+0144: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0149: ldarg.3        
+014a: ldc.i4.2       
+014b: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+0150: ldarg.3        
+0151: callvirt      0x0a000298 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0156: ldarg.3        
+0157: ldc.i4.2       
+0158: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+015d: ldarg.3        
+015e: ldc.i4.2       
+015f: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+0164: ldc.i4.2       
+0165: ldarg.3        
+0166: ldc.i4.2       
+0167: callvirt      0x0a000299 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMaxScaleValue
+016c: ldarg.3        
+016d: ldc.i4.2       
+016e: callvirt      0x0a00029a Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMinScaleValue
+0173: ldarg.3        
+0174: ldc.i4.2       
+0175: callvirt      0x0a00024e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+017a: ldarg.2        
+017b: ldarg.1        
+017c: callvirt      0x2b000022 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.ExportOrPrintImage
+0181: stloc.0        
+0182: br            614 
+0187: ldarg.s       4 
+0189: ldc.i4.8       
+018a: bne.un.s      473 
+018c: ldloc.s       5 
+018e: ldarg.3        
+018f: callvirt      0x0a000298 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0194: ldarg.3        
+0195: ldc.i4.2       
+0196: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+019b: ldarg.3        
+019c: ldc.i4.2       
+019d: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+01a2: ldarg.3        
+01a3: callvirt      0x0a000298 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+01a8: ldarg.3        
+01a9: ldc.i4.2       
+01aa: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+01af: ldarg.3        
+01b0: ldc.i4.2       
+01b1: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+01b6: ldc.i4.8       
+01b7: ldarg.3        
+01b8: ldc.i4.2       
+01b9: callvirt      0x0a000299 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMaxScaleValue
+01be: ldarg.3        
+01bf: ldc.i4.2       
+01c0: callvirt      0x0a00029a Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMinScaleValue
+01c5: ldarg.3        
+01c6: ldc.i4.2       
+01c7: callvirt      0x0a00024e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+01cc: ldarg.2        
+01cd: ldarg.1        
+01ce: callvirt      0x2b000022 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.ExportOrPrintImage
+01d3: stloc.0        
+01d4: br            614 
+01d9: ldarg.s       4 
+01db: ldc.i4.s      14 
+01dd: bne.un.s      542 
+01df: ldloc.s       5 
+01e1: ldarg.3        
+01e2: callvirt      0x0a000317 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetCSVData
+01e7: ldarg.3        
+01e8: ldc.i4.s      14 
+01ea: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+01ef: ldarg.3        
+01f0: ldc.i4.s      14 
+01f2: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+01f7: ldnull         
+01f8: ldc.i4.0       
+01f9: ldc.i4.0       
+01fa: ldc.i4.s      14 
+01fc: ldarg.3        
+01fd: ldc.i4.s      14 
+01ff: callvirt      0x0a000299 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMaxScaleValue
+0204: ldarg.3        
+0205: ldc.i4.s      14 
+0207: callvirt      0x0a00029a Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMinScaleValue
+020c: ldarg.3        
+020d: ldc.i4.s      14 
+020f: callvirt      0x0a00024e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+0214: ldarg.2        
+0215: ldarg.1        
+0216: callvirt      0x2b000022 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.ExportOrPrintImage
+021b: stloc.0        
+021c: br.s          614 
+021e: ldloc.s       5 
+0220: ldarg.3        
+0221: callvirt      0x0a00029d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_ColorData
+0226: ldarg.3        
+0227: ldc.i4.3       
+0228: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+022d: ldarg.3        
+022e: ldc.i4.3       
+022f: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+0234: ldarg.3        
+0235: callvirt      0x0a000298 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+023a: ldarg.3        
+023b: ldc.i4.2       
+023c: callvirt      0x0a0000f2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0241: ldarg.3        
+0242: ldc.i4.2       
+0243: callvirt      0x0a0000f1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+0248: ldc.i4.3       
+0249: ldarg.3        
+024a: ldc.i4.2       
+024b: callvirt      0x0a000299 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMaxScaleValue
+0250: ldarg.3        
+0251: ldc.i4.2       
+0252: callvirt      0x0a00029a Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMinScaleValue
+0257: ldarg.3        
+0258: ldc.i4.2       
+0259: callvirt      0x0a00024e Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+025e: ldarg.2        
+025f: ldarg.1        
+0260: callvirt      0x2b000023 Olympus.Mis.Imaging.Capsules.ImageControl.Controller.ImageControlController.ExportOrPrintImage
+0265: stloc.0        
+0266: ldarg.0        
+0267: call          0x0600026c Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.get_CurrentImageDimensionType
+026c: callvirt      0x0a000205 Utilities.BusinessEntities.CommonClasses.DimensionType.get_dimensionType
+0271: brtrue.s      639 
+0273: ldarg.0        
+0274: ldarg.3        
+0275: ldarg.2        
+0276: ldarg.1        
+0277: ldc.i4.0       
+0278: ldarg.s       4 
+027a: call          0x06000240 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.LaunchProcess
+027f: ldloc.2        
+0280: ldc.i4.m1      
+0281: beq.s         660 
+0283: ldc.i4.1       
+0284: stloc.0        
+0285: br.s          660 
+0287: ldc.i4.0       
+0288: stloc.0        
+0289: ldc.i4        524305 
+028e: newobj        0x0a000119 Olympus.Mis.Imaging.TriumpServices.LocalizationService.FrameworkException..ctor
+0293: throw          
+0294: ldloc.0        
+0295: ret            
+
+METHOD 0x060003b0 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController GetUniqueFileName IL_SHA256 1e72f1aa89924c601633d8cbdaa8125133d097749793a81c3f3e41c640d3a4fe DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+0006: ldarg.1        
+0007: ldarg.2        
+0008: callvirt      0x06000288 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.GetUniqueFileName
+000d: ret            
+
+METHOD 0x060003c0 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController ExportImage IL_SHA256 9c081fb9ae32377862e330679e5a73f65f270dcd3f4832e40f293fcf8a6236d3 DECODE_ISSUE null
+0000: ldc.i4.4       
+0001: newarr        0x010000fc 
+0006: dup            
+0007: ldc.i4.0       
+0008: ldstr         0x7000242a "<S> strFilename = "
+000d: stelem.ref     
+000e: dup            
+000f: ldc.i4.1       
+0010: ldarg.1        
+0011: stelem.ref     
+0012: dup            
+0013: ldc.i4.2       
+0014: ldstr         0x700025de ", filterIndex = "
+0019: stelem.ref     
+001a: dup            
+001b: ldc.i4.3       
+001c: ldarga.s      2 
+001e: call          0x0a000108 System.Globalization.CultureInfo.get_InvariantCulture
+0023: call          0x0a0000d0 System.Int32.ToString
+0028: stelem.ref     
+0029: call          0x0a000090 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+002e: call          0x0a00005b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0033: newobj        0x0a00011e Utilities.BusinessEntities.CommonClasses.ActionInformation..ctor
+0038: stloc.0        
+0039: ldloc.0        
+003a: ldc.i4.s      21 
+003c: callvirt      0x0a00011f Utilities.BusinessEntities.CommonClasses.ActionInformation.set_emRules
+0041: newobj        0x0a000120 System.Collections.Hashtable..ctor
+0046: stloc.1        
+0047: ldloc.1        
+0048: ldc.i4.0       
+0049: box           0x0100012a 
+004e: ldnull         
+004f: callvirt      0x0a000121 System.Collections.Hashtable.Add
+0054: ldloc.1        
+0055: ldc.i4.1       
+0056: box           0x0100012a 
+005b: ldloc.0        
+005c: callvirt      0x0a000121 System.Collections.Hashtable.Add
+0061: ldarg.0        
+0062: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+0067: ldarg.1        
+0068: ldarg.0        
+0069: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+006e: ldarg.2        
+006f: callvirt      0x060002a7 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.GetFiltertype
+0074: ldc.i4.0       
+0075: ldnull         
+0076: callvirt      0x0600023f Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.ExportImage
+007b: pop            
+007c: ldloc.0        
+007d: ldc.i4.s      22 
+007f: callvirt      0x0a00011f Utilities.BusinessEntities.CommonClasses.ActionInformation.set_emRules
+0084: ldloc.1        
+0085: callvirt      0x0a00013d System.Collections.Hashtable.Clear
+008a: ldloc.1        
+008b: ldc.i4.0       
+008c: box           0x0100012a 
+0091: ldnull         
+0092: callvirt      0x0a000121 System.Collections.Hashtable.Add
+0097: ldloc.1        
+0098: ldc.i4.1       
+0099: box           0x0100012a 
+009e: ldloc.0        
+009f: callvirt      0x0a000121 System.Collections.Hashtable.Add
+00a4: ldarg.0        
+00a5: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+00aa: ldloc.1        
+00ab: callvirt      0x0600028d Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.ExecuteRule
+00b0: pop            
+00b1: ldstr         0x70000151 "<E>"
+00b6: call          0x0a00005b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+00bb: ret            
+
+METHOD 0x060003de Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController ExportImage IL_SHA256 34b0681cb95d6f70aa3dd5574bc1cadad40f92c2f5016899d09719e58635cc34 DECODE_ISSUE null
+0000: ldc.i4.8       
+0001: newarr        0x010000fc 
+0006: dup            
+0007: ldc.i4.0       
+0008: ldstr         0x7000242a "<S> strFilename = "
+000d: stelem.ref     
+000e: dup            
+000f: ldc.i4.1       
+0010: ldarg.1        
+0011: stelem.ref     
+0012: dup            
+0013: ldc.i4.2       
+0014: ldstr         0x70002646 ", emExportType= "
+0019: stelem.ref     
+001a: dup            
+001b: ldc.i4.3       
+001c: ldarga.s      2 
+001e: constrained.  0x01000075 
+0024: callvirt      0x0a00008f System.Object.ToString
+0029: stelem.ref     
+002a: dup            
+002b: ldc.i4.4       
+002c: ldstr         0x70002668 ", _clsImageEntity = "
+0031: stelem.ref     
+0032: dup            
+0033: ldc.i4.5       
+0034: ldarg.3        
+0035: call          0x0a0001f4 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.GetImageEntityString
+003a: stelem.ref     
+003b: dup            
+003c: ldc.i4.6       
+003d: ldstr         0x700024fe " , _emWImageType = "
+0042: stelem.ref     
+0043: dup            
+0044: ldc.i4.7       
+0045: ldarga.s      4 
+0047: constrained.  0x010000af 
+004d: callvirt      0x0a00008f System.Object.ToString
+0052: stelem.ref     
+0053: call          0x0a000090 Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+0058: call          0x0a00005b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+005d: ldc.i4.0       
+005e: stloc.0        
+005f: call          0x0a0000d5 Olympus.CF.CommonUtility.Common.CommonUtility.get_ApplicationMode
+0064: ldc.i4.2       
+0065: bne.un.s      165 
+0067: ldarg.2        
+0068: ldc.i4.3       
+0069: sub            
+006a: ldc.i4.2       
+006b: ble.un.s      116 
+006d: ldarg.2        
+006e: ldc.i4.s      15 
+0070: sub            
+0071: ldc.i4.1       
+0072: bgt.un.s      165 
+0074: ldarg.0        
+0075: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+007a: ldarg.0        
+007b: call          0x060003d4 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController.get_LUTObject
+0080: callvirt      0x06000231 Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.set_LUTObject
+0085: ldarg.0        
+0086: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+008b: ldarg.0        
+008c: ldfld         0x040001b0 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsIHeightDataSettings
+0091: stfld         0x0400014e Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel._clsIHeightDataSettings
+0096: ldarg.0        
+0097: ldfld         0x040001b1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsAcquisitionContainer
+009c: ldarg.3        
+009d: ldarg.s       4 
+009f: callvirt      0x0a00036a Olympus.Mis.Imaging.TriumphBase.InterfaceLibrary.CapsuleInterfaces.IImageTransferMode.ExportCanvasForImageTransfer
+00a4: pop            
+00a5: ldarg.0        
+00a6: ldfld         0x040001a1 Olympus.Mis.Imaging.Capsules.ImageDataList.Controller.ImageDataListController._clsDataListModel
+00ab: ldarg.1        
+00ac: ldarg.2        
+00ad: ldarg.3        
+00ae: ldarg.s       4 
+00b0: callvirt      0x060002cb Olympus.Mis.Imaging.Capsules.ImageDataList.Model.DataListModel.ExportImage
+00b5: stloc.0        
+00b6: ldstr         0x70002692 "<E> ReturnVal= "
+00bb: ldloca.s      0 
+00bd: call          0x0a000108 System.Globalization.CultureInfo.get_InvariantCulture
+00c2: call          0x0a000109 System.Boolean.ToString
+00c7: call          0x0a0000e3 System.String.Concat
+00cc: call          0x0a00005b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+00d1: ldloc.0        
+00d2: ret            

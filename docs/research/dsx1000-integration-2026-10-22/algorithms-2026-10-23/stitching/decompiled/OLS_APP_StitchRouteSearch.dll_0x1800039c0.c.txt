@@ -1,0 +1,42 @@
+Evidence: ev_e12e0f9c45b66f6826e7a6791dba53954b238b7a72acb13f43b2d17ccd9e2ac2
+Subject SHA256: 1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4
+Bundle: route-evidence.json.gz
+
+
+int SearchSingleStrokeSequence(longlong param_1,undefined8 *param_2)
+
+{
+  longlong lVar1;
+  undefined8 uVar2;
+  undefined8 uVar3;
+  int iVar4;
+  ulonglong uVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  undefined8 local_28;
+  undefined8 uStack_20;
+  
+                    /* 0x39c0  8  SearchSingleStrokeSequence */
+  uVar2 = *param_2;
+  uVar3 = param_2[1];
+  FUN_180002210();
+  local_28 = uVar2;
+  uStack_20 = uVar3;
+  FUN_180002f90(param_1,(int *)&local_28,(ulonglong *)&DAT_1800077c8);
+  FUN_180001cc0();
+  iVar6 = 0;
+  iVar7 = iVar6;
+  for (iVar8 = iVar6; iVar4 = iVar6, (ulonglong)(longlong)iVar8 < DAT_180007708; iVar8 = iVar8 + 1)
+  {
+    for (; uVar5 = (ulonglong)iVar4, uVar5 < DAT_180007700; iVar4 = iVar4 + 1) {
+      lVar1 = (longlong)iVar8 * 0x18;
+      if ((*(char *)(uVar5 + *(longlong *)(lVar1 + DAT_1800077c8)) != '\0') &&
+         (*(int *)(*(longlong *)(lVar1 + DAT_180007780) + uVar5 * 4) == -1)) {
+        iVar7 = iVar7 + 1;
+      }
+    }
+  }
+  return (iVar7 < 2) - 1;
+}
+

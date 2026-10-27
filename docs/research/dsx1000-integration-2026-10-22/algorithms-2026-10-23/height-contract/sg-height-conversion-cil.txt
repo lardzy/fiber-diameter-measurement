@@ -1,0 +1,183 @@
+EVIDENCE ev_9608f5546b072cfe45109c88ec2a520edaec01fb7864c17feeaacd091a863d73 SHA256 03c4bf3ac7421bcf09a163fbf9cb7501dd9b1266ae0da79c66ba7438eeab444b
+
+METHOD 0x060001cb Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter _GetExtendFocusImageSG IL_SHA256 e1acd5be096211f6ed6675bae2376d6fab86cfb6edcf12aecf52fad8482beed9 DECODE_ISSUE null
+0000: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+0005: ldarg.1        
+0006: callvirt      0x0a00003f Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetImageBuffer
+000b: stloc.0        
+000c: ldloc.0        
+000d: callvirt      0x0a000040 Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+0012: stloc.1        
+0013: ldarg.3        
+0014: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+0019: callvirt      0x0a0000fa Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeX
+001e: ldarg.3        
+001f: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+0024: callvirt      0x0a0000fc Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeY
+0029: mul            
+002a: ldarg.3        
+002b: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+0030: callvirt      0x0a0000f7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_CamByte
+0035: mul            
+0036: stloc.2        
+0037: ldloc.1        
+0038: ldarg.2        
+0039: ldloc.2        
+003a: conv.u8        
+003b: call          0x0a0001d5 System.IntPtr.op_Explicit
+0040: call          0x0a0001d6 Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.CopyMemory
+0045: ldarg.3        
+0046: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+004b: callvirt      0x0a0000f7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_CamByte
+0050: ldc.i4.6       
+0051: bne.un.s      207 
+0053: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+0058: callvirt      0x0a0000d3 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetRealHDRBuffHeader
+005d: stloc.3        
+005e: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+0063: ldloc.3        
+0064: callvirt      0x0a0000d4 Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.Attach
+0069: stloc.s       4 
+006b: ldloc.s       4 
+006d: callvirt      0x0a000040 Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+0072: stloc.s       5 
+0074: ldloc.s       4 
+0076: callvirt      0x0a00016d Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetBufferSize
+007b: conv.i4        
+007c: stloc.s       6 
+007e: ldloc.1        
+007f: ldloc.s       5 
+0081: ldloc.s       6 
+0083: call          0x060000ac Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FilterUtil.CopyIntPtr
+0088: newobj        0x0a0000d5 Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.RealHDRImage..ctor
+008d: stloc.s       7 
+008f: ldloc.s       7 
+0091: ldloc.3        
+0092: callvirt      0x0a0000d6 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_ImageBufferHeader
+0097: ldloc.s       7 
+0099: ldarg.3        
+009a: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+009f: callvirt      0x0a0000fa Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeX
+00a4: callvirt      0x0a0000d7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_ImageSizeX
+00a9: ldloc.s       7 
+00ab: ldarg.3        
+00ac: callvirt      0x060000e5 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageEntity
+00b1: callvirt      0x0a0000fc Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.IImageEntity.get_ImageSizeY
+00b6: callvirt      0x0a0000d8 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_ImageSizeY
+00bb: ldloc.s       7 
+00bd: ldc.i4.6       
+00be: callvirt      0x0a0000da Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_CamByte
+00c3: call          0x0a0000db Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_RealHDRImageDao
+00c8: ldloc.s       7 
+00ca: callvirt      0x0a0000dc Olympus.LI.Triumph.Workflow.MemoryDatabase.ProcessJoin.RealHDRImageDao.SyncUpdate
+00cf: ldarg.3        
+00d0: callvirt      0x060000e9 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_DstPtr
+00d5: ldloc.1        
+00d6: ldloc.2        
+00d7: conv.u8        
+00d8: call          0x0a0001d5 System.IntPtr.op_Explicit
+00dd: call          0x0a0001d6 Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.CopyMemory
+00e2: ret            
+
+METHOD 0x060001cc Olympus.LI.Triumph.Workflow.ImageProcessDomain.Filter.FineExtendFocusImageFilter _GetExtendHeightDataSG IL_SHA256 78c28cb5da8bd78f5439f08d431c02baa02fb065373e623d757938f3df2549e8 DECODE_ISSUE null
+0000: call          0x0a0001a8 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendFocusImageDataDao
+0005: callvirt      0x0a0001a9 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+000a: stloc.0        
+000b: ldloc.0        
+000c: brtrue.s      20 
+000e: newobj        0x0a0001aa Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageData..ctor
+0013: stloc.0        
+0014: ldloc.0        
+0015: ldc.i4.0       
+0016: callvirt      0x0a0004de Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_IsFiltered
+001b: call          0x0a00003c Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.get_Instance
+0020: ldarg.1        
+0021: callvirt      0x0a00003f Olympus.LI.Triumph.Image.ImageDataManager.ImageManager.GetImageBuffer
+0026: stloc.1        
+0027: ldloc.1        
+0028: callvirt      0x0a000040 Olympus.LI.Triumph.Image.ImageDataManager.IImageBuffer.GetPLiveBuff
+002d: stloc.2        
+002e: ldc.i4.4       
+002f: stloc.3        
+0030: ldarg.3        
+0031: callvirt      0x060000ef Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageSizeX
+0036: stloc.s       4 
+0038: ldarg.3        
+0039: callvirt      0x060000f0 Olympus.LI.Triumph.Workflow.ImageProcessDomain.IFilterableImage.get_ImageSizeY
+003e: stloc.s       5 
+0040: ldarg.2        
+0041: ldlen          
+0042: conv.i4        
+0043: stloc.s       6 
+0045: ldarg.s       4 
+0047: ldarg.s       5 
+0049: call          0x0a0001ad Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetExtendZResolution
+004e: ldc.r4        1000 
+0053: mul            
+0054: stloc.s       7 
+0056: ldc.r4        1 
+005b: ldloc.s       7 
+005d: div            
+005e: stloc.s       8 
+0060: ldloc.s       6 
+0062: newarr        0x01000073 
+0067: stloc.s       9 
+0069: ldc.i4.0       
+006a: stloc.s       10 
+006c: br.s          165 
+006e: ldarg.2        
+006f: ldloc.s       10 
+0071: ldelem.r4      
+0072: ldloc.s       8 
+0074: mul            
+0075: stloc.s       11 
+0077: ldloc.s       11 
+0079: ldc.r4        65535 
+007e: ble.un.s      135 
+0080: ldc.r4        65535 
+0085: stloc.s       11 
+0087: ldloc.s       11 
+0089: ldc.r4        0 
+008e: bge.un.s      151 
+0090: ldc.r4        0 
+0095: stloc.s       11 
+0097: ldloc.s       9 
+0099: ldloc.s       10 
+009b: ldloc.s       11 
+009d: conv.u2        
+009e: stelem.i4      
+009f: ldloc.s       10 
+00a1: ldc.i4.1       
+00a2: add            
+00a3: stloc.s       10 
+00a5: ldloc.s       10 
+00a7: ldloc.s       6 
+00a9: blt.s         110 
+00ab: ldloc.s       9 
+00ad: ldc.i4.0       
+00ae: call          0x2b00002e System.Runtime.InteropServices.Marshal.UnsafeAddrOfPinnedArrayElement
+00b3: stloc.s       12 
+00b5: ldloc.2        
+00b6: ldloc.s       12 
+00b8: ldloc.s       6 
+00ba: ldloc.3        
+00bb: mul            
+00bc: call          0x0a000234 System.IntPtr.op_Explicit
+00c1: call          0x0a0001d6 Olympus.LI.Triumph.Infrastructure.ApiWin32CSharp.ApiWin32External.CopyMemory
+00c6: ldloc.0        
+00c7: ldarg.1        
+00c8: callvirt      0x0a0000d6 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_ImageBufferHeader
+00cd: ldloc.0        
+00ce: ldloc.3        
+00cf: callvirt      0x0a0000da Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_CamByte
+00d4: ldloc.0        
+00d5: ldloc.s       4 
+00d7: callvirt      0x0a0000d7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_ImageSizeX
+00dc: ldloc.0        
+00dd: ldloc.s       5 
+00df: callvirt      0x0a0000d8 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.set_ImageSizeY
+00e4: ldloc.0        
+00e5: ldloc.s       7 
+00e7: callvirt      0x0a0001b1 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendFocusImageData.set_ZResolution
+00ec: ldloc.0        
+00ed: ret            

@@ -1,0 +1,43 @@
+Evidence: ev_7b65b85719de77b84584860b522d4b8fb6d567c44c11053f63c83844661db419
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+Algorithm *
+FUN_140126170(Algorithm *param_1,undefined8 param_2,undefined4 param_3,undefined4 param_4)
+
+{
+  cv::Algorithm::Algorithm(param_1);
+  *(undefined8 *)(param_1 + 8) = param_2;
+  *(undefined4 *)(param_1 + 0x10) = param_3;
+  *(undefined4 *)(param_1 + 0x14) = param_4;
+  *(undefined ***)param_1 = _anon_C61CE0E7::CLAHE_Impl::vftable;
+  *(Algorithm **)(param_1 + 0x58) = param_1 + 0x20;
+  *(Algorithm **)(param_1 + 0x60) = param_1 + 0x68;
+  *(undefined8 *)(param_1 + 0x70) = 0;
+  **(undefined8 **)(param_1 + 0x60) = 0;
+  *(undefined8 *)(param_1 + 0x18) = 0x42ff0000;
+  *(undefined4 *)(param_1 + 0x24) = 0;
+  *(undefined8 *)(param_1 + 0x48) = 0;
+  *(undefined8 *)(param_1 + 0x40) = 0;
+  *(undefined8 *)(param_1 + 0x38) = 0;
+  *(undefined8 *)(param_1 + 0x28) = 0;
+  *(undefined8 *)(param_1 + 0x30) = 0;
+  *(undefined8 *)(param_1 + 0x50) = 0;
+  *(undefined4 *)(param_1 + 0x20) = 0;
+  *(Algorithm **)(param_1 + 0xb8) = param_1 + 0x80;
+  *(Algorithm **)(param_1 + 0xc0) = param_1 + 200;
+  *(undefined8 *)(param_1 + 0xd0) = 0;
+  **(undefined8 **)(param_1 + 0xc0) = 0;
+  *(undefined8 *)(param_1 + 0x78) = 0x42ff0000;
+  *(undefined4 *)(param_1 + 0x84) = 0;
+  *(undefined8 *)(param_1 + 0xa8) = 0;
+  *(undefined8 *)(param_1 + 0xa0) = 0;
+  *(undefined8 *)(param_1 + 0x98) = 0;
+  *(undefined8 *)(param_1 + 0x88) = 0;
+  *(undefined8 *)(param_1 + 0x90) = 0;
+  *(undefined8 *)(param_1 + 0xb0) = 0;
+  *(undefined4 *)(param_1 + 0x80) = 0;
+  return param_1;
+}
+

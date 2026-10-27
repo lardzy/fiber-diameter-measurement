@@ -1,0 +1,94 @@
+{
+  "profile": {
+    "lap_levels": 4,
+    "depth_level": 3,
+    "fast_weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "height_weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "fast_gauss": 3,
+    "height_gauss": 11,
+    "near_samples": 5,
+    "interp": 8,
+    "texture_threshold_3d": 1.8,
+    "texture_threshold_efi": 1.5,
+    "texture_scale": 0.5,
+    "texture_gauss": 9,
+    "texture_sad": 10.0,
+    "texture_iteration_cap": 500,
+    "guide_scale": 0.5,
+    "wm_radius_3d": 5,
+    "wm_radius_efi": 1,
+    "wm_eps_3d": 0.01,
+    "wm_eps_efi": 0.01,
+    "median_3d": 5,
+    "median_efi": 3,
+    "self_radius_3d": 9,
+    "self_radius_efi": 1,
+    "self_eps_3d": 0.0001,
+    "self_eps_efi": 0.01,
+    "sweep_threshold": 5.0,
+    "sweep_max": 1.0,
+    "fine_threshold": 30.0,
+    "fine_max": 1.0,
+    "blend_adjacent_z": true
+  },
+  "z": [
+    0.4000000059604645,
+    1.6999999284744263,
+    3.0,
+    4.299999713897705,
+    5.599999904632568,
+    6.900000095367432,
+    8.199999809265137,
+    9.499999046325684,
+    10.799999237060547
+  ],
+  "source_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "height_shape": [
+    24,
+    32
+  ],
+  "path": "SG-CPU-reference",
+  "comparison_status": "not run against Olympus binary",
+  "declared_z_unit": "synthetic",
+  "input_sha256": "888e308ae5b2c71e55f2ab1a5f181fa4f0788c4c13feb3c8853021b1eef3ed15",
+  "source_sha256": "98a134a6cd6175a83be72989aff763ee686a18c0bfc7af1b83c0f31161f5fcbd",
+  "output_sha256": "1ccfde3e81767278bedd129cec95802050064da6e3922c4ac6e9835b0284efb5",
+  "vendor_executed": false,
+  "numpy": "2.4.3",
+  "opencv": "4.13.0",
+  "duplicate_policy": "reject",
+  "masks": {
+    "3d": {
+      "iterations": 1,
+      "converged": true,
+      "sad": 0.0,
+      "native_loop_difference": "independent hard cap is enforced here"
+    },
+    "efi": {
+      "iterations": 1,
+      "converged": true,
+      "sad": 0.0,
+      "native_loop_difference": "independent hard cap is enforced here"
+    }
+  }
+}

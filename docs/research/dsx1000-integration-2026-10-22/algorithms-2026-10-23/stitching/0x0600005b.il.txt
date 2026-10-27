@@ -1,0 +1,219 @@
+0x0600005b Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.AddStitchingImagesOutProcess
+0 ldc.i4.5 None 
+1 newarr 0x0100009e 
+6 dup None 
+7 ldc.i4.0 None 
+8 ldstr 0x70000619 '<S> clsStitchingOperationData = StitchingOperationData('
+13 stelem.ref None 
+14 dup None 
+15 ldc.i4.1 None 
+16 ldarg.1 None 
+17 call 0x0a00002c .ConvertObjectToString
+22 stelem.ref None 
+23 dup None 
+24 ldc.i4.2 None 
+25 ldstr 0x70001043 ', innerImage = '
+30 stelem.ref None 
+31 dup None 
+32 ldc.i4.3 None 
+33 ldarg.2 None 
+34 call 0x0a000036 .GetImageEntityString
+39 stelem.ref None 
+40 dup None 
+41 ldc.i4.4 None 
+42 ldstr 0x700004f7 ')'
+47 stelem.ref None 
+48 call 0x0a00002d .Concat
+53 call 0x0a00002e .FlowLog
+58 newobj 0x0a000022 ..ctor
+63 dup None 
+64 ldc.i4.2 None 
+65 call 0x0a00002f .GetPath
+70 callvirt 0x0a000023 .Append
+75 pop None 
+76 dup None 
+77 ldstr 0x70000689 '\\'
+82 callvirt 0x0a000023 .Append
+87 pop None 
+88 dup None 
+89 ldstr 0x7000068d 'Stitching.ini'
+94 callvirt 0x0a000023 .Append
+99 pop None 
+100 callvirt 0x0a00002a .ToString
+105 newobj 0x0a000030 ..ctor
+110 ldc.i4.0 None 
+111 stloc.0 None 
+112 dup None 
+113 ldstr 0x70000eab 'out'
+118 ldstr 0x70000eb3 'totalimagecount'
+123 callvirt 0x0a000037 .IniReadValue
+128 ldloca.s 0 
+130 call 0x0a000038 .TryParse
+135 pop None 
+136 ldarg.1 None 
+137 callvirt 0x06000013 Olympus.Mis.Imaging.Utilities.BusinessEnities.Stitching.StitchingOperationData.get_IsHeightImage
+142 brfalse.s 260 
+144 newobj 0x0a000022 ..ctor
+149 stloc.1 None 
+150 ldloc.1 None 
+151 ldstr 0x70001063 'ImageH_'
+156 callvirt 0x0a000023 .Append
+161 pop None 
+162 ldloc.1 None 
+163 ldloca.s 0 
+165 ldstr 0x70001073 '000'
+170 call 0x0a000024 .get_InvariantCulture
+175 call 0x0a000039 .ToString
+180 callvirt 0x0a000023 .Append
+185 pop None 
+186 ldloc.1 None 
+187 ldstr 0x7000107b '.img'
+192 callvirt 0x0a000023 .Append
+197 pop None 
+198 newobj 0x0a000022 ..ctor
+203 dup None 
+204 ldc.i4.2 None 
+205 call 0x0a00002f .GetPath
+210 callvirt 0x0a000023 .Append
+215 pop None 
+216 dup None 
+217 ldstr 0x70000689 '\\'
+222 callvirt 0x0a000023 .Append
+227 pop None 
+228 dup None 
+229 ldloc.1 None 
+230 callvirt 0x0a00002a .ToString
+235 callvirt 0x0a000023 .Append
+240 pop None 
+241 callvirt 0x0a00002a .ToString
+246 ldarg.2 None 
+247 callvirt 0x0a00003a .get_HeightData
+252 call 0x0a00003b .CreateImageFile
+257 pop None 
+258 ldnull None 
+259 stloc.1 None 
+260 ldarg.1 None 
+261 callvirt 0x06000015 Olympus.Mis.Imaging.Utilities.BusinessEnities.Stitching.StitchingOperationData.get_IsColorImage
+266 brfalse.s 384 
+268 newobj 0x0a000022 ..ctor
+273 stloc.2 None 
+274 ldloc.2 None 
+275 ldstr 0x70001085 'ImageC_'
+280 callvirt 0x0a000023 .Append
+285 pop None 
+286 ldloc.2 None 
+287 ldloca.s 0 
+289 ldstr 0x70001073 '000'
+294 call 0x0a000024 .get_InvariantCulture
+299 call 0x0a000039 .ToString
+304 callvirt 0x0a000023 .Append
+309 pop None 
+310 ldloc.2 None 
+311 ldstr 0x7000107b '.img'
+316 callvirt 0x0a000023 .Append
+321 pop None 
+322 newobj 0x0a000022 ..ctor
+327 dup None 
+328 ldc.i4.2 None 
+329 call 0x0a00002f .GetPath
+334 callvirt 0x0a000023 .Append
+339 pop None 
+340 dup None 
+341 ldstr 0x70000689 '\\'
+346 callvirt 0x0a000023 .Append
+351 pop None 
+352 dup None 
+353 ldloc.2 None 
+354 callvirt 0x0a00002a .ToString
+359 callvirt 0x0a000023 .Append
+364 pop None 
+365 callvirt 0x0a00002a .ToString
+370 ldarg.2 None 
+371 callvirt 0x0a00003c .get_ColorData
+376 call 0x0a00003d .CreateImageFile
+381 pop None 
+382 ldnull None 
+383 stloc.2 None 
+384 ldarg.1 None 
+385 callvirt 0x06000017 Olympus.Mis.Imaging.Utilities.BusinessEnities.Stitching.StitchingOperationData.get_IsInvalidImage
+390 brfalse.s 508 
+392 newobj 0x0a000022 ..ctor
+397 stloc.3 None 
+398 ldloc.3 None 
+399 ldstr 0x70001095 'ImageInv_'
+404 callvirt 0x0a000023 .Append
+409 pop None 
+410 ldloc.3 None 
+411 ldloca.s 0 
+413 ldstr 0x70001073 '000'
+418 call 0x0a000024 .get_InvariantCulture
+423 call 0x0a000039 .ToString
+428 callvirt 0x0a000023 .Append
+433 pop None 
+434 ldloc.3 None 
+435 ldstr 0x7000107b '.img'
+440 callvirt 0x0a000023 .Append
+445 pop None 
+446 newobj 0x0a000022 ..ctor
+451 dup None 
+452 ldc.i4.2 None 
+453 call 0x0a00002f .GetPath
+458 callvirt 0x0a000023 .Append
+463 pop None 
+464 dup None 
+465 ldstr 0x70000689 '\\'
+470 callvirt 0x0a000023 .Append
+475 pop None 
+476 dup None 
+477 ldloc.3 None 
+478 callvirt 0x0a00002a .ToString
+483 callvirt 0x0a000023 .Append
+488 pop None 
+489 callvirt 0x0a00002a .ToString
+494 ldarg.2 None 
+495 callvirt 0x0a00003e .get_InvalidData
+500 call 0x0a00003d .CreateImageFile
+505 pop None 
+506 ldnull None 
+507 stloc.3 None 
+508 ldloc.0 None 
+509 ldc.i4.1 None 
+510 add None 
+511 stloc.0 None 
+512 ldstr 0x70000eab 'out'
+517 ldstr 0x70000eb3 'totalimagecount'
+522 ldloca.s 0 
+524 call 0x0a000024 .get_InvariantCulture
+529 call 0x0a000025 .ToString
+534 callvirt 0x0a000031 .IniWriteValue
+539 ldarg.1 None 
+540 ldloc.0 None 
+541 callvirt 0x06000056 Olympus.Mis.Imaging.Utilities.BusinessEnities.Stitching.StitchingOperationData.set_AddedImageCount
+546 ldarg.0 None 
+547 ldfld 0x04000044 Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching._clsImageStitchingModel
+552 ldfld 0x04000092 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.IsDSXOutprocessStitching
+557 brtrue.s 604 
+559 ldarg.0 None 
+560 ldarg.2 None 
+561 call 0x06000061 Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.PrepareMatrixPositionFile
+566 ldarg.2 None 
+567 callvirt 0x0a00003f .get_IsHeightImage
+572 brfalse.s 588 
+574 ldarg.0 None 
+575 ldarg.2 None 
+576 call 0x0600005f Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.CreateHWZImgStartPositionFile
+581 ldarg.0 None 
+582 ldarg.2 None 
+583 call 0x06000060 Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.CreateHighVoltageSetValueFile
+588 ldarg.0 None 
+589 ldarg.2 None 
+590 call 0x0600005c Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.IsCreateHWStageXYPositionFile
+595 brfalse.s 604 
+597 ldarg.0 None 
+598 ldarg.2 None 
+599 call 0x0600005d Olympus.Mis.Imaging.Capsules.ImageStitching.UIImageStitching.CreateHWStageXYPositionFile
+604 ldnull None 
+605 starg.s 1 
+607 ldstr 0x7000103b '<E>'
+612 call 0x0a00002e .FlowLog
+617 ret None 

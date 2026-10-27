@@ -1,0 +1,146 @@
+Evidence: ev_7588625509fe48216fd44021364b8e9d5b63c8359b09acd55433a214cfbe9c94
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined4 FUN_140147110(longlong param_1,int param_2)
+
+{
+  char *pcVar1;
+  undefined1 auVar2 [16];
+  undefined1 auVar3 [16];
+  undefined1 auVar4 [16];
+  undefined4 uVar5;
+  int iVar6;
+  ulonglong uVar7;
+  int *piVar8;
+  undefined *puVar9;
+  int iVar10;
+  ulonglong uVar11;
+  double dVar12;
+  double dVar13;
+  int local_res10 [2];
+  undefined1 auStack_d8 [32];
+  undefined4 *local_b8;
+  int *local_b0;
+  int *local_a8;
+  undefined4 *local_a0;
+  int *local_98;
+  longlong local_90;
+  undefined1 local_88 [4];
+  int local_84;
+  int local_80;
+  undefined4 local_7c;
+  int local_78;
+  int iStack_74;
+  undefined4 local_70 [2];
+  undefined1 local_68 [16];
+  undefined8 local_58;
+  undefined8 local_50;
+  undefined8 local_48;
+  undefined1 local_40;
+  undefined7 uStack_3f;
+  undefined8 local_30;
+  ulonglong local_28;
+  ulonglong local_20;
+  
+  local_48 = 0xfffffffffffffffe;
+  uVar7 = DAT_1401c7000 ^ (ulonglong)auStack_d8;
+  uVar11 = 0;
+  local_7c = 0;
+  local_res10[0] = param_2;
+  local_20 = uVar7;
+  if (*(int *)(param_1 + 0x178) == 1) {
+    pcVar1 = *(char **)(param_1 + 400);
+    local_50 = 0xf;
+    local_58 = 0;
+    local_68[0] = 0;
+    if (*pcVar1 != '\0') {
+      uVar11 = 0xffffffffffffffff;
+      do {
+        uVar11 = uVar11 + 1;
+      } while (pcVar1[uVar11] != '\0');
+    }
+    FUN_1400021b0((ulonglong *)local_68,pcVar1,uVar11);
+    uVar7 = FUN_14015ef50(param_1 + 0x280,(longlong *)local_68,*(int *)(param_1 + 0x10),
+                          *(int *)(param_1 + 0x14));
+    if ((char)uVar7 == '\0') {
+      return 0x193;
+    }
+  }
+  if ((*(int *)(param_1 + 0x100) == 1) && (*(int *)(param_1 + 0x110) == 1)) {
+    dVar13 = *(double *)(param_1 + 0x230);
+    dVar12 = (double)*(int *)(param_1 + 0x10) * dVar13;
+    local_78 = (int)ROUND(dVar12);
+    auVar2._8_8_ = 0;
+    auVar2._0_8_ = -(ulonglong)(dVar12 < (double)local_78);
+    iVar6 = movmskpd((int)uVar7,auVar2);
+    local_78 = local_78 - iVar6;
+    dVar12 = (double)*(int *)(param_1 + 0x14) * dVar13;
+    iStack_74 = (int)ROUND(dVar12);
+    auVar3._8_8_ = 0;
+    auVar3._0_8_ = -(ulonglong)(dVar12 < (double)iStack_74);
+    iVar6 = movmskpd(iVar6,auVar3);
+    iStack_74 = iStack_74 - iVar6;
+    dVar13 = (double)*(int *)(param_1 + 0x114) * dVar13;
+    iVar10 = (int)ROUND(dVar13);
+    auVar4._8_8_ = 0;
+    auVar4._0_8_ = -(ulonglong)(dVar13 < (double)iVar10);
+    iVar6 = movmskpd(iVar6,auVar4);
+    iVar10 = iVar10 - iVar6;
+    FUN_1401265b0((longlong *)(param_1 + 0x240),CONCAT44(iStack_74,local_78),iVar10,
+                  *(int *)(param_1 + 0x104));
+    if (*(int *)(param_1 + 0x104) == 1) {
+      iVar10 = iVar10 * iVar10;
+    }
+    *(longlong *)(param_1 + 0x248) = (longlong)iVar10;
+  }
+  local_84 = *(int *)(param_1 + 0x220);
+  local_80 = *(int *)(param_1 + 0x224);
+  FUN_140017390((undefined8 *)(param_1 + 0x1f0));
+  FUN_1400172a0((longlong *)(param_1 + 0x1f0),(longlong)(local_80 * local_84));
+  local_70[0] = 0;
+  local_88[0] = 0;
+  local_78 = omp_get_num_procs();
+  piVar8 = &local_78;
+  if (*(int *)(param_1 + 0x400) < local_78) {
+    piVar8 = (int *)(param_1 + 0x400);
+  }
+  iVar6 = *piVar8;
+  local_28 = 0xf;
+  local_30 = 0;
+  local_40 = 0;
+  FUN_1400021b0((ulonglong *)&local_40,&DAT_14016adcf,0);
+  if (local_res10[0] == 1) {
+    puVar9 = &DAT_140177f7c;
+  }
+  else if (local_res10[0] == 2) {
+    puVar9 = &DAT_14017800c;
+  }
+  else {
+    if (local_res10[0] != 3) goto LAB_140147325;
+    puVar9 = &DAT_140178044;
+  }
+  FUN_1400021b0((ulonglong *)&local_40,puVar9,1);
+LAB_140147325:
+  _vcomp_set_num_threads(iVar6);
+  local_98 = local_res10;
+  local_a0 = &local_7c;
+  local_a8 = &local_84;
+  local_b0 = &local_80;
+  local_b8 = local_70;
+  local_90 = param_1;
+  _vcomp_fork(1,7,FUN_14014d450,local_88);
+  if (*(longlong *)(param_1 + 0x240) != 0) {
+    Ordinal_266();
+  }
+  uVar5 = local_7c;
+  *(undefined8 *)(param_1 + 0x240) = 0;
+  if (0xf < local_28) {
+    Ordinal_1486(CONCAT71(uStack_3f,local_40));
+  }
+  return uVar5;
+}
+

@@ -1,0 +1,76 @@
+Evidence: ev_978a5cfcf8a59e8a743f4499de27cf1f88b565a33acc91c05c1f1e48dffbab56
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+undefined8 * FUN_14014ae30(undefined8 *param_1)
+
+{
+  *param_1 = ImageStitching::vftable;
+  param_1[2] = 0;
+  param_1[3] = 0;
+  param_1[4] = 0x3ff0000000000000;
+  param_1[0x2f] = 0;
+  *(undefined4 *)(param_1 + 0x30) = 1;
+  *(undefined4 *)((longlong)param_1 + 0x184) = 0x65;
+  *(undefined4 *)(param_1 + 0x31) = 10;
+  param_1[0x32] = 0;
+  param_1[0x34] = 0;
+  param_1[0x35] = 0;
+  param_1[0x36] = 0;
+  param_1[0x38] = 0;
+  param_1[0x39] = 0;
+  param_1[0x3a] = 0;
+  param_1[0x3b] = 0;
+  param_1[0x3c] = 0;
+  param_1[0x3d] = 0;
+  param_1[0x3e] = 0;
+  param_1[0x3f] = 0;
+  param_1[0x40] = 0;
+  param_1[0x41] = 0;
+  param_1[0x42] = 0;
+  param_1[0x43] = 0;
+  FUN_1400179a0(param_1,(longlong *)0x0,(longlong *)0x0);
+  param_1[0x42] = param_1[0x41];
+  param_1[0x48] = 0;
+  param_1[0x49] = 0x7fffffffffffffff;
+  param_1[0x4a] = 0;
+  param_1[0x4b] = 0x7fffffffffffffff;
+  param_1[0x4d] = AutoIplImage::vftable;
+  param_1[0x4e] = 0;
+  *(undefined1 *)(param_1 + 0x4f) = 0;
+  FUN_14015e7f0(param_1 + 0x50);
+  *(undefined1 *)(param_1 + 0x60) = 0;
+  *(undefined4 *)(param_1 + 0x66) = 0x1e;
+  *(undefined4 *)((longlong)param_1 + 0x334) = 0x19;
+  *(undefined4 *)(param_1 + 0x67) = 10;
+  *(undefined4 *)((longlong)param_1 + 0x33c) = 10;
+  FUN_140016190(param_1 + 0x68);
+  param_1[0x82] = 0;
+  param_1[0x83] = 0;
+  param_1[0x84] = 0;
+  param_1[0x85] = CArray<double,double_const&___ptr64>::vftable;
+  param_1[0x86] = 0;
+  param_1[0x89] = 0;
+  param_1[0x88] = 0;
+  param_1[0x87] = 0;
+  param_1[0x8a] = 0;
+  param_1[0x8b] = 0;
+  param_1[0x8c] = 0;
+  param_1[0x8d] = 0;
+  param_1[0x8e] = 0;
+  param_1[0x8f] = 0;
+  param_1[0x90] = 0;
+  param_1[0x91] = 0;
+  param_1[0x92] = 0;
+  *(undefined4 *)(param_1 + 1) = 0;
+  param_1[0x45] = 0;
+  param_1[0x4c] = 0;
+  param_1[0x47] = 0;
+  param_1[5] = 0;
+  param_1[0x37] = 0;
+  cvSetErrMode(0);
+  cvSetErrStatus(0);
+  return param_1;
+}
+

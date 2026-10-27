@@ -1,0 +1,562 @@
+Evidence: ev_b1b3b0e930411c1534e29b27215ec05e473c163f224017ca264aab3f39120c21
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* private: bool __cdecl CCompositeDLL::GetShift(struct _IplImage * __ptr64,struct _IplImage *
+   __ptr64,int & __ptr64,int & __ptr64,double & __ptr64,enum E_DIRECTION) __ptr64 */
+
+bool __thiscall
+CCompositeDLL::GetShift
+          (CCompositeDLL *this,_IplImage *param_1,_IplImage *param_2,int *param_3,int *param_4,
+          double *param_5,E_DIRECTION param_6)
+
+{
+  uint uVar1;
+  uint uVar2;
+  void *pvVar3;
+  CCompositeDLL *pCVar4;
+  double *pdVar5;
+  _IplImage *p_Var6;
+  undefined8 uVar7;
+  int iVar8;
+  basic_iostream<char,std::char_traits<char>_> *pbVar9;
+  undefined8 uVar10;
+  int iVar11;
+  basic_iostream<char,std::char_traits<char>_> *pbVar12;
+  void *pvVar13;
+  longlong lVar14;
+  bool bVar15;
+  double dVar16;
+  undefined4 uVar17;
+  undefined4 uVar18;
+  undefined4 uVar19;
+  undefined1 auStackY_2a8 [32];
+  undefined8 local_268;
+  CCompositeDLL *local_260;
+  undefined **local_258;
+  longlong local_250;
+  undefined **local_248;
+  longlong local_240;
+  undefined8 local_238;
+  int local_230;
+  int local_22c;
+  int local_228;
+  undefined8 local_218;
+  int iStack_210;
+  int iStack_20c;
+  int *local_208;
+  undefined **local_200;
+  longlong local_1f8;
+  _IplImage *local_1f0;
+  undefined8 local_1e8;
+  int *local_1e0;
+  basic_iostream<char,std::char_traits<char>_> local_1d8 [248];
+  undefined8 local_e0;
+  undefined8 local_d8;
+  undefined8 uStack_d0;
+  undefined8 local_c8;
+  ulonglong uStack_c0;
+  undefined1 local_b8;
+  undefined7 uStack_b7;
+  undefined8 local_a8;
+  ulonglong uStack_a0;
+  ulonglong local_98;
+  
+                    /* 0xa420  61
+                       ?GetShift@CCompositeDLL@@AEAA_NPEAU_IplImage@@0AEAH1AEANW4E_DIRECTION@@@Z */
+  local_e0 = 0xfffffffffffffffe;
+  local_98 = DAT_180023010 ^ (ulonglong)auStackY_2a8;
+  local_208 = param_4;
+  local_218 = param_5;
+  local_c8 = 0;
+  uStack_c0 = 0xf;
+  local_d8 = (void *)((ulonglong)local_d8 & 0xffffffffffffff00);
+  local_260 = this;
+  local_1f0 = param_1;
+  local_1e0 = param_3;
+  FUN_180015be0(&local_d8," 7 GetShift(): [start]",0x16);
+  pbVar12 = local_1d8;
+  pbVar9 = FUN_180010310(pbVar12,&local_d8);
+  FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+  if (0xf < uStack_c0) {
+    pvVar13 = local_d8;
+    if ((0xfff < uStack_c0 + 1) &&
+       (pvVar13 = *(void **)((longlong)local_d8 + -8),
+       0x1f < (ulonglong)((longlong)local_d8 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar13);
+  }
+  local_c8 = 0;
+  uStack_c0 = 0xf;
+  local_d8 = (void *)((ulonglong)local_d8 & 0xffffffffffffff00);
+  FUN_180015be0(&local_d8," 8 GetShift():part1 [start]",0x1b);
+  pbVar12 = local_1d8;
+  pbVar9 = FUN_180010310(pbVar12,&local_d8);
+  FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+  if (0xf < uStack_c0) {
+    pvVar13 = local_d8;
+    if ((0xfff < uStack_c0 + 1) &&
+       (pvVar13 = *(void **)((longlong)local_d8 + -8),
+       0x1f < (ulonglong)((longlong)local_d8 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar13);
+  }
+  iVar11 = *(int *)(param_1 + 0x28);
+  uVar1 = (*(int *)(this + 0x84) * iVar11) / 100;
+  iVar8 = *(int *)(param_1 + 0x2c);
+  uVar2 = (*(int *)(this + 0x88) * iVar8) / 100;
+  local_22c = (iVar11 * *(int *)(this + 0x7c)) / 100 + uVar1;
+  local_228 = (*(int *)(this + 0x80) * iVar8) / 100 + uVar2;
+  if ((param_6 & 0xfffffffd) == 0) {
+    dVar16 = sin(*(double *)(this + 0xa8));
+    dVar16 = dVar16 * (double)iVar11;
+  }
+  else {
+    if ((param_6 - 1 & 0xfffffffd) != 0) {
+      return false;
+    }
+    dVar16 = sin(*(double *)(this + 0xa8));
+    dVar16 = dVar16 * (double)iVar8;
+  }
+  p_Var6 = local_1f0;
+  local_230 = (int)ABS(dVar16);
+  if ((param_6 & 0xfffffffd) == 0) {
+    local_d8 = (void *)(ulonglong)(uint)(iVar11 - local_22c);
+    uStack_d0 = CONCAT44(iVar8,local_22c);
+    uVar10 = uStack_d0;
+    uStack_d0 = CONCAT44(iVar8,local_22c);
+  }
+  else {
+    if ((param_6 - 1 & 0xfffffffd) != 0) {
+      return false;
+    }
+    local_d8 = (void *)((ulonglong)(uint)(iVar8 - local_228) << 0x20);
+    uStack_d0 = CONCAT44(local_228,iVar11);
+    uVar10 = uStack_d0;
+    uStack_d0 = CONCAT44(local_228,iVar11);
+  }
+  uVar7 = uStack_d0;
+  uStack_d0 = uVar10;
+  cvSetImageROI(local_1f0,&local_d8);
+  local_d8 = (void *)0x0;
+  uStack_d0 = uVar7;
+  cvSetImageROI(param_2,&local_d8);
+  local_258 = AutoIplImage::vftable;
+  local_250 = 0;
+  local_248 = AutoIplImage::vftable;
+  local_240 = 0;
+  if (param_6 < 2) {
+    uVar10 = cvGetSize(p_Var6);
+    local_250 = cvCreateImage(uVar10,0x20,1);
+    uVar10 = cvGetSize(param_2);
+    local_240 = cvCreateImage(uVar10,0x20,1);
+    cvConvertScale(p_Var6,local_250,0x3ff0000000000000,0);
+    lVar14 = local_240;
+LAB_18000a857:
+    cvConvertScale(param_2,lVar14,0x3ff0000000000000,0);
+  }
+  else if (param_6 - 2 < 2) {
+    uVar10 = cvGetSize(param_2);
+    local_250 = cvCreateImage(uVar10,0x20,1);
+    uVar10 = cvGetSize(p_Var6);
+    local_240 = cvCreateImage(uVar10,0x20,1);
+    cvConvertScale(p_Var6,local_240,0x3ff0000000000000,0);
+    lVar14 = local_250;
+    goto LAB_18000a857;
+  }
+  uVar10 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                         ,0x3e2);
+  if ((char)uVar10 != '\0') {
+    cvResetImageROI(p_Var6);
+    cvResetImageROI(param_2);
+    local_c8 = 0;
+    uStack_c0 = 0xf;
+    local_d8 = (void *)((ulonglong)local_d8 & 0xffffffffffffff00);
+    FUN_180015be0(&local_d8," 8 GetShift():part1 [end]",0x19);
+    pbVar12 = local_1d8;
+    pbVar9 = FUN_180010310(pbVar12,&local_d8);
+    FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+    if (0xf < uStack_c0) {
+      pvVar13 = local_d8;
+      if ((0xfff < uStack_c0 + 1) &&
+         (pvVar13 = *(void **)((longlong)local_d8 + -8),
+         0x1f < (ulonglong)((longlong)local_d8 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      free(pvVar13);
+    }
+    local_c8 = 0;
+    uStack_c0 = 0xf;
+    local_d8 = (void *)((ulonglong)local_d8 & 0xffffffffffffff00);
+    FUN_180015be0(&local_d8," 8 GetShift():part2 [start]",0x1b);
+    pbVar12 = local_1d8;
+    pbVar9 = FUN_180010310(pbVar12,&local_d8);
+    FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+    if (0xf < uStack_c0) {
+      pvVar13 = local_d8;
+      if ((0xfff < uStack_c0 + 1) &&
+         (pvVar13 = *(void **)((longlong)local_d8 + -8),
+         0x1f < (ulonglong)((longlong)local_d8 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      free(pvVar13);
+    }
+    pCVar4 = local_260;
+    local_d8 = (void *)0x0;
+    uStack_d0 = 0;
+    if (param_6 == 0) {
+      iVar11 = *(int *)(local_250 + 0x2c);
+      iVar8 = *(int *)(local_250 + 0x28) - uVar1;
+      local_d8 = (void *)(ulonglong)uVar1;
+LAB_18000aa1b:
+      uStack_d0 = CONCAT44(iVar11,iVar8);
+      uVar18 = (undefined4)local_d8;
+      uVar19 = local_d8._4_4_;
+    }
+    else {
+      if (param_6 == 2) {
+        iVar11 = *(int *)(local_250 + 0x2c);
+        iVar8 = *(int *)(local_250 + 0x28) - uVar1;
+        local_d8 = (void *)0x0;
+        goto LAB_18000aa1b;
+      }
+      if (param_6 == 1) {
+        local_d8 = (void *)((ulonglong)uVar2 << 0x20);
+LAB_18000aa10:
+        iVar8 = *(int *)(local_250 + 0x28);
+        iVar11 = *(int *)(local_250 + 0x2c) - uVar2;
+        goto LAB_18000aa1b;
+      }
+      if (param_6 == 3) {
+        local_d8 = (void *)0x0;
+        goto LAB_18000aa10;
+      }
+      local_d8._0_4_ = 0;
+      local_d8._4_4_ = 0;
+      iVar8 = 0;
+      iVar11 = 0;
+      uVar18 = (undefined4)local_d8;
+      uVar19 = local_d8._4_4_;
+    }
+    cvSmooth(local_250,local_250,2,*(undefined4 *)(local_260 + 0x8c));
+    cvSmooth(local_240,local_240,2);
+    uVar10 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                           ,0x3f9);
+    lVar14 = local_240;
+    if ((char)uVar10 != '\0') {
+      local_238 = 0.0;
+      local_1e8 = 0;
+      local_260 = (CCompositeDLL *)0x0;
+      local_268 = 0;
+      cvMinMaxLoc(local_250,&local_238,&local_1e8);
+      cvMinMaxLoc(lVar14,&local_260,&local_268);
+      uVar10 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\imagingtools.h"
+                             ,0xbb);
+      if ((char)uVar10 != '\0') {
+        uVar17 = SUB84(local_238,0);
+        if ((double)local_260 <= local_238) {
+          uVar17 = SUB84(local_260,0);
+        }
+        cvConvertScale(local_250,local_250,0x3ff0000000000000,uVar17);
+        cvConvertScale(local_240,local_240,0x3ff0000000000000,uVar17);
+        uVar10 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                               ,0x401);
+        if ((char)uVar10 != '\0') {
+          if (*(int *)(pCVar4 + 0xb0) == 2) {
+            cvLaplace(local_250,local_250,3);
+            cvLaplace(local_240,local_240,3);
+            cvSmooth(local_250,local_250,2,*(undefined4 *)(pCVar4 + 0x8c));
+            cvSmooth(local_240,local_240,2);
+          }
+          local_a8 = 0;
+          uStack_a0 = 0xf;
+          local_b8 = 0;
+          FUN_180015be0((longlong *)&local_b8," 8 GetShift():part2 [end]",0x19);
+          pbVar12 = local_1d8;
+          pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+          FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+          if (0xf < uStack_a0) {
+            pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+            pvVar13 = pvVar3;
+            if ((0xfff < uStack_a0 + 1) &&
+               (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+               0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+              _invalid_parameter_noinfo_noreturn();
+            }
+            free(pvVar13);
+          }
+          local_a8 = 0;
+          uStack_a0 = 0xf;
+          local_b8 = 0;
+          FUN_180015be0((longlong *)&local_b8," 8 GetShift():part3 [start]",0x1b);
+          pbVar12 = local_1d8;
+          pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+          FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+          if (0xf < uStack_a0) {
+            pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+            pvVar13 = pvVar3;
+            if ((0xfff < uStack_a0 + 1) &&
+               (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+               0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+              _invalid_parameter_noinfo_noreturn();
+            }
+            free(pvVar13);
+          }
+          local_a8 = 0;
+          uStack_a0 = 0xf;
+          local_b8 = 0;
+          FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_1 [start]",0x1d);
+          pbVar12 = local_1d8;
+          pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+          FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+          if (0xf < uStack_a0) {
+            pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+            pvVar13 = pvVar3;
+            if ((0xfff < uStack_a0 + 1) &&
+               (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+               0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+              _invalid_parameter_noinfo_noreturn();
+            }
+            free(pvVar13);
+          }
+          pdVar5 = local_218;
+          _DAT_180023cd8 = _DAT_180023cd8 + 1;
+          *local_218 = 0.0;
+          local_a8 = 0;
+          uStack_a0 = 0xf;
+          local_b8 = 0;
+          FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_1 [end]",0x1b);
+          pbVar12 = local_1d8;
+          pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+          FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+          if (0xf < uStack_a0) {
+            pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+            pvVar13 = pvVar3;
+            if ((0xfff < uStack_a0 + 1) &&
+               (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+               0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+              _invalid_parameter_noinfo_noreturn();
+            }
+            free(pvVar13);
+          }
+          local_a8 = 0;
+          uStack_a0 = 0xf;
+          local_b8 = 0;
+          FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_2 [start]",0x1d);
+          pbVar12 = local_1d8;
+          pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+          FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+          if (0xf < uStack_a0) {
+            pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+            pvVar13 = pvVar3;
+            if ((0xfff < uStack_a0 + 1) &&
+               (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+               0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+              _invalid_parameter_noinfo_noreturn();
+            }
+            free(pvVar13);
+          }
+          local_218 = (double *)CONCAT44(uVar19,uVar18);
+          iStack_210 = iVar8;
+          iStack_20c = iVar11;
+          cvSetImageROI(local_250,&local_218);
+          local_260 = (CCompositeDLL *)CONCAT44(iVar11,(int)uStack_d0);
+          local_1f8 = cvCreateImage(local_260,0x20,1);
+          local_200 = AutoIplImage::vftable;
+          cvCopy(local_250,local_1f8,0);
+          uVar10 = FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                                 ,0x427);
+          if ((char)uVar10 == '\0') {
+            bVar15 = false;
+          }
+          else {
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_2 [end]",0x1b);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_3 [start]",0x1d);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            if ((param_6 & 0xfffffffd) == 0) {
+              iVar11 = 0;
+              iVar8 = local_230;
+            }
+            else {
+              iVar11 = local_230;
+              iVar8 = 0;
+            }
+            dVar16 = (double)FUN_1800122a0(local_1f8,local_240,iVar11,iVar8,(int *)&local_238);
+            *pdVar5 = dVar16;
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_3 [end]",0x1b);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_4 [start]",0x1d);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            *local_1e0 = (int)local_238;
+            *local_208 = local_238._4_4_;
+            if (param_6 == 0) {
+              *local_1e0 = *local_1e0 + (*(int *)(local_1f0 + 0x28) * *(int *)(pCVar4 + 0x7c)) / 100
+              ;
+            }
+            else if (param_6 == 2) {
+              *local_1e0 = *local_1e0 - local_22c;
+            }
+            else if (param_6 == 1) {
+              *local_208 = (*(int *)(pCVar4 + 0x80) * *(int *)(local_1f0 + 0x2c)) / 100 +
+                           local_238._4_4_;
+            }
+            else if (param_6 == 3) {
+              *local_208 = local_238._4_4_ - local_228;
+            }
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 9 GetShift():part3_4 [end]",0x1b);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 8 GetShift():part3 [end]",0x19);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            local_a8 = 0;
+            uStack_a0 = 0xf;
+            local_b8 = 0;
+            FUN_180015be0((longlong *)&local_b8," 7 GetShift(): [end]",0x14);
+            pbVar12 = local_1d8;
+            pbVar9 = FUN_180010310(pbVar12,(undefined8 *)&local_b8);
+            FUN_1800035c0(pbVar12,(longlong *)pbVar9);
+            if (0xf < uStack_a0) {
+              pvVar3 = (void *)CONCAT71(uStack_b7,local_b8);
+              pvVar13 = pvVar3;
+              if ((0xfff < uStack_a0 + 1) &&
+                 (pvVar13 = *(void **)((longlong)pvVar3 + -8),
+                 0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar13)))) {
+                    /* WARNING: Subroutine does not return */
+                _invalid_parameter_noinfo_noreturn();
+              }
+              free(pvVar13);
+            }
+            bVar15 = true;
+          }
+          local_200 = AutoIplImage::vftable;
+          if (local_1f8 != 0) {
+            cvReleaseImage(&local_1f8);
+          }
+          goto LAB_18000b418;
+        }
+      }
+    }
+  }
+  bVar15 = false;
+LAB_18000b418:
+  local_248 = AutoIplImage::vftable;
+  if (local_240 != 0) {
+    cvReleaseImage(&local_240);
+  }
+  local_258 = AutoIplImage::vftable;
+  if (local_250 != 0) {
+    cvReleaseImage(&local_250);
+  }
+  return bVar15;
+}
+

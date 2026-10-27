@@ -1,0 +1,6 @@
+# Local collector packages and raw simulation runs; keep sources and final evidence.
+/collector/release/DsxEvidenceCollector-*/
+/collector/release/DsxEvidenceCollector-*.zip
+/collector/validation/run-*/
+/collector/validation/windows-result.zip
+/collector/validation/*.part

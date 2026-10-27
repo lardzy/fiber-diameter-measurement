@@ -1,0 +1,1071 @@
+Evidence: ev_3a11f4f672b22c536ff4a0b883514fbf5e6f5de8288ae07abde4955e5183cc74
+Artifact: /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMicroscopeDomain.dll
+SHA256: 7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e
+Static CIL, not source C#, not runtime observation.
+
+0x06000081 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.StartZMovePitchTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 10990; IL sha256: a2ac1effc5674cacc6d45e275ac26b23b047c1f5edb496bb8bacdde19a071df4; normalized IL sha256: 9ac082c37e29f163c10a800bbad7db341e9c2f8ff8e501e2ae51539064492193
+0: call 0x0a000153 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+5: ldarg.0  
+6: ldftn 0x0600008a Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._MoveZPitch
+12: newobj 0x0a000154 System.EventHandler`1..ctor
+17: callvirt 0x0a000155 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.add_EntityUpdateHandler
+22: ret  
+
+0x06000082 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.StopZMovePitchTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 11014; IL sha256: 82f64b9be4fea4a9b31f36bf65961e37e8d22f53c44b4712267d07a496adccbf; normalized IL sha256: d8772ab38d79f81d11c657a11c1b1bb96246877c149d02d1d099df3699f4c5a9
+0: call 0x0a000153 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+5: ldarg.0  
+6: ldftn 0x0600008a Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._MoveZPitch
+12: newobj 0x0a000154 System.EventHandler`1..ctor
+17: callvirt 0x0a000156 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.remove_EntityUpdateHandler
+22: ret  
+
+0x06000083 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.MoveAbsoluteStopJudgeForSuperFast3DTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 11040; IL sha256: e372ba4f5f7e2347071f6cd3b22c5cee0bdbf77f7597f509a68d878a2aa15229; normalized IL sha256: 80f5e94756ac9ba46e79e654972f1120a1af04d861771e02e901cb00686af17a
+0: ldc.i4.0  
+1: stloc.1  
+2: ldarg.0  
+3: ldfld 0x04000034 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._waitStopZFor3DObject
+8: dup  
+9: stloc.2  
+10: ldloca.s 1 
+12: call 0x0a000085 System.Threading.Monitor.Enter
+17: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+22: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+27: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+32: callvirt 0x0a000158 Olympus.LI.Triumph.Device.Microscope.ZDrive.StopZ
+37: leave.s 53 
+39: stloc.0  
+40: ldloc.0  
+41: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+46: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+51: leave.s 53 
+53: leave.s 65 
+55: ldloc.1  
+56: brfalse.s 64 
+58: ldloc.2  
+59: call 0x0a00008e System.Threading.Monitor.Exit
+64: endfinally  
+65: ret  
+
+0x06000084 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.MoveAbsoluteZTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 11148; IL sha256: 0a8e8a863f3628886e7210dc643cc808a1db87d1322461fb2b0336ddf0b65f0b; normalized IL sha256: 491bac6638e16588e26f7d229fb8e8e96aaf94770a6ea05d91d27d0565ce92ff
+0: ldc.i4.0  
+1: stloc.s 4 
+3: ldarg.0  
+4: ldfld 0x04000034 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._waitStopZFor3DObject
+9: dup  
+10: stloc.s 5 
+12: ldloca.s 4 
+14: call 0x0a000085 System.Threading.Monitor.Enter
+19: ldarg.1  
+20: isinst 0x010000eb 
+25: stloc.0  
+26: ldloc.0  
+27: brtrue.s 34 
+29: leave 192 
+34: ldarg.0  
+35: ldfld 0x04000032 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._bZMoveCancel
+40: brfalse.s 54 
+42: ldarg.0  
+43: ldc.i4.0  
+44: stfld 0x04000032 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._bZMoveCancel
+49: leave 192 
+54: ldloc.0  
+55: callvirt 0x0a000159 Olympus.LI.Triumph.Workflow.ScenarioDefinition.SetZPointParam.get_Point
+60: stloc.1  
+61: call 0x0a00015a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExceptionNotifierDao
+66: ldarg.0  
+67: ldftn 0x0600008b Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._ReceiveExceptionZStop
+73: newobj 0x0a00015b System.EventHandler`1..ctor
+78: callvirt 0x0a00015c Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.add_EntityUpdateHandler
+83: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+88: ldsfld 0x0400002c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_Z_MOVING
+93: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+98: ldc.i4.3  
+99: stloc.2  
+100: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+105: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+110: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+115: ldloc.2  
+116: ldloc.1  
+117: callvirt 0x0a00015d Olympus.LI.Triumph.Device.Microscope.ZDrive.MoveAbsolutely
+122: leave.s 138 
+124: stloc.3  
+125: ldloc.3  
+126: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+131: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+136: leave.s 138 
+138: leave.s 178 
+140: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+145: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+150: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+155: call 0x0a00015a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExceptionNotifierDao
+160: ldarg.0  
+161: ldftn 0x0600008b Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._ReceiveExceptionZStop
+167: newobj 0x0a00015b System.EventHandler`1..ctor
+172: callvirt 0x0a00015e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.remove_EntityUpdateHandler
+177: endfinally  
+178: leave.s 192 
+180: ldloc.s 4 
+182: brfalse.s 191 
+184: ldloc.s 5 
+186: call 0x0a00008e System.Threading.Monitor.Exit
+191: endfinally  
+192: ret  
+
+0x06000085 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.StopAbsoluteZTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 11396; IL sha256: b7591e1b08a22150060560fdb9f5fe83cc2ca528193a264a137ba35b8fafead8; normalized IL sha256: a145440aa4426cced0abfb95103aeb71828213f781d316bb835f10ce6692c54d
+0: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+5: callvirt 0x0600007b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_CurrentState
+10: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+15: bne.un.s 24 
+17: ldarg.0  
+18: ldc.i4.1  
+19: stfld 0x04000032 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._bZMoveCancel
+24: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+29: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+34: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+39: callvirt 0x0a000158 Olympus.LI.Triumph.Device.Microscope.ZDrive.StopZ
+44: call 0x0a000153 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+49: ldc.i4.7  
+50: callvirt 0x0a00015f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+55: ret  
+
+0x06000088 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.MoveAsyncAbsoluteForSuperFast3DTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 11460; IL sha256: 54f36b34f0b704cf749c5dfd1470312c7c3301f154dcb3d277f1c238b21e26a9; normalized IL sha256: 7b0de05bfb7c91ee4e221aed89f10aa5344ee03af5e8703436e12566014995b4
+0: ldc.i4 8000000 
+5: stloc.0  
+6: ldc.i4 30000000 
+11: stloc.1  
+12: ldc.i4 250000 
+17: stloc.2  
+18: ldc.i4 25000 
+23: stloc.3  
+24: ldc.i4 170000 
+29: stloc.s 4 
+31: ldc.i4.s 16 
+33: stloc.s 5 
+35: call 0x0a000084 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+40: callvirt 0x0a000086 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+45: stloc.s 6 
+47: ldloc.s 6 
+49: callvirt 0x0a000160 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zpitch
+54: stloc.s 7 
+56: ldloc.s 6 
+58: callvirt 0x0a000161 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zupper
+63: stloc.s 8 
+65: ldloc.s 6 
+67: callvirt 0x0a000162 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zlower
+72: stloc.s 9 
+74: call 0x0a0000d9 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExposureDao
+79: callvirt 0x0a0000da Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+84: callvirt 0x0a000163 Olympus.LI.Triumph.Workflow.MemoryDatabase.Exposure.get_Speed
+89: ldc.r8 0.001 
+98: mul  
+99: stloc.s 10 
+101: call 0x0a000164 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_DP74FrameRateTableDao
+106: ldloc.s 10 
+108: callvirt 0x0a000165 Olympus.LI.Triumph.Workflow.MemoryDatabase.FrameRate.DP74FrameRateTableDao.GetFrameRate
+113: stloc.s 11 
+115: ldloc.s 11 
+117: ldc.r8 0 
+126: bne.un.s 162 
+128: ldstr 0x7000113b "Failed to get Frame Rate from exposure time. Current exposure time= {0} ms."
+133: ldloc.s 10 
+135: box 0x010000ef 
+140: call 0x0a00009f System.String.Format
+145: stloc.s 12 
+147: ldloc.s 12 
+149: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+154: ldloc.s 12 
+156: newobj 0x0a000166 Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowDaoException..ctor
+161: throw  
+162: ldloc.s 11 
+164: ldloc.s 7 
+166: conv.r.un  
+167: conv.r8  
+168: mul  
+169: stloc.s 13 
+171: ldloc.s 13 
+173: ldloc.0  
+174: conv.r.un  
+175: conv.r8  
+176: div  
+177: conv.i4  
+178: ldc.i4.1  
+179: add  
+180: stloc.s 14 
+182: ldloc.s 13 
+184: ldloc.s 14 
+186: conv.r8  
+187: div  
+188: stloc.s 13 
+190: ldloc.s 13 
+192: ldloc.2  
+193: conv.r.un  
+194: conv.r8  
+195: bgt.s 202 
+197: ldloc.3  
+198: conv.r.un  
+199: conv.r8  
+200: br.s 205 
+202: ldloc.2  
+203: conv.r.un  
+204: conv.r8  
+205: stloc.s 15 
+207: ldloc.s 13 
+209: ldloc.s 13 
+211: mul  
+212: ldloc.s 15 
+214: ldloc.s 15 
+216: mul  
+217: sub  
+218: ldc.r8 2 
+227: ldloc.s 7 
+229: conv.r.un  
+230: conv.r8  
+231: mul  
+232: div  
+233: stloc.s 16 
+235: ldloc.s 16 
+237: ldloc.1  
+238: conv.r.un  
+239: conv.r8  
+240: ble.un.s 247 
+242: ldloc.1  
+243: conv.r.un  
+244: conv.r8  
+245: stloc.s 16 
+247: ldloc.s 13 
+249: ldloc.s 13 
+251: mul  
+252: ldloc.s 15 
+254: ldloc.s 15 
+256: mul  
+257: sub  
+258: ldc.r8 2 
+267: ldloc.s 16 
+269: mul  
+270: div  
+271: stloc.s 17 
+273: ldloc.s 6 
+275: ldloc.s 14 
+277: callvirt 0x0a000167 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.set_VRatio
+282: call 0x0a000084 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+287: ldloc.s 6 
+289: callvirt 0x0a000168 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateWithoutNotify
+294: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+299: callvirt 0x0a00016a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+304: stloc.s 18 
+306: ldc.r8 1 
+315: ldloc.s 11 
+317: div  
+318: stloc.s 19 
+320: ldloc.s 13 
+322: ldloc.s 15 
+324: sub  
+325: ldloc.s 16 
+327: conv.r8  
+328: div  
+329: stloc.s 20 
+331: ldloc.s 20 
+333: ldloc.s 19 
+335: div  
+336: call 0x0a00016b System.Math.Ceiling
+341: conv.u4  
+342: stloc.s 21 
+344: ldloc.s 18 
+346: ldloc.s 21 
+348: callvirt 0x0a00016c Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_ApproachSkipFrameCount
+353: ldloc.s 13 
+355: ldloc.s 19 
+357: mul  
+358: stloc.s 22 
+360: ldloc.s 17 
+362: ldloc.s 22 
+364: add  
+365: stloc.s 23 
+367: ldloc.s 8 
+369: ldloc.s 23 
+371: conv.i4  
+372: sub  
+373: ldc.i4.0  
+374: blt.s 384 
+376: ldloc.s 8 
+378: ldloc.s 23 
+380: conv.u4  
+381: sub  
+382: br.s 385 
+384: ldc.i4.0  
+385: stloc.s 24 
+387: ldloc.s 9 
+389: ldloc.s 23 
+391: conv.u4  
+392: add  
+393: stloc.s 25 
+395: call 0x0a00016d Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.IsZLimitEnabled
+400: brtrue.s 429 
+402: call 0x0a00016e Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_FrameMasterDao
+407: call 0x0a000017 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetSystemVariationMaster
+412: callvirt 0x0a00016f Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemVariationMaster.get_FrameID
+417: callvirt 0x0a000170 Olympus.LI.Triumph.Workflow.MemoryDatabase.FrameMasterDao.GetFrameMaster
+422: callvirt 0x0a000171 Olympus.LI.Triumph.Workflow.MemoryDatabase.FrameMaster.get_MoveRange
+427: br.s 444 
+429: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+434: callvirt 0x0a000173 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+439: callvirt 0x0a000174 Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfo.get_NearLimitPoint
+444: stloc.s 26 
+446: ldloc.s 25 
+448: ldloc.s 26 
+450: cgt.un  
+452: stloc.s 27 
+454: ldloc.s 18 
+456: ldloc.s 27 
+458: brtrue.s 463 
+460: ldc.i4.0  
+461: br.s 464 
+463: ldc.i4.1  
+464: callvirt 0x0a000175 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_CancelStatus
+469: ldloc.s 18 
+471: ldc.i4.0  
+472: callvirt 0x0a000176 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_ErrorStatus
+477: ldloc.s 18 
+479: ldloc.s 17 
+481: conv.u4  
+482: callvirt 0x0a000177 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_ApproachDistance
+487: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+492: ldloc.s 18 
+494: callvirt 0x0a000178 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+499: ldstr 0x700011d4 "[MoveAsyncAbsoluteForSuperFast3DTask] FrameRate= {0} (fps), upper={1} (nm), lower={2} (nm), pitch={3} (nm), interval={4} (frame), vc={5} (nm/s), vo={6} (nm/s), ac={7} (nm/s2), al={8} (nm), lpf={9} (nm), ep={10} (nm), sp={11} (nm), alskip={12} frame"
+504: ldc.i4.s 13 
+506: newarr 0x01000002 
+511: stloc.s 38 
+513: ldloc.s 38 
+515: ldc.i4.0  
+516: ldloc.s 11 
+518: box 0x010000ef 
+523: stelem.ref  
+524: ldloc.s 38 
+526: ldc.i4.1  
+527: ldloc.s 8 
+529: box 0x010000db 
+534: stelem.ref  
+535: ldloc.s 38 
+537: ldc.i4.2  
+538: ldloc.s 9 
+540: box 0x010000db 
+545: stelem.ref  
+546: ldloc.s 38 
+548: ldc.i4.3  
+549: ldloc.s 7 
+551: box 0x010000db 
+556: stelem.ref  
+557: ldloc.s 38 
+559: ldc.i4.4  
+560: ldloc.s 14 
+562: box 0x010000e2 
+567: stelem.ref  
+568: ldloc.s 38 
+570: ldc.i4.5  
+571: ldloc.s 13 
+573: box 0x010000ef 
+578: stelem.ref  
+579: ldloc.s 38 
+581: ldc.i4.6  
+582: ldloc.s 15 
+584: box 0x010000ef 
+589: stelem.ref  
+590: ldloc.s 38 
+592: ldc.i4.7  
+593: ldloc.s 16 
+595: box 0x010000ef 
+600: stelem.ref  
+601: ldloc.s 38 
+603: ldc.i4.8  
+604: ldloc.s 17 
+606: box 0x010000ef 
+611: stelem.ref  
+612: ldloc.s 38 
+614: ldc.i4.s 9 
+616: ldloc.s 22 
+618: box 0x010000ef 
+623: stelem.ref  
+624: ldloc.s 38 
+626: ldc.i4.s 10 
+628: ldloc.s 24 
+630: box 0x010000db 
+635: stelem.ref  
+636: ldloc.s 38 
+638: ldc.i4.s 11 
+640: ldloc.s 25 
+642: box 0x010000db 
+647: stelem.ref  
+648: ldloc.s 38 
+650: ldc.i4.s 12 
+652: ldloc.s 21 
+654: box 0x010000db 
+659: stelem.ref  
+660: ldloc.s 38 
+662: call 0x0a000179 System.String.Format
+667: call 0x0a0000c3 Olympus.Mis.Core.Logging.Logger.StepLog
+672: ldloc.s 27 
+674: brfalse.s 681 
+676: leave 1198 
+681: ldloc.s 5 
+683: stloc.s 28 
+685: ldloca.s 29 
+687: ldloc.s 16 
+689: conv.u4  
+690: stfld 0x0a00017a Olympus.LI.Triumph.Device.Microscope.ZSpeed._I32AcceralationSpeed
+695: ldloca.s 29 
+697: ldloc.s 15 
+699: conv.u4  
+700: stfld 0x0a00017b Olympus.LI.Triumph.Device.Microscope.ZSpeed._I32InitialSpeed
+705: ldloca.s 29 
+707: ldloc.s 13 
+709: conv.u4  
+710: stfld 0x0a00017c Olympus.LI.Triumph.Device.Microscope.ZSpeed._I32MaxSpeed
+715: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+720: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+725: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+730: ldloc.s 28 
+732: ldloc.s 29 
+734: callvirt 0x0a00017d Olympus.LI.Triumph.Device.Microscope.ZDrive.SetZSpeed
+739: ldc.i4.3  
+740: stloc.s 30 
+742: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+747: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+752: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+757: ldloc.s 30 
+759: ldloc.s 25 
+761: callvirt 0x0a00015d Olympus.LI.Triumph.Device.Microscope.ZDrive.MoveAbsolutely
+766: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+771: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+776: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+781: ldc.i4.0  
+782: callvirt 0x0a00017e Olympus.LI.Triumph.Device.Microscope.ZDrive.EnableNotifyZPosition
+787: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+792: ldsfld 0x0400002c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_Z_MOVING
+797: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+802: ldarg.0  
+803: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+808: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+813: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+818: ldloc.s 28 
+820: ldloc.s 24 
+822: ldloc.s 4 
+824: callvirt 0x0a00017f Olympus.LI.Triumph.Device.Microscope.ZDrive.AsyncMoveAbsolutely
+829: stfld 0x04000033 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._tmpZdriveHandle
+834: call 0x0a000153 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionEventDao
+839: ldc.i4.5  
+840: callvirt 0x0a00015f Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+845: leave.s 878 
+847: stloc.s 31 
+849: ldloc.s 31 
+851: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+856: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+861: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+866: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+871: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+876: leave.s 878 
+878: leave.s 903 
+880: call 0x0a00015a Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExceptionNotifierDao
+885: ldarg.0  
+886: ldftn 0x0600008b Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._ReceiveExceptionZStop
+892: newobj 0x0a00015b System.EventHandler`1..ctor
+897: callvirt 0x0a00015e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.remove_EntityUpdateHandler
+902: endfinally  
+903: leave 1198 
+908: stloc.s 32 
+910: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+915: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+920: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+925: ldloc.s 32 
+927: callvirt 0x0a000180 Olympus.LI.Triumph.Device.Exception.HardwareException.get_ErrorType
+932: stloc.s 39 
+934: ldloc.s 39 
+936: ldc.i4.7  
+937: sub  
+938: switch 3 
+955: br.s 981 
+957: ldstr 0x700013c7 "Stop to arrived near/far limit point."
+962: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+967: br.s 1031 
+969: ldstr 0x70001413 "Stop by command."
+974: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+979: br.s 1031 
+981: ldstr 0x70001435 "exception caught in 3DTaskMethod : MoveAsyncAbsoluteForSuperFast3DTask"
+986: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+991: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+996: callvirt 0x0a00016a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+1001: stloc.s 33 
+1003: ldloc.s 33 
+1005: ldc.i4.1  
+1006: callvirt 0x0a000176 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_ErrorStatus
+1011: ldloc.s 33 
+1013: ldc.i4.1  
+1014: callvirt 0x0a000175 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_CancelStatus
+1019: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+1024: ldloc.s 33 
+1026: callvirt 0x0a000178 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+1031: leave 1198 
+1036: stloc.s 34 
+1038: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+1043: callvirt 0x0a00016a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+1048: stloc.s 35 
+1050: ldloc.s 35 
+1052: ldc.i4.1  
+1053: callvirt 0x0a000176 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_ErrorStatus
+1058: ldloc.s 35 
+1060: ldc.i4.1  
+1061: callvirt 0x0a000175 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_CancelStatus
+1066: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+1071: ldloc.s 35 
+1073: callvirt 0x0a000178 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+1078: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+1083: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+1088: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+1093: ldstr 0x700014c4 "exception caught in 3DTaskMethod : MoveAsyncAbsoluteForSuperFast3DTask."
+1098: ldloc.s 34 
+1100: callvirt 0x0a000051 System.Exception.get_Message
+1105: call 0x0a000076 System.String.Concat
+1110: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+1115: leave.s 1198 
+1117: stloc.s 36 
+1119: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+1124: callvirt 0x0a00016a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+1129: stloc.s 37 
+1131: ldloc.s 37 
+1133: ldc.i4.1  
+1134: callvirt 0x0a000176 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_ErrorStatus
+1139: ldloc.s 37 
+1141: ldc.i4.1  
+1142: callvirt 0x0a000175 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.set_CancelStatus
+1147: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+1152: ldloc.s 37 
+1154: callvirt 0x0a000178 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateOrCreate
+1159: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+1164: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+1169: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+1174: ldstr 0x700014c4 "exception caught in 3DTaskMethod : MoveAsyncAbsoluteForSuperFast3DTask."
+1179: ldloc.s 36 
+1181: callvirt 0x0a000051 System.Exception.get_Message
+1186: call 0x0a000076 System.String.Concat
+1191: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+1196: leave.s 1198 
+1198: ret  
+
+0x06000089 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService.ReceiveAbsoluteMoveResponseForSuperFast3DTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 12796; IL sha256: a9d53757640d217b502f5e8b7ef8cc93148836437b0a2e477010b8ef955abbe0; normalized IL sha256: 238cd2388e480358e02ed1e75a1f0bc9409924e2a91a5255185c55d5653318d2
+0: call 0x0a000169 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ExtendSuperFastParamDao
+5: callvirt 0x0a00016a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+10: callvirt 0x0a000181 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.ExtendSuperFastParam.get_CancelStatus
+15: ldc.i4.1  
+16: bne.un.s 23 
+18: leave 229 
+23: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+28: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+33: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+38: ldarg.0  
+39: ldfld 0x04000033 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._tmpZdriveHandle
+44: callvirt 0x0a000054 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+49: leave 183 
+54: stloc.0  
+55: ldloc.0  
+56: callvirt 0x0a000180 Olympus.LI.Triumph.Device.Exception.HardwareException.get_ErrorType
+61: stloc.1  
+62: ldloc.1  
+63: ldc.i4.3  
+64: sub  
+65: switch 7 
+98: br.s 147 
+100: ldstr 0x700013c7 "Stop to arrived near/far limit point."
+105: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+110: br.s 168 
+112: ldstr 0x70001413 "Stop by command."
+117: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+122: br.s 168 
+124: ldstr 0x70001555 "[Unexpected Error]InternalTimeout."
+129: ldloc.0  
+130: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+135: call 0x0a000076 System.String.Concat
+140: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+145: br.s 168 
+147: ldstr 0x7000159b "[Unexpected Error]exception caought in AFTaskMethod : 3DReceiveZMoveResponseTask: Wait _tmpZdriveHandle"
+152: ldloc.0  
+153: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+158: call 0x0a000076 System.String.Concat
+163: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+168: leave.s 183 
+170: pop  
+171: ldstr 0x7000166c "exception caught in 3DTaskMethod : ReceiveAbsoluteMoveResponseForSuperFast3DTask"
+176: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+181: leave.s 183 
+183: leave.s 229 
+185: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+190: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+195: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+200: ldc.i4.1  
+201: callvirt 0x0a00017e Olympus.LI.Triumph.Device.Microscope.ZDrive.EnableNotifyZPosition
+206: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+211: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+216: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+221: ldarg.0  
+222: ldnull  
+223: stfld 0x04000033 Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._tmpZdriveHandle
+228: endfinally  
+229: ret  
+
+0x0600008a Olympus.LI.Triumph.Workflow.MicroscopeDomain.Microscope3DAcquisitionService._MoveZPitch
+signature: {"raw_length":11,"raw_sha256":"ebc0910423ac9c0a40200b2149bb7ad3737dd7728aebc79ee1a931e9118a517e","resolved_sha256":"86570f006c160b421ce9c99cf5d62c7a3c948df2343a11c5aa23e31f434162c3","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["object","class:57<class:153>"],"field_type":null,"issue":null}
+body offset: 13080; IL sha256: 1f08b736544dde173e2481e255803fa5529012bcb6a67eb509feb334a5ee00b2; normalized IL sha256: 56293ebbc1c0611ae06051a03baf1f2e78ab127cf69d6510c20ecf8c23234e1e
+0: ldarg.2  
+1: callvirt 0x0a000182 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+6: callvirt 0x0a000183 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEvent.get_AcquisitionStateEvent
+11: ldc.i4.3  
+12: beq.s 15 
+14: ret  
+15: call 0x0a000084 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_AcquisitionConditionDao
+20: callvirt 0x0a000086 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+25: stloc.0  
+26: ldloc.0  
+27: callvirt 0x0a000160 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionCondition.get_Zpitch
+32: conv.u8  
+33: stloc.1  
+34: ldc.i4.3  
+35: stloc.2  
+36: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+41: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+46: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+51: ldloc.2  
+52: ldc.i4.0  
+53: ldloc.1  
+54: conv.u4  
+55: callvirt 0x0a000184 Olympus.LI.Triumph.Device.Microscope.ZDrive.MoveRelatively
+60: leave.s 129 
+62: stloc.3  
+63: ldloc.3  
+64: callvirt 0x0a000180 Olympus.LI.Triumph.Device.Exception.HardwareException.get_ErrorType
+69: stloc.s 4 
+71: ldloc.s 4 
+73: ldc.i4.7  
+74: sub  
+75: switch 2 
+88: br.s 114 
+90: ldstr 0x7000170f "Stop to arrived near limit point."
+95: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+100: br.s 127 
+102: ldstr 0x70001413 "Stop by command."
+107: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+112: br.s 127 
+114: ldloc.3  
+115: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+120: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+125: rethrow  
+127: leave.s 129 
+129: ret  
+
+0x06000150 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.WaitMoveZStopResponseTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 47180; IL sha256: 7384ce44a11fba4a94c69736631c50072366534437f98d06a4c80d91d1f13ab6; normalized IL sha256: 69d60cc701c811317e378128d2b56d0b6ede14bd1718524640608b1032baa80a
+0: ldstr 0x70004c32 "ZMOVE TIME Workflow WaitMoveZStopResponseTask"
+5: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+10: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+15: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+20: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+25: ldarg.0  
+26: ldfld 0x040000da Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zStopCommandHandle
+31: callvirt 0x0a000054 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+36: ldstr 0x70004c8e "★☆★ WaitMoveZStopResponseTask()"
+41: ldc.i4.0  
+42: newarr 0x01000002 
+47: call 0x0a000179 System.String.Format
+52: call 0x0a0000c3 Olympus.Mis.Core.Logging.Logger.StepLog
+57: ldc.i4.0  
+58: call 0x0a000426 Olympus.LI.Triumph.Workflow.ScenarioDefinition.GlobalZFocusState.set_IsZMovingFromGUI
+63: leave.s 78 
+65: ldarg.0  
+66: ldarg.0  
+67: ldflda 0x040000da Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zStopCommandHandle
+72: call 0x06000165 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.HandleClose
+77: endfinally  
+78: ret  
+
+0x06000151 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.WaitZStopResponseTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 47288; IL sha256: 368e50bf27ae6a6fcda4d961cdcf9165f8ec8504f3538a5873ff78d4e8d0ebbb; normalized IL sha256: ec5a5e0529abc44a4dd3f86480b50b7f94889c29a7c3198eced13a236cfc2659
+0: ldstr 0x70004cce "ZMOVE TIME Workflow WaitZStopResponseTask"
+5: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+10: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+15: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+20: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+25: ldarg.0  
+26: ldfld 0x040000da Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zStopCommandHandle
+31: callvirt 0x0a000054 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+36: ldstr 0x70004d22 "★☆★ WaitZStopResponseTask()"
+41: ldc.i4.0  
+42: newarr 0x01000002 
+47: call 0x0a000179 System.String.Format
+52: call 0x0a0000c3 Olympus.Mis.Core.Logging.Logger.StepLog
+57: ldc.i4.0  
+58: call 0x0a000427 Olympus.LI.Triumph.Workflow.ScenarioDefinition.GlobalZFocusState.set_IsZMovingFromCSL
+63: leave.s 78 
+65: ldarg.0  
+66: ldarg.0  
+67: ldflda 0x040000da Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zStopCommandHandle
+72: call 0x06000165 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.HandleClose
+77: endfinally  
+78: ret  
+
+0x06000156 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.GetCurrentZPositionTask
+signature: {"raw_length":5,"raw_sha256":"9940afde2b5914779fb16966caf88683bc66de727f34c65a6ef4bae7fd0d9b52","resolved_sha256":"6c8b4164cfea359989acec849ae281525a553d86d652237601f5046752f8543b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:37"],"field_type":null,"issue":null}
+body offset: 48624; IL sha256: e77cbc531a4063af4b7cc43ae81aba33e502d122345cd9701cb6648f1e6e80a4; normalized IL sha256: f253d772d0284091cb6398361e099b13fc1910a050ff478f2673bccdf4973586
+0: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+5: callvirt 0x0a000173 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+10: stloc.0  
+11: ldloc.0  
+12: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+17: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+22: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+27: ldc.i4 1500 
+32: callvirt 0x0a0001b9 Olympus.LI.Triumph.Device.Microscope.ZDrive.GetZPosition
+37: callvirt 0x0a000435 Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfo.set_CurrentPoint
+42: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+47: ldloc.0  
+48: callvirt 0x0a0003fa Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+53: ret  
+
+0x06000159 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.OnZDriveMoved
+signature: {"raw_length":7,"raw_sha256":"dff21964a165a4d7bc31911d1c430d615e9d9268f130f3d7d994a42a5d72d2c5","resolved_sha256":"6b1424d93191c2e54fb56dd1b1ccc1b8b9f55ff2bca66e4869a51e2357c972a3","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["object","class:309"],"field_type":null,"issue":null}
+body offset: 48716; IL sha256: 010a5166b48f7e2d29717b718efc47eec99e9b5da78a79613de612d05250611c; normalized IL sha256: d5b1f3953afc1604ff63ff15cb15a1ae935e42d56c06e2a543bf1f22b48956ff
+0: call 0x0a00016e Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_FrameMasterDao
+5: call 0x0a000017 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoHelper.GetSystemVariationMaster
+10: callvirt 0x0a00016f Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemVariationMaster.get_FrameID
+15: callvirt 0x0a000170 Olympus.LI.Triumph.Workflow.MemoryDatabase.FrameMasterDao.GetFrameMaster
+20: stloc.0  
+21: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+26: callvirt 0x0a0001ad Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfoDao.GetZDriveInfo
+31: stloc.1  
+32: ldloc.1  
+33: ldloc.0  
+34: callvirt 0x0a000171 Olympus.LI.Triumph.Workflow.MemoryDatabase.FrameMaster.get_MoveRange
+39: ldarg.2  
+40: callvirt 0x0a000437 Olympus.LI.Triumph.Device.Microscope.Events.ZDriveMoveEventArgs.get_Point
+45: call 0x0a000247 System.Math.Min
+50: callvirt 0x0a000435 Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfo.set_CurrentPoint
+55: ldloc.1  
+56: ldloc.1  
+57: call 0x0600015b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsWarnningByNearLimit
+62: callvirt 0x0a00040a Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfo.set_NearLimitWarnning
+67: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+72: ldloc.1  
+73: callvirt 0x0a0003fa Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+78: leave.s 101 
+80: stloc.2  
+81: ldloc.2  
+82: callvirt 0x0a000051 System.Exception.get_Message
+87: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+92: ldarg.0  
+93: ldloc.2  
+94: call 0x0a00006e Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+99: leave.s 101 
+101: ret  
+
+0x0600015d Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.MoveRelatively
+signature: {"raw_length":8,"raw_sha256":"431548946ff88188c230fa62aed13b4d32699ae5809eac705ca3ec7d7dc2bd6c","resolved_sha256":"47a1a6e109e164d166f10672d6409272dce6fc07d53d47baa107f7dea4a848b5","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":3,"return_type":"void","parameter_types":["u4","valuetype:305","u4"],"field_type":null,"issue":null}
+body offset: 49152; IL sha256: d44f1215241984f9b66e833c10c5ef3285456f75d0a11f06b58170bc450ee7fe; normalized IL sha256: 2b1b51a89ef2f381fc482e4e668057809208b223a8bb1b4ca6f2e127b9e4ab63
+0: call 0x0a00006f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_MicroscopeStatusDao
+5: callvirt 0x0a000150 Olympus.LI.Triumph.Workflow.MemoryDatabase.MicroscopeStatusDao.GetMicroscopeStatus
+10: callvirt 0x0a00037e Olympus.LI.Triumph.Workflow.MemoryDatabase.MicroscopeStatusEntity.get_Status
+15: ldc.i4.2  
+16: bne.un.s 24 
+18: newobj 0x0a00043c Olympus.LI.Triumph.Workflow.ExceptionObject.StatusException..ctor
+23: throw  
+24: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+29: ldsfld 0x0400002c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_Z_MOVING
+34: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+39: ldarg.2  
+40: call 0x0600015a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.GetZMoveDirection
+45: stloc.0  
+46: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+51: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+56: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+61: ldarg.1  
+62: ldloc.0  
+63: ldarg.3  
+64: callvirt 0x0a000184 Olympus.LI.Triumph.Device.Microscope.ZDrive.MoveRelatively
+69: ldstr 0x7000522e "[DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] Axis Z stopped successfully."
+74: call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+79: leave.s 208 
+81: stloc.1  
+82: ldarg.0  
+83: ldloc.1  
+84: call 0x06000162 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsErrorForZHardwareException
+89: brfalse.s 136 
+91: ldstr 0x700052b7 "[DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] Axis Z stopped by an hardware exception of this axis."
+96: call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+101: ldstr 0x70005372 "[DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] This exception is handled as a normal behavior."
+106: call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+111: ldloc.1  
+112: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+117: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+122: ldarg.0  
+123: ldloc.1  
+124: newobj 0x0a00043d Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowMicroscopeHardwareException..ctor
+129: call 0x0a00006e Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+134: br.s 206 
+136: ldloc.1  
+137: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+142: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+147: call 0x0a0001e0 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+152: ldc.i4.s 19 
+154: callvirt 0x0a0001e1 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+159: ldstr 0x70005421 "[DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] Axis Z stopped by an exception("
+164: ldloc.1  
+165: callvirt 0x0a0000c2 System.Object.ToString
+170: ldstr 0x700054b0 ")."
+175: call 0x0a000226 System.String.Concat
+180: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+185: ldstr 0x700054b6 "[DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] StackTrace is : "
+190: ldloc.1  
+191: callvirt 0x0a000227 System.Exception.get_StackTrace
+196: call 0x0a000076 System.String.Concat
+201: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+206: leave.s 208 
+208: leave.s 258 
+210: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+215: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+220: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+225: call 0x0a0001e2 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+230: ldc.i4.8  
+231: callvirt 0x0a0001e3 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitRelease
+236: call 0x0a0001e2 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+241: ldc.i4.7  
+242: callvirt 0x0a0001e3 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitRelease
+247: ldstr 0x70005526 "[DSX-BSW-RDK][MVZR=][INITZ=][MVZHOME=] Axis Z was stopped."
+252: call 0x0a000113 Olympus.Mis.Core.Logging.Logger.SystemLog
+257: endfinally  
+258: ret  
+
+0x0600015e Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.MoveAbsolutely
+signature: {"raw_length":5,"raw_sha256":"697895d0539fde201e93e65beb2235507c1b5f2da5f970c14fa442b5245cf76f","resolved_sha256":"697895d0539fde201e93e65beb2235507c1b5f2da5f970c14fa442b5245cf76f","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["u4","u4"],"field_type":null,"issue":null}
+body offset: 49452; IL sha256: abb976af8766de2faf5bb297da65a6f4b6a983bf719dc5e8962b297f4427f416; normalized IL sha256: 5be2140772e2d15820c55c647c383afce6bb4a86766ef0e7a8627989901c2b2d
+0: ldstr 0x7000559c "ZMOVE TIME Workflow MoveAbsolutely"
+5: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+10: ldarg.0  
+11: call 0x06000163 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsExecutableZMove
+16: brtrue.s 24 
+18: newobj 0x0a00043c Olympus.LI.Triumph.Workflow.ExceptionObject.StatusException..ctor
+23: throw  
+24: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+29: ldsfld 0x0400002c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_Z_MOVING
+34: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+39: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+44: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+49: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+54: ldarg.1  
+55: ldarg.2  
+56: callvirt 0x0a00015d Olympus.LI.Triumph.Device.Microscope.ZDrive.MoveAbsolutely
+61: leave.s 111 
+63: stloc.0  
+64: ldarg.0  
+65: ldloc.0  
+66: call 0x06000162 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsErrorForZHardwareException
+71: brfalse.s 98 
+73: ldloc.0  
+74: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+79: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+84: ldarg.0  
+85: ldloc.0  
+86: newobj 0x0a00043d Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowMicroscopeHardwareException..ctor
+91: call 0x0a00006e Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+96: br.s 109 
+98: ldloc.0  
+99: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+104: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+109: leave.s 111 
+111: leave.s 129 
+113: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+118: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+123: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+128: endfinally  
+129: ret  
+
+0x0600015f Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.AsyncMoveAbsolutely
+signature: {"raw_length":5,"raw_sha256":"697895d0539fde201e93e65beb2235507c1b5f2da5f970c14fa442b5245cf76f","resolved_sha256":"697895d0539fde201e93e65beb2235507c1b5f2da5f970c14fa442b5245cf76f","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"void","parameter_types":["u4","u4"],"field_type":null,"issue":null}
+body offset: 49624; IL sha256: 0bce2f62271cb4062abe234239fefa1ebcc659ac0ce8ed1fc063b940636281dd; normalized IL sha256: 26bed9edf67170a531085ac35db156ea069f69e9d866251c1c9316dd081786c9
+0: ldstr 0x700055e2 "ZMOVE TIME Workflow AsyncMoveAbsolutely 1"
+5: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+10: ldarg.0  
+11: ldfld 0x040000dc Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMovedEvent
+16: ldc.i4.0  
+17: callvirt 0x0a000424 System.Threading.WaitHandle.WaitOne
+22: brtrue.s 35 
+24: ldstr 0x70005636 "Move absolutely was canceled already moving currently."
+29: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+34: ret  
+35: ldstr 0x700056a4 "ZMOVE TIME Workflow AsyncMoveAbsolutely 2"
+40: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+45: ldarg.0  
+46: call 0x06000163 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsExecutableZMove
+51: brtrue.s 76 
+53: ldarg.0  
+54: ldfld 0x040000dc Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMovedEvent
+59: callvirt 0x0a00024e System.Threading.EventWaitHandle.Set
+64: pop  
+65: ldstr 0x700056f8 "State of ZMove executable is invalid. Move absolutely was canceled."
+70: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+75: ret  
+76: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+81: ldsfld 0x0400002c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_Z_MOVING
+86: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+91: ldstr 0x70005781 "ZMOVE TIME Workflow AsyncMoveAbsolutely 3"
+96: call 0x0a0000fc Olympus.Mis.Core.Logging.Logger.DebugLog
+101: ldarg.0  
+102: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+107: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+112: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+117: ldarg.1  
+118: ldarg.2  
+119: ldc.i4 170000 
+124: callvirt 0x0a00017f Olympus.LI.Triumph.Device.Microscope.ZDrive.AsyncMoveAbsolutely
+129: stfld 0x040000db Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMoveCommandhandle
+134: ldarg.0  
+135: ldfld 0x040000de Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMoveContinuouslyWaitHandle
+140: brfalse.s 154 
+142: ldarg.0  
+143: ldfld 0x040000de Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMoveContinuouslyWaitHandle
+148: callvirt 0x0a00024e System.Threading.EventWaitHandle.Set
+153: pop  
+154: ldarg.0  
+155: ldarg.0  
+156: ldfld 0x040000db Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMoveCommandhandle
+161: ldarg.0  
+162: ldftn 0x06000161 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.WaitForMoveZContinously
+168: newobj 0x06000167 AsyncWaitZCommandDelegate..ctor
+173: call 0x06000160 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.AsyncWaitZCommand
+178: leave.s 241 
+180: stloc.0  
+181: ldloc.0  
+182: callvirt 0x0a000051 System.Exception.get_Message
+187: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+192: ldarg.0  
+193: ldfld 0x040000de Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMoveContinuouslyWaitHandle
+198: brfalse.s 212 
+200: ldarg.0  
+201: ldfld 0x040000de Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMoveContinuouslyWaitHandle
+206: callvirt 0x0a00024e System.Threading.EventWaitHandle.Set
+211: pop  
+212: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+217: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+222: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+227: ldarg.0  
+228: ldfld 0x040000dc Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMovedEvent
+233: callvirt 0x0a00024e System.Threading.EventWaitHandle.Set
+238: pop  
+239: rethrow  
+241: leave.s 291 
+243: stloc.1  
+244: ldarg.0  
+245: ldloc.1  
+246: call 0x06000162 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsErrorForZHardwareException
+251: brfalse.s 278 
+253: ldloc.1  
+254: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+259: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+264: ldarg.0  
+265: ldloc.1  
+266: newobj 0x0a00043d Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowMicroscopeHardwareException..ctor
+271: call 0x0a00006e Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+276: br.s 289 
+278: ldloc.1  
+279: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+284: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+289: leave.s 291 
+291: ret  
+
+0x06000161 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.WaitForMoveZContinously
+signature: {"raw_length":5,"raw_sha256":"6b389fd05cab5de4b58af54760bbe4be72099329a3f369def91a267ab9aee0ae","resolved_sha256":"387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:33"],"field_type":null,"issue":null}
+body offset: 49992; IL sha256: 47d2557cac4a2c59d5f32b287db5cdaf17eb5a6c6bc0826c5fce67616ec937c4; normalized IL sha256: 36bd3f8c3982317a6e87a5e73a106890f090820983166e913f05dbcfe99ba8e5
+0: ldc.i4.0  
+1: stloc.0  
+2: call 0x0a000024 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Instance
+7: callvirt 0x0a000025 Olympus.LI.Triumph.Device.DeviceControl.DeviceController.get_Microscope
+12: callvirt 0x0a000157 Olympus.LI.Triumph.Device.Microscope.MicroscopeController.get_ZDrive
+17: ldarg.1  
+18: callvirt 0x0a000054 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+23: ldarg.0  
+24: ldfld 0x040000dd Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._blnMovingToRestorePoint
+29: brfalse.s 77 
+31: ldstr 0x700057d5 "Cleared restore point {0} by continuous z-move."
+36: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+41: callvirt 0x0a0001ad Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfoDao.GetZDriveInfo
+46: callvirt 0x0a000405 Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfo.get_RestorePoint
+51: box 0x010000db 
+56: call 0x0a00009f System.String.Format
+61: call 0x0a0000c3 Olympus.Mis.Core.Logging.Logger.StepLog
+66: call 0x0a000172 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_ZDriveInfoDao
+71: ldc.i4.0  
+72: callvirt 0x0a000414 Olympus.LI.Triumph.Workflow.MemoryDatabase.ZDriveInfoDao.UpdateRestorePoint
+77: leave.s 159 
+79: stloc.1  
+80: ldarg.0  
+81: ldloc.1  
+82: call 0x06000162 Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService.IsErrorForZHardwareException
+87: brfalse.s 114 
+89: ldloc.1  
+90: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+95: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+100: ldarg.0  
+101: ldloc.1  
+102: newobj 0x0a00043d Olympus.LI.Triumph.Workflow.ExceptionObject.WorkflowMicroscopeHardwareException..ctor
+107: call 0x0a00006e Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+112: br.s 125 
+114: ldloc.1  
+115: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Exception.HardwareException.get_Message
+120: call 0x0a000035 Olympus.Mis.Core.Logging.Logger.WarningLog
+125: ldloc.1  
+126: callvirt 0x0a000180 Olympus.LI.Triumph.Device.Exception.HardwareException.get_ErrorType
+131: ldc.i4.7  
+132: bne.un.s 136 
+134: ldc.i4.1  
+135: stloc.0  
+136: leave.s 159 
+138: stloc.2  
+139: ldloc.2  
+140: callvirt 0x0a000051 System.Exception.get_Message
+145: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+150: ldarg.0  
+151: ldloc.2  
+152: call 0x0a00006e Olympus.LI.Triumph.Workflow.Domain.ADomainService.NotifyExceptionInHandledEvent
+157: leave.s 159 
+159: leave.s 214 
+161: ldarg.1  
+162: callvirt 0x0a000034 Olympus.LI.Triumph.Device.Device.Command.CommandHandle.Close
+167: leave.s 183 
+169: stloc.3  
+170: ldloc.3  
+171: callvirt 0x0a000051 System.Exception.get_Message
+176: call 0x0a000050 Olympus.Mis.Core.Logging.Logger.ErrorLog
+181: leave.s 183 
+183: ldarg.0  
+184: ldfld 0x040000dc Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeZDriveService._zMovedEvent
+189: callvirt 0x0a00024e System.Threading.EventWaitHandle.Set
+194: pop  
+195: ldloc.0  
+196: brtrue.s 213 
+198: call 0x0600007a Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.get_Instance
+203: ldsfld 0x0400002b Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeState.MICROSCOPE_IDLE
+208: callvirt 0x0600007c Olympus.LI.Triumph.Workflow.MicroscopeDomain.MicroscopeStateManager.set_CurrentState
+213: endfinally  
+214: ret  
+

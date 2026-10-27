@@ -1,0 +1,805 @@
+Evidence: ev_d21f8b6b4d196940822b45152d326fafc585adcbf9bd5a176d9de3c9af4b41d9
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_180004dc0(matrix<_IplImage*___ptr64> *param_1,longlong param_2,int param_3,int param_4
+                       ,double param_5,longlong param_6)
+
+{
+  undefined8 *puVar1;
+  ulonglong *puVar2;
+  _IplImage *p_Var3;
+  undefined1 auVar4 [16];
+  undefined1 auVar5 [16];
+  undefined1 auVar6 [16];
+  undefined1 auVar7 [16];
+  undefined1 auVar8 [12];
+  int iVar9;
+  int iVar10;
+  int iVar11;
+  int iVar12;
+  int iVar13;
+  int iVar14;
+  uint uVar15;
+  basic_iostream<char,std::char_traits<char>_> *pbVar16;
+  basic_ostream<char,struct_std::char_traits<char>_> *pbVar17;
+  basic_ostream<char,std::char_traits<char>_> *pbVar18;
+  _IplImage **pp_Var19;
+  _IplImage **pp_Var20;
+  _IplImage *p_Var21;
+  longlong lVar22;
+  longlong lVar23;
+  ulonglong uVar24;
+  undefined8 uVar25;
+  undefined8 extraout_RAX;
+  int iVar26;
+  int iVar27;
+  int iVar28;
+  int iVar29;
+  int iVar30;
+  int iVar31;
+  basic_iostream<char,std::char_traits<char>_> *pbVar32;
+  _IplImage *p_Var33;
+  void *pvVar34;
+  int iVar35;
+  int iVar36;
+  int iVar37;
+  int iVar38;
+  int iVar39;
+  int iVar40;
+  _IplImage *p_Var41;
+  int iVar42;
+  int iVar43;
+  int iVar44;
+  int iVar45;
+  int iVar46;
+  int iVar47;
+  int iVar48;
+  int iVar49;
+  int iVar50;
+  int iVar51;
+  undefined1 auStackY_3f8 [32];
+  undefined8 uVar52;
+  int local_3a8;
+  int local_3a4;
+  int local_39c;
+  int local_398;
+  undefined1 local_388 [16];
+  longlong local_378;
+  undefined8 local_368;
+  undefined8 uStack_360;
+  int local_358;
+  int local_354;
+  int local_350;
+  int local_34c;
+  undefined8 local_348;
+  undefined8 uStack_340;
+  int local_338;
+  int local_334;
+  int local_330;
+  int local_32c;
+  undefined1 local_328 [16];
+  int *local_318;
+  int local_310;
+  int local_30c;
+  int local_308;
+  int iStack_304;
+  int iStack_300;
+  int iStack_2fc;
+  int *local_2f8;
+  _IplImage *local_2e8;
+  undefined8 uStack_2e0;
+  int local_2d8;
+  int local_2d4;
+  longlong local_2d0;
+  undefined4 local_2c8;
+  undefined4 uStack_2c4;
+  undefined4 uStack_2c0;
+  undefined4 uStack_2bc;
+  int local_2b8;
+  int iStack_2b4;
+  int iStack_2b0;
+  int iStack_2ac;
+  int local_2a8;
+  int iStack_2a4;
+  undefined4 uStack_2a0;
+  undefined4 uStack_29c;
+  int local_298;
+  int iStack_294;
+  int iStack_290;
+  int iStack_28c;
+  int local_288;
+  int iStack_284;
+  int iStack_280;
+  int iStack_27c;
+  int local_278;
+  int iStack_274;
+  int iStack_270;
+  int iStack_26c;
+  int local_268;
+  int iStack_264;
+  int iStack_260;
+  int iStack_25c;
+  int local_258;
+  int iStack_254;
+  int iStack_250;
+  int iStack_24c;
+  int local_248;
+  int iStack_244;
+  int iStack_240;
+  int iStack_23c;
+  int local_238;
+  int iStack_234;
+  int iStack_230;
+  int iStack_22c;
+  int local_228;
+  uint uStack_224;
+  int iStack_220;
+  int iStack_21c;
+  int local_218;
+  int iStack_214;
+  int iStack_210;
+  int iStack_20c;
+  int local_208;
+  int iStack_204;
+  int iStack_200;
+  int iStack_1fc;
+  uint local_1f8;
+  int iStack_1f4;
+  int iStack_1f0;
+  int iStack_1ec;
+  undefined8 local_1e8;
+  basic_iostream<char,std::char_traits<char>_> local_1e0 [248];
+  undefined8 local_e8;
+  undefined8 uStack_e0;
+  undefined8 local_d8;
+  ulonglong uStack_d0;
+  ulonglong local_c8;
+  
+  local_1e8 = 0xfffffffffffffffe;
+  local_c8 = DAT_180023010 ^ (ulonglong)auStackY_3f8;
+  local_d8 = 0;
+  uStack_d0 = 0xf;
+  local_e8 = (void *)((ulonglong)local_e8 & 0xffffffffffffff00);
+  local_30c = param_3;
+  local_2d0 = param_2;
+  FUN_180015be0(&local_e8," 2 InterpolateImage() [start]",0x1d);
+  pbVar32 = local_1e0;
+  pbVar16 = FUN_180010310(pbVar32,&local_e8);
+  FUN_1800035c0(pbVar32,(longlong *)pbVar16);
+  if (0xf < uStack_d0) {
+    pvVar34 = local_e8;
+    if ((0xfff < uStack_d0 + 1) &&
+       (pvVar34 = *(void **)((longlong)local_e8 + -8),
+       0x1f < (ulonglong)((longlong)local_e8 + (-8 - (longlong)pvVar34)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar34);
+  }
+  pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+            FUN_180004c20((longlong)param_1,param_2,param_6);
+  if ((char)pbVar17 == '\0') {
+    if (*(longlong *)(DAT_180023ce0 + 0xa8) != 0) {
+      pbVar18 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)(DAT_180023ce0 + 0x20),
+                              "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                             );
+      pbVar18 = FUN_180011340(pbVar18," (");
+      pbVar17 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar18,0x187);
+      pbVar18 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar17,
+                              ") : error no = ");
+      pbVar17 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar18,(void *)0xff01)
+      ;
+      pbVar17 = std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                          ((basic_ostream<char,std::char_traits<char>_> *)pbVar17,FUN_180011510);
+    }
+    DAT_180023ce8 = 0xff00;
+  }
+  else {
+    iVar39 = *(int *)(param_1 + 0x20);
+    if (iVar39 == 1) {
+      pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0,0);
+      iVar39 = *(int *)(param_1 + 0x20);
+    }
+    else {
+      pp_Var19 = *(_IplImage ***)(param_1 + 0x18);
+    }
+    if (iVar39 == 1) {
+      pp_Var20 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0,0);
+    }
+    else {
+      pp_Var20 = *(_IplImage ***)(param_1 + 0x18);
+    }
+    puVar2 = *(ulonglong **)(param_2 + 0x18);
+    iStack_2fc = *(int *)(*pp_Var19 + 0x2c);
+    iStack_300 = *(int *)(*pp_Var20 + 0x28);
+    iStack_304 = *(int *)((longlong)puVar2 + 4);
+    local_308 = (int)*puVar2;
+    local_e8 = (void *)*puVar2;
+    uStack_e0 = CONCAT44(iStack_2fc,iStack_300);
+    cvSetImageROI();
+    if (*(int *)(param_1 + 0x20) == 1) {
+      pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0,0);
+    }
+    else {
+      pp_Var19 = *(_IplImage ***)(param_1 + 0x18);
+    }
+    pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+              FUN_180004d00((ulonglong)*pp_Var19,param_6,0,0,0);
+    if ((char)pbVar17 == '\0') {
+      if (*(longlong *)(DAT_180023ce0 + 0xa8) != 0) {
+        pbVar18 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)
+                                (DAT_180023ce0 + 0x20),
+                                "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                               );
+        pbVar18 = FUN_180011340(pbVar18," (");
+        iVar39 = 0x18e;
+LAB_18000504f:
+        pbVar17 = std::basic_ostream<char,std::char_traits<char>_>::operator<<(pbVar18,iVar39);
+        pbVar18 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)pbVar17,
+                                ") : error no = ");
+        pbVar17 = std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                            (pbVar18,(void *)0xf004);
+        pbVar17 = std::basic_ostream<char,std::char_traits<char>_>::operator<<
+                            ((basic_ostream<char,std::char_traits<char>_> *)pbVar17,FUN_180011510);
+      }
+LAB_180005085:
+      DAT_180023ce8 = 0xf000;
+      return (ulonglong)pbVar17 & 0xffffffffffffff00;
+    }
+    if (*(int *)(param_1 + 0x20) == 1) {
+      pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0,0);
+    }
+    else {
+      pp_Var19 = *(_IplImage ***)(param_1 + 0x18);
+    }
+    cvCopy(*pp_Var19,param_6);
+    cvResetImageROI(param_6);
+    pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+              FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                            ,0x194);
+    if ((char)pbVar17 != '\0') {
+      iVar39 = 1;
+      local_2d4 = param_3 * param_4;
+      if (1 < local_2d4) {
+        local_378 = 1;
+        iVar27 = (int)local_e8;
+        iVar28 = local_e8._4_4_;
+        iVar42 = (int)uStack_e0;
+        iVar43 = uStack_e0._4_4_;
+        iVar29 = (int)local_e8;
+        iVar37 = local_e8._4_4_;
+        iVar44 = (int)uStack_e0;
+        iVar45 = uStack_e0._4_4_;
+        iVar12 = (int)local_e8;
+        iVar30 = local_e8._4_4_;
+        iVar46 = (int)uStack_e0;
+        iVar47 = uStack_e0._4_4_;
+        iVar13 = (int)local_e8;
+        iVar31 = local_e8._4_4_;
+        iVar48 = (int)uStack_e0;
+        iVar49 = uStack_e0._4_4_;
+        iVar14 = (int)local_e8;
+        iVar40 = local_e8._4_4_;
+        iVar50 = (int)uStack_e0;
+        iVar51 = uStack_e0._4_4_;
+        do {
+          lVar23 = local_378;
+          if (*(int *)(param_1 + 0x20) == 1) {
+            pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar39,0);
+          }
+          else {
+            pp_Var19 = (_IplImage **)(*(longlong *)(param_1 + 0x18) + (longlong)iVar39 * 8);
+          }
+          p_Var3 = *pp_Var19;
+          iVar9 = iVar39 / param_3;
+          iVar35 = iVar39 % param_3;
+          if (iVar35 == 0) {
+            local_2e8 = (_IplImage *)0x0;
+          }
+          else {
+            if (*(int *)(param_1 + 0x20) == 1) {
+              pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar39 + -1,0);
+            }
+            else {
+              pp_Var19 = (_IplImage **)(*(longlong *)(param_1 + 0x18) + (longlong)iVar39 * 8 + -8);
+            }
+            local_2e8 = *pp_Var19;
+          }
+          p_Var33 = (_IplImage *)0x0;
+          if (iVar9 == 0) {
+            auVar6._8_8_ = 0;
+            auVar6._0_8_ = local_328._8_8_;
+            local_328 = auVar6 << 0x40;
+            iVar38 = iVar39 - local_30c;
+          }
+          else {
+            iVar38 = iVar39 - param_3;
+            if (*(int *)(param_1 + 0x20) == 1) {
+              pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar38,0);
+            }
+            else {
+              pp_Var19 = (_IplImage **)(*(longlong *)(param_1 + 0x18) + (longlong)iVar38 * 8);
+            }
+            p_Var33 = *pp_Var19;
+            local_328._0_8_ = p_Var33;
+          }
+          if ((iVar35 == 0) || (iVar9 == 0)) {
+            auVar7._8_8_ = 0;
+            auVar7._0_8_ = local_388._8_8_;
+            local_388 = auVar7 << 0x40;
+          }
+          else if (*(int *)(param_1 + 0x20) == 1) {
+            pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar38 + -1,0);
+            local_388._0_8_ = *pp_Var19;
+          }
+          else {
+            local_388._0_8_ =
+                 *(undefined8 *)(*(longlong *)(param_1 + 0x18) + (longlong)iVar38 * 8 + -8);
+          }
+          local_368 = *(int **)(local_2d0 + 0x18);
+          if (iVar35 == 0) {
+            local_348 = (int *)0x0;
+          }
+          else {
+            local_348 = local_368 + (longlong)(iVar39 + -1) * 2;
+          }
+          local_318 = (int *)0x0;
+          if (iVar9 != 0) {
+            local_318 = local_368 + (longlong)iVar38 * 2;
+          }
+          if ((iVar35 == 0) || (iVar9 == 0)) {
+            local_2f8 = (int *)0x0;
+          }
+          else {
+            local_2f8 = local_368 + (longlong)(iVar38 + -1) * 2;
+          }
+          iVar9 = 0;
+          if (local_2e8 == (_IplImage *)0x0) {
+            local_358 = 0;
+          }
+          else {
+            iVar9 = (*(int *)(local_2e8 + 0x28) - local_368[lVar23 * 2]) + *local_348;
+            iVar35 = local_348[1];
+            iVar38 = local_368[lVar23 * 2 + 1];
+            local_358 = *(int *)(p_Var3 + 0x2c) + iVar38;
+            if (*(int *)(local_2e8 + 0x2c) + iVar35 <= *(int *)(p_Var3 + 0x2c) + iVar38) {
+              local_358 = *(int *)(local_2e8 + 0x2c) + iVar35;
+            }
+            if (iVar38 <= iVar35) {
+              iVar38 = iVar35;
+            }
+            local_358 = local_358 - iVar38;
+          }
+          iVar35 = 0;
+          if (p_Var33 == (_IplImage *)0x0) {
+            local_330 = 0;
+          }
+          else {
+            iVar35 = *local_318;
+            iVar38 = local_368[lVar23 * 2];
+            local_330 = *(int *)(p_Var3 + 0x28) + iVar38;
+            if (*(int *)(p_Var33 + 0x28) + iVar35 <= *(int *)(p_Var3 + 0x28) + iVar38) {
+              local_330 = *(int *)(p_Var33 + 0x28) + iVar35;
+            }
+            if (iVar38 <= iVar35) {
+              iVar38 = iVar35;
+            }
+            local_330 = local_330 - iVar38;
+            iVar35 = (local_318[1] - local_368[lVar23 * 2 + 1]) + *(int *)(p_Var33 + 0x2c);
+          }
+          iVar38 = iVar9 / 2;
+          iVar10 = iVar35 / 2;
+          p_Var41 = (_IplImage *)0x0;
+          p_Var33 = p_Var41;
+          local_350 = 0;
+          if (0 < iVar38) {
+            p_Var33 = local_2e8;
+            local_350 = iVar38;
+          }
+          local_34c = 0;
+          if (0 < iVar10) {
+            local_34c = iVar10;
+          }
+          p_Var21 = p_Var41;
+          if (0 < iVar38) {
+            p_Var21 = (_IplImage *)local_388._0_8_;
+          }
+          local_2e8 = p_Var41;
+          if (0 < iVar10) {
+            local_2e8 = p_Var21;
+          }
+          if (0 < iVar10) {
+            p_Var41 = (_IplImage *)local_328._0_8_;
+          }
+          if (((p_Var33 == (_IplImage *)0x0) && (p_Var41 == (_IplImage *)0x0)) &&
+             (local_2e8 == (_IplImage *)0x0)) {
+            iVar9 = *(int *)(param_1 + 0x20);
+            if (iVar9 == 1) {
+              pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar39,0);
+              iVar9 = *(int *)(param_1 + 0x20);
+            }
+            else {
+              pp_Var19 = (_IplImage **)(*(longlong *)(param_1 + 0x18) + (longlong)iVar39 * 8);
+            }
+            if (iVar9 == 1) {
+              pp_Var20 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar39,0);
+            }
+            else {
+              pp_Var20 = (_IplImage **)(*(longlong *)(param_1 + 0x18) + (longlong)iVar39 * 8);
+            }
+            lVar23 = local_378;
+            uStack_2bc = *(undefined4 *)(*pp_Var19 + 0x2c);
+            uStack_2c0 = *(undefined4 *)(*pp_Var20 + 0x28);
+            uStack_2c4 = *(undefined4 *)(*(longlong *)(local_2d0 + 0x18) + 4 + local_378 * 8);
+            local_2c8 = *(undefined4 *)(*(longlong *)(local_2d0 + 0x18) + local_378 * 8);
+            local_2e8 = (_IplImage *)CONCAT44(uStack_2c4,local_2c8);
+            uStack_2e0 = CONCAT44(uStack_2bc,uStack_2c0);
+            cvSetImageROI();
+            if (*(int *)(param_1 + 0x20) == 1) {
+              pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,0,0);
+            }
+            else {
+              pp_Var19 = *(_IplImage ***)(param_1 + 0x18);
+            }
+            lVar22 = FUN_180004d00((ulonglong)*pp_Var19,param_6,0,0,0);
+            if ((char)lVar22 == '\0') {
+              uVar24 = FUN_180015fe0(0xf000,4,
+                                     "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                                     ,0x1be);
+              return uVar24 & 0xffffffffffffff00;
+            }
+            if (*(int *)(param_1 + 0x20) == 1) {
+              pp_Var19 = ctool::matrix<_IplImage*___ptr64>::_readimage(param_1,iVar39,0);
+            }
+            else {
+              pp_Var19 = (_IplImage **)(*(longlong *)(param_1 + 0x18) + (longlong)iVar39 * 8);
+            }
+            cvCopy(*pp_Var19,param_6);
+            pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+                      FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                                    ,0x1c2);
+            if ((char)pbVar17 == '\0') goto LAB_180004f61;
+            cvResetImageROI(param_6);
+            local_378 = lVar23;
+          }
+          else {
+            iStack_2ac = *(int *)(p_Var3 + 0x2c);
+            iStack_2b0 = *(int *)(p_Var3 + 0x28);
+            if (iStack_2b0 - local_350 <= iStack_2b0) {
+              iStack_2b0 = iStack_2b0 - local_350;
+            }
+            if (iStack_2ac - local_34c <= iStack_2ac) {
+              iStack_2ac = iStack_2ac - local_34c;
+            }
+            local_388._0_8_ = CONCAT44(local_34c,local_350);
+            local_388._8_8_ = CONCAT44(iStack_2ac,iStack_2b0);
+            local_2b8 = local_350;
+            iStack_2b4 = local_34c;
+            cvSetImageROI(p_Var3,local_388);
+            uStack_29c = *(undefined4 *)(*(longlong *)(p_Var3 + 0x30) + 0x10);
+            puVar1 = (undefined8 *)(*(longlong *)(p_Var3 + 0x30) + 0xc);
+            uStack_2a0 = *(undefined4 *)puVar1;
+            iStack_2a4 = local_34c + local_368[local_378 * 2 + 1];
+            local_2a8 = local_350 + local_368[local_378 * 2];
+            local_388._4_4_ = iStack_2a4;
+            local_388._0_4_ = local_2a8;
+            local_388._8_8_ = *puVar1;
+            cvSetImageROI(param_6,local_388);
+            pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+                      FUN_180004d00((ulonglong)p_Var3,param_6,0,0,0);
+            if ((char)pbVar17 == '\0') {
+              if (*(longlong *)(DAT_180023ce0 + 0xa8) == 0) goto LAB_180005085;
+              pbVar18 = FUN_180011340((basic_ostream<char,std::char_traits<char>_> *)
+                                      (DAT_180023ce0 + 0x20),
+                                      "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                                     );
+              pbVar18 = FUN_180011340(pbVar18," (");
+              iVar39 = 0x1d0;
+              goto LAB_18000504f;
+            }
+            cvCopy(p_Var3,param_6,0);
+            pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+                      FUN_180015db0("d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                                    ,0x1d4);
+            if ((char)pbVar17 == '\0') goto LAB_180004f61;
+            cvResetImageROI(param_6);
+            cvResetImageROI(p_Var3);
+            iVar38 = local_330;
+            if (p_Var33 != (_IplImage *)0x0) {
+              iVar38 = (int)((param_5 / 100.0) * (double)iVar9 + 0.5);
+            }
+            local_32c = local_358;
+            if (p_Var41 != (_IplImage *)0x0) {
+              local_32c = (int)((param_5 / 100.0) * (double)iVar35 + 0.5);
+            }
+            if ((iVar38 < 1) || (local_32c < 1)) {
+              iVar39 = 0x1de;
+LAB_180005d86:
+              uVar24 = FUN_180015fe0(0xf000,4,
+                                     "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\interpolatetools.h"
+                                     ,iVar39);
+              return uVar24 & 0xffffffffffffff00;
+            }
+            if (p_Var33 == (_IplImage *)0x0) {
+              local_334 = 0;
+            }
+            else {
+              local_334 = (iVar9 - iVar38) / 2;
+            }
+            if (p_Var41 == (_IplImage *)0x0) {
+              local_398 = 0;
+            }
+            else {
+              local_398 = (iVar35 - local_32c) / 2;
+            }
+            local_39c = 0;
+            local_3a4 = 0;
+            local_34c = 0;
+            local_3a8 = 0;
+            if (local_2e8 != (_IplImage *)0x0) {
+              iVar9 = local_2f8[1];
+              local_388._0_4_ = iVar9;
+              iStack_304 = local_368[local_378 * 2 + 1];
+              iStack_2fc = (*(int *)(local_2e8 + 0x2c) - iStack_304) + iVar9;
+              local_308 = local_368[local_378 * 2];
+              local_350 = *local_2f8;
+              iStack_300 = local_350 + (*(int *)(local_2e8 + 0x28) - local_308);
+              iVar35 = local_318[1];
+              local_2f8 = (int *)CONCAT44(local_2f8._4_4_,iVar35);
+              local_354 = (*(int *)(p_Var41 + 0x2c) - iStack_304) + iVar35;
+              if (iStack_2fc < local_354) {
+                local_354 = iStack_2fc;
+              }
+              iVar10 = *local_318;
+              local_328._0_4_ = iVar10;
+              local_338 = local_308;
+              if (local_308 <= iVar10) {
+                local_338 = iVar10;
+              }
+              local_2d8 = local_348[1];
+              local_310 = *local_348;
+              iVar11 = (*(int *)(p_Var33 + 0x28) - local_368[local_378 * 2]) + local_310;
+              iVar26 = iStack_300;
+              if (iVar11 <= iStack_300) {
+                iVar26 = iVar11;
+              }
+              iVar11 = iStack_304;
+              if (iStack_304 <= local_2d8) {
+                iVar11 = local_2d8;
+              }
+              local_e8 = (void *)CONCAT44(iVar11,local_368[local_378 * 2]);
+              if ((local_338 < local_368[local_378 * 2] + iVar26) &&
+                 (iVar11 < local_354 + iStack_304)) {
+                iVar36 = (iVar26 - local_338) + local_368[local_378 * 2];
+                iVar26 = (iStack_304 - iVar11) + local_354;
+                local_3a8 = (int)((double)iVar36 * (param_5 / 100.0) + 0.5);
+                local_34c = (int)((double)iVar26 * (param_5 / 100.0) + 0.5);
+                if ((0 < local_3a8) && (0 < local_34c)) {
+                  local_3a4 = (iVar36 - local_3a8) / 2;
+                  local_39c = (iVar26 - local_34c) / 2;
+                  iVar27 = local_3a4 + local_338;
+                  iVar28 = iVar11 + local_39c;
+                  iVar37 = (iVar11 - local_368[local_378 * 2 + 1]) + local_39c;
+                  iVar29 = (local_338 - local_368[local_378 * 2]) + local_3a4;
+                  iVar30 = (iVar11 - local_2d8) + local_39c;
+                  iVar12 = (local_338 - local_310) + local_3a4;
+                  iVar31 = (iVar11 - iVar35) + local_39c;
+                  iVar13 = (local_338 - iVar10) + local_3a4;
+                  iVar40 = (iVar11 - iVar9) + local_39c;
+                  iVar14 = (local_338 - local_350) + local_3a4;
+                  iVar42 = local_3a8;
+                  iVar43 = local_34c;
+                  iVar44 = local_3a8;
+                  iVar45 = local_34c;
+                  iVar46 = local_3a8;
+                  iVar47 = local_34c;
+                  iVar48 = local_3a8;
+                  iVar49 = local_34c;
+                  iVar50 = local_3a8;
+                  iVar51 = local_34c;
+                  local_298 = iVar27;
+                  iStack_294 = iVar28;
+                  iStack_290 = local_3a8;
+                  iStack_28c = local_34c;
+                  local_288 = iVar29;
+                  iStack_284 = iVar37;
+                  iStack_280 = local_3a8;
+                  iStack_27c = local_34c;
+                  local_278 = iVar12;
+                  iStack_274 = iVar30;
+                  iStack_270 = local_3a8;
+                  iStack_26c = local_34c;
+                  local_268 = iVar13;
+                  iStack_264 = iVar31;
+                  iStack_260 = local_3a8;
+                  iStack_25c = local_34c;
+                  local_258 = iVar14;
+                  iStack_254 = iVar40;
+                  iStack_250 = local_3a8;
+                  iStack_24c = local_34c;
+                }
+              }
+            }
+            if (p_Var33 != (_IplImage *)0x0) {
+              uStack_224 = local_368[local_378 * 2 + 1] - local_348[1];
+              uVar15 = uStack_224;
+              if (0 < (int)uStack_224) {
+                uVar15 = 0;
+              }
+              iStack_244 = (uVar15 ^ (int)uVar15 >> 0x1f) - ((int)uVar15 >> 0x1f);
+              local_248 = local_334;
+              iStack_23c = local_358;
+              auVar4._4_4_ = iStack_244;
+              auVar4._0_4_ = local_334;
+              auVar4._8_4_ = iVar38;
+              auVar4._12_4_ = local_358;
+              iStack_234 = local_368[local_378 * 2 + 1] + iStack_244;
+              local_238 = local_334 + local_368[local_378 * 2];
+              iStack_22c = local_358;
+              auVar5._4_4_ = iStack_234;
+              auVar5._0_4_ = local_238;
+              auVar5._8_4_ = iVar38;
+              auVar5._12_4_ = local_358;
+              local_228 = (local_334 - *local_348) + local_368[local_378 * 2];
+              if ((int)uStack_224 < 0) {
+                uStack_224 = 0;
+              }
+              iStack_21c = local_358;
+              local_388._8_8_ = auVar4._8_8_;
+              local_388._4_4_ = iStack_244 + local_39c;
+              local_388._0_4_ = local_334;
+              uVar25 = local_388._0_8_;
+              local_328._8_8_ = auVar5._8_8_;
+              local_328._4_4_ = iStack_234 + local_39c;
+              local_328._0_4_ = local_238;
+              local_348 = (int *)CONCAT44(uStack_224 + local_39c,local_228);
+              local_388._12_4_ = local_358 - local_39c;
+              local_328._12_4_ = local_358 - local_39c;
+              uStack_340 = CONCAT44(local_358 - local_39c,iVar38);
+              iStack_240 = iVar38;
+              iStack_230 = iVar38;
+              iStack_220 = iVar38;
+              local_388._0_8_ = uVar25;
+              cvSetImageROI(p_Var3,local_388);
+              local_388 = local_328;
+              cvSetImageROI(param_6,local_388);
+              cvSetImageROI(p_Var33,&local_348);
+              uVar52 = 0;
+              uVar25 = 0;
+              lVar23 = FUN_180004d00((ulonglong)p_Var3,param_6,p_Var33,0,0);
+              if ((char)lVar23 == '\0') {
+                iVar39 = 0x221;
+                goto LAB_180005d86;
+              }
+              uVar25 = FUN_180004800((longlong)p_Var33,(longlong)p_Var3,param_6,uVar25,uVar52,0);
+              cvResetImageROI(p_Var33);
+              cvResetImageROI(param_6);
+              pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+                        cvResetImageROI(p_Var3);
+              if ((char)uVar25 == '\0') goto LAB_180004f61;
+            }
+            if (p_Var41 != (_IplImage *)0x0) {
+              local_1f8 = local_368[local_378 * 2] - *local_318;
+              uVar15 = local_1f8;
+              if (0 < (int)local_1f8) {
+                uVar15 = 0;
+              }
+              local_218 = (uVar15 ^ (int)uVar15 >> 0x1f) - ((int)uVar15 >> 0x1f);
+              iStack_214 = local_398;
+              iStack_210 = local_330;
+              iStack_20c = local_32c;
+              auVar8._4_8_ = local_388._8_8_;
+              auVar8._0_4_ = local_398;
+              local_388._0_8_ = auVar8._0_8_ << 0x20;
+              local_388._8_4_ = local_330;
+              local_388._12_4_ = local_32c;
+              iStack_204 = local_398 + local_368[local_378 * 2 + 1];
+              local_208 = local_368[local_378 * 2] + local_218;
+              iStack_200 = local_330;
+              iStack_1fc = local_32c;
+              local_328._4_4_ = iStack_204;
+              local_328._0_4_ = local_208;
+              local_328._12_4_ = local_32c;
+              local_328._8_4_ = local_330;
+              iStack_1f4 = (local_398 - local_318[1]) + local_368[local_378 * 2 + 1];
+              if ((int)local_1f8 < 0) {
+                local_1f8 = 0;
+              }
+              iStack_1f0 = local_330;
+              iStack_1ec = local_32c;
+              local_388._0_4_ = local_218 + local_3a4;
+              local_328._0_4_ = local_3a4 + local_208;
+              local_348 = (int *)CONCAT44(iStack_1f4,local_1f8 + local_3a4);
+              local_388._8_4_ = local_330 - local_3a4;
+              local_328._8_4_ = local_330 - local_3a4;
+              uStack_340 = CONCAT44(local_32c,local_330 - local_3a4);
+              local_368 = (int *)local_388._0_8_;
+              uStack_360 = local_388._8_8_;
+              cvSetImageROI(p_Var3,&local_368);
+              local_368 = (int *)local_328._0_8_;
+              uStack_360 = local_328._8_8_;
+              cvSetImageROI(param_6,&local_368);
+              local_368 = local_348;
+              uStack_360 = uStack_340;
+              cvSetImageROI(p_Var41,&local_368);
+              uVar52 = 0;
+              uVar25 = 0;
+              lVar23 = FUN_180004d00((ulonglong)p_Var3,param_6,p_Var41,0,0);
+              if ((char)lVar23 == '\0') {
+                iVar39 = 0x241;
+                goto LAB_180005d86;
+              }
+              uVar25 = FUN_180004800((longlong)p_Var41,(longlong)p_Var3,param_6,uVar25,uVar52,1);
+              cvResetImageROI(p_Var41);
+              cvResetImageROI(param_6);
+              pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+                        cvResetImageROI(p_Var3);
+              if ((char)uVar25 == '\0') goto LAB_180004f61;
+            }
+            p_Var21 = local_2e8;
+            if (((local_2e8 != (_IplImage *)0x0) && (0 < local_3a8)) && (0 < local_34c)) {
+              local_368 = (int *)CONCAT44(iVar28,iVar27);
+              uStack_360 = CONCAT44(iVar43,iVar42);
+              cvSetImageROI(param_6,&local_368);
+              local_368 = (int *)CONCAT44(iVar37,iVar29);
+              uStack_360 = CONCAT44(iVar45,iVar44);
+              cvSetImageROI(p_Var3,&local_368);
+              local_368 = (int *)CONCAT44(iVar30,iVar12);
+              uStack_360 = CONCAT44(iVar47,iVar46);
+              cvSetImageROI(p_Var33,&local_368);
+              local_368 = (int *)CONCAT44(iVar31,iVar13);
+              uStack_360 = CONCAT44(iVar49,iVar48);
+              cvSetImageROI(p_Var41,&local_368);
+              local_368 = (int *)CONCAT44(iVar40,iVar14);
+              uStack_360 = CONCAT44(iVar51,iVar50);
+              cvSetImageROI(p_Var21,&local_368);
+              lVar23 = FUN_180004d00((ulonglong)p_Var3,param_6,p_Var33,p_Var41,p_Var21);
+              if ((char)lVar23 == '\0') {
+                iVar39 = 600;
+                goto LAB_180005d86;
+              }
+              uVar25 = FUN_1800042b0((longlong)p_Var33,(longlong)p_Var41,(longlong)p_Var21,
+                                     (longlong)p_Var3,param_6);
+              cvResetImageROI(param_6);
+              cvResetImageROI(p_Var3);
+              cvResetImageROI(p_Var33);
+              cvResetImageROI(p_Var41);
+              pbVar17 = (basic_ostream<char,struct_std::char_traits<char>_> *)
+                        cvResetImageROI(local_2e8);
+              if ((char)uVar25 == '\0') goto LAB_180004f61;
+            }
+          }
+          iVar39 = iVar39 + 1;
+          local_378 = local_378 + 1;
+          param_3 = local_30c;
+        } while (iVar39 < local_2d4);
+      }
+      local_d8 = 0;
+      uStack_d0 = 0xf;
+      local_e8 = (void *)((ulonglong)local_e8 & 0xffffffffffffff00);
+      FUN_180015be0(&local_e8," 2 InterpolateImage() [end]",0x1b);
+      pbVar32 = local_1e0;
+      pbVar16 = FUN_180010310(pbVar32,&local_e8);
+      uVar25 = FUN_1800035c0(pbVar32,(longlong *)pbVar16);
+      if (0xf < uStack_d0) {
+        pvVar34 = local_e8;
+        if ((0xfff < uStack_d0 + 1) &&
+           (pvVar34 = *(void **)((longlong)local_e8 + -8),
+           0x1f < (ulonglong)((longlong)local_e8 + (-8 - (longlong)pvVar34)))) {
+                    /* WARNING: Subroutine does not return */
+          _invalid_parameter_noinfo_noreturn();
+        }
+        free(pvVar34);
+        uVar25 = extraout_RAX;
+      }
+      return CONCAT71((int7)((ulonglong)uVar25 >> 8),1);
+    }
+  }
+LAB_180004f61:
+  return (ulonglong)pbVar17 & 0xffffffffffffff00;
+}
+

@@ -1,0 +1,169 @@
+Evidence: ev_ff363ac0a916ab5ef0adab26d6d49973f97a71be3ae034d60e8600b5c02abe31
+Subject SHA256: 8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94
+Bundle: matching-evidence.json.gz
+
+
+ulonglong FUN_180007960(longlong *param_1,undefined4 *param_2,undefined4 *param_3,longlong param_4,
+                       longlong param_5,undefined8 *param_6)
+
+{
+  int iVar1;
+  longlong lVar2;
+  undefined8 uVar3;
+  ulonglong unaff_RBX;
+  undefined4 uVar4;
+  undefined **local_50;
+  longlong local_48;
+  undefined **local_40;
+  longlong local_38 [2];
+  undefined4 local_28;
+  undefined4 uStack_24;
+  undefined4 uStack_20;
+  undefined4 uStack_1c;
+  
+  if (*(int *)(param_4 + 8) != *(int *)(param_5 + 8)) {
+    return unaff_RBX;
+  }
+  if (*(int *)(param_4 + 0x10) != *(int *)(param_5 + 0x10)) {
+    return unaff_RBX;
+  }
+  if (*(int *)(param_4 + 8) != 3) {
+    return unaff_RBX;
+  }
+  if (*(int *)(param_5 + 8) != 3) {
+    return unaff_RBX;
+  }
+  if (*(int *)(param_4 + 0x28) != *(int *)(param_5 + 0x28)) {
+    return unaff_RBX;
+  }
+  if (*(int *)(param_4 + 0x2c) != *(int *)(param_5 + 0x2c)) {
+    return unaff_RBX;
+  }
+  if (param_6 == (undefined8 *)0x0) {
+    return unaff_RBX;
+  }
+  local_40 = AutoIplImage::vftable;
+  local_38[0] = 0;
+  local_50 = AutoIplImage::vftable;
+  local_48 = 0;
+  lVar2 = cvCreateImage(*(undefined8 *)(param_2 + 2),*(int *)(param_4 + 0x10),3);
+  if (local_38[0] != 0) {
+    cvReleaseImage(local_38);
+    iVar1 = cvGetErrStatus();
+    if (iVar1 < 0) {
+      cvError(0xffffffff,s_release_18000f028,"Inner function failed.",
+              "..\\StitchingCommon\\include\\ImageManager.cpp",0x28a);
+    }
+  }
+  local_38[0] = lVar2;
+  iVar1 = cvGetErrStatus();
+  if (iVar1 < 0) {
+    uVar4 = 0x1c1;
+  }
+  else {
+    lVar2 = cvCreateImage(*(undefined8 *)(param_3 + 2),*(undefined4 *)(param_5 + 0x10),
+                          *(undefined4 *)(param_5 + 8));
+    if (local_48 != 0) {
+      cvReleaseImage(&local_48);
+      iVar1 = cvGetErrStatus();
+      if (iVar1 < 0) {
+        cvError(0xffffffff,s_release_18000f028,"Inner function failed.",
+                "..\\StitchingCommon\\include\\ImageManager.cpp",0x28a);
+      }
+    }
+    local_48 = lVar2;
+    iVar1 = cvGetErrStatus();
+    if (iVar1 < 0) {
+      uVar4 = 0x1c2;
+    }
+    else {
+      local_28 = *param_2;
+      uStack_24 = param_2[1];
+      uStack_20 = param_2[2];
+      uStack_1c = param_2[3];
+      cvSetImageROI(param_4,&local_28);
+      iVar1 = cvGetErrStatus();
+      if (iVar1 < 0) {
+        uVar4 = 0x1c3;
+      }
+      else {
+        local_28 = *param_3;
+        uStack_24 = param_3[1];
+        uStack_20 = param_3[2];
+        uStack_1c = param_3[3];
+        cvSetImageROI(param_5,&local_28);
+        iVar1 = cvGetErrStatus();
+        if (iVar1 < 0) {
+          uVar4 = 0x1c4;
+        }
+        else {
+          cvCopy(param_4,local_38[0],0);
+          iVar1 = cvGetErrStatus();
+          if (iVar1 < 0) {
+            uVar4 = 0x1c5;
+          }
+          else {
+            cvCopy(param_5,local_48,0);
+            iVar1 = cvGetErrStatus();
+            if (iVar1 < 0) {
+              uVar4 = 0x1c6;
+            }
+            else {
+              cvResetImageROI(param_4);
+              iVar1 = cvGetErrStatus();
+              if (iVar1 < 0) {
+                uVar4 = 0x1c7;
+              }
+              else {
+                cvResetImageROI(param_5);
+                iVar1 = cvGetErrStatus();
+                if (-1 < iVar1) goto LAB_180007bfb;
+                uVar4 = 0x1c8;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  cvError(0xffffffff,s_CalculateShift_18000f068,"Inner function failed.","ImageMatching.cpp",uVar4);
+LAB_180007bfb:
+  iVar1 = cvGetErrStatus();
+  if (iVar1 < 0) {
+    uVar3 = _log_info_id(2);
+    LogTraceStdF(L"[Stitch_C++]openCV error.",uVar3,
+                 L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                 ,0x37);
+  }
+  else {
+    (**(code **)*param_1)(0);
+    uVar3 = FUN_180007f90(param_1,(longlong)&local_40,(longlong)&local_50,param_6);
+    if ((int)uVar3 != 0) {
+      uVar3 = _log_info_id(2);
+      LogTraceStdF(L"[Stitch_C++]calculate shift value error.",uVar3,
+                   L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                   ,0x37);
+    }
+    (**(code **)(*param_1 + 8))();
+  }
+  local_50 = AutoIplImage::vftable;
+  if (local_48 != 0) {
+    cvReleaseImage(&local_48);
+    iVar1 = cvGetErrStatus();
+    if (iVar1 < 0) {
+      cvError(0xffffffff,s_release_18000f028,"Inner function failed.",
+              "..\\StitchingCommon\\include\\ImageManager.cpp",0x28a);
+    }
+  }
+  local_40 = AutoIplImage::vftable;
+  if (local_38[0] != 0) {
+    cvReleaseImage(local_38);
+    iVar1 = cvGetErrStatus();
+    if (iVar1 < 0) {
+      cvError(0xffffffff,s_release_18000f028,"Inner function failed.",
+              "..\\StitchingCommon\\include\\ImageManager.cpp",0x28a);
+    }
+  }
+  return unaff_RBX;
+}
+

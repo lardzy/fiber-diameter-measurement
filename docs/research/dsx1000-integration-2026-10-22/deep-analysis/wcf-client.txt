@@ -1,0 +1,25 @@
+EVIDENCE ev_9f8dbdde3fd7b44578f750e7303507672484bea2ebf5e11c4fc5052af0befa80 SHA256 c7078c1d780a88773edbbf75fd2fe988615af13f9031ce78c2765a93c4443047
+
+METHOD 0x06000023 Olympus.LI.Triumph.InterProcess.InterProcessCommunication.ApplicationServiceClient ImageTransfer IL_SHA256 3de91c92ed0013eecc6b3e901f65ebf2235a377ad4ad50f1d55d1108d429d29b DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x0a00001c System.ServiceModel.ClientBase`1.get_Channel
+0006: ldarg.1        
+0007: ldarg.2        
+0008: ldarg.3        
+0009: ldarg.s       4 
+000b: ldarg.s       5 
+000d: ldarg.s       6 
+000f: callvirt      0x0600000a Olympus.LI.Triumph.InterProcess.InterProcessCommunication.IApplicationService.ImageTransfer
+0014: ret            
+
+METHOD 0x0600002e Olympus.LI.Triumph.InterProcess.InterProcessCommunication.MicroscopeClient ImageTrancefer IL_SHA256 a3549d308298df461136a9ad0f2d757ff527c968bd828f7160c99472e335652f DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000007 Olympus.LI.Triumph.InterProcess.InterProcessCommunication.MicroscopeClient._clsProxy
+0006: ldarg.1        
+0007: ldarg.2        
+0008: ldarg.3        
+0009: ldarg.s       4 
+000b: ldarg.s       5 
+000d: ldarg.s       6 
+000f: callvirt      0x06000023 Olympus.LI.Triumph.InterProcess.InterProcessCommunication.ApplicationServiceClient.ImageTransfer
+0014: ret            

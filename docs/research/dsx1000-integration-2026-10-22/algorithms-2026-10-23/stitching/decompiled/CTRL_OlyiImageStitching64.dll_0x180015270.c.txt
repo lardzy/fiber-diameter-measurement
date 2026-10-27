@@ -1,0 +1,177 @@
+Evidence: ev_9c9f9e17de919729b8b33abc9710e292726ec3f9d203ad06bb5adf53b8687c30
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_180015270(ulonglong param_1,ulonglong *param_2,undefined8 param_3,undefined2 *param_4)
+
+{
+  double dVar1;
+  byte bVar2;
+  undefined2 uVar3;
+  longlong lVar4;
+  code *pcVar5;
+  int iVar6;
+  int iVar7;
+  longlong lVar8;
+  ulonglong *puVar9;
+  undefined2 *puVar10;
+  int iVar11;
+  ulonglong uVar12;
+  int iVar13;
+  ulonglong uVar14;
+  ulonglong uVar15;
+  double dVar16;
+  undefined1 auStackY_138 [32];
+  byte local_108;
+  byte bStack_107;
+  ulonglong local_100;
+  ulonglong local_f8;
+  ulonglong local_f0;
+  undefined2 *local_e8;
+  ulonglong local_e0;
+  ulonglong local_d8;
+  void *local_d0;
+  longlong lStack_c8;
+  undefined8 local_c0;
+  ulonglong local_b8;
+  ulonglong local_b0;
+  ulonglong local_a8;
+  undefined8 local_a0;
+  undefined8 local_80;
+  ulonglong local_78;
+  
+  local_a0 = 0xfffffffffffffffe;
+  local_78 = DAT_180023000 ^ (ulonglong)auStackY_138;
+  local_d0 = (void *)0x0;
+  lStack_c8 = 0;
+  local_c0 = 0;
+  iVar13 = (int)((ulonglong)param_3 >> 0x20);
+  iVar11 = (int)param_3;
+  local_e8 = param_4;
+  lVar8 = FUN_18000dc80(param_1,iVar11,iVar13,param_2,(ulonglong *)&local_d0);
+  iVar7 = (int)lVar8;
+  local_f8 = CONCAT44(local_f8._4_4_,iVar7);
+  if (iVar7 != 0) {
+    lVar8 = *(longlong *)(param_1 + 0x220);
+    if ((lVar8 != 0) && (*(char *)(param_1 + 0x228) != '\0')) {
+      *(undefined1 *)
+       ((longlong)(*(int *)(lVar8 + 0x60) * iVar13 + iVar11) + *(longlong *)(lVar8 + 0x58)) = 0xff;
+    }
+    local_b0 = lStack_c8 - (longlong)local_d0 >> 2;
+    if (local_b0 <= (ulonglong)(longlong)(iVar7 + -1)) {
+      std::_Xout_of_range("invalid vector<T> subscript");
+      pcVar5 = (code *)swi(3);
+      (*pcVar5)();
+      return;
+    }
+    uVar15 = (ulonglong)*(int *)((longlong)local_d0 + (longlong)(iVar7 + -1) * 4);
+    local_a8 = *param_2;
+    local_b8 = (longlong)(param_2[1] - local_a8) >> 3;
+    if (local_b8 <= uVar15) {
+      std::_Xout_of_range("invalid vector<T> subscript");
+      pcVar5 = (code *)swi(3);
+      (*pcVar5)();
+      return;
+    }
+    lVar8 = *(longlong *)(local_a8 + uVar15 * 8);
+    if (*(int *)(param_1 + 0xdc) == 0) {
+      iVar6 = FUN_180007120(lVar8 + 0x10,iVar11,iVar13);
+      uVar15 = (ulonglong)iVar6;
+    }
+    else {
+      uVar15 = FUN_1800071f0(lVar8 + 0x10,iVar11,iVar13);
+    }
+    lVar4 = *(longlong *)(lVar8 + 8);
+    puVar10 = (undefined2 *)
+              ((longlong)(*(int *)(lVar4 + 0x60) * (iVar13 - *(int *)(lVar8 + 0x9c))) +
+               (longlong)(*(int *)(lVar4 + 8) * (iVar11 - *(int *)(lVar8 + 0x98))) +
+              *(longlong *)(lVar4 + 0x58));
+    uVar3 = *puVar10;
+    bVar2 = *(byte *)(puVar10 + 1);
+    if ((((iVar7 == 1) || (iVar7 = *(int *)(param_1 + 0xf0), iVar7 == 1)) ||
+        (*(int *)(param_1 + 0xd8) == 0)) || (*(ulonglong *)(param_1 + 0x1f8) < uVar15)) {
+      *local_e8 = uVar3;
+      *(byte *)(local_e8 + 1) = bVar2;
+    }
+    else {
+      local_f0 = 0xffffffffffffffff;
+      if (*(int *)(param_1 + 0xe8) == 1) {
+        local_f0 = *(ulonglong *)
+                    (*(longlong *)(param_1 + 0x1f0) +
+                    (longlong)
+                    (((iVar13 - *(int *)(lVar8 + 0x9c)) * *(int *)(lVar4 + 0x28) -
+                     *(int *)(lVar8 + 0x98)) + iVar11) * 8);
+      }
+      local_80 = 0;
+      local_108 = (byte)uVar3;
+      local_e0 = local_108 * uVar15;
+      bStack_107 = (byte)((ushort)uVar3 >> 8);
+      local_100 = bStack_107 * uVar15;
+      local_d8 = bVar2 * uVar15;
+      dVar1 = *(double *)(param_1 + 0xe0);
+      iVar6 = 1;
+      if (-1 < (int)local_f8 + -2) {
+        uVar12 = (ulonglong)((int)local_f8 + -2);
+        do {
+          if (iVar6 == iVar7) break;
+          if (local_b0 <= uVar12) {
+            std::_Xout_of_range("invalid vector<T> subscript");
+            pcVar5 = (code *)swi(3);
+            (*pcVar5)();
+            return;
+          }
+          uVar14 = (ulonglong)*(int *)((longlong)local_d0 + uVar12 * 4);
+          if (local_b8 <= uVar14) {
+            std::_Xout_of_range("invalid vector<T> subscript");
+            pcVar5 = (code *)swi(3);
+            (*pcVar5)();
+            return;
+          }
+          lVar8 = *(longlong *)(local_a8 + uVar14 * 8);
+          if (*(int *)(param_1 + 0xdc) == 0) {
+            iVar7 = FUN_180007120(lVar8 + 0x10,iVar11,iVar13);
+            local_f8 = (ulonglong)iVar7;
+          }
+          else {
+            local_f8 = FUN_1800071f0(lVar8 + 0x10,iVar11,iVar13);
+          }
+          lVar4 = *(longlong *)(lVar8 + 8);
+          puVar10 = (undefined2 *)
+                    ((longlong)(*(int *)(lVar4 + 0x60) * (iVar13 - *(int *)(lVar8 + 0x9c))) +
+                     (longlong)(*(int *)(lVar4 + 8) * (iVar11 - *(int *)(lVar8 + 0x98))) +
+                    *(longlong *)(lVar4 + 0x58));
+          uVar3 = *puVar10;
+          puVar9 = &local_f8;
+          if (local_f0 <= local_f8) {
+            puVar9 = &local_f0;
+          }
+          dVar16 = (double)(longlong)*puVar9;
+          if ((longlong)*puVar9 < 0) {
+            dVar16 = dVar16 + 1.8446744073709552e+19;
+          }
+          lVar8 = (longlong)(int)ROUND(dVar16 * dVar1);
+          uVar15 = uVar15 + lVar8;
+          local_108 = (byte)uVar3;
+          local_e0 = local_e0 + (ulonglong)local_108 * lVar8;
+          bStack_107 = (byte)((ushort)uVar3 >> 8);
+          local_100 = local_100 + (ulonglong)bStack_107 * lVar8;
+          local_d8 = local_d8 + (ulonglong)*(byte *)(puVar10 + 1) * lVar8;
+          iVar6 = iVar6 + 1;
+          uVar12 = uVar12 - 1;
+          iVar7 = *(int *)(param_1 + 0xf0);
+        } while (-1 < (longlong)uVar12);
+      }
+      *(char *)local_e8 = (char)(local_e0 / uVar15);
+      *(char *)((longlong)local_e8 + 1) = (char)(local_100 / uVar15);
+      *(char *)(local_e8 + 1) = (char)(local_d8 / uVar15);
+    }
+  }
+  if (local_d0 != (void *)0x0) {
+    operator_delete(local_d0);
+  }
+  return;
+}
+

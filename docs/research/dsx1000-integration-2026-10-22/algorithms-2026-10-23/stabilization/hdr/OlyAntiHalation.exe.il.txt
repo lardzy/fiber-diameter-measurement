@@ -1,0 +1,590 @@
+// ev_09368777195f2aa665adced0801a6bdb86fa91bd98a9cc2b8003b839a08513a8
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::RunAntiHalation 0x06000001
+0000 ldarg.0 None 
+0001 call 0x06000008 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_Initialize
+0006 ldarg.1 None 
+0007 ldloca.s 0 
+0009 ldloca.s 2 
+0011 ldloca.s 3 
+0013 ldloca.s 4 
+0015 call 0x0a000011 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ArgXMLFileIO::LoadArgFromXML
+0020 stloc.s 5 
+0022 ldloc.s 5 
+0024 brfalse.s 50 
+0026 ldloc.2 None 
+0027 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0032 ldloc.s 5 
+0034 ldc.r8 100 
+0043 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0048 pop None 
+0049 ret None 
+0050 ldarg.0 None 
+0051 ldloc.3 None 
+0052 ldloc.s 4 
+0054 call 0x06000002 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_AllockMemory
+0059 stloc.s 5 
+0061 ldloc.s 5 
+0063 brfalse.s 89 
+0065 ldloc.2 None 
+0066 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0071 ldloc.s 5 
+0073 ldc.r8 100 
+0082 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0087 pop None 
+0088 ret None 
+0089 ldloc.0 None 
+0090 isinst 0x01000008 
+0095 stloc.1 None 
+0096 ldarg.0 None 
+0097 ldfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0102 box 0x0100001f 
+0107 stloc.s 6 
+0109 ldloc.3 None 
+0110 stloc.s 7 
+0112 ldloc.s 7 
+0114 ldc.i4.0 None 
+0115 callvirt 0x0a000014 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::set_PassingImageData
+0120 ldloc.s 7 
+0122 ldtoken 0x0100001f 
+0127 call 0x0a000015 System.Type::GetTypeFromHandle
+0132 callvirt 0x0a000016 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::set_MemoryDataType
+0137 ldloc.2 None 
+0138 callvirt 0x0a000017 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_InputImagePath
+0143 ldloc.s 7 
+0145 ldloca.s 6 
+0147 call 0x0a000018 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ImageDataFileIO::LoadImageData
+0152 stloc.s 5 
+0154 ldloc.s 5 
+0156 brfalse.s 182 
+0158 ldloc.2 None 
+0159 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0164 ldloc.s 5 
+0166 ldc.r8 100 
+0175 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0180 pop None 
+0181 ret None 
+0182 ldloc.3 None 
+0183 callvirt 0x0a000019 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageFormat
+0188 ldc.i4.2 None 
+0189 bne.un.s 204 
+0191 ldarg.0 None 
+0192 ldloc.3 None 
+0193 ldarg.0 None 
+0194 ldfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0199 call 0x06000009 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertBGR2RGB
+0204 ldarg.0 None 
+0205 ldloc.3 None 
+0206 ldloc.s 4 
+0208 call 0x06000004 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_SetImageClass
+0213 stloc.s 5 
+0215 ldloc.s 5 
+0217 brfalse.s 243 
+0219 ldloc.2 None 
+0220 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0225 ldloc.s 5 
+0227 ldc.r8 100 
+0236 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0241 pop None 
+0242 ret None 
+0243 ldarg.0 None 
+0244 ldloc.1 None 
+0245 call 0x06000005 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ApicalExecute
+0250 stloc.s 5 
+0252 ldloc.s 5 
+0254 brfalse.s 280 
+0256 ldloc.2 None 
+0257 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0262 ldloc.s 5 
+0264 ldc.r8 100 
+0273 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0278 pop None 
+0279 ret None 
+0280 ldarg.0 None 
+0281 ldloc.1 None 
+0282 ldloc.3 None 
+0283 call 0x06000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_NoiseReductionExecute
+0288 stloc.s 5 
+0290 ldloc.s 5 
+0292 brfalse.s 318 
+0294 ldloc.2 None 
+0295 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0300 ldloc.s 5 
+0302 ldc.r8 100 
+0311 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0316 pop None 
+0317 ret None 
+0318 ldloc.s 4 
+0320 callvirt 0x0a000019 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageFormat
+0325 ldc.i4.2 None 
+0326 bne.un.s 366 
+0328 ldloc.1 None 
+0329 callvirt 0x0a00001a Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NRLevel
+0334 brtrue.s 352 
+0336 ldarg.0 None 
+0337 ldloc.s 4 
+0339 ldarg.0 None 
+0340 ldfld 0x04000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pApicalTempImageData
+0345 call 0x06000009 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertBGR2RGB
+0350 br.s 366 
+0352 ldarg.0 None 
+0353 ldloc.s 4 
+0355 ldarg.0 None 
+0356 ldfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0361 call 0x06000009 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertBGR2RGB
+0366 ldloc.1 None 
+0367 callvirt 0x0a00001a Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NRLevel
+0372 brtrue.s 389 
+0374 ldarg.0 None 
+0375 ldfld 0x04000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pApicalTempImageData
+0380 box 0x0100001f 
+0385 stloc.s 6 
+0387 br.s 402 
+0389 ldarg.0 None 
+0390 ldfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0395 box 0x0100001f 
+0400 stloc.s 6 
+0402 ldloc.s 4 
+0404 stloc.s 7 
+0406 ldloc.s 7 
+0408 ldc.i4.0 None 
+0409 callvirt 0x0a000014 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::set_PassingImageData
+0414 ldloc.s 7 
+0416 ldtoken 0x0100001f 
+0421 call 0x0a000015 System.Type::GetTypeFromHandle
+0426 callvirt 0x0a000016 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::set_MemoryDataType
+0431 ldloc.2 None 
+0432 callvirt 0x0a00001b Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_OutputImagePath
+0437 ldloc.s 4 
+0439 ldloca.s 6 
+0441 call 0x0a00001c Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ImageDataFileIO::SaveImageData
+0446 stloc.s 5 
+0448 ldarg.0 None 
+0449 call 0x06000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ReleaseResource
+0454 pop None 
+0455 ldloc.2 None 
+0456 callvirt 0x0a000012 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.FilePath::get_ResultFilePath
+0461 ldloc.s 5 
+0463 ldc.r8 100 
+0472 call 0x0a000013 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.InterProcessFileIO.ResultFileIO::WriteResultFile
+0477 pop None 
+0478 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_AllockMemory 0x06000002
+0000 ldarg.0 None 
+0001 ldfld 0x04000004 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalWrapper
+0006 ldloca.s 0 
+0008 conv.u None 
+0009 ldloca.s 2 
+0011 conv.u None 
+0012 callvirt 0x0a00001d Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::QueryWorkBuffInfo
+0017 pop None 
+0018 ldarg.0 None 
+0019 ldfld 0x04000005 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsNoiseReductionWrapper
+0024 ldloca.s 1 
+0026 conv.u None 
+0027 ldloca.s 3 
+0029 conv.u None 
+0030 callvirt 0x0a00001e Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::QueryWorkBuffInfo
+0035 pop None 
+0036 ldloc.2 None 
+0037 ldloc.3 None 
+0038 add None 
+0039 conv.u4 None 
+0040 stloc.s 5 
+0042 ldc.i4.0 None 
+0043 stloc.s 4 
+0045 br.s 90 
+0047 ldloc.s 4 
+0049 conv.u8 None 
+0050 ldloc.2 None 
+0051 bge.un.s 59 
+0053 ldloc.0 None 
+0054 conv.u4 None 
+0055 stloc.s 6 
+0057 br.s 63 
+0059 ldloc.1 None 
+0060 conv.u4 None 
+0061 stloc.s 6 
+0063 ldarg.0 None 
+0064 ldfld 0x04000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsBufferIF
+0069 ldloc.s 6 
+0071 ldc.i4.0 None 
+0072 conv.u None 
+0073 call 0x0a00001f System.IntPtr::op_Explicit
+0078 callvirt 0x0a000020 OlyIPCommonCLI.COlyIPBufferCLI::PushBuffer
+0083 pop None 
+0084 ldloc.s 4 
+0086 ldc.i4.1 None 
+0087 add None 
+0088 stloc.s 4 
+0090 ldloc.s 4 
+0092 ldloc.s 5 
+0094 blt.un.s 47 
+0096 ldarg.0 None 
+0097 ldfld 0x04000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsBufferIF
+0102 callvirt 0x0a000021 OlyIPCommonCLI.COlyIPBufferCLI::Attach
+0107 pop None 
+0108 ldarg.0 None 
+0109 ldarg.1 None 
+0110 callvirt 0x0a000022 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageWidth
+0115 ldarg.1 None 
+0116 callvirt 0x0a000023 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageHeight
+0121 mul None 
+0122 ldarg.1 None 
+0123 callvirt 0x0a000024 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ChannelPerPixel
+0128 mul None 
+0129 call 0x0a000025 System.Runtime.InteropServices.Marshal::AllocCoTaskMem
+0134 stfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0139 ldarg.0 None 
+0140 ldarg.2 None 
+0141 callvirt 0x0a000022 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageWidth
+0146 ldarg.2 None 
+0147 callvirt 0x0a000023 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageHeight
+0152 mul None 
+0153 ldarg.2 None 
+0154 callvirt 0x0a000024 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ChannelPerPixel
+0159 mul None 
+0160 call 0x0a000025 System.Runtime.InteropServices.Marshal::AllocCoTaskMem
+0165 stfld 0x04000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pApicalTempImageData
+0170 leave.s 191 
+0172 stloc.s 7 
+0174 ldloc.s 7 
+0176 callvirt 0x0a000026 System.Exception::get_Message
+0181 call 0x0a000027 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0186 ldc.i4.5 None 
+0187 stloc.s 8 
+0189 leave.s 217 
+0191 ldarg.0 None 
+0192 ldfld 0x04000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsBufferIF
+0197 callvirt 0x0a000021 OlyIPCommonCLI.COlyIPBufferCLI::Attach
+0202 pop None 
+0203 ldarg.0 None 
+0204 ldfld 0x04000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsBufferIF
+0209 callvirt 0x0a000021 OlyIPCommonCLI.COlyIPBufferCLI::Attach
+0214 pop None 
+0215 ldc.i4.0 None 
+0216 ret None 
+0217 ldloc.s 8 
+0219 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ReleaseResource 0x06000003
+0000 ldarg.0 None 
+0001 ldfld 0x04000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsBufferIF
+0006 callvirt 0x0a000028 OlyIPCommonCLI.COlyIPBufferCLI::Dispose
+0011 ldarg.0 None 
+0012 ldfld 0x04000001 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsInOutImage
+0017 callvirt 0x0a000029 OlyIPCommonCLI.COlyImageCLI::Dispose
+0022 ldarg.0 None 
+0023 ldfld 0x04000002 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalImage
+0028 callvirt 0x0a000029 OlyIPCommonCLI.COlyImageCLI::Dispose
+0033 ldarg.0 None 
+0034 ldfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0039 call 0x0a00002a System.Runtime.InteropServices.Marshal::FreeCoTaskMem
+0044 ldarg.0 None 
+0045 ldfld 0x04000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pApicalTempImageData
+0050 call 0x0a00002a System.Runtime.InteropServices.Marshal::FreeCoTaskMem
+0055 ldc.i4.0 None 
+0056 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_SetImageClass 0x06000004
+0000 ldarg.0 None 
+0001 ldflda 0x04000001 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsInOutImage
+0006 ldarg.0 None 
+0007 ldarg.1 None 
+0008 callvirt 0x0a000019 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageFormat
+0013 call 0x06000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertImageType
+0018 ldarg.1 None 
+0019 callvirt 0x0a000022 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageWidth
+0024 ldarg.1 None 
+0025 callvirt 0x0a000023 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageHeight
+0030 ldarg.1 None 
+0031 callvirt 0x0a00002b Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_EffectiveBits
+0036 ldarg.1 None 
+0037 callvirt 0x0a000024 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ChannelPerPixel
+0042 ldarg.1 None 
+0043 callvirt 0x0a00002b Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_EffectiveBits
+0048 ldarg.0 None 
+0049 ldfld 0x04000006 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pInOutImageData
+0054 call 0x0a00002c OlyIPCommonCLI.COlyImageCLI::CreateInstance
+0059 stloc.0 None 
+0060 ldloc.0 None 
+0061 brfalse.s 66 
+0063 ldc.i4.s 12 
+0065 ret None 
+0066 ldarg.0 None 
+0067 ldflda 0x04000002 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalImage
+0072 ldarg.0 None 
+0073 ldarg.1 None 
+0074 callvirt 0x0a000019 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageFormat
+0079 call 0x06000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertImageType
+0084 ldarg.2 None 
+0085 callvirt 0x0a000022 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageWidth
+0090 ldarg.2 None 
+0091 callvirt 0x0a000023 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageHeight
+0096 ldarg.2 None 
+0097 callvirt 0x0a00002b Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_EffectiveBits
+0102 ldarg.2 None 
+0103 callvirt 0x0a000024 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ChannelPerPixel
+0108 ldarg.2 None 
+0109 callvirt 0x0a00002b Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_EffectiveBits
+0114 ldarg.0 None 
+0115 ldfld 0x04000007 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_pApicalTempImageData
+0120 call 0x0a00002c OlyIPCommonCLI.COlyImageCLI::CreateInstance
+0125 stloc.0 None 
+0126 ldloc.0 None 
+0127 brfalse.s 132 
+0129 ldc.i4.s 12 
+0131 ret None 
+0132 ldc.i4.0 None 
+0133 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ApicalExecute 0x06000005
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldc.i4.8 None 
+0003 newarr 0x01000028 
+0008 stloc.s 4 
+0010 ldc.i4.8 None 
+0011 newarr 0x01000028 
+0016 stloc.s 5 
+0018 ldc.i4.8 None 
+0019 newarr 0x01000028 
+0024 stloc.s 6 
+0026 ldarg.1 None 
+0027 callvirt 0x0a00002d Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NoiseSupSlp1
+0032 ldlen None 
+0033 conv.i4 None 
+0034 stloc.2 None 
+0035 ldc.i4.0 None 
+0036 stloc.1 None 
+0037 br.s 55 
+0039 ldloc.s 4 
+0041 ldloc.1 None 
+0042 ldarg.1 None 
+0043 callvirt 0x0a00002d Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NoiseSupSlp1
+0048 ldloc.1 None 
+0049 ldelem.u4 None 
+0050 stelem.i4 None 
+0051 ldloc.1 None 
+0052 ldc.i4.1 None 
+0053 add None 
+0054 stloc.1 None 
+0055 ldloc.1 None 
+0056 ldloc.2 None 
+0057 blt.s 39 
+0059 ldarg.1 None 
+0060 callvirt 0x0a00002e Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NoiseSupSlp2
+0065 ldlen None 
+0066 conv.i4 None 
+0067 stloc.2 None 
+0068 ldc.i4.0 None 
+0069 stloc.1 None 
+0070 br.s 88 
+0072 ldloc.s 5 
+0074 ldloc.1 None 
+0075 ldarg.1 None 
+0076 callvirt 0x0a00002e Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NoiseSupSlp2
+0081 ldloc.1 None 
+0082 ldelem.u4 None 
+0083 stelem.i4 None 
+0084 ldloc.1 None 
+0085 ldc.i4.1 None 
+0086 add None 
+0087 stloc.1 None 
+0088 ldloc.1 None 
+0089 ldloc.2 None 
+0090 blt.s 72 
+0092 ldarg.1 None 
+0093 callvirt 0x0a00002f Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NoiseSupBin
+0098 ldlen None 
+0099 conv.i4 None 
+0100 stloc.2 None 
+0101 ldc.i4.0 None 
+0102 stloc.1 None 
+0103 br.s 121 
+0105 ldloc.s 6 
+0107 ldloc.1 None 
+0108 ldarg.1 None 
+0109 callvirt 0x0a00002f Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NoiseSupBin
+0114 ldloc.1 None 
+0115 ldelem.u4 None 
+0116 stelem.i4 None 
+0117 ldloc.1 None 
+0118 ldc.i4.1 None 
+0119 add None 
+0120 stloc.1 None 
+0121 ldloc.1 None 
+0122 ldloc.2 None 
+0123 blt.s 105 
+0125 ldarg.1 None 
+0126 callvirt 0x0a000030 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_Asymmetry
+0131 stloc.s 7 
+0133 ldarg.1 None 
+0134 callvirt 0x0a000031 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_Saturation
+0139 stloc.s 8 
+0141 ldarg.1 None 
+0142 callvirt 0x0a000032 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_Strength
+0147 stloc.s 9 
+0149 ldarg.0 None 
+0150 ldfld 0x04000004 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalWrapper
+0155 ldarg.0 None 
+0156 ldfld 0x04000001 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsInOutImage
+0161 ldarg.0 None 
+0162 ldfld 0x04000002 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalImage
+0167 ldloc.s 7 
+0169 ldloc.s 8 
+0171 ldloc.s 9 
+0173 ldloc.s 4 
+0175 ldloc.s 5 
+0177 ldloc.s 6 
+0179 callvirt 0x0a000033 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::Execute
+0184 stloc.3 None 
+0185 ldarg.0 None 
+0186 ldnull None 
+0187 stfld 0x04000004 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalWrapper
+0192 ldloc.3 None 
+0193 brtrue.s 199 
+0195 ldc.i4.0 None 
+0196 stloc.0 None 
+0197 br.s 202 
+0199 ldc.i4.s 12 
+0201 stloc.0 None 
+0202 ldloc.0 None 
+0203 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_NoiseReductionExecute 0x06000006
+0000 ldc.i4.0 None 
+0001 stloc.0 None 
+0002 ldc.i4.1 None 
+0003 stloc.2 None 
+0004 ldarg.1 None 
+0005 callvirt 0x0a00001a Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NRLevel
+0010 brtrue.s 14 
+0012 ldc.i4.0 None 
+0013 ret None 
+0014 ldarg.1 None 
+0015 callvirt 0x0a00001a Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingParam.AntiHalation_Param::get_NRLevel
+0020 stloc.3 None 
+0021 ldloc.3 None 
+0022 ldc.i4.1 None 
+0023 sub None 
+0024 switch 3 
+0041 br.s 53 
+0043 ldc.i4.1 None 
+0044 stloc.2 None 
+0045 br.s 53 
+0047 ldc.i4.2 None 
+0048 stloc.2 None 
+0049 br.s 53 
+0051 ldc.i4.3 None 
+0052 stloc.2 None 
+0053 ldarg.0 None 
+0054 ldfld 0x04000005 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsNoiseReductionWrapper
+0059 ldarg.0 None 
+0060 ldfld 0x04000002 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalImage
+0065 ldarg.0 None 
+0066 ldfld 0x04000001 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsInOutImage
+0071 ldloc.2 None 
+0072 callvirt 0x0a000034 Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::Execute
+0077 stloc.1 None 
+0078 ldloc.1 None 
+0079 brtrue.s 85 
+0081 ldc.i4.0 None 
+0082 stloc.0 None 
+0083 br.s 88 
+0085 ldc.i4.s 12 
+0087 stloc.0 None 
+0088 ldloc.0 None 
+0089 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertImageType 0x06000007
+0000 ldc.i4.2 None 
+0001 stloc.0 None 
+0002 ldloc.0 None 
+0003 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_Initialize 0x06000008
+0000 call 0x0a000035 System.AppDomain::get_CurrentDomain
+0005 callvirt 0x0a000036 System.AppDomain::get_BaseDirectory
+0010 stloc.0 None 
+0011 ldarg.0 None 
+0012 ldflda 0x04000003 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsBufferIF
+0017 call 0x0a000037 OlyIPCommonCLI.COlyIPBufferCLI::CreateInstance
+0022 pop None 
+0023 ldarg.0 None 
+0024 ldsfld 0x0a000038 System.String::Empty
+0029 ldsfld 0x0a000038 System.String::Empty
+0034 newobj 0x0a000039 Olympus.LI.Triumph.Image.AntiHalationWrapper.ApicalWrapper::.ctor
+0039 stfld 0x04000004 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsApicalWrapper
+0044 ldarg.0 None 
+0045 ldsfld 0x0a000038 System.String::Empty
+0050 ldloc.0 None 
+0051 ldstr 0x70000001 'OlySpica.ini'
+0056 call 0x0a00003a System.IO.Path::Combine
+0061 newobj 0x0a00003b Olympus.LI.Triumph.Image.AntiHalationWrapper.NoiseReductionWrapper::.ctor
+0066 stfld 0x04000005 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_clsNoiseReductionWrapper
+0071 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::_ConvertBGR2RGB 0x06000009
+0000 ldarg.1 None 
+0001 callvirt 0x0a000022 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageWidth
+0006 ldarg.1 None 
+0007 callvirt 0x0a000023 Olympus.LI.Triumph.Infrastructure.InterProcessImaging.ImagingCommon.ImageInfo::get_ImageHeight
+0012 mul None 
+0013 stloc.0 None 
+0014 ldarg.2 None 
+0015 call 0x0a00003c System.IntPtr::op_Explicit
+0020 stloc.3 None 
+0021 ldc.i4.0 None 
+0022 stloc.1 None 
+0023 br.s 50 
+0025 ldloc.3 None 
+0026 ldind.u1 None 
+0027 stloc.2 None 
+0028 ldloc.3 None 
+0029 ldloc.3 None 
+0030 ldc.i4.2 None 
+0031 conv.i None 
+0032 add None 
+0033 ldind.u1 None 
+0034 stind.i1 None 
+0035 ldloc.3 None 
+0036 ldc.i4.2 None 
+0037 conv.i None 
+0038 add None 
+0039 ldloc.2 None 
+0040 stind.i1 None 
+0041 ldloc.3 None 
+0042 ldc.i4.3 None 
+0043 conv.i None 
+0044 add None 
+0045 stloc.3 None 
+0046 ldloc.1 None 
+0047 ldc.i4.1 None 
+0048 add None 
+0049 stloc.1 None 
+0050 ldloc.1 None 
+0051 ldloc.0 None 
+0052 blt.s 25 
+0054 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::.ctor 0x0600000a
+0000 ldarg.0 None 
+0001 call 0x0a00003d System.Object::.ctor
+0006 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.Starting::Main 0x0600000b
+0000 newobj 0x0600000a Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::.ctor
+0005 stloc.0 None 
+0006 ldloc.0 None 
+0007 ldarg.0 None 
+0008 ldc.i4.0 None 
+0009 ldelem.ref None 
+0010 callvirt 0x06000001 Olympus.LI.Triumph.Image.AntiHalation.AntiHalation::RunAntiHalation
+0015 ret None 
+
+METHOD Olympus.LI.Triumph.Image.AntiHalation.Starting::.ctor 0x0600000c
+0000 ldarg.0 None 
+0001 call 0x0a00003d System.Object::.ctor
+0006 ret None 

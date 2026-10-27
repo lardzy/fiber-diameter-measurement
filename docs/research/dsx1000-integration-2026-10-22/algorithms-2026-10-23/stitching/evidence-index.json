@@ -1,0 +1,3144 @@
+[
+  {
+    "id": "ev_196d87bc743d1bb43af11debd3909163de9b210f7e8c95c7c6cebf55d880c14e",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x14000693f"
+    }
+  },
+  {
+    "id": "ev_1af2699142a1720fb09b232eb8039b85a3de3bdf633e6eaf84c4caacf917788b",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x140026728"
+    }
+  },
+  {
+    "id": "ev_2b3409379990ecc1ebd9dcc280b20c31a6ad712e153454ebce0080bcb38d0d51",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140006900"
+    }
+  },
+  {
+    "id": "ev_314e5991fd24e73b017ae1ff41b5ee6ef97e742e62294a64b0bb138b4bc3d9fd",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x140027a58"
+    }
+  },
+  {
+    "id": "ev_4ea7e417601b8ad3df22af3575ccb841d625a400ac4f6ab6b78093c0aa710d6b",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1400206d0"
+    }
+  },
+  {
+    "id": "ev_5f4e471b9a91e2447ff5ff623cf2bb8aa4b4eceb450451b0712d2f0b14311c2c",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x140020a4c"
+    }
+  },
+  {
+    "id": "ev_8df69025f57d80a22974f1b974f5642fb96f6988fe8e5c549a86a6552f6a2ce9",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_9257d03ac3a183fc3c65cd8da550cae9329f4c84d7d9028d617d2dd8734b0411",
+    "bundle": "appnative-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "(Stitch|Matching|Error|Overlap|correc|feature|log)"
+    }
+  },
+  {
+    "id": "ev_0ed907a4c7b02bf3a45892a05dd6f20c2ebb5121938429d96429634860de0cb0",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001d320"
+    }
+  },
+  {
+    "id": "ev_1056f142bb9b7990ac80a9b42e91e8acd9d9fb4b70c809f730e67a228f979a34",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001b8c0"
+    }
+  },
+  {
+    "id": "ev_51ec3082e8908b06abac4bd13ebd6acb4c43c459c1c15360eab0bfbfc03baca1",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001cf60"
+    }
+  },
+  {
+    "id": "ev_533be75fba9a11682603d981fef52178f0179fec955a4fa929496bdad74e63f7",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140014350"
+    }
+  },
+  {
+    "id": "ev_589d661034f0dc465c03d4e6c39583df881049f7ec03080951dc4e9068d7625c",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140004560"
+    }
+  },
+  {
+    "id": "ev_632f41592daa2d469b557d45a8ef06bd19c5805b0dcc2839aa648b1d91853227",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140008080"
+    }
+  },
+  {
+    "id": "ev_74fbbc0c3ae8b502ef954a0aa282cbcbdd3c3639fa773f2273fee8a2e6f80e7a",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140018de0"
+    }
+  },
+  {
+    "id": "ev_8463962138d22734e800d889faebf9f408ee1e9889c2c7aebd055a3e5b0af260",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140004400"
+    }
+  },
+  {
+    "id": "ev_88a4c5bc1496da1919a375d314511a39bd63a6f01802f40b67bc372c000042da",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140010a90"
+    }
+  },
+  {
+    "id": "ev_9a6488efe9706356ae0bc84a720ff017dccc2c890d8cc961f115b5956866602b",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140001110"
+    }
+  },
+  {
+    "id": "ev_9c7842f9a9c1dfce8caf1ebda8a1df8c879a9e3455b30714b931befc3e9e8ae8",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140006e70"
+    }
+  },
+  {
+    "id": "ev_a268a3bbcf7212579da5148d796c630dd494ee4741a9488b5833dd7dff95dcf8",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140013c60"
+    }
+  },
+  {
+    "id": "ev_ac28a740c7f5a3ebbe236a32e4bd3f243131e7ea03afe73b87f45bb32a9760c4",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140015e60"
+    }
+  },
+  {
+    "id": "ev_b67d44ac9ac0c6e176d2dd7c1db715a48f49274cdbbcc67070dfc8dd9956220d",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1400082b0"
+    }
+  },
+  {
+    "id": "ev_bc28e0d4d0819c476575a620c4a8d2521058e429554c9c0593e3636088d7aae4",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14000f9b0"
+    }
+  },
+  {
+    "id": "ev_cd6a06f197954d94f72b280e12f33d2727a078bf40de83427b0e06bd6fa2fd2c",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1400161b0"
+    }
+  },
+  {
+    "id": "ev_d873f1d2e5b48c1b3f8952048816ae1cc50205adc501b2501d6ebd5037926501",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140019be0"
+    }
+  },
+  {
+    "id": "ev_e36669257df1a99ac5eaea58975ac12e9a541b3de9840894f3bd256c5c58af49",
+    "bundle": "appnative-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140005c50"
+    }
+  },
+  {
+    "id": "ev_5cbb0b72fff2a139a2fa08eb54d00384ee06e563ef9678f210cc445a06e0e4be",
+    "bundle": "appnative-weights-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001ec10"
+    }
+  },
+  {
+    "id": "ev_e4325d6a7f0f976ae363d5ca512d34f6ed822f2c264fb62a0abd1492adab0e08",
+    "bundle": "appnative-weights-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001ed40"
+    }
+  },
+  {
+    "id": "ev_1175ee2858d9c78ea81636e7d87d15dae8027af1b13af54715ac7a75d0a74ff3",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004800"
+    }
+  },
+  {
+    "id": "ev_12f215073d6251788b272d3b6856ac79329316fd109e92d2e3ad9efb3f9beae3",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000b490"
+    }
+  },
+  {
+    "id": "ev_17e3ade3ac47b2f9f202d35fb2ca53c42d05358f18370dce677ae0fe630f1431",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x1800122a0"
+    }
+  },
+  {
+    "id": "ev_2321cd67f3ba6b3305715109d5e3e3b7fcc41a616665f9a26fe44fcb43d49f73",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x18001b270",
+      "length": 8
+    }
+  },
+  {
+    "id": "ev_2570b06edadd7de9248f2552b75911b9085e2c0ba6124e40ff10aef5f32e7e9b",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180007340"
+    }
+  },
+  {
+    "id": "ev_41ff469eb835b552768f53eed5fc4e64f28daf6c6aa5c88b3f1be5addd5a8d7e",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000be10"
+    }
+  },
+  {
+    "id": "ev_4db87d226f56c240d84ab82349f778ebe7692143cd7d625a1875d9b99db392cb",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800042b0"
+    }
+  },
+  {
+    "id": "ev_58e8c4f01ab967d9893f2a05cf289e38935e61aec5a21f3a5c8cb91c0195c1b5",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180005ed0"
+    }
+  },
+  {
+    "id": "ev_60a5d9f2ab9052518c001d3c360ce528e72c292c094fd665a00a993785b83ba6",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000e450"
+    }
+  },
+  {
+    "id": "ev_715a9e00b559bf38b97f09b7b445180e0cd39d5252a42f26147017aba264ed98",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "(match|feature|error|concord|correl|ransac|harris|surf|affine)"
+    }
+  },
+  {
+    "id": "ev_727b0a639b1b941678dacff1cd9f5285fa2fde6783e595040aafdbf505b83c69",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800120b0"
+    }
+  },
+  {
+    "id": "ev_777419ab30838d534db82bfc1c71721e08a9cc26885623f82d5efe801d1b4108",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180014140"
+    }
+  },
+  {
+    "id": "ev_842fe1881a85997663c50ab51000011e6c6e388cde9a1ab92fccebd48d372869",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000bfa0"
+    }
+  },
+  {
+    "id": "ev_a4369bfba938c1f6d36863846e135788ae3bddbe897e3d2e471bb389c02794a5",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180008bf0"
+    }
+  },
+  {
+    "id": "ev_ab4bd0d036f5cd3d0e24ee5ea14344cc64eb45c8d76610dd4ad04a2e16594fdb",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180009090"
+    }
+  },
+  {
+    "id": "ev_b1b3b0e930411c1534e29b27215ec05e473c163f224017ca264aab3f39120c21",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000a420"
+    }
+  },
+  {
+    "id": "ev_b4ea917d6ee0b67fdd8cea69df3ce2855f829b883d09483926c69b64a03e13fb",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000c890"
+    }
+  },
+  {
+    "id": "ev_b5a3bccf602e3d9d864518356b7c814f5910b6c83edfb35c7f6c721b28f24828",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180008e40"
+    }
+  },
+  {
+    "id": "ev_d21f8b6b4d196940822b45152d326fafc585adcbf9bd5a176d9de3c9af4b41d9",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004dc0"
+    }
+  },
+  {
+    "id": "ev_d22a743221e89d415e334f766f2c5b7d32a17c09f9ce4f7df01305c6a9c8478d",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800082a0"
+    }
+  },
+  {
+    "id": "ev_d547a0489e3046b7e60b4de62ecb7d91f07ee26f574fe2a4a15c03512a032284",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_d8518145777087b30cbbabf91d3f9c71a8d1014e4951b0df80acd7b5244ba2b5",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000e8c0"
+    }
+  },
+  {
+    "id": "ev_df2f238fdf4d147f5f16b5910de3360cb017a4b2d59d64a8f8e91e9b2ef7fb22",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180009a00"
+    }
+  },
+  {
+    "id": "ev_e21bf3c78e68b77408c249631357b30df2bf0927cd6f4614b376f4f005911e58",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000c420"
+    }
+  },
+  {
+    "id": "ev_ecbf3952159709d7f4176a6dfde2569fc6f706395172ab3ffb3f840dba2be308",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180007b30"
+    }
+  },
+  {
+    "id": "ev_effd0326ec4482e73382c75d5ba20cbc180a15318ec90a6b179bdb7956e4ab08",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800122a0"
+    }
+  },
+  {
+    "id": "ev_f548c0b8b7f42179aac998b048405630ebdbddf6c4f489aa8d1ef9ca8d31072b",
+    "bundle": "composite-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/CompositeDLL64.dll",
+      "name": "CompositeDLL64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000d330"
+    }
+  },
+  {
+    "id": "ev_279482760a49485d8df07d8d91b65da4bb61b5cb5736328fd146e9657a1d5434",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180009f70"
+    }
+  },
+  {
+    "id": "ev_2965b15813b0a6b9005b02507135a54b78272de1313dd71f30849562197c3c68",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "(Blend|blend|Correct|interpol|[Ss]titch|weight)"
+    }
+  },
+  {
+    "id": "ev_34a676b232bcba0f3efee9f21c1f6298e0f17f2a7c48ff94e13c3ab7668d9d3d",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_438108a00c231cbd84c261ad3cff6f29e7e2d3495e3ccd9e10bdf65f07c67f77",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800102c0"
+    }
+  },
+  {
+    "id": "ev_44fca72f970fc04fb97efb89910d407b80dd33562124ca22afa1a92d30c59483",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000c100"
+    }
+  },
+  {
+    "id": "ev_5fef2bf65805b5b93d3808ce5289a7b1c53b912a828c04774ca94b2c6f6082d0",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "ExecuteStitching"
+    }
+  },
+  {
+    "id": "ev_9c9f9e17de919729b8b33abc9710e292726ec3f9d203ad06bb5adf53b8687c30",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180015270"
+    }
+  },
+  {
+    "id": "ev_b247c304bce06152e528170c7d3489a61f9f4e4d2ccc4f533dd2f815478ef9ca",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180017490"
+    }
+  },
+  {
+    "id": "ev_b30989a208f10bdeb504771b5b7b4d06f3c7d12971b43171dfb7c8af5a9d3d67",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x18001af60"
+    }
+  },
+  {
+    "id": "ev_c5e64d0df7ec3af046c8f61a7a27beb508b9fa00fcb9c41ec36fabfea4874900",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000d9b0"
+    }
+  },
+  {
+    "id": "ev_d2f98a60db341998349841a5a3e94c426a8125163151812cc68c8a0644642114",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000c5e0"
+    }
+  },
+  {
+    "id": "ev_efa2ff116acb1b398edcc58d5a453a8672210ea5bb98c1a6823f6fcfcd91c13a",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180006ad0"
+    }
+  },
+  {
+    "id": "ev_f585faa6b85aa63425fa6549c0e3dbed4a1fea2d550532d04f3c07d583276ca9",
+    "bundle": "fusion-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180010da0"
+    }
+  },
+  {
+    "id": "ev_2f28f0e86b050230995e92a7b3451ef1eeea3b89f3823ff52ab28eef477ec83b",
+    "bundle": "fusion-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180007120"
+    }
+  },
+  {
+    "id": "ev_44962006ea26ad66410eba5a3c070ea01ac92c72abb8cf22e38f075155fb7321",
+    "bundle": "fusion-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitching64.dll",
+      "name": "OlyiImageStitching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800071f0"
+    }
+  },
+  {
+    "id": "ev_218db35e8f55a228db74f9478fe66a386f44d60d987594dd5314de5fb6dc8983",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "da2e80910020af290e40d766ec5ec4a09b0fa632ef2950958e27d6e1e8c797b8"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageStitching.dll",
+      "name": "OlycImageStitching.dll"
+    },
+    "operation": "inspect_managed_artifact",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageStitching.dll"
+    }
+  },
+  {
+    "id": "ev_2d8bf01b7d7c1b91d79efe09e3f91dab939dd69aa5be0392bd40bd96ae2c837d",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "0baac6955622d2cfa7155664162820a19ff737217485a4c182a0c74c11527a8c"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll",
+      "name": "OlyiImageStitchingAPI.dll"
+    },
+    "operation": "inspect_analysis_view",
+    "parameters": {
+      "parent_evidence_id": "ev_3eff1c79e8a84ec12719889ff738d9584133ee78aaae3cc1d1cd5bae9453b8a0",
+      "view": {
+        "kind": "summary"
+      }
+    }
+  },
+  {
+    "id": "ev_32997da91696d1e9d0f35f7eb80303dc67c2c669c986f7e5a9431d1028710c75",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "inspect_analysis_view",
+    "parameters": {
+      "parent_evidence_id": "ev_e5a8092fd91f07b315b1ec4129629de19bdf16e2ef36b241a8ca1449902f6897",
+      "view": {
+        "kind": "summary"
+      }
+    }
+  },
+  {
+    "id": "ev_3ac04e8ec577d315ff9c9107ee983047f0447c04a071ba6e6917573a6d2bae0c",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "da2e80910020af290e40d766ec5ec4a09b0fa632ef2950958e27d6e1e8c797b8"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageStitching.dll",
+      "name": "OlycImageStitching.dll"
+    },
+    "operation": "inspect_managed_members",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageStitching.dll"
+    }
+  },
+  {
+    "id": "ev_3eff1c79e8a84ec12719889ff738d9584133ee78aaae3cc1d1cd5bae9453b8a0",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "0baac6955622d2cfa7155664162820a19ff737217485a4c182a0c74c11527a8c"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll",
+      "name": "OlyiImageStitchingAPI.dll"
+    },
+    "operation": "inspect_managed_artifact",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll"
+    }
+  },
+  {
+    "id": "ev_6aa2aae8f3e40186b26326a436648d9ac2b06ac7ccc29b8c6e9021edac68e873",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "87f1910bce9e275aaca3b0de4c0141eeaf455c98281e4caceeb0504e850752d4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "inspect_managed_members",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyImageStitching.exe"
+    }
+  },
+  {
+    "id": "ev_70658aff45990744f5e743b3d7b0f224e9ce0cf66322e5791587dc3888858cdf",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "inspect_managed_artifact",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe"
+    }
+  },
+  {
+    "id": "ev_9be2929176be35b4b4e8dce608ca7c84a4b251d8f1c76feae203a29dbe2de1d5",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "da2e80910020af290e40d766ec5ec4a09b0fa632ef2950958e27d6e1e8c797b8"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageStitching.dll",
+      "name": "OlycImageStitching.dll"
+    },
+    "operation": "inspect_analysis_view",
+    "parameters": {
+      "parent_evidence_id": "ev_218db35e8f55a228db74f9478fe66a386f44d60d987594dd5314de5fb6dc8983",
+      "view": {
+        "kind": "summary"
+      }
+    }
+  },
+  {
+    "id": "ev_ad2109f7c400715c6b205402ce132a3f0c61d84e25b1d0edd13bb75727bd13ed",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "87f1910bce9e275aaca3b0de4c0141eeaf455c98281e4caceeb0504e850752d4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "inspect_analysis_view",
+    "parameters": {
+      "parent_evidence_id": "ev_f348b5fd7749293d9d51757ba3420e0076eae8a32fd970d36fc2c2f79f2455fc",
+      "view": {
+        "kind": "summary"
+      }
+    }
+  },
+  {
+    "id": "ev_e5a8092fd91f07b315b1ec4129629de19bdf16e2ef36b241a8ca1449902f6897",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "inspect_managed_artifact",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlyImageStitching.exe"
+    }
+  },
+  {
+    "id": "ev_edb973844d18e8d217f81c4edd36eab779a764b01c34cf593ec5b00643bbe616",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "inspect_analysis_view",
+    "parameters": {
+      "parent_evidence_id": "ev_70658aff45990744f5e743b3d7b0f224e9ce0cf66322e5791587dc3888858cdf",
+      "view": {
+        "kind": "summary"
+      }
+    }
+  },
+  {
+    "id": "ev_f348b5fd7749293d9d51757ba3420e0076eae8a32fd970d36fc2c2f79f2455fc",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "87f1910bce9e275aaca3b0de4c0141eeaf455c98281e4caceeb0504e850752d4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyImageStitching.exe",
+      "name": "OlyImageStitching.exe"
+    },
+    "operation": "inspect_managed_artifact",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyImageStitching.exe"
+    }
+  },
+  {
+    "id": "ev_f4863d0bed4a6154b589a62b414779a70205374dfacb17279693dfafa6444282",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "0baac6955622d2cfa7155664162820a19ff737217485a4c182a0c74c11527a8c"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll",
+      "name": "OlyiImageStitchingAPI.dll"
+    },
+    "operation": "inspect_managed_members",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll"
+    }
+  },
+  {
+    "id": "ev_fa3da23a409bdcbf9a81d6bb2668d55b5392376fe0d20552c1fb2a90fee50cd0",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "0baac6955622d2cfa7155664162820a19ff737217485a4c182a0c74c11527a8c"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll",
+      "name": "OlyiImageStitchingAPI.dll"
+    },
+    "operation": "inspect_managed_native_boundaries",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageStitchingAPI.dll"
+    }
+  },
+  {
+    "id": "ev_1ccc265e28e94c8a60a395a49f4feadd16529487587543de7a2e82ce765e629e",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_3ff6a34ad97f156d26d757a57a637582b6b53a8186c374bf042e6748c4124d8d",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180007d40"
+    }
+  },
+  {
+    "id": "ev_7b09b369bd9273b9515b603d8e75cd30aaa1c7e22a2c7be5cdeacb18b3f57383",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800039b0"
+    }
+  },
+  {
+    "id": "ev_8a112666364249004858cb0304bbedd1fdc56b7c6370fedc2b7e722a39860e06",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180008210"
+    }
+  },
+  {
+    "id": "ev_9f1856a71fcfa41f1c91a5fa1cdac619742432ccbf69b7d3ba56dba57eaa45d0",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001280"
+    }
+  },
+  {
+    "id": "ev_b5b247927f36a5725906e31a671f5eeeef79cb53e63755dc9918e490f129e0dd",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "AttachNMV"
+    }
+  },
+  {
+    "id": "ev_c6e6fc508e390c1d9f6755c2a7273a0ae9e8aba5f72e0827aca4edf946cb856c",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180006970"
+    }
+  },
+  {
+    "id": "ev_e60ddd57b2bfdf90da72f97498662d144d664d87f43bf9a6801ebd8b6c5760bb",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "ExecuteMatching"
+    }
+  },
+  {
+    "id": "ev_ff363ac0a916ab5ef0adab26d6d49973f97a71be3ae034d60e8600b5c02abe31",
+    "bundle": "matching-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180007960"
+    }
+  },
+  {
+    "id": "ev_8c90377ce949d99b4da74f2d0fb39edb0db74266201b5a1cd78c68959cb64ced",
+    "bundle": "matching-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiImageMatching64.dll",
+      "name": "OlyiImageMatching64.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180007f90"
+    }
+  },
+  {
+    "id": "ev_2b55ce263f336686455dc8631c0ff94138515b40ab7a646d93a243b0a83a955c",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_2fdeec6d570f48da3c47ccf3d45db81c1436d253303dd14c63f513eef69d3abc",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "OLYNMV_EstimateMV"
+    }
+  },
+  {
+    "id": "ev_33a285b3b4a7a1886755bd9fc6d8b491d49ccc9e8fe254e6c624c3c9ab777dc3",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003640"
+    }
+  },
+  {
+    "id": "ev_34dc0c8542e037c480b40013a05ccd4ad1d971efd0555bd0a7edbf560c5dd20a",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "OLYNMV_CreateWindow"
+    }
+  },
+  {
+    "id": "ev_39dc87d9f7f21510430fd95f5ec509e724a6d175b5819c686b3c5c3ea1879fbc",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003d10"
+    }
+  },
+  {
+    "id": "ev_73f4e913be6536a68d39a90fb89ac701cdd6a2dc391c1022a89871b32688223a",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "OLYNMV_ConvertToDstImage"
+    }
+  },
+  {
+    "id": "ev_f7e96bf60d0a5643e721cb57e416070e9d6a9ed6d956c4551ad9e3359cae892c",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002870"
+    }
+  },
+  {
+    "id": "ev_fd20fcabd92215ad27a65c1ee90e7ab34b1d0694b76d0f383481568736005cec",
+    "bundle": "nmv-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyNmv.dll",
+      "name": "OlyNmv.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002ad0"
+    }
+  },
+  {
+    "id": "ev_018f3de92db2af9d7455357c8f7b1892c91d8954065485b9a8f0f742f549f59d",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x140194860"
+    }
+  },
+  {
+    "id": "ev_0ec34c89eadde0055fd77a2926d39eef5383ff295eb527d77ab548c0390e5d6d",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140157840"
+    }
+  },
+  {
+    "id": "ev_14a11350d56a9978377e44f61b7afb04639173a2928f7ff478b6577b0be66756",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x140132f84"
+    }
+  },
+  {
+    "id": "ev_1798940feb196983be6f31f3d3319f5bf535860e39b4b845ccba3a3d7ef6ed09",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140130c30"
+    }
+  },
+  {
+    "id": "ev_20ede76b4ae2c1836e9bc54f688570fefa881d6e25297842accd230b01582719",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x14015d07e"
+    }
+  },
+  {
+    "id": "ev_27edff049583706b0e050391b127bd781733026d363b02d6a51d7b85c0adc476",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140125310"
+    }
+  },
+  {
+    "id": "ev_2be50156c7e0ebbb54307b910e3275c95fd67bb3f5b3f14c9a9c3d6c0c471930",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "EXTERNAL:0x50"
+    }
+  },
+  {
+    "id": "ev_2dd4578362cb6dff98b8ca7f4810f1b3023dee028a61d7c0f184131cd4778e30",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140124a90"
+    }
+  },
+  {
+    "id": "ev_369df13316b9e1e56ae861b5b4d676b86b9cf9a9869c5859c3719bfcd121420b",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140124dc0"
+    }
+  },
+  {
+    "id": "ev_3b3cc2110093b8e1155af243ac29efb3cacbfd4d353ff6219d1a877a8010e6a3",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140124f90"
+    }
+  },
+  {
+    "id": "ev_5171757505f97824166205e203c546950188ac645ad6675196827c6ccef830dc",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140125190"
+    }
+  },
+  {
+    "id": "ev_685dfb2c51542d2bd3cb31f9e34b38442373c786342055e4842d8e6acf60e3d2",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_callers",
+    "parameters": {
+      "procedure": "0x140132670"
+    }
+  },
+  {
+    "id": "ev_70ecce880dafbc219af7c4deb4b2699099782f01090db16a338df9a24f462e14",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140156f60"
+    }
+  },
+  {
+    "id": "ev_746fbfd1d1fbac18d86316b1e872f0748004aaf8cd73796f2a0d607d8ccce77d",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140157a70"
+    }
+  },
+  {
+    "id": "ev_75d279ad878159c58f125a57db9de2e3f64fefede6a6d8fd3412132c0548cb69",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1401036e0"
+    }
+  },
+  {
+    "id": "ev_7751df9545c3cf342aacad022c2d7c45d04abc2cb1848d74c43c22f2e26140f0",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x14018bf60"
+    }
+  },
+  {
+    "id": "ev_899a36cd1c531942ff82e85ef47d1c6caffff441d36242b210e8154e9f2bce7c",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14013bcb0"
+    }
+  },
+  {
+    "id": "ev_8c0e09c7bb2d22c3a54484bcd4739efc6d5cfb6c28086554fd9961072966fc0e",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_9422c7fabd96d3193185ba119fb38c4fa0fe70c6b692f3283e242b7cc2b2472b",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x140160991"
+    }
+  },
+  {
+    "id": "ev_94a9b0bedb43fa6e65f5d192270133c4e6517808e062268c17e541d9c9a72903",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1401607b0"
+    }
+  },
+  {
+    "id": "ev_9530891ac323aa22a2f780b2f29159248cb8b06aca96c020a68f935c08a4686a",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x14019e2e8"
+    }
+  },
+  {
+    "id": "ev_995644ed01c73e1c3d6fedf111fca44ec30e01d9a9820868af6755447b0cfa90",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140124330"
+    }
+  },
+  {
+    "id": "ev_999e6382706cd60ba45bf1de8882c7deb724ac6b0d65ed93751fd00add9916dc",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14013c340"
+    }
+  },
+  {
+    "id": "ev_99bd9020645fb99bb32aab915c07d7ca4a56fb5702deccd39c02e726b7a14e77",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140122ec0"
+    }
+  },
+  {
+    "id": "ev_a40250584d838ddff3d420675973d42883289ac280a32a2966306f9678030bf5",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x140190b48"
+    }
+  },
+  {
+    "id": "ev_a4d11173deecea484410961995ecded814d50043eba7688a69fcc318895fe3ca",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140138300"
+    }
+  },
+  {
+    "id": "ev_abfcdd30f2a95df16b879c358259d3e1e3edf28bb1063b0546ff0ec2b28615ba",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140129bd0"
+    }
+  },
+  {
+    "id": "ev_af29a48398351ebf0ae51e00c1574fc005ecf9d77925f8d8d64b873b27d791bb",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14012e080"
+    }
+  },
+  {
+    "id": "ev_b6ecf9dc4d3cbe077818c2791c3e4eb56ffdd8c374d2e41ab72edfc38edb4b0d",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14015f5c0"
+    }
+  },
+  {
+    "id": "ev_bd376dbcdd96ff53d2fa8ed8051146fbe0427574d998ce82dde916485ee6b617",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140156060"
+    }
+  },
+  {
+    "id": "ev_c05f499c4d82518e841659babc9da2fbd187bacd3de6632dc79edbb17714c9f6",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14015b990"
+    }
+  },
+  {
+    "id": "ev_cda839d905ee6265ab1a9bed832096913dd4fd20e91e5fa4133acc7384c77aa6",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140103950"
+    }
+  },
+  {
+    "id": "ev_d564d16f7a19951a1157f01465e9c5989a4d7e27b025a996ed6f17760fcfddef",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1401573d0"
+    }
+  },
+  {
+    "id": "ev_d582fbb2a53e9e5a7691f654ae37835dbeafe4e046a282a16578c83a98151826",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140159380"
+    }
+  },
+  {
+    "id": "ev_da1fa35cf2f8563df5546aaded07f2480d8e5b9bd89f5c51300bfb403940bacd",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14012df90"
+    }
+  },
+  {
+    "id": "ev_dac6b152cd11b26205561b5ca93d887a8ebc798cd93d5851904cafb4bb7a1ffd",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140154360"
+    }
+  },
+  {
+    "id": "ev_dcb11f0b51dce732d426c82f8a1d418acb6cffe2c86d18fcaa85c34b5148e295",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "(?i)(ALMIS|matching|correl|ransac|feature|STCImage|concord|seam|surf|sift)"
+    }
+  },
+  {
+    "id": "ev_e0ee9ea8d37a5ab7df97f19a80195d8a0e6d7cc12c78d7590583db50c62001e8",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x1401559f8"
+    }
+  },
+  {
+    "id": "ev_e20bd18ef5d43b9dd4b2ddf29439e5348265da967c6de69c549fce64c47c2cdb",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140132670"
+    }
+  },
+  {
+    "id": "ev_e63e2891367ec617b492f5d90b93935c4f30cb79ab10f76b46e8be5dbd0f5cc5",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140103b50"
+    }
+  },
+  {
+    "id": "ev_e64cb5ee565e890b06f15ed9ca6ee9712f281fb6a2868872699478ad92247f66",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_callers",
+    "parameters": {
+      "procedure": "0x14015f5c0"
+    }
+  },
+  {
+    "id": "ev_e9c3f4e157126a8f63b540a4e853812a5de8e95c8904f95143b26680848f4941",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001a440"
+    }
+  },
+  {
+    "id": "ev_eff998621e0906c707dfe5698b1d32c4520d6633896e66cf925ea77d9a2cfbef",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "EXTERNAL:0x52"
+    }
+  },
+  {
+    "id": "ev_f30fb42b64bd2bc42a5f995cdf87a33f06b077a9cdccbec5f6ac1b2983499453",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14015cf90"
+    }
+  },
+  {
+    "id": "ev_f5484a2d4b63d4e5b0d9de6719f59e49544405592aa5496440acb22937f2f68e",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x14019dc50"
+    }
+  },
+  {
+    "id": "ev_f7b30f07d64c5772b902f15e7c2c82d06cbffa27bdaf521807df01a41e940418",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x14015cf90"
+    }
+  },
+  {
+    "id": "ev_fa67f021f69db4793665ef9fa56e602ccfb7690ad68d04d46eea5d83b7d6938d",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x14015f793"
+    }
+  },
+  {
+    "id": "ev_fb6d98422911defb72247a120f087a527321d68e3a109b702d5e6fd99c5e0681",
+    "bundle": "ols-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14001a6f0"
+    }
+  },
+  {
+    "id": "ev_08d123754e882fe07cfd7221a414cfb8c1521e7e50c75d2c77b8a75eb8f82508",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14012d460"
+    }
+  },
+  {
+    "id": "ev_12165dff92870fe2dbc07c00fa11cd706ea62ab4a28bd3cafe8911f783a371f5",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140018370"
+    }
+  },
+  {
+    "id": "ev_3c4c229671861becf141371b8a15b781ba46246d3fa1549d8fd2783824c3f235",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140146ed0"
+    }
+  },
+  {
+    "id": "ev_524bd065c4c9ae2fe069d063122c774e372e60d0e4f1db8f5d16f09a30aeb5b2",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140017f10"
+    }
+  },
+  {
+    "id": "ev_5c78ad1c71d3ab0254067cf0fe843b8f7f30252254481cb1214e35263c083021",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140146790"
+    }
+  },
+  {
+    "id": "ev_6feb60000ed8efa897cab3063157586c6e9acd43c502e30ddbffbe31aac3f5a5",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140151e90"
+    }
+  },
+  {
+    "id": "ev_728ab8f0b65f2364d5e43b94e9255feeaa2b7bb172d021e09f140f81e1e07417",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x14014ae30"
+    }
+  },
+  {
+    "id": "ev_7300acc49a841de1eae6f58cd73a2578e5d09cd4e781ceac55c682d12d12f48e",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14012dd40"
+    }
+  },
+  {
+    "id": "ev_74005e8e93ac327d8abbc39cf7641f6b29d045530a5df644eff191c0ab38a0ab",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14012a0c0"
+    }
+  },
+  {
+    "id": "ev_7588625509fe48216fd44021364b8e9d5b63c8359b09acd55433a214cfbe9c94",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140147110"
+    }
+  },
+  {
+    "id": "ev_7a8d00304ba207ce0d834512332db071afb31dbcfc39021afb736172775dbac1",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x1401a2208",
+      "length": 16
+    }
+  },
+  {
+    "id": "ev_7b65b85719de77b84584860b522d4b8fb6d567c44c11053f63c83844661db419",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140126170"
+    }
+  },
+  {
+    "id": "ev_7d85763a748e7292046ca0e47bd63d7f8146edd418cfb165d46189eacd8cded4",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1401459e0"
+    }
+  },
+  {
+    "id": "ev_7fdf845af0ab9a249621f8b2434f8ece165d687ca58b06818c56ec0b4145c075",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1401396a0"
+    }
+  },
+  {
+    "id": "ev_8d02c900da118497be0907ea3101639722fd8983075f0e07c30dcd7d8485d7d6",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14014d450"
+    }
+  },
+  {
+    "id": "ev_978a5cfcf8a59e8a743f4499de27cf1f88b565a33acc91c05c1f1e48dffbab56",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14014ae30"
+    }
+  },
+  {
+    "id": "ev_b0a8d11060ca354d1c7af06c656d5f9f4c7294e0fc2457cb82840c1b404f9e8d",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1401255a0"
+    }
+  },
+  {
+    "id": "ev_bcd45b4acb2e67d9f4a463b776f7196d455b71366b46a1e06879fb7245218f27",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "find_xrefs_to_name",
+    "parameters": {
+      "name": "MultilayerImageStitching::vftable"
+    }
+  },
+  {
+    "id": "ev_bd32d70483437eebd72c93efb39fc045c3374832cdf573e1386bfd819c1d70d9",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140148530"
+    }
+  },
+  {
+    "id": "ev_cefa167b70f5da3988836552b8eb56d56b121bee3cfc4b2cc759934276a961ac",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140143c30"
+    }
+  },
+  {
+    "id": "ev_d0d48c72ed03e846baa766912197a7fc76a3a38186fc549e18da2a7e32dd1ebe",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "find_xrefs_to_name",
+    "parameters": {
+      "name": "ImageStitching::vftable"
+    }
+  },
+  {
+    "id": "ev_d0e6866d474228651a3cc9f6f42c7cebfa64bbb1e56b4e420c6a8fff2bd32ea2",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x14014a910"
+    }
+  },
+  {
+    "id": "ev_e188d1bbb46de4becf53430b67e71e47e1f8e2a2f258f39925159135f3b707b8",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x1401c9a38"
+    }
+  },
+  {
+    "id": "ev_e9fb76d1fbb423a0af3f61eddddeee016fbeb345bdfe1b3acbae1fb386f7e0f4",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x1401a2220",
+      "length": 16
+    }
+  },
+  {
+    "id": "ev_f42f155403a20ff906cbd2173d00f510154708108c485c8044d2795a1564a751",
+    "bundle": "ols-extra-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/OlyaImageStitching.exe",
+      "name": "OlyaImageStitching.exe"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x140152ce0"
+    }
+  },
+  {
+    "id": "ev_2660fa5d9f25171cbb133d1d9f4513a0ca6fb3b8e81e3ed319c93110c12d2159",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001700"
+    }
+  },
+  {
+    "id": "ev_32369ce4cc4cf495692aa4b3f06f28653d62493ddeadd3c2a31af84a73dccf44",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "list_procedures",
+    "parameters": {}
+  },
+  {
+    "id": "ev_478e29225526652d384dc4b7a170bcb9c499d6605c6bde0026714741c650e492",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001cc0"
+    }
+  },
+  {
+    "id": "ev_7be1b4407b08a5d9c687ac50ee6f20fcd97c36bd2f62dc883cbe30d217c7300f",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "(route|sequence|concord|error|TSP)"
+    }
+  },
+  {
+    "id": "ev_bd743e195b9c58e380f796b10841a0dfe905a2ad04c449043cc7efee0d8e3c9c",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001900"
+    }
+  },
+  {
+    "id": "ev_beed8d56fcb42c08e984ef5b730f3425d71348cb6591f7dc0436a15edcff58fe",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800012a0"
+    }
+  },
+  {
+    "id": "ev_c0aba333147cd023ec4aff677a98e8fa23a2d1e13a9cc5ca467bd610ae209d65",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002210"
+    }
+  },
+  {
+    "id": "ev_e12e0f9c45b66f6826e7a6791dba53954b238b7a72acb13f43b2d17ccd9e2ac2",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800039c0"
+    }
+  },
+  {
+    "id": "ev_f711bb25b43f6066bc4609969610c8fcb6bbe9314244ce365b611cd99fcac7bd",
+    "bundle": "route-evidence.json.gz",
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "1fbe6c28535be5530a6753d32ba6a1171bf3bb320dce07516e733ac6e404e3f4"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OLSStitching/StitchRouteSearch.dll",
+      "name": "StitchRouteSearch.dll"
+    },
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002f90"
+    }
+  }
+]

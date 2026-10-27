@@ -1,0 +1,159 @@
+EVIDENCE ev_843208320387c5be1655ded4cca7240e491442b3ec62025009b2df6b3a04cc1a SHA256 d466121f92f19d77a5346136635da3a3fb3b32ef45f6fd5bd813aee3e68eca03
+
+METHOD 0x06000077 InterProcessCommunication.ApplicationServer ImageTransfer IL_SHA256 a654f0a0c8dcd8d04065477b2275790d186e5b6d6276c81820c5f06d2ea3988f DECODE_ISSUE null
+0000: ldc.i4.s      10 
+0002: newarr        0x010000c5 
+0007: dup            
+0008: ldc.i4.0       
+0009: ldstr         0x700004b7 "<S> _AcquisitionInfomation= "
+000e: stelem.ref     
+000f: dup            
+0010: ldc.i4.1       
+0011: ldarg.1        
+0012: callvirt      0x0a000029 System.Object.ToString
+0017: stelem.ref     
+0018: dup            
+0019: ldc.i4.2       
+001a: ldstr         0x700004f1 " , _ImageDataPathInfo= "
+001f: stelem.ref     
+0020: dup            
+0021: ldc.i4.3       
+0022: ldarg.2        
+0023: call          0x0600008a InterProcessCommunication.ApplicationServer.ConvertImageDataPathInfoToString
+0028: stelem.ref     
+0029: dup            
+002a: ldc.i4.4       
+002b: ldstr         0x70000521 " , _AutoSaveInfo = "
+0030: stelem.ref     
+0031: dup            
+0032: ldc.i4.5       
+0033: ldarg.3        
+0034: call          0x0600008b InterProcessCommunication.ApplicationServer.ConvertAutoSaveInfoToString
+0039: stelem.ref     
+003a: dup            
+003b: ldc.i4.6       
+003c: ldstr         0x70000549 " , _StitchingInfo = "
+0041: stelem.ref     
+0042: dup            
+0043: ldc.i4.7       
+0044: ldarg.s       4 
+0046: call          0x0600008d InterProcessCommunication.ApplicationServer.ConvertStitchingInfoToString
+004b: stelem.ref     
+004c: dup            
+004d: ldc.i4.8       
+004e: ldstr         0x70000573 " , _AnnotationData = "
+0053: stelem.ref     
+0054: dup            
+0055: ldc.i4.s      9 
+0057: ldarg.s       5 
+0059: call          0x0600008e InterProcessCommunication.ApplicationServer.ConvertAnnotationDataToString
+005e: stelem.ref     
+005f: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+0064: call          0x0a0001af Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Process_joinLog
+0069: ldc.i4.6       
+006a: newarr        0x010000c5 
+006f: dup            
+0070: ldc.i4.0       
+0071: ldstr         0x700011ff "<S> Trac302 ImageTransfer strObjectiveLensType="
+0076: stelem.ref     
+0077: dup            
+0078: ldc.i4.1       
+0079: ldarg.1        
+007a: callvirt      0x0a00007b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+007f: callvirt      0x0a0001b2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ObsevationSettingInfo
+0084: callvirt      0x0a0001b3 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ObsevationSettingInfo.get_ObjectiveLensType
+0089: stelem.ref     
+008a: dup            
+008b: ldc.i4.2       
+008c: ldstr         0x7000125f ", dbObjectiveLensMagnification="
+0091: stelem.ref     
+0092: dup            
+0093: ldc.i4.3       
+0094: ldarg.1        
+0095: callvirt      0x0a00007b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+009a: callvirt      0x0a0001b2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ObsevationSettingInfo
+009f: callvirt      0x0a0001b4 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ObsevationSettingInfo.get_ObjectiveLensMagnification
+00a4: stloc.2        
+00a5: ldloca.s      2 
+00a7: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+00ac: call          0x0a0001b5 System.Double.ToString
+00b1: stelem.ref     
+00b2: dup            
+00b3: ldc.i4.4       
+00b4: ldstr         0x7000129f ",ObjectveLensId="
+00b9: stelem.ref     
+00ba: dup            
+00bb: ldc.i4.5       
+00bc: ldarg.1        
+00bd: callvirt      0x0a00007b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+00c2: callvirt      0x0a0001b2 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_ObsevationSettingInfo
+00c7: callvirt      0x0a0001b6 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ObsevationSettingInfo.get_ObjectiveLensID
+00cc: stloc.3        
+00cd: ldloca.s      3 
+00cf: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+00d4: call          0x0a000027 System.Int32.ToString
+00d9: stelem.ref     
+00da: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+00df: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+00e4: ldstr         0x700012c1 "Current UI Culture = "
+00e9: call          0x0a0001b7 System.Threading.Thread.get_CurrentThread
+00ee: callvirt      0x0a0001b8 System.Threading.Thread.get_CurrentUICulture
+00f3: callvirt      0x0a0001b9 System.Globalization.CultureInfo.get_Name
+00f8: call          0x0a0000d0 System.String.Concat
+00fd: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0102: ldstr         0x700012ed "Current Culture = "
+0107: call          0x0a0001b7 System.Threading.Thread.get_CurrentThread
+010c: callvirt      0x0a0001ba System.Threading.Thread.get_CurrentCulture
+0111: callvirt      0x0a0001b9 System.Globalization.CultureInfo.get_Name
+0116: call          0x0a0000d0 System.String.Concat
+011b: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0120: ldstr         0x70001051 "en-US"
+0125: call          0x0a0001bb System.Globalization.CultureInfo.CreateSpecificCulture
+012a: stloc.1        
+012b: call          0x0a0001b7 System.Threading.Thread.get_CurrentThread
+0130: ldloc.1        
+0131: callvirt      0x0a0001bc System.Threading.Thread.set_CurrentUICulture
+0136: ldarg.0        
+0137: ldfld         0x04000022 InterProcessCommunication.ApplicationServer._dgtImageTransfer
+013c: ldarg.1        
+013d: ldarg.2        
+013e: ldarg.3        
+013f: ldarg.s       4 
+0141: ldarg.s       5 
+0143: ldarg.s       6 
+0145: callvirt      0x060001ef dgtImageTransfer.Invoke
+014a: stloc.0        
+014b: ldstr         0x7000012b "<E>"
+0150: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0155: ldc.i4.4       
+0156: newarr        0x010000c5 
+015b: dup            
+015c: ldc.i4.0       
+015d: ldstr         0x70000335 "<E> ReturnVal= IsSuccess: "
+0162: stelem.ref     
+0163: dup            
+0164: ldc.i4.1       
+0165: ldloc.0        
+0166: callvirt      0x0a00003b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+016b: stloc.s       4 
+016d: ldloca.s      4 
+016f: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+0174: call          0x0a00005d System.Boolean.ToString
+0179: stelem.ref     
+017a: dup            
+017b: ldc.i4.2       
+017c: ldstr         0x70000297 " , ErrorCode: "
+0181: stelem.ref     
+0182: dup            
+0183: ldc.i4.3       
+0184: ldloc.0        
+0185: callvirt      0x0a00005e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_ErrorCode
+018a: stloc.3        
+018b: ldloca.s      3 
+018d: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+0192: call          0x0a000027 System.Int32.ToString
+0197: stelem.ref     
+0198: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+019d: call          0x0a0001af Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Process_joinLog
+01a2: ldloc.0        
+01a3: ret            

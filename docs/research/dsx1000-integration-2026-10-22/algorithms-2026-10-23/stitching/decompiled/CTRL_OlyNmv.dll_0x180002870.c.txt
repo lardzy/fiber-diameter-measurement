@@ -1,0 +1,120 @@
+Evidence: ev_f7e96bf60d0a5643e721cb57e416070e9d6a9ed6d956c4551ad9e3359cae892c
+Subject SHA256: 3f7556ebfb87e739a2503c66330703c1836c4f2e7871a549c3b7b3e81f31b875
+Bundle: nmv-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_180002870(undefined8 *param_1,undefined8 *param_2,longlong *param_3)
+
+{
+  int iVar1;
+  int iVar2;
+  uint uVar3;
+  ulonglong uVar4;
+  float fVar5;
+  float fVar6;
+  float fVar7;
+  undefined1 auStack_1c8 [32];
+  undefined1 local_1a8;
+  undefined4 local_1a0;
+  int local_198;
+  int local_194;
+  undefined8 local_190;
+  Mat local_188 [16];
+  float *local_178;
+  int *local_170;
+  undefined8 local_168;
+  undefined8 local_160;
+  undefined8 local_158;
+  int *local_148;
+  undefined1 *local_140;
+  undefined1 local_138 [16];
+  Mat local_128 [16];
+  float *local_118;
+  int *local_110;
+  undefined8 local_108;
+  undefined8 local_100;
+  undefined8 local_f8;
+  undefined4 *local_e8;
+  undefined1 *local_e0;
+  undefined1 local_d8 [16];
+  Mat local_c8 [16];
+  float *local_b8;
+  int *local_b0;
+  undefined8 local_a8;
+  undefined8 local_a0;
+  undefined8 local_98;
+  undefined4 *local_88;
+  undefined1 *local_80;
+  undefined1 local_78 [16];
+  ulonglong local_68;
+  
+  local_190 = 0xfffffffffffffffe;
+  local_68 = DAT_18001a000 ^ (ulonglong)auStack_1c8;
+  (**(code **)*param_1)(param_1,local_188,0xffffffff);
+  (**(code **)*param_2)(param_2,local_c8,0xffffffff);
+  iVar2 = *local_148;
+  iVar1 = local_148[1];
+  local_1a0 = 0;
+  local_1a8 = 0;
+  local_198 = iVar1;
+  local_194 = iVar2;
+  (**(code **)(*param_3 + 0x90))(param_3,&local_198,0xd,0xffffffff);
+  (**(code **)*param_3)(param_3,local_128,0xffffffff);
+  uVar3 = iVar2 * iVar1;
+  uVar4 = (ulonglong)uVar3;
+  if (0 < (int)uVar3) {
+    do {
+      fVar6 = local_b8[1] * local_178[1] + *local_b8 * *local_178;
+      fVar7 = *local_b8 * local_178[1] - local_b8[1] * *local_178;
+      fVar5 = sqrtf(fVar7 * fVar7 + fVar6 * fVar6);
+      *local_118 = fVar6 / (fVar5 + 1.1920929e-07);
+      local_118[1] = fVar7 / (fVar5 + 1.1920929e-07);
+      uVar4 = uVar4 - 1;
+      local_118 = local_118 + 2;
+      local_178 = local_178 + 2;
+      local_b8 = local_b8 + 2;
+    } while (uVar4 != 0);
+  }
+  if ((local_110 != (int *)0x0) && (iVar2 = cv::_interlockedExchangeAdd(local_110,-1), iVar2 == 1))
+  {
+    cv::Mat::deallocate(local_128);
+  }
+  local_f8 = 0;
+  local_100 = 0;
+  local_108 = 0;
+  local_118 = (float *)0x0;
+  *local_e8 = 0;
+  local_110 = (int *)0x0;
+  if (local_e0 != local_d8) {
+    cv::fastFree(local_e0);
+  }
+  if ((local_b0 != (int *)0x0) && (iVar2 = cv::_interlockedExchangeAdd(local_b0,-1), iVar2 == 1)) {
+    cv::Mat::deallocate(local_c8);
+  }
+  local_98 = 0;
+  local_a0 = 0;
+  local_a8 = 0;
+  local_b8 = (float *)0x0;
+  *local_88 = 0;
+  local_b0 = (int *)0x0;
+  if (local_80 != local_78) {
+    cv::fastFree(local_80);
+  }
+  if ((local_170 != (int *)0x0) && (iVar2 = cv::_interlockedExchangeAdd(local_170,-1), iVar2 == 1))
+  {
+    cv::Mat::deallocate(local_188);
+  }
+  local_158 = 0;
+  local_160 = 0;
+  local_168 = 0;
+  local_178 = (float *)0x0;
+  *local_148 = 0;
+  local_170 = (int *)0x0;
+  if (local_140 != local_138) {
+    cv::fastFree(local_140);
+  }
+  return;
+}
+

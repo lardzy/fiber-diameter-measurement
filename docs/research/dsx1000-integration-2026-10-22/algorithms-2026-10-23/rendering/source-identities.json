@@ -1,0 +1,27 @@
+[
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/ImageProcessingWrapper.dll",
+    "sha256": "0bac697fb85805b24d20362a0bc03f56989c03c3cebef74a2c54caf1a056ea63",
+    "reverified": true
+  },
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycImageControl.dll",
+    "sha256": "82180eddd2ab0ef88cd744b7e9af26162356d932c2037ed2dd3d7f8018ab07fa",
+    "reverified": true
+  },
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycSurfaceCorrectionFilter.dll",
+    "sha256": "af324fc21fdf0999526e36169e38ec31c04a959609ee5f70e190b64c2d25b817",
+    "reverified": true
+  },
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlycThreeDSettings.dll",
+    "sha256": "d11b387c65be8ccb7b1cfcbcbc13a47ec9e803f1f5654ced733be2feff5d9084",
+    "reverified": true
+  },
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-APP/OlysViewHelpers.dll",
+    "sha256": "d12ac365f4cd6c1bf602c186f0a0db625bed656375b59e26538662d9fd7a0f09",
+    "reverified": true
+  }
+]

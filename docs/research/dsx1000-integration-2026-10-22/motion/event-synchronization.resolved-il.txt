@@ -1,0 +1,85 @@
+Selected CIL interpreted statically; no target execution. Tokens scoped to artifact SHA-256 + MVID.
+
+ARTIFACT /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlybMemoryDatabase.dll
+SHA256 1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b
+MVID c0223e38-004b-4799-8ff5-4416e69eaf0b
+EVIDENCE ev_fc5f7d5ef1644e9899021e77c833b1615a828d67daf31b9c904498e0b9d5286d
+
+METHOD 0x06000028 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+SIGNATURE {"raw_length":5,"raw_sha256":"a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a","resolved_sha256":"a09ef67399ead586825bc1d0464a8c5ddc413f90894151dab075ceab029a8b6a","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["var:0"],"field_type":null,"issue":null}
+EXCEPTIONS [{"flags":2,"try_offset":27,"try_length":21,"handler_offset":48,"handler_length":11,"class_token":null,"filter_offset":null},{"flags":2,"try_offset":2,"try_length":71,"handler_offset":73,"handler_length":10,"class_token":null,"filter_offset":null}]
+IL_0000 ldc.i4.0  
+IL_0001 stloc.2  
+IL_0002 ldarg.0  
+IL_0003 ldfld 0x0a00004e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2._syncEvent
+IL_0008 dup  
+IL_0009 stloc.3  
+IL_000a ldloca.s 2 
+IL_000c call 0x0a00005b System.Threading.Monitor.Enter
+IL_0011 ldloca.s 0 
+IL_0013 initobj 0x1b000104 
+IL_0019 ldc.i4.0  
+IL_001a stloc.1  
+IL_001b ldarg.0  
+IL_001c dup  
+IL_001d stloc.s 4 
+IL_001f ldloca.s 1 
+IL_0021 call 0x0a00005b System.Threading.Monitor.Enter
+IL_0026 ldarg.0  
+IL_0027 ldarg.1  
+IL_0028 callvirt 0x0a000060 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.UpdateBase
+IL_002d stloc.0  
+IL_002e leave.s 59 
+IL_0030 ldloc.1  
+IL_0031 brfalse.s 58 
+IL_0033 ldloc.s 4 
+IL_0035 call 0x0a00005d System.Threading.Monitor.Exit
+IL_003a endfinally  
+IL_003b ldarg.0  
+IL_003c ldloc.0  
+IL_003d newobj 0x0a00005e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1..ctor
+IL_0042 callvirt 0x0a00005f Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.OnEntityUpdateHandler
+IL_0047 leave.s 83 
+IL_0049 ldloc.2  
+IL_004a brfalse.s 82 
+IL_004c ldloc.3  
+IL_004d call 0x0a00005d System.Threading.Monitor.Exit
+IL_0052 endfinally  
+IL_0053 ret  
+
+METHOD 0x0600003f Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.OnEntityUpdateHandler
+SIGNATURE {"raw_length":10,"raw_sha256":"816f8ba4c52416d2151b81df12842be11cc4ac5ba57de11f3ea039f47a330872","resolved_sha256":"7490ef4afac4b1322a264eef9250ccf1a1afe03ae78efa062fb804a7aaa785fd","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:1984<var:0>"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldfld 0x0a000050 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.EntityUpdateHandler
+IL_0006 stloc.0  
+IL_0007 ldloc.0  
+IL_0008 brfalse.s 18 
+IL_000a ldloc.0  
+IL_000b ldarg.0  
+IL_000c ldarg.1  
+IL_000d callvirt 0x0a000094 System.EventHandler`1.Invoke
+IL_0012 ret  
+
+METHOD 0x06000aac Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEvent.set_AcquisitionStateEvent
+SIGNATURE {"raw_length":4,"raw_sha256":"c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a","resolved_sha256":"c889396c66b535112cb33472b6ecf61ad5f09860a1ea642fb8c31a4ed004296a","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["i4"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 ldarg.1  
+IL_0002 stfld 0x04000401 
+IL_0007 ret  
+
+METHOD 0x06000ab0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEventDao.UpdateEvent
+SIGNATURE {"raw_length":6,"raw_sha256":"f37b595d3e652f968ffa8e53e20be394fd5031be869f2efaa99bad7a2a82be13","resolved_sha256":"1bd0ab8d1567456f9d7e35fbc18540be70f222550d098f2f2cec273904eeacfa","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["valuetype:569"],"field_type":null,"issue":null}
+EXCEPTIONS []
+IL_0000 ldarg.0  
+IL_0001 callvirt 0x0a00037d Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+IL_0006 stloc.0  
+IL_0007 ldloc.0  
+IL_0008 ldarg.1  
+IL_0009 callvirt 0x06000aac Olympus.LI.Triumph.Workflow.MemoryDatabase.Acquisition.AcquisitionEvent.set_AcquisitionStateEvent
+IL_000e ldarg.0  
+IL_000f ldloc.0  
+IL_0010 callvirt 0x0a00037e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.Update
+IL_0015 ret  
+

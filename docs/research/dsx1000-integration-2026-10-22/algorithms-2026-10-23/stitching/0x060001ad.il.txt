@@ -1,0 +1,38 @@
+0x060001ad Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController.ExportStitchingImages
+0 ldc.i4.2 None 
+1 newarr 0x0100009e 
+6 dup None 
+7 ldc.i4.0 None 
+8 ldstr 0x70002114 '<S> _clsStitchingImageEntity = '
+13 stelem.ref None 
+14 dup None 
+15 ldc.i4.1 None 
+16 ldarg.1 None 
+17 call 0x0a000036 .GetImageEntityString
+22 stelem.ref None 
+23 call 0x0a00002d .Concat
+28 call 0x0a00002e .FlowLog
+33 ldarg.0 None 
+34 ldfld 0x040000ba Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController._clsImageStitchingPopupModel
+39 brtrue.s 58 
+41 ldarg.0 None 
+42 ldarg.0 None 
+43 ldfld 0x040000b7 Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController._clsImageStitchingModel
+48 newobj 0x06000147 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel..ctor
+53 stfld 0x040000ba Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController._clsImageStitchingPopupModel
+58 ldarg.0 None 
+59 ldfld 0x040000b7 Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController._clsImageStitchingModel
+64 ldarg.2 None 
+65 stfld 0x04000093 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.StitchConfigImageStitchingSize
+70 ldarg.0 None 
+71 ldfld 0x040000b7 Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController._clsImageStitchingModel
+76 ldarg.3 None 
+77 stfld 0x04000092 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingModel.IsDSXOutprocessStitching
+82 ldarg.0 None 
+83 ldfld 0x040000ba Olympus.Mis.Imaging.Capsules.ImageStitching.Capsule.ImageStitchingController._clsImageStitchingPopupModel
+88 ldarg.1 None 
+89 ldc.i4.1 None 
+90 callvirt 0x06000162 Olympus.Mis.Imaging.Capsules.ImageStitching.Model.ImageStitchingPopupModel.ExportStitchingImages
+95 ldstr 0x7000103b '<E>'
+100 call 0x0a00002e .FlowLog
+105 ret None 

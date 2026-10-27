@@ -1,0 +1,194 @@
+EVIDENCE ev_378406d3cc5d33fff9bac20201e3e02f62d6c8d92469fb1ab8c86b8b422a8ea1 SHA256 f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD 0x060048f4 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior TransferImageResultInfo IL_SHA256 546411129c73a518fdf37dc139f0d305c4e73cb93fe42f04fb23c8ccd3d44e9f DECODE_ISSUE null
+0000: nop            
+0001: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0006: callvirt      0x0a000090 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+000b: brfalse.s     28 
+000d: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0012: callvirt      0x0a000091 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_AutoSaveForcedChange
+0017: ldc.i4.0       
+0018: ceq            
+001a: br.s          29 
+001c: ldc.i4.1       
+001d: nop            
+001e: stloc.0        
+001f: ldloc.0        
+0020: brtrue.s      108 
+0022: nop            
+0023: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0028: callvirt      0x0a000092 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_AutoSaveRestoreWaitEventHandle
+002d: callvirt      0x0a000aba System.Threading.EventWaitHandle.Reset
+0032: pop            
+0033: call          0x060053b7 Olympus.LI.Triumph.Application.ViewModel.UiController.get_sUiController
+0038: callvirt      0x060053ba Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+003d: ldc.i4.0       
+003e: callvirt      0x06000014 Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_AutoSaveCheck
+0043: nop            
+0044: ldstr         0x70022c83 "AutoSave=OFF.Wait"
+0049: call          0x0a0012a2 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+004e: nop            
+004f: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0054: callvirt      0x0a000092 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_AutoSaveRestoreWaitEventHandle
+0059: callvirt      0x0a00017d System.Threading.WaitHandle.WaitOne
+005e: pop            
+005f: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0064: ldc.i4.0       
+0065: callvirt      0x0a0012a3 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AutoSaveForcedChange
+006a: nop            
+006b: nop            
+006c: ldarg.0        
+006d: ldfld         0x04000756 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._emAcquisitionType
+0072: ldc.i4.1       
+0073: beq.s         137 
+0075: ldarg.0        
+0076: ldfld         0x04000756 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._emAcquisitionType
+007b: ldc.i4.2       
+007c: beq.s         137 
+007e: ldarg.0        
+007f: ldfld         0x04000756 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._emAcquisitionType
+0084: ldc.i4.4       
+0085: ceq            
+0087: br.s          138 
+0089: ldc.i4.1       
+008a: nop            
+008b: stloc.0        
+008c: ldloc.0        
+008d: brtrue.s      153 
+008f: nop            
+0090: ldarg.0        
+0091: ldc.i4.1       
+0092: call          0x06004968 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior.RestoreLivePostAcquisition
+0097: nop            
+0098: nop            
+0099: ldarg.0        
+009a: ldarg.1        
+009b: call          0x06004900 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._ChangeUIControllerForTransferImageResult
+00a0: nop            
+00a1: ldarg.0        
+00a2: ldarg.1        
+00a3: call          0x06004901 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._OperationForTransferImageResult
+00a8: nop            
+00a9: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00ae: callvirt      0x0a000090 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+00b3: ldc.i4.0       
+00b4: ceq            
+00b6: stloc.0        
+00b7: ldloc.0        
+00b8: brtrue.s      200 
+00ba: nop            
+00bb: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00c0: ldc.i4.0       
+00c1: callvirt      0x0a0012a4 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AcquisitionShotStatus
+00c6: nop            
+00c7: nop            
+00c8: ret            
+
+METHOD 0x060049c6 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior StateAcquisitionStop IL_SHA256 aaed0ba088b66e5b65aef5429d5c2d4f2376540c5050b431cb4f90d953371649 DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldarg.1        
+0003: call          0x06004a06 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._AcquisitionStopCommonProcess
+0008: nop            
+0009: ldarg.1        
+000a: stloc.1        
+000b: ldloc.1        
+000c: brtrue        280 
+0011: nop            
+0012: call          0x0a0000aa Olympus.LI.Triumph.Application.UiData.UICommonData.get_AcquisitionData
+0017: callvirt      0x0a000113 Olympus.LI.Triumph.Application.UiData.AcquisitionCommonData.get_LiveStitchingEnable
+001c: ldc.i4.0       
+001d: ceq            
+001f: stloc.1        
+0020: ldloc.1        
+0021: brtrue.s      84 
+0023: nop            
+0024: call          0x060053b7 Olympus.LI.Triumph.Application.ViewModel.UiController.get_sUiController
+0029: callvirt      0x060053b9 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Observation
+002e: callvirt      0x06005396 Olympus.LI.Triumph.Application.ViewModel.Observation.ExecuteStartLive
+0033: nop            
+0034: ldarg.0        
+0035: call          0x06004ace Olympus.LI.Triumph.Application.ViewModel.UIStateUpdaterFactory.CreateStateLiveStitchingAcquisitionFinishedUpdater
+003a: call          0x06004a0f Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior.StateGUIStateUpdate
+003f: nop            
+0040: call          0x060053b7 Olympus.LI.Triumph.Application.ViewModel.UiController.get_sUiController
+0045: callvirt      0x060053ba Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+004a: ldc.i4.0       
+004b: callvirt      0x060003ce Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_UpdateLiveStitchingAcquisitionOperation
+0050: nop            
+0051: nop            
+0052: br.s          149 
+0054: nop            
+0055: call          0x060053b7 Olympus.LI.Triumph.Application.ViewModel.UiController.get_sUiController
+005a: callvirt      0x060053ba Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+005f: callvirt      0x060003f2 Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AcquisitionMode
+0064: ldc.i4.0       
+0065: ceq            
+0067: ldc.i4.0       
+0068: ceq            
+006a: stloc.1        
+006b: ldloc.1        
+006c: brtrue.s      140 
+006e: nop            
+006f: ldsfld        0x0a00138c Olympus.LI.Triumph.Application.Resource.UiMessageResourceKey.MSG_W_SNAP_CANCELED_NOT_SAVED
+0074: call          0x0a00003d Olympus.LI.Triumph.Application.Resource.UiResource.GetResourceValue
+0079: stloc.0        
+007a: call          0x060053b7 Olympus.LI.Triumph.Application.ViewModel.UiController.get_sUiController
+007f: callvirt      0x060053c2 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Message
+0084: ldloc.0        
+0085: callvirt      0x0600532a Olympus.LI.Triumph.Application.ViewModel.Message.ShowUserWarning
+008a: pop            
+008b: nop            
+008c: ldarg.0        
+008d: ldc.i4.1       
+008e: call          0x06004968 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior.RestoreLivePostAcquisition
+0093: nop            
+0094: nop            
+0095: ldarg.0        
+0096: ldc.i4.0       
+0097: call          0x060048f6 Olympus.LI.Triumph.Application.ViewModel.UiStateBehavior._SendMicrocopeStateNotify
+009c: nop            
+009d: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00a2: callvirt      0x0a000090 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_IsRdkProcessing
+00a7: ldc.i4.0       
+00a8: ceq            
+00aa: stloc.1        
+00ab: ldloc.1        
+00ac: brtrue.s      279 
+00ae: nop            
+00af: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00b4: callvirt      0x0a000091 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_AutoSaveForcedChange
+00b9: ldc.i4.0       
+00ba: ceq            
+00bc: stloc.1        
+00bd: ldloc.1        
+00be: brtrue.s      266 
+00c0: nop            
+00c1: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00c6: callvirt      0x0a000092 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_AutoSaveRestoreWaitEventHandle
+00cb: callvirt      0x0a000aba System.Threading.EventWaitHandle.Reset
+00d0: pop            
+00d1: call          0x060053b7 Olympus.LI.Triumph.Application.ViewModel.UiController.get_sUiController
+00d6: callvirt      0x060053ba Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+00db: ldc.i4.0       
+00dc: callvirt      0x06000014 Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_AutoSaveCheck
+00e1: nop            
+00e2: ldstr         0x70022c83 "AutoSave=OFF.Wait"
+00e7: call          0x0a0012a2 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+00ec: nop            
+00ed: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00f2: callvirt      0x0a000092 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_AutoSaveRestoreWaitEventHandle
+00f7: callvirt      0x0a00017d System.Threading.WaitHandle.WaitOne
+00fc: pop            
+00fd: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0102: ldc.i4.0       
+0103: callvirt      0x0a0012a3 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AutoSaveForcedChange
+0108: nop            
+0109: nop            
+010a: call          0x0a00008f Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+010f: ldc.i4.0       
+0110: callvirt      0x0a0012a4 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AcquisitionShotStatus
+0115: nop            
+0116: nop            
+0117: nop            
+0118: ret            

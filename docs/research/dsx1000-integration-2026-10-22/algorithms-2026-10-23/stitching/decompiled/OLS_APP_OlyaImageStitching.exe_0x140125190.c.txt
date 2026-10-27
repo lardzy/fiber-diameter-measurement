@@ -1,0 +1,56 @@
+Evidence: ev_5171757505f97824166205e203c546950188ac645ad6675196827c6ccef830dc
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_140125190(longlong param_1,longlong param_2)
+
+{
+  double dVar1;
+  longlong lVar2;
+  double *pdVar3;
+  longlong lVar4;
+  longlong lVar5;
+  longlong lVar6;
+  int iVar7;
+  longlong lVar8;
+  double dVar9;
+  undefined1 auStackY_c8 [32];
+  double local_98 [4];
+  undefined1 local_78 [8];
+  double local_70 [9];
+  ulonglong local_28;
+  
+  local_28 = DAT_1401c7000 ^ (ulonglong)auStackY_c8;
+  pdVar3 = *(double **)(*(longlong *)(param_1 + 8) + 0x30);
+  FUN_140125310((longlong)local_78,*pdVar3,pdVar3[1],pdVar3[2],pdVar3[3],pdVar3[4]);
+  iVar7 = 0;
+  if (DAT_1401c9bb8 - DAT_1401c9bb0 >> 4 != 0) {
+    lVar2 = *(longlong *)(param_2 + 8);
+    lVar6 = 0;
+    lVar8 = 0;
+    do {
+      dVar1 = *(double *)(lVar6 + DAT_1401c9bb0);
+      dVar9 = *(double *)(lVar6 + 8 + DAT_1401c9bb0);
+      pdVar3 = local_70;
+      lVar4 = 0;
+      do {
+        lVar5 = lVar4 + 1;
+        local_98[lVar4] = dVar1 * pdVar3[-1] + 0.0 + dVar9 * *pdVar3 + pdVar3[1];
+        pdVar3 = pdVar3 + 3;
+        lVar4 = lVar5;
+      } while (lVar5 < 3);
+      dVar1 = local_98[1] - *(double *)(lVar6 + 8 + DAT_1401c9bc8);
+      dVar9 = local_98[0] - *(double *)(lVar6 + DAT_1401c9bc8);
+      dVar1 = sqrt(dVar1 * dVar1 + dVar9 * dVar9);
+      iVar7 = iVar7 + 1;
+      lVar6 = lVar6 + 0x10;
+      *(double *)(lVar8 + *(longlong *)(lVar2 + 0x30)) = dVar1;
+      lVar8 = lVar8 + 8;
+    } while ((ulonglong)(longlong)iVar7 < (ulonglong)(DAT_1401c9bb8 - DAT_1401c9bb0 >> 4));
+  }
+  return;
+}
+

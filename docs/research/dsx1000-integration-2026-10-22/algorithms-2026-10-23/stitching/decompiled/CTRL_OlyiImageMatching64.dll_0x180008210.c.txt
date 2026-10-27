@@ -1,0 +1,51 @@
+Evidence: ev_8a112666364249004858cb0304bbedd1fdc56b7c6370fedc2b7e722a39860e06
+Subject SHA256: 8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94
+Bundle: matching-evidence.json.gz
+
+
+int FUN_180008210(longlong param_1)
+
+{
+  undefined1 auVar1 [16];
+  undefined1 auVar2 [16];
+  undefined1 auVar3 [16];
+  int iVar4;
+  int iVar5;
+  double *pdVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  double dVar10;
+  double dVar11;
+  double local_res8;
+  double local_res10 [3];
+  
+  iVar5 = *(int *)(param_1 + 8);
+  local_res8 = (double)*(int *)(param_1 + 0x54);
+  local_res10[0] = (double)*(int *)(param_1 + 0x50);
+  pdVar6 = &local_res8;
+  if ((double)*(int *)(param_1 + 0x50) <= (double)*(int *)(param_1 + 0x54)) {
+    pdVar6 = local_res10;
+  }
+  dVar11 = *pdVar6 * *(double *)(param_1 + 0x60);
+  dVar10 = *pdVar6 * 0.1;
+  iVar9 = (int)ROUND(dVar10);
+  auVar1._8_8_ = 0;
+  auVar1._0_8_ = -(ulonglong)(dVar10 < (double)iVar9);
+  iVar4 = movmskpd((int)pdVar6,auVar1);
+  dVar10 = dVar11 / (double)iVar5;
+  iVar8 = (int)ROUND(dVar10);
+  auVar3._8_8_ = 0;
+  auVar3._0_8_ = -(ulonglong)(dVar10 < (double)iVar8);
+  iVar7 = movmskpd((int)param_1,auVar3);
+  for (iVar8 = iVar8 - iVar7; (1 < iVar5 && (iVar8 < iVar9 - iVar4)); iVar8 = iVar8 - iVar7) {
+    iVar5 = iVar5 / 2;
+    dVar10 = dVar11 / (double)iVar5;
+    iVar8 = (int)ROUND(dVar10);
+    auVar2._8_8_ = 0;
+    auVar2._0_8_ = -(ulonglong)(dVar10 < (double)iVar8);
+    iVar7 = movmskpd(iVar5,auVar2);
+  }
+  return iVar5;
+}
+

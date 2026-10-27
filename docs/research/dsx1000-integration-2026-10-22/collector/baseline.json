@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "description": "DSX supplied copy identity; static analysis 2026-10-22",
+  "files": [
+    {
+      "path": "DSX-BSW-APP/DSX-BSW-APP.exe",
+      "sha256": "345544ec1a3feceb4cf8e50f7d8e07ce4a7298453d33bd791e30a48a78e505a4"
+    },
+    {
+      "path": "DSX-BSW-APP/LoadSaveModule.dll",
+      "sha256": "ddc6de1658d9c79047a5cccabd3c5c1efb58d09382aa0d470e1675837078fa7e"
+    },
+    {
+      "path": "DSX-BSW-APP/OlyImageExporter.exe",
+      "sha256": "b5215aa9d54da8e2139470e54e2c9e666b6676592640250cc3a80c9469ff687e"
+    },
+    {
+      "path": "DSX-BSW-APP/OlycAcquisitionContainer.dll",
+      "sha256": "d466121f92f19d77a5346136635da3a3fb3b32ef45f6fd5bd813aee3e68eca03"
+    },
+    {
+      "path": "DSX-BSW-APP/OlycImageList.dll",
+      "sha256": "d810da9ba32ac0a19e2e967c49e519b184635fb36d6952852ecbb8830b5840e0"
+    },
+    {
+      "path": "DSX-BSW-APP/OlycLogin.dll",
+      "sha256": "60648ccc528529d4928771f9d5cb235aa538564202b2582fa72b342ca04c4974"
+    },
+    {
+      "path": "DSX-BSW-APP/OlysDataStoreService.dll",
+      "sha256": "677b02270d54a6c210ba30a3949e188e0994b18388e04f84dc2d7ea3bf63286c"
+    },
+    {
+      "path": "DSX-BSW-CTRL/DSX-BSW-CTRL.exe",
+      "sha256": "99927e1185bcb7fee71d3ed6a497637600e7b9dfe459825e1429746c853aa7aa"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybAcquisitionDomain.dll",
+      "sha256": "6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybCameraDomain.dll",
+      "sha256": "ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybMemoryDatabase.dll",
+      "sha256": "1a61f387ddc242b91f85716ebe3586f205020ec678276e9355b628f14b29208b"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybMicroscopeDomain.dll",
+      "sha256": "7f443e9916c0f1a5230a0093f73a68dddd546ee369e72779619a9b7042df2f9e"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybProcessJoinDomain.dll",
+      "sha256": "0ff9f5de10d9187883cec52d2f78467928cde2bf8e82d0b1e4a601a178670f6d"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybScenarioDefinition.dll",
+      "sha256": "3adada8987b382a8fd4397690fc39cccc7ab06128db86fceccfc400d315cfd98"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlybStageDomain.dll",
+      "sha256": "2c8091cb74dd3b20ff14363d8810b739c0d972008ec6fc7b7560d659c150e0ff"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlycSdkCore.dll",
+      "sha256": "5903e108d1e65494b2bcd5959d9634cad1fba3b1359e0ba559653f5ee387d8e1"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlydCamera.dll",
+      "sha256": "19a1e1b01cafda823c8daafe11f3b461705157213798f116fd90dc25119a0955"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlydDevice.dll",
+      "sha256": "5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlydDeviceControl.dll",
+      "sha256": "b3b8ef0270606b2af3605b527e8d3b8e968085860424e77a3572cc152365141a"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlydMicroscope.dll",
+      "sha256": "f3d42e588a5ea19570db681ec1886b05da8e7a69d858ff04d6698d58a654d810"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlydPort.dll",
+      "sha256": "5f1c56f28a6f5c6a0ca5a0dc1918133bc4404b13fd5aa186fa909ed9e9ce804b"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlydStage.dll",
+      "sha256": "2b81ecb535e5e9f8b96b2dfdf7e871a2a9310ffbf3d59e36fdb8300130ff6194"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlymAsyncSocket.dll",
+      "sha256": "5e90594310b01392a700a30a7763980943317559f0fe7240f8dc5ba1d6d05bd8"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlymRdkData.dll",
+      "sha256": "f7967dd314463b582c3419e90f1b83268b249d3213a5eb3ad04a5b09b62a398e"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlypInterProcessCommon.dll",
+      "sha256": "649cd7647d8dc4de4cbe619b2a1e0f9e028576a74f70d3ed45c0baf278396803"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlypInterProcessCommunication.dll",
+      "sha256": "c7078c1d780a88773edbbf75fd2fe988615af13f9031ce78c2765a93c4443047"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuDomainController.dll",
+      "sha256": "509f90651420b31bbca28161ffe2639c467bb5c1a2fd99af265d966b67f7766a"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuDomainManager.dll",
+      "sha256": "c89dd1dfa5903c26620d4b588d33f707e391401bfbe0798f68fac21892578a00"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuMicroscope.dll",
+      "sha256": "f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuRdkMicroscopeControl.dll",
+      "sha256": "842a81dbb38f2a1e73528d1c07fbff5a3f5e9351ef7d4b6fbc6a99d9c46dabb3"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuUiCalculator.dll",
+      "sha256": "3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuUiData.dll",
+      "sha256": "3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245"
+    },
+    {
+      "path": "DSX-BSW-CTRL/OlyuUiUtility.dll",
+      "sha256": "644e4384819490a05d652eea49813b315f9e585df3f076faf4bd98129ef0bb8c"
+    }
+  ]
+}

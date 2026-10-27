@@ -1,0 +1,48 @@
+Evidence: ev_b247c304bce06152e528170c7d3489a61f9f4e4d2ccc4f533dd2f815478ef9ca
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-evidence.json.gz
+
+
+void FUN_180017490(char *param_1,undefined8 param_2,int *param_3,int *param_4,int *param_5,
+                  ulonglong param_6)
+
+{
+  longlong *plVar1;
+  undefined8 *puVar2;
+  undefined8 uVar3;
+  int iVar4;
+  undefined8 local_res10;
+  int local_res18 [4];
+  
+  if (0 < *param_3 * *param_4) {
+    local_res10 = param_2;
+    _vcomp_for_static_simple_init(0,*param_3 * *param_4 + -1,1,1,&local_res10,local_res18);
+    for (iVar4 = (int)local_res10; iVar4 <= local_res18[0]; iVar4 = iVar4 + 1) {
+      if (*param_1 == '\0') {
+        uVar3 = FUN_18000c5e0(param_6,iVar4,*param_4);
+        if ((int)uVar3 != 0) {
+          *param_1 = '\x01';
+          *param_5 = (int)uVar3;
+        }
+        _vcomp_enter_critsect(&DAT_180023c30);
+        plVar1 = *(longlong **)(param_6 + 0x210);
+        puVar2 = *(undefined8 **)(param_6 + 0x1e8);
+        if (*(int *)((longlong)plVar1 + 0xc) != 0) {
+          *(float *)(puVar2 + 6) =
+               (float)*(int *)((longlong)plVar1 + 0xc) / (float)(int)plVar1[1] +
+               *(float *)(puVar2 + 6);
+          if ((int)plVar1[6] == 1) {
+            FUN_180007c40(plVar1);
+          }
+          else if ((int)plVar1[6] == 2) {
+            FUN_180007d70((longlong)plVar1,puVar2);
+          }
+        }
+        _vcomp_leave_critsect(DAT_180023c30);
+      }
+    }
+    _vcomp_for_static_end();
+  }
+  return;
+}
+

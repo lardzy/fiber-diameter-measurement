@@ -1,0 +1,521 @@
+Evidence: ev_dac6b152cd11b26205561b5ca93d887a8ebc798cd93d5851904cafb4bb7a1ffd
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_140154360(undefined8 *param_1)
+
+{
+  int iVar1;
+  undefined8 uVar2;
+  longlong lVar3;
+  ulonglong uVar4;
+  undefined1 *puVar5;
+  LPWSTR lpReturnedString;
+  double dVar6;
+  undefined1 auStackY_638 [32];
+  LPCWSTR local_608;
+  undefined8 *local_600;
+  undefined8 local_5f8;
+  undefined1 local_5f0 [472];
+  undefined1 local_418 [8];
+  undefined1 local_410 [8];
+  undefined1 local_408 [8];
+  undefined1 local_400 [8];
+  UINT local_3f8;
+  UINT local_3f4;
+  undefined4 local_3f0;
+  double local_3e8;
+  double local_3e0;
+  double local_3d8;
+  uint local_3d0;
+  uint local_3cc;
+  uint local_3c8;
+  uint local_3c4;
+  uint local_3c0;
+  uint local_3bc;
+  double local_3b8;
+  double local_3b0;
+  UINT local_3a8;
+  UINT local_3a4;
+  UINT local_3a0;
+  UINT local_39c;
+  UINT local_398;
+  UINT local_394;
+  UINT local_390;
+  UINT local_38c;
+  UINT local_388;
+  UINT local_384;
+  UINT local_380;
+  UINT local_37c;
+  uint local_378;
+  uint local_374;
+  UINT local_368;
+  double local_360;
+  double local_358;
+  double local_350;
+  UINT local_348;
+  double local_340;
+  double local_338;
+  UINT local_330;
+  undefined1 local_328 [8];
+  undefined1 local_320 [8];
+  uint local_318;
+  uint local_314;
+  int local_310;
+  UINT local_30c;
+  UINT local_308;
+  UINT local_300;
+  uint local_2f8;
+  undefined1 local_2f0 [8];
+  uint local_2e8;
+  undefined1 local_2e0 [8];
+  UINT local_2d8;
+  UINT local_2d0;
+  UINT local_2cc;
+  UINT local_2c8;
+  double local_2c0;
+  double local_2b8;
+  double local_2b0;
+  UINT local_2a8;
+  UINT local_2a4;
+  UINT local_2a0;
+  UINT local_29c;
+  double local_298;
+  UINT local_290;
+  double local_288;
+  UINT local_280;
+  double local_268;
+  uint local_260;
+  uint local_25c;
+  uint local_258;
+  double local_250;
+  double local_248;
+  WCHAR local_238 [2];
+  undefined1 local_234 [508];
+  ulonglong local_38;
+  
+  local_5f8 = 0xfffffffffffffffe;
+  local_38 = DAT_1401c7000 ^ (ulonglong)auStackY_638;
+  local_600 = param_1;
+  Ordinal_296(local_418);
+  Ordinal_296(local_410);
+  Ordinal_296(local_408);
+  Ordinal_296(local_400);
+  Ordinal_296(local_328);
+  Ordinal_296(local_320);
+  Ordinal_296(local_2f0);
+  Ordinal_296(local_2e0);
+  local_238[0] = L'\0';
+  local_238[1] = L'\0';
+  memset(local_234,0,0x1fc);
+  GetPrivateProfileStringW(L"system",L"exefile",L"none",local_238,0x100,(LPCWSTR)*param_1);
+  Ordinal_1498(local_410,local_238);
+  iVar1 = Ordinal_4467(local_410,L"none",0);
+  if (iVar1 != 0) {
+    memset(local_238,0,0x200);
+    GetPrivateProfileStringW(L"system",L"inifile",L"none",local_238,0x100,(LPCWSTR)*param_1);
+    Ordinal_1498(local_408,local_238);
+    iVar1 = Ordinal_4467(local_408,L"none",0);
+    if (iVar1 != 0) {
+      memset(local_238,0,0x200);
+      local_3f0 = 0x10;
+      GetPrivateProfileStringW
+                (L"system",L"imagedatafolder",L"none",local_238,0x100,(LPCWSTR)*param_1);
+      Ordinal_1498(local_400,local_238);
+      iVar1 = Ordinal_4467(local_400,L"none",0);
+      if (iVar1 != 0) {
+        memset(local_238,0,0x200);
+        GetPrivateProfileStringW(L"system",L"operation",L"none",local_238,0x100,(LPCWSTR)*param_1);
+        Ordinal_1498(local_418,local_238);
+        iVar1 = Ordinal_4467(local_418,L"none",0);
+        if (iVar1 != 0) {
+          memset(local_238,0,0x200);
+          local_3f8 = GetPrivateProfileIntW(L"image",L"orgwidth",-1,(LPCWSTR)*param_1);
+          if ((-1 < (int)local_3f8) &&
+             (local_3f4 = GetPrivateProfileIntW(L"image",L"orgheight",-1,(LPCWSTR)*param_1),
+             -1 < (int)local_3f4)) {
+            GetPrivateProfileStringW(L"image",L"orgxscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1);
+            local_3e8 = _wtof(local_238);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"orgyscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1);
+            local_3e0 = _wtof(local_238);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"orgzscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1);
+            local_3d8 = _wtof(local_238);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"isintensity",L"none",local_238,8,(LPCWSTR)*param_1);
+            uVar2 = Ordinal_286(&local_608,local_238);
+            iVar1 = Ordinal_4467(uVar2,L"true",0);
+            Ordinal_1030(&local_608);
+            local_3d0 = (uint)(iVar1 == 0);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"isheight",L"none",local_238,8,(LPCWSTR)*param_1);
+            uVar2 = Ordinal_286(&local_608,local_238);
+            iVar1 = Ordinal_4467(uVar2,L"true",0);
+            Ordinal_1030(&local_608);
+            local_3cc = (uint)(iVar1 == 0);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"iscolor",L"none",local_238,8,(LPCWSTR)*param_1);
+            uVar2 = Ordinal_286(&local_608,local_238);
+            iVar1 = Ordinal_4467(uVar2,L"true",0);
+            Ordinal_1030(&local_608);
+            local_3c8 = (uint)(iVar1 == 0);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"isinvalid",L"none",local_238,8,(LPCWSTR)*param_1);
+            uVar2 = Ordinal_286(&local_608,local_238);
+            iVar1 = Ordinal_4467(uVar2,L"true",0);
+            Ordinal_1030(&local_608);
+            local_3c4 = (uint)(iVar1 == 0);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"isplanefilm",L"none",local_238,8,(LPCWSTR)*param_1);
+            uVar2 = Ordinal_286(&local_608,local_238);
+            iVar1 = Ordinal_4467(uVar2,L"true",0);
+            Ordinal_1030(&local_608);
+            local_3c0 = (uint)(iVar1 == 0);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"islinefilm",L"none",local_238,8,(LPCWSTR)*param_1);
+            uVar2 = Ordinal_286(&local_608,local_238);
+            iVar1 = Ordinal_4467(uVar2,L"true",0);
+            Ordinal_1030(&local_608);
+            local_3bc = (uint)(iVar1 == 0);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW(L"image",L"orgzscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1);
+            local_3b8 = _wtof(local_238);
+            memset(local_238,0,0x200);
+            GetPrivateProfileStringW
+                      (L"image",L"orgzoommagnification",L"1.0",local_238,0x20,(LPCWSTR)*param_1);
+            local_3b0 = _wtof(local_238);
+            memset(local_238,0,0x200);
+            local_3a8 = GetPrivateProfileIntW(L"stitching",L"maximagewidth",-1,(LPCWSTR)*param_1);
+            if (((-1 < (int)local_3a8) &&
+                (((((local_3a4 = GetPrivateProfileIntW
+                                           (L"stitching",L"maximageheight",-1,(LPCWSTR)*param_1),
+                    -1 < (int)local_3a4 &&
+                    (local_3a0 = GetPrivateProfileIntW
+                                           (L"stitching",L"stitchingcolnum",-1,(LPCWSTR)*param_1),
+                    -1 < (int)local_3a0)) &&
+                   (local_39c = GetPrivateProfileIntW
+                                          (L"stitching",L"stitchingrownum",-1,(LPCWSTR)*param_1),
+                   -1 < (int)local_39c)) &&
+                  ((local_398 = GetPrivateProfileIntW
+                                          (L"stitching",L"overlapwidth",-1,(LPCWSTR)*param_1),
+                   -1 < (int)local_398 &&
+                   (local_394 = GetPrivateProfileIntW
+                                          (L"stitching",L"overlapheight",-1,(LPCWSTR)*param_1),
+                   -1 < (int)local_394)))) &&
+                 (local_390 = GetPrivateProfileIntW
+                                        (L"stitching",L"templatesize",-1,(LPCWSTR)*param_1),
+                 -1 < (int)local_390)))) &&
+               ((((local_38c = GetPrivateProfileIntW
+                                         (L"stitching",L"logfiltersize",-1,(LPCWSTR)*param_1),
+                  -1 < (int)local_38c &&
+                  (local_388 = GetPrivateProfileIntW
+                                         (L"stitching",L"featurecount",-1,(LPCWSTR)*param_1),
+                  -1 < (int)local_388)) &&
+                 (local_384 = GetPrivateProfileIntW
+                                        (L"stitching",L"featuredistance",-1,(LPCWSTR)*param_1),
+                 -1 < (int)local_384)) &&
+                (((local_380 = GetPrivateProfileIntW(L"stitching",L"search",-1,(LPCWSTR)*param_1),
+                  -1 < (int)local_380 &&
+                  (local_37c = GetPrivateProfileIntW
+                                         (L"stitching",L"featurequality",-1,(LPCWSTR)*param_1),
+                  -1 < (int)local_37c)) &&
+                 (local_368 = GetPrivateProfileIntW
+                                        (L"stitching",L"reliabilitythreshold",0x1e,(LPCWSTR)*param_1
+                                        ), -1 < (int)local_368)))))) {
+              GetPrivateProfileStringW
+                        (L"stitching",L"ismatching",L"none",local_238,8,(LPCWSTR)*param_1);
+              uVar2 = Ordinal_286(&local_608,local_238);
+              iVar1 = Ordinal_4467(uVar2,L"true",0);
+              Ordinal_1030(&local_608);
+              local_378 = (uint)(iVar1 == 0);
+              memset(local_238,0,0x200);
+              GetPrivateProfileStringW
+                        (L"stitching",L"iszcorrection",L"none",local_238,8,(LPCWSTR)*param_1);
+              uVar2 = Ordinal_286(&local_608,local_238);
+              iVar1 = Ordinal_4467(uVar2,L"true",0);
+              Ordinal_1030(&local_608);
+              local_374 = (uint)(iVar1 == 0);
+              memset(local_238,0,0x200);
+              if (local_3bc == 1) {
+                GetPrivateProfileStringW
+                          (L"stitching",L"xzstart",L"-1.0",local_238,0x14,(LPCWSTR)*param_1);
+                dVar6 = _wtof(local_238);
+                local_340 = dVar6;
+                memset(local_238,0,0x200);
+                if (dVar6 < 0.0) goto LAB_14015467b;
+                GetPrivateProfileStringW
+                          (L"stitching",L"xzend",L"-1.0",local_238,0x14,(LPCWSTR)*param_1);
+                dVar6 = _wtof(local_238);
+                local_338 = dVar6;
+                memset(local_238,0,0x200);
+                if ((dVar6 < 0.0) ||
+                   (local_330 = GetPrivateProfileIntW
+                                          (L"stitching",L"xzlinepos",0x200,(LPCWSTR)*param_1),
+                   (int)local_330 < 0)) goto LAB_14015467b;
+                GetPrivateProfileStringW
+                          (L"stitching",L"lsmflatnesspath",L"none",local_238,0x100,(LPCWSTR)*param_1
+                          );
+                Ordinal_1498(local_328,local_238);
+                iVar1 = Ordinal_4467(local_328,L"none",0);
+                if (iVar1 == 0) goto LAB_14015467b;
+                memset(local_238,0,0x200);
+                GetPrivateProfileStringW
+                          (L"stitching",L"lsmshadingcorrectionpath",L"none",local_238,0x100,
+                           (LPCWSTR)*param_1);
+                Ordinal_1498(local_320,local_238);
+                iVar1 = Ordinal_4467(local_320,L"none",0);
+                if (iVar1 == 0) goto LAB_14015467b;
+                memset(local_238,0,0x200);
+              }
+              if ((local_3c0 != 1) ||
+                 ((local_348 = GetPrivateProfileIntW
+                                         (L"stitching",L"maxdetectlayernum",3,(LPCWSTR)*param_1),
+                  -1 < (int)local_348 &&
+                  (local_280 = GetPrivateProfileIntW(L"out",L"stitchedlayernum",3,(LPCWSTR)*param_1)
+                  , -1 < (int)local_280)))) {
+                GetPrivateProfileStringW
+                          (L"stitching",L"xyhwposzoomthreshold",L"0.7",local_238,0x14,
+                           (LPCWSTR)*param_1);
+                local_360 = _wtof(local_238);
+                memset(local_238,0,0x200);
+                GetPrivateProfileStringW
+                          (L"hwcoordinateplacement",L"xyhwthreshold",L"1.0",local_238,0x14,
+                           (LPCWSTR)*param_1);
+                local_358 = _wtof(local_238);
+                memset(local_238,0,0x200);
+                GetPrivateProfileStringW
+                          (L"hwcoordinateplacement",L"zhwthreshold",L"1.0",local_238,0x14,
+                           (LPCWSTR)*param_1);
+                local_350 = _wtof(local_238);
+                memset(local_238,0,0x200);
+                local_300 = GetPrivateProfileIntW(L"zoom",L"orgzoomratio",-1,(LPCWSTR)*param_1);
+                if (-1 < (int)local_300) {
+                  GetPrivateProfileStringW
+                            (L"trimming",L"istrimming",L"none",local_238,8,(LPCWSTR)*param_1);
+                  uVar2 = Ordinal_286(&local_608,local_238);
+                  iVar1 = Ordinal_4467(uVar2,L"true",0);
+                  Ordinal_1030(&local_608);
+                  local_2f8 = (uint)(iVar1 == 0);
+                  memset(local_238,0,0x200);
+                  GetPrivateProfileStringW
+                            (L"trimming",L"mode",L"none",local_238,0x10,(LPCWSTR)*param_1);
+                  Ordinal_1498(local_2f0,local_238);
+                  iVar1 = Ordinal_4467(local_2f0,L"none",0);
+                  if (iVar1 != 0) {
+                    memset(local_238,0,0x200);
+                    GetPrivateProfileStringW
+                              (L"interpolation",L"isinterpolation",L"none",local_238,8,
+                               (LPCWSTR)*param_1);
+                    uVar2 = Ordinal_286(&local_608,local_238);
+                    iVar1 = Ordinal_4467(uVar2,L"true",0);
+                    Ordinal_1030(&local_608);
+                    local_2e8 = (uint)(iVar1 == 0);
+                    memset(local_238,0,0x200);
+                    GetPrivateProfileStringW
+                              (L"interpolation",L"type",L"none",local_238,0x10,(LPCWSTR)*param_1);
+                    Ordinal_1498(local_2e0,local_238);
+                    iVar1 = Ordinal_4467(local_2e0,L"none",0);
+                    if (iVar1 != 0) {
+                      memset(local_238,0,0x200);
+                      local_2d8 = GetPrivateProfileIntW
+                                            (L"interpolation",L"interpolationwidthrate",-1,
+                                             (LPCWSTR)*param_1);
+                      if ((((-1 < (int)local_2d8) &&
+                           (local_2d0 = GetPrivateProfileIntW
+                                                  (L"out",L"totalimagecount",-1,(LPCWSTR)*param_1),
+                           -1 < (int)local_2d0)) &&
+                          (local_2cc = GetPrivateProfileIntW
+                                                 (L"out",L"stitchedwidth",-1,(LPCWSTR)*param_1),
+                          -1 < (int)local_2cc)) &&
+                         (local_2c8 = GetPrivateProfileIntW
+                                                (L"out",L"stitchedheight",-1,(LPCWSTR)*param_1),
+                         -1 < (int)local_2c8)) {
+                        GetPrivateProfileStringW
+                                  (L"out",L"stitchedxscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1)
+                        ;
+                        local_2c0 = _wtof(local_238);
+                        memset(local_238,0,0x200);
+                        GetPrivateProfileStringW
+                                  (L"out",L"stitchedyscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1)
+                        ;
+                        local_2b8 = _wtof(local_238);
+                        memset(local_238,0,0x200);
+                        GetPrivateProfileStringW
+                                  (L"out",L"stitchedzscale",L"0.0",local_238,0x20,(LPCWSTR)*param_1)
+                        ;
+                        local_2b0 = _wtof(local_238);
+                        memset(local_238,0,0x200);
+                        local_2a8 = GetPrivateProfileIntW
+                                              (L"out",L"stitchedoverlapwidth",-1,(LPCWSTR)*param_1);
+                        if (((-1 < (int)local_2a8) &&
+                            (local_2a4 = GetPrivateProfileIntW
+                                                   (L"out",L"stitchedoverlapheight",-1,
+                                                    (LPCWSTR)*param_1), -1 < (int)local_2a4)) &&
+                           ((local_2a0 = GetPrivateProfileIntW
+                                                   (L"out",L"orgzoomimagewidth",-1,(LPCWSTR)*param_1
+                                                   ), -1 < (int)local_2a0 &&
+                            ((local_29c = GetPrivateProfileIntW
+                                                    (L"out",L"orgzoomimageheight",-1,
+                                                     (LPCWSTR)*param_1), -1 < (int)local_29c &&
+                             (local_290 = GetPrivateProfileIntW
+                                                    (L"out",L"progress",-1,(LPCWSTR)*param_1),
+                             -1 < (int)local_290)))))) {
+                          GetPrivateProfileStringW
+                                    (L"out",L"resizeratio",L"1.0",local_238,0x40,(LPCWSTR)*param_1);
+                          local_298 = _wtof(local_238);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"matching",L"colorsearchfactor",L"2.5",local_238,0x20,
+                                     (LPCWSTR)*param_1);
+                          local_268 = _wtof(local_238);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"matching",L"recalibrationenable",L"none",local_238,8,
+                                     (LPCWSTR)*param_1);
+                          uVar2 = Ordinal_286(&local_608,local_238);
+                          iVar1 = Ordinal_4467(uVar2,L"false",0);
+                          Ordinal_1030(&local_608);
+                          local_260 = (uint)(iVar1 != 0);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"matching",L"gridmatchingenable",L"none",local_238,8,
+                                     (LPCWSTR)*param_1);
+                          uVar2 = Ordinal_286(&local_608,local_238);
+                          iVar1 = Ordinal_4467(uVar2,L"false",0);
+                          Ordinal_1030(&local_608);
+                          local_25c = (uint)(iVar1 != 0);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"matching",L"phasecorrelationlpfenable",L"none",local_238,8,
+                                     (LPCWSTR)*param_1);
+                          uVar2 = Ordinal_286(&local_608,local_238);
+                          iVar1 = Ordinal_4467(uVar2,L"true",0);
+                          Ordinal_1030(&local_608);
+                          local_258 = (uint)(iVar1 == 0);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"matching",L"phasecorrelationlpfcutoff",L"0.75",local_238,0x20
+                                     ,(LPCWSTR)*param_1);
+                          local_250 = _wtof(local_238);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"matching",L"minmatchingscorethreshould",L"-1",local_238,0x20,
+                                     (LPCWSTR)*param_1);
+                          local_248 = _wtof(local_238);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"stitching",L"isexcludeblankarea",L"none",local_238,8,
+                                     (LPCWSTR)*param_1);
+                          uVar2 = Ordinal_286(&local_608,local_238);
+                          iVar1 = Ordinal_4467(uVar2,L"true",0);
+                          Ordinal_1030(&local_608);
+                          local_318 = (uint)(iVar1 == 0);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"stitching",L"isuseinvaliddata",L"none",local_238,8,
+                                     (LPCWSTR)*param_1);
+                          uVar2 = Ordinal_286(&local_608,local_238);
+                          iVar1 = Ordinal_4467(uVar2,L"false",0);
+                          Ordinal_1030(&local_608);
+                          local_314 = (uint)(iVar1 != 0);
+                          memset(local_238,0,0x200);
+                          GetPrivateProfileStringW
+                                    (L"stitching",L"correctionlowintensitythresh",L"-1",local_238,
+                                     0x20,(LPCWSTR)*param_1);
+                          dVar6 = _wtof(local_238);
+                          local_310 = (int)dVar6;
+                          memset(local_238,0,0x200);
+                          local_308 = GetPrivateProfileIntW
+                                                (L"stitching",L"maxtotalpixelsenable",0,
+                                                 (LPCWSTR)*param_1);
+                          local_30c = GetPrivateProfileIntW
+                                                (L"stitching",L"maxtotalpixels",-1,(LPCWSTR)*param_1
+                                                );
+                          if ((local_308 == 1) && ((int)local_30c < 0)) {
+                            local_308 = 0;
+                          }
+                          lpReturnedString = local_238;
+                          GetPrivateProfileStringW
+                                    (L"out",L"matchingresizeratio",L"1.0",lpReturnedString,0x40,
+                                     (LPCWSTR)*param_1);
+                          local_288 = _wtof(local_238);
+                          memset(local_238,0,0x200);
+                          uVar2 = 0;
+                          iVar1 = Ordinal_4467(local_418,L"stitching");
+                          if (iVar1 == 0) {
+                            puVar5 = local_418;
+                            lVar3 = FUN_14001a070((longlong)local_5f0,(longlong)puVar5,uVar2,
+                                                  lpReturnedString);
+                            uVar4 = FUN_140156f60(lVar3,puVar5,uVar2,lpReturnedString);
+                            FUN_14001a000((longlong)local_418);
+                            Ordinal_1030(param_1);
+                            return uVar4 & 0xffffffff;
+                          }
+                          uVar2 = 0;
+                          iVar1 = Ordinal_4467(local_418,L"trimming");
+                          if (iVar1 == 0) {
+                            puVar5 = local_418;
+                            lVar3 = FUN_14001a070((longlong)local_5f0,(longlong)puVar5,uVar2,
+                                                  lpReturnedString);
+                            uVar4 = FUN_140156fe0(lVar3,puVar5,uVar2,lpReturnedString);
+                            FUN_14001a000((longlong)local_418);
+                            Ordinal_1030(param_1);
+                            return uVar4 & 0xffffffff;
+                          }
+                          uVar2 = 0;
+                          iVar1 = Ordinal_4467(local_418,L"zoom");
+                          if (iVar1 == 0) {
+                            puVar5 = local_418;
+                            lVar3 = FUN_14001a070((longlong)local_5f0,(longlong)puVar5,uVar2,
+                                                  lpReturnedString);
+                            uVar4 = FUN_140157060(lVar3,puVar5,uVar2,lpReturnedString);
+                            FUN_14001a000((longlong)local_418);
+                            Ordinal_1030(param_1);
+                            return uVar4 & 0xffffffff;
+                          }
+                          iVar1 = Ordinal_4467(local_418,L"interpolation",0);
+                          if (iVar1 == 0) {
+                            Ordinal_296(&local_608);
+                            Ordinal_4612(&local_608,&DAT_14019ded4,100);
+                            WritePrivateProfileStringW
+                                      (L"out",L"progress",local_608,(LPCWSTR)*param_1);
+                            Ordinal_1030(&local_608);
+                            FUN_14001a000((longlong)local_418);
+                            Ordinal_1030(param_1);
+                            return 1;
+                          }
+                          FUN_14001a000((longlong)local_418);
+                          Ordinal_1030(param_1);
+                          return 0;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+LAB_14015467b:
+        FUN_14001a000((longlong)local_418);
+        Ordinal_1030(param_1);
+        return 0xfffffffe;
+      }
+    }
+  }
+  Ordinal_1030(local_2e0);
+  Ordinal_1030(local_2f0);
+  Ordinal_1030(local_320);
+  Ordinal_1030(local_328);
+  Ordinal_1030(local_400);
+  Ordinal_1030(local_408);
+  Ordinal_1030(local_410);
+  Ordinal_1030(local_418);
+  Ordinal_1030(param_1);
+  return 0xfffffffe;
+}
+

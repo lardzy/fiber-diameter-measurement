@@ -1,0 +1,62 @@
+Evidence: ev_75d279ad878159c58f125a57db9de2e3f64fefede6a6d8fd3412132c0548cb69
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Removing unreachable block (ram,0x0001401037b7) */
+/* WARNING: Removing unreachable block (ram,0x000140103761) */
+/* WARNING: Removing unreachable block (ram,0x0001401038ac) */
+/* WARNING: Removing unreachable block (ram,0x00014010371b) */
+
+void FUN_1401036e0(longlong param_1,undefined8 param_2,longlong *param_3,longlong *param_4)
+
+{
+  undefined8 uVar1;
+  undefined1 auStack_168 [32];
+  undefined8 local_148;
+  undefined8 local_138;
+  longlong local_128 [18];
+  ulonglong local_98 [2];
+  undefined8 local_88;
+  undefined8 local_80;
+  ulonglong local_18;
+  
+  local_138 = 0xfffffffffffffffe;
+  local_18 = DAT_1401c7000 ^ (ulonglong)auStack_168;
+  FUN_140049f00(local_128);
+  do {
+    while( true ) {
+      while( true ) {
+        while( true ) {
+          uVar1 = FUN_140106710(*(ulonglong **)(param_1 + 8),local_128,param_3,param_4);
+          if ((char)uVar1 == '\0') {
+            FUN_140049fd0((longlong)local_128);
+            return;
+          }
+          if (**(char **)(param_1 + 0x10) == '\0') break;
+          param_3 = (longlong *)0x0;
+          FUN_140124f90(param_1 + 0x188,*(double **)(param_1 + 0x40));
+        }
+        if (**(char **)(param_1 + 0x18) == '\0') break;
+        param_3 = (longlong *)(param_1 + 0x90);
+        param_4 = (longlong *)0x0;
+        FUN_140124dc0(param_1 + 0x188,*(double **)(param_1 + 0x40),(longlong)param_3);
+      }
+      if (**(char **)(param_1 + 0x20) == '\0') break;
+      param_4 = (longlong *)(param_1 + 0xd8);
+      param_3 = (longlong *)(param_1 + 0x90);
+      local_148 = 0;
+      FUN_140124a90(param_1 + 0x188,*(double **)(param_1 + 0x40),(longlong)param_3,(longlong)param_4
+                   );
+    }
+  } while (**(char **)(param_1 + 0x38) != '\0');
+  local_80 = 0xf;
+  local_88 = 0;
+  local_98[0]._0_1_ = 0;
+  FUN_1400021b0(local_98,"ALGLIB: error in \'minlmoptimize\' (some derivatives were not provided?)",
+                0x46);
+                    /* WARNING: Subroutine does not return */
+  _CxxThrowException(local_98,(ThrowInfo *)&DAT_1401c31b0);
+}
+

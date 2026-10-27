@@ -1,0 +1,73 @@
+Evidence: ev_5cbb0b72fff2a139a2fa08eb54d00384ee06e563ef9678f210cc445a06e0e4be
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-weights-evidence.json.gz
+
+
+void FUN_14001ec10(longlong param_1,longlong param_2,longlong param_3,undefined1 *param_4,
+                  longlong *param_5)
+
+{
+  int iVar1;
+  int iVar2;
+  longlong lVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  
+  iVar7 = 0;
+  iVar4 = (int)param_2;
+  iVar5 = (int)((ulonglong)param_2 >> 0x20);
+  if ((-1 < iVar4) && (-1 < param_2)) {
+    iVar6 = *(int *)(param_3 + 0xc0) + *(int *)(param_3 + 0xb8);
+    if (iVar4 < iVar6) {
+      iVar2 = *(int *)(param_3 + 0xc4) + *(int *)(param_3 + 0xbc);
+      if (iVar5 < iVar2) {
+        iVar6 = iVar6 - iVar4;
+        iVar1 = iVar4 - *(int *)(param_3 + 0xb8);
+        if (iVar1 <= iVar6) {
+          iVar6 = iVar1;
+        }
+        iVar2 = iVar2 - iVar5;
+        iVar1 = iVar5 - *(int *)(param_3 + 0xbc);
+        if (iVar1 <= iVar2) {
+          iVar2 = iVar1;
+        }
+        if (iVar2 < iVar6) {
+          iVar6 = iVar2;
+        }
+        if (iVar6 < 1) {
+          iVar6 = 1;
+        }
+        goto LAB_14001ec94;
+      }
+    }
+  }
+  iVar6 = 0;
+LAB_14001ec94:
+  lVar3 = (longlong)iVar6;
+  iVar6 = *(int *)(param_1 + 0xf4);
+  if (iVar6 == 1) {
+    lVar3 = lVar3 * lVar3;
+  }
+  else if (iVar6 == 2) {
+    lVar3 = lVar3 * lVar3 * lVar3;
+  }
+  else if (iVar6 == 3) {
+    lVar3 = lVar3 * lVar3 * lVar3 * lVar3;
+  }
+  *param_5 = lVar3;
+  lVar3 = *(longlong *)(param_3 + 8);
+  if (0 < *(int *)(lVar3 + 8)) {
+    lVar3 = ((longlong)((iVar5 - *(int *)(param_3 + 0xbc)) * *(int *)(lVar3 + 0x60)) +
+             (longlong)((iVar4 - *(int *)(param_3 + 0xb8)) * *(int *)(lVar3 + 8)) +
+            *(longlong *)(lVar3 + 0x58)) - (longlong)param_4;
+    do {
+      iVar7 = iVar7 + 1;
+      *param_4 = param_4[lVar3];
+      param_4 = param_4 + 1;
+    } while (iVar7 < *(int *)(*(longlong *)(param_3 + 8) + 8));
+  }
+  return;
+}
+

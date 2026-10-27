@@ -1,0 +1,274 @@
+Evidence: ev_e36669257df1a99ac5eaea58975ac12e9a541b3de9840894f3bd256c5c58af49
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+bool FUN_140005c50(longlong param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  ulonglong uVar1;
+  undefined1 auVar2 [16];
+  ulonglong uVar3;
+  __uint64 _Var4;
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *pCVar5;
+  undefined8 ***pppuVar6;
+  undefined8 *puVar7;
+  undefined8 **ppuVar8;
+  undefined8 ***_Dst;
+  ulonglong uVar9;
+  uint uVar10;
+  ulonglong uVar12;
+  CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *pCVar13;
+  char *pcVar14;
+  undefined8 ****ppppuVar15;
+  size_t sVar16;
+  longlong lVar18;
+  ulonglong uVar19;
+  bool bVar20;
+  undefined4 uVar21;
+  undefined4 uVar22;
+  undefined1 auStackY_618 [32];
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> local_5e8 [8];
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> local_5e0 [8];
+  wchar_t *local_5d8;
+  undefined8 **local_5d0;
+  undefined8 **ppuStack_5c8;
+  ulonglong local_5c0;
+  ulonglong local_5b8;
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> local_5b0 [8];
+  undefined8 local_5a8;
+  undefined1 local_5a0;
+  undefined7 uStack_59f;
+  undefined8 local_590;
+  ulonglong uStack_588;
+  undefined8 ***local_580;
+  undefined8 uStack_578;
+  ulonglong local_570;
+  ulonglong uStack_568;
+  wchar_t local_560 [4];
+  char local_558 [272];
+  wchar_t local_448 [256];
+  WCHAR local_248 [264];
+  ulonglong local_38;
+  undefined8 ***pppuVar11;
+  size_t sVar17;
+  
+  local_5a8 = 0xfffffffffffffffe;
+  local_38 = DAT_140030010 ^ (ulonglong)auStackY_618;
+  FUN_14000cc00(L"STCInitialize\n",param_2,param_3,param_4);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+             &DAT_140030f08,
+             (CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *)
+             (param_1 + 0x18));
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::operator=
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+             &DAT_140030f10,
+             (CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *)
+             (param_1 + 0x10));
+  DAT_140030f04 = *(undefined4 *)(param_1 + 0x20);
+  DAT_140030f00 = *(undefined4 *)(param_1 + 0x24);
+  DAT_1400300e8 = *(undefined8 *)(param_1 + 0x28);
+  DAT_1400300e0 = *(undefined8 *)(param_1 + 0x30);
+  DAT_1400300a0 = *(double *)(param_1 + 0x38);
+  DAT_140030efc = *(undefined4 *)(param_1 + 0x40);
+  DAT_140030ef8 = *(int *)(param_1 + 0x44);
+  DAT_140030ef4 = *(int *)(param_1 + 0x48);
+  DAT_140030ef0 = *(undefined4 *)(param_1 + 0x4c);
+  DAT_1400300dc = *(undefined4 *)(param_1 + 0x50);
+  DAT_1400300d8 = *(undefined4 *)(param_1 + 0x54);
+  DAT_1400300d4 = *(int *)(param_1 + 0x58);
+  DAT_1400300d0 = *(int *)(param_1 + 0x5c);
+  DAT_140030eec = *(undefined4 *)(param_1 + 0x60);
+  DAT_140030ee8 = *(undefined4 *)(param_1 + 100);
+  DAT_1400300bc = *(undefined4 *)(param_1 + 0x78);
+  DAT_140030eb8 = *(undefined4 *)(param_1 + 0x84);
+  _DAT_1400300c8 = (double)*(int *)(param_1 + 0x88);
+  DAT_1400300b8 = *(undefined4 *)(param_1 + 0xa0);
+  if (DAT_140030ef8 != 0) {
+    DAT_140030edc = *(int *)(param_1 + 200);
+  }
+  if (DAT_140030ef4 != 0) {
+    DAT_140030ed8 = *(undefined4 *)(param_1 + 200);
+  }
+  auVar2._8_8_ = 0;
+  auVar2._0_8_ = (longlong)(DAT_1400300d0 * DAT_1400300d4);
+  _Var4 = SUB168(ZEXT816(8) * auVar2,0);
+  if (SUB168(ZEXT816(8) * auVar2,8) != 0) {
+    _Var4 = 0xffffffffffffffff;
+  }
+  DAT_140030ec0 = operator_new__(_Var4);
+  FUN_14000c220(0x140030118,(longlong)(DAT_1400300d0 * DAT_1400300d4));
+  _DAT_1400300c8 = 1.0;
+  DAT_140030ee4 = DAT_140030f04;
+  DAT_140030ee0 = DAT_140030f00;
+  DAT_1400300b0 = DAT_1400300e8;
+  DAT_1400300a8 = DAT_1400300e0;
+  _Dst = (undefined8 ***)0x0;
+  if (DAT_140030ef8 != 0) {
+    FUN_140001840(0x1400300f0,(longlong)(DAT_1400300d0 * DAT_1400300d4));
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>(local_5e0);
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+              (local_5e0,L"%s\\%s",DAT_140030f08);
+    pCVar13 = (CStringT<wchar_t,class_StrTraitMFC_DLL<wchar_t,class_ATL::ChTraitsCRT<wchar_t>_>_> *)
+              local_5e0;
+    pCVar5 = (CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)
+             ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+             CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+                       (local_5e8,pCVar13);
+    FUN_140001600(pCVar5,(ulonglong)pCVar13);
+    if (0 < DAT_140030edc) {
+      uVar21 = SUB84(DAT_1400300a0,0);
+      uVar22 = (undefined4)((ulonglong)DAT_1400300a0 >> 0x20);
+      pppuVar6 = _Dst;
+      pppuVar11 = _Dst;
+      do {
+        if (((longlong)pppuVar6 < 0) || (DAT_140030100 <= (longlong)pppuVar6)) {
+          lVar18 = DAT_1400300f8;
+          AfxThrowInvalidArgException();
+          goto LAB_14000605f;
+        }
+        DAT_1400300a0 = *(double *)(DAT_1400300f8 + (longlong)pppuVar6 * 8);
+        if (DAT_1400300a0 <= (double)CONCAT44(uVar22,uVar21)) {
+          DAT_1400300a0 = (double)CONCAT44(uVar22,uVar21);
+        }
+        uVar21 = SUB84(DAT_1400300a0,0);
+        uVar22 = (undefined4)((ulonglong)DAT_1400300a0 >> 0x20);
+        uVar10 = (int)pppuVar11 + 1;
+        pppuVar11 = (undefined8 ***)(ulonglong)uVar10;
+        pppuVar6 = (undefined8 ***)((longlong)pppuVar6 + 1);
+      } while ((int)uVar10 < DAT_140030edc);
+    }
+    ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+    ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>(local_5e0);
+  }
+  FUN_140004400();
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_5d8);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>(local_5b0);
+  GetModuleFileNameW((HMODULE)0x0,local_248,0x208);
+  _wsplitpath(local_248,local_560,local_448,(wchar_t *)0x0,(wchar_t *)0x0);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::Format
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_5d8,
+             L"%s%s%s",local_560,local_448);
+  puVar7 = (undefined8 *)
+           ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+           CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+                     ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)local_5e8,
+                      local_5d8);
+  strcpy_s(local_558,0x104,(char *)*puVar7);
+  ATL::CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>::
+  ~CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_>
+            ((CStringT<char,StrTraitMFC_DLL<char,ATL::ChTraitsCRT<char>_>_> *)local_5e8);
+  local_590 = 0;
+  uStack_588 = 0xf;
+  local_5a0 = 0;
+  sVar17 = 0xffffffffffffffff;
+  do {
+    sVar16 = sVar17 + 1;
+    lVar18 = sVar17 + 1;
+    sVar17 = sVar16;
+  } while (local_558[lVar18] != '\0');
+  pcVar14 = local_558;
+  FUN_14000cca0((longlong *)&local_5a0,pcVar14,sVar16);
+  lVar18 = 0x19;
+  pppuVar11 = (undefined8 ***)&local_5a0;
+  puVar7 = FUN_14000c7a0(pppuVar11,pcVar14,(undefined8 *)"strTStitchingIniFilePath:",0x19);
+  local_580 = (undefined8 ****)*puVar7;
+  uStack_578 = puVar7[1];
+  local_570 = puVar7[2];
+  uStack_568 = puVar7[3];
+  puVar7[2] = 0;
+  puVar7[3] = 0xf;
+  *(undefined1 *)puVar7 = 0;
+  if (0xf < uStack_588) {
+    pppuVar6 = (undefined8 ***)CONCAT71(uStack_59f,local_5a0);
+    pppuVar11 = pppuVar6;
+    if ((0xfff < uStack_588 + 1) &&
+       (pppuVar11 = (undefined8 ***)pppuVar6[-1],
+       0x1f < (ulonglong)((longlong)pppuVar6 + (-8 - (longlong)pppuVar11)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+LAB_14000605f:
+    FUN_1400219e4(pppuVar11);
+  }
+  uVar3 = uStack_568;
+  uVar9 = local_570;
+  pppuVar6 = local_580;
+  local_590 = 0;
+  uStack_588 = 0xf;
+  local_5a0 = 0;
+  local_5c0 = 0;
+  local_5b8 = 0;
+  ppppuVar15 = &local_580;
+  if (0xf < uStack_568) {
+    ppppuVar15 = (undefined8 ****)local_580;
+  }
+  if (local_570 < 0x10) {
+    local_5d0 = *ppppuVar15;
+    ppuStack_5c8 = ppppuVar15[1];
+    local_5b8 = 0xf;
+    _Dst = pppuVar11;
+  }
+  else {
+    uVar19 = local_570 | 0xf;
+    if (0x7fffffffffffffff < uVar19) {
+      uVar19 = 0x7fffffffffffffff;
+    }
+    uVar1 = uVar19 + 1;
+    if (uVar1 < 0x1000) {
+      if (uVar1 != 0) {
+        _Dst = operator_new(uVar1);
+      }
+    }
+    else {
+      uVar12 = uVar19 + 0x28;
+      if (uVar12 <= uVar1) {
+        uVar12 = 0xffffffffffffffff;
+      }
+      ppuVar8 = operator_new(uVar12);
+      if (ppuVar8 == (undefined8 **)0x0) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      _Dst = (undefined8 ***)((longlong)ppuVar8 + 0x27U & 0xffffffffffffffe0);
+      _Dst[-1] = ppuVar8;
+    }
+    local_5d0 = _Dst;
+    memcpy(_Dst,ppppuVar15,uVar9 + 1);
+    local_5b8 = uVar19;
+  }
+  local_5c0 = uVar9;
+  pppuVar11 = &local_5d0;
+  FUN_140005ad0(_Dst,(longlong *)pppuVar11);
+  uVar9 = FUN_140004560(_Dst,pppuVar11,(UINT *)&DAT_140030d60,lVar18,local_558);
+  bVar20 = (char)uVar9 != '\0';
+  if (bVar20) {
+    DAT_140030e1c = DAT_140030e10;
+    DAT_140030e18 = *(undefined4 *)(param_1 + 0x10c);
+  }
+  if (0xf < uVar3) {
+    ppppuVar15 = (undefined8 ****)pppuVar6;
+    if ((0xfff < uVar3 + 1) &&
+       (ppppuVar15 = (undefined8 ****)pppuVar6[-1],
+       0x1f < (ulonglong)((longlong)pppuVar6 + (-8 - (longlong)ppppuVar15)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    FUN_1400219e4(ppppuVar15);
+  }
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>(local_5b0);
+  ATL::CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>::
+  ~CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_>
+            ((CStringT<wchar_t,StrTraitMFC_DLL<wchar_t,ATL::ChTraitsCRT<wchar_t>_>_> *)&local_5d8);
+  return bVar20;
+}
+

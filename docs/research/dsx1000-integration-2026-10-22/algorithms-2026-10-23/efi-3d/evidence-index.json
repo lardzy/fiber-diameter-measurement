@@ -1,0 +1,2479 @@
+[
+  {
+    "bundle": "managed-evidence.json",
+    "evidence_id": "ev_379de98b66523eeb7bc419eabf4a809f30e787c4bec9fb63d97cafd76c9bb6b2",
+    "operation": "inspect_managed_members",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll"
+    },
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "name": "OlyiExtendFocusImageSGSharp64.dll"
+    }
+  },
+  {
+    "bundle": "managed-evidence.json",
+    "evidence_id": "ev_6fccdeb9689d8137ac9a7f69f9e8f7bbceecc8d9597888cf7c50a448bc9d6d31",
+    "operation": "inspect_managed_native_boundaries",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll"
+    },
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "name": "OlyiExtendFocusImageSGSharp64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_0799f14d755a466d2e9a367d59d872400de124472efa12b697f09c9285e8418f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180014730"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_0a01c3e8c99f3d852739ea8620d43e6b924f4a4f08623d87a2dc3822290e4f9a",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180016f70"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_0a0f49acf4d588b10168a58666899c7a3c58fdfb83a596d2533e4cb5010d65c8",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001c480"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_1047e5e1b8b8b01278b0ae9557bdac8cb7cc1ccb54206f8cfe1b313e6223f86b",
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x18007b590"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_1a5e701b88ea0a6bcbaa53ee714f107ef37e4511c61a60ee8da335709c7904ed",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "EFI_InputImage"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_21faf21d88f3bf576e8cee16a896f3a85ae7e0b1d3196392de22edb05c3432b4",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180023a90"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_2b287a6e081d1cf79ebf3e7440c135f9c22d1c37813f615873c3c01194805dbd",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001e6a0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_2fc389a03d9d3e986eba3a170b1562b137e9a5d46a60d41a2ff353e5b5df69bc",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800033d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_379de98b66523eeb7bc419eabf4a809f30e787c4bec9fb63d97cafd76c9bb6b2",
+    "operation": "inspect_managed_members",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll"
+    },
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "name": "OlyiExtendFocusImageSGSharp64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_3be95145858f8504ae479cfd58f0cdce39de0afdbe162f46e12a3acd3189a51c",
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x18007c090",
+      "length": 80
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_3d349d7919cd6d508a6c67c80a34ecb7d49afa84a872fca44b8c57e9be7a1bd6",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001e660"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_3dbfc5a9562c7d4471cbee5bacb7046aa5c7a5231a7b602fe645654395f0581f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800251b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_48a28f53ec9bee8d160ba8b19ed40db26b90c33610c7e87c609ce9d363781012",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180009040"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_4995d6886e1994bac47df223cac38803753e228fbcafe4a2007e423a28ef56e1",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x180002e50"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_4fd99b6dd262829826d3cb4d8f0635bd9a76d63df10f5c3bfb10637a88c1d59d",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "EFI_GetMemorySize"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_58b2b8783f86af1edb89a397457a4aec7b5d7d1fc5a163167b0cf15b529caff3",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "EFI_CreateContext"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_674d4ce16e371b6e87d3701fd59c19ec81f7c79add7825d7018d2dbc35b3872d",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "EFI_EndConstruct"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_6ce11dafef4c2ab6f50541af640036033db7e1743cb3fa845910f88401dd2e93",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180020450"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_6fccdeb9689d8137ac9a7f69f9e8f7bbceecc8d9597888cf7c50a448bc9d6d31",
+    "operation": "inspect_managed_native_boundaries",
+    "parameters": {
+      "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll"
+    },
+    "subject": {
+      "architecture": "x86",
+      "digest": {
+        "sha256": "cb03932b0582204728b20e68bf6342f4f6d1ed0b155b8652ba1bca0a34baaebc"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyiExtendFocusImageSGSharp64.dll",
+      "name": "OlyiExtendFocusImageSGSharp64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_6fd02dcc6c1fff3b5e2a07410308bf6439bf9b503efb4be6731b4eff8499208e",
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "[Dd]epth|[Ll]apl|[Tt]ex|[Bb]lend|[Gg]uid|[Pp]eak"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_7536072e8ebcfd1d1440749f9dd10fc377a473f350d94267af031ec3fb9e0ffc",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001aa20"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_7893e13f11a836cdd3372b36b43f25f3672ca68825ce5275bcb09a40533f4c0b",
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x180012c93"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_7b67ede848601e9752368f7180cc7132fc949ffa62475b28c06928c1edb1f548",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001fc80"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_7c1f4c5c271c5d17c0ccaf6e544993594262407348aeb757a2097872d4d60f35",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800152a0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_86838a8dce3e48684acb1ece763e25c502e9b9062ef5d7fbf05cc7b117806a97",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180016000"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_8a0c56d03763cf3b6aa001c84437b22100a4a38f2f799be9540674d4e545b9f4",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180016840"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_8d030d58e9e60bab70a4cf5e8e19b0629078a6ef5f068c817243b82cba884b33",
+    "operation": "search_strings",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "Spline|Laplacian|Pyr|WeightedMedian|Gaussian"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_8f3644f8f11c96afc308a2d923058b00f290f0a2dd7d56956b77dc82b46e918d",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800121b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_938acaf413863a99a130e35c0289295d469236a97a0821d91032d86cbbf527f2",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002e50"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_93900dcdfbf4362d4415fde79e60a122b72bcee3e3b0e1ffdbc175568f9702b7",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003550"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_95adec5bb101242d5660b807890989f7587d5f12c237cd164e7fa36be4fc5651",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180012b70"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_9ab8b0d2afa0a3a2e8bb58e8a19e4a745fbd95db198a960dd69ec759d98baea2",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180024c90"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_9b962c6583d27fb5de564d0d5bf904ca2912a62b165260574c7d0d4b39d97b75",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180008f80"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_9d6b707e62a524ff038d0401beec2d2deb9bf5e31b4e8cb522725f795086635f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "EFI_Construct"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_9e7bbde1e039a3c936cf904f0fd699a0c49207e81fb2e330c6c6a0af6e8e4aa4",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001c3b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_9fa8787837f163d98de346a5d9ae680906af8a0b7ee4c73766ee11a8b5102b2f",
+    "operation": "search_procedures",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "EFI|Depth|Focus|Lapl|Guid|Median|Bilateral|Construct|Texture|Peak"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_ab529eea9e1889b6b4cdb18d12785af07981c0801b179463a8ff4cdf99b054ca",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800124d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_ac5afb9bd0ab7768d0cb9e29597f1bd90bbfe684369b4a249efbaa4a55ef9117",
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x18007bb68"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_adb1fbdf82e530d22881b8a86027753dd49106614d3d3d36fa97a076f11b7060",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180016a80"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_af649763122711c16f1ee288880da4ec0e8854314b84967d38ed88fd3c4f7266",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180015960"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_b356ed1dd01e88190a41eb82011123c07ef8991844173153f14587bfbb777583",
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x18007b5b8"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_b5a9ee99f49d41ea94ba31a3ef2590f581393785ad0202693765381b601999f6",
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x18007b4c8"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_bb2e3c3e524897a281f424abbe687b7acd4355942d41c191c3f385a6fefc3501",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180014890"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_bef161eff7ef9bc56337ebf856bf218be55969bf34da0445febc03f6094ecb75",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800157e0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_c7d850fe24a07a0f21002d77d53100ab34aaf09a9c404fc052321e8cc431efab",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000e280"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_c96443007656214a2511adb33d09efd78021af83ffc956a890df134ba6b71fa8",
+    "operation": "xrefs",
+    "parameters": {
+      "address": "0x18007b560"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_cb8cb6a5a4ea85eecd77170fc655544ce46dcd723d2accc863961cfe9c166dad",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001e520"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_cf52a7fd57ecde67a70af79600563ab4fa5e70a8d741ab7f42b9c87f546e952f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180013fd0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_d27841304e8f5d1fd2151c73ee8bc2442553886109e27002bf2b4338dec60216",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180022960"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_d9a44e2f73b547b9ac0b6d0623b54c27fef561de54e68b88cc1ce82c3ff72b03",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001df60"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_e3ea72f1e8944cbc8bf62d4582151080b7754312d99e2d15acc670aeb8696bef",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180015100"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_e60310e63badb3155e5e4676d8782ac078d07eb289aba6e990f62777c52f9307",
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x180005394"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_e8aa9d5ceb05bf35c60b5e5826b5447c639b9c6d00990c35c300a66dfaf08620",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800043f0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_f083fcce4be536479f2eb7e1e14476a980cc0251974c04cdc082a22e5b8ce56e",
+    "operation": "list_names",
+    "parameters": {},
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_f2d110210008fba0d5e5e9013f47f0354527e985403d47c6f5da8df75215f708",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004050"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-evidence.json",
+    "evidence_id": "ev_f69c6fe6de982545d16e426e8d8800cc02400ed30c51eaf0faa1b4ccb16e877a",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001ba70"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_09c4446010d435aa6c406bef93555cb198c9f2277268c247cde8e095ef24c0de",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004490"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_11cb18c9da6e59d88504b70238b4c2b098cf9d7cebd27245549926d56a8e7116",
+    "operation": "search_procedures",
+    "parameters": {
+      "case_sensitive": false,
+      "mode": "regex",
+      "pattern": "EFIMV|EFI_|Motion|Stabil"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_4578638030f20c660b4f3b9025dbae51735f21c35168af7850cc810a9f08277f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800028b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_78891cdd2bcfd8566cec695e965adfefb45c73bedea96965b2540cdf05079728",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002490"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_7f3d160f0de5958de31bc7413691275e66bdd40f35476331ae52066dc0d3afbe",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004290"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_91f33c139396ccceb37d08389eeef6b98e6ed702c4437e3b1b0d7bf087165256",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800041b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_a83a488aa01aa6b72624344785b62c68408c0cd0a65744645ce69c4a200dc489",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004390"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_adc6c1f6c3871960ee4242a662d1f59381cf3733b87f35ea142eaad19c3a88f0",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001ce0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_b5bc3d59db921553a1df5b8871f713baa9f3822a41bd558fcfe94af922f317ef",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003ff0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_dcff2c3c3436528e84cb307e4a47eb21452593b85dfc13f2d9f7f243bd865459",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800022d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_de565fdd414f3bf42964692c4ba1543f0d936dbc0476d8924ef7e998e067f58b",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001f20"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_e10926e0c8ced8ddb986326c944d8ab6ccdfa111da8887cd88eeeb3811daceeb",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180001740"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sgmv-evidence.json",
+    "evidence_id": "ev_eddf0d080abe37827270d7f85d472566bea8cc351f8254c587d52bae04842e2e",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002cc0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+      "name": "OlyExtendFocusImageSGmv64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_01ee25be30e71ef85c344be6ea1c1e91d71bb9e4b85b8c84a9b56591a2ec790c",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180006bc0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_04ae4a82164b51eac576384883ce4b293d8f6aa7c68f2149f6c58a0698e20f58",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001cf20"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_053ea1fefb81aaed0910b37dba2e6bba7f2bae1526e8e79cab05cc2d0dbb18b2",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001f8f0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_065c984578d2ee5df1c98b9ea6f1fe04560509ae6e6da5912d0ab2fdb6073f00",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180029a60"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_067f9786c9792a47e534bb638157d6714ba6b8b9c4224e4cb218fa59b4332142",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180004260"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_0f6fcdd9bf6763fa1316d394bd32a97d0cba3267a43628d1399b2d894ae6fa9f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180011c40"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_11bdfa8d932df03f742669c8e7cd5152216ac452065853af7d44379cddbe0358",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180014f30"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_12796908bc2e21d5629a0791722e100eb94dbca694fc47fdff7e6c22d5341d7d",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180026e20"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_16e4bbdd4021475e874b3d8c2568e7167f066e8207b907d0d34d157b66424f41",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002ca70"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_1883003ec377119bf29a2e465a30803e7f95176c7abd83a46a594d24182597f6",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180025a80"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_18eda889156df99feaeddde06af3dc31862328d84f05733a9d9eab2ab8d0ab9e",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800026d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_193af52c5cbcfbc090bb739b1fad25a4aa60c1c547d194068a3c6c231c919967",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003eb0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_267a8373fee07df1c6367138e7ef11c577a08ba2320363563f1de346c5d85947",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180019a20"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_2b1e98e93345bc9e609ffd49f0a3cecc3c5f5e9a8627a490aeabd9539805a3ca",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180018360"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_356e12e550a22e33223010bdea23ee79f0eab699a67b5f2d337e56680a877d0c",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002eb70"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_379548d6eac46cc70e7aa9e397cf47d705dd12442ce7829a863aa4e51528be7e",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002c920"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_41f835454dc3b84203c95a34b03b1c0ef82939c87d0ebb105ff700a19f2f5b99",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800256b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_420883bfd1cec47d848b0c5817566460374b6361df8490a242af65cd8333ea2c",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180002a40"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_4991b583617a4c36a47d392183ccea90eaab8ac9b526c6758440e1c5d90255b3",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002c790"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_4a4631d095148a63a8fdef9217cd8dbd886696090f1ec46c267ba29025938056",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180009190"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_51d4c11856b97eaf0bcbf60ffaa43aa4c72643bedcd1e62ab43a559256fbf462",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000ea90"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_53e919d4fa467cbf62b1df7a8070dfa6f96c6e1953f4dd6e897fe1b2bfc62551",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002ba10"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_589297c08254f89977535a2c99d2f2a03e2641547d7efd64c84fa362a717babf",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002bc20"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_624a0d2303074dc47128b497167a8e39b8ebfbf316fe7d584eaa49ccf8f11d50",
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x180025a40",
+      "length": 64
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_68d4fabaa3980c91c79ba7a39c2f32061a646b8a29c4c603fb4b27d67671f09d",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800243b0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_6b8f29ece4cc32358253e214367a7d11388e522cdd0dd01071c49c4c449478f4",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180019740"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_6c3757447e9cd6f9a5e8f9083a2226c2b5e5173ca447b96d346c75cfe29eee72",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800114f0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_709a90a816dabcb85491acf94339e6128eb6f629d9732f6e2e11ee3b4ae7b8ec",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x180020450"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_7745a2c5375e93f75436e342f941af17aa6516a9cfa67aa640258b22606e2aeb",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003960"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_7d59a5dfcc534694c999d7331ded9e071df00622e85c1885e9e9691b2ace6218",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180016710"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_7decdccb6eb8266f0437a105ea36076b8ac62f25dede70c2041eccfc3c15f82a",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180009100"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_7e9569df2b841c9f41825f4080023d5734903aa8d8ac3144a3d10e1469480be2",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180003c30"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_7f8f4c7930f22d5af3e71b01c45db9493e3cf22d3a06f0f2e7e128154a62a5d3",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180013c90"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_811a973e815f5e6487ade2391de5b2b2a129766e179cb80be15af9a4c295c74a",
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x18007c130",
+      "length": 32
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_84fb3aaf6346047ea5be294fa624b04eef3738bb1aca0394bbaa0db53e23b55f",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x18001e660"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_8e5a78edd46bd40bc63f0559bc18853f73d72e3cdc36eda68496730ddc311613",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18001a680"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_8ea9692476c1b1f3b59d1c675fa2364d21d3a9617f784d04af1be93fb1e32eb2",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180019010"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_8fba74678d11802f9431d8e779fd911eb3df9415a64acfbb14431c4f26bb7b9e",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002a880"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_978793a9a83bd833bece8c6b087a34c8686ac9ed701ba9b0ae5dc4163a185051",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180019240"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_a12ba5d003f4f9d422ec9e685c5d7c75d99487f94da58e6b66c39010e772a3f0",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002d520"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_a132a4eff8c397e36a342bff3e35925871b32686b8fefce0d2313ec97711dbaf",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002f300"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_a2aed7eeceb789d780a6b587d118bd723000fd2865234db35bce33a20a222b74",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x18001e6a0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_a798899f4bac3e11432e68f92cc366ab2494c33e256a4633dc08c491f0d2f28d",
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x18007bb30",
+      "length": 64
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_a9a718742f815bebfd1b9c1f7c120ec6f4de44295cd2d82e417af07cc5e2bbfd",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180024770"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_ad026f025a7941b7339b6bcc78dbd20a984ae959125fbc982a9cc240c9895bb7",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002d190"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_ae66b9f69809a828d2874db7a04f49a37c1997c3bf8b300a2fab4fefc243353f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002f490"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_af114e000dad2a39ad9794db5ff1638af6e3ff9633460844957a550a14f3d37d",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18000f040"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_b2bb6add63b2252d16ae78999b0c1dc8e226b1a376c1144e5f3d843768bbc673",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002d840"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_bb2e3c3e524897a281f424abbe687b7acd4355942d41c191c3f385a6fefc3501",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180014890"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_bc6d07bdf598eb01ed26a4ed05eabcf546f81f56624c125ab96a0eda1626dda0",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x180003960"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_bef161eff7ef9bc56337ebf856bf218be55969bf34da0445febc03f6094ecb75",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800157e0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_bf0ded9713bab33dede85925e4c967f184e5ffe275a7ef20d2f6067f3d7dce15",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180011630"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_c0a72f305270cde830947a9fb033cf34f8d74de6b92d924cd7bb878fc6d06435",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800120e0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_c37706c610878c2593f2dd955c83a0566fd6789dd3adccd46f52457cbd28d062",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180027570"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_c530dfe1a8513adc37fdfaf8229a6364f9ce11f5e90afe000c490514a0981b72",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180018e40"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_de802c09073927f5bdb6e6f7961b2da5852434de9bb1ec20e263351a595ee437",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180025b60"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_e23d3c2b21e85bd7c8059ee76027a24335dffe61e17208fae65b9aea9c40f86f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180017d60"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_e3ea72f1e8944cbc8bf62d4582151080b7754312d99e2d15acc670aeb8696bef",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180015100"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_e53783163e3f3580d1a69ab2762106ba96e066506d5bac20081cc14526cc7ae3",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180024320"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_e6a433ee89fdcbd512b92a0bf82c31e09297ac12f59d0083d9a88ca096788f84",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180017560"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_edc5a1718abecaf9af7d394289617a0e0839a3fa464684d2302323ef6681f077",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180026940"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_efff0abb66a4d5f1d6bef7a93d7f6d624df7c2ea918004e74b6f9d461119d574",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002ce00"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_f1fc8a1cd8fba07602499b568845920f99c683f47391f140fbac3db136220720",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180023d80"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_f407aba66df2a758d2f8dd0943adfc11f68a1f6010345dd21ee35fc8d739a496",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x180012b70"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_f5cbad14e32ad11ada8dc34a9ebd1a0f843289159bb8472ee7a3ab128767851f",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800180c0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "sg64-followup-evidence.json",
+    "evidence_id": "ev_ff605d9a59feb06094154c09e9afdc9fcf8d856f59ac223ee98bdacf188fc669",
+    "operation": "resolve_containing_procedure",
+    "parameters": {
+      "address": "0x180025a40"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_1fe78b560e8961129eaf7041dcb0894bb8083acc1535aac71b27070aac977793",
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x18007c4fc",
+      "length": 16
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_2277be1da764d865d0fd1581ec71dc960d70e1313c74bd5ebbc7a34ec15b1d6e",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x18002c2f0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_45613b98d138d190a95f42ea3c949ca43b5bd318624973976f94d445ceaa2635",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x1800244d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_69af2bc5c4ffa73c29e55d21ca5083e5069699622e602d162cd4da87c7ac4d0a",
+    "operation": "procedure_assembly",
+    "parameters": {
+      "procedure": "0x18002c0d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_7b9745d8c6c453454cdfe63a69991d86357b00fe887b36db9c0deaf7fca623fc",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002c2f0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_b83f6c9c469c6fd013342c8a33a333ff09d466cf34d4e114354163d507f2dc0a",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x18002c0d0"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_c6e5c0c4cc790121912c86668d568289a0f6b49b4a0846fc766c0c082d1ec172",
+    "operation": "read_bytes",
+    "parameters": {
+      "address": "0x18007c0c8",
+      "length": 32
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  },
+  {
+    "bundle": "../stabilization/efi-loader-e11-evidence.json.gz",
+    "evidence_id": "ev_d04d12e749bb9c41f940bd7b00d5b290ec371fd84f8919552b550de2e740551c",
+    "operation": "procedure_pseudo_code",
+    "parameters": {
+      "procedure": "0x180024440"
+    },
+    "subject": {
+      "architecture": "x86_64",
+      "digest": {
+        "sha256": "f51d75f9b28c5f7135b591e6c41669cd7ba5ebd4ee00bbf378c90cd9a7d11547"
+      },
+      "format": "pe",
+      "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSG64.dll",
+      "name": "OlyExtendFocusImageSG64.dll"
+    }
+  }
+]

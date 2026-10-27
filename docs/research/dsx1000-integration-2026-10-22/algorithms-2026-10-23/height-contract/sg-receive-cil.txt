@@ -1,0 +1,62 @@
+EVIDENCE ev_891cb106c231976c46418566a57ec65e2fc1312be125613c325169caa6de500f SHA256 6c6aff3590c0406b6fed4eaa47b447e84ebeea3882d930b93fc2c99880d64302
+
+METHOD 0x06000030 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _ReceiveSnapImage IL_SHA256 bc050091fe76c4523e5360826c70f576ff8d8c9f9e392ab86362ebcae329453f DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000018 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+0006: brfalse.s     77 
+0008: ldarg.2        
+0009: callvirt      0x0a0001a3 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+000e: callvirt      0x0a0001a4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_IsFiltered
+0013: brfalse.s     77 
+0015: call          0x0a000085 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_HdrDao
+001a: callvirt      0x0a0001a5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2.Get
+001f: callvirt      0x0a000087 Olympus.LI.Triumph.Workflow.MemoryDatabase.HdrEntity.get_HdrEnabled
+0024: brfalse.s     60 
+0026: ldarg.0        
+0027: ldfld         0x04000018 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+002c: call          0x0a0001a6 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_RealHDRImageDao
+0031: callvirt      0x0a0001a7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0036: callvirt      0x06000066 _ReceiveImageProcess.Invoke
+003b: ret            
+003c: ldarg.0        
+003d: ldfld         0x04000018 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+0042: ldarg.2        
+0043: callvirt      0x0a0001a3 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+0048: callvirt      0x06000066 _ReceiveImageProcess.Invoke
+004d: ret            
+
+METHOD 0x06000031 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _ReceiveLiveImage IL_SHA256 95be3dc7f84d0b5c947289372496c4d8ab712ba3b2766f0824fe84e77135bff0 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000018 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+0006: brfalse.s     77 
+0008: ldarg.2        
+0009: callvirt      0x0a0001a8 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+000e: callvirt      0x0a0001a4 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase.get_IsFiltered
+0013: brfalse.s     77 
+0015: call          0x0a000085 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_HdrDao
+001a: callvirt      0x0a0001a5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2.Get
+001f: callvirt      0x0a000087 Olympus.LI.Triumph.Workflow.MemoryDatabase.HdrEntity.get_HdrEnabled
+0024: brfalse.s     60 
+0026: ldarg.0        
+0027: ldfld         0x04000018 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+002c: call          0x0a0001a6 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager.get_RealHDRImageDao
+0031: callvirt      0x0a0001a7 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2.GetFirst
+0036: callvirt      0x06000066 _ReceiveImageProcess.Invoke
+003b: ret            
+003c: ldarg.0        
+003d: ldfld         0x04000018 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveExtendProcess
+0042: ldarg.2        
+0043: callvirt      0x0a0001a8 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+0048: callvirt      0x06000066 _ReceiveImageProcess.Invoke
+004d: ret            
+
+METHOD 0x06000032 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService _Receive3DImage IL_SHA256 9b17ff0258dc60b34dfb43b7d7f58ec36f9a58455b6fad2fbb1eab5e6672b0a1 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000019 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveBuiltProcess
+0006: brfalse.s     25 
+0008: ldarg.0        
+0009: ldfld         0x04000019 Olympus.LI.Triumph.Workflow.AcquisitionDomain.AcquisitionService._dgtReceiveBuiltProcess
+000e: ldarg.2        
+000f: callvirt      0x0a0001a9 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.EntityUpdateEventArgs`1.get_Entity
+0014: callvirt      0x06000066 _ReceiveImageProcess.Invoke
+0019: ret            

@@ -1,0 +1,11 @@
+﻿{
+    "run":  "run-20261022-134438",
+    "self_test_exit":  0,
+    "ui_exit":  0,
+    "fallback_passed":  true,
+    "validation_process_elevated":  false,
+    "real_hardware_tested":  false,
+    "windows_1909_tested":  false,
+    "self_test_scope":  "Loopback random-port fake RDK only; temporary synthetic files/logs",
+    "ui_scope":  "Actual WinForms render in Windows 11 ARM64 VM, x64 process; no DSX installed/executed"
+}

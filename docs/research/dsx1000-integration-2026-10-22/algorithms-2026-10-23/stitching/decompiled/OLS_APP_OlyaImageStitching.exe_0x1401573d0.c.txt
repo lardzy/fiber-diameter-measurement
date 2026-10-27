@@ -1,0 +1,187 @@
+Evidence: ev_d564d16f7a19951a1157f01465e9c5989a4d7e27b025a996ed6f17760fcfddef
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_1401573d0(undefined8 *param_1,undefined8 *param_2,longlong *param_3)
+
+{
+  int iVar1;
+  double dVar2;
+  double dVar3;
+  int iVar4;
+  Exception *pEVar5;
+  ulonglong uVar6;
+  float fVar7;
+  double dVar8;
+  float fVar9;
+  float fVar10;
+  undefined1 auStackY_278 [32];
+  int local_248;
+  int local_244;
+  undefined8 local_240;
+  uint local_238 [4];
+  double *local_228;
+  int *local_220;
+  undefined8 local_218;
+  undefined8 local_210;
+  undefined8 local_208;
+  int *local_1f8;
+  undefined1 *local_1f0;
+  undefined1 local_1e8 [16];
+  uint local_1d8 [4];
+  double *local_1c8;
+  int *local_1c0;
+  undefined8 local_1b8;
+  undefined8 local_1b0;
+  undefined8 local_1a8;
+  int *local_198;
+  undefined1 *local_190;
+  undefined1 local_188 [16];
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_178;
+  undefined7 uStack_177;
+  undefined8 local_168;
+  ulonglong local_160;
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_158;
+  undefined7 uStack_157;
+  undefined8 local_148;
+  ulonglong local_140;
+  basic_string<char,std::char_traits<char>,std::allocator<char>_> local_138;
+  undefined7 uStack_137;
+  undefined8 local_128;
+  ulonglong local_120;
+  Exception local_118 [16];
+  double *local_108;
+  int *local_100;
+  undefined8 local_f8;
+  undefined8 local_f0;
+  undefined8 local_e8;
+  undefined4 *local_d8;
+  undefined1 *local_d0;
+  undefined1 local_c8 [96];
+  ulonglong local_68;
+  
+  local_240 = 0xfffffffffffffffe;
+  local_68 = DAT_1401c7000 ^ (ulonglong)auStackY_278;
+  (**(code **)*param_1)(param_1,local_238,0xffffffff);
+  (**(code **)*param_2)(param_2,local_1d8,0xffffffff);
+  iVar4 = *local_1f8;
+  iVar1 = local_1f8[1];
+  if ((((local_238[0] & 0xfff) != (local_1d8[0] & 0xfff)) || (iVar1 != local_198[1])) ||
+     (iVar4 != *local_198)) {
+    local_120 = 0xf;
+    local_128 = 0;
+    local_138 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1400021b0((ulonglong *)&local_138,"PhasecorrelateOriginal.cpp",0x1a);
+    local_160 = 0xf;
+    local_168 = 0;
+    local_178 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1400021b0((ulonglong *)&local_178,&DAT_14017870c,3);
+    local_140 = 0xf;
+    local_148 = 0;
+    local_158 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    FUN_1400021b0((ulonglong *)&local_158,"type == src2.type() && src1.size() == src2.size()",0x31);
+    pEVar5 = (Exception *)
+             cv::Exception::Exception(local_118,-0xd7,&local_158,&local_178,&local_138,0x365);
+    cv::error(pEVar5);
+    cv::Exception::~Exception(local_118);
+    if (0xf < local_140) {
+      Ordinal_1486(CONCAT71(uStack_157,local_158));
+    }
+    local_140 = 0xf;
+    local_148 = 0;
+    local_158 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < local_160) {
+      Ordinal_1486(CONCAT71(uStack_177,local_178));
+    }
+    local_160 = 0xf;
+    local_168 = 0;
+    local_178 = (basic_string<char,std::char_traits<char>,std::allocator<char>_>)0x0;
+    if (0xf < local_120) {
+      Ordinal_1486(CONCAT71(uStack_137,local_138));
+    }
+  }
+  local_248 = iVar1;
+  local_244 = iVar4;
+  if ((local_238[0] & 7) == 5) {
+    (**(code **)(*param_3 + 0x90))(param_3,&local_248,0xd);
+    (**(code **)*param_3)(param_3,local_118,0xffffffff);
+    uVar6 = (ulonglong)(uint)(iVar4 * iVar1);
+    if (0 < iVar4 * iVar1) {
+      do {
+        fVar9 = *(float *)((longlong)local_1c8 + 4) * *(float *)((longlong)local_228 + 4) +
+                *(float *)local_1c8 * *(float *)local_228;
+        fVar10 = *(float *)local_1c8 * *(float *)((longlong)local_228 + 4) -
+                 *(float *)((longlong)local_1c8 + 4) * *(float *)local_228;
+        fVar7 = sqrtf(fVar10 * fVar10 + fVar9 * fVar9);
+        *(float *)local_108 = fVar9 / (fVar7 + 1.1920929e-07);
+        *(float *)((longlong)local_108 + 4) = fVar10 / (fVar7 + 1.1920929e-07);
+        uVar6 = uVar6 - 1;
+        local_1c8 = local_1c8 + 1;
+        local_108 = local_108 + 1;
+        local_228 = local_228 + 1;
+      } while (uVar6 != 0);
+    }
+  }
+  else {
+    (**(code **)(*param_3 + 0x90))(param_3,&local_248,0xe);
+    (**(code **)*param_3)(param_3,local_118,0xffffffff);
+    uVar6 = (ulonglong)(uint)(iVar4 * iVar1);
+    if (0 < iVar4 * iVar1) {
+      do {
+        dVar2 = local_1c8[1] * local_228[1] + *local_1c8 * *local_228;
+        dVar3 = *local_1c8 * local_228[1] - local_1c8[1] * *local_228;
+        dVar8 = sqrt(dVar3 * dVar3 + dVar2 * dVar2);
+        *local_108 = dVar2 / (dVar8 + 2.220446049250313e-16);
+        local_108[1] = dVar3 / (dVar8 + 2.220446049250313e-16);
+        uVar6 = uVar6 - 1;
+        local_1c8 = local_1c8 + 2;
+        local_108 = local_108 + 2;
+        local_228 = local_228 + 2;
+      } while (uVar6 != 0);
+    }
+  }
+  if ((local_100 != (int *)0x0) && (iVar4 = cv::_interlockedExchangeAdd(local_100,-1), iVar4 == 1))
+  {
+    cv::Mat::deallocate((Mat *)local_118);
+  }
+  local_e8 = 0;
+  local_f0 = 0;
+  local_f8 = 0;
+  local_108 = (double *)0x0;
+  *local_d8 = 0;
+  local_100 = (int *)0x0;
+  if (local_d0 != local_c8) {
+    cv::fastFree(local_d0);
+  }
+  if ((local_1c0 != (int *)0x0) && (iVar4 = cv::_interlockedExchangeAdd(local_1c0,-1), iVar4 == 1))
+  {
+    cv::Mat::deallocate((Mat *)local_1d8);
+  }
+  local_1a8 = 0;
+  local_1b0 = 0;
+  local_1b8 = 0;
+  local_1c8 = (double *)0x0;
+  *local_198 = 0;
+  local_1c0 = (int *)0x0;
+  if (local_190 != local_188) {
+    cv::fastFree(local_190);
+  }
+  if ((local_220 != (int *)0x0) && (iVar4 = cv::_interlockedExchangeAdd(local_220,-1), iVar4 == 1))
+  {
+    cv::Mat::deallocate((Mat *)local_238);
+  }
+  local_208 = 0;
+  local_210 = 0;
+  local_218 = 0;
+  local_228 = (double *)0x0;
+  *local_1f8 = 0;
+  local_220 = (int *)0x0;
+  if (local_1f0 != local_1e8) {
+    cv::fastFree(local_1f0);
+  }
+  return;
+}
+

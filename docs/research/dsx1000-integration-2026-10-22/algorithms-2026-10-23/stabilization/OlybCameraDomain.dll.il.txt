@@ -1,0 +1,143 @@
+// ev_ca7f048c65775df6acf996dc88d0ada6fb77174a4edb5a50f0f96824febec89e
+// ccecfd020f6543bba5e9cb8f04268452784a7bd98a07185d2430b075d9930988
+
+METHOD Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_ReceiveInputFrameBuffer 0x06000094
+0000 ldarg.0  
+0001 ldc.i4.0  
+0002 stfld 0x0400004c Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_bFpsDecimation
+0007 call 0x0a00027f Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_SystemStatusDao
+0012 callvirt 0x0a000280 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0017 stloc.0  
+0018 ldarg.0  
+0019 ldfld 0x0400004d Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_i32FpsDecimation
+0024 ldc.i4.0  
+0025 ble.s 83 
+0027 ldloc.0  
+0028 callvirt 0x0a000281 Olympus.LI.Triumph.Workflow.MemoryDatabase.SystemStatusEntity::get_SystemStatus
+0033 ldc.i4.s 21 
+0035 bne.un.s 83 
+0037 ldarg.0  
+0038 ldfld 0x0400004e Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_i32CountForFpsDecimation
+0043 ldarg.0  
+0044 ldfld 0x0400004d Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_i32FpsDecimation
+0049 ldc.i4.1  
+0050 sub  
+0051 bne.un.s 62 
+0053 ldarg.0  
+0054 ldc.i4.0  
+0055 stfld 0x0400004e Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_i32CountForFpsDecimation
+0060 br.s 83 
+0062 ldarg.0  
+0063 ldc.i4.1  
+0064 stfld 0x0400004c Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_bFpsDecimation
+0069 ldarg.0  
+0070 dup  
+0071 ldfld 0x0400004e Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_i32CountForFpsDecimation
+0076 ldc.i4.1  
+0077 add  
+0078 stfld 0x0400004e Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_i32CountForFpsDecimation
+0083 ldarg.0  
+0084 ldfld 0x0400004c Olympus.LI.Triumph.Workflow.CameraDomain.LiveService::_bFpsDecimation
+0089 brtrue 406 
+0094 ldarg.2  
+0095 callvirt 0x0a000282 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_FrameBuffer
+0100 stloc.1  
+0101 ldloc.1  
+0102 callvirt 0x0a000283 Olympus.LI.Triumph.Device.Camera.IFrameBuffer::get_Id
+0107 ldloc.1  
+0108 callvirt 0x0a000284 Olympus.LI.Triumph.Device.Camera.IFrameBuffer::get_FrameNo
+0113 ldloc.1  
+0114 callvirt 0x0a000285 Olympus.LI.Triumph.Device.Camera.IFrameBuffer::get_ImageBufferHeader
+0119 newobj 0x0a000286 Olympus.LI.Triumph.Workflow.MemoryDatabase.CurrentFrame::.ctor
+0124 stloc.2  
+0125 ldloc.2  
+0126 ldarg.2  
+0127 callvirt 0x0a000287 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_LiveImageWidth
+0132 conv.u2  
+0133 callvirt 0x0a000288 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageSizeX
+0138 ldloc.2  
+0139 ldarg.2  
+0140 callvirt 0x0a000289 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_LiveImageHeight
+0145 conv.u2  
+0146 callvirt 0x0a00028a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageSizeY
+0151 ldloc.2  
+0152 ldarg.2  
+0153 callvirt 0x0a00028b Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_EMId
+0158 callvirt 0x0a00028c Olympus.LI.Triumph.Workflow.MemoryDatabase.CurrentFrame::set_CallbackID
+0163 ldloc.2  
+0164 ldarg.2  
+0165 callvirt 0x0a00028d Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_CamByte
+0170 callvirt 0x0a00028e Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_CamByte
+0175 ldloc.2  
+0176 ldarg.2  
+0177 callvirt 0x0a00028f Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_RotationCount
+0182 callvirt 0x0a000290 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_RotationCount
+0187 ldloc.2  
+0188 ldarg.2  
+0189 callvirt 0x0a000291 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_HdrExposureTime
+0194 ldfld 0x0a0000ea CAM_RATIONAL::_UiDenominator
+0199 callvirt 0x0a000292 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_Denominator
+0204 ldloc.2  
+0205 ldarg.2  
+0206 callvirt 0x0a000291 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_HdrExposureTime
+0211 ldfld 0x0a0000ec CAM_RATIONAL::_UiNumerator
+0216 callvirt 0x0a000293 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_Numerator
+0221 ldloc.2  
+0222 ldc.i4.0  
+0223 callvirt 0x0a000294 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_ImageFrameType
+0228 ldloc.2  
+0229 ldarg.2  
+0230 callvirt 0x0a000295 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_AEStatus
+0235 callvirt 0x0a000296 Olympus.LI.Triumph.Workflow.MemoryDatabase.CurrentFrame::set_AEStatus
+0240 call 0x0a000114 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_CurrentFrameDao
+0245 callvirt 0x0a000297 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::GetFirst
+0250 stloc.3  
+0251 ldloc.3  
+0252 brfalse.s 278 
+0254 ldloc.2  
+0255 ldloc.3  
+0256 callvirt 0x0a000298 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_SumShiftX
+0261 callvirt 0x0a000299 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_SumShiftX
+0266 ldloc.2  
+0267 ldloc.3  
+0268 callvirt 0x0a00029a Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::get_SumShiftY
+0273 callvirt 0x0a00029b Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.AImageEntityBase::set_SumShiftY
+0278 call 0x0a000114 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_CurrentFrameDao
+0283 ldloc.2  
+0284 callvirt 0x0a00029c Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::UpdateOrCreate
+0289 call 0x0a0000e1 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_AutoExposureDao
+0294 callvirt 0x0a0000f8 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleXmlDao`2::Get
+0299 stloc.s 4 
+0301 ldloc.s 4 
+0303 callvirt 0x0a000029 Olympus.LI.Triumph.Workflow.MemoryDatabase.AutoExposure::get_AeEnabled
+0308 brfalse.s 406 
+0310 call 0x0a0000e6 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExposureDao
+0315 callvirt 0x0a0001d5 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.SingleDao`2::Get
+0320 stloc.s 5 
+0322 ldloc.s 5 
+0324 ldarg.2  
+0325 callvirt 0x0a000291 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_HdrExposureTime
+0330 ldfld 0x0a0000ea CAM_RATIONAL::_UiDenominator
+0335 callvirt 0x0a0001ce Olympus.LI.Triumph.Workflow.MemoryDatabase.Exposure::set_Denominator
+0340 ldloc.s 5 
+0342 ldarg.2  
+0343 callvirt 0x0a000291 Olympus.LI.Triumph.Device.Camera.Parameter.InputFrameEventArgs::get_HdrExposureTime
+0348 ldfld 0x0a0000ec CAM_RATIONAL::_UiNumerator
+0353 callvirt 0x0a0001cd Olympus.LI.Triumph.Workflow.MemoryDatabase.Exposure::set_Numerator
+0358 ldloc.s 5 
+0360 ldloc.s 5 
+0362 callvirt 0x0a0000eb Olympus.LI.Triumph.Workflow.MemoryDatabase.Exposure::get_Numerator
+0367 conv.r.un  
+0368 conv.r8  
+0369 ldc.r8 1000000 
+0378 mul  
+0379 ldloc.s 5 
+0381 callvirt 0x0a0000e9 Olympus.LI.Triumph.Workflow.MemoryDatabase.Exposure::get_Denominator
+0386 conv.r.un  
+0387 conv.r8  
+0388 div  
+0389 callvirt 0x0a0001cf Olympus.LI.Triumph.Workflow.MemoryDatabase.Exposure::set_Speed
+0394 call 0x0a0000e6 Olympus.LI.Triumph.Workflow.MemoryDatabase.DaoManager::get_ExposureDao
+0399 ldloc.s 5 
+0401 callvirt 0x0a0001d0 Olympus.LI.Triumph.Workflow.MemoryDatabase.Base.DaoBase`2::UpdateOrCreate
+0406 ret  

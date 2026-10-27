@@ -1,0 +1,123 @@
+Evidence: ev_9a6488efe9706356ae0bc84a720ff017dccc2c890d8cc961f115b5956866602b
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_140001110(longlong *param_1,undefined8 param_2,int param_3,int param_4)
+
+{
+  undefined1 auVar1 [16];
+  char cVar2;
+  int iVar3;
+  int iVar4;
+  uint uVar5;
+  __uint64 _Var6;
+  void *pvVar7;
+  undefined7 extraout_var;
+  longlong lVar8;
+  int iVar9;
+  int iVar10;
+  ulonglong uVar11;
+  int iVar12;
+  int iVar13;
+  int iVar14;
+  int iVar15;
+  longlong lVar16;
+  undefined1 auStack_f8 [48];
+  int local_c8;
+  int local_b8;
+  int iStack_b4;
+  int iStack_b0;
+  int iStack_ac;
+  int local_a8;
+  undefined8 local_98;
+  undefined8 uStack_90;
+  longlong *local_88;
+  ulonglong local_80;
+  int local_78;
+  int iStack_74;
+  int iStack_70;
+  int iStack_6c;
+  int local_68 [2];
+  undefined8 uStack_60;
+  ulonglong local_58;
+  
+  local_58 = DAT_140030010 ^ (ulonglong)auStack_f8;
+  iVar13 = (int)((ulonglong)param_2 >> 0x20);
+  iVar9 = (int)param_2;
+  uVar11 = (ulonglong)(iVar13 * iVar9);
+  auVar1._8_8_ = 0;
+  auVar1._0_8_ = uVar11;
+  _Var6 = SUB168(ZEXT816(8) * auVar1,0);
+  if (SUB168(ZEXT816(8) * auVar1,8) != 0) {
+    _Var6 = 0xffffffffffffffff;
+  }
+  local_a8 = param_4;
+  local_88 = param_1;
+  local_80 = uVar11;
+  pvVar7 = operator_new__(_Var6);
+  *param_1 = (longlong)pvVar7;
+  iVar13 = iVar13 + param_3 * -2;
+  iVar15 = iVar9 + param_3 * -2;
+  iVar14 = 0;
+  if (0 < (longlong)uVar11) {
+    lVar16 = 0;
+    iVar4 = iVar13;
+    local_c8 = iVar13;
+    uStack_90 = param_2;
+    local_b8 = param_3;
+    iStack_b4 = param_3;
+    iStack_b0 = iVar15;
+    iStack_ac = iVar13;
+    do {
+      lVar8 = 0;
+      iVar10 = iVar14 % iVar9;
+      iVar3 = iVar14 / iVar9;
+      local_98 = CONCAT44(iVar3,iVar10);
+      if ((((iVar10 <= param_3) || (param_3 + iVar15 <= iVar10)) || (iVar3 <= param_3)) ||
+         (iVar4 + param_3 <= iVar3)) {
+        local_68[0] = 0;
+        local_68[1] = 0;
+        iVar12 = 0;
+        uStack_60 = param_2;
+        local_78 = param_3;
+        iStack_74 = param_3;
+        iStack_70 = iVar15;
+        iStack_6c = iVar13;
+        cVar2 = FUN_140001340(0,local_98,local_68,&local_78);
+        iVar4 = (int)CONCAT71(extraout_var,cVar2);
+        if (iVar4 == 1) {
+          uVar5 = iStack_b4 - iVar3;
+LAB_1400012be:
+          iVar12 = (uVar5 ^ (int)uVar5 >> 0x1f) - ((int)uVar5 >> 0x1f);
+        }
+        else {
+          if (iVar4 == 2) {
+            uVar5 = param_3 - iVar10;
+            goto LAB_1400012be;
+          }
+          if (iVar4 == 3) {
+            uVar5 = (iVar15 - iVar10) + param_3;
+            goto LAB_1400012be;
+          }
+          if (iVar4 == 4) {
+            uVar5 = (iStack_b4 - iVar3) + iStack_ac;
+            goto LAB_1400012be;
+          }
+        }
+        lVar8 = (longlong)iVar12;
+        iVar4 = local_c8;
+        if (local_a8 == 1) {
+          lVar8 = lVar8 * lVar8;
+        }
+      }
+      iVar14 = iVar14 + 1;
+      *(longlong *)(*local_88 + lVar16 * 8) = lVar8;
+      lVar16 = lVar16 + 1;
+    } while (lVar16 < (longlong)local_80);
+  }
+  return;
+}
+

@@ -1,0 +1,49 @@
+Evidence: ev_44962006ea26ad66410eba5a3c070ea01ac92c72abb8cf22e38f075155fb7321
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-extra-evidence.json.gz
+
+
+ulonglong FUN_1800071f0(longlong param_1,int param_2,int param_3)
+
+{
+  int *piVar1;
+  int *piVar2;
+  ulonglong uVar3;
+  int iVar4;
+  int local_res10 [4];
+  int local_res20 [2];
+  
+  if ((-1 < param_2) && (-1 < param_3)) {
+    local_res20[0] = *(int *)(param_1 + 0x90) + *(int *)(param_1 + 0x88);
+    if (param_2 < local_res20[0]) {
+      iVar4 = *(int *)(param_1 + 0x94) + *(int *)(param_1 + 0x8c);
+      if (param_3 < iVar4) {
+        local_res20[0] = local_res20[0] - param_2;
+        local_res10[0] = param_2 - *(int *)(param_1 + 0x88);
+        piVar2 = local_res20;
+        if (local_res10[0] <= local_res20[0]) {
+          piVar2 = local_res10;
+        }
+        local_res20[0] = iVar4 - param_3;
+        local_res10[0] = param_3 - *(int *)(param_1 + 0x8c);
+        piVar1 = local_res20;
+        if (local_res10[0] <= local_res20[0]) {
+          piVar1 = local_res10;
+        }
+        local_res10[0] = *piVar2 * *piVar2;
+        local_res20[0] = *piVar1 * *piVar1;
+        piVar2 = local_res20;
+        if (local_res10[0] <= local_res20[0]) {
+          piVar2 = local_res10;
+        }
+        uVar3 = 1;
+        if (1 < (ulonglong)(longlong)*piVar2) {
+          uVar3 = (longlong)*piVar2;
+        }
+        return uVar3;
+      }
+    }
+  }
+  return 0;
+}
+

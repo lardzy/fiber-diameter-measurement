@@ -1,0 +1,28 @@
+EVIDENCE ev_06e2960bc201588960f5c7f1982113f134d7c23bbc512f3e4426592dc381eb40 SHA256 3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245
+
+METHOD 0x06000426 Olympus.LI.Triumph.Application.UiData.CstAcquisition .cctor IL_SHA256 d4aa3401d2809cb743e44a49b22019cf2415a4ec8ec0906ffde03c3b87b07c02 DECODE_ISSUE null
+0000: ldstr         0x70000241 "MAX_TOTAL_ACQUISITION_COUNT"
+0005: stsfld        0x040004b2 Olympus.LI.Triumph.Application.UiData.CstAcquisition.strMAX_TOTAL_ACQUISITION_COUNT
+000a: ldc.i4        1000 
+000f: stsfld        0x040004b3 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32MAX_TOTAL_ACQUISITION_DEFAULT_COUNT
+0014: ldstr         0x70000279 "MAX_TOTAL_ACQUISITION_COUNT_FOR_OLS_AUTO_STICHING"
+0019: stsfld        0x040004b4 Olympus.LI.Triumph.Application.UiData.CstAcquisition.strMAX_TOTAL_ACQUISITION_COUNT_FOR_OLS_AUTO_STICHING
+001e: ldc.i4        2500 
+0023: stsfld        0x040004b5 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32MAX_TOTAL_ACQUISITION_DEFAULT_COUNT_FOR_OLS_AUTO_STICHING
+0028: ldc.i4        300 
+002d: stsfld        0x040004b6 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32MAP_BITMAP_MAX_WIDTH
+0032: ldc.i4        300 
+0037: stsfld        0x040004b7 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32MAP_BITMAP_MAX_HEIGHT
+003c: ldc.i4.s      100 
+003e: stsfld        0x040004b8 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32STEP_COUNT_WIDE
+0043: ldc.i4.s      30 
+0045: stsfld        0x040004b9 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32STEP_COUNT_STANDARD
+004a: ldc.i4.s      10 
+004c: stsfld        0x040004ba Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32STEP_COUNT_SMALL
+0051: ldc.r8        1 
+005a: stsfld        0x040004bb Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblFINE_STEP_RATIO
+005f: ldc.r8        0.5 
+0068: stsfld        0x040004bc Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblFAST_STEP_RATIO
+006d: ldc.r8        0.5 
+0076: stsfld        0x040004bd Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblSUPERFAST_STEP_RATIO
+007b: ret            

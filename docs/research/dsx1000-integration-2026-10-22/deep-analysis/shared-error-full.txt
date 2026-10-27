@@ -1,0 +1,178 @@
+EVIDENCE ev_829e6bd66270cc328ef7e962fb1f80592e012849ae6f8f870559bbb22bff144e SHA256 649cd7647d8dc4de4cbe619b2a1e0f9e028576a74f70d3ed45c0baf278396803
+
+METHOD 0x0600002f Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition .cctor IL_SHA256 82d039a7678e4e43413de0d0158659b40d45132a7dd292eeeecf3c42be94dce9 DECODE_ISSUE null
+0000: ldstr         0x70000001 "C:\\Users\\Public\\OLYMPUS\\DSX-BSW\\Common\\System"
+0005: stsfld        0x0400004f Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.SETTINGFILEDIRECTORYPATH
+000a: ldstr         0x7000005d "ResultMicroscopeInitialize.xml"
+000f: stsfld        0x04000050 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.RESULTINITIALIZEFILENAME
+0014: ldstr         0x7000009b "UserInfo"
+0019: stsfld        0x04000051 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.USERINFOFILENAME
+001e: ldstr         0x700000ad "SystemInfo"
+0023: stsfld        0x04000052 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.SYSTEMINFOFILENAME
+0028: ldstr         0x700000c3 "ImageData"
+002d: stsfld        0x04000053 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.IMAGEFILENAME
+0032: ldstr         0x700000d7 "RdkErrorCode.ini"
+0037: stsfld        0x04000054 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.RDKERRORCODEFILENAME
+003c: ldstr         0x700000f9 "ScaleData"
+0041: stsfld        0x04000055 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.SCALEFILENAME
+0046: ret            
+
+METHOD 0x060001c5 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation ReadRdkErrorCode IL_SHA256 1bd8aeb1e98c3af2ece24d60b0b8cb2d9bf09c3eef2fba2af620963d0880d5cc DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.2        
+0002: ldsfld        0x040001cb Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation._fileAccessLockObject
+0007: dup            
+0008: stloc.s       4 
+000a: ldloca.s      2 
+000c: call          0x0a000014 System.Threading.Monitor.Enter
+0011: ldc.i4.1       
+0012: stloc.0        
+0013: ldsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0018: call          0x0a000015 System.IO.File.Exists
+001d: brtrue.s      35 
+001f: ldc.i4.0       
+0020: stloc.0        
+0021: br.s          71 
+0023: ldstr         0x7000010d "COMMON"
+0028: ldstr         0x7000011b "RDK_ERROR_CODE"
+002d: ldsfld        0x040001cc Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.strDEF_RDK_ERROR_CODE
+0032: ldsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0037: ldc.i4.1       
+0038: call          0x060001c7 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.ReadInfo
+003d: stloc.1        
+003e: ldloc.1        
+003f: ldloca.s      0 
+0041: call          0x2b000001 System.Enum.TryParse
+0046: pop            
+0047: ldloc.0        
+0048: stloc.3        
+0049: leave.s       86 
+004b: ldloc.2        
+004c: brfalse.s     85 
+004e: ldloc.s       4 
+0050: call          0x0a000017 System.Threading.Monitor.Exit
+0055: endfinally     
+0056: ldloc.3        
+0057: ret            
+
+METHOD 0x060001c6 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation WriteRdkErrorCode IL_SHA256 d1dfdabd85966b2da33d1d0feefd1cb93abeaa2125371df73c19d3f30a5a391a DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldsfld        0x040001cb Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation._fileAccessLockObject
+0007: dup            
+0008: stloc.2        
+0009: ldloca.s      0 
+000b: call          0x0a000014 System.Threading.Monitor.Enter
+0010: ldstr         0x7000010d "COMMON"
+0015: ldstr         0x7000011b "RDK_ERROR_CODE"
+001a: ldtoken       0x02000017 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommonEnumDefinition.RdkErrorCode
+001f: call          0x0a000018 System.Type.GetTypeFromHandle
+0024: ldarg.0        
+0025: box           0x02000017 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommonEnumDefinition.RdkErrorCode
+002a: call          0x0a000019 System.Enum.GetName
+002f: ldsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0034: call          0x060001c8 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.WriteInfo
+0039: stloc.1        
+003a: leave.s       70 
+003c: ldloc.0        
+003d: brfalse.s     69 
+003f: ldloc.2        
+0040: call          0x0a000017 System.Threading.Monitor.Exit
+0045: endfinally     
+0046: ldloc.1        
+0047: ret            
+
+METHOD 0x060001c7 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation ReadInfo IL_SHA256 da2c282cd8b7e2acd2aad0bc6f9951bd51c91d601037097e4bfbbcc3b0861906 DECODE_ISSUE null
+0000: ldsfld        0x0a00001a System.String.Empty
+0005: stloc.0        
+0006: ldc.i4        1024 
+000b: newobj        0x0a00001b System.Text.StringBuilder..ctor
+0010: stloc.1        
+0011: ldc.i4.0       
+0012: ldstr         0x70000139 "CRdkSharedInfo_Mutex"
+0017: newobj        0x0a00001c System.Threading.Mutex..ctor
+001c: stloc.2        
+001d: ldloc.2        
+001e: ldc.i4        10000 
+0023: callvirt      0x0a00001d System.Threading.WaitHandle.WaitOne
+0028: pop            
+0029: ldarg.0        
+002a: ldarg.1        
+002b: ldarg.2        
+002c: ldloc.1        
+002d: ldloc.1        
+002e: callvirt      0x0a00001e System.Text.StringBuilder.get_Capacity
+0033: ldarg.3        
+0034: call          0x060001c3 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.GetPrivateProfileString
+0039: stloc.3        
+003a: ldloc.3        
+003b: brfalse.s     68 
+003d: ldloc.1        
+003e: callvirt      0x0a00001f System.Object.ToString
+0043: stloc.0        
+0044: ldarg.s       4 
+0046: brfalse.s     78 
+0048: ldarg.3        
+0049: call          0x0a000020 System.IO.File.Delete
+004e: leave.s       87 
+0050: ldloc.2        
+0051: callvirt      0x0a000021 System.Threading.Mutex.ReleaseMutex
+0056: endfinally     
+0057: leave.s       99 
+0059: ldloc.2        
+005a: brfalse.s     98 
+005c: ldloc.2        
+005d: callvirt      0x0a000022 System.IDisposable.Dispose
+0062: endfinally     
+0063: ldloc.0        
+0064: ret            
+
+METHOD 0x060001c8 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation WriteInfo IL_SHA256 3f09fbad7d7d4bcfc423af2e118d17bf868a470b17cc42023e6c2a2bb15c3fa9 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldc.i4.0       
+0003: ldstr         0x70000139 "CRdkSharedInfo_Mutex"
+0008: newobj        0x0a00001c System.Threading.Mutex..ctor
+000d: stloc.1        
+000e: ldloc.1        
+000f: ldc.i4        10000 
+0014: callvirt      0x0a00001d System.Threading.WaitHandle.WaitOne
+0019: pop            
+001a: ldarg.0        
+001b: ldarg.1        
+001c: ldarg.2        
+001d: ldarg.3        
+001e: call          0x060001c4 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.WritePrivateProfileString
+0023: stloc.2        
+0024: ldloc.2        
+0025: brfalse.s     41 
+0027: ldc.i4.1       
+0028: stloc.0        
+0029: leave.s       50 
+002b: ldloc.1        
+002c: callvirt      0x0a000021 System.Threading.Mutex.ReleaseMutex
+0031: endfinally     
+0032: leave.s       62 
+0034: ldloc.1        
+0035: brfalse.s     61 
+0037: ldloc.1        
+0038: callvirt      0x0a000022 System.IDisposable.Dispose
+003d: endfinally     
+003e: ldloc.0        
+003f: ret            
+
+METHOD 0x060001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation .cctor IL_SHA256 1fada0044a8ea8e8bfa8017cc8afed4c867489432c40f2c1e61a4b7f85a2cf74 DECODE_ISSUE null
+0000: ldstr         0x70000163 "{0}\\{1}"
+0005: ldsfld        0x0400004f Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.SETTINGFILEDIRECTORYPATH
+000a: ldsfld        0x04000054 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.PathDefinition.RDKERRORCODEFILENAME
+000f: call          0x0a000023 System.String.Format
+0014: stsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0019: newobj        0x0a000011 System.Object..ctor
+001e: stsfld        0x040001cb Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation._fileAccessLockObject
+0023: ldtoken       0x02000017 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommonEnumDefinition.RdkErrorCode
+0028: call          0x0a000018 System.Type.GetTypeFromHandle
+002d: ldc.i4.1       
+002e: box           0x02000017 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommonEnumDefinition.RdkErrorCode
+0033: call          0x0a000019 System.Enum.GetName
+0038: stsfld        0x040001cc Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.strDEF_RDK_ERROR_CODE
+003d: ret            

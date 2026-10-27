@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "zip": "release/DsxEvidenceCollector-1.0.0-win-x64.zip",
+  "zip_sha256": "17edf68574c3c45dc0d5a1dcf5f60ccae7adb8b9b4885d3b5587587ce74052d5",
+  "bytes": 1201214,
+  "manifest_files_verified": 39,
+  "source_files_matched_build": 6,
+  "tests_passed": 35,
+  "validation_run": "run-20261022-134438",
+  "vendor_binaries_included": false,
+  "fdm_product_modified": false
+}

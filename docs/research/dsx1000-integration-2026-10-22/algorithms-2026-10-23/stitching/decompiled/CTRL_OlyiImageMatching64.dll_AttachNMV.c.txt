@@ -1,0 +1,35 @@
+Evidence: ev_b5b247927f36a5725906e31a671f5eeeef79cb53e63755dc9918e490f129e0dd
+Subject SHA256: 8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94
+Bundle: matching-evidence.json.gz
+
+
+undefined8 * AttachNMV(char *param_1)
+
+{
+  undefined8 *puVar1;
+  undefined8 uVar2;
+  undefined8 *puVar3;
+  
+                    /* 0x8bd0  1  AttachNMV */
+  puVar1 = operator_new(0x40);
+  puVar3 = (undefined8 *)0x0;
+  if (puVar1 != (undefined8 *)0x0) {
+    puVar1[7] = 0;
+    *puVar1 = 0;
+    puVar1[1] = 0;
+    puVar1[2] = 0;
+    puVar1[3] = 0;
+    puVar1[4] = 0;
+    puVar1[5] = 0;
+    puVar3 = puVar1;
+  }
+  uVar2 = FUN_180001280(puVar3,param_1);
+  if ((char)uVar2 != '\0') {
+    return puVar3;
+  }
+  if (puVar3 != (undefined8 *)0x0) {
+    operator_delete(puVar3);
+  }
+  return (undefined8 *)0x0;
+}
+

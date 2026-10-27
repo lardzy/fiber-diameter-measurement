@@ -1,0 +1,412 @@
+{
+  "scope": "independent reconstructed reference; Olympus binaries never executed",
+  "not_claimed": [
+    "bit-exact equivalence",
+    "real optical accuracy",
+    "DSX runtime/driver compatibility",
+    "CUDA equivalence"
+  ],
+  "environment": {
+    "python": "3.13.12",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "numpy": "2.4.3",
+    "opencv": "4.13.0",
+    "scipy": "1.18.1"
+  },
+  "seed": 20261023,
+  "profile": {
+    "lap_levels": 4,
+    "depth_level": 3,
+    "fast_weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "height_weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "fast_gauss": 3,
+    "height_gauss": 11,
+    "near_samples": 5,
+    "interp": 8,
+    "texture_threshold_3d": 1.8,
+    "texture_threshold_efi": 1.5,
+    "texture_scale": 0.5,
+    "texture_gauss": 9,
+    "texture_sad": 10.0,
+    "texture_iteration_cap": 500,
+    "guide_scale": 0.5,
+    "wm_radius_3d": 5,
+    "wm_radius_efi": 1,
+    "wm_eps_3d": 0.01,
+    "wm_eps_efi": 0.01,
+    "median_3d": 5,
+    "median_efi": 3,
+    "self_radius_3d": 9,
+    "self_radius_efi": 1,
+    "self_eps_3d": 0.0001,
+    "self_eps_efi": 0.01,
+    "sweep_threshold": 5.0,
+    "sweep_max": 1.0,
+    "fine_threshold": 30.0,
+    "fine_max": 1.0,
+    "blend_adjacent_z": true
+  },
+  "source_sha256": {
+    "reference_efi.py": "98a134a6cd6175a83be72989aff763ee686a18c0bfc7af1b83c0f31161f5fcbd",
+    "validate_reference.py": "00e93c27355908cac40b3917a975e341d5f6bdadd60bdc6c3c829600f55cd0fa"
+  },
+  "fixture_sha256": "888e308ae5b2c71e55f2ab1a5f181fa4f0788c4c13feb3c8853021b1eef3ed15",
+  "results": [
+    {
+      "name": "natural_spline_independent_scipy_oracle",
+      "passed": true,
+      "max_absolute_error": 1.7763568394002505e-15
+    },
+    {
+      "name": "band_blend_partition_3d",
+      "passed": true
+    },
+    {
+      "name": "band_blend_partition_efi",
+      "passed": true
+    },
+    {
+      "name": "response_tie_uses_original_input_order",
+      "passed": true
+    },
+    {
+      "name": "nonuniform_fractional_z",
+      "passed": true,
+      "truth": 4.4,
+      "estimate": 4.779166221618652,
+      "grid_step": 0.24583332240581512,
+      "note": "Synthetic Gaussian focus curve; grid resolution is not optical accuracy."
+    },
+    {
+      "name": "boundary_peak_is_flagged",
+      "passed": true,
+      "estimate": 0.4000000059604645,
+      "boundary": true
+    },
+    {
+      "name": "fractional_z_last_layer_float32_grid_endpoint",
+      "passed": true,
+      "estimated": 10.799999237060547,
+      "expected": 10.799999237060547,
+      "regression": "Prior mixed float64 grid dropped the last candidate, yielding 10.6374998093."
+    },
+    {
+      "name": "fractional_z_interior_window_float32_endpoint",
+      "passed": true,
+      "count": 33,
+      "first": 4.299999713897705,
+      "last": 9.499999046325684,
+      "oracle": "Native float32 ceil/floor yields global grid indices 24..56 inclusive."
+    },
+    {
+      "name": "textureless_reconstruction_has_no_measured_support",
+      "passed": true,
+      "raw_height_range": [
+        5.599999904632568,
+        5.599999904632568
+      ],
+      "filled_numeric_range": [
+        -1.0,
+        -1.0
+      ],
+      "warning": "Finite raw/filled numbers do not establish measured height; all pixels invalid."
+    },
+    {
+      "name": "two_surfaces_single_depth_counterexample",
+      "passed": true,
+      "reconstructed": 3.0,
+      "other_surface": 9.0,
+      "limitation_confirmed": "Only one peak is retained; full Z stack remains necessary."
+    },
+    {
+      "name": "texture_fill_keeps_anchors_and_labels_synthesis",
+      "passed": true,
+      "anchor_max_error": 0.0,
+      "synthesized_pixels": 905,
+      "iterations": 300,
+      "converged": false
+    },
+    {
+      "name": "zero_sad_threshold_bounded_reference_counterexample",
+      "passed": true,
+      "note": "Native strict SAD<threshold loop has no observed count cap; reference stops at 3."
+    },
+    {
+      "name": "guided_filter_constant_guide_double_box_oracle",
+      "passed": true,
+      "max_absolute_error": 2.9802322387695312e-08
+    },
+    {
+      "name": "rgb_guided_filter_preserves_constant",
+      "passed": true,
+      "max_absolute_error": 0.0
+    },
+    {
+      "name": "uint16_range_collinear_rgb_scalar_oracle",
+      "passed": true,
+      "max_absolute_error": 1.1920928955078125e-07,
+      "difference_from_native": "Reference moments/solve use float64; original numeric parity unclaimed."
+    },
+    {
+      "name": "pyramid_constant_(33, 47)",
+      "passed": true,
+      "reconstructed_shape": [
+        33,
+        47
+      ],
+      "maximum_focus_response": 0.0
+    },
+    {
+      "name": "pyramid_constant_(32, 48)",
+      "passed": true,
+      "reconstructed_shape": [
+        32,
+        48
+      ],
+      "maximum_focus_response": 0.0
+    },
+    {
+      "name": "pyramid_constant_(33, 48)",
+      "passed": true,
+      "reconstructed_shape": [
+        33,
+        48
+      ],
+      "maximum_focus_response": 0.0
+    },
+    {
+      "name": "pyramid_constant_(32, 47)",
+      "passed": true,
+      "reconstructed_shape": [
+        32,
+        47
+      ],
+      "maximum_focus_response": 0.0
+    },
+    {
+      "name": "pyramid_nonconstant_edge_halo_7",
+      "passed": true,
+      "observed": [
+        2.0,
+        4.0,
+        6.0,
+        4.0,
+        3.0,
+        8.0,
+        12.0
+      ],
+      "expected": [
+        2,
+        4,
+        6,
+        4,
+        3,
+        8,
+        12
+      ],
+      "oracle": "Hand calculation: even output=(left+6*center+right)/8; odd=(center+right)/2."
+    },
+    {
+      "name": "pyramid_nonconstant_edge_halo_8",
+      "passed": true,
+      "observed": [
+        2.0,
+        4.0,
+        6.0,
+        4.0,
+        3.0,
+        8.0,
+        14.0,
+        16.0
+      ],
+      "expected": [
+        2,
+        4,
+        6,
+        4,
+        3,
+        8,
+        14,
+        16
+      ],
+      "oracle": "Hand calculation: even output=(left+6*center+right)/8; odd=(center+right)/2."
+    },
+    {
+      "name": "pyramid_odd_terminal_impulse_halo",
+      "passed": true,
+      "observed": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        4.0,
+        6.0
+      ],
+      "regression": "Always replicating right edge incorrectly returns 7 at last sample."
+    },
+    {
+      "name": "fine_efi_physical_z_and_boundaries",
+      "passed": true,
+      "result": [
+        [
+          90.0,
+          10.0,
+          70.0
+        ],
+        [
+          30.0,
+          50.0,
+          90.0
+        ]
+      ],
+      "note": "Explicit boundary clamp; native alpha carry is not reproduced."
+    },
+    {
+      "name": "end_to_end_two_plane_synthetic_scene",
+      "passed": true,
+      "raw_height_mae": 0.06323958188295364,
+      "post_height_mae": 0.12073105573654175,
+      "efi_pixel_mae": 7.625662326812744,
+      "center_slice_pixel_mae": 26.133136749267578,
+      "elapsed_seconds": 0.005653874977724627,
+      "note": "Synthetic scene only; thresholds are test acceptance, not DSX measurement specifications."
+    },
+    {
+      "name": "postprocessing_is_not_an_accuracy_guarantee",
+      "passed": true,
+      "raw_height_mae": 0.06323958188295364,
+      "post_height_mae": 0.12073105573654175,
+      "counterexample": "With this finite noisy scene, smoothing worsens interior height error despite producing a smoother surface."
+    },
+    {
+      "name": "reverse_z_same_unique_data",
+      "passed": true,
+      "max_height_difference": 0.0
+    },
+    {
+      "name": "nonmonotonic_z_requires_opt_in",
+      "passed": true
+    },
+    {
+      "name": "duplicate_z_requires_explicit_policy",
+      "passed": true
+    },
+    {
+      "name": "explicit_duplicate_first_policy_retains_identity",
+      "passed": true
+    },
+    {
+      "name": "short_stack_quality_overwrites_last_active_band",
+      "passed": true,
+      "note": "Static assembly contract; no vendor execution oracle."
+    },
+    {
+      "name": "uint16_single_plane_exact_intensity_and_fractional_z",
+      "passed": true
+    },
+    {
+      "name": "full_pipeline_flat_stack_remains_explicitly_unsupported",
+      "passed": true,
+      "numeric_height": 0.0,
+      "warning": "Output numbers exist even though no measured surface is supported."
+    },
+    {
+      "name": "bgr_full_pipeline_dimensions_and_finite_result",
+      "passed": true,
+      "note": "Exercises color guidance and output channels; no vendor equivalence claim."
+    },
+    {
+      "name": "uint16_multilayer_full_pipeline_gray",
+      "passed": true,
+      "height_range": [
+        3.1650586128234863,
+        7.060171127319336
+      ],
+      "note": "Full pipeline robustness only; E11 now evidences native uint16-to-float32 raw intensity preservation; full pipeline numeric parity remains unverified."
+    },
+    {
+      "name": "uint16_multilayer_full_pipeline_collinear_bgr",
+      "passed": true,
+      "height_range": [
+        3.1650586128234863,
+        7.060171127319336
+      ],
+      "note": "Full pipeline robustness only; E11 now evidences native uint16-to-float32 raw intensity preservation; full pipeline numeric parity remains unverified."
+    },
+    {
+      "name": "stack_motion_gate_accumulate_crop",
+      "passed": true,
+      "maximum_aligned_error": 0.0,
+      "geometry": {
+        "trajectory_xy": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            2.0,
+            -1.0
+          ],
+          [
+            2.0,
+            -1.0
+          ]
+        ],
+        "crop_origin_xy": [
+          4,
+          3
+        ],
+        "crop_shape_hw": [
+          42,
+          56
+        ],
+        "output_scale_to_input_xy": [
+          1.0,
+          1.0
+        ],
+        "resize_back": false,
+        "mv_estimator": "externally supplied; not simulated here"
+      }
+    },
+    {
+      "name": "crop_resize_records_pixel_mapping",
+      "passed": true,
+      "geometry": {
+        "trajectory_xy": [
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "crop_origin_xy": [
+          4,
+          3
+        ],
+        "crop_shape_hw": [
+          42,
+          56
+        ],
+        "output_scale_to_input_xy": [
+          0.875,
+          0.875
+        ],
+        "resize_back": true,
+        "mv_estimator": "externally supplied; not simulated here"
+      }
+    }
+  ],
+  "passed": 37,
+  "total": 37,
+  "elapsed_seconds": 0.10931654198793694
+}

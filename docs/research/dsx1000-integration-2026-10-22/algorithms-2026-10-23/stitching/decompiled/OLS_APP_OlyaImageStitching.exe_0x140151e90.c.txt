@@ -1,0 +1,83 @@
+Evidence: ev_6feb60000ed8efa897cab3063157586c6e9acd43c502e30ddbffbe31aac3f5a5
+Subject SHA256: dafe74d256b93447cd64a45fb79274771c7f3530edc9159800f710bce742ec1a
+Bundle: ols-extra-evidence.json.gz
+
+
+ulonglong FUN_140151e90(longlong param_1,longlong param_2)
+
+{
+  int iVar1;
+  uint extraout_EAX;
+  ulonglong uVar2;
+  ulonglong uVar3;
+  uint uVar4;
+  undefined8 local_c8;
+  undefined8 uStack_c0;
+  undefined8 local_b8;
+  undefined8 local_a8;
+  undefined8 uStack_a0;
+  undefined8 local_98;
+  undefined8 uStack_90;
+  undefined8 local_88;
+  undefined8 uStack_80;
+  undefined8 local_78;
+  undefined8 uStack_70;
+  undefined8 local_68;
+  undefined8 uStack_60;
+  undefined8 local_58;
+  undefined8 uStack_50;
+  undefined8 local_48;
+  undefined8 uStack_40;
+  undefined8 local_38;
+  undefined8 uStack_30;
+  undefined8 local_28;
+  undefined8 uStack_20;
+  undefined8 local_18;
+  
+  local_a8 = *(undefined8 *)(param_1 + 0x30);
+  uStack_a0 = *(undefined8 *)(param_1 + 0x38);
+  local_98 = *(undefined8 *)(param_1 + 0x40);
+  uStack_90 = *(undefined8 *)(param_1 + 0x48);
+  uVar3 = 0;
+  local_88 = *(undefined8 *)(param_1 + 0x50);
+  uStack_80 = *(undefined8 *)(param_1 + 0x58);
+  local_78 = *(undefined8 *)(param_1 + 0x60);
+  uStack_70 = *(undefined8 *)(param_1 + 0x68);
+  local_68 = *(undefined8 *)(param_1 + 0x70);
+  uStack_60 = *(undefined8 *)(param_1 + 0x78);
+  local_58 = *(undefined8 *)(param_1 + 0x80);
+  uStack_50 = *(undefined8 *)(param_1 + 0x88);
+  local_48 = *(undefined8 *)(param_1 + 0x90);
+  uStack_40 = *(undefined8 *)(param_1 + 0x98);
+  local_38 = *(undefined8 *)(param_1 + 0xa0);
+  uStack_30 = *(undefined8 *)(param_1 + 0xa8);
+  local_28 = *(undefined8 *)(param_1 + 0xb0);
+  uStack_20 = *(undefined8 *)(param_1 + 0xb8);
+  local_18 = *(undefined8 *)(param_1 + 0xc0);
+  FUN_140019c00((undefined8 *)(param_1 + 0x4a0),(longlong)&local_a8);
+  local_c8 = *(undefined8 *)(param_1 + 0x10);
+  uStack_c0 = *(undefined8 *)(param_1 + 0x18);
+  local_b8 = *(undefined8 *)(param_1 + 0x20);
+  FUN_14014f610(param_1,(int *)&local_c8,*(longlong *)(param_1 + 0x28),*(int *)(param_1 + 0x198));
+  if ((*(int *)(param_1 + 300) == 1) && (*(int *)(param_1 + 0x128) == 1)) {
+    uVar2 = FUN_140152740(param_1);
+    uVar3 = uVar2 & 0xffffffff;
+    if ((int)uVar2 != 0) {
+      return uVar2;
+    }
+  }
+  iVar1 = *(int *)(param_1 + 0x49c);
+  uVar4 = 1;
+  if (0 < iVar1) {
+    do {
+      FUN_140151150(param_1,uVar4,param_2);
+      if (extraout_EAX != 0) {
+        return (ulonglong)extraout_EAX;
+      }
+      uVar4 = uVar4 + 1;
+      uVar3 = 0;
+    } while ((int)uVar4 <= iVar1);
+  }
+  return uVar3;
+}
+

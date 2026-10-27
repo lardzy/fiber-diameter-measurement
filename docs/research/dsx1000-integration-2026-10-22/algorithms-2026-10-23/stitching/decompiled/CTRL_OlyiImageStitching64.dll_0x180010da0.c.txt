@@ -1,0 +1,417 @@
+Evidence: ev_f585faa6b85aa63425fa6549c0e3dbed4a1fea2d550532d04f3c07d583276ca9
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_180010da0(longlong param_1,double *param_2,double *param_3)
+
+{
+  char *pcVar1;
+  undefined8 *puVar2;
+  code *pcVar3;
+  double *pdVar4;
+  double *pdVar5;
+  int iVar6;
+  int iVar7;
+  uint uVar8;
+  undefined4 *puVar9;
+  longlong lVar10;
+  undefined8 uVar11;
+  longlong *plVar12;
+  ulonglong *puVar13;
+  longlong *plVar14;
+  ulonglong uVar15;
+  ulonglong uVar16;
+  ulonglong uVar17;
+  undefined1 auStackY_3a8 [32];
+  double local_368;
+  double local_360;
+  longlong local_358 [2];
+  undefined8 local_348;
+  ulonglong local_340;
+  double *local_338;
+  double *local_330;
+  undefined1 local_328 [16];
+  undefined8 local_318;
+  undefined8 local_310;
+  undefined8 local_308;
+  undefined1 *local_300;
+  undefined4 local_2f8 [40];
+  undefined **local_258;
+  longlong local_250;
+  long local_248;
+  int local_244;
+  undefined1 local_240 [16];
+  undefined8 local_230;
+  undefined8 local_228;
+  undefined1 local_220 [16];
+  undefined8 local_210;
+  undefined8 local_208;
+  undefined1 local_200 [16];
+  undefined8 local_1f0;
+  undefined8 local_1e8;
+  undefined1 local_1e0 [16];
+  undefined8 local_1d0;
+  undefined8 local_1c8;
+  int local_1c0;
+  int local_1bc;
+  undefined4 local_1b8;
+  undefined4 local_1b4;
+  void *local_1a8 [3];
+  ulonglong local_190;
+  undefined1 local_188;
+  undefined7 uStack_187;
+  undefined8 local_178;
+  ulonglong local_170;
+  undefined **local_168;
+  longlong local_160;
+  undefined4 local_158;
+  undefined4 local_154;
+  undefined1 local_150 [16];
+  undefined8 local_140;
+  undefined8 local_138;
+  undefined1 local_130 [16];
+  undefined8 local_120;
+  undefined8 local_118;
+  undefined1 local_110 [16];
+  undefined8 local_100;
+  undefined8 local_f8;
+  undefined1 local_f0 [16];
+  undefined8 local_e0;
+  undefined8 local_d8;
+  int local_d0;
+  int local_cc;
+  undefined4 local_c8;
+  undefined4 local_c4;
+  undefined1 local_b8;
+  undefined7 uStack_b7;
+  undefined8 local_a8;
+  ulonglong local_a0;
+  undefined1 local_98;
+  undefined7 uStack_97;
+  undefined8 local_88;
+  ulonglong local_80;
+  undefined1 local_78;
+  undefined7 uStack_77;
+  undefined8 local_68;
+  ulonglong local_60;
+  ulonglong local_58;
+  
+  local_308 = 0xfffffffffffffffe;
+  local_58 = DAT_180023000 ^ (ulonglong)auStackY_3a8;
+  iVar7 = (int)((*(longlong *)(param_1 + 0x178) - *(longlong *)(param_1 + 0x170)) / 0x98);
+  local_258 = AutoIplImage::vftable;
+  local_228 = 0xf;
+  uVar15 = 0;
+  local_230 = 0;
+  local_240[0] = 0;
+  local_208 = 0xf;
+  local_210 = 0;
+  local_220[0] = 0;
+  local_1e8 = 0xf;
+  local_1f0 = 0;
+  local_200[0] = 0;
+  local_1c8 = 0xf;
+  local_1d0 = 0;
+  local_1e0[0] = 0;
+  local_168 = AutoIplImage::vftable;
+  local_138 = 0xf;
+  local_140 = 0;
+  local_150[0] = 0;
+  local_118 = 0xf;
+  local_120 = 0;
+  local_130[0] = 0;
+  local_f8 = 0xf;
+  local_100 = 0;
+  local_110[0] = 0;
+  local_d8 = 0xf;
+  local_e0 = 0;
+  local_f0[0] = 0;
+  local_250 = 0;
+  local_160 = 0;
+  local_360 = 0.0;
+  local_368 = 1.7976931348623157e+308;
+  uVar17 = uVar15;
+  local_338 = param_2;
+  local_330 = param_3;
+  if (0 < iVar7) {
+    do {
+      lVar10 = *(longlong *)(param_1 + 0x188);
+      if ((ulonglong)((*(longlong *)(param_1 + 400) - lVar10) / 0x98) <= uVar17) {
+        std::_Xout_of_range("invalid vector<T> subscript");
+        pcVar3 = (code *)swi(3);
+        uVar17 = (*pcVar3)();
+        return uVar17;
+      }
+      local_248 = *(long *)(uVar15 + lVar10);
+      local_244 = *(int *)(uVar15 + 4 + lVar10);
+      plVar14 = (longlong *)(lVar10 + 8 + uVar15);
+      if ((longlong *)local_240 != plVar14) {
+        FUN_1800033a0((longlong *)local_240,plVar14,0,0xffffffffffffffff);
+      }
+      plVar14 = (longlong *)(lVar10 + 0x28 + uVar15);
+      if ((longlong *)local_220 != plVar14) {
+        FUN_1800033a0((longlong *)local_220,plVar14,0,0xffffffffffffffff);
+      }
+      plVar14 = (longlong *)(lVar10 + 0x48 + uVar15);
+      if ((longlong *)local_200 != plVar14) {
+        FUN_1800033a0((longlong *)local_200,plVar14,0,0xffffffffffffffff);
+      }
+      plVar14 = (longlong *)(lVar10 + 0x68 + uVar15);
+      if ((longlong *)local_1e0 != plVar14) {
+        FUN_1800033a0((longlong *)local_1e0,plVar14,0,0xffffffffffffffff);
+      }
+      local_1c0 = *(int *)(uVar15 + 0x88 + lVar10);
+      local_1bc = *(int *)(uVar15 + 0x8c + lVar10);
+      local_1b8 = *(undefined4 *)(uVar15 + 0x90 + lVar10);
+      local_1b4 = *(undefined4 *)(uVar15 + 0x94 + lVar10);
+      puVar9 = FUN_18000e250(local_2f8,&local_248);
+      lVar10 = FUN_18000ff40(param_1,(longlong)puVar9,*(int *)(param_1 + 0x11c));
+      if (local_250 != 0) {
+        cvReleaseImage(&local_250);
+        iVar6 = cvGetErrStatus();
+        if (iVar6 < 0) {
+          cvError(0xffffffff,s_release_180023030);
+        }
+      }
+      local_250 = lVar10;
+      if (lVar10 == 0) {
+LAB_18001175e:
+        uVar8 = 0x2bf;
+        goto LAB_180011804;
+      }
+      if (uVar17 != 0) {
+        if ((ulonglong)(longlong)local_244 <
+            (ulonglong)(*(longlong *)(param_1 + 0x158) - *(longlong *)(param_1 + 0x150) >> 2)) {
+          uVar16 = (ulonglong)*(int *)(*(longlong *)(param_1 + 0x150) + (longlong)local_244 * 4);
+          if ((ulonglong)((*(longlong *)(param_1 + 400) - *(longlong *)(param_1 + 0x188)) / 0x98) <=
+              uVar16) {
+            std::_Xout_of_range("invalid vector<T> subscript");
+            pcVar3 = (code *)swi(3);
+            uVar17 = (*pcVar3)();
+            return uVar17;
+          }
+          puVar9 = (undefined4 *)(uVar16 * 0x98 + *(longlong *)(param_1 + 0x188));
+          local_158 = *puVar9;
+          local_154 = puVar9[1];
+          if ((undefined4 *)local_150 != puVar9 + 2) {
+            FUN_1800033a0((longlong *)local_150,(longlong *)(puVar9 + 2),0,0xffffffffffffffff);
+          }
+          if ((undefined4 *)local_130 != puVar9 + 10) {
+            FUN_1800033a0((longlong *)local_130,(longlong *)(puVar9 + 10),0,0xffffffffffffffff);
+          }
+          if ((undefined4 *)local_110 != puVar9 + 0x12) {
+            FUN_1800033a0((longlong *)local_110,(longlong *)(puVar9 + 0x12),0,0xffffffffffffffff);
+          }
+          if ((undefined4 *)local_f0 != puVar9 + 0x1a) {
+            FUN_1800033a0((longlong *)local_f0,(longlong *)(puVar9 + 0x1a),0,0xffffffffffffffff);
+          }
+          local_d0 = puVar9[0x22];
+          local_cc = puVar9[0x23];
+          local_c8 = puVar9[0x24];
+          local_c4 = puVar9[0x25];
+          puVar9 = FUN_18000e250(local_2f8,&local_158);
+          lVar10 = FUN_18000ff40(param_1,(longlong)puVar9,*(int *)(param_1 + 0x11c));
+          if (local_160 != 0) {
+            cvReleaseImage(&local_160);
+            iVar6 = cvGetErrStatus();
+            if (iVar6 < 0) {
+              cvError(0xffffffff,s_release_180023030,"Inner function failed.",
+                      "..\\StitchingCommon\\include\\ImageManager.cpp");
+            }
+          }
+          local_160 = lVar10;
+          if (lVar10 == 0) goto LAB_18001175e;
+          uVar11 = _log_info_id(0);
+          LogTraceStdF(L"[Stitch_C++]fit z scale.",uVar11,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                       ,0x37);
+          uVar11 = FUN_1800102c0(param_1,local_d0,local_cc,local_1c0,local_1bc,(longlong)&local_168,
+                                 (longlong)&local_258);
+          if ((char)uVar11 != '\0') goto LAB_1800112b0;
+          uVar11 = _log_info_id(2);
+          LogTraceStdF(L"[Stitch_C++]fit z scale error.",uVar11,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                       ,0x37);
+          uVar8 = 0x2be;
+        }
+        else {
+          std::_Xout_of_range("invalid vector<T> subscript");
+LAB_1800116c7:
+          std::_Xout_of_range("invalid vector<T> subscript");
+LAB_1800116d5:
+          uVar11 = _log_info_id(2);
+          LogTraceStdF(L"[Stitch_C++]write binary image error.",uVar11,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                       ,0x37);
+          if (0xf < local_340) {
+            operator_delete((void *)CONCAT71(local_358[0]._1_7_,(undefined1)local_358[0]));
+          }
+          uVar11 = _log_info_id(2);
+          LogTraceStdF(L"[Stitch_C++]write z image error.",uVar11,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                       ,0x37);
+          uVar8 = 0x2c0;
+          if (0xf < local_190) {
+            operator_delete(local_1a8[0]);
+          }
+        }
+        goto LAB_180011804;
+      }
+LAB_1800112b0:
+      plVar14 = FUN_180007430((undefined8 *)&local_78,local_248);
+      pcVar1 = *(char **)(param_1 + 0x58);
+      local_170 = 0xf;
+      local_178 = 0;
+      local_188 = 0;
+      if (*pcVar1 == '\0') {
+        uVar16 = 0;
+      }
+      else {
+        uVar16 = 0xffffffffffffffff;
+        do {
+          uVar16 = uVar16 + 1;
+        } while (pcVar1[uVar16] != '\0');
+      }
+      FUN_1800039a0((ulonglong *)&local_188,pcVar1,uVar16);
+      plVar12 = FUN_1800151f0((undefined8 *)&local_98,(longlong *)&local_188,
+                              (undefined8 *)(param_1 + 0x390));
+      puVar13 = FUN_1800150d0((undefined8 *)&local_b8,plVar12,plVar14);
+      FUN_1800151a0(local_1a8,puVar13,".tmp");
+      if (0xf < local_a0) {
+        operator_delete((void *)CONCAT71(uStack_b7,local_b8));
+      }
+      local_a0 = 0xf;
+      local_a8 = 0;
+      local_b8 = 0;
+      if (0xf < local_80) {
+        operator_delete((void *)CONCAT71(uStack_97,local_98));
+      }
+      local_80 = 0xf;
+      local_88 = 0;
+      local_98 = 0;
+      if (0xf < local_170) {
+        operator_delete((void *)CONCAT71(uStack_187,local_188));
+      }
+      local_170 = 0xf;
+      local_178 = 0;
+      local_188 = 0;
+      if (0xf < local_60) {
+        operator_delete((void *)CONCAT71(uStack_77,local_78));
+      }
+      local_60 = 0xf;
+      local_68 = 0;
+      local_78 = 0;
+      local_340 = 0xf;
+      local_348 = 0;
+      local_358[0]._0_1_ = 0;
+      FUN_1800033a0(local_358,(longlong *)local_1a8,0,0xffffffffffffffff);
+      local_300 = (undefined1 *)local_358;
+      local_310 = 0xf;
+      local_318 = 0;
+      local_328[0] = 0;
+      FUN_1800033a0((longlong *)local_328,local_358,0,0xffffffffffffffff);
+      uVar16 = FUN_180001b00((longlong)&local_258,(longlong *)local_328);
+      if ((char)uVar16 == '\0') goto LAB_1800116d5;
+      if (0xf < local_340) {
+        operator_delete((void *)CONCAT71(local_358[0]._1_7_,(undefined1)local_358[0]));
+      }
+      if ((ulonglong)(*(longlong *)(param_1 + 0x158) - *(longlong *)(param_1 + 0x150) >> 2) <=
+          (ulonglong)(longlong)local_248) goto LAB_1800116c7;
+      uVar16 = (ulonglong)*(int *)(*(longlong *)(param_1 + 0x150) + (longlong)local_248 * 4);
+      lVar10 = FUN_1800139e0((longlong *)(param_1 + 0x170),uVar16);
+      if ((void **)(lVar10 + 0x48) != local_1a8) {
+        FUN_1800033a0((longlong *)(lVar10 + 0x48),(longlong *)local_1a8,0,0xffffffffffffffff);
+      }
+      lVar10 = FUN_1800139e0((longlong *)(param_1 + 0x188),uVar16);
+      if ((void **)(lVar10 + 0x48) != local_1a8) {
+        FUN_1800033a0((longlong *)(lVar10 + 0x48),(longlong *)local_1a8,0,0xffffffffffffffff);
+      }
+      cvMinMaxLoc(local_250,&local_368,&local_360);
+      if (local_360 <= 0.0) {
+        local_360 = 0.0;
+      }
+      if (0.0 <= local_368) {
+        local_368 = 0.0;
+      }
+      if (local_250 != 0) {
+        cvReleaseImage(&local_250);
+        iVar6 = cvGetErrStatus();
+        if (iVar6 < 0) {
+          cvError(0xffffffff,s_release_180023030,"Inner function failed.");
+        }
+      }
+      local_250 = 0;
+      if (local_160 != 0) {
+        cvReleaseImage(&local_160);
+        iVar6 = cvGetErrStatus();
+        if (iVar6 < 0) {
+          cvError(0xffffffff,s_release_180023030,"Inner function failed.");
+        }
+      }
+      local_160 = 0;
+      puVar2 = *(undefined8 **)(param_1 + 0x1e8);
+      plVar14 = *(longlong **)(param_1 + 0x210);
+      if (*(int *)((longlong)plVar14 + 0xc) != 0) {
+        *(float *)(puVar2 + 6) =
+             (float)*(int *)((longlong)plVar14 + 0xc) / (float)(int)plVar14[1] +
+             *(float *)(puVar2 + 6);
+        if ((int)plVar14[6] == 1) {
+          FUN_180007c40(plVar14);
+        }
+        else if ((int)plVar14[6] == 2) {
+          FUN_180007d70((longlong)plVar14,puVar2);
+        }
+      }
+      if (0xf < local_190) {
+        operator_delete(local_1a8[0]);
+      }
+      uVar17 = uVar17 + 1;
+      uVar15 = uVar15 + 0x98;
+    } while ((longlong)uVar17 < (longlong)iVar7);
+  }
+  pdVar5 = local_330;
+  pdVar4 = local_338;
+  iVar7 = cvGetErrStatus();
+  if (iVar7 < 0) {
+    uVar11 = _log_info_id(2);
+    LogTraceStdF(L"[Stitch_C++]OpenCV error.",uVar11,
+                 L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                 ,0x37);
+    uVar8 = 0x2be;
+  }
+  else {
+    uVar8 = FUN_1800118f0(param_1,local_360,local_368,pdVar4,pdVar5);
+    if (uVar8 != 0) {
+      uVar11 = _log_info_id(2);
+      LogTraceStdF(L"[Stitch_C++]fit z scale error.",uVar11,
+                   L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                   ,0x37);
+    }
+  }
+LAB_180011804:
+  FUN_1800072b0((longlong)&local_158);
+  local_168 = AutoIplImage::vftable;
+  if (local_160 != 0) {
+    cvReleaseImage(&local_160);
+    iVar7 = cvGetErrStatus();
+    if (iVar7 < 0) {
+      cvError(0xffffffff,s_release_180023030,"Inner function failed.",
+              "..\\StitchingCommon\\include\\ImageManager.cpp");
+    }
+  }
+  FUN_1800072b0((longlong)&local_248);
+  local_258 = AutoIplImage::vftable;
+  if (local_250 != 0) {
+    cvReleaseImage(&local_250);
+    iVar7 = cvGetErrStatus();
+    if (iVar7 < 0) {
+      cvError(0xffffffff,s_release_180023030,"Inner function failed.",
+              "..\\StitchingCommon\\include\\ImageManager.cpp");
+    }
+  }
+  return (ulonglong)uVar8;
+}
+

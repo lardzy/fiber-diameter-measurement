@@ -1,0 +1,485 @@
+EVIDENCE ev_65fec493efc403e113aea715f07bba33ccb14f9aa7c2e35d543eb784aa47a93b SHA256 842a81dbb38f2a1e73528d1c07fbff5a3f5e9351ef7d4b6fbc6a99d9c46dabb3
+
+METHOD 0x06000012 Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction ProcSHOT_SET IL_SHA256 480324f739b77fb1cb2ee2465fbc3e0f187852cfbf5d30a63753672b363dca83 DECODE_ISSUE null
+0000: newobj        0x06000059 <>c__DisplayClass1c..ctor
+0005: stloc.s       13 
+0007: ldloc.s       13 
+0009: ldarg.s       4 
+000b: stfld         0x040000b6 <>c__DisplayClass1c.target
+0010: ldstr         0x70000bf5 ">>ProcSHOT_SET()."
+0015: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+001a: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+001f: callvirt      0x0a000080 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.ClearAcquisitionShotParam
+0024: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0029: ldc.i4.0       
+002a: callvirt      0x0a000081 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AutoSaveForcedChange
+002f: ldloc.s       13 
+0031: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0036: callvirt      0x0a00002d Olympus.LI.Triumph.Application.ViewModel.UiController.get_ProcessJoin
+003b: callvirt      0x0a000041 Olympus.LI.Triumph.Application.ViewModel.ProcessJoin.SyncTransitionAcquisitionTab
+0040: ldarg.1        
+0041: ldc.i4.1       
+0042: call          0x0a00002a Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.GetParameterString
+0047: callvirt      0x0a000017 System.String.Trim
+004c: stloc.0        
+004d: ldarg.1        
+004e: ldc.i4.2       
+004f: call          0x0a00002a Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.GetParameterString
+0054: callvirt      0x0a000017 System.String.Trim
+0059: stloc.1        
+005a: ldloc.0        
+005b: ldstr         0x700001d5 "0"
+0060: call          0x0a00002b System.String.op_Inequality
+0065: brfalse.s     147 
+0067: ldloc.0        
+0068: ldstr         0x700001d9 "1"
+006d: call          0x0a00002b System.String.op_Inequality
+0072: brfalse.s     147 
+0074: ldstr         0x70000c19 "Invalid parameter. ONOFF:{0}, PATH:{1}"
+0079: ldloc.0        
+007a: ldloc.1        
+007b: call          0x0a000082 System.String.Format
+0080: call          0x0a00007c Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.WarningLog
+0085: ldarg.0        
+0086: ldarg.2        
+0087: ldarg.3        
+0088: ldstr         0x70000c67 "<<ProcSHOT_SET()."
+008d: call          0x0600001b Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendParamError
+0092: ret            
+0093: ldloc.0        
+0094: ldstr         0x700001d9 "1"
+0099: call          0x0a00002c System.String.op_Equality
+009e: brfalse.s     206 
+00a0: ldloc.1        
+00a1: newobj        0x0a000083 System.IO.FileInfo..ctor
+00a6: pop            
+00a7: leave.s       206 
+00a9: stloc.2        
+00aa: ldstr         0x70000c8b "Invalid parameter. ONOFF:{0}, PATH:{1}, exception="
+00af: ldloc.0        
+00b0: ldloc.1        
+00b1: ldloc.2        
+00b2: call          0x0a000084 System.String.Format
+00b7: call          0x0a00007c Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.WarningLog
+00bc: ldarg.0        
+00bd: ldarg.2        
+00be: ldarg.3        
+00bf: ldstr         0x70000c67 "<<ProcSHOT_SET()."
+00c4: call          0x0600001b Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendParamError
+00c9: leave         672 
+00ce: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00d3: ldsfld        0x0a000059 System.String.Empty
+00d8: callvirt      0x0a000085 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AcquisitionShotFileName
+00dd: ldloc.s       13 
+00df: ldftn         0x0600005a <>c__DisplayClass1c.<ProcSHOT_SET>b__1b
+00e5: newobj        0x0a000031 System.Action..ctor
+00ea: stloc.3        
+00eb: ldloc.0        
+00ec: dup            
+00ed: stloc.s       14 
+00ef: brfalse       1088 
+00f4: ldloc.s       14 
+00f6: ldstr         0x700001d5 "0"
+00fb: call          0x0a00002c System.String.op_Equality
+0100: brtrue.s      277 
+0102: ldloc.s       14 
+0104: ldstr         0x700001d9 "1"
+0109: call          0x0a00002c System.String.op_Equality
+010e: brtrue.s      370 
+0110: br            1088 
+0115: call          0x0a000026 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+011a: ldc.i4.s      14 
+011c: callvirt      0x0a000042 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitReset
+0121: call          0x0a000030 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Dispatcher
+0126: ldloc.3        
+0127: ldc.i4.0       
+0128: newarr        0x01000001 
+012d: callvirt      0x0a000072 System.Windows.Threading.Dispatcher.BeginInvoke
+0132: pop            
+0133: call          0x0a000026 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+0138: ldc.i4.s      14 
+013a: callvirt      0x0a000027 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWait
+013f: leave         1088 
+0144: stloc.s       4 
+0146: ldstr         0x70000cf1 "[SHOT=] target.Acquisition.SnapOperation threw the exception ("
+014b: ldloc.s       4 
+014d: callvirt      0x0a000036 System.Object.ToString
+0152: ldstr         0x70000253 ")."
+0157: call          0x0a000037 System.String.Concat
+015c: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+0161: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0166: ldc.i4.s      19 
+0168: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+016d: leave         1088 
+0172: ldc.i4.0       
+0173: stloc.s       5 
+0175: ldloc.1        
+0176: newobj        0x0a000083 System.IO.FileInfo..ctor
+017b: stloc.s       6 
+017d: ldloc.s       6 
+017f: callvirt      0x0a000086 System.IO.FileSystemInfo.get_Name
+0184: stloc.s       7 
+0186: ldsfld        0x0a000059 System.String.Empty
+018b: stloc.s       8 
+018d: ldsfld        0x0a000059 System.String.Empty
+0192: pop            
+0193: ldsfld        0x0a000059 System.String.Empty
+0198: pop            
+0199: ldc.i4.0       
+019a: stloc.s       9 
+019c: ldloc.1        
+019d: call          0x0a000087 System.IO.Path.IsPathRooted
+01a2: brfalse       569 
+01a7: ldloc.s       6 
+01a9: callvirt      0x0a000088 System.IO.FileInfo.get_DirectoryName
+01ae: stloc.s       8 
+01b0: ldloc.s       8 
+01b2: ldsfld        0x0a000059 System.String.Empty
+01b7: call          0x0a00002b System.String.op_Inequality
+01bc: brfalse.s     572 
+01be: ldloc.s       8 
+01c0: call          0x0a000074 System.IO.Directory.Exists
+01c5: brtrue.s      553 
+01c7: ldloc.s       8 
+01c9: call          0x0a000089 System.IO.Directory.CreateDirectory
+01ce: pop            
+01cf: leave.s       553 
+01d1: stloc.s       10 
+01d3: ldstr         0x70000d6f "[SHOT=] threw the exception ("
+01d8: ldloc.s       10 
+01da: callvirt      0x0a000036 System.Object.ToString
+01df: ldstr         0x70000253 ")."
+01e4: call          0x0a000037 System.String.Concat
+01e9: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+01ee: ldstr         0x70000dab "[SHOT=] StackTrace is : "
+01f3: ldloc.s       10 
+01f5: callvirt      0x0a00008a System.Exception.get_StackTrace
+01fa: call          0x0a000061 System.String.Concat
+01ff: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+0204: ldstr         0x70000ddd "[SHOT=] Directory ("
+0209: ldloc.s       8 
+020b: ldstr         0x70000e05 ") was not created."
+0210: call          0x0a000037 System.String.Concat
+0215: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+021a: ldstr         0x70000e2b "[SHOT=] So this image will be stored by using normal settings."
+021f: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+0224: ldc.i4.1       
+0225: stloc.s       5 
+0227: leave.s       553 
+0229: ldloc.s       8 
+022b: ldloc.s       7 
+022d: call          0x0a00008b Olympus.LI.Triumph.Workflow.AcquisitionDomain.AutoSaveChecker.CheckAutoSaveFolderPath
+0232: brfalse.s     572 
+0234: ldc.i4.1       
+0235: stloc.s       5 
+0237: br.s          572 
+0239: ldc.i4.1       
+023a: stloc.s       9 
+023c: ldc.i4.0       
+023d: stloc.s       11 
+023f: ldloc.s       8 
+0241: ldsfld        0x0a000059 System.String.Empty
+0246: call          0x0a00002c System.String.op_Equality
+024b: brfalse.s     706 
+024d: ldloc.s       13 
+024f: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0254: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0259: callvirt      0x0a00008c Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSavePlace
+025e: ldc.i4.1       
+025f: beq.s         638 
+0261: ldloc.s       13 
+0263: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0268: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+026d: callvirt      0x0a00008d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveFolderPath
+0272: callvirt      0x0a000017 System.String.Trim
+0277: call          0x0a000074 System.IO.Directory.Exists
+027c: brtrue.s      673 
+027e: ldstr         0x70000ea9 "The auto save path was not set."
+0283: call          0x0a00007c Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.WarningLog
+0288: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+028d: ldc.i4.8       
+028e: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+0293: ldarg.0        
+0294: ldarg.2        
+0295: ldarg.3        
+0296: ldstr         0x7000012b ""
+029b: call          0x0600001c Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendFinalReply
+02a0: ret            
+02a1: ldloc.s       13 
+02a3: ldfld         0x040000b6 <>c__DisplayClass1c.target
+02a8: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+02ad: callvirt      0x0a00008d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveFolderPath
+02b2: callvirt      0x0a000017 System.String.Trim
+02b7: ldloc.s       7 
+02b9: call          0x0a00008b Olympus.LI.Triumph.Workflow.AcquisitionDomain.AutoSaveChecker.CheckAutoSaveFolderPath
+02be: stloc.s       11 
+02c0: br.s          717 
+02c2: ldloc.s       8 
+02c4: ldloc.s       7 
+02c6: call          0x0a00008b Olympus.LI.Triumph.Workflow.AcquisitionDomain.AutoSaveChecker.CheckAutoSaveFolderPath
+02cb: stloc.s       11 
+02cd: ldloc.s       5 
+02cf: brtrue.s      725 
+02d1: ldloc.s       11 
+02d3: brfalse.s     760 
+02d5: ldstr         0x70000ee9 "Checking the file name and file path resulted in NG."
+02da: call          0x0a00007c Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.WarningLog
+02df: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+02e4: ldc.i4.3       
+02e5: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+02ea: ldarg.0        
+02eb: ldarg.2        
+02ec: ldarg.3        
+02ed: ldstr         0x7000012b ""
+02f2: call          0x0600001c Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendFinalReply
+02f7: ret            
+02f8: ldloc.s       13 
+02fa: ldfld         0x040000b6 <>c__DisplayClass1c.target
+02ff: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0304: callvirt      0x0a00008e Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveCheck
+0309: brtrue        947 
+030e: ldloc.s       9 
+0310: brfalse.s     848 
+0312: ldloc.s       13 
+0314: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0319: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+031e: callvirt      0x0a00008d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveFolderPath
+0323: ldsfld        0x0a000059 System.String.Empty
+0328: call          0x0a00002c System.String.op_Equality
+032d: brfalse.s     829 
+032f: ldarg.0        
+0330: ldarg.2        
+0331: ldarg.3        
+0332: ldstr         0x70000c67 "<<ProcSHOT_SET()."
+0337: call          0x0600001b Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendParamError
+033c: ret            
+033d: ldloc.s       13 
+033f: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0344: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0349: callvirt      0x0a00008d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveFolderPath
+034e: stloc.s       8 
+0350: ldloc.s       13 
+0352: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0357: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+035c: callvirt      0x0a00008d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveFolderPath
+0361: pop            
+0362: ldloc.s       13 
+0364: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0369: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+036e: callvirt      0x0a00008f Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AutoSaveFileName
+0373: pop            
+0374: call          0x0a000026 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+0379: ldc.i4.s      17 
+037b: callvirt      0x0a000042 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitReset
+0380: ldloc.s       13 
+0382: ldfld         0x040000b6 <>c__DisplayClass1c.target
+0387: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+038c: ldc.i4.1       
+038d: callvirt      0x0a000076 Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_AutoSaveCheck
+0392: ldstr         0x70000f53 "AutoSave=ON.Wait"
+0397: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+039c: call          0x0a000026 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+03a1: ldc.i4.s      17 
+03a3: callvirt      0x0a000027 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWait
+03a8: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+03ad: ldc.i4.1       
+03ae: callvirt      0x0a000081 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AutoSaveForcedChange
+03b3: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+03b8: ldloc.s       7 
+03ba: callvirt      0x0a000085 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AcquisitionShotFileName
+03bf: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+03c4: ldloc.s       8 
+03c6: callvirt      0x0a000090 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AcquisitionShotFilePath
+03cb: call          0x0a000026 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+03d0: ldc.i4.s      14 
+03d2: callvirt      0x0a000042 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWaitReset
+03d7: ldstr         0x70000f75 "AutoSave=CHATSAVEUNDO.RESET"
+03dc: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+03e1: ldstr         0x70000fad "AutoSave=Shot Invoke"
+03e6: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+03eb: call          0x0a000030 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Dispatcher
+03f0: ldloc.3        
+03f1: ldc.i4.0       
+03f2: newarr        0x01000001 
+03f7: callvirt      0x0a000072 System.Windows.Threading.Dispatcher.BeginInvoke
+03fc: pop            
+03fd: ldstr         0x70000fd7 "AutoSave=Shot Wait"
+0402: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+0407: call          0x0a000026 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.get_Instance
+040c: ldc.i4.s      14 
+040e: callvirt      0x0a000027 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.CommandWait
+0413: leave.s       1088 
+0415: stloc.s       12 
+0417: ldstr         0x70000cf1 "[SHOT=] target.Acquisition.SnapOperation threw the exception ("
+041c: ldloc.s       12 
+041e: callvirt      0x0a000036 System.Object.ToString
+0423: ldstr         0x70000253 ")."
+0428: call          0x0a000037 System.String.Concat
+042d: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+0432: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0437: ldc.i4.s      19 
+0439: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+043e: leave.s       1088 
+0440: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0445: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+044a: brfalse.s     1115 
+044c: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0451: ldsfld        0x0a000059 System.String.Empty
+0456: callvirt      0x0a000085 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.set_AcquisitionShotFileName
+045b: ldarg.0        
+045c: ldarg.2        
+045d: ldarg.3        
+045e: ldstr         0x7000012b ""
+0463: call          0x0600001c Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendFinalReply
+0468: ldstr         0x70000c67 "<<ProcSHOT_SET()."
+046d: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+0472: ret            
+
+METHOD 0x06000014 Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction ProcENDSHOT_SET IL_SHA256 ff0cb2fb9e8279bc877ce5e054a135eaae5873b743010632918a0d1552af0081 DECODE_ISSUE null
+0000: ldstr         0x70001051 ">>ProcENDSHOT_SET()."
+0005: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+000a: ldarg.1        
+000b: ldc.i4.1       
+000c: call          0x0a00002a Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.GetParameterString
+0011: callvirt      0x0a000017 System.String.Trim
+0016: stloc.0        
+0017: ldloc.0        
+0018: ldsfld        0x0a000059 System.String.Empty
+001d: call          0x0a00002c System.String.op_Equality
+0022: brtrue.s      49 
+0024: ldloc.0        
+0025: ldstr         0x700001d5 "0"
+002a: call          0x0a00002b System.String.op_Inequality
+002f: brfalse.s     63 
+0031: ldarg.0        
+0032: ldarg.2        
+0033: ldarg.3        
+0034: ldstr         0x7000107b "<<ProcENDSHOT_SET()."
+0039: call          0x0600001b Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendParamError
+003e: ret            
+003f: ldarg.s       4 
+0041: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0046: callvirt      0x0a00007d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AcquisitionMode
+004b: ldc.i4.1       
+004c: bne.un.s      92 
+004e: ldarg.s       4 
+0050: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0055: callvirt      0x0a000092 Olympus.LI.Triumph.Application.ViewModel.Acquisition.StopExtend
+005a: br.s          119 
+005c: ldarg.s       4 
+005e: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0063: callvirt      0x0a00007d Olympus.LI.Triumph.Application.ViewModel.Acquisition.get_AcquisitionMode
+0068: brtrue.s      119 
+006a: ldarg.s       4 
+006c: callvirt      0x0a000048 Olympus.LI.Triumph.Application.ViewModel.UiController.get_Acquisition
+0071: ldc.i4.0       
+0072: callvirt      0x0a00007e Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_SnapOperation
+0077: leave.s       162 
+0079: stloc.1        
+007a: ldstr         0x700010a5 "[ENDSHOT=] threw the exception ("
+007f: ldloc.1        
+0080: callvirt      0x0a000036 System.Object.ToString
+0085: ldstr         0x70000253 ")."
+008a: call          0x0a000037 System.String.Concat
+008f: call          0x0a000038 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.ErrorLog
+0094: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0099: ldc.i4.s      19 
+009b: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+00a0: leave.s       162 
+00a2: ldarg.0        
+00a3: ldarg.2        
+00a4: ldarg.3        
+00a5: ldstr         0x7000012b ""
+00aa: call          0x0600001c Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendFinalReply
+00af: ldstr         0x7000107b "<<ProcENDSHOT_SET()."
+00b4: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+00b9: ret            
+
+METHOD 0x06000018 Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction ProcGETERRCODE_REQ IL_SHA256 0fcd20581e4472e17d1216bfc0f094c186abf10a7ad58edd34be87f34085ee85 DECODE_ISSUE null
+0000: ldstr         0x700013f9 ">>ProcGETERRCODE_REQ()."
+0005: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+000a: ldarg.0        
+000b: ldarg.2        
+000c: ldarg.3        
+000d: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0012: callvirt      0x0a0000a2 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_ErrorCode
+0017: box           0x01000039 
+001c: callvirt      0x0a000036 System.Object.ToString
+0021: call          0x0600001c Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction._SendFinalReply
+0026: ldstr         0x70001429 "<<ProcGETERRCODE_REQ()."
+002b: call          0x0a000011 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandManager.DebugLog
+0030: ret            
+
+METHOD 0x0600001c Olympus.LI.Triumph.Rdk.RdkMicroscopeControl.CCommandAction _SendFinalReply IL_SHA256 8b05a993c57b166fac61bbb561727006a1b213b3fbffea1437d32c5dfd367b74 DECODE_ISSUE null
+0000: ldsfld        0x0a000059 System.String.Empty
+0005: stloc.0        
+0006: call          0x0a0000a7 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.ReadRdkErrorCode
+000b: stloc.1        
+000c: ldloc.1        
+000d: stloc.2        
+000e: ldloc.2        
+000f: switch        8 
+0034: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0039: ldc.i4.s      19 
+003b: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+0040: br.s          77 
+0042: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0047: ldc.i4.1       
+0048: callvirt      0x0a000023 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.SetErrorCode
+004d: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0052: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+0057: brtrue.s      101 
+0059: ldarg.1        
+005a: ldc.i4.s      -2 
+005c: ldarg.3        
+005d: callvirt      0x0a0000a8 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandInfo.CreateFinalReplyCommandString
+0062: stloc.0        
+0063: br.s          209 
+0065: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+006a: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+006f: ldc.i4.3       
+0070: beq.s         141 
+0072: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0077: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+007c: ldc.i4.7       
+007d: beq.s         141 
+007f: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+0084: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+0089: ldc.i4.s      9 
+008b: bne.un.s      152 
+008d: ldarg.1        
+008e: ldc.i4.0       
+008f: ldarg.3        
+0090: callvirt      0x0a0000a8 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandInfo.CreateFinalReplyCommandString
+0095: stloc.0        
+0096: br.s          209 
+0098: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+009d: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+00a2: ldc.i4.8       
+00a3: bne.un.s      176 
+00a5: ldarg.1        
+00a6: ldc.i4.1       
+00a7: ldarg.3        
+00a8: callvirt      0x0a0000a8 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandInfo.CreateFinalReplyCommandString
+00ad: stloc.0        
+00ae: br.s          209 
+00b0: call          0x0a000022 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_Instance
+00b5: callvirt      0x0a000043 Olympus.LI.Triumph.Rdk.RdkData.CRdkDataManager.get_CurrentCommandActionError
+00ba: ldc.i4.4       
+00bb: bne.un.s      200 
+00bd: ldarg.1        
+00be: ldc.i4.2       
+00bf: ldarg.3        
+00c0: callvirt      0x0a0000a8 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandInfo.CreateFinalReplyCommandString
+00c5: stloc.0        
+00c6: br.s          209 
+00c8: ldarg.1        
+00c9: ldc.i4.3       
+00ca: ldarg.3        
+00cb: callvirt      0x0a0000a8 Olympus.LI.Triumph.Rdk.RdkData.CRdkCommandInfo.CreateFinalReplyCommandString
+00d0: stloc.0        
+00d1: ldarg.2        
+00d2: ldloc.0        
+00d3: callvirt      0x0a0000a9 Olympus.LI.Triumph.Rdk.RdkClient.CAsyncSocketServer.SendAll
+00d8: pop            
+00d9: ret            

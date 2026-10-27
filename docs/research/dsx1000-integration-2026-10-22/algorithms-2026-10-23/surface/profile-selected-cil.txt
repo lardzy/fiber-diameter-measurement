@@ -1,0 +1,1535 @@
+EVIDENCE ev_951d2e8f1c32aff2a9b533e814e57a9386c0d3ba51a8c4e67a59a326b9c843bf SHA256 af324fc21fdf0999526e36169e38ec31c04a959609ee5f70e190b64c2d25b817
+
+METHOD 0x06000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel DrawControlSpline IL_SHA256 ef250e9a71997abfd50d21ec182b0cb60f0588246044354e5f5c8b9324c1712b DECODE_ISSUE null
+0000: ldarg.1        
+0001: brtrue.s      23 
+0003: ldarg.3        
+0004: newarr        0x010000be 
+0009: stloc.0        
+000a: ldarg.0        
+000b: ldloca.s      0 
+000d: ldarg.2        
+000e: ldarg.3        
+000f: call          0x0600009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalcSplineX
+0014: stloc.0        
+0015: br.s          43 
+0017: ldarg.s       4 
+0019: newarr        0x010000be 
+001e: stloc.0        
+001f: ldarg.0        
+0020: ldloca.s      0 
+0022: ldarg.2        
+0023: ldarg.s       4 
+0025: call          0x0600009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalcSplineY
+002a: stloc.0        
+002b: ldloc.0        
+002c: ret            
+
+METHOD 0x0600009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalcSplineX IL_SHA256 b6c29f35525d506baccc360e508519af040ef91704688003442d12593aafb9ac DECODE_ISSUE null
+0000: ldc.i4.2       
+0001: stloc.0        
+0002: ldloc.0        
+0003: ldc.i4.1       
+0004: add            
+0005: newarr        0x010000b1 
+000a: stloc.1        
+000b: ldarg.3        
+000c: newarr        0x010000b1 
+0011: stloc.2        
+0012: ldarg.3        
+0013: newarr        0x010000b1 
+0018: stloc.3        
+0019: ldc.i4.0       
+001a: stloc.s       4 
+001c: br.s          52 
+001e: ldloc.3        
+001f: ldloc.s       4 
+0021: ldarg.2        
+0022: ldloc.s       4 
+0024: ldelem.u2      
+0025: conv.r8        
+0026: stelem.r8      
+0027: ldloc.2        
+0028: ldloc.s       4 
+002a: ldloc.s       4 
+002c: conv.r8        
+002d: stelem.r8      
+002e: ldloc.s       4 
+0030: ldc.i4.1       
+0031: add            
+0032: stloc.s       4 
+0034: ldloc.s       4 
+0036: ldarg.3        
+0037: blt.s         30 
+0039: ldarg.0        
+003a: ldloca.s      2 
+003c: ldloca.s      3 
+003e: ldarg.3        
+003f: ldloc.0        
+0040: ldc.i4.1       
+0041: add            
+0042: ldloca.s      1 
+0044: call          0x060000ad Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.buildpolynomialleastsquares
+0049: ldc.i4.0       
+004a: stloc.s       5 
+004c: br.s          170 
+004e: ldloc.1        
+004f: ldc.i4.2       
+0050: ldelem.r8      
+0051: ldloc.2        
+0052: ldloc.s       5 
+0054: ldelem.r8      
+0055: mul            
+0056: ldloc.2        
+0057: ldloc.s       5 
+0059: ldelem.r8      
+005a: mul            
+005b: ldloc.1        
+005c: ldc.i4.1       
+005d: ldelem.r8      
+005e: ldloc.2        
+005f: ldloc.s       5 
+0061: ldelem.r8      
+0062: mul            
+0063: add            
+0064: ldloc.1        
+0065: ldc.i4.0       
+0066: ldelem.r8      
+0067: add            
+0068: stloc.s       6 
+006a: ldloc.s       6 
+006c: ldc.r8        65535 
+0075: ble.un.s      132 
+0077: ldc.r8        65535 
+0080: stloc.s       6 
+0082: br.s          156 
+0084: ldloc.s       6 
+0086: ldc.r8        0 
+008f: bge.un.s      156 
+0091: ldc.r8        0 
+009a: stloc.s       6 
+009c: ldarg.1        
+009d: ldind.ref      
+009e: ldloc.s       5 
+00a0: ldloc.s       6 
+00a2: conv.u2        
+00a3: stelem.i2      
+00a4: ldloc.s       5 
+00a6: ldc.i4.1       
+00a7: add            
+00a8: stloc.s       5 
+00aa: ldloc.s       5 
+00ac: ldarg.3        
+00ad: blt.s         78 
+00af: ldarg.1        
+00b0: ldind.ref      
+00b1: ret            
+
+METHOD 0x0600009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalcSplineY IL_SHA256 b6c29f35525d506baccc360e508519af040ef91704688003442d12593aafb9ac DECODE_ISSUE null
+0000: ldc.i4.2       
+0001: stloc.0        
+0002: ldloc.0        
+0003: ldc.i4.1       
+0004: add            
+0005: newarr        0x010000b1 
+000a: stloc.1        
+000b: ldarg.3        
+000c: newarr        0x010000b1 
+0011: stloc.2        
+0012: ldarg.3        
+0013: newarr        0x010000b1 
+0018: stloc.3        
+0019: ldc.i4.0       
+001a: stloc.s       4 
+001c: br.s          52 
+001e: ldloc.3        
+001f: ldloc.s       4 
+0021: ldarg.2        
+0022: ldloc.s       4 
+0024: ldelem.u2      
+0025: conv.r8        
+0026: stelem.r8      
+0027: ldloc.2        
+0028: ldloc.s       4 
+002a: ldloc.s       4 
+002c: conv.r8        
+002d: stelem.r8      
+002e: ldloc.s       4 
+0030: ldc.i4.1       
+0031: add            
+0032: stloc.s       4 
+0034: ldloc.s       4 
+0036: ldarg.3        
+0037: blt.s         30 
+0039: ldarg.0        
+003a: ldloca.s      2 
+003c: ldloca.s      3 
+003e: ldarg.3        
+003f: ldloc.0        
+0040: ldc.i4.1       
+0041: add            
+0042: ldloca.s      1 
+0044: call          0x060000ad Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel.buildpolynomialleastsquares
+0049: ldc.i4.0       
+004a: stloc.s       5 
+004c: br.s          170 
+004e: ldloc.1        
+004f: ldc.i4.2       
+0050: ldelem.r8      
+0051: ldloc.2        
+0052: ldloc.s       5 
+0054: ldelem.r8      
+0055: mul            
+0056: ldloc.2        
+0057: ldloc.s       5 
+0059: ldelem.r8      
+005a: mul            
+005b: ldloc.1        
+005c: ldc.i4.1       
+005d: ldelem.r8      
+005e: ldloc.2        
+005f: ldloc.s       5 
+0061: ldelem.r8      
+0062: mul            
+0063: add            
+0064: ldloc.1        
+0065: ldc.i4.0       
+0066: ldelem.r8      
+0067: add            
+0068: stloc.s       6 
+006a: ldloc.s       6 
+006c: ldc.r8        65535 
+0075: ble.un.s      132 
+0077: ldc.r8        65535 
+0080: stloc.s       6 
+0082: br.s          156 
+0084: ldloc.s       6 
+0086: ldc.r8        0 
+008f: bge.un.s      156 
+0091: ldc.r8        0 
+009a: stloc.s       6 
+009c: ldarg.1        
+009d: ldind.ref      
+009e: ldloc.s       5 
+00a0: ldloc.s       6 
+00a2: conv.u2        
+00a3: stelem.i2      
+00a4: ldloc.s       5 
+00a6: ldc.i4.1       
+00a7: add            
+00a8: stloc.s       5 
+00aa: ldloc.s       5 
+00ac: ldarg.3        
+00ad: blt.s         78 
+00af: ldarg.1        
+00b0: ldind.ref      
+00b1: ret            
+
+METHOD 0x0600009c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel ExecuteCurvedSurfaceManualProfileCompensation IL_SHA256 3dd1d57ebcc103db22ea111e104fe08f33dc3fed9d6bb71bd81f0eaa07191d65 DECODE_ISSUE null
+0000: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldarg.s       13 
+0008: brfalse.s     26 
+000a: ldarg.3        
+000b: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0010: ldarg.1        
+0011: ldind.ref      
+0012: ldc.i4.0       
+0013: callvirt      0x0a00008a System.Array.CopyTo
+0018: br.s          40 
+001a: ldarg.2        
+001b: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0020: ldarg.1        
+0021: ldind.ref      
+0022: ldc.i4.0       
+0023: callvirt      0x0a00008a System.Array.CopyTo
+0028: ldc.i4.3       
+0029: newarr        0x010000b1 
+002e: stloc.1        
+002f: ldc.i4.3       
+0030: newarr        0x010000b1 
+0035: stloc.2        
+0036: ldc.i4.0       
+0037: stloc.s       5 
+0039: br            212 
+003e: ldloc.1        
+003f: ldloc.s       5 
+0041: ldarg.s       6 
+0043: ldloc.s       5 
+0045: ldelema       0x01000044 
+004a: call          0x0a00007f System.Windows.Point.get_X
+004f: stelem.r8      
+0050: ldloc.2        
+0051: ldloc.s       5 
+0053: ldarg.s       6 
+0055: ldloc.s       5 
+0057: ldelema       0x01000044 
+005c: call          0x0a000081 System.Windows.Point.get_Y
+0061: stelem.r8      
+0062: ldarg.s       6 
+0064: ldc.i4.0       
+0065: ldelema       0x01000044 
+006a: call          0x0a000081 System.Windows.Point.get_Y
+006f: ldc.r8        0 
+0078: bne.un.s      206 
+007a: ldarg.s       6 
+007c: ldc.i4.1       
+007d: ldelema       0x01000044 
+0082: call          0x0a000081 System.Windows.Point.get_Y
+0087: ldc.r8        0 
+0090: bne.un.s      206 
+0092: ldarg.s       6 
+0094: ldc.i4.2       
+0095: ldelema       0x01000044 
+009a: call          0x0a000081 System.Windows.Point.get_Y
+009f: ldc.r8        0 
+00a8: bne.un.s      206 
+00aa: ldloc.1        
+00ab: ldloc.s       5 
+00ad: ldarg.s       7 
+00af: ldloc.s       5 
+00b1: ldelema       0x01000044 
+00b6: call          0x0a00007f System.Windows.Point.get_X
+00bb: stelem.r8      
+00bc: ldloc.2        
+00bd: ldloc.s       5 
+00bf: ldarg.s       7 
+00c1: ldloc.s       5 
+00c3: ldelema       0x01000044 
+00c8: call          0x0a000081 System.Windows.Point.get_Y
+00cd: stelem.r8      
+00ce: ldloc.s       5 
+00d0: ldc.i4.1       
+00d1: add            
+00d2: stloc.s       5 
+00d4: ldloc.s       5 
+00d6: ldc.i4.3       
+00d7: blt           62 
+00dc: ldarg.s       4 
+00de: newarr        0x010000b1 
+00e3: stloc.3        
+00e4: ldarg.s       11 
+00e6: ldarg.0        
+00e7: ldc.i4.0       
+00e8: ldloca.s      1 
+00ea: ldloca.s      2 
+00ec: ldloca.s      3 
+00ee: ldarg.s       4 
+00f0: conv.r8        
+00f1: ldarg.s       5 
+00f3: conv.r8        
+00f4: call          0x0600009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CreateSplineCorrectionData
+00f9: stind.ref      
+00fa: ldc.i4.0       
+00fb: stloc.s       6 
+00fd: br            408 
+0102: ldloc.1        
+0103: ldloc.s       6 
+0105: ldarg.s       7 
+0107: ldloc.s       6 
+0109: ldelema       0x01000044 
+010e: call          0x0a00007f System.Windows.Point.get_X
+0113: stelem.r8      
+0114: ldloc.2        
+0115: ldloc.s       6 
+0117: ldarg.s       7 
+0119: ldloc.s       6 
+011b: ldelema       0x01000044 
+0120: call          0x0a000081 System.Windows.Point.get_Y
+0125: stelem.r8      
+0126: ldarg.s       7 
+0128: ldc.i4.0       
+0129: ldelema       0x01000044 
+012e: call          0x0a000081 System.Windows.Point.get_Y
+0133: ldc.r8        0 
+013c: bne.un.s      402 
+013e: ldarg.s       7 
+0140: ldc.i4.1       
+0141: ldelema       0x01000044 
+0146: call          0x0a000081 System.Windows.Point.get_Y
+014b: ldc.r8        0 
+0154: bne.un.s      402 
+0156: ldarg.s       7 
+0158: ldc.i4.2       
+0159: ldelema       0x01000044 
+015e: call          0x0a000081 System.Windows.Point.get_Y
+0163: ldc.r8        0 
+016c: bne.un.s      402 
+016e: ldloc.1        
+016f: ldloc.s       6 
+0171: ldarg.s       6 
+0173: ldloc.s       6 
+0175: ldelema       0x01000044 
+017a: call          0x0a00007f System.Windows.Point.get_X
+017f: stelem.r8      
+0180: ldloc.2        
+0181: ldloc.s       6 
+0183: ldarg.s       6 
+0185: ldloc.s       6 
+0187: ldelema       0x01000044 
+018c: call          0x0a000081 System.Windows.Point.get_Y
+0191: stelem.r8      
+0192: ldloc.s       6 
+0194: ldc.i4.1       
+0195: add            
+0196: stloc.s       6 
+0198: ldloc.s       6 
+019a: ldc.i4.3       
+019b: blt           258 
+01a0: ldarg.s       5 
+01a2: newarr        0x010000b1 
+01a7: stloc.s       4 
+01a9: ldarg.s       11 
+01ab: ldarg.0        
+01ac: ldc.i4.1       
+01ad: ldloca.s      1 
+01af: ldloca.s      2 
+01b1: ldloca.s      4 
+01b3: ldarg.s       4 
+01b5: conv.r8        
+01b6: ldarg.s       5 
+01b8: conv.r8        
+01b9: call          0x0600009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CreateSplineCorrectionData
+01be: stind.ref      
+01bf: ldarg.s       8 
+01c1: brtrue.s      494 
+01c3: ldarg.0        
+01c4: ldloc.3        
+01c5: ldarg.1        
+01c6: ldarg.s       8 
+01c8: ldarg.s       4 
+01ca: ldarg.s       5 
+01cc: ldarg.s       9 
+01ce: ldarg.s       10 
+01d0: call          0x0600009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateAvg
+01d5: stloc.s       7 
+01d7: ldarg.0        
+01d8: ldarg.s       4 
+01da: ldarg.s       5 
+01dc: ldc.i4.0       
+01dd: ldloca.s      3 
+01df: ldloca.s      4 
+01e1: ldarg.1        
+01e2: ldloc.s       7 
+01e4: call          0x060000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._ApplyOffsetOfCurvedSurfaceCompensationManualMode
+01e9: br            755 
+01ee: ldarg.s       8 
+01f0: ldc.i4.1       
+01f1: bne.un.s      550 
+01f3: ldloc.s       4 
+01f5: call          0x0a000095 System.Array.Reverse
+01fa: ldarg.0        
+01fb: ldloc.s       4 
+01fd: ldarg.1        
+01fe: ldarg.s       8 
+0200: ldarg.s       4 
+0202: ldarg.s       5 
+0204: ldarg.s       9 
+0206: ldarg.s       10 
+0208: call          0x0600009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateAvg
+020d: stloc.s       8 
+020f: ldarg.0        
+0210: ldarg.s       4 
+0212: ldarg.s       5 
+0214: ldc.i4.1       
+0215: ldloca.s      3 
+0217: ldloca.s      4 
+0219: ldarg.1        
+021a: ldloc.s       8 
+021c: call          0x060000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._ApplyOffsetOfCurvedSurfaceCompensationManualMode
+0221: br            755 
+0226: ldc.i4.0       
+0227: starg.s       8 
+0229: ldarg.s       6 
+022b: ldc.i4.0       
+022c: ldelema       0x01000044 
+0231: call          0x0a000081 System.Windows.Point.get_Y
+0236: ldarg.s       6 
+0238: ldc.i4.1       
+0239: ldelema       0x01000044 
+023e: call          0x0a000081 System.Windows.Point.get_Y
+0243: bne.un.s      609 
+0245: ldarg.s       6 
+0247: ldc.i4.1       
+0248: ldelema       0x01000044 
+024d: call          0x0a000081 System.Windows.Point.get_Y
+0252: ldarg.s       6 
+0254: ldc.i4.2       
+0255: ldelema       0x01000044 
+025a: call          0x0a000081 System.Windows.Point.get_Y
+025f: beq.s         647 
+0261: ldarg.0        
+0262: ldloc.3        
+0263: ldarg.1        
+0264: ldarg.s       8 
+0266: ldarg.s       4 
+0268: ldarg.s       5 
+026a: ldarg.s       9 
+026c: ldarg.s       10 
+026e: call          0x0600009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateAvg
+0273: stloc.s       9 
+0275: ldarg.0        
+0276: ldarg.s       4 
+0278: ldarg.s       5 
+027a: ldc.i4.0       
+027b: ldloca.s      3 
+027d: ldloca.s      4 
+027f: ldarg.1        
+0280: ldloc.s       9 
+0282: call          0x060000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._ApplyOffsetOfCurvedSurfaceCompensationManualMode
+0287: ldc.i4.1       
+0288: starg.s       8 
+028a: ldarg.s       7 
+028c: ldc.i4.0       
+028d: ldelema       0x01000044 
+0292: call          0x0a000081 System.Windows.Point.get_Y
+0297: ldarg.s       7 
+0299: ldc.i4.1       
+029a: ldelema       0x01000044 
+029f: call          0x0a000081 System.Windows.Point.get_Y
+02a4: bne.un.s      706 
+02a6: ldarg.s       7 
+02a8: ldc.i4.1       
+02a9: ldelema       0x01000044 
+02ae: call          0x0a000081 System.Windows.Point.get_Y
+02b3: ldarg.s       7 
+02b5: ldc.i4.2       
+02b6: ldelema       0x01000044 
+02bb: call          0x0a000081 System.Windows.Point.get_Y
+02c0: beq.s         752 
+02c2: ldloc.s       4 
+02c4: call          0x0a000095 System.Array.Reverse
+02c9: ldarg.0        
+02ca: ldloc.s       4 
+02cc: ldarg.1        
+02cd: ldarg.s       8 
+02cf: ldarg.s       4 
+02d1: ldarg.s       5 
+02d3: ldarg.s       9 
+02d5: ldarg.s       10 
+02d7: call          0x0600009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalculateAvg
+02dc: stloc.s       10 
+02de: ldarg.0        
+02df: ldarg.s       4 
+02e1: ldarg.s       5 
+02e3: ldc.i4.1       
+02e4: ldloca.s      3 
+02e6: ldloca.s      4 
+02e8: ldarg.1        
+02e9: ldloc.s       10 
+02eb: call          0x060000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._ApplyOffsetOfCurvedSurfaceCompensationManualMode
+02f0: ldc.i4.2       
+02f1: starg.s       8 
+02f3: ldarg.s       12 
+02f5: ldloc.0        
+02f6: ldarg.1        
+02f7: ldind.ref      
+02f8: ldarg.s       4 
+02fa: ldarg.s       5 
+02fc: ldarg.s       4 
+02fe: ldarg.s       5 
+0300: ldarg.3        
+0301: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0306: callvirt      0x0a00008b OpenCVWrapper.IImageProcessingCommonWrapper.RescaleInclinedHeightData
+030b: stind.r8       
+030c: ret            
+
+METHOD 0x0600009d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CreateSplineCorrectionData IL_SHA256 6cdf0eaf8c73ebb55bb4aff283c71f6dfbe5893c0b5aa2b18aae16da7076ea5c DECODE_ISSUE null
+0000: ldarg.s       6 
+0002: conv.i2        
+0003: stloc.0        
+0004: ldarg.1        
+0005: brtrue.s      11 
+0007: ldarg.s       5 
+0009: conv.i2        
+000a: stloc.0        
+000b: ldloc.0        
+000c: newarr        0x010000b1 
+0011: stloc.1        
+0012: ldloc.0        
+0013: newarr        0x010000b1 
+0018: stloc.2        
+0019: ldarg.0        
+001a: ldarg.2        
+001b: ldarg.3        
+001c: ldc.i4.0       
+001d: ldloc.0        
+001e: ldloca.s      1 
+0020: ldloca.s      2 
+0022: call          0x0600009e Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._CalcSpline
+0027: ldc.i4.0       
+0028: stloc.3        
+0029: br.s          56 
+002b: ldarg.s       4 
+002d: ldind.ref      
+002e: ldloc.3        
+002f: ldloc.1        
+0030: ldloc.3        
+0031: ldelem.r8      
+0032: conv.r8        
+0033: stelem.r8      
+0034: ldloc.3        
+0035: ldc.i4.1       
+0036: add            
+0037: stloc.3        
+0038: ldloc.3        
+0039: ldloc.0        
+003a: blt.s         43 
+003c: ldloc.2        
+003d: ret            
+
+METHOD 0x0600009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _CalculateAvg IL_SHA256 27b30287c4bce5574bdce62b2d74faa1f6480b2136b27debf1cf027ceb5eb263 DECODE_ISSUE null
+0000: ldc.r8        0 
+0009: stloc.0        
+000a: ldc.i4.0       
+000b: stloc.1        
+000c: br.s          24 
+000e: ldloc.0        
+000f: ldarg.1        
+0010: ldloc.1        
+0011: ldelem.r8      
+0012: add            
+0013: stloc.0        
+0014: ldloc.1        
+0015: ldc.i4.1       
+0016: add            
+0017: stloc.1        
+0018: ldloc.1        
+0019: ldarg.1        
+001a: ldlen          
+001b: conv.i4        
+001c: blt.s         14 
+001e: ldloc.0        
+001f: ldarg.1        
+0020: ldlen          
+0021: conv.i4        
+0022: conv.r8        
+0023: div            
+0024: stloc.0        
+0025: ldloc.0        
+0026: ret            
+
+METHOD 0x060000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _ApplyOffsetOfCurvedSurfaceCompensationManualMode IL_SHA256 4ac70c79ae09eff4452ef37c20906148f29a1626f97f4dee9e4fe4c449f62800 DECODE_ISSUE null
+0000: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldc.i4.0       
+0007: stloc.1        
+0008: ldc.i4.0       
+0009: stloc.2        
+000a: ldarg.0        
+000b: ldarg.3        
+000c: ldloca.s      1 
+000e: ldloca.s      2 
+0010: ldarg.1        
+0011: ldarg.2        
+0012: call          0x060000a1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel._GetIMaxAndJMax
+0017: ldarg.3        
+0018: brtrue.s      77 
+001a: ldarg.1        
+001b: newarr        0x010000bd 
+0020: stloc.3        
+0021: ldc.i4.0       
+0022: stloc.s       4 
+0024: br.s          59 
+0026: ldloc.3        
+0027: ldloc.s       4 
+0029: ldarg.s       4 
+002b: ldind.ref      
+002c: ldloc.s       4 
+002e: ldelem.r8      
+002f: neg            
+0030: ldarg.s       7 
+0032: add            
+0033: conv.r4        
+0034: stelem.r4      
+0035: ldloc.s       4 
+0037: ldc.i4.1       
+0038: add            
+0039: stloc.s       4 
+003b: ldloc.s       4 
+003d: ldarg.1        
+003e: blt.s         38 
+0040: ldloc.0        
+0041: ldarg.s       6 
+0043: ldind.ref      
+0044: ldarg.1        
+0045: ldarg.2        
+0046: ldloc.3        
+0047: callvirt      0x0a000092 OpenCVWrapper.IImageProcessingCommonWrapper.InclineX
+004c: ret            
+004d: ldarg.2        
+004e: newarr        0x010000bd 
+0053: stloc.3        
+0054: ldc.i4.0       
+0055: stloc.s       5 
+0057: br.s          110 
+0059: ldloc.3        
+005a: ldloc.s       5 
+005c: ldarg.s       5 
+005e: ldind.ref      
+005f: ldloc.s       5 
+0061: ldelem.r8      
+0062: neg            
+0063: ldarg.s       7 
+0065: add            
+0066: conv.r4        
+0067: stelem.r4      
+0068: ldloc.s       5 
+006a: ldc.i4.1       
+006b: add            
+006c: stloc.s       5 
+006e: ldloc.s       5 
+0070: ldarg.2        
+0071: blt.s         89 
+0073: ldloc.0        
+0074: ldarg.s       6 
+0076: ldind.ref      
+0077: ldarg.1        
+0078: ldarg.2        
+0079: ldloc.3        
+007a: callvirt      0x0a000093 OpenCVWrapper.IImageProcessingCommonWrapper.InclineY
+007f: ret            
+
+METHOD 0x060000a1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.InclinationCorrectionModel _GetIMaxAndJMax IL_SHA256 e08b0e6711f89db7c618024136458367eb768174d2c910d464ed4f921c061c8f DECODE_ISSUE null
+0000: ldarg.2        
+0001: ldarg.s       5 
+0003: stind.i2       
+0004: ldarg.3        
+0005: ldarg.s       4 
+0007: stind.i2       
+0008: ldarg.1        
+0009: ldc.i4.1       
+000a: bne.un.s      20 
+000c: ldarg.2        
+000d: ldarg.s       4 
+000f: stind.i2       
+0010: ldarg.3        
+0011: ldarg.s       5 
+0013: stind.i2       
+0014: ret            
+
+METHOD 0x06000102 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _CalculateProfileDataOneShot IL_SHA256 67bf210c106dfe8fcf06eefe7d115c3480bd06d22a6427e2055a4ed3dffe14b0 DECODE_ISSUE null
+0000: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldarg.2        
+0007: ldarg.0        
+0008: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+000d: callvirt      0x0a00001c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+0012: stloc.1        
+0013: ldarg.2        
+0014: ldarg.0        
+0015: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+001a: callvirt      0x0a00001d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+001f: stloc.2        
+0020: ldarg.0        
+0021: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+0026: brfalse.s     51 
+0028: ldarg.0        
+0029: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+002e: ldlen          
+002f: conv.i4        
+0030: ldloc.2        
+0031: beq.s         63 
+0033: ldarg.0        
+0034: ldloc.2        
+0035: newarr        0x010000b1 
+003a: stfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+003f: ldarg.0        
+0040: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0045: brfalse.s     82 
+0047: ldarg.0        
+0048: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+004d: ldlen          
+004e: conv.i4        
+004f: ldloc.1        
+0050: beq.s         94 
+0052: ldarg.0        
+0053: ldloc.1        
+0054: newarr        0x010000b1 
+0059: stfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+005e: ldarg.1        
+005f: ldloc.0        
+0060: ldarg.0        
+0061: ldarg.2        
+0062: ldarg.3        
+0063: call          0x06000105 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._GetHorzProfileData
+0068: callvirt      0x0a0000c6 OpenCVWrapper.IImageProcessingCommonWrapper.ConvertToDouble
+006d: callvirt      0x0a0000d7 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileDataPoints
+0072: ldarg.1        
+0073: callvirt      0x0a0000d8 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ProfileDataPoints
+0078: ldarg.0        
+0079: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+007e: ldc.i4.0       
+007f: callvirt      0x0a00008a System.Array.CopyTo
+0084: ldarg.1        
+0085: ldloc.0        
+0086: ldarg.0        
+0087: ldarg.2        
+0088: ldarg.3        
+0089: call          0x06000106 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._GetvertProfileData
+008e: callvirt      0x0a0000c6 OpenCVWrapper.IImageProcessingCommonWrapper.ConvertToDouble
+0093: callvirt      0x0a0000d7 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileDataPoints
+0098: ldarg.1        
+0099: callvirt      0x0a0000d8 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ProfileDataPoints
+009e: ldarg.0        
+009f: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+00a4: ldc.i4.0       
+00a5: callvirt      0x0a00008a System.Array.CopyTo
+00aa: ret            
+
+METHOD 0x06000103 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel SetProfileData IL_SHA256 148b1cb642adfc8710e6c33d5710a4907aea59118c769096fd80af06c4d34256 DECODE_ISSUE null
+0000: ldarg.1        
+0001: brfalse.s     11 
+0003: ldarg.1        
+0004: ldc.i4.1       
+0005: beq           206 
+000a: ret            
+000b: ldarg.0        
+000c: ldfld         0x0400009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainProfileData
+0011: ldarg.0        
+0012: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0017: ldc.i4.2       
+0018: callvirt      0x0a0000d9 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+001d: ldarg.0        
+001e: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0023: callvirt      0x0a0000da Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationX
+0028: mul            
+0029: ldarg.0        
+002a: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+002f: callvirt      0x0a0000db Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationX
+0034: mul            
+0035: callvirt      0x0a0000dc Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_XFactor
+003a: ldarg.0        
+003b: ldfld         0x0400009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainProfileData
+0040: ldarg.0        
+0041: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0046: ldc.i4.2       
+0047: callvirt      0x0a0000dd Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetYResolution
+004c: ldarg.0        
+004d: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0052: callvirt      0x0a0000de Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationY
+0057: mul            
+0058: ldarg.0        
+0059: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+005e: callvirt      0x0a0000df Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationY
+0063: mul            
+0064: callvirt      0x0a0000e0 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_YFactor
+0069: ldarg.0        
+006a: ldfld         0x0400009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainProfileData
+006f: ldarg.0        
+0070: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0075: ldc.i4.2       
+0076: callvirt      0x0a0000e1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+007b: ldarg.0        
+007c: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0081: callvirt      0x0a0000e2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationZ
+0086: mul            
+0087: ldarg.0        
+0088: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+008d: callvirt      0x0a0000e3 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationZ
+0092: mul            
+0093: callvirt      0x0a0000e4 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ZFactor
+0098: ldarg.0        
+0099: ldarg.0        
+009a: ldfld         0x0400009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainProfileData
+009f: ldarg.0        
+00a0: ldfld         0x0400009c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsSCExecutionStates
+00a5: callvirt      0x0600014d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_ProfileLineType
+00aa: ldarg.0        
+00ab: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+00b0: ldc.i4.0       
+00b1: ldc.i4.0       
+00b2: call          0x06000104 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._CalculateProfileData
+00b7: ldarg.0        
+00b8: ldfld         0x0400009c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsSCExecutionStates
+00bd: ldarg.0        
+00be: ldfld         0x0400009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainProfileData
+00c3: callvirt      0x0a0000e5 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ZFactor
+00c8: callvirt      0x06000152 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.set_ZResolutionFactor
+00cd: ret            
+00ce: ldarg.0        
+00cf: call          0x060000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentPreviewImage
+00d4: brfalse       453 
+00d9: ldarg.0        
+00da: call          0x060000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentPreviewImage
+00df: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+00e4: brfalse       453 
+00e9: ldarg.0        
+00ea: ldfld         0x0400009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsPreviewProfileData
+00ef: ldarg.0        
+00f0: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+00f5: ldc.i4.2       
+00f6: callvirt      0x0a0000d9 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetXResolution
+00fb: ldarg.0        
+00fc: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0101: callvirt      0x0a0000da Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationX
+0106: mul            
+0107: ldarg.0        
+0108: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+010d: callvirt      0x0a0000db Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationX
+0112: mul            
+0113: callvirt      0x0a0000dc Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_XFactor
+0118: ldarg.0        
+0119: ldfld         0x0400009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsPreviewProfileData
+011e: ldarg.0        
+011f: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0124: ldc.i4.2       
+0125: callvirt      0x0a0000dd Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetYResolution
+012a: ldarg.0        
+012b: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0130: callvirt      0x0a0000de Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationY
+0135: mul            
+0136: ldarg.0        
+0137: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+013c: callvirt      0x0a0000df Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationY
+0141: mul            
+0142: callvirt      0x0a0000e0 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_YFactor
+0147: ldarg.0        
+0148: ldfld         0x0400009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsPreviewProfileData
+014d: ldarg.0        
+014e: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+0153: ldc.i4.2       
+0154: callvirt      0x0a0000e1 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetZResolution
+0159: ldarg.0        
+015a: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+015f: callvirt      0x0a0000e2 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetMakerCaliberationZ
+0164: mul            
+0165: ldarg.0        
+0166: call          0x060000cf Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_MainImage
+016b: callvirt      0x0a0000e3 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_UserCalibrationZ
+0170: mul            
+0171: callvirt      0x0a0000e4 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ZFactor
+0176: ldarg.0        
+0177: ldfld         0x0400009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsPreviewProfileData
+017c: dup            
+017d: callvirt      0x0a0000e5 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ZFactor
+0182: ldarg.0        
+0183: ldfld         0x040000b4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblPreviewImageZPitchFactor
+0188: div            
+0189: callvirt      0x0a0000e4 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ZFactor
+018e: ldarg.0        
+018f: ldarg.0        
+0190: ldfld         0x0400009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsPreviewProfileData
+0195: ldarg.0        
+0196: ldfld         0x0400009c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsSCExecutionStates
+019b: callvirt      0x0600014d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_ProfileLineType
+01a0: ldarg.0        
+01a1: call          0x060000cd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentPreviewImage
+01a6: ldc.i4.1       
+01a7: ldc.i4.1       
+01a8: call          0x06000104 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._CalculateProfileData
+01ad: ldarg.0        
+01ae: ldfld         0x0400009b Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsPreviewProfileData
+01b3: dup            
+01b4: callvirt      0x0a0000e5 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ZFactor
+01b9: ldarg.0        
+01ba: ldfld         0x040000b4 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblPreviewImageZPitchFactor
+01bf: div            
+01c0: callvirt      0x0a0000e4 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ZFactor
+01c5: ret            
+
+METHOD 0x06000104 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _CalculateProfileData IL_SHA256 4e01f4de84490379d71cb672623c6e2b0fb281a2bcc661b76e7bdd66eab99472 DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x06000129 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.ApplyColorSettings
+0006: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+000b: stloc.0        
+000c: ldarg.3        
+000d: ldarg.0        
+000e: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0013: callvirt      0x0a00001c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+0018: stloc.1        
+0019: ldarg.3        
+001a: ldarg.0        
+001b: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0020: callvirt      0x0a00001d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0025: stloc.2        
+0026: ldarg.0        
+0027: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+002c: brfalse.s     57 
+002e: ldarg.0        
+002f: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+0034: ldlen          
+0035: conv.i4        
+0036: ldloc.2        
+0037: beq.s         69 
+0039: ldarg.0        
+003a: ldloc.2        
+003b: newarr        0x010000b1 
+0040: stfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+0045: ldarg.0        
+0046: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+004b: brfalse.s     88 
+004d: ldarg.0        
+004e: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0053: ldlen          
+0054: conv.i4        
+0055: ldloc.1        
+0056: beq.s         100 
+0058: ldarg.0        
+0059: ldloc.1        
+005a: newarr        0x010000b1 
+005f: stfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+0064: ldarg.0        
+0065: call          0x060000c9 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentProfileLineType
+006a: brtrue.s      178 
+006c: ldarg.1        
+006d: ldloc.0        
+006e: ldarg.0        
+006f: ldarg.3        
+0070: ldarg.0        
+0071: call          0x060000e0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_dblProfileLineWidth
+0076: call          0x06000105 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._GetHorzProfileData
+007b: callvirt      0x0a0000c6 OpenCVWrapper.IImageProcessingCommonWrapper.ConvertToDouble
+0080: callvirt      0x0a0000d7 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileDataPoints
+0085: ldarg.1        
+0086: callvirt      0x0a0000d8 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ProfileDataPoints
+008b: ldarg.0        
+008c: ldfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+0091: ldc.i4.0       
+0092: callvirt      0x0a00008a System.Array.CopyTo
+0097: ldarg.0        
+0098: ldloc.0        
+0099: ldarg.0        
+009a: ldarg.3        
+009b: ldarg.0        
+009c: call          0x060000e0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_dblProfileLineWidth
+00a1: call          0x06000106 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._GetvertProfileData
+00a6: callvirt      0x0a0000c6 OpenCVWrapper.IImageProcessingCommonWrapper.ConvertToDouble
+00ab: stfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+00b0: br.s          266 
+00b2: ldarg.0        
+00b3: call          0x060000c9 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentProfileLineType
+00b8: ldc.i4.1       
+00b9: bne.un.s      266 
+00bb: ldarg.1        
+00bc: ldloc.0        
+00bd: ldarg.0        
+00be: ldarg.3        
+00bf: ldarg.0        
+00c0: call          0x060000e0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_dblProfileLineWidth
+00c5: call          0x06000106 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._GetvertProfileData
+00ca: callvirt      0x0a0000c6 OpenCVWrapper.IImageProcessingCommonWrapper.ConvertToDouble
+00cf: callvirt      0x0a0000d7 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileDataPoints
+00d4: ldarg.1        
+00d5: callvirt      0x0a0000d8 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ProfileDataPoints
+00da: ldarg.0        
+00db: ldfld         0x040000b1 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaVertProfileData
+00e0: ldc.i4.0       
+00e1: callvirt      0x0a00008a System.Array.CopyTo
+00e6: ldarg.1        
+00e7: callvirt      0x0a0000d8 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.get_ProfileDataPoints
+00ec: call          0x0a000095 System.Array.Reverse
+00f1: ldarg.0        
+00f2: ldloc.0        
+00f3: ldarg.0        
+00f4: ldarg.3        
+00f5: ldarg.0        
+00f6: call          0x060000e0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_dblProfileLineWidth
+00fb: call          0x06000105 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._GetHorzProfileData
+0100: callvirt      0x0a0000c6 OpenCVWrapper.IImageProcessingCommonWrapper.ConvertToDouble
+0105: stfld         0x040000b0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._flaHorzProfileData
+010a: ldarg.1        
+010b: ldarg.s       4 
+010d: callvirt      0x0a0000e6 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileIndex
+0112: ldarg.s       4 
+0114: brtrue.s      292 
+0116: ldarg.1        
+0117: ldarg.0        
+0118: ldfld         0x040000bd Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._strProfileLine1Color
+011d: callvirt      0x0a0000e7 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileGraphColor
+0122: br.s          309 
+0124: ldarg.s       4 
+0126: ldc.i4.1       
+0127: bne.un.s      309 
+0129: ldarg.1        
+012a: ldarg.0        
+012b: ldfld         0x040000be Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._strProfileLine2Color
+0130: callvirt      0x0a0000e7 Olympus.Mis.Imaging.SharableClasses.CommonUtilities.BusinessEntities.CommonClasses.ProfileData.set_ProfileGraphColor
+0135: ldarg.s       5 
+0137: brfalse.s     319 
+0139: ldarg.s       5 
+013b: ldc.i4.1       
+013c: beq.s         332 
+013e: ret            
+013f: ldarg.0        
+0140: ldfld         0x040000c7 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._iProfileControlModel
+0145: ldarg.1        
+0146: callvirt      0x0a0000e8 Olympus.Mis.Imaging.TriumphBase.InterfaceLibrary.CapsuleInterfaces.IProfileControlModel.SetProfileData
+014b: ret            
+014c: ldarg.0        
+014d: ldfld         0x040000c7 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._iProfileControlModel
+0152: ldarg.1        
+0153: callvirt      0x0a0000e9 Olympus.Mis.Imaging.TriumphBase.InterfaceLibrary.CapsuleInterfaces.IProfileControlModel.SetPreviewProfileData
+0158: ret            
+
+METHOD 0x06000105 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _GetHorzProfileData IL_SHA256 2129f9f3f74fdde859cab05280661f57f6ce70a61af70a43e6de9cfa87a5cf7a DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldarg.0        
+0002: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0007: callvirt      0x0a00001c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+000c: stloc.0        
+000d: ldarg.1        
+000e: ldarg.0        
+000f: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0014: callvirt      0x0a00001d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0019: stloc.1        
+001a: ldc.i4.0       
+001b: stloc.2        
+001c: ldarg.0        
+001d: ldfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+0022: conv.i4        
+0023: ldloc.1        
+0024: ldc.i4.1       
+0025: sub            
+0026: stloc.3        
+0027: ldarg.0        
+0028: ldfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+002d: pop            
+002e: ldloc.1        
+002f: stloc.s       4 
+0031: ldloc.0        
+0032: stloc.s       5 
+0034: ldloc.2        
+0035: stloc.s       6 
+0037: ldloc.3        
+0038: stloc.s       7 
+003a: ldarg.2        
+003b: ldc.r8        2 
+0044: div            
+0045: conv.i4        
+0046: stloc.s       8 
+0048: ldloc.s       8 
+004a: sub            
+004b: stloc.s       9 
+004d: ldloc.s       9 
+004f: ldc.i4.0       
+0050: bge.s         85 
+0052: ldc.i4.0       
+0053: stloc.s       9 
+0055: ldloc.s       9 
+0057: ldarg.2        
+0058: conv.i4        
+0059: add            
+005a: ldc.i4.1       
+005b: sub            
+005c: stloc.s       10 
+005e: ldloc.s       10 
+0060: ldloc.s       5 
+0062: blt.s         106 
+0064: ldloc.s       5 
+0066: ldc.i4.1       
+0067: sub            
+0068: stloc.s       10 
+006a: ldloc.s       10 
+006c: ldloc.s       9 
+006e: bge.s         116 
+0070: ldloc.s       9 
+0072: stloc.s       10 
+0074: ldloc.s       4 
+0076: newarr        0x010000be 
+007b: stloc.s       11 
+007d: ldarg.2        
+007e: ldc.r8        0 
+0087: beq.s         167 
+0089: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+008e: ldarg.1        
+008f: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0094: ldloc.s       4 
+0096: ldloc.s       6 
+0098: ldloc.s       7 
+009a: ldloc.s       9 
+009c: ldloc.s       10 
+009e: ldloc.s       11 
+00a0: callvirt      0x2b000006 OpenCVWrapper.IImageProcessingCommonWrapper.CalculateHorizontalProfileWidthAverage
+00a5: br.s          211 
+00a7: ldarg.0        
+00a8: ldfld         0x040000c3 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._iFilterCommon
+00ad: ldarg.1        
+00ae: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+00b3: ldloc.1        
+00b4: ldloc.0        
+00b5: ldc.i4.0       
+00b6: ldarg.0        
+00b7: ldfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+00bc: conv.i4        
+00bd: ldloc.1        
+00be: ldc.i4.1       
+00bf: sub            
+00c0: ldarg.0        
+00c1: ldfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+00c6: conv.i4        
+00c7: newobj        0x0a0000eb System.Collections.Generic.List`1..ctor
+00cc: callvirt      0x2b000007 Olympus.Mis.Imaging.FilterMeasurementCommonLibrary.IFilterCommon.GetProfileLineData
+00d1: stloc.s       11 
+00d3: ldloc.s       11 
+00d5: ret            
+
+METHOD 0x06000106 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _GetvertProfileData IL_SHA256 4f31cb26d6b3fbd3d22c3159ee95fb1766c9ac0822584475390c6fe7544b69ea DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldarg.0        
+0002: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0007: callvirt      0x0a00001c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+000c: stloc.0        
+000d: ldarg.1        
+000e: ldarg.0        
+000f: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0014: callvirt      0x0a00001d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0019: stloc.1        
+001a: ldarg.0        
+001b: ldfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+0020: conv.i4        
+0021: ldc.i4.0       
+0022: stloc.2        
+0023: ldarg.0        
+0024: ldfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+0029: pop            
+002a: ldloc.0        
+002b: ldc.i4.1       
+002c: sub            
+002d: stloc.3        
+002e: ldloc.0        
+002f: stloc.s       4 
+0031: ldloc.1        
+0032: stloc.s       5 
+0034: ldloc.2        
+0035: stloc.s       6 
+0037: ldloc.3        
+0038: stloc.s       7 
+003a: ldarg.2        
+003b: ldc.r8        2 
+0044: div            
+0045: conv.i4        
+0046: stloc.s       8 
+0048: ldloc.s       8 
+004a: sub            
+004b: stloc.s       9 
+004d: ldloc.s       9 
+004f: ldc.i4.0       
+0050: bge.s         85 
+0052: ldc.i4.0       
+0053: stloc.s       9 
+0055: ldloc.s       9 
+0057: ldarg.2        
+0058: conv.i4        
+0059: add            
+005a: ldc.i4.1       
+005b: sub            
+005c: stloc.s       10 
+005e: ldloc.s       10 
+0060: ldloc.s       5 
+0062: blt.s         106 
+0064: ldloc.s       5 
+0066: ldc.i4.1       
+0067: sub            
+0068: stloc.s       10 
+006a: ldloc.s       10 
+006c: ldloc.s       9 
+006e: bge.s         116 
+0070: ldloc.s       9 
+0072: stloc.s       10 
+0074: ldloc.s       4 
+0076: newarr        0x010000be 
+007b: stloc.s       11 
+007d: ldarg.2        
+007e: ldc.r8        0 
+0087: beq.s         167 
+0089: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+008e: ldarg.1        
+008f: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+0094: ldloc.s       5 
+0096: ldloc.s       6 
+0098: ldloc.s       7 
+009a: ldloc.s       9 
+009c: ldloc.s       10 
+009e: ldloc.s       11 
+00a0: callvirt      0x2b000008 OpenCVWrapper.IImageProcessingCommonWrapper.CalculateVerticalProfileWidthAverage
+00a5: br.s          211 
+00a7: ldarg.0        
+00a8: ldfld         0x040000c3 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._iFilterCommon
+00ad: ldarg.1        
+00ae: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+00b3: ldloc.1        
+00b4: ldloc.0        
+00b5: ldarg.0        
+00b6: ldfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+00bb: conv.i4        
+00bc: ldc.i4.0       
+00bd: ldarg.0        
+00be: ldfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+00c3: conv.i4        
+00c4: ldloc.0        
+00c5: ldc.i4.1       
+00c6: sub            
+00c7: newobj        0x0a0000eb System.Collections.Generic.List`1..ctor
+00cc: callvirt      0x2b000007 Olympus.Mis.Imaging.FilterMeasurementCommonLibrary.IFilterCommon.GetProfileLineData
+00d1: stloc.s       11 
+00d3: ldloc.s       11 
+00d5: ret            
+
+METHOD 0x06000107 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _GetProfileData IL_SHA256 b0feefe2ad7d880d02cb76c9369942fe8224004c7842a271205537b25fb5902b DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldarg.0        
+0002: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0007: callvirt      0x0a00001c Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageHeight
+000c: stloc.0        
+000d: ldarg.1        
+000e: ldarg.0        
+000f: call          0x0600011c Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.GetImageType
+0014: callvirt      0x0a00001d Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.GetImageWidth
+0019: stloc.1        
+001a: ldarg.0        
+001b: call          0x060000c9 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentProfileLineType
+0020: brtrue.s      70 
+0022: ldc.i4.0       
+0023: stloc.2        
+0024: ldarg.0        
+0025: ldfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+002a: conv.i4        
+002b: ldloc.1        
+002c: stloc.3        
+002d: ldarg.0        
+002e: ldfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+0033: conv.i4        
+0034: stloc.s       4 
+0036: stloc.s       5 
+0038: ldloc.1        
+0039: stloc.s       6 
+003b: ldloc.0        
+003c: stloc.s       7 
+003e: ldloc.2        
+003f: stloc.s       8 
+0041: ldloc.3        
+0042: stloc.s       9 
+0044: br.s          105 
+0046: ldarg.0        
+0047: ldfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+004c: conv.i4        
+004d: stloc.2        
+004e: ldc.i4.0       
+004f: ldarg.0        
+0050: ldfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+0055: conv.i4        
+0056: stloc.3        
+0057: ldloc.0        
+0058: stloc.s       4 
+005a: ldloc.2        
+005b: stloc.s       5 
+005d: ldloc.0        
+005e: stloc.s       6 
+0060: ldloc.1        
+0061: stloc.s       7 
+0063: stloc.s       8 
+0065: ldloc.s       4 
+0067: stloc.s       9 
+0069: ldarg.0        
+006a: call          0x060000e0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_dblProfileLineWidth
+006f: ldc.r8        2 
+0078: div            
+0079: conv.i4        
+007a: stloc.s       10 
+007c: ldloc.s       5 
+007e: ldloc.s       10 
+0080: sub            
+0081: stloc.s       11 
+0083: ldloc.s       11 
+0085: ldc.i4.0       
+0086: bge.s         139 
+0088: ldc.i4.0       
+0089: stloc.s       11 
+008b: ldloc.s       11 
+008d: ldarg.0        
+008e: call          0x060000e0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_dblProfileLineWidth
+0093: conv.i4        
+0094: add            
+0095: ldc.i4.1       
+0096: sub            
+0097: stloc.s       12 
+0099: ldloc.s       12 
+009b: ldloc.s       7 
+009d: blt.s         165 
+009f: ldloc.s       7 
+00a1: ldc.i4.1       
+00a2: sub            
+00a3: stloc.s       12 
+00a5: ldloc.s       12 
+00a7: ldloc.s       11 
+00a9: bge.s         175 
+00ab: ldloc.s       11 
+00ad: stloc.s       12 
+00af: ldloc.s       6 
+00b1: newarr        0x010000be 
+00b6: stloc.s       13 
+00b8: call          0x0a000088 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+00bd: stloc.s       14 
+00bf: ldarg.0        
+00c0: call          0x060000c9 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel.get_CurrentProfileLineType
+00c5: brtrue.s      226 
+00c7: ldloc.s       14 
+00c9: ldarg.1        
+00ca: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+00cf: ldloc.s       6 
+00d1: ldloc.s       8 
+00d3: ldloc.s       9 
+00d5: ldloc.s       11 
+00d7: ldloc.s       12 
+00d9: ldloc.s       13 
+00db: callvirt      0x2b000006 OpenCVWrapper.IImageProcessingCommonWrapper.CalculateHorizontalProfileWidthAverage
+00e0: br.s          251 
+00e2: ldloc.s       14 
+00e4: ldarg.1        
+00e5: callvirt      0x0a000089 Olympus.Mis.Imaging.BusinessEntities.Common.ImageEntityBase.get_HeightData
+00ea: ldloc.s       6 
+00ec: ldloc.s       8 
+00ee: ldloc.s       9 
+00f0: ldloc.s       11 
+00f2: ldloc.s       12 
+00f4: ldloc.s       13 
+00f6: callvirt      0x2b000008 OpenCVWrapper.IImageProcessingCommonWrapper.CalculateVerticalProfileWidthAverage
+00fb: ldloc.s       13 
+00fd: ret            
+
+METHOD 0x06000115 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel ExecuteFilter IL_SHA256 e64a7154c7a788724d5644f09f5f223bd913ec26e7fa0800ee9a4b416e03ea81 DECODE_ISSUE null
+0000: newobj        0x0600013e Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates..ctor
+0005: stloc.0        
+0006: ldloc.0        
+0007: ldarg.2        
+0008: callvirt      0x0600016e Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.ImportFilterExecutionState
+000d: ldloc.0        
+000e: callvirt      0x0600013f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_CheckForThreePointSaved
+0013: brfalse.s     33 
+0015: ldarg.0        
+0016: ldloc.0        
+0017: callvirt      0x06000141 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_PtThreePointsInclinationCorrection
+001c: stfld         0x040000a7 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ptICThreePoints
+0021: ldarg.0        
+0022: ldloc.0        
+0023: callvirt      0x06000143 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_PtFourPointsInclinationCorrection
+0028: stfld         0x040000a8 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ptSCFourPoints
+002d: ldarg.0        
+002e: ldloc.0        
+002f: callvirt      0x06000147 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_HorizontalProfilePosition
+0034: stfld         0x0400009f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblHorizontalLineProfilePosition
+0039: ldarg.0        
+003a: ldloc.0        
+003b: callvirt      0x06000149 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_VerticalProfilePosition
+0040: stfld         0x040000a0 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._dblVerticalLineProfilePosition
+0045: ldarg.0        
+0046: ldarg.0        
+0047: ldfld         0x0400009a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsMainProfileData
+004c: ldarg.1        
+004d: ldloc.0        
+004e: callvirt      0x0600014f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_ProfileWidth
+0053: call          0x06000102 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._CalculateProfileDataOneShot
+0058: ldarg.0        
+0059: ldarg.1        
+005a: ldloc.0        
+005b: ldc.i4.1       
+005c: call          0x0600010f Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ExecuteSurfaceCorrectionFilter
+0061: ret            
+
+METHOD 0x06000119 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel _SetDefaultControlPointsPosition IL_SHA256 a012419a8dd6d51a833bb6b9b351760709a5453a0acd872b4875f56da44e03d6 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x040000ad Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppHorizontalPercentagePoint
+0006: ldc.i4.0       
+0007: ldc.r8        0 
+0010: ldc.r8        50 
+0019: newobj        0x0a000094 System.Windows.Point..ctor
+001e: stelem        0x01000044 
+0023: ldarg.0        
+0024: ldfld         0x040000ad Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppHorizontalPercentagePoint
+0029: ldc.i4.1       
+002a: ldc.r8        100 
+0033: ldc.r8        50 
+003c: newobj        0x0a000094 System.Windows.Point..ctor
+0041: stelem        0x01000044 
+0046: ldarg.0        
+0047: ldfld         0x040000ae Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppVerticalPercentagePoint
+004c: ldc.i4.0       
+004d: ldc.r8        0 
+0056: ldc.r8        50 
+005f: newobj        0x0a000094 System.Windows.Point..ctor
+0064: stelem        0x01000044 
+0069: ldarg.0        
+006a: ldfld         0x040000ae Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppVerticalPercentagePoint
+006f: ldc.i4.1       
+0070: ldc.r8        100 
+0079: ldc.r8        50 
+0082: newobj        0x0a000094 System.Windows.Point..ctor
+0087: stelem        0x01000044 
+008c: ldarg.0        
+008d: ldarg.0        
+008e: ldfld         0x040000ad Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppHorizontalPercentagePoint
+0093: stfld         0x040000ac Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppPercentagePoint
+0098: ldarg.0        
+0099: ldfld         0x040000aa Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedHorzPercentagePoint
+009e: ldc.i4.0       
+009f: ldc.r8        0 
+00a8: ldc.r8        50 
+00b1: newobj        0x0a000094 System.Windows.Point..ctor
+00b6: stelem        0x01000044 
+00bb: ldarg.0        
+00bc: ldfld         0x040000aa Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedHorzPercentagePoint
+00c1: ldc.i4.1       
+00c2: ldc.r8        50 
+00cb: ldc.r8        50 
+00d4: newobj        0x0a000094 System.Windows.Point..ctor
+00d9: stelem        0x01000044 
+00de: ldarg.0        
+00df: ldfld         0x040000aa Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedHorzPercentagePoint
+00e4: ldc.i4.2       
+00e5: ldc.r8        100 
+00ee: ldc.r8        50 
+00f7: newobj        0x0a000094 System.Windows.Point..ctor
+00fc: stelem        0x01000044 
+0101: ldarg.0        
+0102: ldfld         0x040000ab Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedVertPercentagePoint
+0107: ldc.i4.0       
+0108: ldc.r8        0 
+0111: ldc.r8        50 
+011a: newobj        0x0a000094 System.Windows.Point..ctor
+011f: stelem        0x01000044 
+0124: ldarg.0        
+0125: ldfld         0x040000ab Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedVertPercentagePoint
+012a: ldc.i4.1       
+012b: ldc.r8        50 
+0134: ldc.r8        50 
+013d: newobj        0x0a000094 System.Windows.Point..ctor
+0142: stelem        0x01000044 
+0147: ldarg.0        
+0148: ldfld         0x040000ab Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedVertPercentagePoint
+014d: ldc.i4.2       
+014e: ldc.r8        100 
+0157: ldc.r8        50 
+0160: newobj        0x0a000094 System.Windows.Point..ctor
+0165: stelem        0x01000044 
+016a: ldarg.0        
+016b: ldfld         0x040000aa Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedHorzPercentagePoint
+0170: ldarg.0        
+0171: ldfld         0x040000a9 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._ppCurvedManual
+0176: ldc.i4.0       
+0177: callvirt      0x0a00008a System.Array.CopyTo
+017c: ret            
+
+METHOD 0x0600011a Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel SaveToHistory IL_SHA256 2a82c378df6e40a2ed4573b22a14fe385ee368c954cd2a21b53557a74bf91531 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldnull         
+0002: stfld         0x04000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsOperation
+0007: ldarg.0        
+0008: newobj        0x0a000100 Utilities.BusinessEntities.CommonClasses.Operation..ctor
+000d: stfld         0x04000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsOperation
+0012: ldarg.0        
+0013: ldfld         0x04000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsOperation
+0018: ldc.i4.0       
+0019: callvirt      0x0a000101 Utilities.BusinessEntities.CommonClasses.Operation.set_OperationCode
+001e: ldarg.0        
+001f: ldfld         0x04000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsOperation
+0024: ldarg.2        
+0025: callvirt      0x06000151 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.get_ZResolutionFactor
+002a: callvirt      0x0a0000fd Utilities.BusinessEntities.CommonClasses.Operation.set_ZResolutionFactor
+002f: ldarg.0        
+0030: ldfld         0x04000099 Olympus.Mis.Imaging.Capsules.SurfaceCorrection.Model.SurfaceCorrectionModel._clsOperation
+0035: ldarg.2        
+0036: callvirt      0x0600016d Olympus.Mis.Imaging.Capsules.SurfaceCorrection.States.SCExecutionStates.ExportFilterExecutionState
+003b: callvirt      0x0a000102 Utilities.BusinessEntities.CommonClasses.Operation.set_FilterOperationData
+0040: ldc.i4.1       
+0041: ret            

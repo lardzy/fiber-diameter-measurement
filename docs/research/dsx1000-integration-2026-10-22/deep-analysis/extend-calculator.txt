@@ -1,0 +1,92 @@
+EVIDENCE ev_5cc84ca4ffbb505c2fca022fcd99c6c0be706dd03aa243ea92748b8bfe4d4110 SHA256 3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6
+
+METHOD 0x0600008f Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.AcquisitionCalculator CalculateZDistanceByDistance IL_SHA256 ffedb02cdb441105122231f02cb3e03116f51a7d272983b0f2543c04c83994b5 DECODE_ISSUE null
+0000: ldc.r8        0 
+0009: stloc.0        
+000a: ldarg.1        
+000b: stloc.3        
+000c: ldloc.3        
+000d: switch        3  targets=32,46,40
+001e: br.s          46 
+0020: ldsfld        0x0a00006f Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblFINE_STEP_RATIO
+0025: stloc.0        
+0026: br.s          46 
+0028: ldsfld        0x0a000070 Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblSUPERFAST_STEP_RATIO
+002d: stloc.0        
+002e: ldarg.2        
+002f: stloc.s       4 
+0031: ldloc.s       4 
+0033: switch        4  targets=74,98,90,82
+0048: br.s          98 
+004a: ldsfld        0x0a000071 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32STEP_COUNT_STANDARD
+004f: stloc.1        
+0050: br.s          104 
+0052: ldsfld        0x0a000072 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32STEP_COUNT_SMALL
+0057: stloc.1        
+0058: br.s          104 
+005a: ldsfld        0x0a000073 Olympus.LI.Triumph.Application.UiData.CstAcquisition.i32STEP_COUNT_WIDE
+005f: stloc.1        
+0060: br.s          104 
+0062: ldarg.3        
+0063: ldc.i4.1       
+0064: stind.i1       
+0065: ldarg.s       4 
+0067: ret            
+0068: ldarg.0        
+0069: ldloc.1        
+006a: conv.r8        
+006b: mul            
+006c: ldloc.0        
+006d: mul            
+006e: stloc.2        
+006f: ldarg.3        
+0070: ldc.i4.0       
+0071: stind.i1       
+0072: ldloc.2        
+0073: ret            
+
+METHOD 0x06000091 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.AcquisitionCalculator CalculatePitch IL_SHA256 d22b798965ada75a1575b7960a2029cb87534658e9ef319e9c2753adfb15c89c DECODE_ISSUE null
+0000: ldarg.0        
+0001: stloc.0        
+0002: ldarg.1        
+0003: ldc.i4.2       
+0004: bne.un.s      23 
+0006: ldarg.2        
+0007: brtrue.s      23 
+0009: ldarg.0        
+000a: ldsfld        0x0a000070 Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblSUPERFAST_STEP_RATIO
+000f: mul            
+0010: ldsfld        0x0a00006f Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblFINE_STEP_RATIO
+0015: div            
+0016: stloc.0        
+0017: ldarg.1        
+0018: brtrue.s      44 
+001a: ldarg.2        
+001b: ldc.i4.2       
+001c: bne.un.s      44 
+001e: ldarg.0        
+001f: ldsfld        0x0a00006f Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblFINE_STEP_RATIO
+0024: mul            
+0025: ldsfld        0x0a000070 Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblSUPERFAST_STEP_RATIO
+002a: div            
+002b: stloc.0        
+002c: ldarg.1        
+002d: ldc.i4.1       
+002e: bne.un.s      66 
+0030: ldarg.2        
+0031: ldc.i4.2       
+0032: bne.un.s      66 
+0034: ldarg.0        
+0035: ldsfld        0x0a00006f Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblFINE_STEP_RATIO
+003a: mul            
+003b: ldsfld        0x0a000070 Olympus.LI.Triumph.Application.UiData.CstAcquisition.dblSUPERFAST_STEP_RATIO
+0040: div            
+0041: stloc.0        
+0042: ldloc.0        
+0043: ldc.r8        1000 
+004c: mul            
+004d: conv.i4        
+004e: conv.r8        
+004f: ldc.r8        1000 
+0058: div            
+0059: ret            

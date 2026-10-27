@@ -1,0 +1,102 @@
+EVIDENCE ev_d7dbd43d2f0023c5080a8597d697e5890582641af43fba882388cf806865b7b3 SHA256 f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD 0x06000432 Olympus.LI.Triumph.Application.ViewModel.Acquisition get_ZPitch IL_SHA256 e0646b08833ebadeaf9f15114f4a7a68cf6ea45419085bbd39e8f8c0abc104e6 DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldfld         0x040001a3 Olympus.LI.Triumph.Application.ViewModel.Acquisition._dblZPitch
+0007: ldc.i4.0       
+0008: call          0x0a0000fd Olympus.LI.Triumph.Application.UiData.UICommonData.get_UserCommonData
+000d: callvirt      0x0a0000fe Olympus.LI.Triumph.Application.UiData.UserCommonData.get_Unit
+0012: ldc.i4.3       
+0013: ldc.i4.3       
+0014: call          0x0a000406 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+0019: stloc.0        
+001a: br.s          28 
+001c: ldloc.0        
+001d: ret            
+
+METHOD 0x06000433 Olympus.LI.Triumph.Application.ViewModel.Acquisition set_ZPitch IL_SHA256 2fcfad23351e6665c27a46f7a6b237a9e14ed27d8c079508d8bb29d47df17420 DECODE_ISSUE null
+0000: nop            
+0001: ldc.i4        128 
+0006: newobj        0x0a000134 System.Text.StringBuilder..ctor
+000b: stloc.0        
+000c: ldloc.0        
+000d: ldstr         0x7000607f "[Extend]-[Pitch] Adjust value Changed ({0}um)"
+0012: ldarg.1        
+0013: box           0x010001b6 
+0018: callvirt      0x0a000136 System.Text.StringBuilder.AppendFormat
+001d: pop            
+001e: ldloc.0        
+001f: callvirt      0x0a00001b System.Object.ToString
+0024: call          0x0a000137 Olympus.Mis.Core.Logging.Logger.UILog
+0029: nop            
+002a: ldarg.1        
+002b: ldc.i4.3       
+002c: call          0x0a00020d System.Math.Round
+0031: stloc.1        
+0032: ldarg.0        
+0033: ldfld         0x040001a3 Olympus.LI.Triumph.Application.ViewModel.Acquisition._dblZPitch
+0038: ldloc.1        
+0039: ceq            
+003b: stloc.2        
+003c: ldloc.2        
+003d: brtrue.s      97 
+003f: nop            
+0040: ldarg.0        
+0041: ldloc.1        
+0042: stfld         0x040001a3 Olympus.LI.Triumph.Application.ViewModel.Acquisition._dblZPitch
+0047: ldarg.0        
+0048: ldarg.0        
+0049: ldfld         0x040001a3 Olympus.LI.Triumph.Application.ViewModel.Acquisition._dblZPitch
+004e: call          0x0600048e Olympus.LI.Triumph.Application.ViewModel.Acquisition.SetZDistanceByDistance
+0053: nop            
+0054: ldarg.0        
+0055: ldstr         0x70005d4a "ZPitch"
+005a: call          0x0600000e Olympus.LI.Triumph.Application.ViewModel.UiControllerBase._OnPropertyChanged
+005f: nop            
+0060: nop            
+0061: ret            
+
+METHOD 0x06000434 Olympus.LI.Triumph.Application.ViewModel.Acquisition get_ZStep IL_SHA256 d85d142cf45694ed7df61dfcf48a196a421573104429dd3d6771100d477440dc DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldfld         0x040001a4 Olympus.LI.Triumph.Application.ViewModel.Acquisition._ui32ZStep
+0007: stloc.0        
+0008: br.s          10 
+000a: ldloc.0        
+000b: ret            
+
+METHOD 0x06000435 Olympus.LI.Triumph.Application.ViewModel.Acquisition set_ZStep IL_SHA256 66304802ea78971bb8623541b9ccccd5db037f99d5da67b3b7b212aa2ac880a8 DECODE_ISSUE null
+0000: nop            
+0001: ldc.i4        128 
+0006: newobj        0x0a000134 System.Text.StringBuilder..ctor
+000b: stloc.0        
+000c: ldloc.0        
+000d: ldstr         0x700060db "[Extend]-[StepCount] Adjust value Changed ({0}um)"
+0012: ldarg.1        
+0013: box           0x010001e7 
+0018: callvirt      0x0a000136 System.Text.StringBuilder.AppendFormat
+001d: pop            
+001e: ldloc.0        
+001f: callvirt      0x0a00001b System.Object.ToString
+0024: call          0x0a000137 Olympus.Mis.Core.Logging.Logger.UILog
+0029: nop            
+002a: ldarg.0        
+002b: ldarg.1        
+002c: stfld         0x040001a4 Olympus.LI.Triumph.Application.ViewModel.Acquisition._ui32ZStep
+0031: ldarg.0        
+0032: ldstr         0x7000613f "ZStep"
+0037: call          0x0600000e Olympus.LI.Triumph.Application.ViewModel.UiControllerBase._OnPropertyChanged
+003c: nop            
+003d: ret            
+
+METHOD 0x06000480 Olympus.LI.Triumph.Application.ViewModel.Acquisition set_UpdateZpitch IL_SHA256 542c34ea138cdcce73052446a4e825cede065764bab4fea8042c8b672062e679 DECODE_ISSUE null
+0000: nop            
+0001: ldarg.0        
+0002: ldarg.1        
+0003: ldc.i4.3       
+0004: ldc.i4.0       
+0005: call          0x0a000102 Olympus.LI.Triumph.Application.UiBusiness.UiUtility.UnitConverter.ConvertUnitOfLength
+000a: call          0x06000433 Olympus.LI.Triumph.Application.ViewModel.Acquisition.set_ZPitch
+000f: nop            
+0010: ret            

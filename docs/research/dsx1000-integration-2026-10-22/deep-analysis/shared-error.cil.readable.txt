@@ -1,0 +1,66 @@
+EVIDENCE ev_829e6bd66270cc328ef7e962fb1f80592e012849ae6f8f870559bbb22bff144e SHA256 649cd7647d8dc4de4cbe619b2a1e0f9e028576a74f70d3ed45c0baf278396803
+
+METHOD 0x060001c5 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation ReadRdkErrorCode IL_SHA256 1bd8aeb1e98c3af2ece24d60b0b8cb2d9bf09c3eef2fba2af620963d0880d5cc DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.2        
+0002: ldsfld        0x040001cb Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation._fileAccessLockObject
+0007: dup            
+0008: stloc.s       4 
+000a: ldloca.s      2 
+000c: call          0x0a000014 System.Threading.Monitor.Enter
+0011: ldc.i4.1       
+0012: stloc.0        
+0013: ldsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0018: call          0x0a000015 System.IO.File.Exists
+001d: brtrue.s      35 
+001f: ldc.i4.0       
+0020: stloc.0        
+0021: br.s          71 
+0023: ldstr         0x7000010d "COMMON"
+0028: ldstr         0x7000011b "RDK_ERROR_CODE"
+002d: ldsfld        0x040001cc Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.strDEF_RDK_ERROR_CODE
+0032: ldsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0037: ldc.i4.1       
+0038: call          0x060001c7 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.ReadInfo
+003d: stloc.1        
+003e: ldloc.1        
+003f: ldloca.s      0 
+0041: call          0x2b000001 System.Enum.TryParse
+0046: pop            
+0047: ldloc.0        
+0048: stloc.3        
+0049: leave.s       86 
+004b: ldloc.2        
+004c: brfalse.s     85 
+004e: ldloc.s       4 
+0050: call          0x0a000017 System.Threading.Monitor.Exit
+0055: endfinally     
+0056: ldloc.3        
+0057: ret            
+
+METHOD 0x060001c6 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation WriteRdkErrorCode IL_SHA256 d1dfdabd85966b2da33d1d0feefd1cb93abeaa2125371df73c19d3f30a5a391a DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldsfld        0x040001cb Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation._fileAccessLockObject
+0007: dup            
+0008: stloc.2        
+0009: ldloca.s      0 
+000b: call          0x0a000014 System.Threading.Monitor.Enter
+0010: ldstr         0x7000010d "COMMON"
+0015: ldstr         0x7000011b "RDK_ERROR_CODE"
+001a: ldtoken       0x02000017 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommonEnumDefinition.RdkErrorCode
+001f: call          0x0a000018 System.Type.GetTypeFromHandle
+0024: ldarg.0        
+0025: box           0x02000017 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommonEnumDefinition.RdkErrorCode
+002a: call          0x0a000019 System.Enum.GetName
+002f: ldsfld        0x040001ca Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.StrFileNameWithFullPath
+0034: call          0x060001c8 Olympus.LI.Triumph.OlypInterProcessCommon.Service.RdkErrorOperation.WriteInfo
+0039: stloc.1        
+003a: leave.s       70 
+003c: ldloc.0        
+003d: brfalse.s     69 
+003f: ldloc.2        
+0040: call          0x0a000017 System.Threading.Monitor.Exit
+0045: endfinally     
+0046: ldloc.1        
+0047: ret            

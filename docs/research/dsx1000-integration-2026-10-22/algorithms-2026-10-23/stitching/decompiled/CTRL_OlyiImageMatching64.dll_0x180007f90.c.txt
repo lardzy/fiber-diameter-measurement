@@ -1,0 +1,143 @@
+Evidence: ev_8c90377ce949d99b4da74f2d0fb39edb0db74266201b5a1cd78c68959cb64ced
+Subject SHA256: 8b50d22de25c1f522d44dd47976cf33bc59c0fafc4b7e463c3fd6dcfd7a09a94
+Bundle: matching-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined8 FUN_180007f90(longlong *param_1,longlong param_2,longlong param_3,undefined8 *param_4)
+
+{
+  longlong lVar1;
+  undefined1 uVar2;
+  undefined4 uVar3;
+  longlong lVar4;
+  longlong lVar5;
+  bool bVar6;
+  int iVar7;
+  undefined8 uVar8;
+  undefined1 auStack_188 [32];
+  undefined1 *local_168;
+  undefined4 *local_160;
+  undefined4 local_158;
+  undefined1 local_150;
+  longlong local_148;
+  undefined1 local_140;
+  ulonglong local_138;
+  ulonglong local_130;
+  undefined8 local_128 [2];
+  undefined4 local_118;
+  undefined4 uStack_114;
+  undefined4 uStack_110;
+  int iStack_10c;
+  undefined4 local_108;
+  undefined4 local_f8;
+  undefined4 uStack_f4;
+  undefined4 uStack_f0;
+  int iStack_ec;
+  undefined4 local_e8;
+  undefined8 local_e0;
+  undefined4 local_d8;
+  undefined4 uStack_d4;
+  undefined4 uStack_d0;
+  int iStack_cc;
+  undefined4 local_c8;
+  undefined8 local_c0;
+  undefined4 local_b8;
+  undefined4 uStack_b4;
+  undefined4 uStack_b0;
+  undefined4 uStack_ac;
+  undefined4 local_a8;
+  longlong local_a0;
+  undefined4 local_98;
+  undefined4 uStack_94;
+  undefined4 uStack_90;
+  undefined4 uStack_8c;
+  undefined4 local_88;
+  longlong local_80;
+  undefined1 local_78 [24];
+  longlong local_60;
+  ulonglong local_58;
+  
+  local_58 = DAT_18000f000 ^ (ulonglong)auStack_188;
+  bVar6 = FUN_1800021d0(param_2,(void *)param_1[7]);
+  if ((bVar6) && (bVar6 = FUN_1800021d0(param_3,(void *)param_1[8]), bVar6)) {
+    lVar4 = *(longlong *)(param_2 + 8);
+    uVar2 = *(undefined1 *)((longlong)param_1 + 0xc);
+    lVar1 = param_1[2];
+    local_118 = *(undefined4 *)(lVar4 + 0x28);
+    lVar5 = param_1[3];
+    uStack_114 = *(undefined4 *)(lVar4 + 0x2c);
+    uStack_110 = *(undefined4 *)(lVar4 + 8);
+    iStack_10c = (int)(*(int *)(lVar4 + 0x10) + (*(int *)(lVar4 + 0x10) >> 0x1f & 7U)) >> 3;
+    local_108 = *(undefined4 *)(lVar4 + 0x60);
+    local_c0 = *(undefined8 *)(lVar4 + 0x58);
+    lVar4 = *(longlong *)(param_3 + 8);
+    uVar3 = (undefined4)param_1[1];
+    local_f8 = *(undefined4 *)(lVar4 + 0x28);
+    uStack_f4 = *(undefined4 *)(lVar4 + 0x2c);
+    uStack_f0 = *(undefined4 *)(lVar4 + 8);
+    iStack_ec = (int)(*(int *)(lVar4 + 0x10) + (*(int *)(lVar4 + 0x10) >> 0x1f & 7U)) >> 3;
+    local_e8 = *(undefined4 *)(lVar4 + 0x60);
+    local_e0 = *(undefined8 *)(lVar4 + 0x58);
+    local_d8 = local_118;
+    uStack_d4 = uStack_114;
+    uStack_d0 = uStack_110;
+    iStack_cc = iStack_10c;
+    local_c8 = local_108;
+    iVar7 = (**(code **)(*param_1 + 0x10))(&local_b8,&local_118,uVar3);
+    if (iVar7 == 0) {
+      local_a0 = param_1[4];
+      iVar7 = (**(code **)(*param_1 + 0x18))(&local_b8,&local_d8,uVar3);
+      if (iVar7 == 0) {
+        local_108 = local_e8;
+        local_118 = local_f8;
+        uStack_114 = uStack_f4;
+        uStack_110 = uStack_f0;
+        iStack_10c = iStack_ec;
+        iVar7 = (**(code **)(*param_1 + 0x10))(local_78,&local_118,uVar3);
+        if (iVar7 == 0) {
+          local_60 = param_1[5];
+          iVar7 = (**(code **)(*param_1 + 0x18))(local_78,&local_f8,uVar3);
+          if (iVar7 == 0) {
+            local_88 = local_a8;
+            local_80 = param_1[6];
+            local_98 = local_b8;
+            uStack_94 = uStack_b4;
+            uStack_90 = uStack_b0;
+            uStack_8c = uStack_ac;
+            iVar7 = (**(code **)(*param_1 + 0x20))(&local_98);
+            if (iVar7 == 0) {
+              local_160 = &local_98;
+              local_138 = 0;
+              local_130 = 0;
+              local_128[0] = 0;
+              local_168 = local_78;
+              local_158 = uVar3;
+              local_150 = uVar2;
+              local_148 = lVar1;
+              local_140 = (char)lVar5;
+              iVar7 = (**(code **)(*param_1 + 0x28))(&local_138,&local_130,local_128,&local_b8);
+              if (iVar7 == 0) {
+                *param_4 = local_128[0];
+                param_4[1] = local_138 ^ 0x8000000000000000;
+                param_4[2] = local_130 ^ 0x8000000000000000;
+                return 0;
+              }
+            }
+          }
+        }
+      }
+    }
+    uVar8 = 0x130;
+  }
+  else {
+    uVar8 = _log_info_id(2);
+    LogTraceStdF(L"[Stitch_C++]convert NonAlignment image error.",uVar8,
+                 L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                 ,0x37);
+    uVar8 = 0x12f;
+  }
+  return uVar8;
+}
+

@@ -1,0 +1,452 @@
+Evidence: ev_438108a00c231cbd84c261ad3cff6f29e7e2d3495e3ccd9e10bdf65f07c67f77
+Subject SHA256: c42a02b15a73b5989f89a24246e897df97e4d73da6cc0a36f42bef48eb82f6ef
+Bundle: fusion-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+undefined8
+FUN_1800102c0(longlong param_1,int param_2,int param_3,int param_4,int param_5,longlong param_6,
+             longlong param_7)
+
+{
+  longlong *plVar1;
+  int *piVar2;
+  char *pcVar3;
+  undefined1 auVar4 [16];
+  ulonglong uVar5;
+  undefined8 uVar6;
+  void *pvVar7;
+  void *pvVar8;
+  int iVar9;
+  uint *puVar10;
+  longlong *plVar11;
+  longlong *plVar12;
+  longlong *plVar13;
+  ulonglong *puVar14;
+  undefined8 uVar15;
+  longlong *plVar16;
+  undefined8 *puVar17;
+  wchar_t *pwVar18;
+  uint uVar19;
+  int iVar20;
+  ulonglong uVar21;
+  int iVar22;
+  double dVar23;
+  undefined4 uVar24;
+  undefined4 uVar25;
+  undefined4 uVar26;
+  undefined1 auStackY_698 [32];
+  void *local_630;
+  undefined8 uStack_628;
+  undefined8 uStack_620;
+  ulonglong uStack_618;
+  undefined8 local_608;
+  undefined8 uStack_600;
+  undefined8 local_5f8;
+  ulonglong local_5f0;
+  undefined8 local_5e8;
+  undefined8 uStack_5e0;
+  undefined8 local_5d8;
+  ulonglong local_5d0;
+  undefined1 local_5c8;
+  undefined7 uStack_5c7;
+  undefined8 local_5b8;
+  ulonglong local_5b0;
+  undefined1 local_5a8;
+  undefined7 uStack_5a7;
+  undefined8 local_598;
+  ulonglong local_590;
+  undefined1 local_588;
+  undefined7 uStack_587;
+  undefined8 local_578;
+  ulonglong local_570;
+  undefined8 local_568;
+  undefined8 uStack_560;
+  undefined8 local_558;
+  ulonglong local_550;
+  undefined1 local_548;
+  undefined7 uStack_547;
+  undefined8 local_538;
+  ulonglong local_530;
+  void *local_528;
+  undefined8 uStack_520;
+  undefined8 local_518;
+  ulonglong uStack_510;
+  undefined1 local_508;
+  undefined7 uStack_507;
+  undefined8 local_4f8;
+  ulonglong local_4f0;
+  void *local_4e8;
+  undefined8 uStack_4e0;
+  undefined8 local_4d8;
+  ulonglong uStack_4d0;
+  undefined1 local_4c8;
+  undefined7 uStack_4c7;
+  undefined8 local_4b8;
+  ulonglong local_4b0;
+  undefined1 local_4a8;
+  undefined7 uStack_4a7;
+  undefined8 local_498;
+  ulonglong local_490;
+  wchar_t local_488;
+  undefined1 local_486 [1022];
+  ulonglong local_88;
+  
+  local_88 = DAT_180023000 ^ (ulonglong)auStackY_698;
+  local_488 = L'\0';
+  memset(local_486,0,0x3fe);
+  local_530 = 0xf;
+  local_538 = 0;
+  local_548 = 0;
+  FUN_1800039a0((ulonglong *)&local_548,&DAT_180019ad0,0);
+  plVar16 = (longlong *)(param_6 + 8);
+  plVar1 = (longlong *)(param_7 + 8);
+  if ((plVar16 == (longlong *)0x0) || (plVar1 == (longlong *)0x0)) {
+    uVar15 = _log_info_id(2);
+    pwVar18 = L"[Stitch_C++]z image null error.";
+  }
+  else {
+    piVar2 = (int *)(*plVar16 + 0x28);
+    uVar15 = *(undefined8 *)piVar2;
+    local_5e8 = (void *)0x0;
+    uStack_5e0 = 0;
+    local_568 = (void *)CONCAT44(param_5,param_4);
+    local_608 = (void *)CONCAT44(param_3,param_2);
+    puVar10 = (uint *)&local_568;
+    if (param_4 <= param_2) {
+      puVar10 = (uint *)&local_608;
+    }
+    local_5e8 = (void *)(ulonglong)*puVar10;
+    puVar17 = &local_568;
+    if (param_5 <= param_3) {
+      puVar17 = &local_608;
+    }
+    local_5e8 = (void *)CONCAT44(*(undefined4 *)((longlong)puVar17 + 4),*puVar10);
+    uVar5 = (ulonglong)local_5e8;
+    uVar19 = param_4 - param_2 >> 0x1f;
+    iVar22 = *piVar2 - ((param_4 - param_2 ^ uVar19) - uVar19);
+    uVar19 = param_5 - param_3 >> 0x1f;
+    iVar9 = (param_5 - param_3 ^ uVar19) - uVar19;
+    iVar20 = *(int *)(*plVar16 + 0x2c) - iVar9;
+    uStack_5e0 = CONCAT44(iVar20,iVar22);
+    uVar6 = uStack_5e0;
+    if ((0 < iVar22) && (0 < iVar20)) {
+      local_4e8 = (void *)0x0;
+      uStack_4e0 = 0;
+      local_4d8 = 0;
+      uStack_4d0 = 0;
+      local_528 = (void *)0x0;
+      uStack_520 = 0;
+      local_518 = 0;
+      uStack_510 = 0;
+      local_568 = (void *)0x0;
+      uStack_560 = 0;
+      dVar23 = (double)*(int *)(param_1 + 0x114) * *(double *)(param_1 + 0x1e0);
+      iVar20 = (int)ROUND(dVar23);
+      auVar4._8_8_ = 0;
+      auVar4._0_8_ = -(ulonglong)(dVar23 < (double)iVar20);
+      iVar9 = movmskpd(iVar9,auVar4);
+      uVar19 = 0;
+      uVar24 = 0;
+      uVar25 = 0;
+      uVar26 = 0;
+      if (*(int *)(param_1 + 0x110) == 1) {
+        local_608 = (void *)CONCAT44(param_5,param_4);
+        FUN_180012250(uVar15,(longlong)&local_5e8,local_608,CONCAT44(param_3,param_2),iVar20 - iVar9
+                      ,uVar15,(int *)&local_568);
+        uVar19 = (uint)local_568;
+        uVar24 = local_568._4_4_;
+        uVar25 = (undefined4)uStack_560;
+        uVar26 = uStack_560._4_4_;
+      }
+      plVar11 = FUN_180007430(&local_630,*(long *)(param_7 + 0x10));
+      plVar12 = FUN_180007430((undefined8 *)&local_588,*(long *)(param_6 + 0x10));
+      pcVar3 = *(char **)(param_1 + 0x48);
+      local_5f0 = 0xf;
+      local_5f8 = 0;
+      local_608 = (void *)((ulonglong)local_608 & 0xffffffffffffff00);
+      if (*pcVar3 == '\0') {
+        uVar21 = 0;
+      }
+      else {
+        uVar21 = 0xffffffffffffffff;
+        do {
+          uVar21 = uVar21 + 1;
+        } while (pcVar3[uVar21] != '\0');
+      }
+      FUN_1800039a0(&local_608,pcVar3,uVar21);
+      pcVar3 = *(char **)(param_1 + 0x40);
+      local_5d0 = 0xf;
+      local_5d8 = 0;
+      local_5e8 = (void *)((ulonglong)local_5e8 & 0xffffffffffffff00);
+      if (*pcVar3 == '\0') {
+        uVar21 = 0;
+      }
+      else {
+        uVar21 = 0xffffffffffffffff;
+        do {
+          uVar21 = uVar21 + 1;
+        } while (pcVar3[uVar21] != '\0');
+      }
+      FUN_1800039a0(&local_5e8,pcVar3,uVar21);
+      plVar13 = FUN_1800150d0((undefined8 *)&local_5a8,&local_5e8,&local_608);
+      puVar14 = FUN_1800150d0((undefined8 *)&local_5c8,plVar13,plVar12);
+      plVar12 = FUN_1800151a0(&local_568,puVar14,"-");
+      FUN_1800150d0((undefined8 *)&local_508,plVar12,plVar11);
+      if (0xf < local_550) {
+        operator_delete(local_568);
+      }
+      local_550 = 0xf;
+      local_558 = 0;
+      local_568 = (void *)((ulonglong)local_568 & 0xffffffffffffff00);
+      if (0xf < local_5b0) {
+        operator_delete((void *)CONCAT71(uStack_5c7,local_5c8));
+      }
+      local_5b0 = 0xf;
+      local_5b8 = 0;
+      local_5c8 = 0;
+      if (0xf < local_590) {
+        operator_delete((void *)CONCAT71(uStack_5a7,local_5a8));
+      }
+      local_590 = 0xf;
+      local_598 = 0;
+      local_5a8 = 0;
+      if (0xf < local_5d0) {
+        operator_delete(local_5e8);
+      }
+      local_5d0 = 0xf;
+      local_5d8 = 0;
+      local_5e8 = (void *)((ulonglong)local_5e8 & 0xffffffffffffff00);
+      if (0xf < local_5f0) {
+        operator_delete(local_608);
+      }
+      local_5f0 = 0xf;
+      local_5f8 = 0;
+      local_608 = (void *)((ulonglong)local_608 & 0xffffffffffffff00);
+      if (0xf < local_570) {
+        operator_delete((void *)CONCAT71(uStack_587,local_588));
+      }
+      local_570 = 0xf;
+      local_578 = 0;
+      local_588 = 0;
+      if (0xf < uStack_618) {
+        operator_delete(local_630);
+      }
+      uStack_618 = 0xf;
+      uStack_620 = 0;
+      local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+      FUN_180006510((ulonglong *)&local_4a8,(undefined8 *)&local_508,"_base.png");
+      local_5e8 = (void *)CONCAT44(uVar24,uVar19);
+      uStack_5e0 = CONCAT44(uVar26,uVar25);
+      local_608 = (void *)uVar5;
+      uStack_600 = uVar6;
+      uStack_618 = 0xf;
+      uStack_620 = 0;
+      local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+      FUN_1800033a0((longlong *)&local_630,(longlong *)&local_4a8,0,0xffffffffffffffff);
+      uVar15 = FUN_1800123a0(param_1,(longlong *)&local_630,(int *)&local_608,(int *)&local_5e8,
+                             CONCAT44(param_3,param_2),*plVar16,(undefined4 *)&local_4e8);
+      pvVar8 = local_4e8;
+      if ((char)uVar15 == '\0') {
+        uVar15 = _log_info_id(2);
+        LogTraceStdF(L"[Stitch_C++]get ovarlap area average error.",uVar15,
+                     L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                     ,0x37);
+        uVar15 = 0;
+      }
+      else {
+        plVar16 = FUN_1800074e0(&local_4e8,(double)local_4e8);
+        puVar14 = FUN_180007430((undefined8 *)&local_5c8,*(long *)(param_6 + 0x10));
+        puVar14 = FUN_180015150((undefined8 *)&local_5a8,"[Stitch_C++]src ID.",puVar14);
+        plVar11 = FUN_1800151a0((undefined8 *)&local_588,puVar14," : ");
+        puVar17 = FUN_1800150d0(&local_630,plVar11,plVar16);
+        if ((undefined8 *)&local_548 != puVar17) {
+          FUN_1800135f0((undefined8 *)&local_548,puVar17);
+        }
+        if (0xf < uStack_618) {
+          operator_delete(local_630);
+        }
+        uStack_618 = 0xf;
+        uStack_620 = 0;
+        local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+        if (0xf < local_570) {
+          operator_delete((void *)CONCAT71(uStack_587,local_588));
+        }
+        local_570 = 0xf;
+        local_578 = 0;
+        local_588 = 0;
+        if (0xf < local_590) {
+          operator_delete((void *)CONCAT71(uStack_5a7,local_5a8));
+        }
+        local_590 = 0xf;
+        local_598 = 0;
+        local_5a8 = 0;
+        if (0xf < local_5b0) {
+          operator_delete((void *)CONCAT71(uStack_5c7,local_5c8));
+        }
+        local_5b0 = 0xf;
+        local_5b8 = 0;
+        local_5c8 = 0;
+        if (0xf < uStack_4d0) {
+          operator_delete(local_4e8);
+        }
+        uStack_618 = 0xf;
+        uStack_620 = 0;
+        local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+        FUN_1800033a0((longlong *)&local_630,(longlong *)&local_548,0,0xffffffffffffffff);
+        FUN_1800073b0((char *)&local_630,&local_488);
+        uVar15 = _log_info_id(2);
+        LogTraceStdF(&local_488,uVar15,
+                     L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                    );
+        FUN_180006510((ulonglong *)&local_4c8,(undefined8 *)&local_508,"_shift.png");
+        local_5e8 = (void *)CONCAT44(uVar24,uVar19);
+        uStack_5e0 = CONCAT44(uVar26,uVar25);
+        local_608 = (void *)uVar5;
+        uStack_600 = uVar6;
+        uStack_618 = 0xf;
+        uStack_620 = 0;
+        local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+        FUN_1800033a0((longlong *)&local_630,(longlong *)&local_4c8,0,0xffffffffffffffff);
+        uVar15 = FUN_1800123a0(param_1,(longlong *)&local_630,(int *)&local_608,(int *)&local_5e8,
+                               CONCAT44(param_5,param_4),*plVar1,(undefined4 *)&local_528);
+        pvVar7 = local_528;
+        if ((char)uVar15 == '\0') {
+          uVar15 = _log_info_id(2);
+          pwVar18 = L"[Stitch_C++]get ovarlap area average error.";
+LAB_180010c69:
+          LogTraceStdF(pwVar18,uVar15,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                       ,0x37);
+          uVar15 = 0;
+        }
+        else {
+          plVar16 = FUN_1800074e0(&local_528,(double)local_528);
+          puVar14 = FUN_180007430((undefined8 *)&local_5c8,*(long *)(param_7 + 0x10));
+          puVar14 = FUN_180015150((undefined8 *)&local_5a8,"[Stitch_C++]dst ID.",puVar14);
+          plVar11 = FUN_1800151a0((undefined8 *)&local_588,puVar14," : ");
+          puVar17 = FUN_1800150d0(&local_630,plVar11,plVar16);
+          if ((undefined8 *)&local_548 != puVar17) {
+            FUN_1800135f0((undefined8 *)&local_548,puVar17);
+          }
+          if (0xf < uStack_618) {
+            operator_delete(local_630);
+          }
+          uStack_618 = 0xf;
+          uStack_620 = 0;
+          local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+          if (0xf < local_570) {
+            operator_delete((void *)CONCAT71(uStack_587,local_588));
+          }
+          local_570 = 0xf;
+          local_578 = 0;
+          local_588 = 0;
+          if (0xf < local_590) {
+            operator_delete((void *)CONCAT71(uStack_5a7,local_5a8));
+          }
+          local_590 = 0xf;
+          local_598 = 0;
+          local_5a8 = 0;
+          if (0xf < local_5b0) {
+            operator_delete((void *)CONCAT71(uStack_5c7,local_5c8));
+          }
+          local_5b0 = 0xf;
+          local_5b8 = 0;
+          local_5c8 = 0;
+          if (0xf < uStack_510) {
+            operator_delete(local_528);
+          }
+          uStack_618 = 0xf;
+          uStack_620 = 0;
+          local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+          FUN_1800033a0((longlong *)&local_630,(longlong *)&local_548,0,0xffffffffffffffff);
+          FUN_1800073b0((char *)&local_630,&local_488);
+          uVar15 = _log_info_id(2);
+          LogTraceStdF(&local_488,uVar15,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                      );
+          uStack_628 = 0;
+          uStack_620 = 0;
+          uStack_618 = 0;
+          local_630 = (void *)((double)pvVar8 - (double)pvVar7);
+          iVar9 = cvGetErrStatus();
+          if (iVar9 < 0) {
+LAB_180010b61:
+            cvError(0xffffffff,s_FitZScale_1800231d8,"Inner function failed.");
+          }
+          else {
+            local_528 = local_630;
+            uStack_520 = uStack_628;
+            local_518 = uStack_620;
+            uStack_510 = uStack_618;
+            cvAddS(*plVar1,&local_528,*plVar1);
+            iVar9 = cvGetErrStatus();
+            if (iVar9 < 0) goto LAB_180010b61;
+          }
+          puVar14 = FUN_1800074e0(&local_528,(double)pvVar8 - (double)pvVar7);
+          puVar17 = FUN_180015150(&local_630,"[Stitch_C++]sub : ",puVar14);
+          if ((undefined8 *)&local_548 != puVar17) {
+            FUN_1800135f0((undefined8 *)&local_548,puVar17);
+          }
+          if (0xf < uStack_618) {
+            operator_delete(local_630);
+          }
+          uStack_618 = 0xf;
+          uStack_620 = 0;
+          local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+          if (0xf < uStack_510) {
+            operator_delete(local_528);
+          }
+          uStack_618 = 0xf;
+          uStack_620 = 0;
+          local_630 = (void *)((ulonglong)local_630 & 0xffffffffffffff00);
+          FUN_1800033a0((longlong *)&local_630,(longlong *)&local_548,0,0xffffffffffffffff);
+          FUN_1800073b0((char *)&local_630,&local_488);
+          uVar15 = _log_info_id(2);
+          LogTraceStdF(&local_488,uVar15,
+                       L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+                       ,0x37);
+          iVar9 = cvGetErrStatus();
+          if (iVar9 < 0) {
+            uVar15 = _log_info_id(2);
+            pwVar18 = L"[Stitch_C++]OpenCV error.";
+            goto LAB_180010c69;
+          }
+          uVar15 = 1;
+        }
+        if (0xf < local_4b0) {
+          operator_delete((void *)CONCAT71(uStack_4c7,local_4c8));
+        }
+        local_4b0 = 0xf;
+        local_4b8 = 0;
+        local_4c8 = 0;
+      }
+      if (0xf < local_490) {
+        operator_delete((void *)CONCAT71(uStack_4a7,local_4a8));
+      }
+      local_490 = 0xf;
+      local_498 = 0;
+      local_4a8 = 0;
+      if (0xf < local_4f0) {
+        operator_delete((void *)CONCAT71(uStack_507,local_508));
+      }
+      local_4f0 = 0xf;
+      local_4f8 = 0;
+      local_508 = 0;
+      goto LAB_180010d55;
+    }
+    uVar15 = _log_info_id(2);
+    pwVar18 = L"[Stitch_C++]overlap size error.";
+  }
+  LogTraceStdF(pwVar18,uVar15,
+               L"c:\\jenkins\\workspace\\izanagi_releasebuild\\sdk\\image\\stitchingcommon\\include\\LoggingMessage.h"
+               ,0x37);
+  uVar15 = 0;
+LAB_180010d55:
+  if (0xf < local_530) {
+    operator_delete((void *)CONCAT71(uStack_547,local_548));
+  }
+  return uVar15;
+}
+

@@ -1,0 +1,320 @@
+Evidence: ev_1056f142bb9b7990ac80a9b42e91e8acd9d9fb4b70c809f730e67a228f979a34
+Subject SHA256: 1b0fdd9023cca9c1c835122971b80bb9a7329d349654c2c5049d28e7a6e36e56
+Bundle: appnative-extra-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_14001b8c0(longlong param_1,longlong *param_2,int *param_3,int *param_4,
+                       undefined8 param_5,longlong param_6,undefined4 *param_7)
+
+{
+  int iVar1;
+  int iVar2;
+  void *pvVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  undefined4 uVar6;
+  undefined4 uVar7;
+  undefined4 uVar8;
+  undefined4 uVar9;
+  undefined4 uVar10;
+  int iVar11;
+  int iVar12;
+  longlong lVar13;
+  ulonglong uVar14;
+  undefined4 *puVar15;
+  longlong *plVar16;
+  undefined8 uVar17;
+  basic_ostream<char,std::char_traits<char>_> *this;
+  void *pvVar18;
+  undefined1 auStack_f8 [32];
+  undefined4 local_d8;
+  int local_c8;
+  int iStack_c4;
+  undefined **local_c0;
+  longlong local_b8;
+  undefined **local_b0;
+  longlong local_a8 [2];
+  undefined8 local_98;
+  longlong lStack_90;
+  undefined4 local_88;
+  undefined4 uStack_84;
+  undefined4 uStack_80;
+  undefined4 uStack_7c;
+  int local_78;
+  undefined8 local_68;
+  undefined8 uStack_60;
+  undefined8 local_58;
+  undefined8 uStack_50;
+  longlong local_48;
+  undefined8 local_40;
+  longlong *local_38;
+  ulonglong local_30;
+  
+  local_40 = 0xfffffffffffffffe;
+  local_30 = DAT_140030010 ^ (ulonglong)auStack_f8;
+  iStack_c4 = param_3[3];
+  plVar16 = (longlong *)(param_3 + 2);
+  iVar12 = (int)*plVar16;
+  lStack_90 = *plVar16;
+  local_98 = (undefined **)
+             CONCAT44(param_3[1] - (int)((ulonglong)param_5 >> 0x20),*param_3 - (int)param_5);
+  local_b0 = AutoIplImage::vftable;
+  local_a8[0] = 0;
+  iVar1 = param_4[3];
+  iVar2 = param_4[2];
+  uStack_60 = *(undefined8 *)(param_4 + 2);
+  local_68 = CONCAT44(param_4[1] - param_3[1],*param_4 - *param_3);
+  local_c0 = AutoIplImage::vftable;
+  local_b8 = 0;
+  local_c8 = iVar12;
+  local_78 = iStack_c4;
+  local_48 = param_1;
+  local_38 = param_2;
+  lVar13 = cvCreateImage(*plVar16,*(undefined4 *)(param_6 + 0x10),*(undefined4 *)(param_6 + 8));
+  if (local_a8[0] != 0) {
+    cvReleaseImage(local_a8);
+    iVar11 = cvGetErrStatus();
+    if (iVar11 < 0) {
+      local_d8 = 0x28b;
+      cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+              "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+             );
+    }
+  }
+  local_a8[0] = lVar13;
+  iVar11 = cvGetErrStatus();
+  if (iVar11 < 0) {
+    local_d8 = 0xc58;
+  }
+  else {
+    cvSetImageROI(param_6,&local_98);
+    iVar11 = cvGetErrStatus();
+    if (iVar11 < 0) {
+      local_d8 = 0xc59;
+    }
+    else {
+      cvCopy(param_6,local_a8[0],0);
+      iVar11 = cvGetErrStatus();
+      if (iVar11 < 0) {
+        local_d8 = 0xc5a;
+      }
+      else {
+        cvResetImageROI(param_6);
+        iVar11 = cvGetErrStatus();
+        if (iVar11 < 0) {
+          local_d8 = 0xc5b;
+        }
+        else if ((iVar2 < 1) || (iVar1 < 1)) {
+          puVar15 = (undefined4 *)cvAvg(&local_68,local_a8[0],0);
+          uVar4 = puVar15[1];
+          uVar5 = puVar15[2];
+          uVar6 = puVar15[3];
+          uVar7 = puVar15[4];
+          uVar8 = puVar15[5];
+          uVar9 = puVar15[6];
+          uVar10 = puVar15[7];
+          *param_7 = *puVar15;
+          param_7[1] = uVar4;
+          param_7[2] = uVar5;
+          param_7[3] = uVar6;
+          param_7[4] = uVar7;
+          param_7[5] = uVar8;
+          param_7[6] = uVar9;
+          param_7[7] = uVar10;
+          iVar12 = cvGetErrStatus();
+          if (-1 < iVar12) {
+LAB_14001bd44:
+            if (*(int *)(local_48 + 0xd4) == 1) {
+              local_c8 = *(int *)(local_a8[0] + 0x28);
+              iStack_c4 = *(int *)(local_a8[0] + 0x2c);
+              lStack_90 = cvCreateImage(*(undefined8 *)(local_a8[0] + 0x28),0x10,1);
+              local_98 = AutoIplImage::vftable;
+              cvConvertScale(local_a8[0],lStack_90,0x3ff0000000000000,0);
+              plVar16 = FUN_1400042a0(&local_68,param_2);
+              uVar17 = FUN_140001a40((longlong)&local_98,plVar16);
+              if ((char)uVar17 == '\0') {
+                this = FUN_14001ccb0((basic_ostream<char,std::char_traits<char>_> *)cout_exref);
+                std::basic_ostream<char,std::char_traits<char>_>::operator<<(this,FUN_14001ce70);
+              }
+              local_98 = AutoIplImage::vftable;
+              if (lStack_90 != 0) {
+                cvReleaseImage(&lStack_90);
+                iVar12 = cvGetErrStatus();
+                if (iVar12 < 0) {
+                  local_d8 = 0x28b;
+                  cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+                          "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+                         );
+                }
+              }
+            }
+            goto LAB_14001ba2c;
+          }
+          local_d8 = 0xc6c;
+        }
+        else {
+          iStack_c4 = local_78;
+          local_c8 = iVar12;
+          lVar13 = cvCreateImage(CONCAT44(local_78,iVar12),8,1);
+          if (local_b8 != 0) {
+            cvReleaseImage(&local_b8);
+            iVar12 = cvGetErrStatus();
+            if (iVar12 < 0) {
+              local_d8 = 0x28b;
+              cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+                      "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+                     );
+            }
+          }
+          local_b8 = lVar13;
+          iVar12 = cvGetErrStatus();
+          if (iVar12 < 0) {
+            local_d8 = 0xc61;
+          }
+          else {
+            local_98 = (undefined **)0x406fe00000000000;
+            lStack_90 = 0x406fe00000000000;
+            local_88 = 0;
+            uStack_84 = 0x406fe000;
+            uStack_80 = 0;
+            uStack_7c = 0x406fe000;
+            cvSet(local_b8,&local_98,0);
+            iVar12 = cvGetErrStatus();
+            if (iVar12 < 0) {
+              local_d8 = 0xc62;
+            }
+            else {
+              cvSetImageROI(local_b8,&local_68);
+              iVar12 = cvGetErrStatus();
+              if (iVar12 < 0) {
+                local_d8 = 0xc63;
+              }
+              else {
+                local_68 = 0;
+                uStack_60 = 0;
+                local_58 = 0;
+                uStack_50 = 0;
+                cvSet(local_b8,&local_68,0);
+                iVar12 = cvGetErrStatus();
+                if (iVar12 < 0) {
+                  local_d8 = 0xc64;
+                }
+                else {
+                  cvResetImageROI(local_b8);
+                  iVar12 = cvGetErrStatus();
+                  if (iVar12 < 0) {
+                    local_d8 = 0xc65;
+                  }
+                  else {
+                    puVar15 = (undefined4 *)cvAvg(&local_68,local_a8[0],local_b8);
+                    uVar4 = puVar15[1];
+                    uVar5 = puVar15[2];
+                    uVar6 = puVar15[3];
+                    uVar7 = puVar15[4];
+                    uVar8 = puVar15[5];
+                    uVar9 = puVar15[6];
+                    uVar10 = puVar15[7];
+                    *param_7 = *puVar15;
+                    param_7[1] = uVar4;
+                    param_7[2] = uVar5;
+                    param_7[3] = uVar6;
+                    param_7[4] = uVar7;
+                    param_7[5] = uVar8;
+                    param_7[6] = uVar9;
+                    param_7[7] = uVar10;
+                    iVar12 = cvGetErrStatus();
+                    if (-1 < iVar12) goto LAB_14001bd44;
+                    local_d8 = 0xc68;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  cvError(0xffffffff,s_GetAreaAverage_1400301d8,"Inner function failed.",
+          "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagetstitching.cpp"
+         );
+LAB_14001ba2c:
+  uVar14 = cvGetErrStatus();
+  local_c0 = AutoIplImage::vftable;
+  if ((int)uVar14 < 0) {
+    if (local_b8 != 0) {
+      cvReleaseImage(&local_b8);
+      uVar14 = cvGetErrStatus();
+      if ((int)uVar14 < 0) {
+        local_d8 = 0x28b;
+        uVar14 = cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+                         "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+                        );
+      }
+    }
+    local_b0 = AutoIplImage::vftable;
+    if (local_a8[0] != 0) {
+      cvReleaseImage(local_a8);
+      uVar14 = cvGetErrStatus();
+      if ((int)uVar14 < 0) {
+        local_d8 = 0x28b;
+        uVar14 = cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+                         "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+                        );
+      }
+    }
+    if (0xf < (ulonglong)param_2[3]) {
+      pvVar3 = (void *)*param_2;
+      pvVar18 = pvVar3;
+      if ((0xfff < param_2[3] + 1U) &&
+         (pvVar18 = *(void **)((longlong)pvVar3 + -8),
+         0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar18)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      uVar14 = FUN_1400219e4(pvVar18);
+    }
+    uVar14 = uVar14 & 0xffffffffffffff00;
+  }
+  else {
+    if (local_b8 != 0) {
+      cvReleaseImage(&local_b8);
+      uVar14 = cvGetErrStatus();
+      if ((int)uVar14 < 0) {
+        local_d8 = 0x28b;
+        uVar14 = cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+                         "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+                        );
+      }
+    }
+    local_b0 = AutoIplImage::vftable;
+    if (local_a8[0] != 0) {
+      cvReleaseImage(local_a8);
+      uVar14 = cvGetErrStatus();
+      if ((int)uVar14 < 0) {
+        local_d8 = 0x28b;
+        uVar14 = cvError(0xffffffff,s_release_140030048,"Inner function failed.",
+                         "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\olyaimagestitching\\imagemanager.cpp"
+                        );
+      }
+    }
+    if (0xf < (ulonglong)param_2[3]) {
+      pvVar3 = (void *)*param_2;
+      pvVar18 = pvVar3;
+      if ((0xfff < param_2[3] + 1U) &&
+         (pvVar18 = *(void **)((longlong)pvVar3 + -8),
+         0x1f < (ulonglong)((longlong)pvVar3 + (-8 - (longlong)pvVar18)))) {
+                    /* WARNING: Subroutine does not return */
+        _invalid_parameter_noinfo_noreturn();
+      }
+      uVar14 = FUN_1400219e4(pvVar18);
+    }
+    uVar14 = CONCAT71((int7)(uVar14 >> 8),1);
+  }
+  param_2[2] = 0;
+  param_2[3] = 0xf;
+  *(undefined1 *)param_2 = 0;
+  return uVar14;
+}
+

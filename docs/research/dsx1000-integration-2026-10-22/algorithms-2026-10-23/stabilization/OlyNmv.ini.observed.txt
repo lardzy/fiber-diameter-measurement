@@ -1,0 +1,6 @@
+[Parameter]
+DividerValue=8
+IsUseLpf=true
+LpfCutOff=0.5
+IsEstimationSubPixel=true
+ReliabilityThresh=0.35

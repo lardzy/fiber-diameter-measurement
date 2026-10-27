@@ -1,0 +1,237 @@
+Evidence: ev_c66f21c1077a53c53582e76d6e5227554440c9c3e2d311a0e8d689d59491cb0b
+Artifact: /Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlydDevice.dll
+SHA256: 5e1da5ce793f71258b95fd06f3960e1376841403acfe5e7b6f6753fde8a7183d
+Static CIL, not source C#, not runtime observation.
+
+0x0600001c Olympus.LI.Triumph.Device.Device.AHardwareWithPort.WaitForAsyncCommandResponse
+signature: {"raw_length":5,"raw_sha256":"82569dd2934d24c018b29f82ef3846474bc1370ae0b68fd2d9d985f662275959","resolved_sha256":"387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:28"],"field_type":null,"issue":null}
+body offset: 1772; IL sha256: ae03436ef04da732cf12a24f1f9ed2dd445fc258f6ec6c631a3ad2d87b7bfdfc; normalized IL sha256: f8bb1f25b2b6add5aadae67285fda0806d8f4f8f4f94a7f86070d98af955c883
+0: ldarg.1  
+1: brtrue.s 14 
+3: ldstr 0x70000127 "Command-handle is null."
+8: newobj 0x0a000035 Olympus.LI.Triumph.Device.Exception.DeviceParameterException..ctor
+13: throw  
+14: ldarg.1  
+15: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+20: callvirt 0x0a000028 System.Object.GetType
+25: ldtoken 0x0100000e 
+30: call 0x0a000036 System.Type.GetTypeFromHandle
+35: callvirt 0x0a000037 System.Type.Equals
+40: brfalse.s 51 
+42: ldarg.0  
+43: ldarg.1  
+44: callvirt 0x06000024 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand
+49: pop  
+50: ret  
+51: ldarg.1  
+52: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+57: callvirt 0x0a000028 System.Object.GetType
+62: ldtoken 0x0100000f 
+67: call 0x0a000036 System.Type.GetTypeFromHandle
+72: callvirt 0x0a000037 System.Type.Equals
+77: brfalse.s 87 
+79: ldarg.0  
+80: ldarg.1  
+81: callvirt 0x06000025 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveQueryCommand
+86: pop  
+87: ret  
+
+0x0600001e Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+signature: {"raw_length":5,"raw_sha256":"5df6f3e148f9a9b375e6ca5a80070a6a42e80f99771f4b795f6663f4bb73f780","resolved_sha256":"605999529bde6f65d215da9dfcc56b113f99d70e6f737680cc6d073db156ba39","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"i4","parameter_types":["class:57"],"field_type":null,"issue":null}
+body offset: 1929; IL sha256: 73b59f5ed83795cd50a0f6d426c796bab94da0a3d1097c18dedaa037fe036daf; normalized IL sha256: 906cbbde1ac1cfe701dcb1a6cfa9b4ca044da1d581b38bb6038e9dc97238fe86
+0: ldarg.0  
+1: ldarg.1  
+2: ldc.i4 5000 
+7: callvirt 0x0600001f Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+12: ret  
+
+0x0600001f Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendRequest
+signature: {"raw_length":6,"raw_sha256":"da52fd766924770a5741f1290bfd2019d22553c84a86cfa56639ea2da810212d","resolved_sha256":"ad12f9b2190bbf2e968d20c547bed707178019bdca0c1788ec93909902f93cf1","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"i4","parameter_types":["class:57","i4"],"field_type":null,"issue":null}
+body offset: 1944; IL sha256: 3a6c937a3af91947071a80cb7caadf768f909342b6c3f28de915b5de4860fe50; normalized IL sha256: 7b99a8ee5b5362e37cbc78196f74a0b00e67f311e37425579a7a183f3626bb82
+0: ldnull  
+1: stloc.0  
+2: ldarg.0  
+3: ldarg.1  
+4: ldarg.2  
+5: call 0x06000022 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand
+10: stloc.0  
+11: ldarg.0  
+12: ldloc.0  
+13: callvirt 0x06000024 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand
+18: stloc.1  
+19: leave.s 28 
+21: ldloc.0  
+22: callvirt 0x0600002e Olympus.LI.Triumph.Device.Device.Command.CommandHandle.Close
+27: endfinally  
+28: ldloc.1  
+29: ret  
+
+0x06000022 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncSendCommand
+signature: {"raw_length":7,"raw_sha256":"d31fdd377a733974d741b1474768c706fd2eab038fb54e7994fb68dddca5a21b","resolved_sha256":"8eee5320e3fc533d712881919ab859b2b36b7a36147ca84539e6b5f91c1c326e","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":2,"return_type":"class:28","parameter_types":["class:33","i4"],"field_type":null,"issue":null}
+body offset: 2080; IL sha256: 228ba5ab5dda378e6b86f46192b8f248081839c77071a12c4d2620ffc0e17785; normalized IL sha256: 1c373384b00e99ef5983507252f1ccb3ecffdfd5fac2d62543eaf121009875df
+0: ldarg.1  
+1: ldarg.0  
+2: ldfld 0x04000005 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._strCommonIndex
+7: callvirt 0x0a00003a Olympus.LI.Triumph.Device.Port.Command.ACommand.set_Index
+12: ldarg.1  
+13: ldarg.2  
+14: callvirt 0x0a00003b Olympus.LI.Triumph.Device.Port.Command.ASendCommand.set_Timeout
+19: ldarg.0  
+20: ldfld 0x04000007 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._clsQueue
+25: callvirt 0x0a00003c Olympus.LI.Triumph.Device.Port.ObjectQueue`1.get_Count
+30: ldc.i4.s 100 
+32: ble.s 45 
+34: ldsfld 0x0a000025 System.String.Empty
+39: newobj 0x0a00003d Olympus.LI.Triumph.Device.Exception.CommandException..ctor
+44: throw  
+45: ldarg.0  
+46: ldfld 0x04000007 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._clsQueue
+51: ldarg.1  
+52: callvirt 0x0a00003e Olympus.LI.Triumph.Device.Port.ObjectQueue`1.Put
+57: ldarg.1  
+58: newobj 0x0600002c Olympus.LI.Triumph.Device.Device.Command.CommandHandle..ctor
+63: ret  
+
+0x06000023 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand
+signature: {"raw_length":5,"raw_sha256":"82569dd2934d24c018b29f82ef3846474bc1370ae0b68fd2d9d985f662275959","resolved_sha256":"387f41260095066426aa7103058b8a1fc8cd427d9ce8e1cce8934b82b0a5d816","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["class:28"],"field_type":null,"issue":null}
+body offset: 2156; IL sha256: aa2c34e6113d08f81cfed61fdace9be3e9204d88a959644da59e09d2ac82a13b; normalized IL sha256: 21770835438d07df568b05d599b28ed01e0b0dae6ed0ec22d115def32acc93b9
+0: ldarg.1  
+1: brtrue.s 14 
+3: ldstr 0x70000127 "Command-handle is null."
+8: newobj 0x0a000035 Olympus.LI.Triumph.Device.Exception.DeviceParameterException..ctor
+13: throw  
+14: ldarg.0  
+15: ldfld 0x04000006 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._infPort
+20: ldarg.1  
+21: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+26: callvirt 0x0a00003f Olympus.LI.Triumph.Device.Port.IPort.Receive
+31: ldarg.1  
+32: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+37: callvirt 0x0a000040 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_IsTimeout
+42: brfalse.s 95 
+44: ldarg.1  
+45: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+50: callvirt 0x0a000041 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendCommand
+55: ldarg.1  
+56: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+61: callvirt 0x0a000042 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_SendParameter
+66: callvirt 0x0a000043 System.Collections.Generic.List`1.ToArray
+71: call 0x0a000044 Olympus.LI.Triumph.Device.Port.Command.ACommand.ChainParametersArray
+76: call 0x0a000045 Olympus.LI.Triumph.Device.Exception.CommandTimeoutException.CreateMessage
+81: stloc.0  
+82: ldloc.0  
+83: call 0x0a000046 Olympus.Mis.Core.Logging.Logger.WarningLog
+88: ldloc.0  
+89: newobj 0x0a000047 Olympus.LI.Triumph.Device.Exception.CommandTimeoutException..ctor
+94: throw  
+95: ret  
+
+0x06000024 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveRequestCommand
+signature: {"raw_length":5,"raw_sha256":"14ae12c6e53ec684648bd8dd3aff09cbcd54699757d574046075254d0f91066c","resolved_sha256":"c96f3563d42ea9cb38cc3d76b9a28bf2ac8bb4a3275d362ab3186d3ae85aeb0b","kind":"method","parse_status":"decoded","calling_convention":"default has-this","generic_parameter_count":null,"parameter_count":1,"return_type":"i4","parameter_types":["class:28"],"field_type":null,"issue":null}
+body offset: 2264; IL sha256: 9fe66f1a730af4892b77ff3de04223ecc68f4677aed8657e29c58c750794e41c; normalized IL sha256: 917bb87563e5c6482b7a4b16ee4915cc4e88477454679e6b1407093b05568b6c
+0: ldarg.0  
+1: ldarg.1  
+2: call 0x06000023 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.AsyncReceiveCommand
+7: ldarg.1  
+8: callvirt 0x0600002d Olympus.LI.Triumph.Device.Device.Command.CommandHandle.get_Command
+13: stloc.0  
+14: ldloc.0  
+15: callvirt 0x0a000048 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveParameter
+20: callvirt 0x0a000049 System.Collections.Generic.List`1.get_Count
+25: ldc.i4.1  
+26: beq.s 75 
+28: ldloc.0  
+29: callvirt 0x0a000048 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveParameter
+34: callvirt 0x0a000049 System.Collections.Generic.List`1.get_Count
+39: ldc.i4.2  
+40: beq.s 75 
+42: ldloc.0  
+43: callvirt 0x0a00004a Olympus.LI.Triumph.Device.Port.Command.ACommand.get_Name
+48: ldloc.0  
+49: callvirt 0x0a000048 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveParameter
+54: callvirt 0x0a000043 System.Collections.Generic.List`1.ToArray
+59: call 0x0a000044 Olympus.LI.Triumph.Device.Port.Command.ACommand.ChainParametersArray
+64: call 0x0a00004b Olympus.LI.Triumph.Device.Exception.CommandParameterException.CreateMessage
+69: newobj 0x0a00004c Olympus.LI.Triumph.Device.Exception.CommandParameterException..ctor
+74: throw  
+75: ldc.i4.0  
+76: stloc.1  
+77: ldsfld 0x0a000025 System.String.Empty
+82: stloc.2  
+83: ldloc.0  
+84: callvirt 0x0a000048 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveParameter
+89: callvirt 0x0a000043 System.Collections.Generic.List`1.ToArray
+94: ldloca.s 1 
+96: ldloca.s 2 
+98: call 0x0a00004d Olympus.LI.Triumph.Device.Port.Command.SCommandUtility.ParamToResult
+103: brfalse.s 116 
+105: ldloc.1  
+106: ldc.i4.1  
+107: bne.un.s 149 
+109: ldloc.2  
+110: call 0x0a00004e Olympus.LI.Triumph.Device.Exception.HardwareException.ConvertToInt32
+115: ret  
+116: ldloc.0  
+117: callvirt 0x0a00004a Olympus.LI.Triumph.Device.Port.Command.ACommand.get_Name
+122: ldloc.0  
+123: callvirt 0x0a000048 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_ReceiveParameter
+128: callvirt 0x0a000043 System.Collections.Generic.List`1.ToArray
+133: call 0x0a000044 Olympus.LI.Triumph.Device.Port.Command.ACommand.ChainParametersArray
+138: call 0x0a00004b Olympus.LI.Triumph.Device.Exception.CommandParameterException.CreateMessage
+143: newobj 0x0a00004c Olympus.LI.Triumph.Device.Exception.CommandParameterException..ctor
+148: throw  
+149: ldc.i4.0  
+150: ret  
+
+0x06000026 Olympus.LI.Triumph.Device.Device.AHardwareWithPort.SendThreadFunc
+signature: {"raw_length":4,"raw_sha256":"5a2a16fc9d52ebb2b465c0aa5b989fbf7b2b7294ea3d80e076ed2e9ba9d6b336","resolved_sha256":"5a2a16fc9d52ebb2b465c0aa5b989fbf7b2b7294ea3d80e076ed2e9ba9d6b336","kind":"method","parse_status":"decoded","calling_convention":"default","generic_parameter_count":null,"parameter_count":1,"return_type":"void","parameter_types":["object"],"field_type":null,"issue":null}
+body offset: 2468; IL sha256: 7445e28ac34e45d86fff4b532c39af16f5399f03ff36ce22cc1dec092d2dfd93; normalized IL sha256: 359bcb012a00fcd7387a26ef5fa05459183dc13ae99906a6480ae5e9186e17fc
+0: ldarg.0  
+1: castclass 0x02000005 
+6: stloc.0  
+7: br.s 126 
+9: ldloc.0  
+10: ldfld 0x04000007 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._clsQueue
+15: callvirt 0x0a00004f Olympus.LI.Triumph.Device.Port.ObjectQueue`1.Get
+20: stloc.1  
+21: ldloc.0  
+22: ldfld 0x04000009 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._blnTerminateThread
+27: brfalse.s 31 
+29: leave.s 134 
+31: ldloc.0  
+32: ldfld 0x04000006 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._infPort
+37: ldloc.1  
+38: ldloc.1  
+39: callvirt 0x0a000050 Olympus.LI.Triumph.Device.Port.Command.ASendCommand.get_Timeout
+44: callvirt 0x0a000051 Olympus.LI.Triumph.Device.Port.IPort.Send
+49: leave.s 126 
+51: stloc.2  
+52: ldloc.2  
+53: callvirt 0x0a00001e System.Exception.get_Message
+58: call 0x0a000052 Olympus.Mis.Core.Logging.Logger.DeviceErrorLog
+63: ldloc.0  
+64: ldloc.0  
+65: ldloc.2  
+66: newobj 0x0a000053 Olympus.LI.Triumph.Device.Exception.Events.DeviceExceptionEventArgs..ctor
+71: callvirt 0x0600000d Olympus.LI.Triumph.Device.Device.ACommonHardware.RaiseDeviceExceptionCathcedEvent
+76: leave.s 126 
+78: stloc.3  
+79: ldstr 0x70000157 "The send thread on hardware was catched {0}. trace={1}"
+84: ldloc.3  
+85: callvirt 0x0a000054 System.Exception.GetType
+90: callvirt 0x0a000029 System.Reflection.MemberInfo.get_Name
+95: ldloc.3  
+96: callvirt 0x0a000055 System.Exception.get_StackTrace
+101: call 0x0a000056 System.String.Format
+106: call 0x0a000052 Olympus.Mis.Core.Logging.Logger.DeviceErrorLog
+111: ldloc.0  
+112: ldloc.0  
+113: ldloc.3  
+114: newobj 0x0a000057 Olympus.LI.Triumph.Device.Exception.Events.SystemExceptionEventArgs..ctor
+119: callvirt 0x0600000e Olympus.LI.Triumph.Device.Device.ACommonHardware.RaiseSystemExceptionCathcedEvent
+124: leave.s 126 
+126: ldloc.0  
+127: ldfld 0x04000009 Olympus.LI.Triumph.Device.Device.AHardwareWithPort._blnTerminateThread
+132: brfalse.s 9 
+134: ret  
+

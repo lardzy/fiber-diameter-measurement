@@ -1,0 +1,494 @@
+EVIDENCE ev_843208320387c5be1655ded4cca7240e491442b3ec62025009b2df6b3a04cc1a SHA256 d466121f92f19d77a5346136635da3a3fb3b32ef45f6fd5bd813aee3e68eca03
+
+METHOD 0x06000033 OLYCoordinator.OLYCoordinator _ImageTrancefered IL_SHA256 7e6376a4949f5440cd30448dab30a7715e77a5ab6df4f432a6d50bf5b451130f DECODE_ISSUE null
+0000: ldc.i4.s      10 
+0002: newarr        0x010000c5 
+0007: dup            
+0008: ldc.i4.0       
+0009: ldstr         0x700004b7 "<S> _AcquisitionInfomation= "
+000e: stelem.ref     
+000f: dup            
+0010: ldc.i4.1       
+0011: ldarg.1        
+0012: callvirt      0x0a000029 System.Object.ToString
+0017: stelem.ref     
+0018: dup            
+0019: ldc.i4.2       
+001a: ldstr         0x700004f1 " , _ImageDataPathInfo= "
+001f: stelem.ref     
+0020: dup            
+0021: ldc.i4.3       
+0022: ldarg.2        
+0023: callvirt      0x0a000029 System.Object.ToString
+0028: stelem.ref     
+0029: dup            
+002a: ldc.i4.4       
+002b: ldstr         0x70000521 " , _AutoSaveInfo = "
+0030: stelem.ref     
+0031: dup            
+0032: ldc.i4.5       
+0033: ldarg.3        
+0034: callvirt      0x0a000029 System.Object.ToString
+0039: stelem.ref     
+003a: dup            
+003b: ldc.i4.6       
+003c: ldstr         0x70000549 " , _StitchingInfo = "
+0041: stelem.ref     
+0042: dup            
+0043: ldc.i4.7       
+0044: ldarg.s       4 
+0046: callvirt      0x0a000029 System.Object.ToString
+004b: stelem.ref     
+004c: dup            
+004d: ldc.i4.8       
+004e: ldstr         0x70000573 " , _AnnotationData = "
+0053: stelem.ref     
+0054: dup            
+0055: ldc.i4.s      9 
+0057: ldarg.s       5 
+0059: callvirt      0x0a000029 System.Object.ToString
+005e: stelem.ref     
+005f: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+0064: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0069: newobj        0x0a000039 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result..ctor
+006e: stloc.0        
+006f: ldloc.0        
+0070: ldc.i4.1       
+0071: callvirt      0x0a000062 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_IsSuccess
+0076: call          0x0a00006b Olympus.CF.CommonUtility.Common.CommonUtility.get_ApplicationMode
+007b: ldc.i4.2       
+007c: bne.un        712 
+0081: call          0x0a00003f System.Configuration.ConfigurationManager.get_AppSettings
+0086: ldstr         0x7000059f "OLS5000AppPath"
+008b: callvirt      0x0a00006c System.Collections.Specialized.NameValueCollection.Get
+0090: callvirt      0x0a000029 System.Object.ToString
+0095: stloc.2        
+0096: ldloc.2        
+0097: call          0x0a000049 System.IO.File.Exists
+009c: brfalse       459 
+00a1: ldloc.2        
+00a2: call          0x0a00006d System.Diagnostics.FileVersionInfo.GetVersionInfo
+00a7: ldstr         0x700005bd "2.2.1.0"
+00ac: newobj        0x0a00006e System.Version..ctor
+00b1: stloc.3        
+00b2: callvirt      0x0a00006f System.Diagnostics.FileVersionInfo.get_FileVersion
+00b7: newobj        0x0a00006e System.Version..ctor
+00bc: stloc.s       4 
+00be: ldloc.s       4 
+00c0: ldloc.3        
+00c1: call          0x0a000070 System.Version.op_LessThan
+00c6: brfalse       712 
+00cb: ldloc.0        
+00cc: ldc.i4.0       
+00cd: callvirt      0x0a000062 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_IsSuccess
+00d2: ldloc.0        
+00d3: ldsfld        0x0a000071 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.ErrorCode.ImageTransfer.SAVEFILEERROR
+00d8: callvirt      0x0a000072 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_ErrorCode
+00dd: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+00e2: callvirt      0x2b000002 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+00e7: stloc.s       5 
+00e9: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+00ee: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+00f3: stloc.s       6 
+00f5: ldloc.s       5 
+00f7: ldc.i4        570884113 
+00fc: callvirt      0x0a000032 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+0101: stloc.s       7 
+0103: ldc.i4.s      10 
+0105: newarr        0x010000c5 
+010a: dup            
+010b: ldc.i4.0       
+010c: ldstr         0x700005cd "Error msg : "
+0111: stelem.ref     
+0112: dup            
+0113: ldc.i4.1       
+0114: ldloc.s       7 
+0116: stelem.ref     
+0117: dup            
+0118: ldc.i4.2       
+0119: ldstr         0x700005e7 ", CurrentVersion of OLS5100 = "
+011e: stelem.ref     
+011f: dup            
+0120: ldc.i4.3       
+0121: ldloc.s       4 
+0123: callvirt      0x0a000029 System.Object.ToString
+0128: stelem.ref     
+0129: dup            
+012a: ldc.i4.4       
+012b: ldstr         0x70000625 ", Result.IsSucess = "
+0130: stelem.ref     
+0131: dup            
+0132: ldc.i4.5       
+0133: ldloc.0        
+0134: callvirt      0x0a00003b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+0139: stloc.s       8 
+013b: ldloca.s      8 
+013d: call          0x0a000073 System.Boolean.ToString
+0142: stelem.ref     
+0143: dup            
+0144: ldc.i4.6       
+0145: ldstr         0x7000064f ", Result.ErrorCode "
+014a: stelem.ref     
+014b: dup            
+014c: ldc.i4.7       
+014d: ldloc.0        
+014e: callvirt      0x0a00005e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_ErrorCode
+0153: stloc.s       9 
+0155: ldloca.s      9 
+0157: call          0x0a000074 System.Int32.ToString
+015c: stelem.ref     
+015d: dup            
+015e: ldc.i4.8       
+015f: ldstr         0x70000677 "_StitchingInfo.IsStitchingAcquisition = "
+0164: stelem.ref     
+0165: dup            
+0166: ldc.i4.s      9 
+0168: ldarg.s       4 
+016a: callvirt      0x0a000075 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsStitchingAcquisition
+016f: stloc.s       8 
+0171: ldloca.s      8 
+0173: call          0x0a000073 System.Boolean.ToString
+0178: stelem.ref     
+0179: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+017e: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0183: ldarg.s       4 
+0185: callvirt      0x0a000075 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsStitchingAcquisition
+018a: brfalse.s     432 
+018c: ldarg.s       4 
+018e: callvirt      0x0a000076 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsLastStitchingAcquisition
+0193: brfalse.s     457 
+0195: ldloc.s       6 
+0197: ldc.i4.2       
+0198: ldloc.s       7 
+019a: ldloc.s       5 
+019c: ldc.i4        805502989 
+01a1: callvirt      0x0a000033 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+01a6: ldc.i4.0       
+01a7: ldc.i4.1       
+01a8: callvirt      0x0a000077 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+01ad: pop            
+01ae: br.s          457 
+01b0: ldloc.s       6 
+01b2: ldc.i4.2       
+01b3: ldloc.s       7 
+01b5: ldloc.s       5 
+01b7: ldc.i4        805502989 
+01bc: callvirt      0x0a000033 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+01c1: ldc.i4.0       
+01c2: ldc.i4.1       
+01c3: callvirt      0x0a000077 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+01c8: pop            
+01c9: ldloc.0        
+01ca: ret            
+01cb: ldloc.0        
+01cc: ldc.i4.0       
+01cd: callvirt      0x0a000062 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_IsSuccess
+01d2: ldloc.0        
+01d3: ldsfld        0x0a000071 Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.ErrorCode.ImageTransfer.SAVEFILEERROR
+01d8: callvirt      0x0a000072 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_ErrorCode
+01dd: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+01e2: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+01e7: stloc.s       10 
+01e9: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+01ee: callvirt      0x2b000002 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+01f3: stloc.s       11 
+01f5: ldloc.s       11 
+01f7: ldc.i4        570884114 
+01fc: callvirt      0x0a000032 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+0201: stloc.s       12 
+0203: ldc.i4.s      10 
+0205: newarr        0x010000c5 
+020a: dup            
+020b: ldc.i4.0       
+020c: ldstr         0x700005cd "Error msg : "
+0211: stelem.ref     
+0212: dup            
+0213: ldc.i4.1       
+0214: ldloc.s       12 
+0216: stelem.ref     
+0217: dup            
+0218: ldc.i4.2       
+0219: ldstr         0x700006c9 ",OLS5100 not present at  = "
+021e: stelem.ref     
+021f: dup            
+0220: ldc.i4.3       
+0221: ldloc.2        
+0222: stelem.ref     
+0223: dup            
+0224: ldc.i4.4       
+0225: ldstr         0x70000625 ", Result.IsSucess = "
+022a: stelem.ref     
+022b: dup            
+022c: ldc.i4.5       
+022d: ldloc.0        
+022e: callvirt      0x0a00003b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+0233: stloc.s       8 
+0235: ldloca.s      8 
+0237: call          0x0a000073 System.Boolean.ToString
+023c: stelem.ref     
+023d: dup            
+023e: ldc.i4.6       
+023f: ldstr         0x70000701 ", Result.ErrorCode = "
+0244: stelem.ref     
+0245: dup            
+0246: ldc.i4.7       
+0247: ldloc.0        
+0248: callvirt      0x0a00005e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_ErrorCode
+024d: stloc.s       9 
+024f: ldloca.s      9 
+0251: call          0x0a000074 System.Int32.ToString
+0256: stelem.ref     
+0257: dup            
+0258: ldc.i4.8       
+0259: ldstr         0x7000072d "_StitchingInfo.IsStitchingAcquisitio = "
+025e: stelem.ref     
+025f: dup            
+0260: ldc.i4.s      9 
+0262: ldarg.s       4 
+0264: callvirt      0x0a000075 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsStitchingAcquisition
+0269: stloc.s       8 
+026b: ldloca.s      8 
+026d: call          0x0a000073 System.Boolean.ToString
+0272: stelem.ref     
+0273: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+0278: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+027d: ldarg.s       4 
+027f: callvirt      0x0a000075 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsStitchingAcquisition
+0284: brfalse.s     682 
+0286: ldarg.s       4 
+0288: callvirt      0x0a000076 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsLastStitchingAcquisition
+028d: brfalse.s     707 
+028f: ldloc.s       10 
+0291: ldc.i4.2       
+0292: ldloc.s       12 
+0294: ldloc.s       11 
+0296: ldc.i4        805502989 
+029b: callvirt      0x0a000033 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+02a0: ldc.i4.0       
+02a1: ldc.i4.1       
+02a2: callvirt      0x0a000077 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+02a7: pop            
+02a8: br.s          707 
+02aa: ldloc.s       10 
+02ac: ldc.i4.2       
+02ad: ldloc.s       12 
+02af: ldloc.s       11 
+02b1: ldc.i4        805502989 
+02b6: callvirt      0x0a000033 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+02bb: ldc.i4.0       
+02bc: ldc.i4.1       
+02bd: callvirt      0x0a000077 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+02c2: pop            
+02c3: ldnull         
+02c4: stloc.s       10 
+02c6: ldloc.0        
+02c7: ret            
+02c8: ldnull         
+02c9: stloc.1        
+02ca: ldarg.0        
+02cb: ldc.i4.1       
+02cc: call          0x06000008 OLYCoordinator.OLYCoordinator.set_IsImageTransfer
+02d1: ldarg.1        
+02d2: callvirt      0x0a000078 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageBasicInfo
+02d7: callvirt      0x0a000079 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageBasicInfo.get_ImageName
+02dc: ldstr         0x7000077d ""
+02e1: call          0x0a00003e System.String.op_Equality
+02e6: brfalse.s     760 
+02e8: ldarg.1        
+02e9: callvirt      0x0a000078 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageBasicInfo
+02ee: ldstr         0x7000077f "AcqImage"
+02f3: callvirt      0x0a00007a Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageBasicInfo.set_ImageName
+02f8: ldarg.1        
+02f9: callvirt      0x0a00007b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+02fe: callvirt      0x0a00007c Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.get_HeightImageSettingInfo
+0303: brtrue.s      789 
+0305: ldarg.1        
+0306: callvirt      0x0a00007b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageInfomation
+030b: newobj        0x0a00007d Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.HeightImageSettingInfo..ctor
+0310: callvirt      0x0a00007e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageInfomation.set_HeightImageSettingInfo
+0315: call          0x0a00003f System.Configuration.ConfigurationManager.get_AppSettings
+031a: ldstr         0x70000791 "IsCustRelease"
+031f: callvirt      0x0a000040 System.Collections.Specialized.NameValueCollection.get_Item
+0324: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+0329: callvirt      0x0a000028 System.String.ToString
+032e: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+0333: callvirt      0x0a00007f System.String.ToUpper
+0338: ldstr         0x700007ad "NO"
+033d: callvirt      0x0a000080 System.String.Equals
+0342: brfalse.s     886 
+0344: ldarg.1        
+0345: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+034a: callvirt      0x0a000082 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_ColorImageDataInfo
+034f: ldc.r8        1 
+0358: callvirt      0x0a000083 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelZ
+035d: ldarg.1        
+035e: callvirt      0x0a000081 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.AcquisitionInfomation.get_ImageDataInfo
+0363: callvirt      0x0a000084 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataInfo.get_HeightImageDataInfo
+0368: ldc.r8        1e-7 
+0371: callvirt      0x0a000083 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.BaseImageDataInfo.set_DataPerPixelZ
+0376: newobj        0x0a000085 Olympus.Mis.Imaging.TriumphBase.ViewHelpers.Classes.UiTransparentWindow..ctor
+037b: stloc.1        
+037c: ldloc.1        
+037d: callvirt      0x0a000086 Olympus.Mis.Imaging.TriumphBase.ViewHelpers.Classes.UiTransparentWindow.Show
+0382: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+0387: callvirt      0x2b000003 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+038c: ldarg.0        
+038d: ldftn         0x06000062 OLYCoordinator.OLYCoordinator.<_ImageTrancefered>b__96_0
+0393: newobj        0x0a000087 System.Threading.ThreadStart..ctor
+0398: call          0x2b000004 System.Array.Empty
+039d: callvirt      0x0a000088 Olympus.Mis.Imaging.TriumpServices.DispatcherService.IDispatcherService.Invoke
+03a2: ldarg.0        
+03a3: ldarga.s      5 
+03a5: ldarg.2        
+03a6: callvirt      0x0a000089 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.ImageDataPathInfo.get_AnnotationDataPath
+03ab: call          0x06000034 OLYCoordinator.OLYCoordinator._ReadAnnotationData
+03b0: ldarg.s       4 
+03b2: callvirt      0x0a000075 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsStitchingAcquisition
+03b7: brfalse.s     999 
+03b9: ldarg.s       4 
+03bb: callvirt      0x0a00008a Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.StitchingInfo.get_IsAutoStitchingExecution
+03c0: brfalse.s     980 
+03c2: ldarg.0        
+03c3: ldarg.1        
+03c4: ldarg.3        
+03c5: ldarg.s       4 
+03c7: ldarg.2        
+03c8: ldarg.s       5 
+03ca: ldarg.s       6 
+03cc: call          0x06000036 OLYCoordinator.OLYCoordinator.PerformStitchedImageOperations
+03d1: stloc.0        
+03d2: br.s          1013 
+03d4: ldarg.0        
+03d5: ldarg.1        
+03d6: ldarg.3        
+03d7: ldarg.s       4 
+03d9: ldarg.2        
+03da: ldarg.s       5 
+03dc: ldnull         
+03dd: ldarg.s       6 
+03df: call          0x0600003b OLYCoordinator.OLYCoordinator.PerformUnstitchedImageOperations
+03e4: stloc.0        
+03e5: br.s          1013 
+03e7: ldarg.0        
+03e8: ldarg.1        
+03e9: ldarg.3        
+03ea: ldarg.2        
+03eb: ldarg.s       5 
+03ed: ldarg.s       6 
+03ef: call          0x0600003c OLYCoordinator.OLYCoordinator.PerformAutoSaveInfoOperation
+03f4: stloc.0        
+03f5: leave         1242 
+03fa: stloc.s       13 
+03fc: ldc.i4.2       
+03fd: newarr        0x010000c5 
+0402: dup            
+0403: ldc.i4.0       
+0404: ldstr         0x700000ed "Error: "
+0409: stelem.ref     
+040a: dup            
+040b: ldc.i4.1       
+040c: ldloc.s       13 
+040e: callvirt      0x0a000029 System.Object.ToString
+0413: stelem.ref     
+0414: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+0419: call          0x0a00002e Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FatalLog
+041e: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+0423: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+0428: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+042d: callvirt      0x2b000002 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+0432: stloc.s       14 
+0434: ldnull         
+0435: ldloc.s       14 
+0437: ldloc.s       13 
+0439: callvirt      0x0a00008b Olympus.Mis.Imaging.TriumpServices.LocalizationService.FrameworkException.get_ErrorCode
+043e: callvirt      0x0a000032 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+0443: ldloc.s       14 
+0445: ldc.i4        805502989 
+044a: callvirt      0x0a000033 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+044f: ldc.i4.0       
+0450: ldc.i4.1       
+0451: callvirt      0x0a000034 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+0456: pop            
+0457: ldloc.0        
+0458: ldc.i4.0       
+0459: callvirt      0x0a000062 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_IsSuccess
+045e: ldloc.0        
+045f: ldsfld        0x0a00008c Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.ErrorCode.ImageTransfer.UNKNOWNEDERROR
+0464: callvirt      0x0a000072 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_ErrorCode
+0469: leave.s       1242 
+046b: stloc.s       15 
+046d: ldc.i4.2       
+046e: newarr        0x010000c5 
+0473: dup            
+0474: ldc.i4.0       
+0475: ldstr         0x700000ed "Error: "
+047a: stelem.ref     
+047b: dup            
+047c: ldc.i4.1       
+047d: ldloc.s       15 
+047f: callvirt      0x0a000029 System.Object.ToString
+0484: stelem.ref     
+0485: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+048a: call          0x0a00002e Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FatalLog
+048f: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+0494: callvirt      0x2b000001 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.Get
+0499: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+049e: callvirt      0x2b000002 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+04a3: stloc.s       16 
+04a5: ldnull         
+04a6: ldloc.s       16 
+04a8: ldc.i4        805503000 
+04ad: callvirt      0x0a000032 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetErrorMessage
+04b2: ldloc.s       16 
+04b4: ldc.i4        805502989 
+04b9: callvirt      0x0a000033 Olympus.Mis.Imaging.TriumpServices.LocalizationService.ILocalizationService.GetLabelValue
+04be: ldc.i4.0       
+04bf: ldc.i4.1       
+04c0: callvirt      0x0a000034 Olympus.Mis.Imaging.TriumpServices.DialogService.Interfaces.IMessageBoxService.Show
+04c5: pop            
+04c6: ldloc.0        
+04c7: ldc.i4.0       
+04c8: callvirt      0x0a000062 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_IsSuccess
+04cd: ldloc.0        
+04ce: ldsfld        0x0a00008c Olympus.LI.Triumph.InterProcess.InterProcessCommon.Consts.ErrorCode.ImageTransfer.UNKNOWNEDERROR
+04d3: callvirt      0x0a000072 Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.set_ErrorCode
+04d8: leave.s       1242 
+04da: call          0x0a00002f Olympus.Mis.Imaging.TriumpServices.ServiceContainer.ServiceLocator.get_Instance
+04df: callvirt      0x2b000006 Olympus.Mis.Imaging.TriumpServices.ServiceContainer.IServiceLocator.GetStaticInstance
+04e4: callvirt      0x0a00008d Olympus.Mis.Imaging.TriumpServices.ThreadPoolService.IThreadPoolService.WaitOnAllWorkItems
+04e9: ldloc.1        
+04ea: brfalse.s     1266 
+04ec: ldloc.1        
+04ed: callvirt      0x0a00008e Olympus.Mis.Imaging.TriumphBase.ViewHelpers.Classes.UiTransparentWindow.Close
+04f2: ldc.i4.4       
+04f3: newarr        0x010000c5 
+04f8: dup            
+04f9: ldc.i4.0       
+04fa: ldstr         0x70000335 "<E> ReturnVal= IsSuccess: "
+04ff: stelem.ref     
+0500: dup            
+0501: ldc.i4.1       
+0502: ldloc.0        
+0503: callvirt      0x0a00003b Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_IsSuccess
+0508: stloc.s       8 
+050a: ldloca.s      8 
+050c: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+0511: call          0x0a00005d System.Boolean.ToString
+0516: stelem.ref     
+0517: dup            
+0518: ldc.i4.2       
+0519: ldstr         0x70000297 " , ErrorCode: "
+051e: stelem.ref     
+051f: dup            
+0520: ldc.i4.3       
+0521: ldloc.0        
+0522: callvirt      0x0a00005e Olympus.LI.Triumph.InterProcess.InterProcessCommon.CommunicationStructure.Result.get_ErrorCode
+0527: stloc.s       9 
+0529: ldloca.s      9 
+052b: call          0x0a000026 System.Globalization.CultureInfo.get_InvariantCulture
+0530: call          0x0a000027 System.Int32.ToString
+0535: stelem.ref     
+0536: call          0x0a00002b Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.Concat
+053b: call          0x0a00002c Olympus.Mis.Imaging.Utilities.Common.Logging.Logger.FlowLog
+0540: ldloc.0        
+0541: ret            

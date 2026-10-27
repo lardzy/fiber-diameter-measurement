@@ -1,0 +1,1201 @@
+{
+  "records": [
+    {
+      "evidence_id": "ev_11cb18c9da6e59d88504b70238b4c2b098cf9d7cebd27245549926d56a8e7116",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "search_procedures",
+      "parameters": {
+        "pattern": "EFIMV|EFI_|Motion|Stabil",
+        "mode": "regex",
+        "case_sensitive": false
+      },
+      "raw_result": null,
+      "normalized_result": [
+        {
+          "address": "EXTERNAL:0x1",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_InputImageForConstruct"
+        },
+        {
+          "address": "EXTERNAL:0x2",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_EndConstruct"
+        },
+        {
+          "address": "EXTERNAL:0x3",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_InputImage"
+        },
+        {
+          "address": "EXTERNAL:0x4",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_ReleaseContext"
+        },
+        {
+          "address": "EXTERNAL:0x5",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_Construct"
+        },
+        {
+          "address": "EXTERNAL:0x6",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_CreateContext"
+        },
+        {
+          "address": "EXTERNAL:0x7",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_CalcCacheImageNum"
+        },
+        {
+          "address": "EXTERNAL:0x8",
+          "value": "OLYEXTENDFOCUSIMAGESG64.DLL::EFI_GetMemorySize"
+        },
+        {
+          "address": "0x180003e50",
+          "value": "EFIMV_GetMemorySize"
+        },
+        {
+          "address": "0x180003f10",
+          "value": "EFIMV_CalcCacheImageNum"
+        },
+        {
+          "address": "0x180003ff0",
+          "value": "EFIMV_CreateContext"
+        },
+        {
+          "address": "0x180004130",
+          "value": "EFIMV_ReleaseContext"
+        },
+        {
+          "address": "0x1800041b0",
+          "value": "EFIMV_InputImage"
+        },
+        {
+          "address": "0x180004290",
+          "value": "EFIMV_Construct"
+        },
+        {
+          "address": "0x180004390",
+          "value": "EFIMV_InputImageForConstruct"
+        },
+        {
+          "address": "0x180004490",
+          "value": "EFIMV_EndConstruct"
+        }
+      ],
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Regex mode uses Java Pattern semantics. Matcher or compiler stack exhaustion returns a resource constraint without closing the session; literal mode avoids regex recursion and returns complete matching values.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_b5bc3d59db921553a1df5b8871f713baa9f3822a41bd558fcfe94af922f317ef",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180003ff0"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nulonglong EFIMV_CreateContext(uint *param_1,char *param_2,longlong param_3,ulonglong param_4,\n                             undefined8 param_5,undefined8 param_6,undefined8 param_7,\n                             longlong *param_8)\n\n{\n  int iVar1;\n  undefined4 extraout_var;\n  ulonglong uVar2;\n  undefined1 auStackY_2d8 [32];\n  longlong local_298;\n  longlong local_290 [3];\n  int local_278;\n  undefined1 local_274 [556];\n  ulonglong local_48;\n  \n                    /* 0x3ff0  3  EFIMV_CreateContext */\n  local_48 = DAT_180008000 ^ (ulonglong)auStackY_2d8;\n  local_298 = 0;\n  local_290[0] = 0;\n  local_278 = 0;\n  memset(local_274,0,0x22c);\n  iVar1 = FUN_180001690(param_1,param_2);\n  uVar2 = CONCAT44(extraout_var,iVar1);\n  if (iVar1 == 0) {\n    if ((param_1 == (uint *)0x0) || (param_2 == (char *)0x0)) {\n      uVar2 = 0x11;\n    }\n    else {\n      uVar2 = FUN_180001de0((int *)param_1,param_2,param_3,param_4,&local_298,local_290,param_8);\n      if ((((int)uVar2 == 0) &&\n          (uVar2 = FUN_180001f20((int *)param_1,param_2,(undefined8 *)*param_8), (int)uVar2 == 0))\n         && (uVar2 = FUN_180001ce0((int *)param_1,param_2,&local_278), (int)uVar2 == 0)) {\n        uVar2 = EFI_CreateContext(&local_278,local_298,local_290[0],param_5);\n      }\n    }\n  }\n  return uVar2;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_91f33c139396ccceb37d08389eeef6b98e6ed702c4437e3b1b0d7bf087165256",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800041b0"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nEFIMV_InputImage(undefined8 param_1,longlong param_2,void *param_3,undefined4 param_4,\n                longlong param_5)\n\n{\n  undefined8 uVar1;\n  undefined1 auStackY_78 [32];\n  undefined8 local_48 [2];\n  longlong local_38;\n  ulonglong local_30;\n  \n                    /* 0x41b0  6  EFIMV_InputImage */\n  local_30 = DAT_180008000 ^ (ulonglong)auStackY_78;\n  local_38 = param_5;\n  local_48[0] = 0;\n  uVar1 = FUN_1800022d0(param_2,param_3,param_4,local_48);\n  if ((int)uVar1 == 0) {\n    if (param_5 == 0) {\n      uVar1 = EFI_InputImage(param_1,local_48[0],param_4,0);\n    }\n    else {\n      if ((*(char *)(param_2 + 0x78) != '\\0') && (*(int *)(param_2 + 0x80) != 1)) {\n        param_5 = *(longlong *)(param_2 + 0x5c8);\n      }\n      uVar1 = EFI_InputImage(param_1,local_48[0],param_4,param_5);\n      if ((int)uVar1 == 0) {\n        uVar1 = FUN_180002cc0(param_2,param_5,0,&local_38,(longlong *)0x0);\n        if ((int)uVar1 == 0) {\n          uVar1 = 0;\n        }\n      }\n    }\n  }\n  return uVar1;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_7f3d160f0de5958de31bc7413691275e66bdd40f35476331ae52066dc0d3afbe",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004290"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nEFIMV_Construct(undefined8 param_1,longlong param_2,undefined8 param_3,longlong param_4,\n               undefined8 param_5)\n\n{\n  longlong lVar1;\n  undefined8 uVar2;\n  undefined1 auStackY_88 [32];\n  undefined8 local_58;\n  longlong local_50 [2];\n  longlong local_40;\n  undefined8 local_38;\n  ulonglong local_30;\n  \n                    /* 0x4290  2  EFIMV_Construct */\n  local_30 = DAT_180008000 ^ (ulonglong)auStackY_88;\n  local_58 = 0;\n  local_50[0] = 0;\n  local_40 = param_4;\n  local_38 = param_3;\n  uVar2 = FUN_180002c70(param_2,param_3,param_4,&local_58,local_50);\n  lVar1 = local_50[0];\n  if ((int)uVar2 == 0) {\n    uVar2 = EFI_Construct(param_1,local_58,local_50[0],param_5);\n    if ((int)uVar2 == 0) {\n      uVar2 = FUN_180002cc0(param_2,local_58,lVar1,&local_38,&local_40);\n      if ((int)uVar2 == 0) {\n        uVar2 = 0;\n      }\n    }\n    else if (((int)uVar2 == 0x18) &&\n            (uVar2 = FUN_180003060(param_2,param_3,param_4), (int)uVar2 == 0)) {\n      uVar2 = 0x18;\n    }\n  }\n  return uVar2;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_a83a488aa01aa6b72624344785b62c68408c0cd0a65744645ce69c4a200dc489",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004390"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nEFIMV_InputImageForConstruct(undefined8 param_1,longlong param_2,int param_3,longlong param_4)\n\n{\n  undefined8 uVar1;\n  int iVar2;\n  undefined1 auStackY_88 [32];\n  undefined8 local_48;\n  ulonglong local_40;\n  \n                    /* 0x4390  7  EFIMV_InputImageForConstruct */\n  local_40 = DAT_180008000 ^ (ulonglong)auStackY_88;\n  if (param_2 == 0) {\n    uVar1 = EFI_InputImageForConstruct(param_1,param_3,param_4);\n  }\n  else {\n    for (iVar2 = 0; iVar2 < param_3; iVar2 = iVar2 + 1) {\n      uVar1 = *(undefined8 *)(param_4 + (longlong)iVar2 * 8);\n      local_48 = uVar1;\n      if (*(char *)(param_2 + 0x78) != '\\0') {\n        local_48 = *(undefined8 *)(param_2 + 0x5c0);\n        uVar1 = FUN_1800028b0(param_2,uVar1,local_48,\n                              -*(double *)\n                                (*(longlong *)(param_2 + 0x518) +\n                                (longlong)*(int *)(param_2 + 0x514) * 8),\n                              -*(double *)\n                                (*(longlong *)(param_2 + 0x520) +\n                                (longlong)*(int *)(param_2 + 0x514) * 8));\n        if ((int)uVar1 != 0) {\n          return uVar1;\n        }\n        *(int *)(param_2 + 0x514) = *(int *)(param_2 + 0x514) + 1;\n      }\n      uVar1 = EFI_InputImageForConstruct(param_1,1,&local_48);\n      if ((int)uVar1 != 0) {\n        return uVar1;\n      }\n    }\n    uVar1 = 0;\n  }\n  return uVar1;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_09c4446010d435aa6c406bef93555cb198c9f2277268c247cde8e095ef24c0de",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180004490"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nEFIMV_EndConstruct(undefined8 param_1,longlong param_2,undefined8 param_3,longlong param_4)\n\n{\n  undefined8 uVar1;\n  undefined1 auStackY_68 [32];\n  undefined8 local_38;\n  longlong local_30 [2];\n  longlong local_20;\n  undefined8 local_18;\n  ulonglong local_10;\n  \n                    /* 0x4490  4  EFIMV_EndConstruct */\n  local_10 = DAT_180008000 ^ (ulonglong)auStackY_68;\n  local_38 = 0;\n  local_30[0] = 0;\n  local_20 = param_4;\n  local_18 = param_3;\n  uVar1 = FUN_180002c70(param_2,param_3,param_4,&local_38,local_30);\n  if ((int)uVar1 == 0) {\n    uVar1 = EFI_EndConstruct(param_1,local_38,local_30[0]);\n    if ((int)uVar1 == 0) {\n      uVar1 = FUN_180002cc0(param_2,local_38,local_30[0],&local_18,&local_20);\n      if ((int)uVar1 == 0) {\n        uVar1 = 0;\n      }\n    }\n  }\n  return uVar1;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_dcff2c3c3436528e84cb307e4a47eb21452593b85dfc13f2d9f7f243bd865459",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800022d0"
+      },
+      "raw_result": null,
+      "normalized_result": "\nundefined8 FUN_1800022d0(longlong param_1,void *param_2,undefined4 param_3,undefined8 *param_4)\n\n{\n  int iVar1;\n  undefined8 uVar2;\n  longlong lVar3;\n  double dVar4;\n  double dVar5;\n  double dVar6;\n  double dVar7;\n  double local_res8;\n  double local_28;\n  double local_20 [3];\n  \n  local_res8 = 0.0;\n  local_28 = 0.0;\n  local_20[0] = 0.0;\n  if (*(int *)(param_1 + 0x510) == 0) {\n    *(undefined4 *)(param_1 + 0x5b0) = param_3;\n    memcpy(*(void **)(param_1 + 0x5b8),param_2,\n           (longlong)(*(int *)(param_1 + 0xb8) * *(int *)(param_1 + 0xb4)));\n  }\n  if (*(char *)(param_1 + 0x78) == '\\0') {\n    *param_4 = param_2;\n    *(int *)(param_1 + 0x510) = *(int *)(param_1 + 0x510) + 1;\n    uVar2 = 0;\n  }\n  else {\n    *param_4 = *(undefined8 *)(param_1 + 0x5c0);\n    uVar2 = FUN_180002490(param_1,(longlong)param_2,&local_res8,(ulonglong *)&local_28,local_20);\n    if ((int)uVar2 == 0) {\n      iVar1 = *(int *)(param_1 + 0x510);\n      lVar3 = (longlong)iVar1;\n      dVar5 = (double)*(uint *)(param_1 + 0x84);\n      dVar7 = (double)*(uint *)(param_1 + 0x88);\n      dVar4 = local_28;\n      dVar6 = local_res8;\n      if (iVar1 != 0) {\n        dVar4 = local_28 + *(double *)(*(longlong *)(param_1 + 0x520) + -8 + lVar3 * 8);\n        dVar6 = local_res8 + *(double *)(*(longlong *)(param_1 + 0x518) + -8 + lVar3 * 8);\n      }\n      if (*(double *)(param_1 + 0x90) <= local_20[0]) {\n        if (dVar6 < -dVar5) {\n          dVar6 = -dVar5;\n        }\n        if (dVar5 < dVar6) {\n          dVar6 = dVar5;\n        }\n        if (dVar4 < -dVar7) {\n          dVar4 = -dVar7;\n        }\n        if (dVar7 < dVar4) {\n          dVar4 = dVar7;\n        }\n      }\n      else if (iVar1 == 0) {\n        dVar6 = 0.0;\n        dVar4 = 0.0;\n      }\n      else {\n        dVar6 = *(double *)(*(longlong *)(param_1 + 0x518) + -8 + lVar3 * 8);\n        dVar4 = *(double *)(*(longlong *)(param_1 + 0x520) + -8 + lVar3 * 8);\n      }\n      *(double *)(*(longlong *)(param_1 + 0x518) + lVar3 * 8) = dVar6;\n      *(double *)(*(longlong *)(param_1 + 0x520) + (longlong)*(int *)(param_1 + 0x510) * 8) = dVar4;\n      *(int *)(param_1 + 0x510) = *(int *)(param_1 + 0x510) + 1;\n      uVar2 = FUN_1800028b0(param_1,param_2,*param_4,-dVar6,-dVar4);\n    }\n  }\n  return uVar2;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_4578638030f20c660b4f3b9025dbae51735f21c35168af7850cc810a9f08277f",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x1800028b0"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nFUN_1800028b0(longlong param_1,undefined8 param_2,undefined8 param_3,double param_4,double param_5)\n\n{\n  int *piVar1;\n  uint uVar2;\n  ulonglong uVar3;\n  ulonglong uVar4;\n  ulonglong uVar5;\n  int iVar6;\n  undefined1 auStackY_218 [32];\n  undefined4 local_1d8;\n  undefined4 local_1d4;\n  undefined4 local_1d0 [2];\n  Mat *local_1c8;\n  undefined8 local_1c0;\n  undefined4 local_1b8 [2];\n  Mat *local_1b0;\n  undefined8 local_1a8;\n  undefined4 local_1a0 [2];\n  Mat *local_198;\n  undefined8 local_190;\n  undefined8 local_188;\n  undefined8 uStack_180;\n  undefined8 local_178;\n  undefined8 uStack_170;\n  undefined8 local_168;\n  Mat local_158 [4];\n  int local_154;\n  undefined4 *local_148;\n  undefined8 local_140;\n  undefined8 local_138;\n  undefined8 local_130;\n  longlong local_120;\n  longlong local_118;\n  longlong *local_110;\n  longlong local_108 [2];\n  Mat local_f8 [4];\n  int local_f4;\n  undefined8 local_e8;\n  undefined8 local_e0;\n  undefined8 local_d8;\n  undefined8 local_d0;\n  longlong local_c0;\n  undefined4 *local_b8;\n  undefined1 *local_b0;\n  undefined1 local_a8 [16];\n  Mat local_98 [4];\n  int local_94;\n  undefined8 local_88;\n  undefined8 local_80;\n  undefined8 local_78;\n  undefined8 local_70;\n  longlong local_60;\n  longlong local_58;\n  undefined1 *local_50;\n  undefined1 local_48 [16];\n  ulonglong local_38;\n  \n  local_168 = 0xfffffffffffffffe;\n  local_38 = DAT_180008000 ^ (ulonglong)auStackY_218;\n  uVar4 = 0;\n  iVar6 = 2;\n  if (*(int *)(param_1 + 200) < 9) {\n    iVar6 = 0;\n  }\n  iVar6 = iVar6 + *(int *)(param_1 + 0xc4) * 8;\n  memset(local_98,0,0x60);\n  FUN_180001340((uint *)local_98,*(uint *)(param_1 + 0xb4),*(uint *)(param_1 + 0xb0),iVar6 - 8,\n                param_2,(longlong)*(int *)(param_1 + 0xb8));\n  memset(local_f8,0,0x60);\n  FUN_180001340((uint *)local_f8,*(uint *)(param_1 + 0x2e4),*(uint *)(param_1 + 0x2e0),iVar6 - 8,\n                param_3,(longlong)*(int *)(param_1 + 0x2e8));\n  memset(local_158,0,0x60);\n  FUN_180001280(local_158);\n  *local_148 = 0x3f800000;\n  local_148[1] = 0;\n  local_148[2] = (float)(param_4 - (double)*(uint *)(param_1 + 0x84));\n  *(undefined4 *)((longlong)local_148 + *local_110) = 0;\n  *(undefined4 *)(*local_110 + 4 + (longlong)local_148) = 0x3f800000;\n  *(float *)(*local_110 + 8 + (longlong)local_148) =\n       (float)(param_5 - (double)*(uint *)(param_1 + 0x88));\n  local_1a8 = 0;\n  local_1b8[0] = 0x1010000;\n  local_1b0 = local_158;\n  local_190 = 0;\n  local_1a0[0] = 0x2010000;\n  local_198 = local_f8;\n  local_1c0 = 0;\n  local_1d0[0] = 0x1010000;\n  local_1c8 = local_98;\n  local_178 = 0;\n  uStack_170 = 0;\n  local_188 = 0;\n  uStack_180 = 0;\n  local_1d4 = *local_b8;\n  local_1d8 = local_b8[1];\n  cv::warpAffine(local_1d0,local_1a0,local_1b8,&local_1d8);\n  if (local_120 != 0) {\n    LOCK();\n    piVar1 = (int *)(local_120 + 0x14);\n    iVar6 = *piVar1;\n    *piVar1 = *piVar1 + -1;\n    UNLOCK();\n    if (iVar6 == 1) {\n      cv::Mat::deallocate(local_158);\n    }\n  }\n  local_120 = 0;\n  local_148 = (undefined4 *)0x0;\n  local_130 = 0;\n  local_138 = 0;\n  local_140 = 0;\n  uVar3 = uVar4;\n  uVar5 = uVar4;\n  if (0 < local_154) {\n    do {\n      *(undefined4 *)(uVar5 + local_118) = 0;\n      uVar2 = (int)uVar3 + 1;\n      uVar3 = (ulonglong)uVar2;\n      uVar5 = uVar5 + 4;\n    } while ((int)uVar2 < local_154);\n  }\n  if (local_110 != local_108) {\n    cv::fastFree(local_110);\n  }\n  if (local_c0 != 0) {\n    LOCK();\n    piVar1 = (int *)(local_c0 + 0x14);\n    iVar6 = *piVar1;\n    *piVar1 = *piVar1 + -1;\n    UNLOCK();\n    if (iVar6 == 1) {\n      cv::Mat::deallocate(local_f8);\n    }\n  }\n  local_c0 = 0;\n  local_e8 = 0;\n  local_d0 = 0;\n  local_d8 = 0;\n  local_e0 = 0;\n  uVar3 = uVar4;\n  uVar5 = uVar4;\n  if (0 < local_f4) {\n    do {\n      *(undefined4 *)(uVar5 + (longlong)local_b8) = 0;\n      uVar2 = (int)uVar3 + 1;\n      uVar3 = (ulonglong)uVar2;\n      uVar5 = uVar5 + 4;\n    } while ((int)uVar2 < local_f4);\n  }\n  if (local_b0 != local_a8) {\n    cv::fastFree(local_b0);\n  }\n  if (local_60 != 0) {\n    LOCK();\n    piVar1 = (int *)(local_60 + 0x14);\n    iVar6 = *piVar1;\n    *piVar1 = *piVar1 + -1;\n    UNLOCK();\n    if (iVar6 == 1) {\n      cv::Mat::deallocate(local_98);\n    }\n  }\n  local_60 = 0;\n  local_88 = 0;\n  local_70 = 0;\n  local_78 = 0;\n  local_80 = 0;\n  uVar3 = uVar4;\n  if (0 < local_94) {\n    do {\n      *(undefined4 *)(uVar3 + local_58) = 0;\n      uVar2 = (int)uVar4 + 1;\n      uVar4 = (ulonglong)uVar2;\n      uVar3 = uVar3 + 4;\n    } while ((int)uVar2 < local_94);\n  }\n  if (local_50 != local_48) {\n    cv::fastFree(local_50);\n  }\n  return 0;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_eddf0d080abe37827270d7f85d472566bea8cc351f8254c587d52bae04842e2e",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002cc0"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nFUN_180002cc0(longlong param_1,undefined8 param_2,longlong param_3,undefined8 *param_4,\n             longlong *param_5)\n\n{\n  int *piVar1;\n  int iVar2;\n  uint uVar3;\n  ulonglong uVar4;\n  ulonglong uVar5;\n  ulonglong uVar6;\n  undefined1 auStackY_288 [32];\n  undefined4 local_258;\n  undefined4 local_254;\n  undefined4 local_250;\n  undefined4 local_24c;\n  undefined4 local_248 [2];\n  Mat *local_240;\n  undefined8 local_238;\n  undefined4 local_230 [2];\n  Mat *local_228;\n  undefined8 local_220;\n  undefined4 local_218 [2];\n  Mat *local_210;\n  undefined8 local_208;\n  undefined4 local_200 [2];\n  Mat *local_1f8;\n  undefined8 local_1f0;\n  undefined8 local_1e8;\n  Mat local_1d8 [4];\n  int local_1d4;\n  undefined8 local_1c8;\n  undefined8 local_1c0;\n  undefined8 local_1b8;\n  undefined8 local_1b0;\n  longlong local_1a0;\n  undefined4 *local_198;\n  undefined1 *local_190;\n  undefined1 local_188 [16];\n  Mat local_178 [4];\n  int local_174;\n  undefined8 local_168;\n  undefined8 local_160;\n  undefined8 local_158;\n  undefined8 local_150;\n  longlong local_140;\n  longlong local_138;\n  undefined1 *local_130;\n  undefined1 local_128 [16];\n  Mat local_118 [64];\n  undefined4 *local_d8;\n  Mat local_b8 [96];\n  ulonglong local_58;\n  \n  local_1e8 = 0xfffffffffffffffe;\n  local_58 = DAT_180008000 ^ (ulonglong)auStackY_288;\n  if ((*(char *)(param_1 + 0x78) == '\\0') || (*(int *)(param_1 + 0x80) == 1)) {\n    *param_4 = param_2;\n    if ((param_3 != 0) && (param_5 != (longlong *)0x0)) {\n      *param_5 = param_3;\n    }\n  }\n  else {\n    uVar5 = 0;\n    iVar2 = 2;\n    if (*(int *)(param_1 + 200) < 9) {\n      iVar2 = 0;\n    }\n    iVar2 = iVar2 + *(int *)(param_1 + 0xc4) * 8;\n    memset(local_178,0,0x60);\n    FUN_180001340((uint *)local_178,*(uint *)(param_1 + 0x2e4),*(uint *)(param_1 + 0x2e0),iVar2 - 8,\n                  param_2,(longlong)*(int *)(param_1 + 0x2ec));\n    memset(local_1d8,0,0x60);\n    FUN_180001340((uint *)local_1d8,*(uint *)(param_1 + 0xb4),*(uint *)(param_1 + 0xb0),iVar2 - 8,\n                  *param_4,(longlong)*(int *)(param_1 + 0xbc));\n    local_208 = 0;\n    local_218[0] = 0x2010000;\n    local_210 = local_1d8;\n    local_1f0 = 0;\n    local_200[0] = 0x1010000;\n    local_1f8 = local_178;\n    local_254 = *local_198;\n    local_258 = local_198[1];\n    cv::resize(local_200,local_218,&local_258,0);\n    if ((param_3 != 0) && (param_5 != (longlong *)0x0)) {\n      memset(local_b8,0,0x60);\n      FUN_180001340((uint *)local_b8,*(uint *)(param_1 + 0x2e4),*(uint *)(param_1 + 0x2e0),5,param_3\n                    ,(longlong)*(int *)(param_1 + 0x2f0));\n      memset(local_118,0,0x60);\n      FUN_180001340((uint *)local_118,*(uint *)(param_1 + 0xb4),*(uint *)(param_1 + 0xb0),5,*param_5\n                    ,(longlong)*(int *)(param_1 + 0xc0));\n      local_238 = 0;\n      local_248[0] = 0x2010000;\n      local_240 = local_118;\n      local_220 = 0;\n      local_230[0] = 0x1010000;\n      local_228 = local_b8;\n      local_24c = *local_d8;\n      local_250 = local_d8[1];\n      cv::resize(local_230,local_248,&local_250,0);\n      FUN_1800015d0(local_118);\n      FUN_1800015d0(local_b8);\n    }\n    if (local_1a0 != 0) {\n      LOCK();\n      piVar1 = (int *)(local_1a0 + 0x14);\n      iVar2 = *piVar1;\n      *piVar1 = *piVar1 + -1;\n      UNLOCK();\n      if (iVar2 == 1) {\n        cv::Mat::deallocate(local_1d8);\n      }\n    }\n    local_1a0 = 0;\n    local_1c8 = 0;\n    local_1b0 = 0;\n    local_1b8 = 0;\n    local_1c0 = 0;\n    uVar4 = uVar5;\n    uVar6 = uVar5;\n    if (0 < local_1d4) {\n      do {\n        *(undefined4 *)(uVar6 + (longlong)local_198) = 0;\n        uVar3 = (int)uVar4 + 1;\n        uVar4 = (ulonglong)uVar3;\n        uVar6 = uVar6 + 4;\n      } while ((int)uVar3 < local_1d4);\n    }\n    if (local_190 != local_188) {\n      cv::fastFree(local_190);\n    }\n    if (local_140 != 0) {\n      LOCK();\n      piVar1 = (int *)(local_140 + 0x14);\n      iVar2 = *piVar1;\n      *piVar1 = *piVar1 + -1;\n      UNLOCK();\n      if (iVar2 == 1) {\n        cv::Mat::deallocate(local_178);\n      }\n    }\n    local_140 = 0;\n    local_168 = 0;\n    local_150 = 0;\n    local_158 = 0;\n    local_160 = 0;\n    uVar4 = uVar5;\n    if (0 < local_174) {\n      do {\n        *(undefined4 *)(uVar4 + local_138) = 0;\n        uVar3 = (int)uVar5 + 1;\n        uVar5 = (ulonglong)uVar3;\n        uVar4 = uVar4 + 4;\n      } while ((int)uVar3 < local_174);\n    }\n    if (local_130 != local_128) {\n      cv::fastFree(local_130);\n    }\n  }\n  return 0;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_adc6c1f6c3871960ee4242a662d1f59381cf3733b87f35ea142eaad19c3a88f0",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001ce0"
+      },
+      "raw_result": null,
+      "normalized_result": "\nundefined8 FUN_180001ce0(int *param_1,char *param_2,int *param_3)\n\n{\n  undefined8 uVar1;\n  int *piVar2;\n  int *piVar3;\n  int iVar4;\n  int *piVar5;\n  int iVar6;\n  longlong lVar7;\n  int *piVar8;\n  \n  if (((param_1 != (int *)0x0) && (param_2 != (char *)0x0)) && (param_3 != (int *)0x0)) {\n    lVar7 = 4;\n    piVar2 = param_1;\n    piVar3 = param_3;\n    do {\n      piVar8 = piVar3;\n      piVar5 = piVar2;\n      uVar1 = *(undefined8 *)(piVar5 + 2);\n      *(undefined8 *)piVar8 = *(undefined8 *)piVar5;\n      *(undefined8 *)(piVar8 + 2) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 6);\n      *(undefined8 *)(piVar8 + 4) = *(undefined8 *)(piVar5 + 4);\n      *(undefined8 *)(piVar8 + 6) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 10);\n      *(undefined8 *)(piVar8 + 8) = *(undefined8 *)(piVar5 + 8);\n      *(undefined8 *)(piVar8 + 10) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 0xe);\n      *(undefined8 *)(piVar8 + 0xc) = *(undefined8 *)(piVar5 + 0xc);\n      *(undefined8 *)(piVar8 + 0xe) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 0x12);\n      *(undefined8 *)(piVar8 + 0x10) = *(undefined8 *)(piVar5 + 0x10);\n      *(undefined8 *)(piVar8 + 0x12) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 0x16);\n      *(undefined8 *)(piVar8 + 0x14) = *(undefined8 *)(piVar5 + 0x14);\n      *(undefined8 *)(piVar8 + 0x16) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 0x1a);\n      *(undefined8 *)(piVar8 + 0x18) = *(undefined8 *)(piVar5 + 0x18);\n      *(undefined8 *)(piVar8 + 0x1a) = uVar1;\n      uVar1 = *(undefined8 *)(piVar5 + 0x1e);\n      *(undefined8 *)(piVar8 + 0x1c) = *(undefined8 *)(piVar5 + 0x1c);\n      *(undefined8 *)(piVar8 + 0x1e) = uVar1;\n      lVar7 = lVar7 + -1;\n      piVar2 = piVar5 + 0x20;\n      piVar3 = piVar8 + 0x20;\n    } while (lVar7 != 0);\n    uVar1 = *(undefined8 *)(piVar5 + 0x22);\n    *(undefined8 *)(piVar8 + 0x20) = *(undefined8 *)(piVar5 + 0x20);\n    *(undefined8 *)(piVar8 + 0x22) = uVar1;\n    uVar1 = *(undefined8 *)(piVar5 + 0x26);\n    *(undefined8 *)(piVar8 + 0x24) = *(undefined8 *)(piVar5 + 0x24);\n    *(undefined8 *)(piVar8 + 0x26) = uVar1;\n    uVar1 = *(undefined8 *)(piVar5 + 0x2a);\n    *(undefined8 *)(piVar8 + 0x28) = *(undefined8 *)(piVar5 + 0x28);\n    *(undefined8 *)(piVar8 + 0x2a) = uVar1;\n    if (*param_2 != '\\0') {\n      iVar6 = *param_1 + *(int *)(param_2 + 0xc) * -2;\n      *param_3 = iVar6;\n      param_3[1] = param_1[1] + *(int *)(param_2 + 0x10) * -2;\n      iVar4 = ((int)(param_1[6] + (param_1[6] >> 0x1f & 7U)) >> 3) * param_1[5] * iVar6;\n      param_3[2] = iVar4;\n      param_3[3] = iVar4;\n      param_3[4] = iVar6 * 4;\n    }\n    return 0;\n  }\n  return 0x11;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_de565fdd414f3bf42964692c4ba1543f0d936dbc0476d8924ef7e998e067f58b",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001f20"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8 FUN_180001f20(int *param_1,char *param_2,undefined8 *param_3)\n\n{\n  undefined4 uVar1;\n  undefined8 *puVar2;\n  int *piVar3;\n  int iVar4;\n  undefined8 *puVar5;\n  undefined8 uVar6;\n  int *piVar7;\n  ulonglong uVar8;\n  uint uVar9;\n  longlong lVar10;\n  ulonglong uVar11;\n  undefined1 auStack_108 [32];\n  int local_e8;\n  int local_e0;\n  undefined4 local_d8;\n  undefined4 local_d0;\n  int local_c8;\n  int local_c0;\n  undefined4 local_b8;\n  undefined4 uStack_b4;\n  undefined4 uStack_b0;\n  undefined4 uStack_ac;\n  int local_a8;\n  int local_a0;\n  undefined4 local_98;\n  undefined4 local_90;\n  undefined4 local_88;\n  undefined8 local_80;\n  undefined8 uStack_78;\n  undefined4 local_70;\n  undefined4 local_68;\n  int local_58;\n  undefined8 uStack_54;\n  undefined8 uStack_4c;\n  undefined4 local_40;\n  undefined8 uStack_3c;\n  undefined8 uStack_34;\n  ulonglong local_28;\n  \n  local_28 = DAT_180008000 ^ (ulonglong)auStack_108;\n  if (((param_1 == (int *)0x0) || (param_2 == (char *)0x0)) || (param_3 == (undefined8 *)0x0)) {\n    return 0x11;\n  }\n  uVar8 = 0;\n  *(undefined4 *)(param_3 + 0xb6) = 0;\n  uVar6 = *(undefined8 *)(param_2 + 8);\n  param_3[0xf] = *(undefined8 *)param_2;\n  param_3[0x10] = uVar6;\n  uVar6 = *(undefined8 *)(param_2 + 0x18);\n  param_3[0x11] = *(undefined8 *)(param_2 + 0x10);\n  param_3[0x12] = uVar6;\n  uVar6 = *(undefined8 *)(param_2 + 0x28);\n  param_3[0x13] = *(undefined8 *)(param_2 + 0x20);\n  param_3[0x14] = uVar6;\n  lVar10 = 4;\n  param_3[0x15] = *(undefined8 *)(param_2 + 0x30);\n  puVar2 = param_3 + 0x16;\n  piVar3 = param_1;\n  do {\n    piVar7 = piVar3;\n    puVar5 = puVar2;\n    uVar6 = *(undefined8 *)(piVar7 + 2);\n    *puVar5 = *(undefined8 *)piVar7;\n    puVar5[1] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 6);\n    puVar5[2] = *(undefined8 *)(piVar7 + 4);\n    puVar5[3] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 10);\n    puVar5[4] = *(undefined8 *)(piVar7 + 8);\n    puVar5[5] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 0xe);\n    puVar5[6] = *(undefined8 *)(piVar7 + 0xc);\n    puVar5[7] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 0x12);\n    puVar5[8] = *(undefined8 *)(piVar7 + 0x10);\n    puVar5[9] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 0x16);\n    puVar5[10] = *(undefined8 *)(piVar7 + 0x14);\n    puVar5[0xb] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 0x1a);\n    puVar5[0xc] = *(undefined8 *)(piVar7 + 0x18);\n    puVar5[0xd] = uVar6;\n    uVar6 = *(undefined8 *)(piVar7 + 0x1e);\n    puVar5[0xe] = *(undefined8 *)(piVar7 + 0x1c);\n    puVar5[0xf] = uVar6;\n    lVar10 = lVar10 + -1;\n    puVar2 = puVar5 + 0x10;\n    piVar3 = piVar7 + 0x20;\n  } while (lVar10 != 0);\n  uVar6 = *(undefined8 *)(piVar7 + 0x22);\n  puVar5[0x10] = *(undefined8 *)(piVar7 + 0x20);\n  puVar5[0x11] = uVar6;\n  uVar6 = *(undefined8 *)(piVar7 + 0x26);\n  puVar5[0x12] = *(undefined8 *)(piVar7 + 0x24);\n  puVar5[0x13] = uVar6;\n  uVar6 = *(undefined8 *)(piVar7 + 0x2a);\n  puVar5[0x14] = *(undefined8 *)(piVar7 + 0x28);\n  puVar5[0x15] = uVar6;\n  uVar6 = FUN_180001ce0(param_1,param_2,(int *)(param_3 + 0x5c));\n  if ((int)uVar6 != 0) {\n    return uVar6;\n  }\n  param_3[0xa2] = 0;\n  if (*param_2 != '\\0') {\n    uVar11 = uVar8;\n    if (0 < *(int *)((longlong)param_3 + 0xcc)) {\n      do {\n        uVar9 = (int)uVar11 + 1;\n        *(undefined8 *)(uVar8 + param_3[0xa3]) = 0;\n        *(undefined8 *)(uVar8 + param_3[0xa4]) = 0;\n        uVar8 = uVar8 + 8;\n        uVar11 = (ulonglong)uVar9;\n      } while ((int)uVar9 < *(int *)((longlong)param_3 + 0xcc));\n    }\n    uVar6 = FUN_180001740(*(int *)(param_2 + 4),param_3);\n    if ((int)uVar6 != 0) {\n      return uVar6;\n    }\n    if (*(int *)(param_2 + 4) == 1) {\n      (*(code *)param_3[4])();\n      local_e8 = *param_1;\n      local_e0 = param_1[1];\n      uVar1 = *(undefined4 *)(param_2 + 0x30);\n      local_68 = 1;\n      local_70 = 0;\n      local_80 = 0;\n      uStack_78 = 0;\n      local_88 = 0;\n      local_90 = 0;\n      local_98 = 0;\n      local_b8 = 0;\n      uStack_b4 = 0x40240000;\n      uStack_b0 = 0;\n      uStack_ac = 0x40240000;\n      local_d0 = 0;\n      local_d8 = 0;\n      local_c8 = local_e8;\n      local_c0 = local_e0;\n      local_a8 = local_e8;\n      local_a0 = local_e0;\n      iVar4 = (*(code *)param_3[1])(1,uVar1,uVar1,uVar1);\n      if (iVar4 == 0) {\n        return 0;\n      }\n      if (iVar4 == -3) {\n        return 0x2008;\n      }\n      if (iVar4 == -2) {\n        return 0x2007;\n      }\n      if (iVar4 == -1) {\n        return 0x2006;\n      }\n      return 0;\n    }\n    if (*(int *)(param_2 + 4) != 0) {\n      return 0x11;\n    }\n    local_58 = 0;\n    local_40 = 0;\n    uStack_54 = 0;\n    uStack_4c = 0;\n    uStack_3c = 0;\n    uStack_34 = 0;\n    (*(code *)param_3[10])();\n    iVar4 = (*(code *)param_3[9])(0);\n    if (iVar4 != 0) {\n      if (iVar4 == -3) {\n        return 0x2005;\n      }\n      if (iVar4 == -2) {\n        return 0x2004;\n      }\n      if (iVar4 == -1) {\n        return 0x2003;\n      }\n    }\n    local_58 = *param_1;\n    uStack_54._0_4_ = param_1[1];\n    uStack_54._4_4_ = param_1[5];\n    uStack_4c._0_4_ = (int)(param_1[6] + (param_1[6] >> 0x1f & 7U)) >> 3;\n    uStack_4c._4_4_ = param_1[2];\n    iVar4 = (*(code *)param_3[0xb])(&local_40,&local_58,*(undefined4 *)(param_2 + 0x20));\n    if (iVar4 != 0) {\n      if (iVar4 == -3) {\n        return 0x2005;\n      }\n      if (iVar4 == -2) {\n        return 0x2004;\n      }\n      if (iVar4 == -1) {\n        return 0x2003;\n      }\n    }\n    *(int *)(param_3 + 0xa5) = local_58;\n    *(int *)((longlong)param_3 + 0x52c) = (int)uStack_54;\n    *(int *)(param_3 + 0xa6) = uStack_54._4_4_;\n    *(int *)((longlong)param_3 + 0x534) = (int)uStack_4c;\n    *(undefined4 *)(param_3 + 0xa9) = local_40;\n    *(undefined4 *)((longlong)param_3 + 0x54c) = (undefined4)uStack_3c;\n    *(undefined4 *)(param_3 + 0xaa) = uStack_3c._4_4_;\n    *(undefined4 *)((longlong)param_3 + 0x554) = (undefined4)uStack_34;\n    *(undefined4 *)(param_3 + 0xad) = local_40;\n    *(undefined4 *)((longlong)param_3 + 0x56c) = (undefined4)uStack_3c;\n    *(undefined4 *)(param_3 + 0xae) = uStack_3c._4_4_;\n    *(undefined4 *)((longlong)param_3 + 0x574) = (undefined4)uStack_34;\n    *(int *)(param_3 + 0xa7) = uStack_4c._4_4_;\n    *(undefined4 *)(param_3 + 0xab) = uStack_34._4_4_;\n    *(undefined4 *)(param_3 + 0xaf) = uStack_34._4_4_;\n    *(undefined4 *)(param_3 + 0xb1) = local_40;\n    *(undefined4 *)((longlong)param_3 + 0x58c) = (undefined4)uStack_3c;\n    *(undefined4 *)(param_3 + 0xb2) = uStack_3c._4_4_;\n    *(undefined4 *)((longlong)param_3 + 0x594) = (undefined4)uStack_34;\n    *(undefined4 *)(param_3 + 0xb3) = uStack_34._4_4_;\n    iVar4 = (*(code *)param_3[0xd])();\n    if (iVar4 != 0) {\n      if (iVar4 == -3) {\n        return 0x2005;\n      }\n      if (iVar4 == -2) {\n        return 0x2004;\n      }\n      if (iVar4 == -1) {\n        return 0x2003;\n      }\n    }\n  }\n  return 0;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_e10926e0c8ced8ddb986326c944d8ab6ccdfa111da8887cd88eeeb3811daceeb",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180001740"
+      },
+      "raw_result": null,
+      "normalized_result": "\nundefined8 FUN_180001740(int param_1,undefined8 *param_2)\n\n{\n  HMODULE pHVar1;\n  FARPROC pFVar2;\n  \n  if (param_1 == 1) {\n    pHVar1 = LoadLibraryW(L\"ALMIS3ol64.dll\");\n    *param_2 = pHVar1;\n    if (pHVar1 != (HMODULE)0x0) {\n      pFVar2 = GetProcAddress(pHVar1,\"ALMIS3Initial\");\n      pHVar1 = (HMODULE)*param_2;\n      param_2[1] = pFVar2;\n      if (pFVar2 != (FARPROC)0x0) {\n        pFVar2 = GetProcAddress(pHVar1,\"ALMIS3Execute\");\n        pHVar1 = (HMODULE)*param_2;\n        param_2[2] = pFVar2;\n        if (pFVar2 != (FARPROC)0x0) {\n          pFVar2 = GetProcAddress(pHVar1,\"ALMIS3Execute_RGB\");\n          pHVar1 = (HMODULE)*param_2;\n          param_2[3] = pFVar2;\n          if (pFVar2 != (FARPROC)0x0) {\n            pFVar2 = GetProcAddress(pHVar1,\"ALMIS3End\");\n            pHVar1 = (HMODULE)*param_2;\n            param_2[4] = pFVar2;\n            if (pFVar2 != (FARPROC)0x0) {\n              pFVar2 = GetProcAddress(pHVar1,\"ALMIS3CheckSecurityUsbKey\");\n              pHVar1 = (HMODULE)*param_2;\n              param_2[5] = pFVar2;\n              if (pFVar2 != (FARPROC)0x0) {\n                pFVar2 = GetProcAddress(pHVar1,\"ALMIS3GetSecurityErrorString\");\n                pHVar1 = (HMODULE)*param_2;\n                param_2[6] = pFVar2;\n                if (pFVar2 != (FARPROC)0x0) {\n                  pFVar2 = GetProcAddress(pHVar1,\"ALMIS3GetSecurityErrorNumber\");\n                  param_2[7] = pFVar2;\n                  if (pFVar2 != (FARPROC)0x0) {\n                    return 0;\n                  }\n                  pHVar1 = (HMODULE)*param_2;\n                }\n              }\n            }\n          }\n        }\n      }\nLAB_180001830:\n      FreeLibrary(pHVar1);\n      return 0x2002;\n    }\n  }\n  else {\n    if (param_1 != 0) {\n      return 0x11;\n    }\n    pHVar1 = LoadLibraryW(L\"OlyNmv.dll\");\n    param_2[8] = pHVar1;\n    if (pHVar1 != (HMODULE)0x0) {\n      pFVar2 = GetProcAddress(pHVar1,\"OLYNMV_Initialize\");\n      pHVar1 = (HMODULE)param_2[8];\n      param_2[9] = pFVar2;\n      if (pFVar2 != (FARPROC)0x0) {\n        pFVar2 = GetProcAddress(pHVar1,\"OLYNMV_Uninitialize\");\n        pHVar1 = (HMODULE)param_2[8];\n        param_2[10] = pFVar2;\n        if (pFVar2 != (FARPROC)0x0) {\n          pFVar2 = GetProcAddress(pHVar1,\"OLYNMV_CalcDstImageInfo\");\n          pHVar1 = (HMODULE)param_2[8];\n          param_2[0xb] = pFVar2;\n          if (pFVar2 != (FARPROC)0x0) {\n            pFVar2 = GetProcAddress(pHVar1,\"OLYNMV_ConvertToDstImage\");\n            pHVar1 = (HMODULE)param_2[8];\n            param_2[0xc] = pFVar2;\n            if (pFVar2 != (FARPROC)0x0) {\n              pFVar2 = GetProcAddress(pHVar1,\"OLYNMV_CreateWindow\");\n              pHVar1 = (HMODULE)param_2[8];\n              param_2[0xd] = pFVar2;\n              if (pFVar2 != (FARPROC)0x0) {\n                pFVar2 = GetProcAddress(pHVar1,\"OLYNMV_EstimateMV\");\n                param_2[0xe] = pFVar2;\n                if (pFVar2 != (FARPROC)0x0) {\n                  return 0;\n                }\n                FreeLibrary((HMODULE)param_2[8]);\n                return 0x2002;\n              }\n            }\n          }\n        }\n      }\n      goto LAB_180001830;\n    }\n  }\n  return 0x2001;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    },
+    {
+      "evidence_id": "ev_78891cdd2bcfd8566cec695e965adfefb45c73bedea96965b2540cdf05079728",
+      "subject": {
+        "name": "OlyExtendFocusImageSGmv64.dll",
+        "digest": {
+          "sha256": "4d5223236add17a5a7601c1762260d5ab5a73d5b0fc524903405455d530de85a"
+        },
+        "local_path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/OlyExtendFocusImageSGmv64.dll",
+        "format": "pe",
+        "architecture": "x86_64"
+      },
+      "provider": {
+        "id": "ghidra",
+        "name": "Ghidra",
+        "version": "12.1.4"
+      },
+      "analysis_profile": {
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "parameters": {
+          "target_kind": "executable",
+          "target_format": "pe",
+          "executable_role": "shared-library",
+          "managed": false,
+          "native_aot_metadata": {
+            "contract_revision": "rtr-9.1-x64-pe-read-only-v5",
+            "source_bytes": 134217728,
+            "work_units": 67108864,
+            "working_memory_bytes": 67108864,
+            "report_bytes": 4194304
+          },
+          "architecture": "x86_64",
+          "available_architectures": [
+            "x86_64"
+          ],
+          "import_mode": "ephemeral-source-immutable",
+          "pdb_observations": "program-info-v5",
+          "annotation_policy": "atomic-function-entry-metadata-v1",
+          "load_image_observations": "source-mappings-entry-context-v2",
+          "function_body_evidence": "complete-inclusive-ranges-v1",
+          "function_references": "complete-body-and-entry-reference-manager-v2",
+          "call_relationship_coverage": "function-body-call-coverage-v5",
+          "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+          "string_inventory_evidence": "defined-data-coverage-v1",
+          "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+          "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+          "instruction_flow_evidence": "decoded-return-pcode-v1",
+          "instruction_references": "exact-address-incoming-without-synthetic-entry-v2",
+          "function_boundary_observations": "ghidra-function-boundary-limitations-v4",
+          "no_return_repair": "returning-imports-decoded-return-v2",
+          "process_launch": "inspected-jvm-launch-support-v1",
+          "jump_table_evidence": "typed-case-default-blocks-v1",
+          "decompiler_jump_loads": true,
+          "loader": "auto-from-header",
+          "language_id": "auto-from-header",
+          "compiler_spec_id": "auto-default",
+          "analyzer_preset": "ghidra-default"
+        },
+        "digest": "23500ca49a1d1c30ade9499cc7ce87c5376277a0bb16225ff60f763f2dcfb2e2"
+      },
+      "predicate_type": "rea.analysis",
+      "operation": "procedure_pseudo_code",
+      "parameters": {
+        "procedure": "0x180002490"
+      },
+      "raw_result": null,
+      "normalized_result": "\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\n\nundefined8\nFUN_180002490(longlong param_1,longlong param_2,undefined8 *param_3,ulonglong *param_4,\n             undefined8 *param_5)\n\n{\n  int iVar1;\n  undefined8 uVar2;\n  undefined4 uVar3;\n  uint uVar4;\n  undefined1 auStack_138 [32];\n  longlong local_118;\n  longlong local_110;\n  undefined4 local_108;\n  undefined1 local_100;\n  undefined8 local_f8;\n  undefined1 local_f0;\n  ulonglong local_e8;\n  undefined8 local_e0;\n  undefined8 local_d8 [2];\n  undefined8 local_c8;\n  undefined1 local_c0 [8];\n  ulonglong local_b8;\n  ulonglong local_58;\n  \n  local_58 = DAT_180008000 ^ (ulonglong)auStack_138;\n  uVar3 = 0;\n  uVar4 = 0;\n  local_d8[0] = 0;\n  local_e8 = 0;\n  local_e0 = 0;\n  if (*(int *)(param_1 + 0x7c) == 1) {\n    local_c8 = 0;\n    memset(local_c0,0,0x60);\n    uVar2 = FUN_180002720(param_1,param_2,(longlong *)(param_1 + 0x5a8));\n    if ((int)uVar2 != 0) {\n      return uVar2;\n    }\n    if (*(int *)(param_1 + 0xc4) == 1) {\n      iVar1 = (**(code **)(param_1 + 0x10))();\n    }\n    else {\n      iVar1 = (**(code **)(param_1 + 0x18))(*(undefined8 *)(param_1 + 0x5a8),&local_c8);\n    }\n    if (iVar1 != 0) {\n      if (iVar1 == -3) {\n        return 0x2008;\n      }\n      if (iVar1 == -2) {\n        return 0x2007;\n      }\n      if (iVar1 == -1) {\n        return 0x2006;\n      }\n      return 0;\n    }\n    uVar3 = local_c0._0_4_;\n    uVar4 = local_c0._4_4_ ^ 0x80000000;\n    local_e8 = local_b8 ^ 0x8000000000000000;\n  }\n  else {\n    if (*(int *)(param_1 + 0x7c) != 0) {\n      return 0x11;\n    }\n    *(longlong *)(param_1 + 0x540) = param_2;\n    if (*(int *)(param_1 + 0x510) == 0) {\n      iVar1 = (**(code **)(param_1 + 0x60))\n                        (param_1 + 0x548,param_1 + 0x528,*(undefined4 *)(param_1 + 0x98));\n      if (iVar1 != 0) {\n        if (iVar1 == -3) {\n          return 0x2005;\n        }\n        if (iVar1 == -2) {\n          return 0x2004;\n        }\n        if (iVar1 == -1) {\n          return 0x2003;\n        }\n      }\n      local_c8 = 0x3ff0000000000000;\n      local_e8 = 0;\n    }\n    else {\n      iVar1 = (**(code **)(param_1 + 0x60))\n                        (param_1 + 0x568,param_1 + 0x528,*(undefined4 *)(param_1 + 0x98));\n      if (iVar1 != 0) {\n        if (iVar1 == -3) {\n          return 0x2005;\n        }\n        if (iVar1 == -2) {\n          return 0x2004;\n        }\n        if (iVar1 == -1) {\n          return 0x2003;\n        }\n      }\n      local_100 = *(undefined1 *)(param_1 + 0x9c);\n      local_f8 = *(undefined8 *)(param_1 + 0xa0);\n      local_f0 = 1;\n      local_108 = *(undefined4 *)(param_1 + 0x98);\n      local_110 = param_1 + 0x588;\n      local_118 = param_1 + 0x568;\n      iVar1 = (**(code **)(param_1 + 0x70))(local_d8,&local_e8,&local_e0,param_1 + 0x548);\n      if (iVar1 != 0) {\n        if (iVar1 == -3) {\n          return 0x2005;\n        }\n        if (iVar1 == -2) {\n          return 0x2004;\n        }\n        if (iVar1 == -1) {\n          return 0x2003;\n        }\n      }\n      uVar2 = *(undefined8 *)(param_1 + 0x560);\n      uVar3 = (undefined4)local_d8[0];\n      uVar4 = (uint)((ulonglong)local_d8[0] >> 0x20);\n      *(undefined8 *)(param_1 + 0x560) = *(undefined8 *)(param_1 + 0x580);\n      *(undefined8 *)(param_1 + 0x580) = uVar2;\n      local_c8 = local_e0;\n    }\n  }\n  *param_3 = CONCAT44(uVar4,uVar3);\n  *param_4 = local_e8;\n  *param_5 = local_c8;\n  return 0;\n}\n\n",
+      "confidence": "observed",
+      "authority": "shipped-artifact",
+      "environment": null,
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+        "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state.",
+        "The Ghidra Program references PDB OlyExtendFocusImageSGmv64.pdb (GUID 1b7c5327-6726-452a-b3e2-68993930b446, age (hex) 3, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+      ],
+      "relationship_coverage": null,
+      "locations": [],
+      "evidence_links": []
+    }
+  ]
+}

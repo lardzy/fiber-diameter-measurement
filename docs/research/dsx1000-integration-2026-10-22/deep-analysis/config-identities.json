@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/Tools/LogTool/Logging.ini",
+    "bytes": 5190,
+    "sha256": "e407e3fb32f5026a25745f0a1d633b4c0cfb9df5b368ec001c52715d957ceea6"
+  },
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/Tools/LogTool/DSXLogBackup.vbs",
+    "bytes": 6768,
+    "sha256": "87f35cde409bc3e0b502c72bbd54b1a22754d7f97195737e79d29bdce78e77c1"
+  },
+  {
+    "path": "/Volumes/LARD/2.中转/OLYMPUS/OLYMPUS/DSX-BSW/DSX-BSW-CTRL/DSX-BSW-CTRL.exe.config",
+    "bytes": 7850,
+    "sha256": "0608e498b5a40f11b12331e8ba0f9ecc030ae2f4e11a326fc7b300bcade62467"
+  }
+]

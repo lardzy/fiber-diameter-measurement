@@ -1,0 +1,516 @@
+{
+  "scope": "8bit AsymMode1 BlendMode1 whole-frame core; no vendor execution",
+  "seed": 2026102301,
+  "settings": {
+    "asymmetry": 50,
+    "saturation": 64,
+    "strength": 20,
+    "noise_slope1": [
+      25,
+      20,
+      15,
+      12,
+      8,
+      5,
+      3,
+      1
+    ],
+    "noise_slope2": [
+      163,
+      204,
+      265,
+      356,
+      505,
+      772,
+      1326,
+      2811
+    ],
+    "noise_bins": [
+      26,
+      33,
+      42,
+      57,
+      81,
+      123,
+      212,
+      450
+    ]
+  },
+  "versions": {
+    "python": "3.13.12",
+    "numpy": "2.4.3",
+    "scipy": "1.18.1",
+    "opencv": "4.13.0"
+  },
+  "source_sha256": {
+    "hamal8_reference.py": "3939a4e63e8f798fd01ef2924a63a7b3ed482cd716e84773b80930a85f39009b",
+    "run_validation.py": "c9144f727441e47d3cbeaa06ff0d956edcf5e88db5110286c2ff56a224da6f91",
+    "native-tables.json": "7c42d8f032364903ed08a262160bd4c9d6b7a219aaffea234cd5e16fb5d39186"
+  },
+  "fixtures_sha256": "f7b7a6be9799f46d9054eec63ba87c06e9afa1154f8406699dd324ba279cc64f",
+  "cases": [
+    {
+      "name": "black",
+      "input_sha256": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2",
+      "output_sha256": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2",
+      "input_mean": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "output_mean": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "gain_range": [
+        176,
+        176
+      ],
+      "tone_range": [
+        0,
+        0
+      ],
+      "adaptive_knots": [
+        1024,
+        2048,
+        3072,
+        4096,
+        5120,
+        6144,
+        7168,
+        8192
+      ],
+      "adaptive_slopes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512
+      ]
+    },
+    {
+      "name": "white",
+      "input_sha256": "1516b21572cdecd2baad775e49c4a2d235b7ce37c9692d90df6b9e0df92f820c",
+      "output_sha256": "1516b21572cdecd2baad775e49c4a2d235b7ce37c9692d90df6b9e0df92f820c",
+      "input_mean": [
+        255.0,
+        255.0,
+        255.0
+      ],
+      "output_mean": [
+        255.0,
+        255.0,
+        255.0
+      ],
+      "gain_range": [
+        256,
+        256
+      ],
+      "tone_range": [
+        4074,
+        4074
+      ],
+      "adaptive_knots": [
+        1024,
+        2048,
+        3072,
+        4096,
+        5120,
+        6144,
+        6912,
+        8192
+      ],
+      "adaptive_slopes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        682,
+        409
+      ]
+    },
+    {
+      "name": "gradient",
+      "input_sha256": "75d35f49d3f87e1e55924aa2d90f33bd356db0d8fb6f9a1769e8d9df78432e16",
+      "output_sha256": "a7f5b24241b456f7a4f95f267f5d3c3b29e05802aca26b508617d18abd4ea9fa",
+      "input_mean": [
+        127.003125,
+        127.003125,
+        127.003125
+      ],
+      "output_mean": [
+        140.571875,
+        140.571875,
+        140.571875
+      ],
+      "gain_range": [
+        176,
+        1126
+      ],
+      "tone_range": [
+        0,
+        4074
+      ],
+      "adaptive_knots": [
+        1024,
+        2048,
+        3072,
+        4096,
+        5120,
+        6128,
+        7008,
+        8192
+      ],
+      "adaptive_slopes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        520,
+        595,
+        442
+      ]
+    },
+    {
+      "name": "dark_texture_and_saturation",
+      "input_sha256": "a6c95f066711be65e89980c7d5f3a713a79078c54f51afd194263fe55dfa7109",
+      "output_sha256": "5c500df96cf412292b028a73da5979efdf88ed145ee602aa701ea107051c8d58",
+      "input_mean": [
+        35.89360677083334,
+        35.89360677083334,
+        35.89360677083334
+      ],
+      "output_mean": [
+        65.1451953125,
+        65.1451953125,
+        65.1451953125
+      ],
+      "gain_range": [
+        176,
+        1393
+      ],
+      "tone_range": [
+        0,
+        4087
+      ],
+      "adaptive_knots": [
+        1024,
+        2048,
+        3072,
+        4096,
+        5120,
+        6144,
+        6912,
+        8192
+      ],
+      "adaptive_slopes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        682,
+        409
+      ]
+    },
+    {
+      "name": "color_noise",
+      "input_sha256": "521737bb27731439f4f176b6ee83a3a4557d24308076827591654b184f461202",
+      "output_sha256": "bec4b87472a97ac475d032f849ba4fe15c4f3636eb9a049192823ed8bd2fc5d2",
+      "input_mean": [
+        127.81868489583333,
+        127.60983072916666,
+        127.07024739583333
+      ],
+      "output_mean": [
+        131.938046875,
+        131.70958333333334,
+        131.1601953125
+      ],
+      "gain_range": [
+        225,
+        280
+      ],
+      "tone_range": [
+        39,
+        4079
+      ],
+      "adaptive_knots": [
+        1024,
+        2048,
+        3072,
+        4096,
+        5064,
+        6032,
+        6912,
+        8192
+      ],
+      "adaptive_slopes": [
+        512,
+        512,
+        512,
+        512,
+        541,
+        541,
+        595,
+        409
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "kernel_identity",
+      "passed": true,
+      "detail": "Extracted 1089 coefficients, symmetric, sum2001"
+    },
+    {
+      "name": "missing_last_column_explicit_rejection",
+      "passed": true,
+      "detail": {
+        "geometry": {
+          "width": 1445,
+          "height": 240,
+          "sx": 448,
+          "sy": 2031,
+          "visited_columns": 79,
+          "visited_rows": 60,
+          "supported": false
+        },
+        "error": "Unsupported research geometry 1445x240: native fixed-point mapping visits 79x60 of 80x60 thumbnail cells; native uncovered-cell initialization is not established"
+      }
+    },
+    {
+      "name": "missing_last_row_explicit_rejection",
+      "passed": true,
+      "detail": {
+        "geometry": {
+          "width": 320,
+          "height": 1221,
+          "sx": 2035,
+          "sy": 396,
+          "visited_columns": 80,
+          "visited_rows": 59,
+          "supported": false
+        },
+        "error": "Unsupported research geometry 320x1221: native fixed-point mapping visits 80x59 of 80x60 thumbnail cells; native uncovered-cell initialization is not established"
+      }
+    },
+    {
+      "name": "dimension_domain_exhaustive_counts",
+      "passed": true,
+      "detail": {
+        "unsupported_widths": 3701,
+        "first_width": 1445,
+        "unsupported_heights": 3861,
+        "first_height": 1221
+      }
+    },
+    {
+      "name": "dimension_classifier_matches_direct_samples",
+      "passed": true,
+      "detail": "Direct enumeration includes supported and unsupported row/column boundaries"
+    },
+    {
+      "name": "invalid_noise_slope1_-1_length8",
+      "passed": true,
+      "detail": "Reject native-invalid range/length before broadcasting or image processing"
+    },
+    {
+      "name": "invalid_noise_slope1_32768_length8",
+      "passed": true,
+      "detail": "Reject native-invalid range/length before broadcasting or image processing"
+    },
+    {
+      "name": "invalid_noise_slope2_8192_length8",
+      "passed": true,
+      "detail": "Reject native-invalid range/length before broadcasting or image processing"
+    },
+    {
+      "name": "invalid_noise_bins_1024_length8",
+      "passed": true,
+      "detail": "Reject native-invalid range/length before broadcasting or image processing"
+    },
+    {
+      "name": "invalid_noise_slope1_25_length1",
+      "passed": true,
+      "detail": "Reject native-invalid range/length before broadcasting or image processing"
+    },
+    {
+      "name": "invalid_noise_bins_1_length9",
+      "passed": true,
+      "detail": "Reject native-invalid range/length before broadcasting or image processing"
+    },
+    {
+      "name": "black_input_unchanged",
+      "passed": true,
+      "detail": "Source retained"
+    },
+    {
+      "name": "black_shapes_ranges",
+      "passed": true,
+      "detail": "Native-style bounds"
+    },
+    {
+      "name": "black_cumulative_monotonic",
+      "passed": true,
+      "detail": "Each local curve is monotonic"
+    },
+    {
+      "name": "black_repeatable",
+      "passed": true,
+      "detail": "Same implementation/settings/bytes reproduce result"
+    },
+    {
+      "name": "white_input_unchanged",
+      "passed": true,
+      "detail": "Source retained"
+    },
+    {
+      "name": "white_shapes_ranges",
+      "passed": true,
+      "detail": "Native-style bounds"
+    },
+    {
+      "name": "white_cumulative_monotonic",
+      "passed": true,
+      "detail": "Each local curve is monotonic"
+    },
+    {
+      "name": "white_repeatable",
+      "passed": true,
+      "detail": "Same implementation/settings/bytes reproduce result"
+    },
+    {
+      "name": "gradient_input_unchanged",
+      "passed": true,
+      "detail": "Source retained"
+    },
+    {
+      "name": "gradient_shapes_ranges",
+      "passed": true,
+      "detail": "Native-style bounds"
+    },
+    {
+      "name": "gradient_cumulative_monotonic",
+      "passed": true,
+      "detail": "Each local curve is monotonic"
+    },
+    {
+      "name": "gradient_repeatable",
+      "passed": true,
+      "detail": "Same implementation/settings/bytes reproduce result"
+    },
+    {
+      "name": "dark_texture_and_saturation_input_unchanged",
+      "passed": true,
+      "detail": "Source retained"
+    },
+    {
+      "name": "dark_texture_and_saturation_shapes_ranges",
+      "passed": true,
+      "detail": "Native-style bounds"
+    },
+    {
+      "name": "dark_texture_and_saturation_cumulative_monotonic",
+      "passed": true,
+      "detail": "Each local curve is monotonic"
+    },
+    {
+      "name": "dark_texture_and_saturation_repeatable",
+      "passed": true,
+      "detail": "Same implementation/settings/bytes reproduce result"
+    },
+    {
+      "name": "color_noise_input_unchanged",
+      "passed": true,
+      "detail": "Source retained"
+    },
+    {
+      "name": "color_noise_shapes_ranges",
+      "passed": true,
+      "detail": "Native-style bounds"
+    },
+    {
+      "name": "color_noise_cumulative_monotonic",
+      "passed": true,
+      "detail": "Each local curve is monotonic"
+    },
+    {
+      "name": "color_noise_repeatable",
+      "passed": true,
+      "detail": "Same implementation/settings/bytes reproduce result"
+    },
+    {
+      "name": "black_remains_black",
+      "passed": true,
+      "detail": "No division-by-zero brightness path"
+    },
+    {
+      "name": "white_remains_clipped",
+      "passed": true,
+      "detail": "Does not imply recovery of hidden detail"
+    },
+    {
+      "name": "zero_strength_gray_identity",
+      "passed": true,
+      "detail": "Gray matrix round trip and unity gain"
+    },
+    {
+      "name": "zero_strength_color_rounding",
+      "passed": true,
+      "detail": "Observed matrix rounding still changes some color values"
+    },
+    {
+      "name": "dim_constant_is_modified",
+      "passed": true,
+      "detail": "Enhancement may amplify low signal; not evidence of recovered structure"
+    },
+    {
+      "name": "saturation_information_loss",
+      "passed": true,
+      "detail": "Identical clipped inputs have identical deterministic outputs; input-information limitation"
+    }
+  ],
+  "rejected_geometry_cases": [
+    {
+      "width": 1445,
+      "height": 240,
+      "sx": 448,
+      "sy": 2031,
+      "visited_columns": 79,
+      "visited_rows": 60,
+      "supported": false
+    },
+    {
+      "width": 320,
+      "height": 1221,
+      "sx": 2035,
+      "sy": 396,
+      "visited_columns": 80,
+      "visited_rows": 59,
+      "supported": false
+    }
+  ],
+  "zero_strength_color_max_abs_error": 2,
+  "counts": {
+    "cases": 5,
+    "checks": 37,
+    "passed": 37
+  },
+  "limitations": [
+    "No vendor numeric oracle",
+    "Prototype invariants are not proof of vendor equivalence",
+    "Color channel handoff must be verified",
+    "Native stripe memory scheduling omitted",
+    "Only geometry covering all 80x60 thumbnail cells is supported; uncovered native cells unresolved",
+    "14bit, external Spica denoising and multiexposure HDR excluded"
+  ]
+}

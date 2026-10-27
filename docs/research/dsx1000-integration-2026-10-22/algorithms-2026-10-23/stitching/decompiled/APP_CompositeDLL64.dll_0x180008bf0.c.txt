@@ -1,0 +1,107 @@
+Evidence: ev_a4369bfba938c1f6d36863846e135788ae3bddbe897e3d2e471bb389c02794a5
+Subject SHA256: dc1d2e118ae8edcc988fec199a53c6dcdc0a0f91cf6e1a0c4560a9fdc9710cb9
+Bundle: composite-evidence.json.gz
+
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+/* private: bool __cdecl CCompositeDLL::ImageMatch(class ctool::matrix<struct _IplImage * __ptr64> &
+   __ptr64) __ptr64 */
+
+bool __thiscall CCompositeDLL::ImageMatch(CCompositeDLL *this,matrix<_IplImage*___ptr64> *param_1)
+
+{
+  void *pvVar1;
+  bool bVar2;
+  int iVar3;
+  basic_iostream<char,std::char_traits<char>_> *pbVar4;
+  basic_iostream<char,std::char_traits<char>_> *pbVar5;
+  void *pvVar6;
+  int iVar7;
+  int iVar8;
+  undefined1 auStack_158 [40];
+  undefined8 local_130;
+  basic_iostream<char,std::char_traits<char>_> local_128 [248];
+  undefined1 local_30;
+  undefined7 uStack_2f;
+  undefined8 local_20;
+  ulonglong uStack_18;
+  ulonglong local_10;
+  
+                    /* 0x8bf0  63
+                       ?ImageMatch@CCompositeDLL@@AEAA_NAEAV?$matrix@PEAU_IplImage@@@ctool@@@Z */
+  local_130 = 0xfffffffffffffffe;
+  local_10 = DAT_180023010 ^ (ulonglong)auStack_158;
+  local_20 = 0;
+  uStack_18 = 0xf;
+  local_30 = 0;
+  FUN_180015be0((longlong *)&local_30,"2 ImageMatch() [start]",0x16);
+  pbVar5 = local_128;
+  pbVar4 = FUN_180010310(pbVar5,(undefined8 *)&local_30);
+  FUN_1800035c0(pbVar5,(longlong *)pbVar4);
+  if (0xf < uStack_18) {
+    pvVar1 = (void *)CONCAT71(uStack_2f,local_30);
+    pvVar6 = pvVar1;
+    if ((0xfff < uStack_18 + 1) &&
+       (pvVar6 = *(void **)((longlong)pvVar1 + -8),
+       0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar6)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar6);
+  }
+  if ((*(int *)(this + 0x7c) < 1) || (*(int *)(this + 0x80) < 1)) {
+    iVar8 = 0;
+    if (0 < *(int *)(this + 0x14)) {
+      iVar3 = *(int *)(this + 0x10);
+      do {
+        iVar7 = 0;
+        if (0 < iVar3) {
+          do {
+            *(int *)(*(longlong *)(this + 0x30) +
+                    (longlong)(*(int *)(this + 0x24) * iVar8 + iVar7) * 8) =
+                 *(int *)(this + 0x58) * iVar7;
+            *(int *)(*(longlong *)(this + 0x30) + 4 +
+                    (longlong)(*(int *)(this + 0x24) * iVar8 + iVar7) * 8) =
+                 iVar8 * *(int *)(this + 0x5c);
+            iVar7 = iVar7 + 1;
+            iVar3 = *(int *)(this + 0x10);
+          } while (iVar7 < iVar3);
+        }
+        iVar8 = iVar8 + 1;
+      } while (iVar8 < *(int *)(this + 0x14));
+    }
+    bVar2 = true;
+  }
+  else if (*(int *)(this + 0x78) == 4) {
+    bVar2 = ContrastMatch(this,param_1);
+  }
+  else if (*(int *)(this + 0x78) - 5U < 2) {
+    bVar2 = BrightMatch(this,param_1);
+  }
+  else {
+    FUN_180015fe0(0xf010,4,
+                  "d:\\work\\izanagi\\dsx1000\\1.2.4.44\\appsource\\sharablelibraries\\compositedll\\compositedll.cpp"
+                  ,0x276);
+    bVar2 = false;
+  }
+  local_20 = 0;
+  uStack_18 = 0xf;
+  local_30 = 0;
+  FUN_180015be0((longlong *)&local_30," 2 ImageMatch() [end]",0x15);
+  pbVar5 = local_128;
+  pbVar4 = FUN_180010310(pbVar5,(undefined8 *)&local_30);
+  FUN_1800035c0(pbVar5,(longlong *)pbVar4);
+  if (0xf < uStack_18) {
+    pvVar1 = (void *)CONCAT71(uStack_2f,local_30);
+    pvVar6 = pvVar1;
+    if ((0xfff < uStack_18 + 1) &&
+       (pvVar6 = *(void **)((longlong)pvVar1 + -8),
+       0x1f < (ulonglong)((longlong)pvVar1 + (-8 - (longlong)pvVar6)))) {
+                    /* WARNING: Subroutine does not return */
+      _invalid_parameter_noinfo_noreturn();
+    }
+    free(pvVar6);
+  }
+  return bVar2;
+}
+

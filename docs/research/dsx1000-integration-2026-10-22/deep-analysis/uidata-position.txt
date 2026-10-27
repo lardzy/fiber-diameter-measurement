@@ -1,0 +1,31 @@
+EVIDENCE ev_06e2960bc201588960f5c7f1982113f134d7c23bbc512f3e4426592dc381eb40 SHA256 3f1a4d1098c5518591962dc318d277096a4a8c7f531008a3789ac44d03adb245
+
+METHOD 0x060007fe Olympus.LI.Triumph.Application.UiData.FocusResultData set_ZInfo IL_SHA256 61d53fd38abfaf69d09ca6a70aac5b4efe959a3a298ac7b769358ae47001cf93 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: stfld         0x04000a3e Olympus.LI.Triumph.Application.UiData.FocusResultData._zInfo
+0007: ldarg.0        
+0008: ldfld         0x04000a48 Olympus.LI.Triumph.Application.UiData.FocusResultData._dgtUpdateZInfo
+000d: brfalse.s     29 
+000f: ldarg.0        
+0010: ldfld         0x04000a48 Olympus.LI.Triumph.Application.UiData.FocusResultData._dgtUpdateZInfo
+0015: ldnull         
+0016: ldnull         
+0017: callvirt      0x06000995 UpdateUiData.BeginInvoke
+001c: pop            
+001d: ret            
+
+METHOD 0x06000abc Olympus.LI.Triumph.Application.UiData.StageResultData set_MovePositionXY IL_SHA256 27138102476671b7f54b9d4ba5212e0ac75a0deceefca233a6d018dc4f6b682f DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: stfld         0x04000ba9 Olympus.LI.Triumph.Application.UiData.StageResultData._dblMovePositionXY
+0007: ldarg.0        
+0008: ldfld         0x04000bbc Olympus.LI.Triumph.Application.UiData.StageResultData._dgtUpdateMovePositionXY
+000d: brfalse.s     29 
+000f: ldarg.0        
+0010: ldfld         0x04000bbc Olympus.LI.Triumph.Application.UiData.StageResultData._dgtUpdateMovePositionXY
+0015: ldnull         
+0016: ldnull         
+0017: callvirt      0x06000995 UpdateUiData.BeginInvoke
+001c: pop            
+001d: ret            

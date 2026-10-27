@@ -1,0 +1,1998 @@
+EVIDENCE ev_9bb4aacf448bfe2a72e8fe7aa6a0bf20410f360391e99d02978be9c26d000c8a SHA256 b5215aa9d54da8e2139470e54e2c9e666b6676592640250cc3a80c9469ff687e
+
+METHOD 0x06000001 ImageExporter.App .ctor IL_SHA256 8d45b6b70821316f2afe1f5fa2abecde86b8cc31617ee889ff4e7b9cac8473bb DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x0a000017 System.Windows.Application..ctor
+0006: ret            
+
+METHOD 0x06000002 ImageExporter.App App_Startup IL_SHA256 e21de42e5fdc2e463ecae9b1f50c8eab3a1c22884eb55dd869359b434f7af88f DECODE_ISSUE null
+0000: ldarg.2        
+0001: callvirt      0x0a000018 System.Windows.StartupEventArgs.get_Args
+0006: stloc.0        
+0007: ldarg.0        
+0008: newobj        0x06000005 ImageExporter.MainWindow..ctor
+000d: stfld         0x04000001 ImageExporter.App._clsMainWindow
+0012: ldarg.0        
+0013: ldfld         0x04000001 ImageExporter.App._clsMainWindow
+0018: ldc.i4.0       
+0019: callvirt      0x0a000019 System.Windows.Window.set_ShowInTaskbar
+001e: ldarg.0        
+001f: ldfld         0x04000001 ImageExporter.App._clsMainWindow
+0024: ldc.i4.1       
+0025: callvirt      0x0a00001a System.Windows.Window.set_WindowState
+002a: ldarg.0        
+002b: ldfld         0x04000001 ImageExporter.App._clsMainWindow
+0030: ldc.i4.0       
+0031: callvirt      0x0a00001b System.Windows.Window.set_WindowStyle
+0036: ldarg.0        
+0037: ldfld         0x04000001 ImageExporter.App._clsMainWindow
+003c: ldloc.0        
+003d: callvirt      0x06000006 ImageExporter.MainWindow.HandleCommandLineArgument
+0042: ret            
+
+METHOD 0x06000003 ImageExporter.App InitializeComponent IL_SHA256 73b6b5cdf4b41dc1570d28547cfc2a08b77e1c944dfa4f53bdb32bc0ee41face DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.0        
+0002: ldftn         0x06000002 ImageExporter.App.App_Startup
+0008: newobj        0x0a00001c System.Windows.StartupEventHandler..ctor
+000d: call          0x0a00001d System.Windows.Application.add_Startup
+0012: ret            
+
+METHOD 0x06000004 ImageExporter.App Main IL_SHA256 fe7588370cfe91c5c4ccea096c18fdc257cadd3ece4f371140bf0d56c4377eb7 DECODE_ISSUE null
+0000: newobj        0x06000001 ImageExporter.App..ctor
+0005: dup            
+0006: callvirt      0x06000003 ImageExporter.App.InitializeComponent
+000b: callvirt      0x0a00001e System.Windows.Application.Run
+0010: pop            
+0011: ret            
+
+METHOD 0x06000005 ImageExporter.MainWindow .ctor IL_SHA256 7fb99fc0769d1dd7ad84c4b6e90c14bddf987222309e428b653f8c976e0619d5 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldstr         0x70000001 "Overlay.png"
+0006: stfld         0x0400000a ImageExporter.MainWindow._strOverlayImageName
+000b: ldarg.0        
+000c: ldc.i4.1       
+000d: stfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+0012: ldarg.0        
+0013: ldc.i4.1       
+0014: stfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+0019: ldarg.0        
+001a: ldc.r8        96 
+0023: stfld         0x0400000d ImageExporter.MainWindow._dblDPIX
+0028: ldarg.0        
+0029: ldc.r8        96 
+0032: stfld         0x0400000e ImageExporter.MainWindow._dblDPIY
+0037: ldarg.0        
+0038: newobj        0x0a00001f System.Collections.Generic.List`1..ctor
+003d: stfld         0x04000010 ImageExporter.MainWindow.FileBuffSizeList
+0042: ldarg.0        
+0043: call          0x0a000020 System.Windows.Window..ctor
+0048: ldarg.0        
+0049: call          0x06000013 ImageExporter.MainWindow.InitializeComponent
+004e: ret            
+
+METHOD 0x06000006 ImageExporter.MainWindow HandleCommandLineArgument IL_SHA256 d406d622f12874d7e537cde78cc8ba234e70d6539d1d7e8987806b0ddfe2d401 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldarg.1        
+0003: brfalse       372 
+0008: ldarg.1        
+0009: ldlen          
+000a: conv.i4        
+000b: ldc.i4.6       
+000c: blt           372 
+0011: ldarg.0        
+0012: ldarg.1        
+0013: ldc.i4.0       
+0014: ldelem.ref     
+0015: call          0x0a000021 System.Globalization.CultureInfo.get_InvariantCulture
+001a: call          0x0a000022 System.Convert.ToInt32
+001f: stfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0024: ldarg.0        
+0025: ldarg.1        
+0026: ldc.i4.1       
+0027: ldelem.ref     
+0028: call          0x0a000021 System.Globalization.CultureInfo.get_InvariantCulture
+002d: call          0x0a000022 System.Convert.ToInt32
+0032: stfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0037: ldarg.0        
+0038: ldarg.1        
+0039: ldc.i4.2       
+003a: ldelem.ref     
+003b: call          0x0a000021 System.Globalization.CultureInfo.get_InvariantCulture
+0040: call          0x0a000022 System.Convert.ToInt32
+0045: stfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+004a: ldarg.0        
+004b: ldarg.1        
+004c: ldc.i4.3       
+004d: ldelem.ref     
+004e: stfld         0x04000006 ImageExporter.MainWindow._strImagePath
+0053: ldarg.0        
+0054: ldarg.1        
+0055: ldc.i4.4       
+0056: ldelem.ref     
+0057: stfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+005c: ldarg.0        
+005d: ldarg.1        
+005e: ldc.i4.5       
+005f: ldelem.ref     
+0060: stfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+0065: ldarg.1        
+0066: ldc.i4.6       
+0067: ldelem.ref     
+0068: call          0x0a000021 System.Globalization.CultureInfo.get_InvariantCulture
+006d: call          0x0a000022 System.Convert.ToInt32
+0072: stloc.0        
+0073: ldarg.0        
+0074: ldarg.1        
+0075: ldc.i4.7       
+0076: ldelem.ref     
+0077: call          0x0a000021 System.Globalization.CultureInfo.get_InvariantCulture
+007c: call          0x0a000022 System.Convert.ToInt32
+0081: stfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+0086: ldsfld        0x0a000023 System.IntPtr.Zero
+008b: stloc.1        
+008c: ldsfld        0x0a000023 System.IntPtr.Zero
+0091: stloc.2        
+0092: ldarg.0        
+0093: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+0098: ldc.i4.1       
+0099: bne.un        372 
+009e: ldarg.0        
+009f: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+00a4: ldc.i4.2       
+00a5: bne.un        372 
+00aa: ldarg.0        
+00ab: ldc.r8        192 
+00b4: stfld         0x0400000d ImageExporter.MainWindow._dblDPIX
+00b9: ldarg.0        
+00ba: ldc.r8        192 
+00c3: stfld         0x0400000e ImageExporter.MainWindow._dblDPIY
+00c8: ldloc.1        
+00c9: ldsfld        0x0a000023 System.IntPtr.Zero
+00ce: call          0x0a000024 System.IntPtr.op_Equality
+00d3: brfalse.s     240 
+00d5: ldarg.0        
+00d6: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+00db: ldarg.0        
+00dc: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+00e1: mul            
+00e2: ldarg.0        
+00e3: ldc.i4.3       
+00e4: call          0x06000012 ImageExporter.MainWindow.GetCurrentImageDataChannelDepth
+00e9: mul            
+00ea: call          0x0a000025 System.Runtime.InteropServices.Marshal.AllocHGlobal
+00ef: stloc.1        
+00f0: nop            
+00f1: ldarg.0        
+00f2: ldarg.0        
+00f3: ldfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+00f8: ldloc.1        
+00f9: call          0x0600000a ImageExporter.MainWindow.ReadImageRawData
+00fe: ldarg.0        
+00ff: ldfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+0104: call          0x0a000026 System.IO.File.Exists
+0109: brfalse.s     278 
+010b: ldarg.0        
+010c: ldfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+0111: call          0x0a000027 System.IO.File.Delete
+0116: ldarg.0        
+0117: ldc.i4.3       
+0118: ldloc.1        
+0119: ldarg.0        
+011a: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+011f: ldarg.0        
+0120: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0125: ldloc.2        
+0126: ldarg.0        
+0127: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+012c: ldarg.0        
+012d: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+0132: mul            
+0133: ldarg.0        
+0134: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0139: ldarg.0        
+013a: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+013f: mul            
+0140: call          0x06000011 ImageExporter.MainWindow.DoResize
+0145: leave.s       334 
+0147: ldloc.1        
+0148: call          0x0a000028 System.Runtime.InteropServices.Marshal.FreeHGlobal
+014d: endfinally     
+014e: ldarg.0        
+014f: ldarg.0        
+0150: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0155: ldarg.0        
+0156: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+015b: mul            
+015c: stfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0161: ldarg.0        
+0162: ldarg.0        
+0163: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0168: ldarg.0        
+0169: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+016e: mul            
+016f: stfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0174: ldarg.0        
+0175: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+017a: call          0x0a000029 System.String.IsNullOrEmpty
+017f: brtrue        1386 
+0184: ldnull         
+0185: stloc.3        
+0186: ldnull         
+0187: stloc.s       4 
+0189: ldc.i4.0       
+018a: stloc.s       5 
+018c: ldarg.0        
+018d: ldarg.0        
+018e: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+0193: call          0x0a00002a System.IO.Directory.GetFiles
+0198: stfld         0x04000008 ImageExporter.MainWindow.fileEntries
+019d: ldc.i4.0       
+019e: stloc.s       12 
+01a0: br            649 
+01a5: ldarg.0        
+01a6: ldfld         0x04000008 ImageExporter.MainWindow.fileEntries
+01ab: ldloc.s       12 
+01ad: ldelem.ref     
+01ae: stloc.s       13 
+01b0: ldloc.s       13 
+01b2: ldstr         0x70000019 ".cvs"
+01b7: callvirt      0x0a00002b System.String.EndsWith
+01bc: brfalse       643 
+01c1: ldnull         
+01c2: stloc.s       14 
+01c4: ldarg.0        
+01c5: ldfld         0x04000008 ImageExporter.MainWindow.fileEntries
+01ca: ldloc.s       12 
+01cc: ldelem.ref     
+01cd: ldc.i4.3       
+01ce: newobj        0x0a00002c System.IO.FileStream..ctor
+01d3: stloc.s       16 
+01d5: ldloc.s       16 
+01d7: call          0x0a00002d System.Windows.Markup.XamlReader.Load
+01dc: stloc.s       14 
+01de: leave.s       492 
+01e0: ldloc.s       16 
+01e2: brfalse.s     491 
+01e4: ldloc.s       16 
+01e6: callvirt      0x0a00002e System.IDisposable.Dispose
+01eb: endfinally     
+01ec: ldnull         
+01ed: stloc.s       15 
+01ef: ldloc.s       14 
+01f1: isinst        0x01000045 
+01f6: brfalse.s     515 
+01f8: ldloc.s       14 
+01fa: castclass     0x01000045 
+01ff: stloc.s       15 
+0201: br.s          524 
+0203: ldloc.s       14 
+0205: castclass     0x01000046 
+020a: stloc.s       15 
+020c: ldloc.3        
+020d: brtrue.s      559 
+020f: newobj        0x0a00002f System.Windows.Controls.Canvas..ctor
+0214: stloc.3        
+0215: ldloc.3        
+0216: ldloc.s       15 
+0218: callvirt      0x0a000030 System.Windows.FrameworkElement.get_Height
+021d: callvirt      0x0a000031 System.Windows.FrameworkElement.set_Height
+0222: ldloc.3        
+0223: ldloc.s       15 
+0225: callvirt      0x0a000032 System.Windows.FrameworkElement.get_Width
+022a: callvirt      0x0a000033 System.Windows.FrameworkElement.set_Width
+022f: ldloc.3        
+0230: callvirt      0x0a000034 System.Windows.Controls.Panel.get_Children
+0235: ldloc.s       15 
+0237: callvirt      0x0a000035 System.Windows.Controls.UIElementCollection.Add
+023c: pop            
+023d: ldloc.s       13 
+023f: ldstr         0x70000023 "ROI"
+0244: callvirt      0x0a000036 System.String.Contains
+0249: brfalse.s     597 
+024b: ldloc.s       15 
+024d: ldc.i4.3       
+024e: call          0x0a000037 System.Windows.Controls.Panel.SetZIndex
+0253: br.s          643 
+0255: ldloc.s       13 
+0257: ldstr         0x7000002b "MeasurementLayer"
+025c: callvirt      0x0a000036 System.String.Contains
+0261: brfalse.s     621 
+0263: ldloc.s       15 
+0265: ldc.i4.2       
+0266: call          0x0a000037 System.Windows.Controls.Panel.SetZIndex
+026b: br.s          643 
+026d: ldloc.s       13 
+026f: ldstr         0x7000004d "Annotation"
+0274: callvirt      0x0a000036 System.String.Contains
+0279: brfalse.s     643 
+027b: ldloc.s       15 
+027d: ldc.i4.1       
+027e: call          0x0a000037 System.Windows.Controls.Panel.SetZIndex
+0283: ldloc.s       12 
+0285: ldc.i4.1       
+0286: add            
+0287: stloc.s       12 
+0289: ldloc.s       12 
+028b: ldarg.0        
+028c: ldfld         0x04000008 ImageExporter.MainWindow.fileEntries
+0291: ldlen          
+0292: conv.i4        
+0293: blt           421 
+0298: ldc.i4        100000000 
+029d: ldarg.0        
+029e: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+02a3: ldc.i4.3       
+02a4: mul            
+02a5: div            
+02a6: stloc.s       6 
+02a8: ldc.r8        0 
+02b1: stloc.s       7 
+02b3: ldarg.0        
+02b4: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+02b9: stloc.s       8 
+02bb: ldc.r8        1 
+02c4: stloc.s       9 
+02c6: ldloc.3        
+02c7: brfalse.s     729 
+02c9: ldloc.3        
+02ca: callvirt      0x0a000030 System.Windows.FrameworkElement.get_Height
+02cf: ldarg.0        
+02d0: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+02d5: conv.r8        
+02d6: div            
+02d7: stloc.s       9 
+02d9: ldloc.s       9 
+02db: ldloc.s       6 
+02dd: conv.r8        
+02de: mul            
+02df: stloc.s       10 
+02e1: newobj        0x0a00001f System.Collections.Generic.List`1..ctor
+02e6: stloc.s       11 
+02e8: br            1063 
+02ed: ldloc.s       8 
+02ef: ldloc.s       6 
+02f1: sub            
+02f2: ldc.i4.0       
+02f3: bge.s         771 
+02f5: ldloc.s       8 
+02f7: stloc.s       6 
+02f9: ldloc.s       9 
+02fb: ldloc.s       6 
+02fd: conv.r8        
+02fe: mul            
+02ff: conv.i4        
+0300: conv.r8        
+0301: stloc.s       10 
+0303: ldloc.s       8 
+0305: ldloc.s       6 
+0307: sub            
+0308: stloc.s       8 
+030a: ldloc.3        
+030b: brfalse       1033 
+0310: ldc.r8        0 
+0319: ldloc.s       7 
+031b: neg            
+031c: newobj        0x0a000038 System.Windows.Media.TranslateTransform..ctor
+0321: stloc.s       17 
+0323: ldloc.3        
+0324: ldloc.s       17 
+0326: callvirt      0x0a000039 System.Windows.UIElement.set_RenderTransform
+032b: ldloc.s       6 
+032d: ldarg.0        
+032e: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+0333: div            
+0334: stloc.s       18 
+0336: ldarg.0        
+0337: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+033c: ldarg.0        
+033d: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+0342: div            
+0343: stloc.s       19 
+0345: newobj        0x0a00003a System.Windows.Controls.Viewbox..ctor
+034a: stloc.s       20 
+034c: ldloc.s       20 
+034e: ldloc.3        
+034f: callvirt      0x0a00003b System.Windows.Controls.Decorator.set_Child
+0354: ldloca.s      21 
+0356: ldloc.s       19 
+0358: conv.r8        
+0359: ldloc.s       18 
+035b: conv.r8        
+035c: call          0x0a00003c System.Windows.Size..ctor
+0361: ldloc.s       20 
+0363: ldloc.s       21 
+0365: callvirt      0x0a00003d System.Windows.UIElement.Measure
+036a: ldloc.s       20 
+036c: ldloc.s       21 
+036e: newobj        0x0a00003e System.Windows.Rect..ctor
+0373: callvirt      0x0a00003f System.Windows.UIElement.Arrange
+0378: ldloc.s       20 
+037a: ldc.i4.3       
+037b: callvirt      0x0a000040 System.Windows.Controls.Viewbox.set_Stretch
+0380: ldloc.s       20 
+0382: callvirt      0x0a000041 System.Windows.UIElement.UpdateLayout
+0387: ldloc.s       6 
+0389: ldloc.s       5 
+038b: beq.s         945 
+038d: ldarg.0        
+038e: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0393: ldloc.s       6 
+0395: ldarg.0        
+0396: ldfld         0x0400000d ImageExporter.MainWindow._dblDPIX
+039b: ldarg.0        
+039c: ldfld         0x0400000e ImageExporter.MainWindow._dblDPIY
+03a1: call          0x0a000042 System.Windows.Media.PixelFormats.get_Pbgra32
+03a6: newobj        0x0a000043 System.Windows.Media.Imaging.RenderTargetBitmap..ctor
+03ab: stloc.s       4 
+03ad: ldloc.s       6 
+03af: stloc.s       5 
+03b1: ldloc.s       4 
+03b3: callvirt      0x0a000044 System.Windows.Media.Imaging.RenderTargetBitmap.Clear
+03b8: ldloc.s       4 
+03ba: ldloc.s       20 
+03bc: callvirt      0x0a000045 System.Windows.Media.Imaging.RenderTargetBitmap.Render
+03c1: ldc.i4.4       
+03c2: newarr        0x01000015 
+03c7: dup            
+03c8: ldc.i4.0       
+03c9: ldarg.0        
+03ca: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+03cf: stelem.ref     
+03d0: dup            
+03d1: ldc.i4.1       
+03d2: ldstr         0x70000063 "\\Canvas_"
+03d7: stelem.ref     
+03d8: dup            
+03d9: ldc.i4.2       
+03da: ldarg.0        
+03db: ldfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+03e0: box           0x01000052 
+03e5: stelem.ref     
+03e6: dup            
+03e7: ldc.i4.3       
+03e8: ldstr         0x70000075 ".png"
+03ed: stelem.ref     
+03ee: call          0x0a000046 System.String.Concat
+03f3: stloc.s       22 
+03f5: ldarg.0        
+03f6: ldloc.s       4 
+03f8: ldloc.s       22 
+03fa: ldc.i4.3       
+03fb: call          0x06000008 ImageExporter.MainWindow.ExportImage
+0400: pop            
+0401: ldloc.s       20 
+0403: ldnull         
+0404: callvirt      0x0a00003b System.Windows.Controls.Decorator.set_Child
+0409: ldarg.0        
+040a: ldarg.0        
+040b: ldfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+0410: ldc.i4.1       
+0411: add            
+0412: stfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+0417: ldloc.s       7 
+0419: ldloc.s       10 
+041b: add            
+041c: stloc.s       7 
+041e: ldloc.s       11 
+0420: ldloc.s       6 
+0422: callvirt      0x0a000047 System.Collections.Generic.List`1.Add
+0427: ldloc.s       8 
+0429: ldc.i4.0       
+042a: bgt           749 
+042f: ldarg.0        
+0430: ldarg.0        
+0431: ldfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+0436: call          0x0600000b ImageExporter.MainWindow.OpenImageRawDataForRead
+043b: ldc.i4.1       
+043c: stloc.s       23 
+043e: br.s          1208 
+0440: ldnull         
+0441: stloc.s       24 
+0443: ldc.i4.4       
+0444: newarr        0x01000015 
+0449: dup            
+044a: ldc.i4.0       
+044b: ldarg.0        
+044c: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+0451: stelem.ref     
+0452: dup            
+0453: ldc.i4.1       
+0454: ldstr         0x70000063 "\\Canvas_"
+0459: stelem.ref     
+045a: dup            
+045b: ldc.i4.2       
+045c: ldloc.s       23 
+045e: box           0x01000052 
+0463: stelem.ref     
+0464: dup            
+0465: ldc.i4.3       
+0466: ldstr         0x70000075 ".png"
+046b: stelem.ref     
+046c: call          0x0a000046 System.String.Concat
+0471: stloc.s       25 
+0473: ldloc.s       25 
+0475: call          0x0a000026 System.IO.File.Exists
+047a: brfalse.s     1157 
+047c: ldloc.s       25 
+047e: newobj        0x0a000048 System.Drawing.Bitmap..ctor
+0483: stloc.s       24 
+0485: ldarg.0        
+0486: ldarg.0        
+0487: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+048c: ldloc.s       24 
+048e: ldloc.s       23 
+0490: ldloc.s       11 
+0492: ldloc.s       23 
+0494: ldc.i4.1       
+0495: sub            
+0496: callvirt      0x0a000049 System.Collections.Generic.List`1.get_Item
+049b: ldarg.0        
+049c: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+04a1: call          0x0600000f ImageExporter.MainWindow.SuperImposeCanvasAndImage
+04a6: pop            
+04a7: ldloc.s       24 
+04a9: brfalse.s     1202 
+04ab: ldloc.s       24 
+04ad: callvirt      0x0a00004a System.Drawing.Image.Dispose
+04b2: ldloc.s       23 
+04b4: ldc.i4.1       
+04b5: add            
+04b6: stloc.s       23 
+04b8: ldloc.s       23 
+04ba: ldarg.0        
+04bb: ldfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+04c0: blt           1088 
+04c5: ldarg.0        
+04c6: call          0x0600000c ImageExporter.MainWindow.CloseImageRawData
+04cb: ldarg.0        
+04cc: ldarg.0        
+04cd: ldfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+04d2: call          0x06000010 ImageExporter.MainWindow.CreateImageFromData
+04d7: pop            
+04d8: ldloc.0        
+04d9: ldc.i4.1       
+04da: bne.un        1386 
+04df: ldarg.0        
+04e0: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+04e5: ldc.i4.1       
+04e6: call          0x0a00004b System.Drawing.Image.FromFile
+04eb: castclass     0x01000025 
+04f0: stloc.s       26 
+04f2: ldloc.s       26 
+04f4: callvirt      0x0a00004c System.Drawing.Bitmap.GetHbitmap
+04f9: call          0x0a00004d System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions
+04fe: stloc.s       27 
+0500: ldsfld        0x0a000023 System.IntPtr.Zero
+0505: call          0x0a00004e System.Windows.Int32Rect.get_Empty
+050a: ldloc.s       27 
+050c: call          0x0a00004f System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap
+0511: dup            
+0512: callvirt      0x0a000050 System.Windows.Freezable.Freeze
+0517: ldsfld        0x0a000023 System.IntPtr.Zero
+051c: pop            
+051d: ldloc.s       26 
+051f: brfalse.s     1320 
+0521: ldloc.s       26 
+0523: callvirt      0x0a00004a System.Drawing.Image.Dispose
+0528: call          0x0a000051 Olympus.CF.CommonUtility.Common.CommonUtility.GetArrayOfPixels
+052d: stloc.s       28 
+052f: ldarg.0        
+0530: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+0535: ldstr         0x7000007f ".jpg"
+053a: ldstr         0x70000089 ".bin"
+053f: callvirt      0x0a000052 System.String.Replace
+0544: ldc.i4.4       
+0545: call          0x0a000053 System.IO.File.Open
+054a: dup            
+054b: ldloc.s       28 
+054d: ldc.i4.0       
+054e: ldloc.s       28 
+0550: ldlen          
+0551: conv.i4        
+0552: callvirt      0x0a000054 System.IO.Stream.Write
+0557: callvirt      0x0a000055 System.IO.Stream.Close
+055c: leave.s       1386 
+055e: ldloc.s       26 
+0560: brfalse.s     1385 
+0562: ldloc.s       26 
+0564: callvirt      0x0a00002e System.IDisposable.Dispose
+0569: endfinally     
+056a: leave         1695 
+056f: callvirt      0x0a000056 System.Object.ToString
+0574: call          0x0a000057 System.Windows.MessageBox.Show
+0579: pop            
+057a: ldc.i4.m1      
+057b: call          0x0a000058 System.Environment.Exit
+0580: leave         1695 
+0585: ldarg.0        
+0586: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+058b: ldstr         0x70000093 "\\"
+0590: ldarg.0        
+0591: ldfld         0x0400000a ImageExporter.MainWindow._strOverlayImageName
+0596: call          0x0a000059 System.String.Concat
+059b: call          0x0a000026 System.IO.File.Exists
+05a0: brfalse.s     1469 
+05a2: ldarg.0        
+05a3: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+05a8: ldstr         0x70000093 "\\"
+05ad: ldarg.0        
+05ae: ldfld         0x0400000a ImageExporter.MainWindow._strOverlayImageName
+05b3: call          0x0a000059 System.String.Concat
+05b8: call          0x0a000027 System.IO.File.Delete
+05bd: ldc.i4.1       
+05be: stloc.s       29 
+05c0: br            1675 
+05c5: ldc.i4.4       
+05c6: newarr        0x01000015 
+05cb: dup            
+05cc: ldc.i4.0       
+05cd: ldarg.0        
+05ce: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+05d3: stelem.ref     
+05d4: dup            
+05d5: ldc.i4.1       
+05d6: ldstr         0x70000063 "\\Canvas_"
+05db: stelem.ref     
+05dc: dup            
+05dd: ldc.i4.2       
+05de: ldloc.s       29 
+05e0: box           0x01000052 
+05e5: stelem.ref     
+05e6: dup            
+05e7: ldc.i4.3       
+05e8: ldstr         0x70000075 ".png"
+05ed: stelem.ref     
+05ee: call          0x0a000046 System.String.Concat
+05f3: stloc.s       30 
+05f5: ldc.i4.4       
+05f6: newarr        0x01000015 
+05fb: dup            
+05fc: ldc.i4.0       
+05fd: ldarg.0        
+05fe: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+0603: stelem.ref     
+0604: dup            
+0605: ldc.i4.1       
+0606: ldstr         0x70000063 "\\Canvas_"
+060b: stelem.ref     
+060c: dup            
+060d: ldc.i4.2       
+060e: ldloc.s       29 
+0610: box           0x01000052 
+0615: stelem.ref     
+0616: dup            
+0617: ldc.i4.3       
+0618: ldstr         0x70000075 ".png"
+061d: stelem.ref     
+061e: call          0x0a000046 System.String.Concat
+0623: stloc.s       31 
+0625: ldc.i4.4       
+0626: newarr        0x01000015 
+062b: dup            
+062c: ldc.i4.0       
+062d: ldarg.0        
+062e: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+0633: stelem.ref     
+0634: dup            
+0635: ldc.i4.1       
+0636: ldstr         0x70000097 "\\CnvImg_"
+063b: stelem.ref     
+063c: dup            
+063d: ldc.i4.2       
+063e: ldloc.s       29 
+0640: box           0x01000052 
+0645: stelem.ref     
+0646: dup            
+0647: ldc.i4.3       
+0648: ldstr         0x700000a9 ".dat"
+064d: stelem.ref     
+064e: call          0x0a000046 System.String.Concat
+0653: stloc.s       32 
+0655: ldloc.s       30 
+0657: call          0x0a000026 System.IO.File.Exists
+065c: brfalse.s     1637 
+065e: ldloc.s       30 
+0660: call          0x0a000027 System.IO.File.Delete
+0665: ldloc.s       31 
+0667: call          0x0a000026 System.IO.File.Exists
+066c: brfalse.s     1653 
+066e: ldloc.s       31 
+0670: call          0x0a000027 System.IO.File.Delete
+0675: ldloc.s       32 
+0677: call          0x0a000026 System.IO.File.Exists
+067c: brfalse.s     1669 
+067e: ldloc.s       32 
+0680: call          0x0a000027 System.IO.File.Delete
+0685: ldloc.s       29 
+0687: ldc.i4.1       
+0688: add            
+0689: stloc.s       29 
+068b: ldloc.s       29 
+068d: ldarg.0        
+068e: ldfld         0x0400000b ImageExporter.MainWindow._iFileCnt
+0693: blt           1477 
+0698: ldarg.0        
+0699: call          0x0a00005a System.Windows.Window.Close
+069e: endfinally     
+069f: ret            
+
+METHOD 0x06000007 ImageExporter.MainWindow SuperImpose IL_SHA256 2c32558f9818063985ade597174ef68e857ff0a2e34d36a5d8895a81b13e1a9f DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldc.i4.4       
+0003: ldarg.0        
+0004: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0009: ldc.i4.3       
+000a: mul            
+000b: ldc.i4.4       
+000c: rem            
+000d: sub            
+000e: ldc.i4.4       
+000f: rem            
+0010: stloc.1        
+0011: ldarg.0        
+0012: ldarg.0        
+0013: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0018: ldc.i4.3       
+0019: mul            
+001a: ldloc.1        
+001b: add            
+001c: stfld         0x04000005 ImageExporter.MainWindow._i32Stride
+0021: ldsfld        0x0a000023 System.IntPtr.Zero
+0026: stloc.2        
+0027: ldnull         
+0028: stloc.3        
+0029: ldarg.2        
+002a: brfalse.s     76 
+002c: ldarg.2        
+002d: ldc.i4.0       
+002e: ldc.i4.0       
+002f: ldarg.2        
+0030: callvirt      0x0a00005b System.Drawing.Image.get_Width
+0035: ldarg.2        
+0036: callvirt      0x0a00005c System.Drawing.Image.get_Height
+003b: newobj        0x0a00005d System.Drawing.Rectangle..ctor
+0040: ldc.i4.1       
+0041: ldc.i4        925707 
+0046: callvirt      0x0a00005e System.Drawing.Bitmap.LockBits
+004b: stloc.3        
+004c: ldarg.0        
+004d: ldfld         0x04000005 ImageExporter.MainWindow._i32Stride
+0052: pop            
+0053: ldarg.0        
+0054: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0059: ldc.i4.3       
+005a: mul            
+005b: ldloc.1        
+005c: add            
+005d: ldarg.0        
+005e: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0063: mul            
+0064: call          0x0a000025 System.Runtime.InteropServices.Marshal.AllocHGlobal
+0069: stloc.2        
+006a: ldarg.0        
+006b: ldarg.0        
+006c: ldfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+0071: ldloc.2        
+0072: ldloc.1        
+0073: call          0x06000009 ImageExporter.MainWindow.ReadImageRawData
+0078: ldloc.2        
+0079: call          0x0a00005f System.IntPtr.op_Explicit
+007e: stloc.s       4 
+0080: ldc.i4.0       
+0081: conv.u         
+0082: stloc.s       5 
+0084: ldloc.3        
+0085: brfalse.s     148 
+0087: ldloc.3        
+0088: callvirt      0x0a000060 System.Drawing.Imaging.BitmapData.get_Scan0
+008d: call          0x0a00005f System.IntPtr.op_Explicit
+0092: stloc.s       5 
+0094: ldc.i4.0       
+0095: stloc.s       6 
+0097: br            394 
+009c: ldc.i4.0       
+009d: stloc.s       7 
+009f: br            369 
+00a4: ldarg.2        
+00a5: brfalse       325 
+00aa: ldloc.s       5 
+00ac: ldc.i4.3       
+00ad: add            
+00ae: ldind.u1       
+00af: ldc.i4.0       
+00b0: ble           325 
+00b5: ldloc.s       4 
+00b7: ldloc.s       4 
+00b9: ldind.u1       
+00ba: conv.r4        
+00bb: ldc.r4        255 
+00c0: ldloc.s       5 
+00c2: ldc.i4.3       
+00c3: add            
+00c4: ldind.u1       
+00c5: conv.r4        
+00c6: sub            
+00c7: mul            
+00c8: ldc.r4        255 
+00cd: div            
+00ce: ldloc.s       5 
+00d0: ldc.i4.2       
+00d1: add            
+00d2: ldind.u1       
+00d3: ldloc.s       5 
+00d5: ldc.i4.3       
+00d6: add            
+00d7: ldind.u1       
+00d8: mul            
+00d9: conv.r4        
+00da: ldc.r4        255 
+00df: div            
+00e0: add            
+00e1: conv.u1        
+00e2: stind.i1       
+00e3: ldloc.s       4 
+00e5: ldc.i4.1       
+00e6: add            
+00e7: ldloc.s       4 
+00e9: ldc.i4.1       
+00ea: add            
+00eb: ldind.u1       
+00ec: conv.r4        
+00ed: ldc.r4        255 
+00f2: ldloc.s       5 
+00f4: ldc.i4.3       
+00f5: add            
+00f6: ldind.u1       
+00f7: conv.r4        
+00f8: sub            
+00f9: mul            
+00fa: ldc.r4        255 
+00ff: div            
+0100: ldloc.s       5 
+0102: ldc.i4.1       
+0103: add            
+0104: ldind.u1       
+0105: ldloc.s       5 
+0107: ldc.i4.3       
+0108: add            
+0109: ldind.u1       
+010a: mul            
+010b: conv.r4        
+010c: ldc.r4        255 
+0111: div            
+0112: add            
+0113: conv.u1        
+0114: stind.i1       
+0115: ldloc.s       4 
+0117: ldc.i4.2       
+0118: add            
+0119: ldloc.s       4 
+011b: ldc.i4.2       
+011c: add            
+011d: ldind.u1       
+011e: conv.r4        
+011f: ldc.r4        255 
+0124: ldloc.s       5 
+0126: ldc.i4.3       
+0127: add            
+0128: ldind.u1       
+0129: conv.r4        
+012a: sub            
+012b: mul            
+012c: ldc.r4        255 
+0131: div            
+0132: ldloc.s       5 
+0134: ldind.u1       
+0135: ldloc.s       5 
+0137: ldc.i4.3       
+0138: add            
+0139: ldind.u1       
+013a: mul            
+013b: conv.r4        
+013c: ldc.r4        255 
+0141: div            
+0142: add            
+0143: conv.u1        
+0144: stind.i1       
+0145: ldloc.s       4 
+0147: ldind.u1       
+0148: stloc.s       8 
+014a: ldloc.s       4 
+014c: ldloc.s       4 
+014e: ldc.i4.2       
+014f: add            
+0150: ldind.u1       
+0151: stind.i1       
+0152: ldloc.s       4 
+0154: ldc.i4.2       
+0155: add            
+0156: ldloc.s       8 
+0158: stind.i1       
+0159: ldloc.s       4 
+015b: ldc.i4.3       
+015c: add            
+015d: stloc.s       4 
+015f: ldc.i4.0       
+0160: conv.u         
+0161: ldloc.s       5 
+0163: beq.s         363 
+0165: ldloc.s       5 
+0167: ldc.i4.4       
+0168: add            
+0169: stloc.s       5 
+016b: ldloc.s       7 
+016d: ldc.i4.1       
+016e: add            
+016f: stloc.s       7 
+0171: ldloc.s       7 
+0173: ldarg.0        
+0174: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0179: blt           164 
+017e: ldloc.s       4 
+0180: ldloc.1        
+0181: add            
+0182: stloc.s       4 
+0184: ldloc.s       6 
+0186: ldc.i4.1       
+0187: add            
+0188: stloc.s       6 
+018a: ldloc.s       6 
+018c: ldarg.0        
+018d: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0192: blt           156 
+0197: ldarg.2        
+0198: brfalse.s     417 
+019a: ldarg.2        
+019b: ldloc.3        
+019c: callvirt      0x0a000061 System.Drawing.Bitmap.UnlockBits
+01a1: ldarg.0        
+01a2: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+01a7: ldarg.0        
+01a8: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+01ad: ldarg.0        
+01ae: ldfld         0x04000005 ImageExporter.MainWindow._i32Stride
+01b3: ldc.i4        137224 
+01b8: ldloc.2        
+01b9: newobj        0x0a000062 System.Drawing.Bitmap..ctor
+01be: stloc.s       9 
+01c0: ldarg.0        
+01c1: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+01c6: brtrue.s      471 
+01c8: ldloc.s       9 
+01ca: ldarg.1        
+01cb: call          0x0a000063 System.Drawing.Imaging.ImageFormat.get_Bmp
+01d0: callvirt      0x0a000064 System.Drawing.Image.Save
+01d5: br.s          517 
+01d7: ldarg.0        
+01d8: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+01dd: ldc.i4.1       
+01de: bne.un.s      495 
+01e0: ldloc.s       9 
+01e2: ldarg.1        
+01e3: call          0x0a000065 System.Drawing.Imaging.ImageFormat.get_Jpeg
+01e8: callvirt      0x0a000064 System.Drawing.Image.Save
+01ed: br.s          517 
+01ef: ldarg.0        
+01f0: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+01f5: ldc.i4.2       
+01f6: bne.un.s      517 
+01f8: ldloc.s       9 
+01fa: ldarg.1        
+01fb: call          0x0a000066 System.Drawing.Imaging.ImageFormat.get_Tiff
+0200: callvirt      0x0a000064 System.Drawing.Image.Save
+0205: leave.s       531 
+0207: ldloc.s       9 
+0209: brfalse.s     530 
+020b: ldloc.s       9 
+020d: callvirt      0x0a00002e System.IDisposable.Dispose
+0212: endfinally     
+0213: leave.s       551 
+0215: pop            
+0216: ldc.i4.m1      
+0217: stloc.0        
+0218: ldc.i4.m1      
+0219: call          0x0a000058 System.Environment.Exit
+021e: leave.s       551 
+0220: ldloc.2        
+0221: call          0x0a000028 System.Runtime.InteropServices.Marshal.FreeHGlobal
+0226: endfinally     
+0227: ldloc.0        
+0228: ret            
+
+METHOD 0x06000008 ImageExporter.MainWindow ExportImage IL_SHA256 0c83bfd065730ae66200d964d27424c2b841d0fe8338217fd4c23299a7de1c73 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldarg.2        
+0003: ldc.i4.2       
+0004: newobj        0x0a00002c System.IO.FileStream..ctor
+0009: stloc.1        
+000a: ldarg.3        
+000b: switch        4 
+0020: br.s          152 
+0022: newobj        0x0a000067 System.Windows.Media.Imaging.BmpBitmapEncoder..ctor
+0027: dup            
+0028: callvirt      0x0a000068 System.Windows.Media.Imaging.BitmapEncoder.get_Frames
+002d: ldarg.1        
+002e: call          0x0a000069 System.Windows.Media.Imaging.BitmapFrame.Create
+0033: callvirt      0x0a00006a System.Collections.Generic.ICollection`1.Add
+0038: ldloc.1        
+0039: callvirt      0x0a00006b System.Windows.Media.Imaging.BitmapEncoder.Save
+003e: br.s          152 
+0040: newobj        0x0a00006c System.Windows.Media.Imaging.JpegBitmapEncoder..ctor
+0045: dup            
+0046: callvirt      0x0a000068 System.Windows.Media.Imaging.BitmapEncoder.get_Frames
+004b: ldarg.1        
+004c: call          0x0a000069 System.Windows.Media.Imaging.BitmapFrame.Create
+0051: callvirt      0x0a00006a System.Collections.Generic.ICollection`1.Add
+0056: ldloc.1        
+0057: callvirt      0x0a00006b System.Windows.Media.Imaging.BitmapEncoder.Save
+005c: br.s          152 
+005e: newobj        0x0a00006d System.Windows.Media.Imaging.TiffBitmapEncoder..ctor
+0063: dup            
+0064: callvirt      0x0a000068 System.Windows.Media.Imaging.BitmapEncoder.get_Frames
+0069: ldarg.1        
+006a: call          0x0a000069 System.Windows.Media.Imaging.BitmapFrame.Create
+006f: callvirt      0x0a00006a System.Collections.Generic.ICollection`1.Add
+0074: ldloc.1        
+0075: callvirt      0x0a00006b System.Windows.Media.Imaging.BitmapEncoder.Save
+007a: br.s          152 
+007c: newobj        0x0a00006e System.Windows.Media.Imaging.PngBitmapEncoder..ctor
+0081: dup            
+0082: callvirt      0x0a000068 System.Windows.Media.Imaging.BitmapEncoder.get_Frames
+0087: ldarg.1        
+0088: call          0x0a000069 System.Windows.Media.Imaging.BitmapFrame.Create
+008d: callvirt      0x0a00006a System.Collections.Generic.ICollection`1.Add
+0092: ldloc.1        
+0093: callvirt      0x0a00006b System.Windows.Media.Imaging.BitmapEncoder.Save
+0098: leave.s       166 
+009a: pop            
+009b: ldc.i4.m1      
+009c: stloc.0        
+009d: leave.s       166 
+009f: ldloc.1        
+00a0: callvirt      0x0a000055 System.IO.Stream.Close
+00a5: endfinally     
+00a6: ldloc.0        
+00a7: stloc.2        
+00a8: leave.s       180 
+00aa: ldloc.1        
+00ab: brfalse.s     179 
+00ad: ldloc.1        
+00ae: callvirt      0x0a00002e System.IDisposable.Dispose
+00b3: endfinally     
+00b4: ldloc.2        
+00b5: ret            
+
+METHOD 0x06000009 ImageExporter.MainWindow ReadImageRawData IL_SHA256 ef8c39ad313bbb9e324bf1dd3756a0900c8d78a3a436aa9e92aeeb1def190e91 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.0       
+0002: newobj        0x0a00006f Olympus.Mis.Imaging.Utilities.Common.NativeFile..ctor
+0007: stloc.0        
+0008: ldarg.0        
+0009: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+000e: ldc.i4.3       
+000f: mul            
+0010: ldarg.0        
+0011: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0016: mul            
+0017: stloc.1        
+0018: ldc.i4.0       
+0019: stloc.2        
+001a: br.s          90 
+001c: ldloc.0        
+001d: ldarga.s      2 
+001f: call          0x0a000070 System.IntPtr.ToInt64
+0024: ldloc.2        
+0025: conv.u8        
+0026: add            
+0027: newobj        0x0a000071 System.IntPtr..ctor
+002c: ldarg.0        
+002d: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0032: ldc.i4.3       
+0033: mul            
+0034: callvirt      0x0a000072 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Read
+0039: stloc.3        
+003a: ldloc.3        
+003b: conv.u8        
+003c: ldarg.0        
+003d: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0042: ldc.i4.3       
+0043: mul            
+0044: conv.i8        
+0045: bge.s         77 
+0047: newobj        0x0a000073 System.IO.EndOfStreamException..ctor
+004c: throw          
+004d: ldloc.2        
+004e: ldloc.3        
+004f: conv.u8        
+0050: ldarg.3        
+0051: conv.i8        
+0052: add            
+0053: conv.u4        
+0054: add            
+0055: stloc.2        
+0056: ldloc.1        
+0057: ldloc.3        
+0058: sub            
+0059: stloc.1        
+005a: ldloc.1        
+005b: ldc.i4.0       
+005c: bgt.un.s      28 
+005e: leave.s       106 
+0060: ldloc.0        
+0061: brfalse.s     105 
+0063: ldloc.0        
+0064: callvirt      0x0a00002e System.IDisposable.Dispose
+0069: endfinally     
+006a: ret            
+
+METHOD 0x0600000a ImageExporter.MainWindow ReadImageRawData IL_SHA256 8aeb4d13638c6ce89653fcd00fa6d3f7d448db07e9bd6df6f57744da3c73df50 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.0       
+0002: newobj        0x0a00006f Olympus.Mis.Imaging.Utilities.Common.NativeFile..ctor
+0007: stloc.0        
+0008: ldarg.0        
+0009: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+000e: ldc.i4.3       
+000f: mul            
+0010: ldarg.0        
+0011: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0016: mul            
+0017: stloc.1        
+0018: ldc.i4.0       
+0019: stloc.2        
+001a: br.s          77 
+001c: ldarg.0        
+001d: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0022: ldc.i4.3       
+0023: mul            
+0024: stloc.3        
+0025: ldloc.1        
+0026: ldloc.3        
+0027: bge.un.s      43 
+0029: ldloc.1        
+002a: stloc.3        
+002b: ldloc.0        
+002c: ldarga.s      2 
+002e: call          0x0a000070 System.IntPtr.ToInt64
+0033: ldloc.2        
+0034: conv.u8        
+0035: add            
+0036: newobj        0x0a000071 System.IntPtr..ctor
+003b: ldloc.3        
+003c: callvirt      0x0a000072 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Read
+0041: stloc.s       4 
+0043: ldloc.2        
+0044: ldloc.s       4 
+0046: add            
+0047: stloc.2        
+0048: ldloc.1        
+0049: ldloc.s       4 
+004b: sub            
+004c: stloc.1        
+004d: ldloc.1        
+004e: ldc.i4.0       
+004f: bgt.un.s      28 
+0051: leave.s       93 
+0053: ldloc.0        
+0054: brfalse.s     92 
+0056: ldloc.0        
+0057: callvirt      0x0a00002e System.IDisposable.Dispose
+005c: endfinally     
+005d: ret            
+
+METHOD 0x0600000b ImageExporter.MainWindow OpenImageRawDataForRead IL_SHA256 cc7b3e5fbc31d0b10e4d227a548af47b720c39181345e40b07aaa5eec0f46664 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400000f ImageExporter.MainWindow._RawImageDatafile
+0006: brtrue.s      21 
+0008: ldarg.0        
+0009: ldarg.1        
+000a: ldc.i4.0       
+000b: newobj        0x0a00006f Olympus.Mis.Imaging.Utilities.Common.NativeFile..ctor
+0010: stfld         0x0400000f ImageExporter.MainWindow._RawImageDatafile
+0015: ret            
+
+METHOD 0x0600000c ImageExporter.MainWindow CloseImageRawData IL_SHA256 b086926edfdb4bca1d43f708cd470d2b80b0749811b543e9424b072e7be94c40 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x0400000f ImageExporter.MainWindow._RawImageDatafile
+0006: callvirt      0x0a000074 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Dispose
+000b: ldarg.0        
+000c: ldnull         
+000d: stfld         0x0400000f ImageExporter.MainWindow._RawImageDatafile
+0012: ret            
+
+METHOD 0x0600000d ImageExporter.MainWindow ReadImageRawDataByStrip IL_SHA256 28980a9d925893f5a4b245c9e5935c0577df51bae4bf49b5cdf74dc44db1ca00 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldarg.0        
+0003: ldfld         0x0400000f ImageExporter.MainWindow._RawImageDatafile
+0008: brfalse.s     76 
+000a: ldc.i4.0       
+000b: stloc.1        
+000c: ldarg.3        
+000d: ldc.i4.3       
+000e: mul            
+000f: stloc.2        
+0010: ldc.i4.0       
+0011: stloc.3        
+0012: ldc.i4.0       
+0013: stloc.s       4 
+0015: br.s          71 
+0017: ldarg.0        
+0018: ldfld         0x0400000f ImageExporter.MainWindow._RawImageDatafile
+001d: ldarga.s      1 
+001f: call          0x0a000070 System.IntPtr.ToInt64
+0024: ldloc.3        
+0025: conv.u8        
+0026: add            
+0027: newobj        0x0a000071 System.IntPtr..ctor
+002c: ldloc.2        
+002d: callvirt      0x0a000072 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Read
+0032: stloc.1        
+0033: ldloc.3        
+0034: ldloc.1        
+0035: conv.u8        
+0036: ldarg.s       4 
+0038: conv.i8        
+0039: add            
+003a: conv.u4        
+003b: add            
+003c: stloc.3        
+003d: ldloc.0        
+003e: ldloc.1        
+003f: add            
+0040: stloc.0        
+0041: ldloc.s       4 
+0043: ldc.i4.1       
+0044: add            
+0045: stloc.s       4 
+0047: ldloc.s       4 
+0049: ldarg.2        
+004a: blt.s         23 
+004c: ldloc.0        
+004d: ret            
+
+METHOD 0x0600000e ImageExporter.MainWindow WriteDataToFile IL_SHA256 78ad924028db9478ca861f4e210060e34d395a4618874524b128facca1308389 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.1       
+0002: newobj        0x0a00006f Olympus.Mis.Imaging.Utilities.Common.NativeFile..ctor
+0007: stloc.0        
+0008: ldloc.0        
+0009: ldarga.s      2 
+000b: call          0x0a000070 System.IntPtr.ToInt64
+0010: newobj        0x0a000071 System.IntPtr..ctor
+0015: ldarg.3        
+0016: callvirt      0x0a000075 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Write
+001b: pop            
+001c: leave.s       40 
+001e: ldloc.0        
+001f: brfalse.s     39 
+0021: ldloc.0        
+0022: callvirt      0x0a00002e System.IDisposable.Dispose
+0027: endfinally     
+0028: ret            
+
+METHOD 0x0600000f ImageExporter.MainWindow SuperImposeCanvasAndImage IL_SHA256 8134bbd844863303970c64e34354d22d31061082ed9dc95f76a522c275fd0977 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldc.i4.4       
+0003: ldarg.0        
+0004: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0009: ldc.i4.3       
+000a: mul            
+000b: ldc.i4.4       
+000c: rem            
+000d: sub            
+000e: ldc.i4.4       
+000f: rem            
+0010: stloc.1        
+0011: ldarg.0        
+0012: ldarg.0        
+0013: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0018: ldc.i4.3       
+0019: mul            
+001a: ldloc.1        
+001b: add            
+001c: stfld         0x04000005 ImageExporter.MainWindow._i32Stride
+0021: ldsfld        0x0a000023 System.IntPtr.Zero
+0026: stloc.2        
+0027: ldarg.s       5 
+0029: ldc.i4.3       
+002a: mul            
+002b: ldloc.1        
+002c: add            
+002d: ldarg.s       4 
+002f: mul            
+0030: stloc.3        
+0031: ldnull         
+0032: stloc.s       4 
+0034: ldarg.2        
+0035: brfalse.s     80 
+0037: ldarg.2        
+0038: ldc.i4.0       
+0039: ldc.i4.0       
+003a: ldarg.s       5 
+003c: ldarg.s       4 
+003e: newobj        0x0a00005d System.Drawing.Rectangle..ctor
+0043: ldc.i4.1       
+0044: ldc.i4        925707 
+0049: callvirt      0x0a00005e System.Drawing.Bitmap.LockBits
+004e: stloc.s       4 
+0050: ldarg.0        
+0051: ldfld         0x04000005 ImageExporter.MainWindow._i32Stride
+0056: pop            
+0057: ldloc.3        
+0058: call          0x0a000025 System.Runtime.InteropServices.Marshal.AllocHGlobal
+005d: stloc.2        
+005e: ldarg.0        
+005f: ldloc.2        
+0060: ldarg.s       4 
+0062: ldarg.s       5 
+0064: ldloc.1        
+0065: call          0x0600000d ImageExporter.MainWindow.ReadImageRawDataByStrip
+006a: pop            
+006b: ldloc.2        
+006c: call          0x0a00005f System.IntPtr.op_Explicit
+0071: stloc.s       6 
+0073: ldc.i4.0       
+0074: conv.u         
+0075: stloc.s       7 
+0077: ldloc.s       4 
+0079: brfalse.s     137 
+007b: ldloc.s       4 
+007d: callvirt      0x0a000060 System.Drawing.Imaging.BitmapData.get_Scan0
+0082: call          0x0a00005f System.IntPtr.op_Explicit
+0087: stloc.s       7 
+0089: ldc.i4.0       
+008a: stloc.s       8 
+008c: br            379 
+0091: ldc.i4.0       
+0092: stloc.s       9 
+0094: br            358 
+0099: ldarg.2        
+009a: brfalse       314 
+009f: ldloc.s       7 
+00a1: ldc.i4.3       
+00a2: add            
+00a3: ldind.u1       
+00a4: ldc.i4.0       
+00a5: ble           314 
+00aa: ldloc.s       6 
+00ac: ldloc.s       6 
+00ae: ldind.u1       
+00af: conv.r4        
+00b0: ldc.r4        255 
+00b5: ldloc.s       7 
+00b7: ldc.i4.3       
+00b8: add            
+00b9: ldind.u1       
+00ba: conv.r4        
+00bb: sub            
+00bc: mul            
+00bd: ldc.r4        255 
+00c2: div            
+00c3: ldloc.s       7 
+00c5: ldc.i4.2       
+00c6: add            
+00c7: ldind.u1       
+00c8: ldloc.s       7 
+00ca: ldc.i4.3       
+00cb: add            
+00cc: ldind.u1       
+00cd: mul            
+00ce: conv.r4        
+00cf: ldc.r4        255 
+00d4: div            
+00d5: add            
+00d6: conv.u1        
+00d7: stind.i1       
+00d8: ldloc.s       6 
+00da: ldc.i4.1       
+00db: add            
+00dc: ldloc.s       6 
+00de: ldc.i4.1       
+00df: add            
+00e0: ldind.u1       
+00e1: conv.r4        
+00e2: ldc.r4        255 
+00e7: ldloc.s       7 
+00e9: ldc.i4.3       
+00ea: add            
+00eb: ldind.u1       
+00ec: conv.r4        
+00ed: sub            
+00ee: mul            
+00ef: ldc.r4        255 
+00f4: div            
+00f5: ldloc.s       7 
+00f7: ldc.i4.1       
+00f8: add            
+00f9: ldind.u1       
+00fa: ldloc.s       7 
+00fc: ldc.i4.3       
+00fd: add            
+00fe: ldind.u1       
+00ff: mul            
+0100: conv.r4        
+0101: ldc.r4        255 
+0106: div            
+0107: add            
+0108: conv.u1        
+0109: stind.i1       
+010a: ldloc.s       6 
+010c: ldc.i4.2       
+010d: add            
+010e: ldloc.s       6 
+0110: ldc.i4.2       
+0111: add            
+0112: ldind.u1       
+0113: conv.r4        
+0114: ldc.r4        255 
+0119: ldloc.s       7 
+011b: ldc.i4.3       
+011c: add            
+011d: ldind.u1       
+011e: conv.r4        
+011f: sub            
+0120: mul            
+0121: ldc.r4        255 
+0126: div            
+0127: ldloc.s       7 
+0129: ldind.u1       
+012a: ldloc.s       7 
+012c: ldc.i4.3       
+012d: add            
+012e: ldind.u1       
+012f: mul            
+0130: conv.r4        
+0131: ldc.r4        255 
+0136: div            
+0137: add            
+0138: conv.u1        
+0139: stind.i1       
+013a: ldloc.s       6 
+013c: ldind.u1       
+013d: stloc.s       10 
+013f: ldloc.s       6 
+0141: ldloc.s       6 
+0143: ldc.i4.2       
+0144: add            
+0145: ldind.u1       
+0146: stind.i1       
+0147: ldloc.s       6 
+0149: ldc.i4.2       
+014a: add            
+014b: ldloc.s       10 
+014d: stind.i1       
+014e: ldloc.s       6 
+0150: ldc.i4.3       
+0151: add            
+0152: stloc.s       6 
+0154: ldc.i4.0       
+0155: conv.u         
+0156: ldloc.s       7 
+0158: beq.s         352 
+015a: ldloc.s       7 
+015c: ldc.i4.4       
+015d: add            
+015e: stloc.s       7 
+0160: ldloc.s       9 
+0162: ldc.i4.1       
+0163: add            
+0164: stloc.s       9 
+0166: ldloc.s       9 
+0168: ldarg.s       5 
+016a: blt           153 
+016f: ldloc.s       6 
+0171: ldloc.1        
+0172: add            
+0173: stloc.s       6 
+0175: ldloc.s       8 
+0177: ldc.i4.1       
+0178: add            
+0179: stloc.s       8 
+017b: ldloc.s       8 
+017d: ldarg.s       4 
+017f: blt           145 
+0184: ldarg.2        
+0185: brfalse.s     399 
+0187: ldarg.2        
+0188: ldloc.s       4 
+018a: callvirt      0x0a000061 System.Drawing.Bitmap.UnlockBits
+018f: ldc.i4.4       
+0190: newarr        0x01000015 
+0195: dup            
+0196: ldc.i4.0       
+0197: ldarg.0        
+0198: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+019d: stelem.ref     
+019e: dup            
+019f: ldc.i4.1       
+01a0: ldstr         0x70000097 "\\CnvImg_"
+01a5: stelem.ref     
+01a6: dup            
+01a7: ldc.i4.2       
+01a8: ldarg.3        
+01a9: box           0x01000052 
+01ae: stelem.ref     
+01af: dup            
+01b0: ldc.i4.3       
+01b1: ldstr         0x700000a9 ".dat"
+01b6: stelem.ref     
+01b7: call          0x0a000046 System.String.Concat
+01bc: stloc.s       5 
+01be: ldarg.0        
+01bf: ldloc.s       5 
+01c1: ldloc.2        
+01c2: ldloc.3        
+01c3: call          0x0600000e ImageExporter.MainWindow.WriteDataToFile
+01c8: ldarg.0        
+01c9: ldfld         0x04000010 ImageExporter.MainWindow.FileBuffSizeList
+01ce: ldloc.3        
+01cf: callvirt      0x0a000047 System.Collections.Generic.List`1.Add
+01d4: ldarg.0        
+01d5: ldarg.0        
+01d6: ldfld         0x04000011 ImageExporter.MainWindow._iTotalBuffSize
+01db: ldloc.3        
+01dc: add            
+01dd: stfld         0x04000011 ImageExporter.MainWindow._iTotalBuffSize
+01e2: leave.s       502 
+01e4: pop            
+01e5: ldc.i4.m1      
+01e6: stloc.0        
+01e7: ldc.i4.m1      
+01e8: call          0x0a000058 System.Environment.Exit
+01ed: leave.s       502 
+01ef: ldloc.2        
+01f0: call          0x0a000028 System.Runtime.InteropServices.Marshal.FreeHGlobal
+01f5: endfinally     
+01f6: ldloc.0        
+01f7: ret            
+
+METHOD 0x06000010 ImageExporter.MainWindow CreateImageFromData IL_SHA256 ed19dcaf69b18eb42678f30d39b63ac62edc6e2d34d98433b80604cca7785dc5 DECODE_ISSUE null
+0000: ldc.i4.0       
+0001: stloc.0        
+0002: ldc.i4.4       
+0003: ldarg.0        
+0004: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0009: ldc.i4.3       
+000a: mul            
+000b: ldc.i4.4       
+000c: rem            
+000d: sub            
+000e: ldc.i4.4       
+000f: rem            
+0010: stloc.1        
+0011: ldarg.0        
+0012: ldarg.0        
+0013: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0018: ldc.i4.3       
+0019: mul            
+001a: ldloc.1        
+001b: add            
+001c: stfld         0x04000005 ImageExporter.MainWindow._i32Stride
+0021: ldsfld        0x0a000023 System.IntPtr.Zero
+0026: stloc.2        
+0027: ldarg.0        
+0028: ldfld         0x04000011 ImageExporter.MainWindow._iTotalBuffSize
+002d: call          0x0a000025 System.Runtime.InteropServices.Marshal.AllocHGlobal
+0032: stloc.2        
+0033: ldc.i4.0       
+0034: stloc.3        
+0035: ldc.i4.1       
+0036: stloc.s       4 
+0038: br.s          176 
+003a: ldc.i4.4       
+003b: newarr        0x01000015 
+0040: dup            
+0041: ldc.i4.0       
+0042: ldarg.0        
+0043: ldfld         0x04000009 ImageExporter.MainWindow._strtargetDirectory
+0048: stelem.ref     
+0049: dup            
+004a: ldc.i4.1       
+004b: ldstr         0x70000097 "\\CnvImg_"
+0050: stelem.ref     
+0051: dup            
+0052: ldc.i4.2       
+0053: ldloc.s       4 
+0055: box           0x01000052 
+005a: stelem.ref     
+005b: dup            
+005c: ldc.i4.3       
+005d: ldstr         0x700000a9 ".dat"
+0062: stelem.ref     
+0063: call          0x0a000046 System.String.Concat
+0068: ldc.i4.0       
+0069: newobj        0x0a00006f Olympus.Mis.Imaging.Utilities.Common.NativeFile..ctor
+006e: stloc.s       5 
+0070: ldloc.s       5 
+0072: ldloca.s      2 
+0074: call          0x0a000070 System.IntPtr.ToInt64
+0079: ldloc.3        
+007a: conv.i8        
+007b: add            
+007c: newobj        0x0a000071 System.IntPtr..ctor
+0081: ldarg.0        
+0082: ldfld         0x04000010 ImageExporter.MainWindow.FileBuffSizeList
+0087: ldloc.s       4 
+0089: ldc.i4.1       
+008a: sub            
+008b: callvirt      0x0a000049 System.Collections.Generic.List`1.get_Item
+0090: callvirt      0x0a000072 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Read
+0095: stloc.s       6 
+0097: ldloc.3        
+0098: ldloc.s       6 
+009a: add            
+009b: stloc.3        
+009c: leave.s       170 
+009e: ldloc.s       5 
+00a0: brfalse.s     169 
+00a2: ldloc.s       5 
+00a4: callvirt      0x0a00002e System.IDisposable.Dispose
+00a9: endfinally     
+00aa: ldloc.s       4 
+00ac: ldc.i4.1       
+00ad: add            
+00ae: stloc.s       4 
+00b0: ldloc.s       4 
+00b2: ldarg.1        
+00b3: blt.s         58 
+00b5: ldarg.0        
+00b6: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+00bb: ldc.i4.2       
+00bc: bne.un        511 
+00c1: ldarg.0        
+00c2: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+00c7: ldc.i4.1       
+00c8: bne.un        511 
+00cd: ldarg.0        
+00ce: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+00d3: ldarg.0        
+00d4: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+00d9: ldarg.0        
+00da: ldfld         0x04000005 ImageExporter.MainWindow._i32Stride
+00df: ldc.i4        137224 
+00e4: ldloc.2        
+00e5: newobj        0x0a000062 System.Drawing.Bitmap..ctor
+00ea: stloc.s       7 
+00ec: ldarg.0        
+00ed: ldarg.0        
+00ee: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+00f3: ldarg.0        
+00f4: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+00f9: div            
+00fa: stfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+00ff: ldarg.0        
+0100: ldarg.0        
+0101: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0106: ldarg.0        
+0107: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+010c: div            
+010d: stfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0112: ldarg.0        
+0113: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0118: ldarg.0        
+0119: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+011e: newobj        0x0a000076 System.Drawing.Bitmap..ctor
+0123: stloc.s       8 
+0125: ldloc.s       8 
+0127: call          0x0a000077 System.Drawing.Graphics.FromImage
+012c: stloc.s       12 
+012e: ldloc.s       12 
+0130: ldc.i4.7       
+0131: callvirt      0x0a000078 System.Drawing.Graphics.set_InterpolationMode
+0136: ldloc.s       12 
+0138: ldc.i4.2       
+0139: callvirt      0x0a000079 System.Drawing.Graphics.set_SmoothingMode
+013e: ldloc.s       12 
+0140: ldc.i4.2       
+0141: callvirt      0x0a00007a System.Drawing.Graphics.set_PixelOffsetMode
+0146: ldloc.s       12 
+0148: ldloc.s       7 
+014a: ldc.i4.0       
+014b: ldc.i4.0       
+014c: ldarg.0        
+014d: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0152: ldarg.0        
+0153: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+0158: callvirt      0x0a00007b System.Drawing.Graphics.DrawImage
+015d: leave.s       363 
+015f: ldloc.s       12 
+0161: brfalse.s     362 
+0163: ldloc.s       12 
+0165: callvirt      0x0a00002e System.IDisposable.Dispose
+016a: endfinally     
+016b: ldnull         
+016c: stloc.s       9 
+016e: call          0x0a00007c System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders
+0173: stloc.s       13 
+0175: ldc.i4.0       
+0176: stloc.s       14 
+0178: br.s          421 
+017a: ldloc.s       13 
+017c: ldloc.s       14 
+017e: ldelem.ref     
+017f: stloc.s       15 
+0181: ldloc.s       15 
+0183: callvirt      0x0a00007d System.Drawing.Imaging.ImageCodecInfo.get_FormatID
+0188: call          0x0a000065 System.Drawing.Imaging.ImageFormat.get_Jpeg
+018d: callvirt      0x0a00007e System.Drawing.Imaging.ImageFormat.get_Guid
+0192: call          0x0a00007f System.Guid.op_Equality
+0197: brfalse.s     415 
+0199: ldloc.s       15 
+019b: stloc.s       9 
+019d: br.s          429 
+019f: ldloc.s       14 
+01a1: ldc.i4.1       
+01a2: add            
+01a3: stloc.s       14 
+01a5: ldloc.s       14 
+01a7: ldloc.s       13 
+01a9: ldlen          
+01aa: conv.i4        
+01ab: blt.s         378 
+01ad: ldsfld        0x0a000080 System.Drawing.Imaging.Encoder.Quality
+01b2: ldc.i4.1       
+01b3: newobj        0x0a000081 System.Drawing.Imaging.EncoderParameters..ctor
+01b8: stloc.s       10 
+01ba: ldc.i4.s      100 
+01bc: conv.i8        
+01bd: newobj        0x0a000082 System.Drawing.Imaging.EncoderParameter..ctor
+01c2: stloc.s       11 
+01c4: ldloc.s       10 
+01c6: callvirt      0x0a000083 System.Drawing.Imaging.EncoderParameters.get_Param
+01cb: ldc.i4.0       
+01cc: ldloc.s       11 
+01ce: stelem.ref     
+01cf: ldloc.s       8 
+01d1: ldarg.0        
+01d2: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+01d7: ldloc.s       9 
+01d9: ldloc.s       10 
+01db: callvirt      0x0a000084 System.Drawing.Image.Save
+01e0: leave.s       494 
+01e2: ldloc.s       8 
+01e4: brfalse.s     493 
+01e6: ldloc.s       8 
+01e8: callvirt      0x0a00002e System.IDisposable.Dispose
+01ed: endfinally     
+01ee: leave         640 
+01f3: ldloc.s       7 
+01f5: brfalse.s     510 
+01f7: ldloc.s       7 
+01f9: callvirt      0x0a00002e System.IDisposable.Dispose
+01fe: endfinally     
+01ff: ldarg.0        
+0200: ldfld         0x04000003 ImageExporter.MainWindow._i32ImageWidth
+0205: ldarg.0        
+0206: ldfld         0x04000002 ImageExporter.MainWindow._i32ImageHeight
+020b: ldarg.0        
+020c: ldfld         0x04000005 ImageExporter.MainWindow._i32Stride
+0211: ldc.i4        137224 
+0216: ldloc.2        
+0217: newobj        0x0a000062 System.Drawing.Bitmap..ctor
+021c: stloc.s       16 
+021e: ldarg.0        
+021f: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+0224: brtrue.s      570 
+0226: ldloc.s       16 
+0228: ldarg.0        
+0229: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+022e: call          0x0a000063 System.Drawing.Imaging.ImageFormat.get_Bmp
+0233: callvirt      0x0a000064 System.Drawing.Image.Save
+0238: br.s          626 
+023a: ldarg.0        
+023b: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+0240: ldc.i4.1       
+0241: bne.un.s      599 
+0243: ldloc.s       16 
+0245: ldarg.0        
+0246: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+024b: call          0x0a000065 System.Drawing.Imaging.ImageFormat.get_Jpeg
+0250: callvirt      0x0a000064 System.Drawing.Image.Save
+0255: br.s          626 
+0257: ldarg.0        
+0258: ldfld         0x04000004 ImageExporter.MainWindow._i32ImageType
+025d: ldc.i4.2       
+025e: bne.un.s      626 
+0260: ldloc.s       16 
+0262: ldarg.0        
+0263: ldfld         0x04000006 ImageExporter.MainWindow._strImagePath
+0268: call          0x0a000066 System.Drawing.Imaging.ImageFormat.get_Tiff
+026d: callvirt      0x0a000064 System.Drawing.Image.Save
+0272: leave.s       640 
+0274: ldloc.s       16 
+0276: brfalse.s     639 
+0278: ldloc.s       16 
+027a: callvirt      0x0a00002e System.IDisposable.Dispose
+027f: endfinally     
+0280: leave.s       660 
+0282: pop            
+0283: ldc.i4.m1      
+0284: stloc.0        
+0285: ldc.i4.m1      
+0286: call          0x0a000058 System.Environment.Exit
+028b: leave.s       660 
+028d: ldloc.2        
+028e: call          0x0a000028 System.Runtime.InteropServices.Marshal.FreeHGlobal
+0293: endfinally     
+0294: ldloc.0        
+0295: ret            
+
+METHOD 0x06000011 ImageExporter.MainWindow DoResize IL_SHA256 0fa1a1be40aa1b81c07ce891e3c20f68bb060691bc859acf6dea7de1e4288034 DECODE_ISSUE null
+0000: call          0x0a000085 OpenCVWrapper.ImageProcessingFactory.GetImageProcessingCommonWrapper
+0005: stloc.0        
+0006: ldc.i4.3       
+0007: starg.s       1 
+0009: ldarg.s       5 
+000b: ldsfld        0x0a000023 System.IntPtr.Zero
+0010: call          0x0a000024 System.IntPtr.op_Equality
+0015: brfalse.s     56 
+0017: ldarg.3        
+0018: ldarg.0        
+0019: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+001e: mul            
+001f: ldarg.s       4 
+0021: ldarg.0        
+0022: ldfld         0x0400000c ImageExporter.MainWindow._i32ScaleFactor
+0027: mul            
+0028: mul            
+0029: ldarg.0        
+002a: ldc.i4.3       
+002b: call          0x06000012 ImageExporter.MainWindow.GetCurrentImageDataChannelDepth
+0030: mul            
+0031: call          0x0a000025 System.Runtime.InteropServices.Marshal.AllocHGlobal
+0036: starg.s       5 
+0038: ldloc.0        
+0039: ldarg.1        
+003a: ldarga.s      2 
+003c: call          0x0a000086 System.IntPtr.ToPointer
+0041: ldarg.3        
+0042: ldarg.s       4 
+0044: ldarga.s      5 
+0046: call          0x0a000086 System.IntPtr.ToPointer
+004b: ldarg.s       6 
+004d: ldarg.s       7 
+004f: callvirt      0x0a000087 OpenCVWrapper.IImageProcessingCommonWrapper.ResizeArrayPtr
+0054: ldarg.0        
+0055: ldfld         0x04000007 ImageExporter.MainWindow._strImageDataPath
+005a: ldc.i4.1       
+005b: newobj        0x0a00006f Olympus.Mis.Imaging.Utilities.Common.NativeFile..ctor
+0060: stloc.1        
+0061: ldloc.1        
+0062: ldarga.s      5 
+0064: call          0x0a000070 System.IntPtr.ToInt64
+0069: newobj        0x0a000071 System.IntPtr..ctor
+006e: ldarg.s       6 
+0070: ldarg.s       7 
+0072: mul            
+0073: ldc.i4.3       
+0074: mul            
+0075: callvirt      0x0a000075 Olympus.Mis.Imaging.Utilities.Common.NativeFile.Write
+007a: pop            
+007b: leave.s       143 
+007d: ldloc.1        
+007e: brfalse.s     134 
+0080: ldloc.1        
+0081: callvirt      0x0a00002e System.IDisposable.Dispose
+0086: endfinally     
+0087: ldarg.s       5 
+0089: call          0x0a000028 System.Runtime.InteropServices.Marshal.FreeHGlobal
+008e: endfinally     
+008f: ret            
+
+METHOD 0x06000012 ImageExporter.MainWindow GetCurrentImageDataChannelDepth IL_SHA256 c45aa87213b2de4dd92fc97d3fc5b8e2dd559354c648c3af763aa4464e814bf7 DECODE_ISSUE null
+0000: ldc.i4.1       
+0001: stloc.0        
+0002: ldc.i4.1       
+0003: stloc.1        
+0004: ldarg.1        
+0005: ldc.i4.2       
+0006: beq.s         17 
+0008: ldarg.1        
+0009: ldc.i4.8       
+000a: beq.s         17 
+000c: ldarg.1        
+000d: ldc.i4.s      14 
+000f: bne.un.s      23 
+0011: ldc.i4.1       
+0012: stloc.1        
+0013: ldc.i4.2       
+0014: stloc.0        
+0015: br.s          42 
+0017: ldarg.1        
+0018: ldc.i4.3       
+0019: bne.un.s      33 
+001b: ldc.i4.3       
+001c: stloc.1        
+001d: ldc.i4.1       
+001e: stloc.0        
+001f: br.s          42 
+0021: ldarg.1        
+0022: ldc.i4.s      11 
+0024: bne.un.s      42 
+0026: ldc.i4.1       
+0027: stloc.1        
+0028: ldc.i4.1       
+0029: stloc.0        
+002a: ldloc.1        
+002b: ldloc.0        
+002c: mul            
+002d: ret            
+
+METHOD 0x06000013 ImageExporter.MainWindow InitializeComponent IL_SHA256 d5b1d3adb3a1da66f2bf42e48aa5204dc255215b492cbe7be1fbda45e5bc7691 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000013 ImageExporter.MainWindow._contentLoaded
+0006: brfalse.s     9 
+0008: ret            
+0009: ldarg.0        
+000a: ldc.i4.1       
+000b: stfld         0x04000013 ImageExporter.MainWindow._contentLoaded
+0010: ldstr         0x700000b3 "/OlyImageExporter;component/mainwindow.xaml"
+0015: ldc.i4.2       
+0016: newobj        0x0a000088 System.Uri..ctor
+001b: stloc.0        
+001c: ldarg.0        
+001d: ldloc.0        
+001e: call          0x0a000089 System.Windows.Application.LoadComponent
+0023: ret            
+
+METHOD 0x06000014 ImageExporter.MainWindow System.Windows.Markup.IComponentConnector.Connect IL_SHA256 3be8257932ae604a041b79c2881b8533c54b498d0ddd3c1c3ebc201f79478d52 DECODE_ISSUE null
+0000: ldarg.1        
+0001: ldc.i4.1       
+0002: bne.un.s      17 
+0004: ldarg.0        
+0005: ldarg.2        
+0006: castclass     0x0100001e 
+000b: stfld         0x04000012 ImageExporter.MainWindow.CanvasGrid
+0010: ret            
+0011: ldarg.0        
+0012: ldc.i4.1       
+0013: stfld         0x04000013 ImageExporter.MainWindow._contentLoaded
+0018: ret            
+
+METHOD 0x06000015 ImageExporter.Properties.Resources .ctor IL_SHA256 061cb6a70631ba6bbdb54f7687793daf552ad7744f75c2c56e1f844c8a85b176 DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x0a00008a System.Object..ctor
+0006: ret            
+
+METHOD 0x06000016 ImageExporter.Properties.Resources get_ResourceManager IL_SHA256 315419ff9fd8dece9e8fadd76a565d6abeb37ee663652556898393b5c8563a7d DECODE_ISSUE null
+0000: ldsfld        0x04000014 ImageExporter.Properties.Resources.resourceMan
+0005: brtrue.s      37 
+0007: ldstr         0x7000010b "ImageExporter.Properties.Resources"
+000c: ldtoken       0x02000004 ImageExporter.Properties.Resources
+0011: call          0x0a00008b System.Type.GetTypeFromHandle
+0016: callvirt      0x0a00008c System.Type.get_Assembly
+001b: newobj        0x0a00008d System.Resources.ResourceManager..ctor
+0020: stsfld        0x04000014 ImageExporter.Properties.Resources.resourceMan
+0025: ldsfld        0x04000014 ImageExporter.Properties.Resources.resourceMan
+002a: ret            
+
+METHOD 0x06000017 ImageExporter.Properties.Resources get_Culture IL_SHA256 fbe33b367e30a9caf6064f056379f4a37db35d28dba98691e0080bf983f6ed70 DECODE_ISSUE null
+0000: ldsfld        0x04000015 ImageExporter.Properties.Resources.resourceCulture
+0005: ret            
+
+METHOD 0x06000018 ImageExporter.Properties.Resources set_Culture IL_SHA256 8a2dc7c75985ee9aad90cb278fcb27ef64df47b38610864c5c60826a56d14db3 DECODE_ISSUE null
+0000: ldarg.0        
+0001: stsfld        0x04000015 ImageExporter.Properties.Resources.resourceCulture
+0006: ret            
+
+METHOD 0x06000019 ImageExporter.Properties.Settings get_Default IL_SHA256 d2227377308905d53494e5a5ca6700b1c13e3b4d4565bbf6f634f4c7c0a52c68 DECODE_ISSUE null
+0000: ldsfld        0x04000016 ImageExporter.Properties.Settings.defaultInstance
+0005: ret            
+
+METHOD 0x0600001a ImageExporter.Properties.Settings .ctor IL_SHA256 ca09e42557df5b5ab7924401f05397b9f87af6b2b8ba3cf23e018ed2f1466de8 DECODE_ISSUE null
+0000: ldarg.0        
+0001: call          0x0a00008e System.Configuration.ApplicationSettingsBase..ctor
+0006: ret            
+
+METHOD 0x0600001b ImageExporter.Properties.Settings .cctor IL_SHA256 6ef95130a9020aee7bd70a608617ec7fa3614b2088f409357e2d45e178e39b3d DECODE_ISSUE null
+0000: newobj        0x0600001a ImageExporter.Properties.Settings..ctor
+0005: call          0x0a00008f System.Configuration.SettingsBase.Synchronized
+000a: castclass     0x02000005 ImageExporter.Properties.Settings
+000f: stsfld        0x04000016 ImageExporter.Properties.Settings.defaultInstance
+0014: ret            

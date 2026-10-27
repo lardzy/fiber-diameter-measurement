@@ -1,0 +1,403 @@
+// ev_492ff0abc0616b1a2ec562d5b70967c151dab9ab31bcfb9a58c3a54d65caeff3
+// f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD Olympus.LI.Triumph.Application.ViewModel.Display::_GetAnntationLiveOffset 0x060007f1
+0000 nop  
+0001 ldarg.1  
+0002 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0007 callvirt 0x0a00062b Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeX
+0012 stind.r8  
+0013 ldarg.2  
+0014 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0019 callvirt 0x0a00062c Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeY
+0024 stind.r8  
+0025 ret  
+
+METHOD Olympus.LI.Triumph.Application.ViewModel.Display::_convertPosition 0x06000834
+0000 nop  
+0001 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0006 callvirt 0x0a00062b Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_BlurCorrectionBufferSizeX
+0011 stloc.0  
+0012 ldarg.2  
+0013 callvirt 0x0a000553 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::GetGraphicWidth
+0018 ldloc.0  
+0019 ldc.r8 2 
+0028 mul  
+0029 sub  
+0030 stloc.1  
+0031 ldarg.3  
+0032 callvirt 0x0a000553 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::GetGraphicWidth
+0037 ldloc.0  
+0038 ldc.r8 2 
+0047 mul  
+0048 sub  
+0049 stloc.2  
+0050 ldarg.3  
+0051 callvirt 0x0a000556 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::GetVisibleAreaWidth
+0056 stloc.3  
+0057 ldarg.2  
+0058 callvirt 0x0a000556 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::GetVisibleAreaWidth
+0063 stloc.s 4 
+0065 ldloc.3  
+0066 ldloc.2  
+0067 div  
+0068 ldloc.s 4 
+0070 ldloc.1  
+0071 div  
+0072 div  
+0073 stloc.s 5 
+0075 ldarg.2  
+0076 callvirt 0x0a000557 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::GetVisibleAreaHeight
+0081 stloc.s 6 
+0083 ldarg.3  
+0084 callvirt 0x0a000557 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::GetVisibleAreaHeight
+0089 stloc.s 7 
+0091 ldloc.s 5 
+0093 ldarg.0  
+0094 ldloc.s 4 
+0096 ldc.r8 2 
+0105 div  
+0106 sub  
+0107 mul  
+0108 ldloc.3  
+0109 ldc.r8 2 
+0118 div  
+0119 add  
+0120 stloc.s 8 
+0122 ldloc.s 5 
+0124 ldarg.1  
+0125 ldloc.s 6 
+0127 ldc.r8 2 
+0136 div  
+0137 sub  
+0138 mul  
+0139 ldloc.s 7 
+0141 ldc.r8 2 
+0150 div  
+0151 add  
+0152 stloc.s 9 
+0154 ldloc.s 8 
+0156 ldloc.s 9 
+0158 newobj 0x0a0001ed System.Windows.Point::.ctor
+0163 stloc.s 10 
+0165 br.s 167 
+0167 ldloc.s 10 
+0169 ret  
+
+METHOD Olympus.LI.Triumph.Application.ViewModel.Display::_ImageUpdateEventHandler 0x060009e3
+0000 nop  
+0001 nop  
+0002 ldc.i4.1  
+0003 stloc.0  
+0004 ldstr 0x7000d7f0 '[WriteableBitmap Update]-[Live]-[ViewModel] Lock.'
+0009 call 0x0a00001f Olympus.Mis.Core.Logging.Logger::DebugLog
+0014 nop  
+0015 ldarg.1  
+0016 callvirt 0x0a0006ed System.Windows.Media.Imaging.WriteableBitmap::Lock
+0021 nop  
+0022 ldarg.0  
+0023 ldarg.2  
+0024 call 0x060009c1 Olympus.LI.Triumph.Application.ViewModel.Display::set_CallBackID
+0029 nop  
+0030 call 0x0a00007d Olympus.LI.Triumph.Application.UiData.UiResultData::get_MagnificationData
+0035 callvirt 0x0a00007e Olympus.LI.Triumph.Application.UiData.MagnificationResultData::get_MagnificationInfo
+0040 callvirt 0x0a00007f Olympus.LI.Triumph.Application.UiData.MagnificationInfo::get_ObservationModeInfo
+0045 callvirt 0x0a000165 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::get_AspectRatio
+0050 ldc.i4.1  
+0051 ceq  
+0053 ldc.i4.0  
+0054 ceq  
+0056 stloc.s 5 
+0058 ldloc.s 5 
+0060 brtrue.s 151 
+0062 nop  
+0063 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0068 callvirt 0x0a0006ee Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_OriginalImageWidth
+0073 call 0x0a0006ef System.Math::Floor
+0078 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0083 callvirt 0x0a0006f0 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_OriginalImageHeight
+0088 call 0x0a0006ef System.Math::Floor
+0093 bne.un.s 129 
+0095 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0100 callvirt 0x0a000362 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_GraphicWidth
+0105 call 0x0a0006ef System.Math::Floor
+0110 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0115 callvirt 0x0a000364 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_GraphicHeight
+0120 call 0x0a0006ef System.Math::Floor
+0125 ceq  
+0127 br.s 130 
+0129 ldc.i4.0  
+0130 nop  
+0131 stloc.s 5 
+0133 ldloc.s 5 
+0135 brtrue.s 148 
+0137 nop  
+0138 ldarg.0  
+0139 call 0x060009d8 Olympus.LI.Triumph.Application.ViewModel.Display::ClearNormalImage
+0144 nop  
+0145 ldc.i4.0  
+0146 stloc.0  
+0147 nop  
+0148 nop  
+0149 br.s 241 
+0151 nop  
+0152 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0157 callvirt 0x0a0006ee Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_OriginalImageWidth
+0162 call 0x0a0006ef System.Math::Floor
+0167 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0172 callvirt 0x0a0006f0 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_OriginalImageHeight
+0177 call 0x0a0006ef System.Math::Floor
+0182 beq.s 221 
+0184 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0189 callvirt 0x0a000362 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_GraphicWidth
+0194 call 0x0a0006ef System.Math::Floor
+0199 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0204 callvirt 0x0a000364 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_GraphicHeight
+0209 call 0x0a0006ef System.Math::Floor
+0214 ceq  
+0216 ldc.i4.0  
+0217 ceq  
+0219 br.s 222 
+0221 ldc.i4.0  
+0222 nop  
+0223 stloc.s 5 
+0225 ldloc.s 5 
+0227 brtrue.s 240 
+0229 nop  
+0230 ldarg.0  
+0231 call 0x060009d8 Olympus.LI.Triumph.Application.ViewModel.Display::ClearNormalImage
+0236 nop  
+0237 ldc.i4.0  
+0238 stloc.0  
+0239 nop  
+0240 nop  
+0241 ldloc.0  
+0242 ldc.i4.0  
+0243 ceq  
+0245 stloc.s 5 
+0247 ldloc.s 5 
+0249 brtrue 668 
+0254 nop  
+0255 ldloca.s 1 
+0257 initobj 0x01000047 
+0263 ldloca.s 1 
+0265 ldarg.3  
+0266 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0271 callvirt 0x0a000387 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_ImageWidth
+0276 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0281 callvirt 0x0a000203 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_VisibleWidth
+0286 ldarg.0  
+0287 call 0x06000951 Olympus.LI.Triumph.Application.ViewModel.Display::get_ImageWidth
+0292 call 0x0a0006f1 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::GetImageDisplayPosition
+0297 call 0x0a000290 System.Windows.Thickness::set_Left
+0302 nop  
+0303 ldloca.s 1 
+0305 ldarg.s 4 
+0307 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0312 callvirt 0x0a000389 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_ImageHeight
+0317 call 0x0a000202 Olympus.LI.Triumph.Application.UiData.UICommonData::get_ObservationData
+0322 callvirt 0x0a000206 Olympus.LI.Triumph.Application.UiData.ObservationCommonData::get_VisibleHeight
+0327 ldarg.0  
+0328 call 0x06000953 Olympus.LI.Triumph.Application.ViewModel.Display::get_ImageHeight
+0333 call 0x0a0006f1 Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::GetImageDisplayPosition
+0338 call 0x0a000291 System.Windows.Thickness::set_Top
+0343 nop  
+0344 ldarg.0  
+0345 ldnull  
+0346 stfld 0x04000368 Olympus.LI.Triumph.Application.ViewModel.Display::_wMoveFollowImageForLiveData
+0351 ldarg.0  
+0352 ldnull  
+0353 stfld 0x04000369 Olympus.LI.Triumph.Application.ViewModel.Display::_wLiveStitchingImageForLiveData
+0358 ldarg.0  
+0359 ldnull  
+0360 stfld 0x04000359 Olympus.LI.Triumph.Application.ViewModel.Display::_wLiveStitchingImageForStitchingData
+0365 ldarg.0  
+0366 ldfld 0x040003c0 Olympus.LI.Triumph.Application.ViewModel.Display::_blnFullScreenDisplayEnable
+0371 stloc.2  
+0372 call 0x0a00007d Olympus.LI.Triumph.Application.UiData.UiResultData::get_MagnificationData
+0377 callvirt 0x0a00007e Olympus.LI.Triumph.Application.UiData.MagnificationResultData::get_MagnificationInfo
+0382 callvirt 0x0a00007f Olympus.LI.Triumph.Application.UiData.MagnificationInfo::get_ObservationModeInfo
+0387 callvirt 0x0a000080 Olympus.LI.Triumph.Application.UiData.ObservationModeInfo::get_ObservationMode
+0392 ldc.i4.1  
+0393 ceq  
+0395 ldc.i4.0  
+0396 ceq  
+0398 stloc.s 5 
+0400 ldloc.s 5 
+0402 brtrue.s 503 
+0404 nop  
+0405 ldarg.0  
+0406 ldc.i4.0  
+0407 stfld 0x040003c0 Olympus.LI.Triumph.Application.ViewModel.Display::_blnFullScreenDisplayEnable
+0412 ldarg.0  
+0413 ldloc.1  
+0414 call 0x06000950 Olympus.LI.Triumph.Application.ViewModel.Display::set_ImagePosition
+0419 nop  
+0420 ldarg.0  
+0421 ldarg.1  
+0422 call 0x0600094c Olympus.LI.Triumph.Application.ViewModel.Display::set_ImageUpdateNormal
+0427 nop  
+0428 ldarg.0  
+0429 ldnull  
+0430 call 0x0600094e Olympus.LI.Triumph.Application.ViewModel.Display::set_ImageUpdateWide
+0435 nop  
+0436 ldarg.0  
+0437 ldarg.0  
+0438 ldfld 0x0400039e Olympus.LI.Triumph.Application.ViewModel.Display::_strImagePosition
+0443 ldloc.1  
+0444 call 0x2b00003e 
+0449 nop  
+0450 ldarg.0  
+0451 ldstr 0x7000c32a 'ImageUpdateNormal'
+0456 call 0x0600000e 
+0461 nop  
+0462 ldarg.0  
+0463 ldstr 0x7000c34e 'ImageUpdateWide'
+0468 call 0x0600000e 
+0473 nop  
+0474 ldarg.0  
+0475 ldarg.0  
+0476 ldfld 0x0400039f Olympus.LI.Triumph.Application.ViewModel.Display::_strImageWidth
+0481 call 0x0600000e 
+0486 nop  
+0487 ldarg.0  
+0488 ldarg.0  
+0489 ldfld 0x040003a0 Olympus.LI.Triumph.Application.ViewModel.Display::_strImageHeight
+0494 call 0x0600000e 
+0499 nop  
+0500 nop  
+0501 br.s 600 
+0503 nop  
+0504 ldarg.0  
+0505 ldc.i4.1  
+0506 stfld 0x040003c0 Olympus.LI.Triumph.Application.ViewModel.Display::_blnFullScreenDisplayEnable
+0511 ldarg.0  
+0512 ldloc.1  
+0513 call 0x06000950 Olympus.LI.Triumph.Application.ViewModel.Display::set_ImagePosition
+0518 nop  
+0519 ldarg.0  
+0520 ldnull  
+0521 call 0x0600094c Olympus.LI.Triumph.Application.ViewModel.Display::set_ImageUpdateNormal
+0526 nop  
+0527 ldarg.0  
+0528 ldarg.1  
+0529 call 0x0600094e Olympus.LI.Triumph.Application.ViewModel.Display::set_ImageUpdateWide
+0534 nop  
+0535 ldarg.0  
+0536 ldarg.0  
+0537 ldfld 0x0400039e Olympus.LI.Triumph.Application.ViewModel.Display::_strImagePosition
+0542 ldloc.1  
+0543 call 0x2b00003e 
+0548 nop  
+0549 ldarg.0  
+0550 ldstr 0x7000c32a 'ImageUpdateNormal'
+0555 call 0x0600000e 
+0560 nop  
+0561 ldarg.0  
+0562 ldstr 0x7000c34e 'ImageUpdateWide'
+0567 call 0x0600000e 
+0572 nop  
+0573 ldarg.0  
+0574 ldarg.0  
+0575 ldfld 0x0400039f Olympus.LI.Triumph.Application.ViewModel.Display::_strImageWidth
+0580 call 0x0600000e 
+0585 nop  
+0586 ldarg.0  
+0587 ldarg.0  
+0588 ldfld 0x040003a0 Olympus.LI.Triumph.Application.ViewModel.Display::_strImageHeight
+0593 call 0x0600000e 
+0598 nop  
+0599 nop  
+0600 ldarg.0  
+0601 ldstr 0x7000c142 'MoveFollowImageForLiveUpdate'
+0606 call 0x0600000e 
+0611 nop  
+0612 ldarg.0  
+0613 ldstr 0x7000bc12 'LiveStitchingImageForLiveUpdate'
+0618 call 0x0600000e 
+0623 nop  
+0624 ldarg.0  
+0625 ldstr 0x7000bde8 'LiveStitchingImageForStitchingUpdate'
+0630 call 0x0600000e 
+0635 nop  
+0636 ldloc.2  
+0637 ldarg.0  
+0638 ldfld 0x040003c0 Olympus.LI.Triumph.Application.ViewModel.Display::_blnFullScreenDisplayEnable
+0643 ceq  
+0645 stloc.s 5 
+0647 ldloc.s 5 
+0649 brtrue.s 660 
+0651 nop  
+0652 ldarg.0  
+0653 call 0x06000891 Olympus.LI.Triumph.Application.ViewModel.Display::UpdateImageFrameScale
+0658 nop  
+0659 nop  
+0660 ldarg.0  
+0661 call 0x060009d6 Olympus.LI.Triumph.Application.ViewModel.Display::UpdateBitmapArea
+0666 nop  
+0667 nop  
+0668 ldstr 0x7000d854 '[WriteableBitmap Update]-[Live]-[ViewModel] UnLock.'
+0673 call 0x0a00001f Olympus.Mis.Core.Logging.Logger::DebugLog
+0678 nop  
+0679 ldarg.1  
+0680 callvirt 0x0a0006f2 System.Windows.Media.Imaging.WriteableBitmap::Unlock
+0685 nop  
+0686 nop  
+0687 leave.s 727 
+0689 stloc.3  
+0690 nop  
+0691 ldloc.3  
+0692 callvirt 0x0a0003c3 System.Exception::get_Message
+0697 call 0x0a000083 Olympus.Mis.Core.Logging.Logger::ErrorLog
+0702 nop  
+0703 ldloc.3  
+0704 newobj 0x0a0006f3 Olympus.LI.Triumph.Application.UiExceptionObject.UiLayerFatalException::.ctor
+0709 stloc.s 4 
+0711 call 0x0a000078 Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager::get_Instance
+0716 ldloc.s 4 
+0718 callvirt 0x0a000079 Olympus.LI.Triumph.Application.UiExceptionObject.UiExceptionManager::UiExceptionNortifier
+0723 nop  
+0724 nop  
+0725 leave.s 727 
+0727 nop  
+0728 ret  
+// ev_5f2f1add462f2653b6614f8673175c7f04c1a705c531b68a25ad63d5d6ba7da3
+// f35ce70de806aa1103e5e6c8b8d672d3ba1de2576f07beb1ed53e1f6141eb067
+
+METHOD Olympus.LI.Triumph.Application.ViewModel.Observation::set_BlurCorrectionOperation 0x06005376
+0000 nop  
+0001 ldstr 0x7002b057 '[BlurCorrection] ON/OFF Changed ({0})'
+0006 ldarg.1  
+0007 box 0x010001c3 
+0012 call 0x0a000075 System.String::Format
+0017 call 0x0a000137 Olympus.Mis.Core.Logging.Logger::UILog
+0022 nop  
+0023 ldarg.1  
+0024 ldc.i4.0  
+0025 ceq  
+0027 stloc.0  
+0028 ldloc.0  
+0029 brtrue.s 47 
+0031 nop  
+0032 ldarg.0  
+0033 ldfld 0x04000945 Olympus.LI.Triumph.Application.ViewModel.Observation::_infObservationCtrl
+0038 callvirt 0x0a00151f Olympus.LI.Triumph.Application.DomainManager.Interface.InfObservation::SetEffectiveBlurCorrection
+0043 nop  
+0044 nop  
+0045 br.s 61 
+0047 nop  
+0048 ldarg.0  
+0049 ldfld 0x04000945 Olympus.LI.Triumph.Application.ViewModel.Observation::_infObservationCtrl
+0054 callvirt 0x0a001520 Olympus.LI.Triumph.Application.DomainManager.Interface.InfObservation::SetInvalidBlurCorrection
+0059 nop  
+0060 nop  
+0061 ret  
+
+METHOD Olympus.LI.Triumph.Application.ViewModel.Observation::_UpdateBlurCorrection 0x060053a7
+0000 nop  
+0001 ldarg.0  
+0002 call 0x0a000186 Olympus.LI.Triumph.Application.UiData.UiResultData::get_ObservationData
+0007 callvirt 0x0a001533 Olympus.LI.Triumph.Application.UiData.ObservationResultData::get_BlurCorrection
+0012 call 0x06005394 Olympus.LI.Triumph.Application.ViewModel.Observation::set_UpdateBlurCorrection
+0017 nop  
+0018 ret  

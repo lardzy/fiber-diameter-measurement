@@ -1,0 +1,416 @@
+{
+  "scope": "read-only independent review in temporary copy; no vendor execution",
+  "temporary_copy": "/var/folders/q7/m2sw7_x519l64fzqnf4rb83h0000gn/T/dsx-independent-final-zevumai6/stabilization",
+  "runs": [
+    {
+      "script": "run_validation.py",
+      "exit_code": 0,
+      "stdout": "{\"cases\": 12, \"checks\": 26, \"passed\": 26}",
+      "stderr": ""
+    },
+    {
+      "script": "hdr/run_validation.py",
+      "exit_code": 0,
+      "stdout": "{'cases': 5, 'checks': 31, 'passed': 31}",
+      "stderr": ""
+    }
+  ],
+  "source_sha256": {
+    "nmv_reference.py": "bdb066e1bf5dffda7fd6be4d5186ac34e80a535765f22094b259dd41228dcc14",
+    "run_validation.py": "683301054b5c7efc21fe260df2ce697515fb0b3d52e0ecd59f40db6931a1f6c9",
+    "implementation-spec.md": "fd36b06c751db63f941afd0e2f0b3f5e18aa7409778e1e2a05876612a07697c0",
+    "hdr/hamal8_reference.py": "3939a4e63e8f798fd01ef2924a63a7b3ed482cd716e84773b80930a85f39009b",
+    "hdr/run_validation.py": "c9144f727441e47d3cbeaa06ff0d956edcf5e88db5110286c2ff56a224da6f91",
+    "hdr/implementation-spec.md": "8fa1376279170054b02a087b826f82c7647e81f5381ef73d0060444681705e83",
+    "hdr/native-tables.json": "7c42d8f032364903ed08a262160bd4c9d6b7a219aaffea234cd5e16fb5d39186"
+  },
+  "checks": [
+    {
+      "name": "nmv_numpy_frequency_surface_oracle",
+      "passed": true,
+      "max_absolute_error": 5.5763237673644994e-05,
+      "peak": [
+        24,
+        13
+      ],
+      "native_shift": [
+        -4.0,
+        3.0
+      ],
+      "managed_shift": [
+        4.0,
+        -3.0
+      ]
+    },
+    {
+      "name": "nmv_error_does_not_advance_reference",
+      "passed": true
+    },
+    {
+      "name": "nmv_per_axis_overflow_does_not_reset_other_axis",
+      "passed": true,
+      "observed": [
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "name": "hamal_problem_geometry_is_explicitly_rejected",
+      "passed": true,
+      "examples": [
+        {
+          "shape": [
+            240,
+            1445
+          ],
+          "supported": false,
+          "error_type": "UnsupportedThumbnailGeometry",
+          "diagnostic": "Unsupported research geometry 1445x240: native fixed-point mapping visits 79x60 of 80x60 thumbnail cells; native uncovered-cell initialization is not established"
+        },
+        {
+          "shape": [
+            1221,
+            320
+          ],
+          "supported": false,
+          "error_type": "UnsupportedThumbnailGeometry",
+          "diagnostic": "Unsupported research geometry 320x1221: native fixed-point mapping visits 80x59 of 80x60 thumbnail cells; native uncovered-cell initialization is not established"
+        },
+        {
+          "shape": [
+            240,
+            320
+          ],
+          "supported": true,
+          "thumbnail_shape": [
+            60,
+            80
+          ]
+        },
+        {
+          "shape": [
+            1200,
+            1200
+          ],
+          "supported": true,
+          "thumbnail_shape": [
+            60,
+            80
+          ]
+        },
+        {
+          "shape": [
+            1080,
+            1920
+          ],
+          "supported": false,
+          "error_type": "UnsupportedThumbnailGeometry",
+          "diagnostic": "Unsupported research geometry 1920x1080: native fixed-point mapping visits 79x60 of 80x60 thumbnail cells; native uncovered-cell initialization is not established"
+        },
+        {
+          "shape": [
+            2048,
+            2448
+          ],
+          "supported": false,
+          "error_type": "UnsupportedThumbnailGeometry",
+          "diagnostic": "Unsupported research geometry 2448x2048: native fixed-point mapping visits 80x59 of 80x60 thumbnail cells; native uncovered-cell initialization is not established"
+        },
+        {
+          "shape": [
+            1944,
+            2592
+          ],
+          "supported": true,
+          "thumbnail_shape": [
+            60,
+            80
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hamal_local_histogram_corner_scalar_oracle",
+      "passed": true,
+      "actual": [
+        3633,
+        388,
+        73,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected": [
+        3633,
+        388,
+        73,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "unvalidated_parameter_probe": {
+    "accepted": true,
+    "min": 104,
+    "max": 1800
+  },
+  "original_files_unchanged": true,
+  "r2_closure": {
+    "scope": "R2 guarded enhance entry; no vendor execution",
+    "source_sha256": {
+      "hamal8_reference.py": "3939a4e63e8f798fd01ef2924a63a7b3ed482cd716e84773b80930a85f39009b",
+      "run_validation.py": "c9144f727441e47d3cbeaa06ff0d956edcf5e88db5110286c2ff56a224da6f91",
+      "implementation-spec.md": "8fa1376279170054b02a087b826f82c7647e81f5381ef73d0060444681705e83",
+      "native-tables.json": "7c42d8f032364903ed08a262160bd4c9d6b7a219aaffea234cd5e16fb5d39186"
+    },
+    "validation_exit_code": 0,
+    "validation_stdout": "{'cases': 5, 'checks': 37, 'passed': 37}",
+    "validation_stderr": "",
+    "checks": [
+      {
+        "parameter": "noise_slope1",
+        "case": "negative",
+        "passed": true,
+        "reason": "noise_slope1 values must be in 0..32767"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "upper",
+        "passed": true,
+        "reason": "noise_slope1 values must be in 0..32767"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "empty",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "broadcast_one",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "short",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "long",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "matrix",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "float",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "bool",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "nan",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "string",
+        "passed": true,
+        "reason": "noise_slope1 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "valid_endpoint_0",
+        "passed": true
+      },
+      {
+        "parameter": "noise_slope1",
+        "case": "valid_endpoint_32767",
+        "passed": true
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "negative",
+        "passed": true,
+        "reason": "noise_slope2 values must be in 0..8191"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "upper",
+        "passed": true,
+        "reason": "noise_slope2 values must be in 0..8191"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "empty",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "broadcast_one",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "short",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "long",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "matrix",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "float",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "bool",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "nan",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "string",
+        "passed": true,
+        "reason": "noise_slope2 must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "valid_endpoint_0",
+        "passed": true
+      },
+      {
+        "parameter": "noise_slope2",
+        "case": "valid_endpoint_8191",
+        "passed": true
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "negative",
+        "passed": true,
+        "reason": "noise_bins values must be in 0..1023"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "upper",
+        "passed": true,
+        "reason": "noise_bins values must be in 0..1023"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "empty",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "broadcast_one",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "short",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "long",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "matrix",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "float",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "bool",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "nan",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "string",
+        "passed": true,
+        "reason": "noise_bins must contain exactly 8 integer values"
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "valid_endpoint_0",
+        "passed": true
+      },
+      {
+        "parameter": "noise_bins",
+        "case": "valid_endpoint_1023",
+        "passed": true
+      }
+    ],
+    "passed": 39,
+    "total": 39,
+    "original_files_unchanged": true
+  },
+  "source_sha256_before_r2": {
+    "nmv_reference.py": "bdb066e1bf5dffda7fd6be4d5186ac34e80a535765f22094b259dd41228dcc14",
+    "run_validation.py": "683301054b5c7efc21fe260df2ce697515fb0b3d52e0ecd59f40db6931a1f6c9",
+    "implementation-spec.md": "fd36b06c751db63f941afd0e2f0b3f5e18aa7409778e1e2a05876612a07697c0",
+    "hdr/hamal8_reference.py": "01e9836ebaf85183caee19a420fd6e1952067c55d19979697f99254cff22edaa",
+    "hdr/run_validation.py": "31d66b4eaefea9ff98d640dd3ba2881c9c8d8a31217a31a7367b78d31c6b6b47",
+    "hdr/implementation-spec.md": "a04757320088cab254f85191c6f7d315321013fb8e8b73d11ca79f660912f919"
+  }
+}

@@ -1,0 +1,203 @@
+EVIDENCE ev_3d4eafea998ffcddb9c26de4668733e0390c5d1267223ecec9dc200575a7ffd7 SHA256 82180eddd2ab0ef88cd744b7e9af26162356d932c2037ed2dd3d7f8018ab07fa
+
+METHOD 0x060004f3 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform setModel IL_SHA256 6787602ed8334ba941ff93a4160367909a9476aae056302a4b7af90d6b282df1 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.1        
+0002: ldarg.0        
+0003: ldfld         0x04000302 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcoordScale
+0008: mul            
+0009: stfld         0x0400030c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeX
+000e: ldarg.0        
+000f: ldarg.2        
+0010: ldarg.0        
+0011: ldfld         0x04000302 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcoordScale
+0016: mul            
+0017: stfld         0x0400030d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeY
+001c: ldarg.0        
+001d: ldarg.3        
+001e: ldarg.0        
+001f: ldfld         0x04000302 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcoordScale
+0024: mul            
+0025: stfld         0x0400030e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeZ
+002a: ldarg.0        
+002b: ldfld         0x0400030c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeX
+0030: ldarg.0        
+0031: ldfld         0x04000303 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblmaxZoom
+0036: mul            
+0037: ldc.r8        2 
+0040: call          0x0a000142 System.Math.Pow
+0045: ldarg.0        
+0046: ldfld         0x0400030d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeY
+004b: ldarg.0        
+004c: ldfld         0x04000303 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblmaxZoom
+0051: mul            
+0052: ldc.r8        2 
+005b: call          0x0a000142 System.Math.Pow
+0060: add            
+0061: ldarg.0        
+0062: ldfld         0x0400030e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeZ
+0067: ldarg.0        
+0068: ldfld         0x04000303 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblmaxZoom
+006d: mul            
+006e: ldarg.0        
+006f: ldfld         0x04000304 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblmaxHeightScale
+0074: mul            
+0075: ldc.r8        2 
+007e: call          0x0a000142 System.Math.Pow
+0083: add            
+0084: call          0x0a000143 System.Math.Sqrt
+0089: ldc.r8        2 
+0092: div            
+0093: stloc.0        
+0094: ldloc.0        
+0095: ldc.r8        1.0499999523162842 
+009e: mul            
+009f: stloc.0        
+00a0: ldarg.0        
+00a1: ldfld         0x04000309 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPosNear
+00a6: ldloc.0        
+00a7: bge.un.s      208 
+00a9: ldarg.0        
+00aa: ldloc.0        
+00ab: stfld         0x04000309 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPosNear
+00b0: ldarg.0        
+00b1: ldarg.0        
+00b2: ldfld         0x04000309 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPosNear
+00b7: ldc.r8        3 
+00c0: mul            
+00c1: ldc.r8        1 
+00ca: div            
+00cb: stfld         0x04000308 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPosFar
+00d0: ldarg.0        
+00d1: call          0x060004f4 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.createWorldMatrix
+00d6: ldarg.0        
+00d7: call          0x060004f5 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.createViewMatrix
+00dc: ldarg.0        
+00dd: call          0x060004f6 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.createProjectionMatrix
+00e2: ret            
+
+METHOD 0x060004f4 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform createWorldMatrix IL_SHA256 5ca525ec36740c8e9cc4b676fd9e83a480e26ae20791def915ad714b456b3794 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldarg.0        
+0002: ldfld         0x0400030d Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeY
+0007: neg            
+0008: ldc.r8        2 
+0011: div            
+0012: conv.r4        
+0013: ldarg.0        
+0014: ldfld         0x0400030c Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeX
+0019: neg            
+001a: ldc.r8        2 
+0023: div            
+0024: conv.r4        
+0025: ldarg.0        
+0026: ldfld         0x0400030e Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblsizeZ
+002b: ldarg.0        
+002c: ldfld         0x04000313 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblheightScale
+0031: mul            
+0032: ldc.r8        2 
+003b: div            
+003c: conv.r4        
+003d: call          0x0a0002de SlimDX.Matrix.Translation
+0042: ldc.r4        3.1415927410125732 
+0047: call          0x0a000286 SlimDX.Matrix.RotationZ
+004c: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0051: ldc.r4        1.5707963705062866 
+0056: call          0x0a000284 SlimDX.Matrix.RotationX
+005b: call          0x0a000171 SlimDX.Matrix.op_Multiply
+0060: stfld         0x04000315 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pworldMatrix
+0065: ret            
+
+METHOD 0x060004f5 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform createViewMatrix IL_SHA256 0ef7f5b32c217b946552b37fe129d008ca380d589a2be8b756a610a471e4bf83 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldc.r4        0 
+0006: ldc.r4        0 
+000b: ldarg.0        
+000c: ldfld         0x0400030f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcamPos
+0011: conv.r4        
+0012: newobj        0x0a000153 SlimDX.Vector3..ctor
+0017: ldc.r4        0 
+001c: ldc.r4        0 
+0021: ldc.r4        0 
+0026: newobj        0x0a000153 SlimDX.Vector3..ctor
+002b: ldc.r4        0 
+0030: ldc.r4        1 
+0035: ldc.r4        0 
+003a: newobj        0x0a000153 SlimDX.Vector3..ctor
+003f: call          0x0a0002df SlimDX.Matrix.LookAtLH
+0044: stfld         0x04000316 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pviewMatrix
+0049: ret            
+
+METHOD 0x060004f6 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform createProjectionMatrix IL_SHA256 9282b4657675e250ba2cbddfc7e66f270c74b077663d2116edb1d443234162c8 DECODE_ISSUE null
+0000: ldarg.0        
+0001: ldfld         0x04000308 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPosFar
+0006: ldarg.0        
+0007: ldfld         0x04000306 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcamPosFar
+000c: sub            
+000d: ldarg.0        
+000e: ldfld         0x0400030b Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfovFar
+0013: ldc.r8        2 
+001c: div            
+001d: call          0x0a0002e0 System.Math.Tan
+0022: mul            
+0023: ldc.r8        2 
+002c: mul            
+002d: ldarg.0        
+002e: ldfld         0x0400030a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblnearDistance
+0033: mul            
+0034: ldarg.0        
+0035: ldfld         0x04000310 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPos
+003a: ldarg.0        
+003b: ldfld         0x0400030f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcamPos
+0040: sub            
+0041: div            
+0042: stloc.0        
+0043: ldloc.0        
+0044: ldarg.0        
+0045: ldfld         0x04000311 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblzoom
+004a: div            
+004b: stloc.0        
+004c: ldarg.0        
+004d: ldfld         0x04000314 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblaspectRatio
+0052: ldc.r8        1 
+005b: ble.un.s      137 
+005d: ldarg.0        
+005e: ldloc.0        
+005f: ldarg.0        
+0060: ldfld         0x04000314 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblaspectRatio
+0065: mul            
+0066: conv.r4        
+0067: ldloc.0        
+0068: conv.r4        
+0069: ldarg.0        
+006a: ldfld         0x0400030a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblnearDistance
+006f: conv.r4        
+0070: ldarg.0        
+0071: ldfld         0x04000310 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPos
+0076: ldarg.0        
+0077: ldfld         0x0400030f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcamPos
+007c: sub            
+007d: conv.r4        
+007e: call          0x0a0002e1 SlimDX.Matrix.PerspectiveLH
+0083: stfld         0x04000317 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pprojectionMatrix
+0088: ret            
+0089: ldarg.0        
+008a: ldloc.0        
+008b: conv.r4        
+008c: ldloc.0        
+008d: ldarg.0        
+008e: ldfld         0x04000314 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblaspectRatio
+0093: div            
+0094: conv.r4        
+0095: ldarg.0        
+0096: ldfld         0x0400030a Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblnearDistance
+009b: conv.r4        
+009c: ldarg.0        
+009d: ldfld         0x04000310 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblfarPos
+00a2: ldarg.0        
+00a3: ldfld         0x0400030f Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pdblcamPos
+00a8: sub            
+00a9: conv.r4        
+00aa: call          0x0a0002e1 SlimDX.Matrix.PerspectiveLH
+00af: stfld         0x04000317 Olympus.Mis.Imaging.Capsules.ImageControl.ThreeD.Model.Transform.pprojectionMatrix
+00b4: ret            

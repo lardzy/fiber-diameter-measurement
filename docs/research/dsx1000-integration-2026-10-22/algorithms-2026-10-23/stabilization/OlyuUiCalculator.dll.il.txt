@@ -1,0 +1,64 @@
+// ev_5e460ae7786d86de74c0664086195f6a9170ae03ca32b4c4b1a9bc9882057737
+// 3b254b20230309cd86136a3c5d86d6364e770f1c84d654867f494443935d62e6
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::ConvertBlurShiftXForDisplay 0x0600005a
+0000 ldc.r8 0 
+0009 stloc.0  
+0010 ldarg.1  
+0011 ldarg.0  
+0012 ldarg.2  
+0013 div  
+0014 mul  
+0015 stloc.0  
+0016 ldloc.0  
+0017 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::ConvertBlurShiftYForDisplay 0x0600005b
+0000 ldc.r8 0 
+0009 stloc.0  
+0010 ldarg.1  
+0011 ldarg.0  
+0012 ldarg.2  
+0013 div  
+0014 mul  
+0015 stloc.0  
+0016 ldloc.0  
+0017 ret  
+
+METHOD Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::GetImageDisplayPosition 0x0600005c
+0000 ldc.r8 0 
+0009 stloc.0  
+0010 ldarg.1  
+0011 ldarg.3  
+0012 call 0x0600005f Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::CalcDisplayReductionRatio
+0017 stloc.1  
+0018 ldarg.1  
+0019 ldarg.2  
+0020 ldloc.1  
+0021 call 0x0600005d Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::CalcDisplayImgPosWithoutShift
+0026 stloc.2  
+0027 ldarg.0  
+0028 ldloc.1  
+0029 call 0x0600005e Olympus.LI.Triumph.Application.UiBusiness.UiCalculator.UiCalculate::CalcDisplayBlurShift
+0034 stloc.3  
+0035 ldloc.2  
+0036 ldloc.3  
+0037 add  
+0038 stloc.0  
+0039 ldarg.0  
+0040 ldc.r8 0 
+0049 blt.un.s 82 
+0051 ldarg.0  
+0052 ldloc.2  
+0053 blt.un.s 82 
+0055 ldarg.0  
+0056 ldc.r8 0 
+0065 bge.un.s 82 
+0067 ldarg.0  
+0068 ldloc.2  
+0069 neg  
+0070 bgt.un.s 82 
+0072 ldstr 0x700007c7 'BlurShift is invalid value.'
+0077 call 0x0a000065 Olympus.Mis.Core.Logging.Logger::WarningLog
+0082 ldloc.0  
+0083 ret  
