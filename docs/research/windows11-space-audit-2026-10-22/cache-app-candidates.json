@@ -1,0 +1,571 @@
+{
+  "schema_version": 1,
+  "analysis_date": "2026-10-22",
+  "action": "analysis_only_no_vm_access_no_deletion",
+  "source_sha256": {
+    "directories.csv": "ecc0f2dcccb7c8721610ff803e95431d4fad24a0990449bfa2d8a4ef230af94c",
+    "large-files.csv": "cc5292ceb7a9cd7fb786ccae75c82462a1c4ce93ebd7253b0ad36088ae4219d6",
+    "summary.json": "b60e8c64b8dc6f1c863d5ccd6895eb4c3938dc1a06d13a4355627ddf3fdb3015",
+    "top100-files.json": "33a2e7e09ec5d6e3c2db5ddbdd091e260652bc66894be35ab25af5abbd35b45b"
+  },
+  "path_encoding_check": {
+    "conclusion": "No path escaping defect. JSON source escapes separators; json.loads and CSV yield single U+005C separators. No original evidence rewritten.",
+    "summary_root_codepoints": [
+      67,
+      58,
+      92
+    ],
+    "sample_top_path_codepoints_prefix": [
+      67,
+      58,
+      92,
+      85,
+      115,
+      101,
+      114,
+      115,
+      92,
+      108,
+      105,
+      115
+    ],
+    "top100_paths_match_large_csv": true,
+    "normalization": "ntpath.normpath on derived candidate path fields only; source path strings already canonical."
+  },
+  "unit": "bytes; tables use MiB/GiB base 1024",
+  "scope_note": "Candidates are review opportunities, not authorized deletions. Parent/child entries overlap and must not be summed. unique assigned allocation is traversal-dependent, not deletable-space estimate.",
+  "findings": [
+    {
+      "id": "uv-cache",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache",
+      "classification": "managed_package_cache",
+      "decision": "review_for_future_app_managed_cleanup",
+      "sizes": {
+        "logical_bytes": 2385189767,
+        "path_allocated_bytes": 2484365688,
+        "first_unique_assigned_allocated_bytes": 2467270336,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "目录内为archive-v0/simple/wheels等缓存；独立Python解释器在Roaming\\uv\\python，不在此目录。大文件样本15项中11项链接数>1，不能把此处体积当释放量。",
+      "future_handling_not_executed": "未来若授权先由uv cache prune管理；不手动删除archive-v0散件，不强制绕过uv锁；已缓存离线依赖需求需先保留。当前未执行任何uv命令。",
+      "sources": [
+        "https://docs.astral.sh/uv/concepts/cache/"
+      ],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0",
+          "logical_bytes": 2319351255,
+          "first_unique_assigned_allocated_bytes": 2399743176
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\simple-v22",
+          "logical_bytes": 44324056,
+          "first_unique_assigned_allocated_bytes": 44544000
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\simple-v20",
+          "logical_bytes": 16283264,
+          "first_unique_assigned_allocated_bytes": 16445440
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\builds-v0",
+          "logical_bytes": 4608000,
+          "first_unique_assigned_allocated_bytes": 4608000
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\wheels-v6",
+          "logical_bytes": 320881,
+          "first_unique_assigned_allocated_bytes": 1557736
+        }
+      ],
+      "hardlink_examples": [
+        {
+          "file_id": "dcdfde70:00010000000260ff",
+          "logical_bytes": 20407296,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\bOw-DeWZSz63VA0ZdD9k0\\numpy.libs\\libscipy_openblas64_-4bb64bb73b19ae7523581172b5c4a821.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\numpy.libs\\libscipy_openblas64_-4bb64bb73b19ae7523581172b5c4a821.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:000800000003cc3e",
+          "logical_bytes": 20390912,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\C2MBwVqNV7dRSbPj\\numpy.libs\\libscipy_openblas64_-13e2df515630b4a41f92893938845698.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\flat-field-grating\\.venv-zemax\\Lib\\site-packages\\numpy.libs\\libscipy_openblas64_-13e2df515630b4a41f92893938845698.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:00010000000282dd",
+          "logical_bytes": 20639544,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\chwo-mJYpaZlcr5WRcEAN\\PySide6\\opengl32sw.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\PySide6\\opengl32sw.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0001000000026bf2",
+          "logical_bytes": 202318648,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\EOnvi3D4SYcB-tpmwMNSZ\\PySide6\\Qt6WebEngineCore.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\PySide6\\Qt6WebEngineCore.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:000100000002a2a5",
+          "logical_bytes": 81573852,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\EOnvi3D4SYcB-tpmwMNSZ\\PySide6\\resources\\qtwebengine_devtools_resources.debug.pak",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\PySide6\\resources\\qtwebengine_devtools_resources.debug.pak"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0006000000076dbf",
+          "logical_bytes": 20262912,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\ZQfnvg7UoDyvymz6\\scipy.libs\\libscipy_openblas-197ee2fc9b4d071f7e048078cac74115.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\scipy.libs\\libscipy_openblas-197ee2fc9b4d071f7e048078cac74115.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0001000000029735",
+          "logical_bytes": 264942080,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\Zy6uCHmnOa50ZIkDzonHf\\torch\\lib\\torch_cpu.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\torch\\lib\\torch_cpu.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0001000000029ae9",
+          "logical_bytes": 29597848,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\Zy6uCHmnOa50ZIkDzonHf\\torch\\lib\\torch_cpu.lib",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\torch\\lib\\torch_cpu.lib"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0001000000029afa",
+          "logical_bytes": 18705920,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\Zy6uCHmnOa50ZIkDzonHf\\torch\\lib\\torch_python.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\torch\\lib\\torch_python.dll"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0001000000023e84",
+          "logical_bytes": 74819072,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\_oCWshYX6MWIedzXsYDk-\\cv2\\cv2.pyd",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\cv2\\cv2.pyd"
+          ]
+        },
+        {
+          "file_id": "dcdfde70:0001000000026c44",
+          "logical_bytes": 28578304,
+          "hard_links": 2,
+          "cache_path": "C:\\Users\\lishuyang\\AppData\\Local\\uv\\cache\\archive-v0\\_oCWshYX6MWIedzXsYDk-\\cv2\\opencv_videoio_ffmpeg4130_64.dll",
+          "other_paths_in_large_file_evidence": [
+            "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Lib\\site-packages\\cv2\\opencv_videoio_ffmpeg4130_64.dll"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uv-python",
+      "path": "C:\\Users\\lishuyang\\AppData\\Roaming\\uv\\python",
+      "classification": "managed_python_runtime",
+      "decision": "retain_runtime",
+      "sizes": {
+        "logical_bytes": 66066613,
+        "path_allocated_bytes": 71944424,
+        "first_unique_assigned_allocated_bytes": 71944424,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "含cpython-3.12.13-windows-x86_64-none解释器，与uv缓存独立。",
+      "future_handling_not_executed": "保持，除非之后核对使用该解释器的环境并有单独卸载授权。",
+      "sources": [
+        "https://docs.astral.sh/uv/concepts/python-versions/"
+      ],
+      "details": []
+    },
+    {
+      "id": "npm-cache",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\npm-cache",
+      "classification": "managed_package_cache",
+      "decision": "review_for_future_app_managed_cleanup",
+      "sizes": {
+        "logical_bytes": 180747096,
+        "path_allocated_bytes": 184672256,
+        "first_unique_assigned_allocated_bytes": 184672256,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "主要为_cacache，其中tmp约62.95MiB；不等于全局node_modules。",
+      "future_handling_not_executed": "未来可考虑npm cache verify（会回收未使用数据，非只读）；需要腾空间才评估clean。当前未运行。",
+      "sources": [
+        "https://docs.npmjs.com/cli/v11/commands/npm-cache/"
+      ],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\npm-cache\\_cacache\\content-v2",
+          "logical_bytes": 114198193,
+          "first_unique_assigned_allocated_bytes": 115744768
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\npm-cache\\_cacache\\tmp",
+          "logical_bytes": 66011200,
+          "first_unique_assigned_allocated_bytes": 66019328
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\npm-cache\\_cacache\\index-v5",
+          "logical_bytes": 525380,
+          "first_unique_assigned_allocated_bytes": 2863104
+        }
+      ]
+    },
+    {
+      "id": "npm-global-tools",
+      "path": "C:\\Users\\lishuyang\\AppData\\Roaming\\npm",
+      "classification": "installed_cli_tools",
+      "decision": "retain_runtime",
+      "sizes": {
+        "logical_bytes": 201272535,
+        "path_allocated_bytes": 202279536,
+        "first_unique_assigned_allocated_bytes": 202279536,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "node_modules里有@openai和@moonshot-ai；这些是已安装CLI工具，不是npm下载缓存。",
+      "future_handling_not_executed": "按软件卸载/升级流程管理，不能作为cache目录清空。",
+      "sources": [],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Roaming\\npm\\node_modules\\@openai",
+          "logical_bytes": 104636124,
+          "first_unique_assigned_allocated_bytes": 104652800
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Roaming\\npm\\node_modules\\@moonshot-ai",
+          "logical_bytes": 96634710,
+          "first_unique_assigned_allocated_bytes": 97621840
+        }
+      ]
+    },
+    {
+      "id": "google-updater-crx",
+      "path": "C:\\Program Files (x86)\\Google\\GoogleUpdater\\crx_cache",
+      "classification": "updater_download_cache",
+      "decision": "review_with_updater_state",
+      "sizes": {
+        "logical_bytes": 515327209,
+        "path_allocated_bytes": 515334512,
+        "first_unique_assigned_allocated_bytes": 515334512,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "官方将crx_cache定义为更新下载缓存；本机一个474.41MiB文件占主要部分。",
+      "future_handling_not_executed": "只能将crx_cache作为候选，保留updater服务、版本目录、prefs和日志；需先确认无进行中更新及可重新下载。未发现本轮可证明的受支持独立清理入口，暂不提供删除命令。",
+      "sources": [
+        "https://chromium.googlesource.com/chromium/src/+/main/docs/updater/functional_spec.md"
+      ],
+      "details": []
+    },
+    {
+      "id": "chrome-cache",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache",
+      "classification": "browser_cache",
+      "decision": "review_for_future_app_managed_cleanup",
+      "sizes": {
+        "logical_bytes": 134439874,
+        "path_allocated_bytes": 135446560,
+        "first_unique_assigned_allocated_bytes": 135446560,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "Default缓存单独可识别，不将整个User Data当缓存。",
+      "future_handling_not_executed": "若未来授权，通过浏览器清理缓存类别，保留密码、历史、Cookies和站点数据。",
+      "sources": [],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache\\Cache_Data",
+          "logical_bytes": 134439850,
+          "first_unique_assigned_allocated_bytes": 135446528
+        }
+      ]
+    },
+    {
+      "id": "chrome-code-cache",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Code Cache",
+      "classification": "browser_cache",
+      "decision": "review_for_future_app_managed_cleanup",
+      "sizes": {
+        "logical_bytes": 36382733,
+        "path_allocated_bytes": 37523168,
+        "first_unique_assigned_allocated_bytes": 37523168,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "单独的脚本缓存目录。",
+      "future_handling_not_executed": "与浏览器缓存一起评估，不批量删除整个用户配置。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "edge-cache",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Cache",
+      "classification": "browser_cache",
+      "decision": "review_for_future_app_managed_cleanup",
+      "sizes": {
+        "logical_bytes": 39805951,
+        "path_allocated_bytes": 40230944,
+        "first_unique_assigned_allocated_bytes": 40230944,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "仅Default缓存，不含整个Edge配置。",
+      "future_handling_not_executed": "使用浏览器维护入口；不把站点数据/扩展/账号目录纳入。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "user-temp",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\Temp",
+      "classification": "mixed_temporary_and_engineering_data",
+      "decision": "review_each_child",
+      "sizes": {
+        "logical_bytes": 1048727649,
+        "path_allocated_bytes": 1055965192,
+        "first_unique_assigned_allocated_bytes": 1055965192,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "包括WinGet、Excel诊断、更新器和final-entry-build-debug工程目录；仅位于Temp不足以证明可丢弃。",
+      "future_handling_not_executed": "先按保留规则核对实验产物，再考虑关闭应用后由系统临时文件入口处理。不能整目录估算全可释放。",
+      "sources": [],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\Temp\\WinGet",
+          "logical_bytes": 206021431,
+          "first_unique_assigned_allocated_bytes": 206057472
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\Temp\\Diagnostics",
+          "logical_bytes": 151073985,
+          "first_unique_assigned_allocated_bytes": 151625728
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\AppData\\Local\\Temp\\final-entry-build-debug",
+          "logical_bytes": 134115470,
+          "first_unique_assigned_allocated_bytes": 134119424
+        }
+      ]
+    },
+    {
+      "id": "codex-profile",
+      "path": "C:\\Users\\lishuyang\\.codex",
+      "classification": "application_profile_and_history",
+      "decision": "retain_profile",
+      "sizes": {
+        "logical_bytes": 1148673563,
+        "path_allocated_bytes": 1158265424,
+        "first_unique_assigned_allocated_bytes": 1158265424,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "包含运行程序、插件、会话、SQLite记录；不是一个缓存目录。",
+      "future_handling_not_executed": "保留会话与数据库，不在运行时手动删除/压缩SQLite；缓存只作为单独小项评估。",
+      "sources": [],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\.codex\\packages",
+          "logical_bytes": 372980120,
+          "first_unique_assigned_allocated_bytes": 372990168
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\.codex\\.sandbox-bin",
+          "logical_bytes": 307258160,
+          "first_unique_assigned_allocated_bytes": 307261440
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\.codex\\sessions",
+          "logical_bytes": 68226903,
+          "first_unique_assigned_allocated_bytes": 68308992
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\.codex\\.tmp",
+          "logical_bytes": 68423758,
+          "first_unique_assigned_allocated_bytes": 77643440
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\.codex\\plugins\\cache",
+          "logical_bytes": 27130708,
+          "first_unique_assigned_allocated_bytes": 27279440
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\.codex\\cache",
+          "logical_bytes": 9718029,
+          "first_unique_assigned_allocated_bytes": 9724096
+        }
+      ]
+    },
+    {
+      "id": "codex-log-db",
+      "path": "C:\\Users\\lishuyang\\.codex\\logs_2.sqlite",
+      "classification": "application_database",
+      "decision": "retain_pending_app_retention_policy",
+      "sizes": {
+        "logical_bytes": 287039488,
+        "path_allocated_bytes": 287039488,
+        "first_unique_assigned_allocated_bytes": 287039488,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "273.74MiB是数据库文件，不是无状态缓存；本轮只看元数据，未读取表/内容。",
+      "future_handling_not_executed": "若需压缩须之后确认应用保留与完整备份方式；此轮不动。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "codex-small-cache",
+      "path": "C:\\Users\\lishuyang\\.codex\\cache",
+      "classification": "application_cache",
+      "decision": "low_priority_review",
+      "sizes": {
+        "logical_bytes": 9718029,
+        "path_allocated_bytes": 9724096,
+        "first_unique_assigned_allocated_bytes": 9724096,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "仅约9.27MiB，收益很小；不与sessions或logs数据库混算。",
+      "future_handling_not_executed": "暂保留；要处理应先明确应用支持的缓存重建方式。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "docker-profile",
+      "path": "C:\\Users\\lishuyang\\.docker",
+      "classification": "docker_cli_profile_and_modules",
+      "decision": "retain_profile",
+      "sizes": {
+        "logical_bytes": 369372425,
+        "path_allocated_bytes": 369378120,
+        "first_unique_assigned_allocated_bytes": 369378120,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "几乎全部是两个docker-scout.exe模块路径；无证据表明它们是容器镜像层。",
+      "future_handling_not_executed": "不要对.docker整体清理，不推导docker system prune会释放此处体积。",
+      "sources": [],
+      "details": [
+        {
+          "path": "C:\\Users\\lishuyang\\.docker\\modules\\tmp",
+          "logical_bytes": 184751772,
+          "first_unique_assigned_allocated_bytes": 184754296
+        },
+        {
+          "path": "C:\\Users\\lishuyang\\.docker\\modules\\scout",
+          "logical_bytes": 184620241,
+          "first_unique_assigned_allocated_bytes": 184623400
+        }
+      ]
+    },
+    {
+      "id": "docker-module-temp",
+      "path": "C:\\Users\\lishuyang\\.docker\\modules\\tmp",
+      "classification": "module_staging_candidate",
+      "decision": "verify_before_any_cleanup",
+      "sizes": {
+        "logical_bytes": 184751772,
+        "path_allocated_bytes": 184754296,
+        "first_unique_assigned_allocated_bytes": 184754296,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "tmp里176.19MiB scout程序；backup路径为176.07MiB，尺寸不同且file_id不同，尚未证明旧/无用。",
+      "future_handling_not_executed": "先核对Docker模块激活状态和升级记录，仅候选，不下删除结论。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "windowsapps",
+      "path": "C:\\Program Files\\WindowsApps",
+      "classification": "installed_store_apps_and_shared_runtimes",
+      "decision": "retain_or_user_selected_uninstall",
+      "sizes": {
+        "logical_bytes": 6437474599,
+        "path_allocated_bytes": 6494478048,
+        "first_unique_assigned_allocated_bytes": 5369418936,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "5.995GiB逻辑量，唯一分配归属5.001GiB，存在4275个重复文件ID路径；这是应用安装和共享运行库，不是缓存。",
+      "future_handling_not_executed": "需用户选择不需要的应用后走设置卸载；不能按版本号手删WindowsAppRuntime目录。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "package-cache",
+      "path": "C:\\ProgramData\\Package Cache",
+      "classification": "installer_repair_payloads",
+      "decision": "retain_for_offline_repair",
+      "sizes": {
+        "logical_bytes": 1972720483,
+        "path_allocated_bytes": 1973043200,
+        "first_unique_assigned_allocated_bytes": 1973043200,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "1.837GiB是安装/维修载荷；最大的v24.1.00目录与已安装Zemax版本相近，但未经MSI内容确认不强归属。",
+      "future_handling_not_executed": "需保留离线修复/卸载能力；不把该总目录并入普通缓存清理。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "visualstudio-cache",
+      "path": "C:\\ProgramData\\Microsoft\\VisualStudio\\Packages",
+      "classification": "installer_repair_payloads",
+      "decision": "retain_for_offline_build_environment",
+      "sizes": {
+        "logical_bytes": 1244290929,
+        "path_allocated_bytes": 1246249432,
+        "first_unique_assigned_allocated_bytes": 1246249432,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "1.159GiB用于Visual Studio包；官方说明离线维修需要缓存载荷。",
+      "future_handling_not_executed": "以后如确需调整，用Visual Studio Installer管理并保证离线包；不手删该目录。",
+      "sources": [
+        "https://learn.microsoft.com/en-us/visualstudio/install/disable-or-move-the-package-cache?view=visualstudio"
+      ],
+      "details": []
+    },
+    {
+      "id": "zemax-data",
+      "path": "C:\\ProgramData\\Zemax",
+      "classification": "application_samples_and_assets",
+      "decision": "retain_application_data",
+      "sizes": {
+        "logical_bytes": 543300283,
+        "path_allocated_bytes": 547958632,
+        "first_unique_assigned_allocated_bytes": 547958632,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "包含Samples、Objects、Design Templates，非普适缓存。",
+      "future_handling_not_executed": "按光学工程软件数据保留；未确认用户项目和定制内容前不动。",
+      "sources": [],
+      "details": []
+    },
+    {
+      "id": "office-solutions",
+      "path": "C:\\Users\\lishuyang\\AppData\\Local\\Microsoft\\Office\\SolutionPackages",
+      "classification": "application_resource_packages",
+      "decision": "unclassified_retain",
+      "sizes": {
+        "logical_bytes": 681183890,
+        "path_allocated_bytes": 693369208,
+        "first_unique_assigned_allocated_bytes": 693369208,
+        "releasable_bytes_estimate": null
+      },
+      "reason": "约649.63MiB，多组PackageResources；仅元数据不能证明是可重建缓存或无用扩展。",
+      "future_handling_not_executed": "保留，之后如用户要求再核对Office加载项/资源包归属。",
+      "sources": [],
+      "details": []
+    }
+  ]
+}

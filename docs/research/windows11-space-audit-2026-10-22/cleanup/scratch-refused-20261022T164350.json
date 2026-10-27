@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "status": "refused_before_deletion",
+  "started_utc": "2026-10-22T16:43:48.9622983Z",
+  "finished_utc": "2026-10-22T16:43:50.7451136Z",
+  "before": {
+    "free_bytes": 178501513216,
+    "utc": "2026-10-22T16:43:49.0981471Z"
+  },
+  "after": {
+    "free_bytes": 178501574656,
+    "utc": "2026-10-22T16:43:50.7451136Z"
+  },
+  "gates": null,
+  "paths": [],
+  "error": "找不到类型 [IO.Compression.ZipArchive]。",
+  "receipt_source": "verbatim JSON fields from tool stdout; saved after transport raised on exit 1"
+}

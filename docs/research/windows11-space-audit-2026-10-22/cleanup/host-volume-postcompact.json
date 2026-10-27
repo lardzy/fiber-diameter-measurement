@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-22T16:49:33.443154+00:00",
+  "path": "/Users/lishuyang/Parallels",
+  "total_bytes": 994610155520,
+  "available_bytes": 371097600000,
+  "free_bytes": 371097600000,
+  "method": "statvfs available volume bytes; includes concurrent unrelated host activity"
+}

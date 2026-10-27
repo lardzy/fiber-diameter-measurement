@@ -1,0 +1,9 @@
+{
+  "source": "C:\\tmp\\windows11-space-audit-20261022\\out\\scan\\all-files-index-local-only.csv",
+  "source_bytes": 152111023,
+  "source_sha256": "4ddac30fd6375d8291eb58418610d7ba1212ba2574cf693a11879ba09edbdb4f",
+  "archive": "audit-full-index.zip",
+  "archive_bytes": 15733838,
+  "archive_sha256": "94b1b4fc88321516cdbe22b56b66bdd274949456d36f06381c60ab99e1eac58e",
+  "status": "verified"
+}

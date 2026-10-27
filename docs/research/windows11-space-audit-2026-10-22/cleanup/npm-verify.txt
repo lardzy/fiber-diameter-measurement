@@ -1,0 +1,12 @@
+Cache verified and compressed (C:\Users\lishuyang\AppData\Local\npm-cache\_cacache)
+Content verified: 771 (91904846 bytes)
+Content garbage-collected: 3 (22293347 bytes)
+Index entries: 771
+Finished in 5.617s
+
+[stderr]
+npm notice
+npm notice New major version of npm available! 11.16.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice

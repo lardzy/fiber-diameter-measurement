@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "created_utc": "2026-10-22T13:53:18.668176+00:00",
+  "scope": "Read-only host file examination; no guest inspection, VM control or deletion by this agent. Report artifacts only.",
+  "installers_live_rehashed": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/optical-adaptive-20261021/FDM-0.4.10-optical-adaptive-daa32894eef7.exe",
+      "bytes": 398869275,
+      "sha256": "ee7ec2619ce1252074789305f7ab4d739d5642b461cf08f93c2e89cc99ae9c8c",
+      "role": "current_trial",
+      "repository_relative_path": "dist/internal/optical-adaptive-20261021/FDM-0.4.10-optical-adaptive-daa32894eef7.exe"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/explicit-manual-gestures-20261021/FDM-0.4.10-explicit-gestures-2527fbdb485c.exe",
+      "bytes": 398846891,
+      "sha256": "fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833",
+      "role": "rollback",
+      "repository_relative_path": "dist/internal/explicit-manual-gestures-20261021/FDM-0.4.10-explicit-gestures-2527fbdb485c.exe"
+    }
+  ],
+  "source_evidence": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/optical-adaptive-20261021/cleanup-local.json",
+      "bytes": 3407,
+      "sha256": "5d59ebc4c2dbf3668aa2f63d027be2aff12ca4b734a0e21a46d1c136c9319cc0"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/optical-adaptive-20261021/cleanup-windows.json",
+      "bytes": 2694,
+      "sha256": "2d254beb9b337519cc4edd034675a4c6f440c895a6231391860959cb6b5a3db9"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/artifact-cleanup-windows-20261021.json",
+      "bytes": 18223,
+      "sha256": "fcfe51dc3936db8a6db2b7636b149504be1b6601b2dc8b6fb0d106e5e176b65c"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/artifact-cleanup-20261021.json",
+      "bytes": 7791,
+      "sha256": "8c3457006f8aa377d4b2504a9862952140ebcb2c53528fa5a9cb73dcdef5c2a5"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/artifact-cleanup-20261020.json",
+      "bytes": 11918,
+      "sha256": "6d6e77853b5b4a2dc9c357837f224ff026966f25b8d46bb6a884bd2e04ddbcc5"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/optical-adaptive-20261021/windows/installation-backup/restored.json",
+      "bytes": 1834,
+      "sha256": "5ae4b0b1dc38ad7b5352a4ba36d33b155636b6676be443881283e572192f6eee"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/acquisition-fourth-round-20261019/windows/installation-backup-baseline.json",
+      "bytes": 3969,
+      "sha256": "21edab1870c0eb6d49a96f25f99f4f155df8781ca683f134925c4949dc5e1254"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/validation/acquisition-fourth-round-20261019/windows/installation-backup-transfer.json",
+      "bytes": 346,
+      "sha256": "b93b9cfbe9b98efd025e8c2682f0ad43d3f40e9d0311fa9e2a1b5edf934c6c5c"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/optical-adaptive-20261021/delivery.json",
+      "bytes": 834,
+      "sha256": "b5e8b422ea1c1e470d53843e4cc1ffdb67adb9be4c4084d5cfff4133e0e176f7"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/README_当前安装包.md",
+      "bytes": 1866,
+      "sha256": "f9e71c5ed0ec00dae6c5cc9de45351bdfc0d19626f2e8fbaf51fb0982ef28022"
+    },
+    {
+      "path": "/Users/lishuyang/Downloads/平场凹面光栅/AGENTS.md",
+      "bytes": 3357,
+      "sha256": "52e68fcaecbe88895f7cee90f450a1faa0ee259c31437e58431054bc5aa21ee4"
+    },
+    {
+      "path": "/Users/lishuyang/Downloads/平场凹面光栅/HANDOFF.md",
+      "bytes": 7387,
+      "sha256": "13878e0976db2dac489d3619f1f4a2a00b34d201a6952f9527c824f30cc0893a"
+    },
+    {
+      "path": "/Users/lishuyang/Downloads/平场凹面光栅/docs/MIGRATION_GUIDE.md",
+      "bytes": 18356,
+      "sha256": "a35613a33766a1593fadf8fbf5a81f16e8834ea7a9607c9a23bdce4b78aa9dcd"
+    },
+    {
+      "path": "/Users/lishuyang/Downloads/平场凹面光栅/integration/windows-zemax-environment.json",
+      "bytes": 630,
+      "sha256": "fc902604daf655d4fdf39af9320911560a2cb00cb736e6953db0942632f65d20"
+    }
+  ],
+  "stale_reference": {
+    "path": "dist/internal/README_当前安装包.md",
+    "reason": "Still describes round7/round6, superseded by optical-adaptive delivery and later cleanup records; not retention authority."
+  },
+  "guest_scan_status": "awaiting root agent current scan; historical deleted byte counts must not count as current reclaimable capacity",
+  "host_archives_live_rehashed_and_crc_checked": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/windows-cleanup-audit-20261021/fdm-build-diagnostics.zip",
+      "exists": true,
+      "bytes": 36558727,
+      "sha256": "9770896a0e66313065ef9641b2c63336c62f594bc67194cd65c65d5111c7df1c",
+      "zip_members": 300,
+      "bad_crc_member": null
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/optical-cleanup-20261021/fdm-build-diagnostics.zip",
+      "exists": true,
+      "bytes": 2987923,
+      "sha256": "1b4b89903ef932508dc01e93f98c4e6d8bd8e0df51e8630654d9a8cbc492a8a5",
+      "zip_members": 22,
+      "bad_crc_member": null
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.tmp/fourth-installation-backup-pre-install.zip",
+      "exists": true,
+      "bytes": 1926,
+      "sha256": "58d58ed0e3e5cb3ba3d69c06cb94043763b9fee27ca03a5d8191b558c99ee16d",
+      "zip_members": 2,
+      "bad_crc_member": null
+    }
+  ]
+}

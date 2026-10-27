@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/optical-adaptive-20261021/FDM-0.4.10-optical-adaptive-daa32894eef7.exe",
+    "bytes": 398869275,
+    "sha256": "ee7ec2619ce1252074789305f7ab4d739d5642b461cf08f93c2e89cc99ae9c8c"
+  },
+  {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/explicit-manual-gestures-20261021/FDM-0.4.10-explicit-gestures-2527fbdb485c.exe",
+    "bytes": 398846891,
+    "sha256": "fd631229a9e74b61cf654d4e96271d50f482e02d425c4c48f48fd5397a17c833"
+  },
+  {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/research/dsx1000-integration-2026-10-22/collector/release/DsxEvidenceCollector-1.0.0-win-x64.zip",
+    "bytes": 1201214,
+    "sha256": "17edf68574c3c45dc0d5a1dcf5f60ccae7adb8b9b4885d3b5587587ce74052d5"
+  }
+]

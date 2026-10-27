@@ -1,0 +1,4 @@
+196	/Users/lishuyang/Parallels/Windows 11.pvm/VM.app/Contents
+196	/Users/lishuyang/Parallels/Windows 11.pvm/VM.app
+130047004	/Users/lishuyang/Parallels/Windows 11.pvm/harddisk.hdd
+130065184	/Users/lishuyang/Parallels/Windows 11.pvm

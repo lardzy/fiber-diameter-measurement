@@ -1,0 +1,26 @@
+{
+  "utc": "2026-10-22T16:54:53.697850+00:00",
+  "final_vm_state": "VM Windows 11 exist stopped",
+  "host_pvm_precompact_bytes": 134620151808,
+  "host_pvm_postcompact_bytes": 100163944448,
+  "host_pvm_final_bytes": 100365266944,
+  "compact_interval_pvm_reduction_bytes": 34456207360,
+  "precompact_to_final_pvm_reduction_bytes": 34254884864,
+  "guest_free_after_boot_bytes": 179563601920,
+  "guest_free_before_maintenance_bytes": 147638542336,
+  "guest_free_net_gain_bytes": 31925059584,
+  "protected_files_check": {
+    "status": "passed",
+    "differences": [],
+    "registered_installation_unchanged": true,
+    "files_checked": 134619,
+    "after": {
+      "utc": "2026-10-22T16:31:41.7153842Z",
+      "free_bytes": 178553020416
+    }
+  },
+  "host_deliverables_status": "passed",
+  "boot_check_status": "passed",
+  "scratch_status": "completed",
+  "compact_exit": 0
+}

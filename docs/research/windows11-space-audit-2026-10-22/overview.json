@@ -1,0 +1,68 @@
+{
+  "baseline_volume": {
+    "DeviceID": "C:",
+    "DriveType": 3,
+    "Size": 273156141056,
+    "FreeSpace": 149094891520
+  },
+  "final_volume": {
+    "DeviceID": "C:",
+    "DriveType": 3,
+    "Size": 273156141056,
+    "FreeSpace": 147646582784
+  },
+  "final_host_allocated_bytes": 134480687104,
+  "root_directory_logical_sizes": [
+    {
+      "path": "C:\\Windows",
+      "logical_bytes": 42814119250
+    },
+    {
+      "path": "C:\\Users",
+      "logical_bytes": 29284662784
+    },
+    {
+      "path": "C:\\tmp",
+      "logical_bytes": 28659179559
+    },
+    {
+      "path": "C:\\Program Files",
+      "logical_bytes": 17025803387
+    },
+    {
+      "path": "C:\\Program Files (x86)",
+      "logical_bytes": 5991974017
+    },
+    {
+      "path": "C:\\ProgramData",
+      "logical_bytes": 5538905957
+    },
+    {
+      "path": "C:\\BuildTools",
+      "logical_bytes": 3342173331
+    },
+    {
+      "path": "C:\\TextileExecutionBridge",
+      "logical_bytes": 1227451364
+    }
+  ],
+  "old_generated_candidates": {
+    "paths": 32,
+    "logical_bytes": 26098604057,
+    "deletion_performed": false,
+    "physical_release_guaranteed": false
+  },
+  "audit_temporary_logical_bytes": 514973246,
+  "scan_counts": {
+    "file_paths_seen": 575786,
+    "directory_rows_completed": 165893,
+    "unique_file_identities": 483292
+  },
+  "retained_original_files": true,
+  "vm_final_state": "stopped (graceful prlctl stop success)",
+  "limitations": [
+    "Live scan; sizes at different timestamps cannot be merged as one atomic snapshot.",
+    "Hard links, allocation and reserved storage must be separated.",
+    "Raw full leaf index remains only inside guest audit scratch; summary archive verified locally."
+  ]
+}

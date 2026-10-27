@@ -1,0 +1,714 @@
+{
+  "generated": [
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013",
+      "kind": "directory",
+      "logical_bytes": 2229310633,
+      "allocation_path_known_bytes": 2236715616,
+      "unique_allocation_assigned_bytes": 2236715616,
+      "files": 4771,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "f43d6293187d591a3277ab24b4a5828818e98c9fe333658e25c14264c7307a04"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 7,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-before-native-20261013",
+      "kind": "directory",
+      "logical_bytes": 2229066890,
+      "allocation_path_known_bytes": 2236465792,
+      "unique_allocation_assigned_bytes": 2236465792,
+      "files": 4769,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "2a592bb75b28d8516ce87335ad9f08f1d9e3afe556fd8f0c9060e68e8f2eecfb"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 7,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer-before-native-20261013",
+      "kind": "directory",
+      "logical_bytes": 1893838583,
+      "allocation_path_known_bytes": 1893842944,
+      "unique_allocation_assigned_bytes": 1893842944,
+      "files": 2,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [
+          "0.4.7"
+        ],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 0,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013",
+      "kind": "directory",
+      "logical_bytes": 952534866,
+      "allocation_path_known_bytes": 959885040,
+      "unique_allocation_assigned_bytes": 959885040,
+      "files": 4728,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "caf7d25bf56e5a3dfb870214a9160d5724b5cc9f5ce0bb82477b9c4481bfbed7"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer",
+      "kind": "directory",
+      "logical_bytes": 795219412,
+      "allocation_path_known_bytes": 795226112,
+      "unique_allocation_assigned_bytes": 795226112,
+      "files": 2,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [
+          "0.4.7"
+        ],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 0,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\full-onedir-rejected-stale-pyz",
+      "kind": "directory",
+      "logical_bytes": 1036401474,
+      "allocation_path_known_bytes": 1043804792,
+      "unique_allocation_assigned_bytes": 1043804792,
+      "files": 4767,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "b174f2254eac91191c5266f87f4bc6fdec499a37770c081c9c734fcf337db444"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 7,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\full-pre-barrier-onedir",
+      "kind": "directory",
+      "logical_bytes": 1036393763,
+      "allocation_path_known_bytes": 1043800696,
+      "unique_allocation_assigned_bytes": 1043800696,
+      "files": 4767,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "34676d45932bc86e9e187dc908e4869d5d097fae92635f1ac2362f2aa3a52c6c"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 7,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-onedir-final",
+      "kind": "directory",
+      "logical_bytes": 953329926,
+      "allocation_path_known_bytes": 960683752,
+      "unique_allocation_assigned_bytes": 960683752,
+      "files": 4730,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "de185eab4784aeeb38674f82bff1786243f236667e8a9adfbb02c51cbe251001"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-onedir-pre-wording",
+      "kind": "directory",
+      "logical_bytes": 953329829,
+      "allocation_path_known_bytes": 960683752,
+      "unique_allocation_assigned_bytes": 960683752,
+      "files": 4730,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "bef31ce10745a4237e924135250a24028e6dd10ebdb03f552fcff9b193915a47"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-pre-afterselection-onedir",
+      "kind": "directory",
+      "logical_bytes": 953323017,
+      "allocation_path_known_bytes": 960675560,
+      "unique_allocation_assigned_bytes": 960675560,
+      "files": 4730,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "9bf7dba36562f86afac8b2e0a84642754d6b87f01eb880e85d515a809095c242"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-technical-onedir",
+      "kind": "directory",
+      "logical_bytes": 953312053,
+      "allocation_path_known_bytes": 960663272,
+      "unique_allocation_assigned_bytes": 960663272,
+      "files": 4730,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "648da28d1152f662f4b96055837b6d1378b5fcef9eea818dad8a4375d2787c42"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-final-r2-20261015\\build\\cu-live-release\\core-onedir-final-r2",
+      "kind": "directory",
+      "logical_bytes": 954107895,
+      "allocation_path_known_bytes": 961466088,
+      "unique_allocation_assigned_bytes": 961466088,
+      "files": 4732,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "c8a623ba54bb64852db2eb3327d2e47bc3e36c094cde2e9154f8b59d37e0521a"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-final-r3-20261015\\build\\cu-live-release\\core-onedir-final-r3",
+      "kind": "directory",
+      "logical_bytes": 954121166,
+      "allocation_path_known_bytes": 961478376,
+      "unique_allocation_assigned_bytes": 961478376,
+      "files": 4732,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "374cf4f008720e38bb90c34bf19ebc554a08ed98a820230a099afd9234e1bce7"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-release\\core-onedir-final-r4",
+      "kind": "directory",
+      "logical_bytes": 954121166,
+      "allocation_path_known_bytes": 961478376,
+      "unique_allocation_assigned_bytes": 961478376,
+      "files": 4732,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "c1520046612e0315f642cd25fc0521c02e6ec4ca0633c755de75e2f60f6793b9"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\installer",
+      "kind": "directory",
+      "logical_bytes": 797558622,
+      "allocation_path_known_bytes": 797564928,
+      "unique_allocation_assigned_bytes": 797564928,
+      "files": 2,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [
+          "0.4.7",
+          "0.4.8"
+        ],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 0,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\windows",
+      "kind": "directory",
+      "logical_bytes": 1036937471,
+      "allocation_path_known_bytes": 1044349904,
+      "unique_allocation_assigned_bytes": 1044349904,
+      "files": 4779,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.8"
+        ],
+        "manifest_sha256": [
+          "5a9fc493dad056ee7ea492fa3b4cd96ba1acad33efc482308ba6f4993e14bc3a"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 7,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\core-onedir",
+      "kind": "directory",
+      "logical_bytes": 953872061,
+      "allocation_path_known_bytes": 961267928,
+      "unique_allocation_assigned_bytes": 961267928,
+      "files": 4742,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "3197d05b319152e37503224355addd51baef3f081a0d8b75b426544c2e2baa1f"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-final",
+      "kind": "directory",
+      "logical_bytes": 956874006,
+      "allocation_path_known_bytes": 964264264,
+      "unique_allocation_assigned_bytes": 964264264,
+      "files": 4755,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "cdf1d467ceb8c5116824366e0bd8ce9c008b5c51aea5cc0ad3b74870dc291b57"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-autobuild-validation\\packaging-source\\dist",
+      "kind": "directory",
+      "logical_bytes": 951642674,
+      "allocation_path_known_bytes": 958983920,
+      "unique_allocation_assigned_bytes": 958983920,
+      "files": 4724,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "798235d83facf8afe472e78b38ecff50033234d2e6c1028090a0b9dbe8209702"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 6,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\internal-no-area-2026-10-14\\before-sync\\previous-outputs\\dist",
+      "kind": "directory",
+      "logical_bytes": 1034708502,
+      "allocation_path_known_bytes": 1042096736,
+      "unique_allocation_assigned_bytes": 1042096736,
+      "files": 4761,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [
+          "0.4.7"
+        ],
+        "manifest_sha256": [
+          "c9f8b50f0abe3d3783c6946e65bf2326a24a05898801a5da159d81dc5eda9f05"
+        ],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 7,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-capture-freeze-dist",
+      "kind": "directory",
+      "logical_bytes": 288821309,
+      "allocation_path_known_bytes": 289298216,
+      "unique_allocation_assigned_bytes": 289298216,
+      "files": 273,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 1,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-automatic-frozen",
+      "kind": "directory",
+      "logical_bytes": 172031558,
+      "allocation_path_known_bytes": 172199032,
+      "unique_allocation_assigned_bytes": 172199032,
+      "files": 98,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 1,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-automatic-frozen-final",
+      "kind": "directory",
+      "logical_bytes": 172046095,
+      "allocation_path_known_bytes": 172215416,
+      "unique_allocation_assigned_bytes": 172215416,
+      "files": 99,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 1,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\FDM-0.4.8-acquisition-rebuild-20261015\\FDM-0.4.8-acquisition-rebuild-20261015.exe",
+      "kind": "file",
+      "logical_bytes": 398804311,
+      "allocation_path_known_bytes": 398807040,
+      "files": 1,
+      "duplicate_identity_paths": 0,
+      "file_id": "dcdfde70:00030000000b1eb8",
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [
+          "0.4.8"
+        ],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 0,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\installer-rejected-stale-pyz.exe",
+      "kind": "file",
+      "logical_bytes": 398386505,
+      "allocation_path_known_bytes": 398389248,
+      "files": 1,
+      "duplicate_identity_paths": 0,
+      "file_id": "dcdfde70:0007000000090a99",
+      "category": "old_generated_distribution_candidate",
+      "identity_followup": {
+        "manifest_versions": [],
+        "manifest_sha256": [],
+        "installer_or_executable_versions": [
+          "0.4.7"
+        ],
+        "project_database_matches": 0,
+        "named_data_config_dirs": 0,
+        "decision": "candidate_conditions_remain_no_deletion_authorization"
+      }
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\pyinstaller-before-native-20261013",
+      "kind": "directory",
+      "logical_bytes": 498795534,
+      "allocation_path_known_bytes": 498856248,
+      "unique_allocation_assigned_bytes": 498856248,
+      "files": 30,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-autobuild-validation\\packaging-source\\build\\pyinstaller",
+      "kind": "directory",
+      "logical_bytes": 490087924,
+      "allocation_path_known_bytes": 490152248,
+      "unique_allocation_assigned_bytes": 490152248,
+      "files": 30,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\internal-no-area-2026-10-14\\before-sync\\previous-outputs\\build\\pyinstaller",
+      "kind": "directory",
+      "logical_bytes": 498953797,
+      "allocation_path_known_bytes": 499015992,
+      "unique_allocation_assigned_bytes": 499015992,
+      "files": 30,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\pyinstaller",
+      "kind": "directory",
+      "logical_bytes": 500978071,
+      "allocation_path_known_bytes": 501035320,
+      "unique_allocation_assigned_bytes": 501035320,
+      "files": 30,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\temp.win-amd64-cpython-312",
+      "kind": "directory",
+      "logical_bytes": 9740903,
+      "allocation_path_known_bytes": 9748480,
+      "unique_allocation_assigned_bytes": 9748480,
+      "files": 3,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\temp.win-amd64-cpython-312",
+      "kind": "directory",
+      "logical_bytes": 69340176,
+      "allocation_path_known_bytes": 69357568,
+      "unique_allocation_assigned_bytes": 69357568,
+      "files": 8,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-capture-freeze-work",
+      "kind": "directory",
+      "logical_bytes": 20613865,
+      "allocation_path_known_bytes": 20648248,
+      "unique_allocation_assigned_bytes": 20648248,
+      "files": 16,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "rebuildable_intermediate_candidate"
+    }
+  ],
+  "duplicate_runtime": [
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\runtime",
+      "kind": "directory",
+      "logical_bytes": 1297303390,
+      "allocation_path_known_bytes": 1297543376,
+      "unique_allocation_assigned_bytes": 1297543376,
+      "files": 149,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "full_identity_comparison_required"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-preview-fix-20261015\\runtime",
+      "kind": "directory",
+      "logical_bytes": 1297296551,
+      "allocation_path_known_bytes": 1297535152,
+      "unique_allocation_assigned_bytes": 1297535152,
+      "files": 149,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "full_identity_comparison_required"
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-save-peaks-20261016\\runtime",
+      "kind": "directory",
+      "logical_bytes": 1297296551,
+      "allocation_path_known_bytes": 1297535152,
+      "unique_allocation_assigned_bytes": 1297535152,
+      "files": 149,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "full_identity_comparison_required"
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-autobuild-validation\\packaging-source\\runtime",
+      "kind": "directory",
+      "logical_bytes": 1297296551,
+      "allocation_path_known_bytes": 1297535152,
+      "unique_allocation_assigned_bytes": 1297535152,
+      "files": 149,
+      "duplicate_identity_paths": 0,
+      "unknown_allocation_files": 0,
+      "errors": 0,
+      "category": "full_identity_comparison_required"
+    }
+  ],
+  "retained_runtime": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime"
+}

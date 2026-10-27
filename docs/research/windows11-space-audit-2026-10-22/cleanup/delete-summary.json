@@ -1,0 +1,319 @@
+{
+  "schema": 1,
+  "derivation": "Projection of the original receipt; no cleanup command was run to generate this summary.",
+  "source": {
+    "file": "delete-result.json",
+    "bytes": 12525303,
+    "sha256": "39d42c34b907d1891991142ef5b628a12c2111cdd9b2c279c041c68883a5f9c1"
+  },
+  "status": "completed",
+  "before": {
+    "utc": "2026-10-22T16:06:43.8879687Z",
+    "free_bytes": 152267206656
+  },
+  "after": {
+    "utc": "2026-10-22T16:22:58.7918995Z",
+    "free_bytes": 178503569408
+  },
+  "archive_sha256": "7fc20c93ef385888f30f0647f0e428edbefaf647883db7ed48b679b9c5c9830b",
+  "totals": {
+    "targets": 32,
+    "status_counts": {
+      "deleted": 32
+    },
+    "deleted_files": 81304,
+    "deleted_directories": 9862,
+    "deleted_logical_bytes": 26098604057,
+    "roots_remaining": 0
+  },
+  "paths": [
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-full-native-20261013",
+      "status": "deleted",
+      "planned_logical_bytes": 2229310633,
+      "deleted_files": 4771,
+      "deleted_directories": 578,
+      "deleted_logical_bytes": 2229310633,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-before-native-20261013",
+      "status": "deleted",
+      "planned_logical_bytes": 2229066890,
+      "deleted_files": 4769,
+      "deleted_directories": 575,
+      "deleted_logical_bytes": 2229066890,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer-before-native-20261013",
+      "status": "deleted",
+      "planned_logical_bytes": 1893838583,
+      "deleted_files": 2,
+      "deleted_directories": 1,
+      "deleted_logical_bytes": 1893838583,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\windows-core-native-20261013",
+      "status": "deleted",
+      "planned_logical_bytes": 952534866,
+      "deleted_files": 4728,
+      "deleted_directories": 564,
+      "deleted_logical_bytes": 952534866,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\dist\\installer",
+      "status": "deleted",
+      "planned_logical_bytes": 795219412,
+      "deleted_files": 2,
+      "deleted_directories": 1,
+      "deleted_logical_bytes": 795219412,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\full-onedir-rejected-stale-pyz",
+      "status": "deleted",
+      "planned_logical_bytes": 1036401474,
+      "deleted_files": 4767,
+      "deleted_directories": 576,
+      "deleted_logical_bytes": 1036401474,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\full-pre-barrier-onedir",
+      "status": "deleted",
+      "planned_logical_bytes": 1036393763,
+      "deleted_files": 4767,
+      "deleted_directories": 576,
+      "deleted_logical_bytes": 1036393763,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-onedir-final",
+      "status": "deleted",
+      "planned_logical_bytes": 953329926,
+      "deleted_files": 4730,
+      "deleted_directories": 563,
+      "deleted_logical_bytes": 953329926,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-onedir-pre-wording",
+      "status": "deleted",
+      "planned_logical_bytes": 953329829,
+      "deleted_files": 4730,
+      "deleted_directories": 563,
+      "deleted_logical_bytes": 953329829,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-pre-afterselection-onedir",
+      "status": "deleted",
+      "planned_logical_bytes": 953323017,
+      "deleted_files": 4730,
+      "deleted_directories": 563,
+      "deleted_logical_bytes": 953323017,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\core-technical-onedir",
+      "status": "deleted",
+      "planned_logical_bytes": 953312053,
+      "deleted_files": 4730,
+      "deleted_directories": 563,
+      "deleted_logical_bytes": 953312053,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-final-r2-20261015\\build\\cu-live-release\\core-onedir-final-r2",
+      "status": "deleted",
+      "planned_logical_bytes": 954107895,
+      "deleted_files": 4732,
+      "deleted_directories": 564,
+      "deleted_logical_bytes": 954107895,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-final-r3-20261015\\build\\cu-live-release\\core-onedir-final-r3",
+      "status": "deleted",
+      "planned_logical_bytes": 954121166,
+      "deleted_files": 4732,
+      "deleted_directories": 564,
+      "deleted_logical_bytes": 954121166,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\cu-live-release\\core-onedir-final-r4",
+      "status": "deleted",
+      "planned_logical_bytes": 954121166,
+      "deleted_files": 4732,
+      "deleted_directories": 564,
+      "deleted_logical_bytes": 954121166,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\installer",
+      "status": "deleted",
+      "planned_logical_bytes": 797558622,
+      "deleted_files": 2,
+      "deleted_directories": 1,
+      "deleted_logical_bytes": 797558622,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\dist\\windows",
+      "status": "deleted",
+      "planned_logical_bytes": 1036937471,
+      "deleted_files": 4779,
+      "deleted_directories": 581,
+      "deleted_logical_bytes": 1036937471,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\core-onedir",
+      "status": "deleted",
+      "planned_logical_bytes": 953872061,
+      "deleted_files": 4742,
+      "deleted_directories": 567,
+      "deleted_logical_bytes": 953872061,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\opt4k\\release-final",
+      "status": "deleted",
+      "planned_logical_bytes": 956874006,
+      "deleted_files": 4755,
+      "deleted_directories": 568,
+      "deleted_logical_bytes": 956874006,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-autobuild-validation\\packaging-source\\dist",
+      "status": "deleted",
+      "planned_logical_bytes": 951642674,
+      "deleted_files": 4724,
+      "deleted_directories": 564,
+      "deleted_logical_bytes": 951642674,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\internal-no-area-2026-10-14\\before-sync\\previous-outputs\\dist",
+      "status": "deleted",
+      "planned_logical_bytes": 1034708502,
+      "deleted_files": 4761,
+      "deleted_directories": 577,
+      "deleted_logical_bytes": 1034708502,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-capture-freeze-dist",
+      "status": "deleted",
+      "planned_logical_bytes": 288821309,
+      "deleted_files": 273,
+      "deleted_directories": 62,
+      "deleted_logical_bytes": 288821309,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-automatic-frozen",
+      "status": "deleted",
+      "planned_logical_bytes": 172031558,
+      "deleted_files": 98,
+      "deleted_directories": 53,
+      "deleted_logical_bytes": 172031558,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-automatic-frozen-final",
+      "status": "deleted",
+      "planned_logical_bytes": 172046095,
+      "deleted_files": 99,
+      "deleted_directories": 53,
+      "deleted_logical_bytes": 172046095,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\FDM-0.4.8-acquisition-rebuild-20261015\\FDM-0.4.8-acquisition-rebuild-20261015.exe",
+      "status": "deleted",
+      "planned_logical_bytes": 398804311,
+      "deleted_files": 1,
+      "deleted_directories": 0,
+      "deleted_logical_bytes": 398804311,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-live-release\\installer-rejected-stale-pyz.exe",
+      "status": "deleted",
+      "planned_logical_bytes": 398386505,
+      "deleted_files": 1,
+      "deleted_directories": 0,
+      "deleted_logical_bytes": 398386505,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\pyinstaller-before-native-20261013",
+      "status": "deleted",
+      "planned_logical_bytes": 498795534,
+      "deleted_files": 30,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 498795534,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\native-autobuild-validation\\packaging-source\\build\\pyinstaller",
+      "status": "deleted",
+      "planned_logical_bytes": 490087924,
+      "deleted_files": 30,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 490087924,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\internal-no-area-2026-10-14\\before-sync\\previous-outputs\\build\\pyinstaller",
+      "status": "deleted",
+      "planned_logical_bytes": 498953797,
+      "deleted_files": 30,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 498953797,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\pyinstaller",
+      "status": "deleted",
+      "planned_logical_bytes": 500978071,
+      "deleted_files": 30,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 500978071,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\build\\temp.win-amd64-cpython-312",
+      "status": "deleted",
+      "planned_logical_bytes": 9740903,
+      "deleted_files": 3,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 9740903,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-opt4k-20261015\\build\\temp.win-amd64-cpython-312",
+      "status": "deleted",
+      "planned_logical_bytes": 69340176,
+      "deleted_files": 8,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 69340176,
+      "root_still_exists": false
+    },
+    {
+      "path": "C:\\tmp\\fdm-cu-live-20261015\\build\\cu-capture-freeze-work",
+      "status": "deleted",
+      "planned_logical_bytes": 20613865,
+      "deleted_files": 16,
+      "deleted_directories": 3,
+      "deleted_logical_bytes": 20613865,
+      "root_still_exists": false
+    }
+  ]
+}

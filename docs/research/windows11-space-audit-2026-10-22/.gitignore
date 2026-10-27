@@ -1,0 +1,9 @@
+# Keep local machine captures and recovery archives on disk, outside Git.
+# See VERSION-CONTROL.md before copying, deleting, or restoring these files.
+/guest/
+/host/host-inventory.json
+/cleanup/*.zip
+/cleanup/archive-mappings.json
+/cleanup/delete-result.json
+/cleanup/plan.json
+/cleanup/protected-before.json

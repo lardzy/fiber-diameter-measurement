@@ -1,0 +1,2 @@
+# Preserve captured Windows encodings and hashes; do not normalize evidence bytes.
+* -text -whitespace

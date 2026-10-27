@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "status": "completed",
+  "started_utc": "2026-10-22T16:45:27.1563674Z",
+  "finished_utc": "2026-10-22T16:45:32.8229137Z",
+  "before": {
+    "free_bytes": 178501509120,
+    "utc": "2026-10-22T16:45:27.2714833Z"
+  },
+  "after": {
+    "free_bytes": 179570532352,
+    "utc": "2026-10-22T16:45:32.8229137Z"
+  },
+  "gates": {
+    "preserved_sha256": "7fc20c93ef385888f30f0647f0e428edbefaf647883db7ed48b679b9c5c9830b",
+    "final_evidence_sha256": "b8737cc980ee484d1284a675960b9a13bc5d6d3def73e14ff17a86dbbb13c4e1",
+    "verify_result_sha256": "3f21ca846128f3161f455caf827da42a77369893d307251359ba91491d507b3a"
+  },
+  "paths": [
+    {
+      "logical_bytes": 514973246,
+      "root_still_exists": false,
+      "path": "C:\\tmp\\windows11-space-audit-20261022",
+      "files": 73,
+      "deleted_files": 73,
+      "status": "deleted",
+      "deleted_logical_bytes": 514973246
+    },
+    {
+      "logical_bytes": 553651462,
+      "root_still_exists": false,
+      "path": "C:\\tmp\\fdm-space-cleanup-20261022",
+      "files": 158,
+      "deleted_files": 158,
+      "status": "deleted",
+      "deleted_logical_bytes": 553651462
+    }
+  ],
+  "error": null
+}

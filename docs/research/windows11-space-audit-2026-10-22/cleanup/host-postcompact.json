@@ -1,0 +1,114 @@
+{
+  "utc": "2026-10-22T16:49:43.920013+00:00",
+  "state": "VM Windows 11 exist stopped",
+  "method": "stat regular-file allocated bytes, no APFS shared extent ownership",
+  "logical_bytes": 100162576575,
+  "allocated_bytes": 100163944448,
+  "files": [
+    {
+      "path": "parallels-tools.log",
+      "logical_bytes": 2289791,
+      "allocated_bytes": 2293760
+    },
+    {
+      "path": "VmInfo.pvi",
+      "logical_bytes": 18702,
+      "allocated_bytes": 20480
+    },
+    {
+      "path": "config.pvs",
+      "logical_bytes": 29929,
+      "allocated_bytes": 32768
+    },
+    {
+      "path": "parallels.log.1.gz",
+      "logical_bytes": 1758484,
+      "allocated_bytes": 1761280
+    },
+    {
+      "path": "statistic.log",
+      "logical_bytes": 1578821,
+      "allocated_bytes": 2469888
+    },
+    {
+      "path": "Snapshots.xml",
+      "logical_bytes": 63,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "config.pvs.backup",
+      "logical_bytes": 29929,
+      "allocated_bytes": 32768
+    },
+    {
+      "path": "parallels.log",
+      "logical_bytes": 7816372,
+      "allocated_bytes": 8253440
+    },
+    {
+      "path": "NVRAM.tnvs",
+      "logical_bytes": 16384,
+      "allocated_bytes": 16384
+    },
+    {
+      "path": "NVRAM.dat",
+      "logical_bytes": 385024,
+      "allocated_bytes": 385024
+    },
+    {
+      "path": "VM.app/Contents/Info.plist",
+      "logical_bytes": 1701,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "VM.app/Contents/PkgInfo",
+      "logical_bytes": 8,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "VM.app/Contents/MacOS/WinAppHelper",
+      "logical_bytes": 51360,
+      "allocated_bytes": 53248
+    },
+    {
+      "path": "VM.app/Contents/Resources/AppParams.pva",
+      "logical_bytes": 136,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "VM.app/Contents/Resources/WinAppHelper.icns",
+      "logical_bytes": 130737,
+      "allocated_bytes": 131072
+    },
+    {
+      "path": "VM.app/Contents/Resources/InfoPlist.strings",
+      "logical_bytes": 30,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "harddisk.hdd/DiskDescriptor.xml",
+      "logical_bytes": 2096,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "harddisk.hdd/harddisk.hdd.0.{5fbaabe3-6958-40ff-92a7-860e329aab41}.hds",
+      "logical_bytes": 100148445184,
+      "allocated_bytes": 100148445184
+    },
+    {
+      "path": "harddisk.hdd/DiskDescriptor.xml.Backup",
+      "logical_bytes": 2096,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "harddisk.hdd/harddisk.hdd.drh",
+      "logical_bytes": 19728,
+      "allocated_bytes": 20480
+    },
+    {
+      "path": "harddisk.hdd/harddisk.hdd",
+      "logical_bytes": 0,
+      "allocated_bytes": 0
+    }
+  ]
+}

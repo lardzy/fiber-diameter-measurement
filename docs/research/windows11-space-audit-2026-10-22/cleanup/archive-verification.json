@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "original_paths": 75073,
+  "unique_contents": 4202,
+  "archive_bytes": 45740655,
+  "archive_sha256": "7fc20c93ef385888f30f0647f0e428edbefaf647883db7ed48b679b9c5c9830b",
+  "mapping_sha256": "1afe705148bcc0ea79873669df63bef523bfc8c75b4345047e5dd1bc1897f9a0",
+  "all_unique_payloads_sha256_verified": true,
+  "all_original_paths_reconstructable": true
+}

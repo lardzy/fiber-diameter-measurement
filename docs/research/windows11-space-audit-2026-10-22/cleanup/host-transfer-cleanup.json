@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-22T16:52:06.962428+00:00",
+  "status": "completed",
+  "directory_absent": true,
+  "files": [
+    {
+      "path": "/Users/lishuyang/Downloads/fdm-space-cleanup-transfer-20261022/host-marker.txt",
+      "bytes": 44,
+      "sha256": "2a205917da4ace3e5220effd194196b5551105156c729e7aed35487f4c579921"
+    },
+    {
+      "path": "/Users/lishuyang/Downloads/fdm-space-cleanup-transfer-20261022/input.zip",
+      "bytes": 34927,
+      "sha256": "7f39ad8543518b0974fa74ae210c8e212885301618fc4c5d30bf9d2c2c7ee1b9"
+    }
+  ]
+}

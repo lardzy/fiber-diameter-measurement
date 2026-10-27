@@ -1,0 +1,4 @@
+
+[stderr]
+Pruning cache at: C:\Users\lishuyang\AppData\Local\uv\cache
+Removed 622 files (34.0MiB)
