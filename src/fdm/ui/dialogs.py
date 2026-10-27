@@ -226,6 +226,66 @@ class _MeasurementStylePreview(QWidget):
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
 
 
+class _ProfessionalMeasurementStylePreview(QWidget):
+    """Render the same dual-end annotation used by professional canvases."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        from fdm.geometry import Point
+        from fdm.measurement_annotation import MeasurementAnnotationLayout
+        from fdm.metrology import (
+            MeasurementDefinition, MeasurementFeature, MeasurementMetric,
+            MeasurementPrimitive, MeasurementResult,
+        )
+
+        self._decimals = 2
+        self.setObjectName("professionalMeasurementStylePreview")
+        self.setAccessibleName("专业测量标注预览")
+        self.setMinimumHeight(140)
+        self._document = ImageDocument("professional-settings-preview", "", (400, 150))
+        self._document.initialize_runtime_state()
+        start, end = Point(40, 105), Point(306.55098, 105)
+        feature = MeasurementFeature("preview-feature", self._document.id, "line", (start, end))
+        definition = MeasurementDefinition(
+            "preview-measurement", self._document.id, "distance", (feature.id,),
+            annotation_layout=MeasurementAnnotationLayout(
+                offset_px=Point(0, -42), leader_style="dual"
+            ),
+        )
+        self._document.apply_professional_state([feature], [definition], mark_dirty=False)
+        self._results = {definition.id: MeasurementResult(
+            definition.id, "ready",
+            metrics=(MeasurementMetric("distance", "距离", 266.55098, "µm"),),
+            anchor_px=Point((start.x + end.x) / 2, start.y),
+            geometry=(MeasurementPrimitive("line", (start, end)),),
+        )}
+
+    def set_decimals(self, decimals: int) -> None:
+        self._decimals = AppSettings._normalize_professional_measurement_label_decimals(decimals)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        del event
+        from fdm.ui.professional_rendering import draw_professional_measurements
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+        painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
+        painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
+        painter.drawRoundedRect(rect, 6, 6)
+        font = QFont(self.font())
+        font.setPixelSize(13)
+        painter.setFont(font)
+        span = max(1.0, self.width() - 48.0)
+        draw_professional_measurements(
+            painter, self._document,
+            lambda point: QPointF(24 + (point.x - 40) * span / 266.55098,
+                                  self.height() - 24 + point.y - 105),
+            results=self._results, label_decimals=self._decimals,
+        )
+
+
 def _redirect_editor_wheel_to_parent_scroll(widget: QWidget, event) -> None:
     parent = widget.parentWidget()
     while parent is not None:
@@ -1809,9 +1869,14 @@ class SettingsDialog(QDialog):
     screenshotCu5DiagnosticRequested = Signal()
     screenshotCu5CandidateSelectionRequested = Signal(object)
 
+    _PAGE_KEYS = (
+        "general", "measurement", "professional", "annotation", "image_processing",
+        "area_models", "digital_slide", "screenshot", "export",
+    )
     _NAVIGATION_DEFINITIONS = (
         ("常规", "主题与默认视图", "主题 深色 浅色 系统 打开 图片 默认 视图"),
         ("测量与显示", "测量结果、计数和线条外观", "测量 结果 文字 标签 计数 编号 端点 颜色"),
+        ("专业测量", "专业测量图中标注的显示精度", "专业 标注 小数位 精度 结果 文字"),
         ("标注与比例尺", "比例尺和图形标注默认样式", "比例尺 叠加 文字 图形 矩形 圆形 箭头 线条"),
         ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
         ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
@@ -1865,6 +1930,7 @@ class SettingsDialog(QDialog):
 
         general_page = self._build_general_tab(settings)
         measurement_page = self._build_measurement_tab(settings)
+        professional_page = self._build_professional_measurement_tab(settings)
         annotation_scale_page = self._build_scale_overlay_tab(settings)
         image_processing_page = self._build_image_processing_tab(settings)
         area_models_page = self._build_area_models_tab(settings)
@@ -1888,6 +1954,7 @@ class SettingsDialog(QDialog):
         navigation_pages = [
             general_page,
             measurement_page,
+            professional_page,
             annotation_scale_page,
             image_processing_page,
             area_models_page,
@@ -1895,7 +1962,8 @@ class SettingsDialog(QDialog):
             screenshot_page,
             raw_record_page,
         ]
-        for page in navigation_pages:
+        for key, page in zip(self._PAGE_KEYS, navigation_pages, strict=True):
+            page.setProperty("settingsPageKey", key)
             self._settings_pages.addWidget(page)
 
         # ``_tabs`` is private legacy surface retained only as a read-only
@@ -2130,6 +2198,20 @@ class SettingsDialog(QDialog):
         elif not has_results:
             self._settings_navigation.clearSelection()
 
+    @classmethod
+    def page_index(cls, key: str) -> int:
+        """Resolve a stable category key without coupling callers to its order."""
+        return cls._PAGE_KEYS.index(key)
+
+    def select_page(self, page: str | int) -> int:
+        index = self.page_index(page) if isinstance(page, str) else max(
+            0, min(self._settings_pages.count() - 1, int(page))
+        )
+        if self._settings_navigation.item(index).isHidden():
+            self._settings_search.clear()
+        self._settings_navigation.setCurrentRow(index)
+        return index
+
     def _activate_settings_navigation_item(
         self,
         current: QListWidgetItem | None,
@@ -2160,6 +2242,7 @@ class SettingsDialog(QDialog):
         page = self._settings_pages.currentWidget()
         if page is None:
             return
+        page_key = str(page.property("settingsPageKey"))
         defaults_dialog = SettingsDialog(
             AppSettings(),
             document=self._document,
@@ -2168,7 +2251,7 @@ class SettingsDialog(QDialog):
             parent=self,
         )
         try:
-            default_page = defaults_dialog._settings_pages.widget(page_index)
+            default_page = defaults_dialog._settings_pages.widget(defaults_dialog.page_index(page_key))
             for name, target in vars(self).items():
                 source = vars(defaults_dialog).get(name)
                 if not isinstance(target, QWidget) or not isinstance(source, QWidget):
@@ -2177,17 +2260,17 @@ class SettingsDialog(QDialog):
                     continue
                 self._copy_default_control_value(target, source)
 
-            if page_index == 4:
+            if page_key == "area_models":
                 self._copy_table_contents(
                     self._area_mapping_table,
                     defaults_dialog._area_mapping_table,
                 )
-            elif page_index == 3:
+            elif page_key == "image_processing":
                 self._offline_segmentation_engine_packs_draft = []
                 self._update_offline_engine_summary()
-            elif page_index == 6:
+            elif page_key == "screenshot":
                 self._screenshot_settings_widget.restore_defaults()
-            elif page_index == 7:
+            elif page_key == "export":
                 self._raw_record_templates_data = []
                 self._raw_record_current_template_index = -1
                 self._raw_record_template_table.setRowCount(0)
@@ -2270,6 +2353,7 @@ class SettingsDialog(QDialog):
             measurement_text_size_space=self._measurement_text_size_space_combo.currentData(),
             length_measurement_label_style=length_label_style,
             area_measurement_label_style=area_label_style,
+            professional_measurement_label_decimals=self._professional_measurement_label_decimals.value(),
             show_count_numbers=self._show_count_numbers.isChecked(),
             count_number_font_family=self._font_combo_family_value(self._count_number_font),
             count_number_font_size=self._count_number_size.value(),
@@ -2602,6 +2686,14 @@ class SettingsDialog(QDialog):
         self._length_measurement_label_parallel.setChecked(length_style.parallel_to_line)
         self._length_measurement_label_background = QCheckBox("显示结果文字浅黑底")
         self._length_measurement_label_background.setChecked(length_style.background_enabled)
+        self._endpoint_style_combo = NoWheelComboBox()
+        self._endpoint_style_combo.addItem("圆点", MeasurementEndpointStyle.CIRCLE)
+        self._endpoint_style_combo.addItem("内侧箭头", MeasurementEndpointStyle.ARROW_INSIDE)
+        self._endpoint_style_combo.addItem("外侧箭头", MeasurementEndpointStyle.ARROW_OUTSIDE)
+        self._endpoint_style_combo.addItem("竖线", MeasurementEndpointStyle.BAR)
+        self._endpoint_style_combo.addItem("无端点", MeasurementEndpointStyle.NONE)
+        self._endpoint_style_combo.setCurrentIndex(max(0, self._endpoint_style_combo.findData(settings.measurement_endpoint_style)))
+        self._default_measurement_color = self._create_color_button(settings.default_measurement_color)
         self._length_measurement_style_preview = _MeasurementStylePreview(
             length_group,
             metric="length",
@@ -2613,6 +2705,8 @@ class SettingsDialog(QDialog):
         length_form.addRow("结果文字小数位", self._length_measurement_label_decimals)
         length_form.addRow("", self._length_measurement_label_parallel)
         length_form.addRow("", self._length_measurement_label_background)
+        length_form.addRow("端点样式", self._endpoint_style_combo)
+        length_form.addRow("未分类测量线颜色", self._default_measurement_color)
         length_form.addRow("预览", self._length_measurement_style_preview)
 
         area_group = QGroupBox("面积结果")
@@ -2666,25 +2760,12 @@ class SettingsDialog(QDialog):
         self._count_number_size.setSuffix(" px")
         self._count_number_size.setValue(settings.count_number_font_size)
         self._count_number_color = self._create_color_button(settings.count_number_color)
-        self._endpoint_style_combo = NoWheelComboBox()
-        self._endpoint_style_combo.addItem("圆点", MeasurementEndpointStyle.CIRCLE)
-        self._endpoint_style_combo.addItem("内侧箭头", MeasurementEndpointStyle.ARROW_INSIDE)
-        self._endpoint_style_combo.addItem("外侧箭头", MeasurementEndpointStyle.ARROW_OUTSIDE)
-        self._endpoint_style_combo.addItem("竖线", MeasurementEndpointStyle.BAR)
-        self._endpoint_style_combo.addItem("无端点", MeasurementEndpointStyle.NONE)
-        self._endpoint_style_combo.setCurrentIndex(max(0, self._endpoint_style_combo.findData(settings.measurement_endpoint_style)))
-        self._default_measurement_color = self._create_color_button(settings.default_measurement_color)
         count_group = QGroupBox("计数点编号")
         count_form = QFormLayout(count_group)
         count_form.addRow("", self._show_count_numbers)
         count_form.addRow("编号字体", self._count_number_font)
         count_form.addRow("编号字号", self._count_number_size)
         count_form.addRow("编号颜色", self._count_number_color)
-
-        measurement_group = QGroupBox("测量线与端点")
-        measurement_form = QFormLayout(measurement_group)
-        measurement_form.addRow("端点样式", self._endpoint_style_combo)
-        measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
         self._show_length_measurement_labels.toggled.connect(self._update_length_measurement_style_preview)
         self._length_measurement_label_font.currentFontChanged.connect(self._update_length_measurement_style_preview)
@@ -2705,7 +2786,32 @@ class SettingsDialog(QDialog):
         layout.addWidget(length_group)
         layout.addWidget(area_group)
         layout.addWidget(count_group)
-        layout.addWidget(measurement_group)
+        layout.addStretch(1)
+        return self._wrap_settings_page(page)
+
+    def _build_professional_measurement_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        page.setObjectName("professionalMeasurementSettingsPage")
+        layout = QVBoxLayout(page)
+        group = QGroupBox("专业测量结果文字")
+        form = QFormLayout(group)
+        self._professional_measurement_label_decimals = NoWheelSpinBox()
+        self._professional_measurement_label_decimals.setObjectName("professionalMeasurementLabelDecimals")
+        self._professional_measurement_label_decimals.setAccessibleName("结果文字小数位")
+        self._professional_measurement_label_decimals.setRange(0, 8)
+        self._professional_measurement_label_decimals.setValue(settings.professional_measurement_label_decimals)
+        self._professional_measurement_label_decimals.setToolTip("固定小数位，保留末尾零；0 表示不显示小数部分。")
+        form.addRow("结果文字小数位", self._professional_measurement_label_decimals)
+        hint = QLabel("仅调整图中标注显示，结果表与数值导出不受影响。\n普通图像、数字切片和导出图上的专业测量标注使用相同设置。")
+        hint.setWordWrap(True)
+        form.addRow(hint)
+        self._professional_measurement_style_preview = _ProfessionalMeasurementStylePreview(group)
+        self._professional_measurement_style_preview.set_decimals(settings.professional_measurement_label_decimals)
+        self._professional_measurement_label_decimals.valueChanged.connect(
+            self._professional_measurement_style_preview.set_decimals
+        )
+        form.addRow("预览", self._professional_measurement_style_preview)
+        layout.addWidget(group)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 

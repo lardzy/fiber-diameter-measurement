@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -87,6 +87,25 @@ class CanvasVisualSettingsSignatureTests(unittest.TestCase):
             self.canvas._overlay_style_generation,  # noqa: SLF001
             initial_generation + 1,
         )
+
+    def test_professional_precision_refreshes_display_without_legacy_tile_eviction(self) -> None:
+        settings = AppSettings()
+        self.canvas.set_settings(settings)
+        controller = Mock()
+        self.canvas._professional_controller = controller  # noqa: SLF001
+        # The settings object may be edited in place by a preferences import.
+        settings.professional_measurement_label_decimals = 8
+        with (
+            patch.object(self.canvas, "_invalidate_all_overlay_tiles") as invalidate,
+            patch.object(self.canvas, "update") as update,
+        ):
+            self.canvas.set_settings(settings)
+            self.canvas.set_settings(settings)
+
+        controller.invalidate_display.assert_called_once_with()
+        controller.results.assert_not_called()
+        invalidate.assert_not_called()
+        update.assert_called_once_with()
 
     def test_every_cached_measurement_visual_family_invalidates(self) -> None:
         def length_background(settings: AppSettings) -> None:

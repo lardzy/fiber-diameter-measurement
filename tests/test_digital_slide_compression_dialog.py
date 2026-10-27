@@ -81,7 +81,7 @@ class DigitalSlideCompressionDialogTests(unittest.TestCase):
     def test_settings_page_no_longer_contains_compression_task_controls(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
-            digital_slide_page = dialog._settings_pages.widget(5)  # noqa: SLF001
+            digital_slide_page = dialog._settings_pages.widget(dialog.page_index("digital_slide"))  # noqa: SLF001
             titles = [group.title() for group in digital_slide_page.findChildren(QGroupBox)]
             self.assertNotIn("切片压缩工具", titles)
             self.assertFalse(hasattr(dialog, "_digital_slide_compress_start_button"))

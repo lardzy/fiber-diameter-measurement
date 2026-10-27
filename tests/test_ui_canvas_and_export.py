@@ -9713,6 +9713,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 [
                     "常规",
                     "测量与显示",
+                    "专业测量",
                     "标注与比例尺",
                     "图像与智能分析",
                     "面积识别",
@@ -9721,7 +9722,7 @@ class CanvasAndExportTests(unittest.TestCase):
                     "导出与模板",
                 ],
             )
-            self.assertEqual(dialog._settings_pages.count(), 8)
+            self.assertEqual(dialog._settings_pages.count(), 9)
             self.assertLessEqual(dialog.width(), 900)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
             self.assertIsInstance(dialog._tabs.widget(1), QScrollArea)
@@ -9731,7 +9732,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_infer_device_combo.currentData(), "cpu")
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 0),
-                ["标注与文字显示", "直径/长度结果", "面积结果", "计数点编号", "测量线与端点"],
+                ["标注与文字显示", "直径/长度结果", "面积结果", "计数点编号"],
             )
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(
@@ -10003,7 +10004,7 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             labels = [dialog._tabs.tabText(index) for index in range(dialog._tabs.count())]
             self.assertNotIn("当前图片", labels)
-            annotation_page = dialog._settings_pages.widget(2)
+            annotation_page = dialog._settings_pages.widget(dialog.page_index("annotation"))
             group_titles = [
                 group.title()
                 for group in annotation_page.findChildren(QGroupBox)

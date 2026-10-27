@@ -48,7 +48,7 @@ def _draw(doc, transform, *, font=None):
     try:
         if font:
             painter.setFont(font)
-        labels = draw_professional_measurements(painter, doc, transform)
+        labels = draw_professional_measurements(painter, doc, transform, label_decimals=2)
     finally:
         painter.end()
     return image, labels

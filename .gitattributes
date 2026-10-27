@@ -52,3 +52,5 @@ docs/validation/slide-adjustments-release-20261026/** -text -whitespace
 # Preserve professional measurement and installer evidence used by SHA-256 manifests.
 docs/validation/professional-measurement-20261027/** -text -whitespace
 docs/validation/professional-measurement-release-20261027/** -text -whitespace
+docs/validation/professional-precision-20261027/** -text -whitespace
+docs/validation/professional-precision-release-20261027/** -text -whitespace

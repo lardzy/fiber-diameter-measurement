@@ -290,7 +290,7 @@ def test_switching_label_metric_changes_caption_only_and_never_evaluates_geometr
     current = evaluate_document(doc)[definition.id]
     assert current is first
     assert current.primary.value == 5
-    assert "水平分量 3 px" in result_caption(changed, current, 1)
+    assert "水平分量 3.00 px" in result_caption(changed, current, 1, decimals=2)
     assert doc.professional_geometry_revision == revision
     before.restore(doc)
     assert evaluate_document(doc)[definition.id] is first

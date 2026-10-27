@@ -453,7 +453,8 @@ class ProfessionalWorkspace(QObject):
         if result.valid:
             zoom = max(controller.canvas._zoom, .001)
             fm = QFontMetricsF(controller.canvas.font())
-            caption = result_caption(definition, result, len(document.professional_measurements) + 1)
+            caption = result_caption(definition, result, len(document.professional_measurements) + 1,
+                                     decimals=controller.canvas._settings.professional_measurement_label_decimals)
             occupied = [QRectF(controller.canvas.widget_to_image(label.text_rect.topLeft()).x,
                                controller.canvas.widget_to_image(label.text_rect.topLeft()).y,
                                label.text_rect.width() / zoom, label.text_rect.height() / zoom)
@@ -489,7 +490,8 @@ class ProfessionalWorkspace(QObject):
             result = presentation_result(document, definition, controller.results()[identity])
             zoom = max(controller.canvas._zoom, .001)
             fm = QFontMetricsF(controller.canvas.font())
-            text = result_caption(definition, result, document.professional_measurements.index(definition) + 1)
+            text = result_caption(definition, result, document.professional_measurements.index(definition) + 1,
+                                  decimals=controller.canvas._settings.professional_measurement_label_decimals)
             occupied = [QRectF(controller.canvas.widget_to_image(h.text_rect.topLeft()).x,
                                controller.canvas.widget_to_image(h.text_rect.topLeft()).y,
                                h.text_rect.width() / zoom, h.text_rect.height() / zoom)
@@ -594,7 +596,9 @@ class ProfessionalWorkspace(QObject):
         zoom = max(controller.canvas._zoom, .001)
         fm = QFontMetricsF(controller.canvas.font())
         for i, definition in enumerate(document.professional_measurements, 1):
-            result = presentation_result(document, definition, results[definition.id]); text = result_caption(definition, result, i)
+            result = presentation_result(document, definition, results[definition.id])
+            text = result_caption(definition, result, i,
+                                  decimals=controller.canvas._settings.professional_measurement_label_decimals)
             width, height = (fm.horizontalAdvance(text) + 14) / zoom, (fm.height() + 8) / zoom
             offset = choose_automatic_offset(result.anchor_px, width, height, occupied=occupied,
                 image_rect=QRectF(0, 0, *document.image_size), gap=18 / zoom)

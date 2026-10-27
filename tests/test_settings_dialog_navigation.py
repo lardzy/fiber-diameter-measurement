@@ -41,7 +41,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
 
-    def test_uses_eight_professional_preference_categories(self) -> None:
+    def test_uses_nine_professional_preference_categories(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
             labels = [
@@ -53,6 +53,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
                 [
                     "常规",
                     "测量与显示",
+                    "专业测量",
                     "标注与比例尺",
                     "图像与智能分析",
                     "面积识别",
@@ -62,7 +63,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
                 ],
             )
             self.assertNotIn("当前图片", labels)
-            self.assertEqual(dialog._settings_pages.count(), 8)  # noqa: SLF001
+            self.assertEqual(dialog._settings_pages.count(), 9)  # noqa: SLF001
             self.assertEqual(dialog._settings_page_title.text(), "常规")  # noqa: SLF001
         finally:
             dialog.close()
@@ -70,7 +71,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
     def test_annotation_page_persists_new_text_size_space_and_anchor(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
-            dialog._settings_navigation.setCurrentRow(2)  # noqa: SLF001
+            dialog.select_page("annotation")  # noqa: SLF001
             dialog._text_size_space_combo.setCurrentIndex(  # noqa: SLF001
                 dialog._text_size_space_combo.findData(  # noqa: SLF001
                     OverlayTextSizeSpace.LEGACY_OUTPUT_PX
@@ -131,7 +132,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             ]
             self.assertEqual(visible_labels, ["导出与模板"])
             self.assertEqual(dialog._settings_page_title.text(), "导出与模板")  # noqa: SLF001
-            self.assertEqual(dialog._settings_pages.currentIndex(), 7)  # noqa: SLF001
+            self.assertEqual(dialog._settings_pages.currentIndex(), dialog.page_index("export"))  # noqa: SLF001
 
             dialog._settings_search.setText("不存在的设置项")  # noqa: SLF001
             self.app.processEvents()
@@ -172,7 +173,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             ),
         )
         try:
-            dialog._settings_navigation.setCurrentRow(6)  # noqa: SLF001
+            dialog.select_page("screenshot")  # noqa: SLF001
             screenshot = dialog.screenshot_settings()
             app_settings = dialog.app_settings()
 
@@ -187,7 +188,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
     def test_screenshot_page_editors_ignore_wheel_and_scroll_the_page(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
-            dialog._settings_navigation.setCurrentRow(6)  # noqa: SLF001
+            dialog.select_page("screenshot")  # noqa: SLF001
             dialog.resize(700, 420)
             dialog.show()
             self.app.processEvents()
@@ -286,7 +287,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
         document.scale_overlay_anchor = Point(24, 36)
         dialog = SettingsDialog(AppSettings(), document=document)
         try:
-            dialog._settings_navigation.setCurrentRow(2)  # noqa: SLF001
+            dialog.select_page("annotation")  # noqa: SLF001
             self.assertTrue(dialog._scale_anchor_pick_button.isEnabled())  # noqa: SLF001
             self.assertIn("主画布预览", dialog._scale_anchor_status_label.text())  # noqa: SLF001
         finally:

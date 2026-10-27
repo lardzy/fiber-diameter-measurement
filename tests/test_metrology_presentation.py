@@ -45,7 +45,7 @@ def test_circle_selected_metric_has_matching_physical_dimension_witness(key, sta
     physical_length = math.hypot((end.x - start.x) * 2, end.y - start.y)
     selected = next(m for m in result.metrics if m.key == key)
     assert selected.value == pytest.approx(physical_length)
-    assert ("R " if key == "radius" else "⌀ ") in result_caption(definition, result, 1)
+    assert ("R " if key == "radius" else "⌀ ") in result_caption(definition, result, 1, decimals=2)
     assert shown.metrics == result.metrics
 
 
@@ -64,7 +64,7 @@ def test_signed_distance_components_have_axis_witness_and_projection_line(key, f
     assert shown.anchor_px == anchor
     metric = next(m for m in shown.metrics if m.key == key)
     assert metric.value == (-120 if key == "dx" else -90)
-    assert str(int(metric.value)) in result_caption(definition, result, 2)
+    assert str(int(metric.value)) in result_caption(definition, result, 2, decimals=2)
 
 
 def test_circle_center_metric_is_a_point_marker_not_a_diameter_line():

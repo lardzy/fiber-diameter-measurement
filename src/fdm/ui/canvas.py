@@ -490,6 +490,7 @@ def _canvas_visual_settings_signature(
 
     return (
         _measurement_overlay_settings_signature(settings),
+        settings.professional_measurement_label_decimals,
         str(settings.text_font_family),
         max(8, int(settings.text_font_size)),
         _visual_color_signature(settings.text_color),
@@ -1601,6 +1602,9 @@ class DocumentCanvas(QWidget):
         if canvas_visual_changed:
             self._measurement_display_index = None
             self._measurement_display_index_signature = None
+            professional = getattr(self, "_professional_controller", None)
+            if professional is not None:
+                professional.invalidate_display()
             self.update()
 
     def set_screen_measurement_labels(self, mode: str) -> None:

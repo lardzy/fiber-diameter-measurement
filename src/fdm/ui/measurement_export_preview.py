@@ -42,7 +42,10 @@ def clipped_manual_labels(canvas, frame: QRectF) -> tuple[str, ...]:
             result = presentation_result(document, definition, result)
             anchor = result.anchor_px
             offset = layout.offset_px or Point(65, -38)
-            caption = result_caption(definition, result, index)
+            caption = result_caption(
+                definition, result, index,
+                decimals=canvas._settings.professional_measurement_label_decimals,
+            )
             resolved = resolve_linked_label(
                 canvas.image_to_widget(anchor),
                 canvas.image_to_widget(Point(anchor.x + offset.x, anchor.y + offset.y)),

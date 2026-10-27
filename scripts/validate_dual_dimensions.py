@@ -99,7 +99,7 @@ def main() -> int:
             draw_measurements(painter, doc, mapper, settings, line_width=1.7, endpoint_radius=2.5, use_sprite_cache=False)
             labels = [resolve_measurement_annotation(item, doc, settings, mapper) for item in doc.measurements]
         else:
-            labels = list(draw_professional_measurements(painter, doc, mapper).values())
+            labels = list(draw_professional_measurements(painter, doc, mapper, label_decimals=2).values())
         for index, (label, pair) in enumerate(zip(labels, expected)):
             truth = tuple(mapper(p) for p in pair)
             assert label.source_points == truth, (doc.id, index, label.source_points, truth)

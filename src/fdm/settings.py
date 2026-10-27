@@ -748,6 +748,7 @@ class AppSettings:
     area_measurement_label_style: MeasurementLabelStyleSettings = field(
         default=_MEASUREMENT_LABEL_STYLE_UNSET  # type: ignore[arg-type]
     )
+    professional_measurement_label_decimals: int = 2
     # Deprecated flat aliases are retained for callers constructing AppSettings
     # directly. The typed styles are canonical once construction completes;
     # persistence and rendering never read later mutations of these aliases.
@@ -933,6 +934,11 @@ class AppSettings:
         )
         normalized.area_measurement_label_style = (
             self.area_measurement_label_style.normalized_copy()
+        )
+        normalized.professional_measurement_label_decimals = (
+            self._normalize_professional_measurement_label_decimals(
+                self.professional_measurement_label_decimals
+            )
         )
         normalized._sync_legacy_measurement_label_fields()
         normalized.count_number_font_size = self._normalize_font_size(self.count_number_font_size, minimum=8, maximum=96)
@@ -1334,6 +1340,14 @@ class AppSettings:
         return max(0, min(8, numeric))
 
     @staticmethod
+    def _normalize_professional_measurement_label_decimals(value: object) -> int:
+        if isinstance(value, bool):
+            return 2
+        return MeasurementLabelStyleSettings._bounded_int(
+            value, default=2, minimum=0, maximum=8
+        )
+
+    @staticmethod
     def _normalize_measurement_endpoint_style(value: str | None) -> str:
         token = str(value or "").strip()
         if token in {
@@ -1546,6 +1560,7 @@ class AppSettings:
             "measurement_text_size_space": normalized.measurement_text_size_space,
             "length_measurement_label_style": normalized.length_measurement_label_style.to_dict(),
             "area_measurement_label_style": normalized.area_measurement_label_style.to_dict(),
+            "professional_measurement_label_decimals": normalized.professional_measurement_label_decimals,
             # Keep flat aliases for older application builds. They mirror the
             # length style and are ignored when typed style payloads exist.
             "show_measurement_labels": normalized.show_measurement_labels,
@@ -1730,6 +1745,11 @@ class AppSettings:
         settings.area_measurement_label_style = MeasurementLabelStyleSettings.from_dict(
             payload.get("area_measurement_label_style"),
             fallback=area_fallback,
+        )
+        settings.professional_measurement_label_decimals = (
+            cls._normalize_professional_measurement_label_decimals(
+                payload.get("professional_measurement_label_decimals", 2)
+            )
         )
         settings._sync_legacy_measurement_label_fields()
         settings.measurement_text_size_space = OverlayTextSizeSpace.normalize(

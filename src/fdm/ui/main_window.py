@@ -2874,7 +2874,7 @@ class MainWindow(QMainWindow):
 
         self.screenshot_preferences_action = QAction("截图工具设置...", self)
         self.screenshot_preferences_action.triggered.connect(
-            lambda: self.open_settings_dialog(initial_page=6)
+            lambda: self.open_settings_dialog(initial_page="screenshot")
         )
 
         self.digital_slide_compression_action = QAction("压缩副本...", self)
@@ -21613,7 +21613,7 @@ class MainWindow(QMainWindow):
         if delete:
             label.deleteLater()
 
-    def open_settings_dialog(self, *, initial_page: int = 0) -> None:
+    def open_settings_dialog(self, *, initial_page: int | str = "general") -> None:
         current_document = self.current_document()
         digital_slide_source_path: Path | None = None
         if current_document is not None and current_document.is_digital_slide():
@@ -21636,8 +21636,7 @@ class MainWindow(QMainWindow):
             screenshot_settings=self._screenshot_settings,
             parent=self,
         )
-        requested_page = max(0, min(dialog._settings_pages.count() - 1, int(initial_page)))
-        dialog._settings_navigation.setCurrentRow(requested_page)
+        dialog.select_page(initial_page)
         screenshot_status = self._screenshot_agent_client.status(timeout_ms=180)
         status_error = str(screenshot_status.error or "")
         if self._screenshot_settings_load_error:
@@ -29104,6 +29103,7 @@ class MainWindow(QMainWindow):
             export_canvas = self._canvases.get(document.id)
             draw_professional_measurements(
                 painter, document, image_to_output,
+                label_decimals=self._app_settings.professional_measurement_label_decimals,
                 focus_index=(render_context.focus_index if render_context is not None and render_context.focus_index is not None
                              else export_canvas.focus_index() if isinstance(export_canvas, DigitalSlideCanvas) else None),
             )

@@ -68,6 +68,13 @@ class ProfessionalCanvasController:
         self._drag_layer = None; self._drag_layer_key = None; self._drag_layer_hits = {}
         self.canvas.update()
 
+    def invalidate_display(self):
+        """Discard derived label pixels/hits without touching geometry or drags."""
+        self.label_hits.clear()
+        self._drag_layer = None
+        self._drag_layer_key = None
+        self._drag_layer_hits = {}
+
     def begin(self, key, selections):
         self.cancel(); self.key = key; self.selections = selections; self.start_focus = self.focus()
         self._advance_sources()
@@ -373,7 +380,8 @@ class ProfessionalCanvasController:
             scratch.mark_professional_geometry_changed()
             results = evaluate_document(scratch)
         mode = getattr(self.canvas, "_screen_label_mode", "all")
-        arguments = dict(results=results, focus_index=self.focus(),
+        label_decimals = self.canvas._settings.professional_measurement_label_decimals
+        arguments = dict(results=results, focus_index=self.focus(), label_decimals=label_decimals,
                          selected_id=document.selected_professional_id, hovered_id=self.hovered_id,
                          show_labels=mode != "hidden", selected_labels_only=mode == "selected")
         dpr = self.canvas.devicePixelRatioF()
@@ -383,7 +391,7 @@ class ProfessionalCanvasController:
             origin = self.canvas.image_to_widget(Point(0, 0))
             cache_key = (self._results_key, identity, width, height, dpr, self.canvas._zoom,
                          origin.x(), origin.y(), self.focus(), painter.font().toString(),
-                         document.selected_professional_id, self.hovered_id, mode,
+                         document.selected_professional_id, self.hovered_id, mode, label_decimals,
                          tuple((d.id, d.annotation_layout) for d in document.professional_measurements))
             if self._drag_layer is None or self._drag_layer_key != cache_key:
                 layer = QImage(width, height, QImage.Format.Format_ARGB32_Premultiplied)

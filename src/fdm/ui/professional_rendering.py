@@ -17,7 +17,7 @@ from fdm.ui.measurement_annotation_layout import resolve_dual_dimension, resolve
 from fdm.ui.rendering import draw_measurement_annotation_lines
 
 
-def result_caption(definition, result, index: int) -> str:
+def result_caption(definition, result, index: int, *, decimals: int) -> str:
     prefix = f"P{index} · " if definition.annotation_layout is None or definition.annotation_layout.show_identifier else ""
     if not result.valid:
         return prefix + "无效：" + result.reason
@@ -26,7 +26,11 @@ def result_caption(definition, result, index: int) -> str:
     if metric is None:
         return prefix + "无有效指标"
     symbol = "⌀ " if metric.key == "diameter" else "R " if metric.key == "radius" else ""
-    return f"{prefix}{metric.label} {symbol}{metric.value:.4g} {metric.unit}"
+    number = f"{metric.value:.{decimals}f}"
+    # The sign of a rounded zero is not a meaningful measured direction.
+    if number.startswith("-") and float(number) == 0:
+        number = number[1:]
+    return f"{prefix}{metric.label} {symbol}{number} {metric.unit}"
 
 
 def presentation_result(document, definition, result):
@@ -66,7 +70,7 @@ def dimension_endpoints(result):
 
 
 def draw_professional_measurements(painter: QPainter, document, transform,
-                                  *, results: Mapping | None = None,
+                                  *, label_decimals: int, results: Mapping | None = None,
                                   focus_index=None, layouts=None, selected_id=None,
                                   hovered_id=None, show_labels=True, selected_labels_only=False,
                                   exclude_label_ids=(), only_measurement_id=None, draw_geometry=True):
@@ -122,7 +126,7 @@ def draw_professional_measurements(painter: QPainter, document, transform,
         layout = layouts.get(definition.id) or definition.annotation_layout or MeasurementAnnotationLayout()
         anchor = result.anchor_px
         offset = layout.offset_px or Point(65, -38)
-        text = result_caption(definition, result, index)
+        text = result_caption(definition, result, index, decimals=label_decimals)
         center = transform(Point(anchor.x + offset.x, anchor.y + offset.y))
         ends = dimension_endpoints(result)
         if layout.leader_style == "dual" and ends is not None:
