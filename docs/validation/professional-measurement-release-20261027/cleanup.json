@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-27T07:38:08.4615875Z",
+  "file_count": 11121,
+  "removed": true,
+  "free_after": 164539539456,
+  "free_before": 161310253056,
+  "root": "C:\\tmp\\fdm-professional-measurement-release-20261027",
+  "bytes": 3251993178,
+  "previous_builds_preserved": true,
+  "host_temporary_files_removed": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-measurement-release-20261027/source.zip",
+      "bytes": 87387297,
+      "sha256": "a6cde055c8a33ca255951c09540905253244ac2dc1cda333470a1260b6e5b7ec"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-measurement-release-20261027/transfer/installer.exe",
+      "bytes": 399281021,
+      "sha256": "330c059e82e61c4faa4d413e7820e7a78ce0bdc3f32ef840953658ed747c5d0c"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-measurement-release-20261027/transfer/evidence.zip",
+      "bytes": 11557926,
+      "sha256": "b44563b128453d75c678dc9abd36bce97a833050bc6509871aac50ac2a25e31a"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-measurement-release-20261027/transfer/transfer.json",
+      "bytes": 40898,
+      "sha256": "60f5669c00280805bd029ffe7c0c08770584580ebb241432ae0d349501bd1bf6"
+    }
+  ],
+  "retained_installer": {
+    "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-measurement-20261027/FDM-0.4.13-professional-measurement-ea3a9c2a985b.exe",
+    "sha256": "330c059e82e61c4faa4d413e7820e7a78ce0bdc3f32ef840953658ed747c5d0c",
+    "bytes": 399281021
+  }
+}

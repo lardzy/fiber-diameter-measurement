@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "version": "0.4.13",
+  "project": "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\2a2bcc331b084b3d8a11eab840258618\\professional-smoke.fdmproj",
+  "image": "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\2a2bcc331b084b3d8a11eab840258618\\synthetic-edge.bmp",
+  "image_sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898",
+  "image_size": [
+    1280,
+    800
+  ],
+  "edge_y_px": 399.5,
+  "scope": "Synthetic external-EXE UI smoke; no device or physical precision claim"
+}

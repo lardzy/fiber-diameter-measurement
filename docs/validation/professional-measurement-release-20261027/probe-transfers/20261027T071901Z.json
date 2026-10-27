@@ -1,0 +1,17 @@
+[
+  {
+    "path": "scripts/validation/probe_professional_measurement_frozen.ps1",
+    "bytes": 31080,
+    "sha256": "500d6a04ce9a4475da1fec3245e779a0550980fad66fdd5c51b59c229e0e12fd"
+  },
+  {
+    "path": "scripts/validation/validate_professional_measurement_frozen.py",
+    "bytes": 7541,
+    "sha256": "e7382ee37a374addb9a2055c3f75c45d5b3ee7bbfa4f4b91d87e6c00de8b2235"
+  },
+  {
+    "path": "build/upload_results.py",
+    "bytes": 3039,
+    "sha256": "b9b6b14318d519180c5387ba43e87f4c553e41f46ed84bb935e00da3ff0ef50b"
+  }
+]

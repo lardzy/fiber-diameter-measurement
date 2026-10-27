@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "source.zip",
+      "bytes": 87387297,
+      "sha256": "a6cde055c8a33ca255951c09540905253244ac2dc1cda333470a1260b6e5b7ec"
+    },
+    {
+      "path": "build.cmd",
+      "bytes": 1004,
+      "sha256": "5d9b19e6f6d62cbb65556da1e1d146426e764ee93053c68d990bd63a3b2a313a"
+    },
+    {
+      "path": "run-build.ps1",
+      "bytes": 613,
+      "sha256": "f2d6f2a5f1fd684310e9ebd259697d0827a93d9bf84c821621e47ceab085a7e8"
+    }
+  ],
+  "http_server_stopped": true
+}

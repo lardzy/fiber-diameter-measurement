@@ -1,0 +1,12 @@
+[
+  {
+    "path": "dist/internal/slide-adjustments-20261026/FDM-0.4.12-slide-adjustments-7b6bef153c0f.exe",
+    "bytes": 399126277,
+    "sha256": "ac9e231c358b2662ff47ed33fce15a53e3748999b7fa35fefae3d58cc41acae5"
+  },
+  {
+    "path": "dist/internal/slide-brightness-20261023/FDM-0.4.11-slide-brightness-487f083d0ba1.exe",
+    "bytes": 399050852,
+    "sha256": "2c6f550749f7a21a3f0399086c1c7b1e695dc6ceac2bcd7797a297d1c0544822"
+  }
+]

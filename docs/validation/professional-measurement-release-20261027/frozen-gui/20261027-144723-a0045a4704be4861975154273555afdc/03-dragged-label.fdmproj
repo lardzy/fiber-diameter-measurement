@@ -1,0 +1,97 @@
+{
+  "project_schema_version": 3,
+  "min_reader_version": 3,
+  "required_features": [
+    "professional-measurements/v1",
+    "measurement-dual-dimensions/v1"
+  ],
+  "version": "0.4.13",
+  "documents": [
+    {
+      "id": "professional-frozen-smoke",
+      "path": "synthetic-edge.bmp",
+      "source_type": "filesystem",
+      "document_kind": "image",
+      "image_size": [
+        1280,
+        800
+      ],
+      "calibration": null,
+      "fiber_groups": [],
+      "measurements": [],
+      "overlay_annotations": [],
+      "view_state": {
+        "zoom": 0.7203125,
+        "pan": {
+          "x": 20.0,
+          "y": 39.875
+        },
+        "selected_measurement_id": null
+      },
+      "metadata": {},
+      "active_group_id": null,
+      "selected_overlay_id": null,
+      "scale_overlay_anchor": null,
+      "suppressed_project_group_labels": [],
+      "absolute_path": "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\d1ee9c2ba08341fb8e1e49787154cdaa\\synthetic-edge.bmp",
+      "raster_pixel_type": "rgb8",
+      "professional_features": [
+        {
+          "id": "feature_ce584a0e75f0",
+          "image_id": "professional-frozen-smoke",
+          "kind": "line",
+          "points_px": [
+            {
+              "x": 440.0867678958785,
+              "y": 218.1344902386117
+            },
+            {
+              "x": 706.6377440347071,
+              "y": 218.1344902386117
+            }
+          ],
+          "source_ref": null,
+          "parameters": {
+            "robust": true,
+            "calibration_at_creation": null
+          },
+          "focus_index": null,
+          "source_revision": null,
+          "quality": {}
+        }
+      ],
+      "professional_measurements": [
+        {
+          "id": "professional_4b383bd73736",
+          "image_id": "professional-frozen-smoke",
+          "kind": "distance",
+          "feature_ids": [
+            "feature_ce584a0e75f0"
+          ],
+          "parameters": {
+            "supplement": false
+          },
+          "name": "",
+          "annotation_layout": {
+            "placement_mode": "manual",
+            "offset_px": {
+              "x": 69.41431670281997,
+              "y": 0.6941431670282157
+            },
+            "show_leader": true,
+            "show_identifier": true,
+            "revision": 2,
+            "metric_key": null,
+            "leader_style": "dual"
+          },
+          "focus_index": null,
+          "created_at": "2026-10-27T06:47:28.728813+00:00"
+        }
+      ],
+      "selected_professional_id": "professional_4b383bd73736"
+    }
+  ],
+  "project_default_calibration": null,
+  "project_group_templates": [],
+  "metadata": {}
+}

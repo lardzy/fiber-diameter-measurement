@@ -1,0 +1,929 @@
+{
+  "installer": "FDM-0.4.13-professional-measurement-ea3a9c2a985b.exe",
+  "installer_sha256": "330c059e82e61c4faa4d413e7820e7a78ce0bdc3f32ef840953658ed747c5d0c",
+  "installer_bytes": 399281021,
+  "evidence_sha256": "b44563b128453d75c678dc9abd36bce97a833050bc6509871aac50ac2a25e31a",
+  "evidence_bytes": 11557926,
+  "files": [
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/01-professional-entry.png",
+      "bytes": 287094,
+      "sha256": "181eec269eda6e5469df23152875b6ca91c010c28f2a6d002490f7f59e3704cf"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/02-created-distance.fdmproj",
+      "bytes": 2653,
+      "sha256": "e8d7b1d40308cca469c764c9cdc33f34b5b9ee336a4ce15fd17517112dd5a7b3"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/02-created-distance.png",
+      "bytes": 298253,
+      "sha256": "60492c5ea436b0a5ace63afd90857aa505cefc409a6444357cfc9925df007c11"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/03-dragged-label.fdmproj",
+      "bytes": 2664,
+      "sha256": "d66fd236bcd04d15bf3c89f7873360e8b172c0435bfa5611681905b51ace6def"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/03-dragged-label.png",
+      "bytes": 298344,
+      "sha256": "018e0b8e2f2b7168c753868ed0f0bd716d58ede833872c9f7803723f0775575b"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/04-undo-label.fdmproj",
+      "bytes": 2653,
+      "sha256": "158feac4074d1471b040f991450745cb12fdc856b7941d9557947f383a01eae1"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/99-failure-controls.json",
+      "bytes": 61602,
+      "sha256": "088b9bec3bc3c423c984a6e110485e748bdd9b9d4d92074df1b54e6ef8a4dc09"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/99-failure.center.png",
+      "bytes": 9536,
+      "sha256": "0892dbdc477f27f35b28a8b88a65ed6078d547992873b30b7f18a1b5243e9880"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/99-failure.png",
+      "bytes": 296658,
+      "sha256": "4e7c6f75e84d4fbcc3b20bfd668bd7b63a6aa54e359e5abb1d0a7d18f2182850"
+    },
+    {
+      "path": "frozen-gui/20261027-144211-fa75c90b397e4181a533eec4c50b2d95/result.json",
+      "bytes": 8196,
+      "sha256": "4bcb35a32089e066796a5ebbcdd2ca90edd2094daae1d96fc27b1066007eabc6"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/01-professional-entry.png",
+      "bytes": 287094,
+      "sha256": "181eec269eda6e5469df23152875b6ca91c010c28f2a6d002490f7f59e3704cf"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "1d9bdce99d9f667b951b131fb71f671d07ff2dba6aa6812699b8af1bd0498cf3"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/02-created-distance.png",
+      "bytes": 299183,
+      "sha256": "ef798e7b1c835ca023f76e3c522aaeb5f6139dbaf87a8ce67c337e322c9d6ec3"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "8b56fc38c93b7010e96be3a6bad4d119736615cfff0f4e3abc11cdb2c3cdaae6"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/03-dragged-label.png",
+      "bytes": 299275,
+      "sha256": "012efc0aee36addf4d74a7b7ce77911a52ebfb05e29d227fa407805c554a7b5d"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "bb16850778b42a6663735932a4d01b525f81132f0724d4dfbcdfa6edf9e212ae"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/99-failure-controls.json",
+      "bytes": 68865,
+      "sha256": "83c0d0a79b52bf50e774b32ad66b68368acd272c149ff2fd550b197bdc5ff63b"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/99-failure.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/99-failure.png",
+      "bytes": 300464,
+      "sha256": "e8982f25b22275facc81d764dd8b3d91596f27af44d7af71b7cc575323314af2"
+    },
+    {
+      "path": "frozen-gui/20261027-144723-a0045a4704be4861975154273555afdc/result.json",
+      "bytes": 8515,
+      "sha256": "2780cfa932c9b3c412ea044ee0729880801bce11327f713e330f80f1581d6bed"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/01-professional-entry.png",
+      "bytes": 287094,
+      "sha256": "181eec269eda6e5469df23152875b6ca91c010c28f2a6d002490f7f59e3704cf"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "5eb5bcc710d1b9be46134b2fae224241432363c70dca961d5f63d5a9643e4db7"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/02-created-distance.png",
+      "bytes": 299126,
+      "sha256": "012b440eb917a6fbdc77dc777712196e5348d6455e678d6ded47677a4d0beb63"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "95327dbfd6d435879fe53535a12a049d6662762a7e017f3f4a9a2bee04c66e0b"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/03-dragged-label.png",
+      "bytes": 299218,
+      "sha256": "bd367a6d97d52891df89fc6e785dd987f854105f071601e33f8e2680f6d5f605"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "8726fee06ad20aa01a98dc96b87230afc23536e82a276d197b2dba2e6854f8a9"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/05-caliper-preview.center.png",
+      "bytes": 11192,
+      "sha256": "01962d1275b7aa6b30d26db14def83fa5728c51f94aa11bef7c83f7feebd9c70"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/05-caliper-preview.png",
+      "bytes": 308597,
+      "sha256": "e5dd5e873c583d9f132316f94aec607135b74f51d7790f94237b7fe534fe64e0"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/99-failure-controls.json",
+      "bytes": 70627,
+      "sha256": "80ce62b04c25349a049f0613372106e245bf6d553e536571a8001c3b64d4327e"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/99-failure.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/99-failure.png",
+      "bytes": 306597,
+      "sha256": "9a672c322333bcce2e9e55cac4283dcdfde12c7b8c5034e0dc28b051bc9bbcfc"
+    },
+    {
+      "path": "frozen-gui/20261027-145053-d79aff5245d84ed2ac81f8e0ada276f0/result.json",
+      "bytes": 9212,
+      "sha256": "e333bac2aa5d845a884fab0855df855d1a1c6e7ec19aa341d95bfe8ee9e30255"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/01-professional-entry.png",
+      "bytes": 287094,
+      "sha256": "181eec269eda6e5469df23152875b6ca91c010c28f2a6d002490f7f59e3704cf"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "b7bdc4818c026816103bed0837b134dc5a725340d20c9d33d041b9cb18bb8e10"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/02-created-distance.png",
+      "bytes": 299172,
+      "sha256": "75f2f26877f4edeb172a2a6488561f41e6f81af620c081ceef9ba663b709dd03"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "c98b805d2e0108ddaff49eb5d039d1cc9ec6fe9988ce57d44d2cea3a15e690fb"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/03-dragged-label.png",
+      "bytes": 299263,
+      "sha256": "2cb9d53ccd02ab9472bef1fb4e5241eacb1f56c66c217fa0981136e7dd7bb4e1"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "e3799b4b47a3c0c1baca8b66ec094aaf1821cfa09a020cf264fb57498f5d4d4a"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/99-failure-controls.json",
+      "bytes": 68834,
+      "sha256": "c67c2e7971c3dec76e53a28298bc48a71ea78e95d7a8af06b130a065987f3c05"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/99-failure.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/99-failure.png",
+      "bytes": 299590,
+      "sha256": "fc18f2cc1c7c4b68b3881bdd42c3b3e046486566fb5055a44b21efcf63c63793"
+    },
+    {
+      "path": "frozen-gui/20261027-151545-2bfedec68731478aba04e3ddf81f4003/result.json",
+      "bytes": 8561,
+      "sha256": "d405a093584a54c0237e5b5b98c4cf6117f9a99ccaa46a935c4fc4df5e022007"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/01-professional-entry.png",
+      "bytes": 287094,
+      "sha256": "181eec269eda6e5469df23152875b6ca91c010c28f2a6d002490f7f59e3704cf"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "646453b0d1f7b2c828c70ddf253ea95ed83862d27022f6776a9ee17962eb0519"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/02-created-distance.png",
+      "bytes": 299155,
+      "sha256": "44b4edf1ba98e343ed4f6b022d74a57ce1c5420ba1af9e4242b453fdff7f5d80"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "759ce39abc52f2b0f7fd375e1a2cb77366c2fd796361ba2aef462a5885509bfd"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/03-dragged-label.png",
+      "bytes": 299245,
+      "sha256": "503f8c3283b429c3e5a313a076c6474199e403486c488a4ba87b8cd6689231cd"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "080865f0e18971a1f39fe46c20596afc13e573e5202151f3ea1f4876d330063c"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/99-failure-controls.json",
+      "bytes": 68834,
+      "sha256": "c67c2e7971c3dec76e53a28298bc48a71ea78e95d7a8af06b130a065987f3c05"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/99-failure.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/99-failure.png",
+      "bytes": 299590,
+      "sha256": "fc18f2cc1c7c4b68b3881bdd42c3b3e046486566fb5055a44b21efcf63c63793"
+    },
+    {
+      "path": "frozen-gui/20261027-151729-1e74d41f8ed844ec9c2dd3aa9136ac6e/result.json",
+      "bytes": 9377,
+      "sha256": "92529fdcb533c6900d112e1af1d7b05aa94b52669df537f9267c799e67c22804"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/01-professional-entry.png",
+      "bytes": 283406,
+      "sha256": "adab49212aea81f73cfae646f936b2e3cd5741da179a082d3de8107e487c5415"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "7958373a2f6917589cc6deed0d15afc1739eee1e0e2bb7b7cb2458b4e71fac7b"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/02-created-distance.png",
+      "bytes": 295389,
+      "sha256": "0b305dafd810ce70cbd6c9cebdbb6d426e314b4e5ab117b7ce25a9176993b82c"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "04d6037fde4c52a521a328113d2e0f53480afaecfb4ccf61106dbf8fbd7d2106"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/03-dragged-label.png",
+      "bytes": 295452,
+      "sha256": "522be0eb5549b4cdc39768e0f53496c158e071312188edc8dc5525d25efe6475"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "51fff475883f5b5f5fbae13b6958bcb323fd0744b3f2a48ea0cd3b44bae86aa5"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/05-caliper-preview.center.png",
+      "bytes": 11192,
+      "sha256": "01962d1275b7aa6b30d26db14def83fa5728c51f94aa11bef7c83f7feebd9c70"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/05-caliper-preview.png",
+      "bytes": 304873,
+      "sha256": "53489823f9087f89b812f33893f7696ad6d727543de09749067da6b06161d1b6"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/06-confirmed-caliper.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/06-confirmed-caliper.fdmproj",
+      "bytes": 138434,
+      "sha256": "18dff1eed80158fa62c6ba71b38c7491b27da443075c0e3c7691d6fe5b47de40"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/06-confirmed-caliper.png",
+      "bytes": 306119,
+      "sha256": "ca6f53cae3d326dc6b544186735a91c90354a9cf8cd58b7ea0a00752bda72ca3"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/99-failure-controls.json",
+      "bytes": 85654,
+      "sha256": "60cce0cea90c411a39ab291ae09f19fcefd14ef1d5bece140560657e98261690"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/99-failure.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/99-failure.png",
+      "bytes": 305782,
+      "sha256": "db9d1cb01e2cc2a35499d7914517431ada09948a94ffe6f9e94a541f7b6d6991"
+    },
+    {
+      "path": "frozen-gui/20261027-151904-96aea7916d7a4958be161cf731751061/result.json",
+      "bytes": 10786,
+      "sha256": "e955352d8b91e77559f9ff94cc5ca93cd93ea98b5d2574b4baeef83b38129471"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/01-professional-entry.png",
+      "bytes": 283406,
+      "sha256": "adab49212aea81f73cfae646f936b2e3cd5741da179a082d3de8107e487c5415"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "a74a52b59aaa86f3c71c06d3016425d600558c0a77f40279fc8ca11c29b5c026"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/02-created-distance.png",
+      "bytes": 295326,
+      "sha256": "372f26579663b22e176e81703f398c7ceea1448b856d037311685e5ea4f59699"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "94532ac8b686a62f3556b74064a690b5c40af10ff6184fd187b381ed1a4a9527"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/03-dragged-label.png",
+      "bytes": 295389,
+      "sha256": "18d5fe5c8baad79fdb879323e5223e2e2633ed78764f5f86743af6b87389b473"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "d30ddb9e5c66c47fd48d248c02983ae046833efe0e5cad19ad3f1f3b29a7462c"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/05-caliper-preview.center.png",
+      "bytes": 11192,
+      "sha256": "01962d1275b7aa6b30d26db14def83fa5728c51f94aa11bef7c83f7feebd9c70"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/05-caliper-preview.png",
+      "bytes": 304873,
+      "sha256": "53489823f9087f89b812f33893f7696ad6d727543de09749067da6b06161d1b6"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/06-confirmed-caliper.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/06-confirmed-caliper.fdmproj",
+      "bytes": 138434,
+      "sha256": "df72f0650662a6a0da628d44ad21c1779abc8cf68077899118a40cd604048b4a"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/06-confirmed-caliper.png",
+      "bytes": 306062,
+      "sha256": "c0857585ac43964e41f9e9ae3ede562b3f99be04480c37a13c2fda4f13e6fb3c"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/99-failure-controls.json",
+      "bytes": 70618,
+      "sha256": "ce6e3747176be29df507c9934b801c14403c45fa18a4726ae4ac6c1d71626a23"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/99-failure.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/99-failure.png",
+      "bytes": 302870,
+      "sha256": "0157007fd96db6c13a6aeca73e974ab4652074ffc85c02a5849fd8da49876ab7"
+    },
+    {
+      "path": "frozen-gui/20261027-152117-ac2cce5bf227428eba800ee43f7a8ff6/result.json",
+      "bytes": 10848,
+      "sha256": "70f99dfba1c6ecda5a3ad4b86b31dc0cdb79198c2866bdaad373ab3db8210ce2"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/01-controls.json",
+      "bytes": 57950,
+      "sha256": "e884ecf783f7ed7a36d2e84eaa3f51f1b1679a5b41b1d030525eb27f1e693368"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/01-professional-entry.center.png",
+      "bytes": 8991,
+      "sha256": "1daa6ca222c8ad971bce47720023da5b771969cf1d3b9571074478fedc6ac41b"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/01-professional-entry.png",
+      "bytes": 283406,
+      "sha256": "adab49212aea81f73cfae646f936b2e3cd5741da179a082d3de8107e487c5415"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/02-created-distance.center.png",
+      "bytes": 9318,
+      "sha256": "faa3a48049ac64c4535c820f14c98a90506a07de76c73a32b76a26990b9529e1"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/02-created-distance.fdmproj",
+      "bytes": 2688,
+      "sha256": "12d7747ee41859da26c7474825a7c8a4c6bf35a453b3c145ec2d9a44ecd19ab8"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/02-created-distance.png",
+      "bytes": 295414,
+      "sha256": "e22f391ed355ba59c35d5b7d7d439e184d40bb742ec70749bb6b1d6837a167ec"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/03-dragged-label.center.png",
+      "bytes": 10426,
+      "sha256": "bc38b912b932ed2f7879a547c489d9ea999d27ae3c1d9888fc925a02156a3cb1"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/03-dragged-label.fdmproj",
+      "bytes": 2699,
+      "sha256": "7dbbec725a0bd1c851e2c50c254e99d3d34284f7a4c8bb5a8f0752cb7b93a406"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/03-dragged-label.png",
+      "bytes": 295478,
+      "sha256": "e6b3aa6342926ff348e9893bdc85cbdc3fdd39b7a99b8023c324f723c9eefc29"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/04-undo-label.fdmproj",
+      "bytes": 2688,
+      "sha256": "9aded7b12e65b7195815aafbb14bf3351238edff1464f75264148faa86b64e55"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/05-caliper-preview.center.png",
+      "bytes": 11192,
+      "sha256": "01962d1275b7aa6b30d26db14def83fa5728c51f94aa11bef7c83f7feebd9c70"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/05-caliper-preview.png",
+      "bytes": 304873,
+      "sha256": "53489823f9087f89b812f33893f7696ad6d727543de09749067da6b06161d1b6"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/06-confirmed-caliper.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/06-confirmed-caliper.fdmproj",
+      "bytes": 138434,
+      "sha256": "822799aab1fe9b92a54bcb31913ab44b5e67eb312abf696d3ba9e32ab63b2778"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/06-confirmed-caliper.png",
+      "bytes": 306145,
+      "sha256": "d4c72d1dee0b633a953e91cf0e5b714086e79a2fefddad1c2234db78a1e73f58"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/07-reopened-controls.json",
+      "bytes": 64154,
+      "sha256": "2a7a911dd060ee03337ae1a8c16474c7ded3408f0ab432ee2d464cc8521008ae"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/07-reopened.center.png",
+      "bytes": 11401,
+      "sha256": "ad87a51d04e884549f0acf34bf147e1b45914b620e47c5f5aa8e9e3e4395d089"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/07-reopened.png",
+      "bytes": 306306,
+      "sha256": "a7c5c3ff921b1216d15a242073b7a4be97b69228f5e466fd199a55375adaf518"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/independent-verify.log",
+      "bytes": 7260,
+      "sha256": "c3974754b362fb7db6f501ff78c2cf196a61d418f503fb20bfff5256867fa107"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/professional.csv",
+      "bytes": 56909,
+      "sha256": "6c903e9153cfa7f36f6fd85db136bda3844b438144545446f320ba7c18d23f6d"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/result.json",
+      "bytes": 15939,
+      "sha256": "93931c5fd4341feba592adb34d7c377291229be5b7ee9fa93f6bf206db1480c3"
+    },
+    {
+      "path": "frozen-gui/20261027-152422-0c0f1d14ec1f49009e78757372ad340a/verified.json",
+      "bytes": 3629,
+      "sha256": "0d9c9a4b0201515de57b84e57f97a476dd0b14e103fefa2b96fafc3eec7403ca"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/1a4a74879b813d899de9314d4e5df97eed58af9981fade7f8f9d926c20bbc29e-probe_professional_measurement_frozen.ps1",
+      "bytes": 31873,
+      "sha256": "1a4a74879b813d899de9314d4e5df97eed58af9981fade7f8f9d926c20bbc29e"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/21dbf67c330702e1b8a3516c7e336bf704f9bd16553c7bd3fcde37d13409f169-probe_professional_measurement_frozen.ps1",
+      "bytes": 26944,
+      "sha256": "21dbf67c330702e1b8a3516c7e336bf704f9bd16553c7bd3fcde37d13409f169"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/2a14dbc31d8aeb6d6d3da479aa628c0691f5efd8c8857644ca1cf966458f0d83-probe_professional_measurement_frozen.ps1",
+      "bytes": 29160,
+      "sha256": "2a14dbc31d8aeb6d6d3da479aa628c0691f5efd8c8857644ca1cf966458f0d83"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/3a10e1bed500cee9a36f0eb444cc1f398131503f86e7e0b7cf12466723ea0766-probe_professional_measurement_frozen.ps1",
+      "bytes": 30422,
+      "sha256": "3a10e1bed500cee9a36f0eb444cc1f398131503f86e7e0b7cf12466723ea0766"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/500d6a04ce9a4475da1fec3245e779a0550980fad66fdd5c51b59c229e0e12fd-probe_professional_measurement_frozen.ps1",
+      "bytes": 31080,
+      "sha256": "500d6a04ce9a4475da1fec3245e779a0550980fad66fdd5c51b59c229e0e12fd"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/76835da27a4e9699874e6003b6328a209597c69bafb32f5ff2a9d755a644b6a7-probe_professional_measurement_frozen.ps1",
+      "bytes": 31831,
+      "sha256": "76835da27a4e9699874e6003b6328a209597c69bafb32f5ff2a9d755a644b6a7"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/84831952efff9727cf406efb444ab611cdba955f3c10ec36278f5d8d48db3552-probe_professional_measurement_frozen.ps1",
+      "bytes": 29534,
+      "sha256": "84831952efff9727cf406efb444ab611cdba955f3c10ec36278f5d8d48db3552"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/a8e8f5ba17222e737676df7d5c65b784e840c43275a9f0f0ce1d6684cb334d9c-upload_results.py",
+      "bytes": 2986,
+      "sha256": "a8e8f5ba17222e737676df7d5c65b784e840c43275a9f0f0ce1d6684cb334d9c"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/b9b6b14318d519180c5387ba43e87f4c553e41f46ed84bb935e00da3ff0ef50b-upload_results.py",
+      "bytes": 3039,
+      "sha256": "b9b6b14318d519180c5387ba43e87f4c553e41f46ed84bb935e00da3ff0ef50b"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/d3fa27bef68296ea1fe64b2b51c66fa7cd383cd6408d71e6acd3c4d501f07493-probe_professional_measurement_frozen.ps1",
+      "bytes": 29766,
+      "sha256": "d3fa27bef68296ea1fe64b2b51c66fa7cd383cd6408d71e6acd3c4d501f07493"
+    },
+    {
+      "path": "frozen-gui/probe-revisions/e7382ee37a374addb9a2055c3f75c45d5b3ee7bbfa4f4b91d87e6c00de8b2235-validate_professional_measurement_frozen.py",
+      "bytes": 7541,
+      "sha256": "e7382ee37a374addb9a2055c3f75c45d5b3ee7bbfa4f4b91d87e6c00de8b2235"
+    },
+    {
+      "path": "gui-status.json",
+      "bytes": 271,
+      "sha256": "6d7caf5dc096363c9c3436d4c14af2435b855200e08ee573831725ca047475de"
+    },
+    {
+      "path": "gui.log",
+      "bytes": 15545,
+      "sha256": "0f136f23ba14c815f64ebc744db0a65da2a41a60efb2121435bfb277f73b4fd6"
+    },
+    {
+      "path": "gui.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "package/extracted-selfcheck.json",
+      "bytes": 37981,
+      "sha256": "42c8b12e71a0bc1657802e0e7a51406801fbd5898db4a53a736075e377407e38"
+    },
+    {
+      "path": "package/installer-identity.json",
+      "bytes": 2406,
+      "sha256": "6740a1da10e5a72698558e1c8e4f96d9007c11935b8556f27b1618a2c9ee0f0f"
+    },
+    {
+      "path": "package/release-manifest.json",
+      "bytes": 818690,
+      "sha256": "53d94dd1f477f696b311169b74e21122002cbb36b49f98eb3da496d03189d7bf"
+    },
+    {
+      "path": "package/runs/20261027T064101Z-1d310b07/extract.log",
+      "bytes": 293567,
+      "sha256": "5ed021b7c9739eda4c34bd4b7db67bcbfe4b2013d0f9e8d374682f3a176c97cf"
+    },
+    {
+      "path": "package/runs/20261027T064101Z-1d310b07/extracted-selfcheck.json",
+      "bytes": 37981,
+      "sha256": "42c8b12e71a0bc1657802e0e7a51406801fbd5898db4a53a736075e377407e38"
+    },
+    {
+      "path": "package/runs/20261027T064101Z-1d310b07/extracted-selfcheck.raw.stdout",
+      "bytes": 21874,
+      "sha256": "327454a74da59802fbbd791638feed4ed143f12a1c50f48786fb6bef2785ba8b"
+    },
+    {
+      "path": "package/runs/20261027T064101Z-1d310b07/installer-identity.json",
+      "bytes": 2406,
+      "sha256": "6740a1da10e5a72698558e1c8e4f96d9007c11935b8556f27b1618a2c9ee0f0f"
+    },
+    {
+      "path": "package/runs/20261027T064101Z-1d310b07/selfcheck.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "package/source-manifest.json",
+      "bytes": 173947,
+      "sha256": "35eb58bf4854dc429614c9e587c464e6ff17a42e442d4724b3c541cc2dd16af8"
+    },
+    {
+      "path": "professional-ui-fixture/fixture.json",
+      "bytes": 548,
+      "sha256": "50f07f24ad722288b9ee3477c4da5c2b3f65902ad1122764b3973d149c08d689"
+    },
+    {
+      "path": "professional-ui-fixture/professional-smoke.fdmproj",
+      "bytes": 2653,
+      "sha256": "158feac4074d1471b040f991450745cb12fdc856b7941d9557947f383a01eae1"
+    },
+    {
+      "path": "professional-ui-fixture/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/2a2bcc331b084b3d8a11eab840258618/fixture.json",
+      "bytes": 618,
+      "sha256": "791cbf4bc41a8c9c6e40937fce21733fcd17ef441c0774745b54ab6efb9551f3"
+    },
+    {
+      "path": "professional-ui-fixtures/2a2bcc331b084b3d8a11eab840258618/professional-smoke.fdmproj",
+      "bytes": 138434,
+      "sha256": "18dff1eed80158fa62c6ba71b38c7491b27da443075c0e3c7691d6fe5b47de40"
+    },
+    {
+      "path": "professional-ui-fixtures/2a2bcc331b084b3d8a11eab840258618/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/4da509a6a9c547c3a1d89cc910a05ea3/fixture.json",
+      "bytes": 618,
+      "sha256": "02180f8b7166ff48d2fd7eca464c4a7f273076d31e9bf6483612a4cc9209a7f2"
+    },
+    {
+      "path": "professional-ui-fixtures/4da509a6a9c547c3a1d89cc910a05ea3/professional-smoke.fdmproj",
+      "bytes": 138434,
+      "sha256": "ca90d859e491441adf1929835dc35cffbc2ba9caf2b1cfeb474f01320d81e8ba"
+    },
+    {
+      "path": "professional-ui-fixtures/4da509a6a9c547c3a1d89cc910a05ea3/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/73884d281ca74d179ab244f794fb3ea9/fixture.json",
+      "bytes": 618,
+      "sha256": "225dce4ae7c13bdbb987f0c5c483479974b2c32a7e220f5fe07aa6bdd10a3f86"
+    },
+    {
+      "path": "professional-ui-fixtures/73884d281ca74d179ab244f794fb3ea9/professional-smoke.fdmproj",
+      "bytes": 2688,
+      "sha256": "e3799b4b47a3c0c1baca8b66ec094aaf1821cfa09a020cf264fb57498f5d4d4a"
+    },
+    {
+      "path": "professional-ui-fixtures/73884d281ca74d179ab244f794fb3ea9/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/8e1528b626ab46a3979c7aa51683027d/fixture.json",
+      "bytes": 618,
+      "sha256": "d6ee47a30c02c50d9921fb1b07fd1a19dcca1d0720d5d0acc2ede215378a8b90"
+    },
+    {
+      "path": "professional-ui-fixtures/8e1528b626ab46a3979c7aa51683027d/professional-smoke.fdmproj",
+      "bytes": 138434,
+      "sha256": "df72f0650662a6a0da628d44ad21c1779abc8cf68077899118a40cd604048b4a"
+    },
+    {
+      "path": "professional-ui-fixtures/8e1528b626ab46a3979c7aa51683027d/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/9d4df50ac28846c9ab5090f35b7937c4/fixture.json",
+      "bytes": 618,
+      "sha256": "dc33f3df58f7d3232c9f2b84d9d6386657e6ece2fb91dce306bcc2c7e144b3fa"
+    },
+    {
+      "path": "professional-ui-fixtures/9d4df50ac28846c9ab5090f35b7937c4/professional-smoke.fdmproj",
+      "bytes": 2688,
+      "sha256": "080865f0e18971a1f39fe46c20596afc13e573e5202151f3ea1f4876d330063c"
+    },
+    {
+      "path": "professional-ui-fixtures/9d4df50ac28846c9ab5090f35b7937c4/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/d1ee9c2ba08341fb8e1e49787154cdaa/fixture.json",
+      "bytes": 618,
+      "sha256": "29740ef3919116e525c7c85c6c6a5ba6a1721418eed1d2965bb93829511ec099"
+    },
+    {
+      "path": "professional-ui-fixtures/d1ee9c2ba08341fb8e1e49787154cdaa/professional-smoke.fdmproj",
+      "bytes": 2688,
+      "sha256": "bb16850778b42a6663735932a4d01b525f81132f0724d4dfbcdfa6edf9e212ae"
+    },
+    {
+      "path": "professional-ui-fixtures/d1ee9c2ba08341fb8e1e49787154cdaa/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "professional-ui-fixtures/d9e78a3954c1406da5e6a50b98b0f0f3/fixture.json",
+      "bytes": 618,
+      "sha256": "f911ac1b96a37d2d089fd13577b4f84bd7a4433d531a3188f9c3786dfbeba31c"
+    },
+    {
+      "path": "professional-ui-fixtures/d9e78a3954c1406da5e6a50b98b0f0f3/professional-smoke.fdmproj",
+      "bytes": 138434,
+      "sha256": "822799aab1fe9b92a54bcb31913ab44b5e67eb312abf696d3ba9e32ab63b2778"
+    },
+    {
+      "path": "professional-ui-fixtures/d9e78a3954c1406da5e6a50b98b0f0f3/synthetic-edge.bmp",
+      "bytes": 3072054,
+      "sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898"
+    },
+    {
+      "path": "release-build.log",
+      "bytes": 1233239,
+      "sha256": "1f07afa78d1b20f2de24bd7b6b04293c22aa2e1fe8d71697adfc52969534307b"
+    },
+    {
+      "path": "release-status.json",
+      "bytes": 196,
+      "sha256": "85c946dbc55f7211741ed32f0665975c561b1def4578422acee64d6d0c0014b4"
+    },
+    {
+      "path": "verify-status.json",
+      "bytes": 75,
+      "sha256": "80b03527d518a3923c4ebc6a605c7d0d2e2be8ca3dab64532701c535c0a6226d"
+    },
+    {
+      "path": "verify.log",
+      "bytes": 2324,
+      "sha256": "234b2319224935f73ccb0c6dddb4e2864c6c44287c3da38c2503164163d1adf3"
+    },
+    {
+      "path": "verify.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

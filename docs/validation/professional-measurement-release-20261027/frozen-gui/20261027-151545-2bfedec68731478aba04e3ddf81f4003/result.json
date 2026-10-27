@@ -1,0 +1,160 @@
+{
+    "schema_version":  1,
+    "passed":  false,
+    "started_at":  "2026-10-27T07:15:45.2174171Z",
+    "scope":  "Frozen EXE UIA smoke; synthetic image/project; no hardware, installation or performance acceptance",
+    "executable":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\dist\\windows\\installer-payload-330c059e82e6\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "96DA32B944902E210D2828E12133694F424E516E88C3671C40C2024F9A495FB2",
+    "project":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\73884d281ca74d179ab244f794fb3ea9\\professional-smoke.fdmproj",
+    "image":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\73884d281ca74d179ab244f794fb3ea9\\synthetic-edge.bmp",
+    "source_sha256_before":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_sha256_after":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\frozen-gui\\20261027-151545-2bfedec68731478aba04e3ddf81f4003",
+    "session_id":  1,
+    "process_id":  1960,
+    "controls":  [
+                     {
+                         "phase":  "canvas",
+                         "name":  "",
+                         "process_id":  1960,
+                         "class":  "DocumentCanvas",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_stackedwidget.DocumentCanvas",
+                         "control_type":  "ControlType.Group",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "01-professional-entry",
+                          "file":  "01-professional-entry.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "181EEC269EDA6E5469DF23152875B6CA91C010C28F2A6D002490F7F59E3704CF",
+                          "center_sha256":  "1DAA6CA222C8AD971BCE47720023DA5B771969CF1D3B9571074478FEDC6AC41B",
+                          "center_mean":  98.891100055279153,
+                          "center_colors":  78,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "02-created-distance",
+                          "file":  "02-created-distance.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "75F2F26877F4EDEB172A2A6488561F41E6F81AF620C081CEEF9BA663B709DD03",
+                          "center_sha256":  "FAA3A48049AC64C4535C820F14C98A90506A07DE76C73A32B76A26990B9529E1",
+                          "center_mean":  99.227197346600335,
+                          "center_colors":  108,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "03-dragged-label",
+                          "file":  "03-dragged-label.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "2CB9D53CCD02AB9472BEF1FB4E5241EACB1F56C66C217FA0981136E7DD7BB4E1",
+                          "center_sha256":  "BC38B912B932ED2F7879A547C489D9EA999D27AE3C1D9888FC925A02156A3CB1",
+                          "center_mean":  101.08070757324489,
+                          "center_colors":  148,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "99-failure",
+                          "file":  "99-failure.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "FC18F2CC1C7C4B68B3881BDD42C3B3E046486566FB5055A44B21EFCF63C63793",
+                          "center_sha256":  "FAA3A48049AC64C4535C820F14C98A90506A07DE76C73A32B76A26990B9529E1",
+                          "center_mean":  99.227197346600335,
+                          "center_colors":  108,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+
+                         ],
+    "errors":  [
+                   "使用“2”个参数调用“FindAll”时发生异常:“无法识别的错误。”"
+               ],
+    "graceful_exit":  true,
+    "exit_code":  0,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "steps":  [
+                  {
+                      "action":  "select-professional-tool",
+                      "before":  "两点距离 / X、Y 分量",
+                      "after":  "直线卡尺：带状找边",
+                      "popup_closed":  true
+                  }
+              ],
+    "project_snapshots":  [
+                              {
+                                  "phase":  "02-created-distance",
+                                  "file":  "02-created-distance.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "B7BDC4818C026816103BED0837B134DC5A725340D20C9D33D041B9CB18BB8E10"
+                              },
+                              {
+                                  "phase":  "03-dragged-label",
+                                  "file":  "03-dragged-label.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "C98B805D2E0108DDAFF49EB5D039D1CC9EC6FE9988CE57D44D2CEA3A15E690FB"
+                              },
+                              {
+                                  "phase":  "04-undo-label",
+                                  "file":  "04-undo-label.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "E3799B4B47A3C0C1BACA8B66EC094AAF1821CFA09A020CF264FB57498F5D4D4A"
+                              }
+                          ],
+    "process_ids":  [
+                        1960
+                    ],
+    "exits":  [
+                  {
+                      "code":  0,
+                      "pid":  1960
+                  }
+              ],
+    "tables":  [
+                   {
+                       "phase":  "distance",
+                       "names":  [
+                                     "当前对象",
+                                     "未选中对象",
+                                     "点击画布中的测量对象\n或在测量记录中选择",
+                                     "N / 均值 / SD / CV",
+                                     "未标定",
+                                     "0 条",
+                                     "",
+                                     "v0.4.13",
+                                     "新测量归类",
+                                     "1 张图片 · 无缺失 · 已保存",
+                                     "颜色",
+                                     "类别",
+                                     "本图 / 全部",
+                                     "像素尺寸: 1280 x 800 px",
+                                     "未标定：长度 px，面积 px²；角度基于像素平面。",
+                                     "来源 1",
+                                     "已保存专业测量。",
+                                     "P1",
+                                     "距离",
+                                     "266.55098",
+                                     "px",
+                                     "P1",
+                                     "水平分量",
+                                     "266.55098",
+                                     "px",
+                                     "P1",
+                                     "垂直分量",
+                                     "0",
+                                     "px"
+                                 ]
+                   }
+               ],
+    "finished_at":  "2026-10-27T07:15:55.4300228Z"
+}

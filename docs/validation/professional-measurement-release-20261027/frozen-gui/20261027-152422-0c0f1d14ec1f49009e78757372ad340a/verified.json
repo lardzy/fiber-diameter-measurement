@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "probe_result": "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\frozen-gui\\20261027-152422-0c0f1d14ec1f49009e78757372ad340a\\result.json",
+  "probe_sha256": "93931c5fd4341feba592adb34d7c377291229be5b7ee9fa93f6bf206db1480c3",
+  "checks": [
+    {
+      "name": "external_probe_completed",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "raw_source_unchanged",
+      "passed": true
+    },
+    {
+      "name": "two_independent_exe_runs",
+      "passed": true
+    },
+    {
+      "name": "owned_project_snapshot",
+      "passed": true
+    },
+    {
+      "name": "saved_project_hash:02-created-distance",
+      "passed": true
+    },
+    {
+      "name": "saved_count:02-created-distance",
+      "passed": true
+    },
+    {
+      "name": "owned_project_snapshot",
+      "passed": true
+    },
+    {
+      "name": "saved_project_hash:03-dragged-label",
+      "passed": true
+    },
+    {
+      "name": "saved_count:03-dragged-label",
+      "passed": true
+    },
+    {
+      "name": "owned_project_snapshot",
+      "passed": true
+    },
+    {
+      "name": "saved_project_hash:04-undo-label",
+      "passed": true
+    },
+    {
+      "name": "saved_count:04-undo-label",
+      "passed": true
+    },
+    {
+      "name": "owned_project_snapshot",
+      "passed": true
+    },
+    {
+      "name": "saved_project_hash:06-confirmed-caliper",
+      "passed": true
+    },
+    {
+      "name": "saved_count:06-confirmed-caliper",
+      "passed": true
+    },
+    {
+      "name": "manual_distance_has_two_distinct_points",
+      "passed": true
+    },
+    {
+      "name": "manual_distance_defaults_dual",
+      "passed": true
+    },
+    {
+      "name": "required_dual_feature",
+      "passed": true
+    },
+    {
+      "name": "saved_distance_matches_points",
+      "passed": true
+    },
+    {
+      "name": "label_drag_changed_layout",
+      "passed": true
+    },
+    {
+      "name": "label_drag_preserved_source_geometry",
+      "passed": true
+    },
+    {
+      "name": "label_drag_preserved_value",
+      "passed": true
+    },
+    {
+      "name": "undo_restored_layout",
+      "passed": true
+    },
+    {
+      "name": "undo_preserved_source_geometry",
+      "passed": true
+    },
+    {
+      "name": "cancelled_preview_did_not_add_result",
+      "passed": true
+    },
+    {
+      "name": "confirmed_caliper_retains_evidence",
+      "passed": true
+    },
+    {
+      "name": "caliper_matches_synthetic_edge",
+      "passed": true,
+      "mean_y": 399.5000006563357
+    },
+    {
+      "name": "csv_hash",
+      "passed": true
+    },
+    {
+      "name": "independent_metric_csv",
+      "passed": true,
+      "rows": 4
+    },
+    {
+      "name": "reopen_visible_results",
+      "passed": true
+    },
+    {
+      "name": "screenshot_hash:01-professional-entry",
+      "passed": true
+    },
+    {
+      "name": "screenshot_hash:02-created-distance",
+      "passed": true
+    },
+    {
+      "name": "screenshot_hash:03-dragged-label",
+      "passed": true
+    },
+    {
+      "name": "screenshot_hash:05-caliper-preview",
+      "passed": true
+    },
+    {
+      "name": "screenshot_hash:06-confirmed-caliper",
+      "passed": true
+    },
+    {
+      "name": "screenshot_hash:07-reopened",
+      "passed": true
+    }
+  ],
+  "scope": "Actual frozen EXE UIA input and persisted project/CSV verification; source evaluator independently checks saved geometry; no installation, full regression or real sample accuracy claim"
+}

@@ -1,0 +1,1450 @@
+[
+    {
+        "name":  "显微测量工作台",
+        "class":  "MainWindow",
+        "type":  "ControlType.Window",
+        "id":  "QApplication.MainWindow",
+        "enabled":  true,
+        "bounds":  "23,68,1574,929"
+    },
+    {
+        "name":  "当前对象与测量",
+        "class":  "WorkspaceDockWidget",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.measurementInspectorDock",
+        "enabled":  true,
+        "bounds":  "-797,-1133,320,701"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget",
+        "enabled":  true,
+        "bounds":  "-797,-1117,320,685"
+    },
+    {
+        "name":  "",
+        "class":  "QScrollArea",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll",
+        "enabled":  true,
+        "bounds":  "-789,-1109,304,669"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport",
+        "enabled":  true,
+        "bounds":  "-789,-1109,304,669"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent",
+        "enabled":  true,
+        "bounds":  "-789,-1109,304,669"
+    },
+    {
+        "name":  "",
+        "class":  "CurrentMeasurementSummary",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.currentMeasurementSummary",
+        "enabled":  true,
+        "bounds":  "-789,-1109,304,117"
+    },
+    {
+        "name":  "当前对象",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.currentMeasurementSummary.QLabel",
+        "enabled":  true,
+        "bounds":  "-779,-1101,48,36"
+    },
+    {
+        "name":  "属性",
+        "class":  "QPushButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.currentMeasurementSummary.currentObjectProperties",
+        "enabled":  true,
+        "bounds":  "-541,-1101,46,36"
+    },
+    {
+        "name":  "未选中对象",
+        "class":  "FixedLineLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.currentMeasurementSummary.currentMeasurementValue",
+        "enabled":  true,
+        "bounds":  "-779,-1061,284,25"
+    },
+    {
+        "name":  "点击画布中的测量对象\n或在测量记录中选择",
+        "class":  "FixedLineLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.currentMeasurementSummary.FixedLineLabel",
+        "enabled":  true,
+        "bounds":  "-779,-1032,284,32"
+    },
+    {
+        "name":  "当前对象类别",
+        "class":  "NoWheelComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.currentMeasurementSummary.NoWheelComboBox",
+        "enabled":  false,
+        "bounds":  "-727,-1099,182,32"
+    },
+    {
+        "name":  "",
+        "class":  "CollapsibleSection",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection",
+        "enabled":  true,
+        "bounds":  "-789,-937,304,43"
+    },
+    {
+        "name":  "实时统计",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QToolButton",
+        "enabled":  true,
+        "bounds":  "-781,-931,87,28"
+    },
+    {
+        "name":  "N / 均值 / SD / CV",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.collapsibleSectionSummary",
+        "enabled":  true,
+        "bounds":  "-688,-925,195,15"
+    },
+    {
+        "name":  "",
+        "class":  "CollapsibleSection",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection",
+        "enabled":  true,
+        "bounds":  "-789,-986,304,43"
+    },
+    {
+        "name":  "标定",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QToolButton",
+        "enabled":  true,
+        "bounds":  "-781,-980,63,28"
+    },
+    {
+        "name":  "未标定",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.collapsibleSectionSummary",
+        "enabled":  true,
+        "bounds":  "-712,-974,219,15"
+    },
+    {
+        "name":  "",
+        "class":  "CollapsibleSection",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection",
+        "enabled":  true,
+        "bounds":  "-789,-888,304,329"
+    },
+    {
+        "name":  "测量记录",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QToolButton",
+        "enabled":  true,
+        "bounds":  "-781,-882,87,28"
+    },
+    {
+        "name":  "0 条",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.collapsibleSectionSummary",
+        "enabled":  true,
+        "bounds":  "-534,-879,41,21"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget",
+        "enabled":  true,
+        "bounds":  "-781,-848,288,260"
+    },
+    {
+        "name":  "",
+        "class":  "MeasurementRecordsPane",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane",
+        "enabled":  true,
+        "bounds":  "-781,-848,288,260"
+    },
+    {
+        "name":  "",
+        "class":  "QLineEdit",
+        "type":  "ControlType.Edit",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QLineEdit",
+        "enabled":  true,
+        "bounds":  "-781,-848,288,32"
+    },
+    {
+        "name":  "",
+        "class":  "NoWheelComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.NoWheelComboBox",
+        "enabled":  true,
+        "bounds":  "-781,-810,92,32"
+    },
+    {
+        "name":  "",
+        "class":  "NoWheelComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.NoWheelComboBox",
+        "enabled":  true,
+        "bounds":  "-683,-810,92,32"
+    },
+    {
+        "name":  "",
+        "class":  "NoWheelComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.NoWheelComboBox",
+        "enabled":  true,
+        "bounds":  "-585,-810,92,32"
+    },
+    {
+        "name":  "",
+        "class":  "QTableView",
+        "type":  "ControlType.Table",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-781,-772,288,142"
+    },
+    {
+        "name":  "",
+        "class":  "",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "纤维结果序号",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-780,-771,44,30"
+    },
+    {
+        "name":  "纤维类别结果序号",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "纤维类别",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-736,-771,184,30"
+    },
+    {
+        "name":  "类型",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-552,-771,36,30"
+    },
+    {
+        "name":  "结果",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-516,-771,64,30"
+    },
+    {
+        "name":  "单位",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-452,-771,36,30"
+    },
+    {
+        "name":  "孔洞面积",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "模式",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "置信度",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "状态",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "-416,-771,48,30"
+    },
+    {
+        "name":  "创建时间",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "ID",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QTableView",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QWidget",
+        "enabled":  true,
+        "bounds":  "-781,-624,288,36"
+    },
+    {
+        "name":  "删除选中",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QWidget.QPushButton",
+        "enabled":  true,
+        "bounds":  "-781,-624,90,36"
+    },
+    {
+        "name":  "删除类别",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QWidget.QPushButton",
+        "enabled":  true,
+        "bounds":  "-685,-624,90,36"
+    },
+    {
+        "name":  "删除全部",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QWidget.MeasurementRecordsPane.QWidget.QPushButton",
+        "enabled":  true,
+        "bounds":  "-589,-624,90,36"
+    },
+    {
+        "name":  "调整测量记录高度",
+        "class":  "_SectionResizeHandle",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.sectionResizeHandle",
+        "enabled":  true,
+        "bounds":  "-781,-582,288,14"
+    },
+    {
+        "name":  "",
+        "class":  "CollapsibleSection",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection",
+        "enabled":  true,
+        "bounds":  "-789,-553,304,43"
+    },
+    {
+        "name":  "面积识别",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.QToolButton",
+        "enabled":  true,
+        "bounds":  "-781,-547,87,28"
+    },
+    {
+        "name":  "",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.QWidget.measurementInspectorScroll.qt_scrollarea_viewport.measurementInspectorContent.collapsibleSection.collapsibleSectionSummary",
+        "enabled":  true,
+        "bounds":  "-688,-541,195,15"
+    },
+    {
+        "name":  "Close",
+        "class":  "QDockWidgetTitleButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementInspectorDock.qt_dockwidget_closebutton",
+        "enabled":  true,
+        "bounds":  "-496,-1133,18,14"
+    },
+    {
+        "name":  "当前工具: 专业测量",
+        "class":  "QStatusBar",
+        "type":  "ControlType.StatusBar",
+        "id":  "QApplication.MainWindow.QStatusBar",
+        "enabled":  true,
+        "bounds":  "23,958,1574,39"
+    },
+    {
+        "name":  "",
+        "class":  "QSizeGrip",
+        "type":  "ControlType.Thumb",
+        "id":  "QApplication.MainWindow.QStatusBar.QSizeGrip",
+        "enabled":  true,
+        "bounds":  "1580,980,17,17"
+    },
+    {
+        "name":  "比例尺，点击编辑，展开菜单显示或隐藏",
+        "class":  "ScaleOverlayStatusButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QStatusBar.scaleOverlayStatusButton",
+        "enabled":  true,
+        "bounds":  "1156,961,111,34"
+    },
+    {
+        "name":  "对象捕捉，可展开选择捕捉类型",
+        "class":  "ObjectSnapStatusButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QStatusBar.objectSnapStatusButton",
+        "enabled":  true,
+        "bounds":  "1273,961,123,34"
+    },
+    {
+        "name":  "适合窗口 · 72%",
+        "class":  "ViewZoomStatusButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QStatusBar.viewZoomStatusButton",
+        "enabled":  true,
+        "bounds":  "1402,961,111,34"
+    },
+    {
+        "name":  "v0.4.13",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.QStatusBar.QLabel",
+        "enabled":  true,
+        "bounds":  "1519,961,54,34"
+    },
+    {
+        "name":  "",
+        "class":  "QMenuBar",
+        "type":  "ControlType.MenuBar",
+        "id":  "QApplication.MainWindow.QMenuBar",
+        "enabled":  true,
+        "bounds":  "23,68,1574,20"
+    },
+    {
+        "name":  "文件",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "29,68,32,20"
+    },
+    {
+        "name":  "编辑",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "67,68,32,20"
+    },
+    {
+        "name":  "图像",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "105,68,32,20"
+    },
+    {
+        "name":  "处理",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "143,68,32,20"
+    },
+    {
+        "name":  "分析",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "181,68,32,20"
+    },
+    {
+        "name":  "工具",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "219,68,32,20"
+    },
+    {
+        "name":  "视图",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "257,68,32,20"
+    },
+    {
+        "name":  "帮助",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "295,68,32,20"
+    },
+    {
+        "name":  "试验",
+        "class":  "QAction",
+        "type":  "ControlType.MenuItem",
+        "id":  "QApplication.MainWindow.QMenuBar.QAction",
+        "enabled":  true,
+        "bounds":  "333,68,32,20"
+    },
+    {
+        "name":  "主命令栏",
+        "class":  "QToolBar",
+        "type":  "ControlType.ToolBar",
+        "id":  "QApplication.MainWindow.mainCommandBar",
+        "enabled":  true,
+        "bounds":  "23,88,1574,37"
+    },
+    {
+        "name":  "测量分析",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  true,
+        "bounds":  "23,88,89,37"
+    },
+    {
+        "name":  "采集与试验",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  true,
+        "bounds":  "116,88,103,37"
+    },
+    {
+        "name":  "数字切片",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  true,
+        "bounds":  "223,88,91,37"
+    },
+    {
+        "name":  "",
+        "class":  "QToolBarSeparator",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolBarSeparator",
+        "enabled":  true,
+        "bounds":  "318,88,6,37"
+    },
+    {
+        "name":  "打开",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.openCommandButton",
+        "enabled":  true,
+        "bounds":  "328,88,67,37"
+    },
+    {
+        "name":  "保存",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  true,
+        "bounds":  "399,88,67,37"
+    },
+    {
+        "name":  "未保存",
+        "class":  "ProjectSaveIndicator",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.projectSaveIndicator",
+        "enabled":  true,
+        "bounds":  "470,89,188,34"
+    },
+    {
+        "name":  "导出",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  true,
+        "bounds":  "662,88,67,37"
+    },
+    {
+        "name":  "撤销",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  false,
+        "bounds":  "733,88,67,37"
+    },
+    {
+        "name":  "重做",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  false,
+        "bounds":  "804,88,67,37"
+    },
+    {
+        "name":  "抓拍",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  false,
+        "bounds":  "875,88,67,37"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.mainCommandBar.QWidget",
+        "enabled":  true,
+        "bounds":  "946,88,359,37"
+    },
+    {
+        "name":  "面板",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.panelCommandButton",
+        "enabled":  true,
+        "bounds":  "1309,88,67,37"
+    },
+    {
+        "name":  "设置",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+        "enabled":  true,
+        "bounds":  "1380,88,67,37"
+    },
+    {
+        "name":  "查找",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+        "enabled":  true,
+        "bounds":  "1451,88,67,37"
+    },
+    {
+        "name":  "更多",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.mainCommandBar.moreCommandButton",
+        "enabled":  true,
+        "bounds":  "1522,88,67,37"
+    },
+    {
+        "name":  "测量工具栏",
+        "class":  "QToolBar",
+        "type":  "ControlType.ToolBar",
+        "id":  "QApplication.MainWindow.measurementCommandBar",
+        "enabled":  true,
+        "bounds":  "23,125,1574,54"
+    },
+    {
+        "name":  "",
+        "class":  "MeasurementToolStrip",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip",
+        "enabled":  true,
+        "bounds":  "29,131,1562,42"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget",
+        "enabled":  true,
+        "bounds":  "35,133,1550,38"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow",
+        "enabled":  true,
+        "bounds":  "35,133,982,38"
+    },
+    {
+        "name":  "浏览",
+        "class":  "ToolStripActionButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+        "enabled":  true,
+        "bounds":  "35,134,86,36"
+    },
+    {
+        "name":  "手动线段工具，可展开选择其他工具",
+        "class":  "OverlayToolSplitButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.OverlayToolSplitButton",
+        "enabled":  true,
+        "bounds":  "127,134,116,36"
+    },
+    {
+        "name":  "多边形面积工具，可展开选择其他工具",
+        "class":  "OverlayToolSplitButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.OverlayToolSplitButton",
+        "enabled":  true,
+        "bounds":  "249,134,128,36"
+    },
+    {
+        "name":  "计数",
+        "class":  "ToolStripActionButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+        "enabled":  true,
+        "bounds":  "383,134,86,36"
+    },
+    {
+        "name":  "标准魔棒工具，可展开选择其他工具",
+        "class":  "OverlayToolSplitButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.OverlayToolSplitButton",
+        "enabled":  true,
+        "bounds":  "475,134,116,36"
+    },
+    {
+        "name":  "标定",
+        "class":  "ToolStripActionButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+        "enabled":  true,
+        "bounds":  "597,134,86,36"
+    },
+    {
+        "name":  "自由点工具，可展开选择其他工具",
+        "class":  "OverlayToolSplitButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.OverlayToolSplitButton",
+        "enabled":  true,
+        "bounds":  "689,134,108,36"
+    },
+    {
+        "name":  "专业测量",
+        "class":  "ToolStripActionButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+        "enabled":  true,
+        "bounds":  "803,134,100,36"
+    },
+    {
+        "name":  "文字工具，可展开选择其他工具",
+        "class":  "OverlayToolSplitButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.OverlayToolSplitButton",
+        "enabled":  true,
+        "bounds":  "909,134,108,36"
+    },
+    {
+        "name":  "图片与测量状态",
+        "class":  "QToolBar",
+        "type":  "ControlType.ToolBar",
+        "id":  "QApplication.MainWindow.measurementContextToolbar",
+        "enabled":  true,
+        "bounds":  "23,179,1574,43"
+    },
+    {
+        "name":  "",
+        "class":  "MeasurementContextBar",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar",
+        "enabled":  true,
+        "bounds":  "23,179,1566,43"
+    },
+    {
+        "name":  "",
+        "class":  "QFrame",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.imageNavigationGroup",
+        "enabled":  true,
+        "bounds":  "31,180,1159,41"
+    },
+    {
+        "name":  "上一张",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.imageNavigationGroup.QToolButton",
+        "enabled":  false,
+        "bounds":  "35,181,65,39"
+    },
+    {
+        "name":  "切换图片",
+        "class":  "NoWheelComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.imageNavigationGroup.quickDocumentSelector",
+        "enabled":  true,
+        "bounds":  "102,185,1017,30"
+    },
+    {
+        "name":  "下一张",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.imageNavigationGroup.QToolButton",
+        "enabled":  false,
+        "bounds":  "1121,181,65,39"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.QWidget",
+        "enabled":  true,
+        "bounds":  "1196,180,189,41"
+    },
+    {
+        "name":  "",
+        "class":  "QFrame",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.QWidget.measurementCategoryGroup",
+        "enabled":  true,
+        "bounds":  "1196,180,189,41"
+    },
+    {
+        "name":  "新测量归类",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.QWidget.measurementCategoryGroup.measurementCategoryLabel",
+        "enabled":  true,
+        "bounds":  "1207,181,60,39"
+    },
+    {
+        "name":  "新测量归类",
+        "class":  "NoWheelComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.QWidget.measurementCategoryGroup.quickMeasurementGroup",
+        "enabled":  true,
+        "bounds":  "1273,185,108,30"
+    },
+    {
+        "name":  "⚠ 未标定 · 结果为 px / px²",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.measurementContextToolbar.measurementContextBar.persistentCalibrationButton",
+        "enabled":  true,
+        "bounds":  "1391,180,190,41"
+    },
+    {
+        "name":  "项目与类别",
+        "class":  "WorkspaceDockWidget",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.projectNavigatorDock",
+        "enabled":  true,
+        "bounds":  "23,222,260,736"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget",
+        "enabled":  true,
+        "bounds":  "23,238,260,720"
+    },
+    {
+        "name":  "",
+        "class":  "QScrollArea",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll",
+        "enabled":  true,
+        "bounds":  "23,238,260,720"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport",
+        "enabled":  true,
+        "bounds":  "23,238,260,720"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget",
+        "enabled":  true,
+        "bounds":  "23,238,260,720"
+    },
+    {
+        "name":  "1 张图片 · 无缺失 · 有未保存更改",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectSummaryLabel",
+        "enabled":  true,
+        "bounds":  "31,246,244,15"
+    },
+    {
+        "name":  "",
+        "class":  "QTabWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs",
+        "enabled":  true,
+        "bounds":  "31,269,244,681"
+    },
+    {
+        "name":  "",
+        "class":  "QStackedWidget",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget",
+        "enabled":  true,
+        "bounds":  "31,304,244,646"
+    },
+    {
+        "name":  "",
+        "class":  "QSplitter",
+        "type":  "ControlType.Custom",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter",
+        "enabled":  true,
+        "bounds":  "31,304,244,646"
+    },
+    {
+        "name":  "纤维类别",
+        "class":  "QGroupBox",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories",
+        "enabled":  true,
+        "bounds":  "31,604,244,346"
+    },
+    {
+        "name":  "颜色",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QLabel",
+        "enabled":  true,
+        "bounds":  "49,631,28,15"
+    },
+    {
+        "name":  "类别",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QLabel",
+        "enabled":  true,
+        "bounds":  "83,631,100,15"
+    },
+    {
+        "name":  "本图 / 全部",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QLabel",
+        "enabled":  true,
+        "bounds":  "183,631,76,15"
+    },
+    {
+        "name":  "",
+        "class":  "FiberGroupListWidget",
+        "type":  "ControlType.List",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.FiberGroupListWidget",
+        "enabled":  true,
+        "bounds":  "35,652,236,208"
+    },
+    {
+        "name":  "",
+        "class":  "",
+        "type":  "ControlType.ListItem",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.FiberGroupListWidget",
+        "enabled":  true,
+        "bounds":  "40,657,226,38"
+    },
+    {
+        "name":  "纤维类别",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QWidget",
+        "enabled":  true,
+        "bounds":  "35,866,236,80"
+    },
+    {
+        "name":  "新增类别",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QWidget.QPushButton",
+        "enabled":  true,
+        "bounds":  "35,866,104,36"
+    },
+    {
+        "name":  "编辑",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QWidget.QPushButton",
+        "enabled":  true,
+        "bounds":  "147,866,92,36"
+    },
+    {
+        "name":  "删除",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectCategories.QWidget.QPushButton",
+        "enabled":  true,
+        "bounds":  "35,910,80,36"
+    },
+    {
+        "name":  "已打开图片",
+        "class":  "QGroupBox",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectImages",
+        "enabled":  true,
+        "bounds":  "31,304,244,296"
+    },
+    {
+        "name":  "",
+        "class":  "QListWidget",
+        "type":  "ControlType.List",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectImages.QListWidget",
+        "enabled":  true,
+        "bounds":  "35,331,236,265"
+    },
+    {
+        "name":  "synthetic-edge.bmp",
+        "class":  "",
+        "type":  "ControlType.ListItem",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.projectImages.QListWidget",
+        "enabled":  true,
+        "bounds":  "36,332,234,15"
+    },
+    {
+        "name":  "",
+        "class":  "QSplitterHandle",
+        "type":  "ControlType.Thumb",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_stackedwidget.QSplitter.qt_splithandle_projectCategories",
+        "enabled":  true,
+        "bounds":  "31,600,244,4"
+    },
+    {
+        "name":  "图片与类别",
+        "class":  "QTabBar",
+        "type":  "ControlType.Tab",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_tabbar",
+        "enabled":  true,
+        "bounds":  "31,269,159,35"
+    },
+    {
+        "name":  "图片与类别",
+        "class":  "",
+        "type":  "ControlType.TabItem",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_tabbar",
+        "enabled":  true,
+        "bounds":  "31,269,80,35"
+    },
+    {
+        "name":  "ROI / 辅助",
+        "class":  "",
+        "type":  "ControlType.TabItem",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.QWidget.projectNavigatorScroll.qt_scrollarea_viewport.QWidget.projectNavigationTabs.qt_tabwidget_tabbar",
+        "enabled":  true,
+        "bounds":  "111,269,79,35"
+    },
+    {
+        "name":  "Close",
+        "class":  "QDockWidgetTitleButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.projectNavigatorDock.qt_dockwidget_closebutton",
+        "enabled":  true,
+        "bounds":  "264,222,18,14"
+    },
+    {
+        "name":  "专业测量",
+        "class":  "QMainWindowTabBar",
+        "type":  "ControlType.Tab",
+        "id":  "QApplication.MainWindow.QMainWindowTabBar",
+        "enabled":  true,
+        "bounds":  "1277,923,320,35"
+    },
+    {
+        "name":  "当前对象与测量",
+        "class":  "",
+        "type":  "ControlType.TabItem",
+        "id":  "QApplication.MainWindow.QMainWindowTabBar",
+        "enabled":  true,
+        "bounds":  "1277,923,104,35"
+    },
+    {
+        "name":  "专业测量",
+        "class":  "",
+        "type":  "ControlType.TabItem",
+        "id":  "QApplication.MainWindow.QMainWindowTabBar",
+        "enabled":  true,
+        "bounds":  "1381,923,68,35"
+    },
+    {
+        "name":  "专业测量",
+        "class":  "QDockWidget",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock",
+        "enabled":  true,
+        "bounds":  "1277,222,320,701"
+    },
+    {
+        "name":  "",
+        "class":  "QScrollArea",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea",
+        "enabled":  true,
+        "bounds":  "1277,238,320,685"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport",
+        "enabled":  true,
+        "bounds":  "1278,239,318,683"
+    },
+    {
+        "name":  "",
+        "class":  "ProfessionalPanel",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel",
+        "enabled":  true,
+        "bounds":  "1278,239,318,683"
+    },
+    {
+        "name":  "",
+        "class":  "QComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QComboBox",
+        "enabled":  true,
+        "bounds":  "1286,247,302,32"
+    },
+    {
+        "name":  "未标定：长度 px，面积 px²；角度基于像素平面。",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QLabel",
+        "enabled":  true,
+        "bounds":  "1286,285,302,15"
+    },
+    {
+        "name":  "来源 1",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QLabel",
+        "enabled":  true,
+        "bounds":  "1286,306,35,26"
+    },
+    {
+        "name":  "来源 1",
+        "class":  "QComboBox",
+        "type":  "ControlType.ComboBox",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QComboBox",
+        "enabled":  true,
+        "bounds":  "1327,306,261,32"
+    },
+    {
+        "name":  "开始取点",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1286,344,97,36"
+    },
+    {
+        "name":  "完成 / Enter",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1389,344,96,36"
+    },
+    {
+        "name":  "取消 / Esc",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1491,344,97,36"
+    },
+    {
+        "name":  "选择工具，指定辅助来源或在画布取点。坐标为图像 / 标定平面。",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QLabel",
+        "enabled":  true,
+        "bounds":  "1286,386,302,30"
+    },
+    {
+        "name":  "",
+        "class":  "QTableWidget",
+        "type":  "ControlType.Table",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTableWidget",
+        "enabled":  true,
+        "bounds":  "1286,422,302,242"
+    },
+    {
+        "name":  "",
+        "class":  "",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTableWidget",
+        "enabled":  true,
+        "bounds":  "Empty"
+    },
+    {
+        "name":  "编号",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTableWidget",
+        "enabled":  true,
+        "bounds":  "1287,423,43,30"
+    },
+    {
+        "name":  "指标 / 状态",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTableWidget",
+        "enabled":  true,
+        "bounds":  "1330,423,81,30"
+    },
+    {
+        "name":  "数值",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTableWidget",
+        "enabled":  true,
+        "bounds":  "1411,423,43,30"
+    },
+    {
+        "name":  "单位",
+        "class":  "",
+        "type":  "ControlType.Header",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTableWidget",
+        "enabled":  true,
+        "bounds":  "1454,423,43,30"
+    },
+    {
+        "name":  "",
+        "class":  "QTextEdit",
+        "type":  "ControlType.Edit",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTextEdit",
+        "enabled":  true,
+        "bounds":  "1286,670,302,160"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QTextEdit.qt_scrollarea_viewport",
+        "enabled":  true,
+        "bounds":  "1287,671,300,158"
+    },
+    {
+        "name":  "删除",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1286,836,92,36"
+    },
+    {
+        "name":  "解除关联并冻结",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1384,836,106,36"
+    },
+    {
+        "name":  "重新找边",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1496,836,92,36"
+    },
+    {
+        "name":  "整理标注",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1286,878,148,36"
+    },
+    {
+        "name":  "导出明细",
+        "class":  "QPushButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+        "enabled":  true,
+        "bounds":  "1440,878,148,36"
+    },
+    {
+        "name":  "Close",
+        "class":  "QDockWidgetTitleButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.qt_dockwidget_closebutton",
+        "enabled":  true,
+        "bounds":  "1578,222,18,14"
+    },
+    {
+        "name":  "Float",
+        "class":  "QDockWidgetTitleButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.professionalMeasurementDock.qt_dockwidget_floatbutton",
+        "enabled":  true,
+        "bounds":  "1559,222,18,14"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.QWidget",
+        "enabled":  true,
+        "bounds":  "289,222,982,736"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.QWidget.QWidget",
+        "enabled":  true,
+        "bounds":  "289,222,982,736"
+    },
+    {
+        "name":  "",
+        "class":  "WorkspaceStack",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack",
+        "enabled":  true,
+        "bounds":  "297,230,966,693"
+    },
+    {
+        "name":  "",
+        "class":  "QTabWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget",
+        "enabled":  true,
+        "bounds":  "297,230,966,693"
+    },
+    {
+        "name":  "",
+        "class":  "QStackedWidget",
+        "type":  "ControlType.Pane",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_stackedwidget",
+        "enabled":  true,
+        "bounds":  "299,265,962,656"
+    },
+    {
+        "name":  "",
+        "class":  "DocumentCanvas",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_stackedwidget.DocumentCanvas",
+        "enabled":  true,
+        "bounds":  "299,265,962,656"
+    },
+    {
+        "name":  "synthetic-edge.bmp",
+        "class":  "QTabBar",
+        "type":  "ControlType.Tab",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_tabbar",
+        "enabled":  true,
+        "bounds":  "297,230,135,35"
+    },
+    {
+        "name":  "synthetic-edge.bmp",
+        "class":  "",
+        "type":  "ControlType.TabItem",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_tabbar",
+        "enabled":  true,
+        "bounds":  "297,230,135,35"
+    },
+    {
+        "name":  "",
+        "class":  "QWidget",
+        "type":  "ControlType.Group",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls",
+        "enabled":  true,
+        "bounds":  "932,229,331,34"
+    },
+    {
+        "name":  "标签：全部",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  true,
+        "bounds":  "936,229,89,36"
+    },
+    {
+        "name":  "适合窗口",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  true,
+        "bounds":  "1027,229,37,36"
+    },
+    {
+        "name":  "原始视场适合",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  false,
+        "bounds":  "1066,229,37,36"
+    },
+    {
+        "name":  "原始像素",
+        "class":  "QToolButton",
+        "type":  "ControlType.Button",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  true,
+        "bounds":  "1105,229,37,36"
+    },
+    {
+        "name":  "全屏测量",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  true,
+        "bounds":  "1144,229,37,36"
+    },
+    {
+        "name":  "平滑移动",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  false,
+        "bounds":  "1183,229,37,36"
+    },
+    {
+        "name":  "快速/整视场移动",
+        "class":  "QToolButton",
+        "type":  "ControlType.CheckBox",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.documentViewControls.QToolButton",
+        "enabled":  false,
+        "bounds":  "1222,229,37,36"
+    },
+    {
+        "name":  "像素尺寸: 1280 x 800 px",
+        "class":  "QLabel",
+        "type":  "ControlType.Text",
+        "id":  "QApplication.MainWindow.QWidget.QWidget.QLabel",
+        "enabled":  true,
+        "bounds":  "297,929,966,21"
+    }
+]

@@ -1,0 +1,155 @@
+{
+    "schema_version":  1,
+    "passed":  false,
+    "started_at":  "2026-10-27T06:42:11.7512945Z",
+    "scope":  "Frozen EXE UIA smoke; synthetic image/project; no hardware, installation or performance acceptance",
+    "executable":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\dist\\windows\\installer-payload-330c059e82e6\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "96DA32B944902E210D2828E12133694F424E516E88C3671C40C2024F9A495FB2",
+    "project":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixture\\professional-smoke.fdmproj",
+    "image":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixture\\synthetic-edge.bmp",
+    "source_sha256_before":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_sha256_after":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\frozen-gui\\20261027-144211-fa75c90b397e4181a533eec4c50b2d95",
+    "session_id":  1,
+    "process_id":  4272,
+    "controls":  [
+                     {
+                         "phase":  "canvas",
+                         "name":  "",
+                         "process_id":  4272,
+                         "class":  "DocumentCanvas",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_stackedwidget.DocumentCanvas",
+                         "control_type":  "ControlType.Group",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "01-professional-entry",
+                          "file":  "01-professional-entry.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "181EEC269EDA6E5469DF23152875B6CA91C010C28F2A6D002490F7F59E3704CF",
+                          "center_sha256":  "1DAA6CA222C8AD971BCE47720023DA5B771969CF1D3B9571074478FEDC6AC41B",
+                          "center_mean":  98.891100055279153,
+                          "center_colors":  78,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "02-created-distance",
+                          "file":  "02-created-distance.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "60492C5EA436B0A5ACE63AFD90857AA505CEFC409A6444357CFC9925DF007C11",
+                          "center_sha256":  "FAA3A48049AC64C4535C820F14C98A90506A07DE76C73A32B76A26990B9529E1",
+                          "center_mean":  99.227197346600335,
+                          "center_colors":  108,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "03-dragged-label",
+                          "file":  "03-dragged-label.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "018E0B8E2F2B7168C753868ED0F0BD716D58EDE833872C9F7803723F0775575B",
+                          "center_sha256":  "BC38B912B932ED2F7879A547C489D9EA999D27AE3C1D9888FC925A02156A3CB1",
+                          "center_mean":  101.08070757324489,
+                          "center_colors":  148,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "99-failure",
+                          "file":  "99-failure.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "4E7C6F75E84D4FBCC3B20BFD668BD7B63A6AA54E359E5ABB1D0A7D18F2182850",
+                          "center_sha256":  "0892DBDC477F27F35B28A8B88A65ED6078D547992873B30B7F18A1B5243E9880",
+                          "center_mean":  99.289294269393778,
+                          "center_colors":  115,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+
+                         ],
+    "errors":  [
+                   "Timed out waiting for PID-owned control: 确认拟合并保存测量"
+               ],
+    "graceful_exit":  true,
+    "exit_code":  0,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "steps":  [
+
+              ],
+    "project_snapshots":  [
+                              {
+                                  "phase":  "02-created-distance",
+                                  "file":  "02-created-distance.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "E8D7B1D40308CCA469C764C9CDC33F34B5B9EE336A4CE15FD17517112DD5A7B3"
+                              },
+                              {
+                                  "phase":  "03-dragged-label",
+                                  "file":  "03-dragged-label.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "D66FD236BCD04D15BF3C89F7873360E8B172C0435BFA5611681905B51ACE6DEF"
+                              },
+                              {
+                                  "phase":  "04-undo-label",
+                                  "file":  "04-undo-label.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "158FEAC4074D1471B040F991450745CB12FDC856B7941D9557947F383A01EAE1"
+                              }
+                          ],
+    "process_ids":  [
+                        4272
+                    ],
+    "exits":  [
+                  {
+                      "code":  0,
+                      "pid":  4272
+                  }
+              ],
+    "tables":  [
+                   {
+                       "phase":  "distance",
+                       "names":  [
+                                     "当前对象",
+                                     "未选中对象",
+                                     "点击画布中的测量对象\n或在测量记录中选择",
+                                     "N / 均值 / SD / CV",
+                                     "未标定",
+                                     "0 条",
+                                     "",
+                                     "v0.4.13",
+                                     "新测量归类",
+                                     "1 张图片 · 无缺失 · 已保存",
+                                     "颜色",
+                                     "类别",
+                                     "本图 / 全部",
+                                     "像素尺寸: 1280 x 800 px",
+                                     "未标定：长度 px，面积 px²；角度基于像素平面。",
+                                     "来源 1",
+                                     "已保存专业测量。",
+                                     "P1",
+                                     "距离",
+                                     "266.55098",
+                                     "px",
+                                     "P1",
+                                     "水平分量",
+                                     "266.55098",
+                                     "px",
+                                     "P1",
+                                     "垂直分量",
+                                     "0",
+                                     "px"
+                                 ]
+                   }
+               ],
+    "finished_at":  "2026-10-27T06:42:53.4895116Z"
+}

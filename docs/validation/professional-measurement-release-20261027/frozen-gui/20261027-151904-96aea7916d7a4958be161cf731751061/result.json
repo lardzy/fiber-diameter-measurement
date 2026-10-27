@@ -1,0 +1,194 @@
+{
+    "schema_version":  1,
+    "passed":  false,
+    "started_at":  "2026-10-27T07:19:04.7493720Z",
+    "scope":  "Frozen EXE UIA smoke; synthetic image/project; no hardware, installation or performance acceptance",
+    "executable":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\dist\\windows\\installer-payload-330c059e82e6\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "96DA32B944902E210D2828E12133694F424E516E88C3671C40C2024F9A495FB2",
+    "project":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\2a2bcc331b084b3d8a11eab840258618\\professional-smoke.fdmproj",
+    "image":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\professional-ui-fixtures\\2a2bcc331b084b3d8a11eab840258618\\synthetic-edge.bmp",
+    "source_sha256_before":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_sha256_after":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-professional-measurement-release-20261027\\build\\frozen-gui\\20261027-151904-96aea7916d7a4958be161cf731751061",
+    "session_id":  1,
+    "process_id":  6712,
+    "controls":  [
+                     {
+                         "phase":  "canvas",
+                         "name":  "",
+                         "process_id":  6712,
+                         "class":  "DocumentCanvas",
+                         "automation_id":  "QApplication.MainWindow.QWidget.QWidget.WorkspaceStack.QTabWidget.qt_tabwidget_stackedwidget.DocumentCanvas",
+                         "control_type":  "ControlType.Group",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "01-professional-entry",
+                          "file":  "01-professional-entry.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "ADAB49212AEA81F73CFAE646F936B2E3CD5741DA179A082D3DE8107E487C5415",
+                          "center_sha256":  "1DAA6CA222C8AD971BCE47720023DA5B771969CF1D3B9571074478FEDC6AC41B",
+                          "center_mean":  98.891100055279153,
+                          "center_colors":  78,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "02-created-distance",
+                          "file":  "02-created-distance.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "0B305DAFD810CE70CBD6C9CEBDBB6D426E314B4E5AB117B7CE25A9176993B82C",
+                          "center_sha256":  "FAA3A48049AC64C4535C820F14C98A90506A07DE76C73A32B76A26990B9529E1",
+                          "center_mean":  99.227197346600335,
+                          "center_colors":  108,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "03-dragged-label",
+                          "file":  "03-dragged-label.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "522BE0EB5549B4CDC39768E0F53496C158E071312188EDC8DC5525D25EFE6475",
+                          "center_sha256":  "BC38B912B932ED2F7879A547C489D9EA999D27AE3C1D9888FC925A02156A3CB1",
+                          "center_mean":  101.08070757324489,
+                          "center_colors":  148,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "05-caliper-preview",
+                          "file":  "05-caliper-preview.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "53489823F9087F89B812F33893F7696AD6D727543DE09749067DA6B06161D1B6",
+                          "center_sha256":  "01962D1275B7AA6B30D26DB14DEF83FA5728C51F94AA11BEF7C83F7FEEBD9C70",
+                          "center_mean":  100.03427307904917,
+                          "center_colors":  159,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "06-confirmed-caliper",
+                          "file":  "06-confirmed-caliper.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "CA6F53CAE3D326DC6B544186735A91C90354A9CF8CD58B7EA0A00752BDA72CA3",
+                          "center_sha256":  "AD87A51D04E884549F0ACF34BF147E1B45914B620E47C5F5AA8E9E3E4395D089",
+                          "center_mean":  100.40657822001099,
+                          "center_colors":  151,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "phase":  "99-failure",
+                          "file":  "99-failure.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "DB9D1CB01E2CC2A35499D7914517431ADA09948A94FFE6F9E94A541F7B6D6991",
+                          "center_sha256":  "AD87A51D04E884549F0ACF34BF147E1B45914B620E47C5F5AA8E9E3E4395D089",
+                          "center_mean":  100.40657822001099,
+                          "center_colors":  151,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+
+                         ],
+    "errors":  [
+                   "Combo item is outside its owned popup"
+               ],
+    "graceful_exit":  true,
+    "exit_code":  0,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "steps":  [
+                  {
+                      "action":  "select-professional-tool",
+                      "before":  "两点距离 / X、Y 分量",
+                      "after":  "直线卡尺：带状找边",
+                      "popup_closed":  true
+                  },
+                  {
+                      "action":  "transient-uia-tree",
+                      "error":  "无法识别的错误。"
+                  }
+              ],
+    "project_snapshots":  [
+                              {
+                                  "phase":  "02-created-distance",
+                                  "file":  "02-created-distance.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "7958373A2F6917589CC6DEED0D15AFC1739EEE1E0E2BB7B7CB2458B4E71FAC7B"
+                              },
+                              {
+                                  "phase":  "03-dragged-label",
+                                  "file":  "03-dragged-label.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "04D6037FDE4C52A521A328113D2E0F53480AFAECFB4CCF61106DBF8FBD7D2106"
+                              },
+                              {
+                                  "phase":  "04-undo-label",
+                                  "file":  "04-undo-label.fdmproj",
+                                  "count":  1,
+                                  "sha256":  "51FFF475883F5B5F5FBAE13B6958BCB323FD0744B3F2A48EA0CD3B44BAE86AA5"
+                              },
+                              {
+                                  "phase":  "06-confirmed-caliper",
+                                  "file":  "06-confirmed-caliper.fdmproj",
+                                  "count":  2,
+                                  "sha256":  "18DFF1EED80158FA62C6BA71B38C7491B27DA443075C0E3C7691D6FE5B47DE40"
+                              }
+                          ],
+    "process_ids":  [
+                        6712
+                    ],
+    "exits":  [
+                  {
+                      "code":  0,
+                      "pid":  6712
+                  }
+              ],
+    "tables":  [
+                   {
+                       "phase":  "distance",
+                       "names":  [
+                                     "当前对象",
+                                     "未选中对象",
+                                     "点击画布中的测量对象\n或在测量记录中选择",
+                                     "N / 均值 / SD / CV",
+                                     "未标定",
+                                     "0 条",
+                                     "",
+                                     "v0.4.13",
+                                     "新测量归类",
+                                     "1 张图片 · 无缺失 · 已保存",
+                                     "颜色",
+                                     "类别",
+                                     "本图 / 全部",
+                                     "像素尺寸: 1280 x 800 px",
+                                     "未标定：长度 px，面积 px²；角度基于像素平面。",
+                                     "来源 1",
+                                     "已保存专业测量。",
+                                     "P1",
+                                     "距离",
+                                     "266.55098",
+                                     "px",
+                                     "P1",
+                                     "水平分量",
+                                     "266.55098",
+                                     "px",
+                                     "P1",
+                                     "垂直分量",
+                                     "0",
+                                     "px"
+                                 ]
+                   }
+               ],
+    "caliper_cancelled_without_commit":  true,
+    "failure_stack":  "在 Select-Tool、C:\\tmp\\fdm-professional-measurement-release-20261027\\scripts\\validation\\probe_professional_measurement_frozen.ps1 中: 第 379 行\r\n在 \u003cScriptBlock\u003e、C:\\tmp\\fdm-professional-measurement-release-20261027\\scripts\\validation\\probe_professional_measurement_frozen.ps1 中: 第 480 行",
+    "finished_at":  "2026-10-27T07:19:18.8510441Z"
+}
