@@ -1,0 +1,17 @@
+[
+  {
+    "path": "scripts/validation/probe_professional_precision_frozen.ps1",
+    "bytes": 35470,
+    "sha256": "d9cf8b305a45760abbea2b34a87090e2f1b8b6fd65351cbb9b2d444111899fba"
+  },
+  {
+    "path": "scripts/validation/validate_professional_precision_frozen.py",
+    "bytes": 14602,
+    "sha256": "bbb9e9592c14998c35a4b08ca5755c8a5d102a39064bd337ebb364ebd015296b"
+  },
+  {
+    "path": "build/upload_results.py",
+    "bytes": 3201,
+    "sha256": "a7f314b7f6c99db81ae5e53f1878743ad526b4ad5b9906c1204e680bcba501b9"
+  }
+]

@@ -1,0 +1,78 @@
+{
+    "schema_version":  1,
+    "passed":  false,
+    "started_at":  "2026-10-27T09:31:58.5884333Z",
+    "scope":  "Frozen EXE precision UIA smoke; independent synthetic project and actual PNG/CSV exports; no installation or device accuracy claim",
+    "executable":  "C:\\tmp\\fdm-professional-precision-release-20261027\\dist\\windows\\installer-payload-6f5f8a19047a\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "0D2993101EAA804AE891CFE95C63A855548B523AFD0F02CA763F1DF6D7ED9743",
+    "project":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\b5736d32d74f4b8bbb8f1bcf44ad81f9\\professional-smoke.fdmproj",
+    "image":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\b5736d32d74f4b8bbb8f1bcf44ad81f9\\synthetic-edge.bmp",
+    "source_sha256_before":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_sha256_after":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-173158-806f6c796def48a78d43ae59fe121ab8",
+    "session_id":  1,
+    "process_id":  8384,
+    "controls":  [
+
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "99-failure",
+                          "file":  "99-failure.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "9AC2543F0A17AADF847999842CD2DC6C0534643E389BF6313C522DA8D91663FC",
+                          "center_sha256":  "9D90D24D2CBBA9458A94F26814EA41EF80A5BFC7F71F2891DE60A1EA50FFF7BD",
+                          "center_mean":  100.11746821448314,
+                          "center_colors":  118,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+
+                         ],
+    "errors":  [
+                   "使用“0”个参数调用“Invoke”时发生异常:“操作超时。 (异常来自 HRESULT:0x80131505)”",
+                   "Close: Owned EXE still running; no forced termination"
+               ],
+    "process_ids":  [
+                        8384
+                    ],
+    "exits":  [
+
+              ],
+    "project_snapshots":  [
+                              {
+                                  "publication_barrier":  "strictly newer LastWriteTimeUtc, then saved UI, exclusive-read copy",
+                                  "before_sha256":  "92047ABDA40D7ABCE9A2BAE79E4C6B4F2581C6F5E0E7E286C78EE7D807DDBC84",
+                                  "file":  "baseline.fdmproj",
+                                  "source_sha256":  "D3623938BCAE8B1EE7C950FF27D14BACCA193129BF8691347EB0386EF74E5B24",
+                                  "before_last_write_utc_ticks":  "639286903181511004",
+                                  "published_last_write_utc_ticks":  "639286903227029905",
+                                  "phase":  "baseline",
+                                  "sha256":  "D3623938BCAE8B1EE7C950FF27D14BACCA193129BF8691347EB0386EF74E5B24"
+                              }
+                          ],
+    "settings":  [
+
+                 ],
+    "images":  [
+
+               ],
+    "csv":  [
+
+            ],
+    "steps":  [
+
+              ],
+    "graceful_exit":  false,
+    "exit_code":  null,
+    "process_still_running":  true,
+    "forced_termination":  false,
+    "tables":  [
+
+               ],
+    "failure_stack":  "在 Invoke-Owned、C:\\tmp\\fdm-professional-precision-release-20261027\\scripts\\validation\\probe_professional_precision_frozen.ps1 中: 第 221 行\r\n在 Open-Preferences、C:\\tmp\\fdm-professional-precision-release-20261027\\scripts\\validation\\probe_professional_precision_frozen.ps1 中: 第 385 行\r\n在 \u003cScriptBlock\u003e、C:\\tmp\\fdm-professional-precision-release-20261027\\scripts\\validation\\probe_professional_precision_frozen.ps1 中: 第 538 行",
+    "finished_at":  "2026-10-27T09:36:39.7813853Z"
+}

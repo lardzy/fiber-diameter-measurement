@@ -1,0 +1,517 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "probe_sha256": "0677442651352b3bf1aa0a484fb19262562a4b13b61f398e8561a5c1dca0233e",
+  "checks": [
+    {
+      "name": "external_probe_completed",
+      "passed": true
+    },
+    {
+      "name": "two_normal_process_exits",
+      "passed": true
+    },
+    {
+      "name": "no_forced_termination",
+      "passed": true
+    },
+    {
+      "name": "source_pixels_unchanged",
+      "passed": true
+    },
+    {
+      "name": "cancel_preserves_applied_setting",
+      "passed": true
+    },
+    {
+      "name": "restore_default_is_draft_until_apply",
+      "passed": true
+    },
+    {
+      "name": "restart_preserves_four_decimals",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:baseline.fdmproj",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:baseline.fdmproj",
+      "passed": true
+    },
+    {
+      "name": "this_save_published:baseline",
+      "passed": true
+    },
+    {
+      "name": "no_precision_field_in_raw_project:baseline",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:after-settings.fdmproj",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:after-settings.fdmproj",
+      "passed": true
+    },
+    {
+      "name": "this_save_published:after-settings",
+      "passed": true
+    },
+    {
+      "name": "no_precision_field_in_raw_project:after-settings",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:reopened.fdmproj",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:reopened.fdmproj",
+      "passed": true
+    },
+    {
+      "name": "this_save_published:reopened",
+      "passed": true
+    },
+    {
+      "name": "no_precision_field_in_raw_project:reopened",
+      "passed": true
+    },
+    {
+      "name": "all_project_phases",
+      "passed": true
+    },
+    {
+      "name": "fixture_geometry_survives_initial_open",
+      "passed": true
+    },
+    {
+      "name": "fixture_source_identity",
+      "passed": true
+    },
+    {
+      "name": "fixture_has_no_precision_field",
+      "passed": true
+    },
+    {
+      "name": "complete_persisted_fields_unchanged:baseline",
+      "passed": true,
+      "ignored_value_paths": [
+        "documents[*].view_state.zoom",
+        "documents[*].view_state.pan.x",
+        "documents[*].view_state.pan.y",
+        "documents[*].view_state.selected_measurement_id"
+      ]
+    },
+    {
+      "name": "complete_persisted_fields_unchanged:after-settings",
+      "passed": true,
+      "ignored_value_paths": [
+        "documents[*].view_state.zoom",
+        "documents[*].view_state.pan.x",
+        "documents[*].view_state.pan.y",
+        "documents[*].view_state.selected_measurement_id"
+      ]
+    },
+    {
+      "name": "complete_persisted_fields_unchanged:reopened",
+      "passed": true,
+      "ignored_value_paths": [
+        "documents[*].view_state.zoom",
+        "documents[*].view_state.pan.x",
+        "documents[*].view_state.pan.y",
+        "documents[*].view_state.selected_measurement_id"
+      ]
+    },
+    {
+      "name": "semantic_geometry_unchanged:baseline",
+      "passed": true
+    },
+    {
+      "name": "calibrated_dual_dimensions:baseline",
+      "passed": true
+    },
+    {
+      "name": "semantic_geometry_unchanged:after-settings",
+      "passed": true
+    },
+    {
+      "name": "calibrated_dual_dimensions:after-settings",
+      "passed": true
+    },
+    {
+      "name": "semantic_geometry_unchanged:reopened",
+      "passed": true
+    },
+    {
+      "name": "calibrated_dual_dimensions:reopened",
+      "passed": true
+    },
+    {
+      "name": "fractional_fixture_value",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:professional-two.csv",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:professional-two.csv",
+      "passed": true
+    },
+    {
+      "name": "csv_six_metric_rows:two",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:professional-four.csv",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:professional-four.csv",
+      "passed": true
+    },
+    {
+      "name": "csv_six_metric_rows:four",
+      "passed": true
+    },
+    {
+      "name": "csv_precision_independent",
+      "passed": true
+    },
+    {
+      "name": "csv_preserves_fractional_value",
+      "passed": true
+    },
+    {
+      "name": "all_csv_phases",
+      "passed": true
+    },
+    {
+      "name": "csv_metric_identities:two",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:two:precision-measurement-1:距离",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:two:precision-measurement-1:水平分量",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:two:precision-measurement-1:垂直分量",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:two:precision-measurement-2:距离",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:two:precision-measurement-2:水平分量",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:two:precision-measurement-2:垂直分量",
+      "passed": true
+    },
+    {
+      "name": "csv_metric_identities:four",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:four:precision-measurement-1:距离",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:four:precision-measurement-1:水平分量",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:four:precision-measurement-1:垂直分量",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:four:precision-measurement-2:距离",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:four:precision-measurement-2:水平分量",
+      "passed": true
+    },
+    {
+      "name": "csv_raw_metric:four:precision-measurement-2:垂直分量",
+      "passed": true
+    },
+    {
+      "name": "all_settings_phases",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:settings-zero.json",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:settings-zero.json",
+      "passed": true
+    },
+    {
+      "name": "stored_precision:zero",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:settings-restored.json",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:settings-restored.json",
+      "passed": true
+    },
+    {
+      "name": "stored_precision:restored",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:settings-four.json",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:settings-four.json",
+      "passed": true
+    },
+    {
+      "name": "stored_precision:four",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:02-default-two.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:02-default-two.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:03-canvas-two.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:03-canvas-two.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:export-options-2.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:export-options-2.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:04-zero-applied.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:04-zero-applied.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:05-canvas-zero.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:05-canvas-zero.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:export-options-0.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:export-options-0.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:06-eight-draft.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:06-eight-draft.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:07-restored-default-draft.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:07-restored-default-draft.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:08-four-applied.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:08-four-applied.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:09-canvas-four.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:09-canvas-four.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:export-options-4.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:export-options-4.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:10-reopened-four.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:10-reopened-four.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:11-reopened-canvas.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:11-reopened-canvas.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:overlay-2.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:overlay-2.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:overlay-0.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:overlay-0.png",
+      "passed": true
+    },
+    {
+      "name": "owned_artifact:overlay-4.png",
+      "passed": true
+    },
+    {
+      "name": "artifact_hash:overlay-4.png",
+      "passed": true
+    },
+    {
+      "name": "three_export_precisions",
+      "passed": true
+    },
+    {
+      "name": "full_resolution_exports",
+      "passed": true
+    },
+    {
+      "name": "export_label_changes:0",
+      "passed": true,
+      "changed_pixels": 2428
+    },
+    {
+      "name": "only_annotation_region_changes:0",
+      "passed": true
+    },
+    {
+      "name": "export_label_changes:4",
+      "passed": true,
+      "changed_pixels": 2366
+    },
+    {
+      "name": "only_annotation_region_changes:4",
+      "passed": true
+    },
+    {
+      "name": "reference_system_dpi_valid",
+      "passed": true
+    },
+    {
+      "name": "reference_uses_fresh_qapplication",
+      "passed": true
+    },
+    {
+      "name": "reference_source_available",
+      "passed": true
+    },
+    {
+      "name": "fixed_precision_caption_rule:2",
+      "passed": true
+    },
+    {
+      "name": "actual_export_matches_independent_reference:2",
+      "passed": true,
+      "expected_captions": [
+        "P1 · 距离 266.55 µm",
+        "P2 · 距离 25.00 µm"
+      ],
+      "reference_file": "reference-2.png",
+      "reference_sha256": "0826244ca8657138b9a7e133f40d784262d01dcb7df0dd07d6f40aae5f771807"
+    },
+    {
+      "name": "fixed_precision_caption_rule:0",
+      "passed": true
+    },
+    {
+      "name": "actual_export_matches_independent_reference:0",
+      "passed": true,
+      "expected_captions": [
+        "P1 · 距离 267 µm",
+        "P2 · 距离 25 µm"
+      ],
+      "reference_file": "reference-0.png",
+      "reference_sha256": "c92e6fae1402d6012e3bd3aea961e80a8b617e1637f235caacc240dada7c9188"
+    },
+    {
+      "name": "fixed_precision_caption_rule:4",
+      "passed": true
+    },
+    {
+      "name": "actual_export_matches_independent_reference:4",
+      "passed": true,
+      "expected_captions": [
+        "P1 · 距离 266.5510 µm",
+        "P2 · 距离 25.0000 µm"
+      ],
+      "reference_file": "reference-4.png",
+      "reference_sha256": "b3e6c63a973c365bd3d523317c7f58da2e586be29aa2c55457534a77772142ee"
+    }
+  ],
+  "reference_comparison": true,
+  "reference_environment": {
+    "previous_qt_environment": {
+      "QT_QPA_PLATFORM": null,
+      "QT_SCALE_FACTOR": null,
+      "QT_SCREEN_SCALE_FACTORS": null,
+      "QT_FONT_DPI": null
+    },
+    "system_dpi": 192,
+    "qt_scale_factor": "0.5",
+    "dpi_recipe": "SetProcessDPIAware; GetDpiForSystem; QT_SCALE_FACTOR=96/dpi",
+    "platform": "windows",
+    "app_font": "Microsoft YaHei UI,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+    "resolved_font_family": "Microsoft YaHei UI",
+    "font_point_size": 9.0,
+    "font_pixel_size": 12,
+    "screen_device_pixel_ratio": 1.0,
+    "screen_logical_dpi": 96.0
+  },
+  "scope": "Actual frozen EXE UIA input and exported artifacts; independent source rendering is a separate post-run reference, not injected code; no installation or physical metrology acceptance"
+}

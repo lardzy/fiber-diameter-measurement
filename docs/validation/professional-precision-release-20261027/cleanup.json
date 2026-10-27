@@ -1,0 +1,201 @@
+{
+  "removed": true,
+  "free_before": 159992360960,
+  "bytes": 4396365558,
+  "root": "C:\\tmp\\fdm-professional-precision-release-20261027",
+  "at": "2026-10-27T09:51:41.0524188Z",
+  "file_count": 11794,
+  "free_after": 164388511744,
+  "retained_installers_before": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-measurement-20261027/FDM-0.4.13-professional-measurement-ea3a9c2a985b.exe",
+      "bytes": 399281021,
+      "sha256": "330c059e82e61c4faa4d413e7820e7a78ce0bdc3f32ef840953658ed747c5d0c",
+      "verified": true
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-precision-20261027/FDM-0.4.14-professional-precision-217d9e373421.exe",
+      "bytes": 399303072,
+      "sha256": "6f5f8a19047a27ca4ac64f5bb876160d9ed89547c9c00190529684c99359c8c9",
+      "verified": true
+    }
+  ],
+  "host_temporary_files_removed": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-precision-release-20261027/source.zip",
+      "bytes": 87412147,
+      "sha256": "ce1e9943e5113a420c9de8838e65bc8f063a1a2480911484ba22f13adae95242"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-precision-release-20261027/transfer/installer.exe",
+      "bytes": 399303072,
+      "sha256": "6f5f8a19047a27ca4ac64f5bb876160d9ed89547c9c00190529684c99359c8c9"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-precision-release-20261027/transfer/evidence.zip",
+      "bytes": 5531466,
+      "sha256": "a778746123e89d6f6f920a09ccbfd6dcf8b54d92ddcba1b1f388a64ff9346c01"
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-precision-release-20261027/transfer/transfer.json",
+      "bytes": 35499,
+      "sha256": "2c6149826dce2f157c5546ceb07a6d92c1f2fc60dafeabe814f18c86880e6e6e"
+    }
+  ],
+  "host_owned_directory_removed": {
+    "root": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/build/professional-precision-release-20261027",
+    "files": [
+      {
+        "path": "check-validation.ps1",
+        "bytes": 519,
+        "sha256": "f25737927c7efc3e2ca490dfe87953622cffab5f44838d7cedf51e2a800a32d6"
+      },
+      {
+        "path": "source-manifest.json",
+        "bytes": 175074,
+        "sha256": "2a97e4a894823a8ebc8dcc71e099cd9bf02804fafdf1b2c1851f6672332d51ab"
+      },
+      {
+        "path": "identity.ps1",
+        "bytes": 134,
+        "sha256": "cf8e84c42d47210c995a64fcf02d90d00bc6d9dbbdb5196a1fdf309bb1f8b9a5"
+      },
+      {
+        "path": "capture-blocked-modal.ps1",
+        "bytes": 5355,
+        "sha256": "0468b5a4a77d7880295f5168143d3d9bb4b2d2597ce23d14a7399d83c38cfa9a"
+      },
+      {
+        "path": "close-blocked-modal.ps1",
+        "bytes": 5030,
+        "sha256": "ba96d484960095a382859afff6d70e36edb6edb06f014dbe24627a91bbf05c72"
+      },
+      {
+        "path": "gui-files.ps1",
+        "bytes": 468,
+        "sha256": "a4b527a04b6d1ef51e3d93643fc1efc86b0c56c490b322fcb348daa05d250e0f"
+      },
+      {
+        "path": "status.ps1",
+        "bytes": 420,
+        "sha256": "6c044c8e338b38baa218b8faab2d965d17bc94c190c27641992880a1a86f071f"
+      },
+      {
+        "path": "remote.py",
+        "bytes": 428,
+        "sha256": "e78b0af3fcf1cf26d22965af793224487e6bb03ec1c18ecc5a114d411f5cb17c"
+      },
+      {
+        "path": "preflight.ps1",
+        "bytes": 578,
+        "sha256": "2bdf2c6badde536f64829227f5eeca149677b10661d276d9df4b950999848ef9"
+      },
+      {
+        "path": "xml-failures.ps1",
+        "bytes": 306,
+        "sha256": "be66e146b788a93bbd3a41f5f3e28023b76be4328752565134403a08b8e36453"
+      },
+      {
+        "path": "check-fixtures.ps1",
+        "bytes": 173,
+        "sha256": "4ab89356448ef8b1f6e93152e352e9e6cb3ad31c1343ca7efb062fd4aa4d741b"
+      },
+      {
+        "path": "failure.ps1",
+        "bytes": 134,
+        "sha256": "4a9b6bb448047fb002c868def379d861742aabd48ea48070352acf9ebd8a046c"
+      },
+      {
+        "path": "check-followup.ps1",
+        "bytes": 304,
+        "sha256": "9c1fdd224d70da837b26f1ac81c48363675ff775c0bbacf0f4ed1ec0167f897e"
+      },
+      {
+        "path": "close-failed-app.ps1",
+        "bytes": 5048,
+        "sha256": "24ce8bca64a9053ae0a6caa446da7394e13e443e65b1f6c0df9215bfece4f02e"
+      },
+      {
+        "path": "fetch-debug.py",
+        "bytes": 999,
+        "sha256": "d75f228f7e9a9ca443d169a56416930aca480a42b0ac3229328252ffd10cb924"
+      },
+      {
+        "path": "check-independent.ps1",
+        "bytes": 568,
+        "sha256": "c098416edfe2b854a19734c110bcf813acbec7cffa297584a4bad520e4c7ef21"
+      },
+      {
+        "path": "diagnose-gui.ps1",
+        "bytes": 597,
+        "sha256": "f82691910bb7a6078dc04047323e755241bdc8d8f43144426dacb6d8e8a676f1"
+      },
+      {
+        "path": "progress.ps1",
+        "bytes": 717,
+        "sha256": "67f37877f028d701cb701ad783fed3dd086605e3ef6099c35651d9400ba27c7b"
+      },
+      {
+        "path": "complete-source-validation.ps1",
+        "bytes": 6111,
+        "sha256": "deb904c3d916b34d0d378f954f4633f8b9c91cac97d859eace5b3b3afe2d2683"
+      },
+      {
+        "path": "check-gui.ps1",
+        "bytes": 643,
+        "sha256": "ef15c0f5693a09fc93947d49aaa29da47666408af77ecaba364657628c41acdc"
+      },
+      {
+        "path": "close-second-probe.ps1",
+        "bytes": 5714,
+        "sha256": "dfd3904177d1636bec9bb0c78a58ee148bce87316a9d8cdbb0c6372861952e2a"
+      },
+      {
+        "path": "debug/overlay-2.png",
+        "bytes": 115003,
+        "sha256": "0826244ca8657138b9a7e133f40d784262d01dcb7df0dd07d6f40aae5f771807"
+      },
+      {
+        "path": "debug/result.json",
+        "bytes": 50690,
+        "sha256": "0677442651352b3bf1aa0a484fb19262562a4b13b61f398e8561a5c1dca0233e"
+      },
+      {
+        "path": "debug/02-default-two.png",
+        "bytes": 35472,
+        "sha256": "55fc1c7da3a0738ab79d8a63228af75eba2bc5c4eceeea2be6d73615fb5f1148"
+      },
+      {
+        "path": "debug/reference-2.png",
+        "bytes": 115681,
+        "sha256": "b9c761d14d898f436526ee8d34b45631298ec3d5a2390ef17e27f17209ac46f1"
+      },
+      {
+        "path": "debug/baseline.fdmproj",
+        "bytes": 3754,
+        "sha256": "aee1592b141e7ddb2a765c3cc75172c765b6501041231892ff272c0cda918ef3"
+      },
+      {
+        "path": "debug/export-options-2.png",
+        "bytes": 37668,
+        "sha256": "d0982122cd6251f604a650ae3e5cf0c71914edd86bc5781f0f920dc3bbeb0bd1"
+      }
+    ]
+  },
+  "retained_installers_after": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-measurement-20261027/FDM-0.4.13-professional-measurement-ea3a9c2a985b.exe",
+      "bytes": 399281021,
+      "sha256": "330c059e82e61c4faa4d413e7820e7a78ce0bdc3f32ef840953658ed747c5d0c",
+      "verified": true
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-precision-20261027/FDM-0.4.14-professional-precision-217d9e373421.exe",
+      "bytes": 399303072,
+      "sha256": "6f5f8a19047a27ca4ac64f5bb876160d9ed89547c9c00190529684c99359c8c9",
+      "verified": true
+    }
+  ],
+  "verified_evidence_files": 169,
+  "completed_at": "2026-10-27T09:51:41.963921+00:00"
+}

@@ -1,0 +1,25 @@
+{
+    "free_bytes":  164553904128,
+    "tools":  [
+                  {
+                      "exists":  true,
+                      "path":  "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\.venv\\Scripts\\python.exe"
+                  },
+                  {
+                      "exists":  true,
+                      "path":  "C:\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat"
+                  },
+                  {
+                      "exists":  true,
+                      "path":  "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe"
+                  },
+                  {
+                      "exists":  true,
+                      "path":  "C:\\tmp\\fdm-cu-live-final-r4-20261015\\build\\validation-tools\\innounp.exe"
+                  }
+              ],
+    "os_version":  "Microsoft Windows NT 10.0.26300.0",
+    "new_root_exists":  false
+}
+
+

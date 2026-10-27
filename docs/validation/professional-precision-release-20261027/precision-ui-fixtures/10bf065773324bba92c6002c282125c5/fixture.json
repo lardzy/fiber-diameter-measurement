@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "version": "0.4.14",
+  "project": "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\10bf065773324bba92c6002c282125c5\\professional-smoke.fdmproj",
+  "image": "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\10bf065773324bba92c6002c282125c5\\synthetic-edge.bmp",
+  "image_sha256": "5b87a2e7a1436e577c88a88b9dd4d794dde4f1b62203c4802c4d3939a17c7898",
+  "image_size": [
+    1280,
+    800
+  ],
+  "edge_y_px": 399.5,
+  "scope": "Synthetic calibrated fixed dual dimensions; actual frozen UI input and offline artifact verification, no device accuracy claim",
+  "project_sha256": "78e7e45e05d30cfc9fa4cf7ed7ea661cb936317d3428d074d0e96df69797060d",
+  "measurement_values": [
+    266.55098,
+    25.0
+  ],
+  "semantic_document": {
+    "calibration": {
+      "mode": "manual",
+      "unit": "µm",
+      "source_label": "Synthetic precision reference",
+      "pixels_per_unit": 2.0
+    },
+    "features": [
+      {
+        "id": "precision-feature-1",
+        "image_id": "professional-frozen-smoke",
+        "kind": "line",
+        "points_px": [
+          {
+            "x": 200.0,
+            "y": 300.0
+          },
+          {
+            "x": 733.10196,
+            "y": 300.0
+          }
+        ],
+        "source_ref": null,
+        "parameters": {},
+        "focus_index": null,
+        "source_revision": null,
+        "quality": {}
+      },
+      {
+        "id": "precision-feature-2",
+        "image_id": "professional-frozen-smoke",
+        "kind": "line",
+        "points_px": [
+          {
+            "x": 400.0,
+            "y": 550.0
+          },
+          {
+            "x": 450.0,
+            "y": 550.0
+          }
+        ],
+        "source_ref": null,
+        "parameters": {},
+        "focus_index": null,
+        "source_revision": null,
+        "quality": {}
+      }
+    ],
+    "measurements": [
+      {
+        "id": "precision-measurement-1",
+        "image_id": "professional-frozen-smoke",
+        "kind": "distance",
+        "feature_ids": [
+          "precision-feature-1"
+        ],
+        "parameters": {},
+        "name": "",
+        "annotation_layout": {
+          "placement_mode": "manual",
+          "offset_px": {
+            "x": 0.0,
+            "y": -60.0
+          },
+          "show_leader": true,
+          "show_identifier": true,
+          "revision": 1,
+          "metric_key": null,
+          "leader_style": "dual"
+        },
+        "focus_index": null,
+        "created_at": "2026-10-27T09:38:52.987436+00:00"
+      },
+      {
+        "id": "precision-measurement-2",
+        "image_id": "professional-frozen-smoke",
+        "kind": "distance",
+        "feature_ids": [
+          "precision-feature-2"
+        ],
+        "parameters": {},
+        "name": "",
+        "annotation_layout": {
+          "placement_mode": "manual",
+          "offset_px": {
+            "x": 0.0,
+            "y": -60.0
+          },
+          "show_leader": true,
+          "show_identifier": true,
+          "revision": 1,
+          "metric_key": null,
+          "leader_style": "dual"
+        },
+        "focus_index": null,
+        "created_at": "2026-10-27T09:38:52.987436+00:00"
+      }
+    ]
+  },
+  "raw_project": {
+    "project_schema_version": 3,
+    "min_reader_version": 3,
+    "required_features": [
+      "professional-measurements/v1",
+      "measurement-dual-dimensions/v1"
+    ],
+    "version": "0.4.14",
+    "documents": [
+      {
+        "id": "professional-frozen-smoke",
+        "path": "synthetic-edge.bmp",
+        "source_type": "filesystem",
+        "document_kind": "image",
+        "image_size": [
+          1280,
+          800
+        ],
+        "calibration": {
+          "mode": "manual",
+          "unit": "µm",
+          "source_label": "Synthetic precision reference",
+          "pixels_per_unit": 2.0
+        },
+        "fiber_groups": [],
+        "measurements": [],
+        "overlay_annotations": [],
+        "view_state": {
+          "zoom": 1.0,
+          "pan": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "selected_measurement_id": null
+        },
+        "metadata": {},
+        "active_group_id": null,
+        "selected_overlay_id": null,
+        "scale_overlay_anchor": null,
+        "suppressed_project_group_labels": [],
+        "absolute_path": "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\10bf065773324bba92c6002c282125c5\\synthetic-edge.bmp",
+        "raster_pixel_type": "rgb8",
+        "professional_features": [
+          {
+            "id": "precision-feature-1",
+            "image_id": "professional-frozen-smoke",
+            "kind": "line",
+            "points_px": [
+              {
+                "x": 200.0,
+                "y": 300.0
+              },
+              {
+                "x": 733.10196,
+                "y": 300.0
+              }
+            ],
+            "source_ref": null,
+            "parameters": {},
+            "focus_index": null,
+            "source_revision": null,
+            "quality": {}
+          },
+          {
+            "id": "precision-feature-2",
+            "image_id": "professional-frozen-smoke",
+            "kind": "line",
+            "points_px": [
+              {
+                "x": 400.0,
+                "y": 550.0
+              },
+              {
+                "x": 450.0,
+                "y": 550.0
+              }
+            ],
+            "source_ref": null,
+            "parameters": {},
+            "focus_index": null,
+            "source_revision": null,
+            "quality": {}
+          }
+        ],
+        "professional_measurements": [
+          {
+            "id": "precision-measurement-1",
+            "image_id": "professional-frozen-smoke",
+            "kind": "distance",
+            "feature_ids": [
+              "precision-feature-1"
+            ],
+            "parameters": {},
+            "name": "",
+            "annotation_layout": {
+              "placement_mode": "manual",
+              "offset_px": {
+                "x": 0.0,
+                "y": -60.0
+              },
+              "show_leader": true,
+              "show_identifier": true,
+              "revision": 1,
+              "metric_key": null,
+              "leader_style": "dual"
+            },
+            "focus_index": null,
+            "created_at": "2026-10-27T09:38:52.987436+00:00"
+          },
+          {
+            "id": "precision-measurement-2",
+            "image_id": "professional-frozen-smoke",
+            "kind": "distance",
+            "feature_ids": [
+              "precision-feature-2"
+            ],
+            "parameters": {},
+            "name": "",
+            "annotation_layout": {
+              "placement_mode": "manual",
+              "offset_px": {
+                "x": 0.0,
+                "y": -60.0
+              },
+              "show_leader": true,
+              "show_identifier": true,
+              "revision": 1,
+              "metric_key": null,
+              "leader_style": "dual"
+            },
+            "focus_index": null,
+            "created_at": "2026-10-27T09:38:52.987436+00:00"
+          }
+        ]
+      }
+    ],
+    "project_default_calibration": null,
+    "project_group_templates": [],
+    "metadata": {}
+  }
+}

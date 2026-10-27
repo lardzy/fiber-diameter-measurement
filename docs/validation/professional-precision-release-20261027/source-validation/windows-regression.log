@@ -1,0 +1,359 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+........................................................................ [ 41%]
+...................................................... [ 47%]
+.................................................... [ 52%]
+........................................................................ [ 58%]
+........................................................................ [ 65%]
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 86%]
+......................F.................F........ [ 91%]
+.......................................................................................         [100%]
+================================== FAILURES ===================================
+_ BuildSupportTests.test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache _
+
+self = <test_build_support.BuildSupportTests testMethod=test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache>
+
+    def test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache(self) -> None:
+>       datas = collect_runtime_datas(PROJECT_ROOT)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027')
+profile = 'full'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -> list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+>           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'full' failed asset preflight:
+E             missing source asset: runtime/area-models/b_v1_1.3.pth
+E             missing source asset: runtime/area-models/b_cv_1.3.pth
+E             missing source asset: runtime/area-models/b_c1_1.3.pth
+E             missing source asset: runtime/area-models/b_cm_1.3.pth
+E             missing source asset: runtime/area-models/b_cc_1.3.pth
+E             missing source asset: runtime/area-models/b_cvlm_1.3.pth
+
+scripts\build_support.py:698: RuntimeError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-models/b_v1_1.3.pth') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027/runtime/area-models/b_v1_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_v1_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-models/b_cv_1.3.pth') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027/runtime/area-models/b_cv_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cv_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-models/b_c1_1.3.pth') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027/runtime/area-models/b_c1_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_c1_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-models/b_cm_1.3.pth') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027/runtime/area-models/b_cm_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cm_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-models/b_cc_1.3.pth') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027/runtime/area-models/b_cc_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cc_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError
+_ BuildSupportTests.test_full_profile_required_assets_have_complete_authoritative_metadata (source='runtime/area-models/b_cvlm_1.3.pth') _
+
+self = <test_build_support.BuildSupportTests testMethod=test_full_profile_required_assets_have_complete_authoritative_metadata>
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+    
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+>               self.assertEqual(source_path.stat().st_size, record.size)
+                                 ^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027/runtime/area-models/b_cvlm_1.3.pth')
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cvlm_1.3.pth'
+
+C:\Users\lishuyang\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:840: FileNotFoundError
+__ BuildSupportTests.test_runtime_profiles_keep_core_small_and_full_complete __
+
+self = <test_build_support.BuildSupportTests testMethod=test_runtime_profiles_keep_core_small_and_full_complete>
+
+    def test_runtime_profiles_keep_core_small_and_full_complete(self) -> None:
+        core = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "core")}
+>       full = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "full")}
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_build_support.py:194: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+project_root = WindowsPath('C:/tmp/fdm-professional-precision-release-20261027')
+profile = 'full'
+
+    def collect_runtime_datas(
+        project_root: Path,
+        profile: str = "full",
+        *,
+        strict_asset_hashes: bool = True,
+        excluded_groups: object = (),
+    ) -> list[tuple[str, str]]:
+        profile_check = check_runtime_profile(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+        preflight_errors = (
+            list(profile_check.metadata_errors)
+            + [f"missing source asset: {item}" for item in profile_check.missing_files]
+            + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
+            + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+        )
+        if preflight_errors:
+>           raise RuntimeError(
+                f"Runtime profile {profile!r} failed asset preflight:\n  "
+                + "\n  ".join(preflight_errors)
+            )
+E           RuntimeError: Runtime profile 'full' failed asset preflight:
+E             missing source asset: runtime/area-models/b_v1_1.3.pth
+E             missing source asset: runtime/area-models/b_cv_1.3.pth
+E             missing source asset: runtime/area-models/b_c1_1.3.pth
+E             missing source asset: runtime/area-models/b_cm_1.3.pth
+E             missing source asset: runtime/area-models/b_cc_1.3.pth
+E             missing source asset: runtime/area-models/b_cvlm_1.3.pth
+
+scripts\build_support.py:698: RuntimeError
+=========================== short test summary info ===========================
+FAILED tests/test_build_support.py::BuildSupportTests::test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache
+SUBFAILED(source='runtime/area-models/b_v1_1.3.pth') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-models/b_cv_1.3.pth') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-models/b_c1_1.3.pth') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-models/b_cm_1.3.pth') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-models/b_cc_1.3.pth') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+SUBFAILED(source='runtime/area-models/b_cvlm_1.3.pth') tests/test_build_support.py::BuildSupportTests::test_full_profile_required_assets_have_complete_authoritative_metadata
+FAILED tests/test_build_support.py::BuildSupportTests::test_runtime_profiles_keep_core_small_and_full_complete
+8 failed, 1032 passed, 176 subtests passed in 165.76s (0:02:45)

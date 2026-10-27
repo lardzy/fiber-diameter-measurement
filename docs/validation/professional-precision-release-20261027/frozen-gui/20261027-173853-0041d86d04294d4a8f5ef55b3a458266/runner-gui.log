@@ -1,0 +1,142 @@
+{
+    "schema_version":  1,
+    "passed":  false,
+    "started_at":  "2026-10-27T09:38:53.4583473Z",
+    "scope":  "Frozen EXE precision UIA smoke; independent synthetic project and actual PNG/CSV exports; no installation or device accuracy claim",
+    "executable":  "C:\\tmp\\fdm-professional-precision-release-20261027\\dist\\windows\\installer-payload-6f5f8a19047a\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "0D2993101EAA804AE891CFE95C63A855548B523AFD0F02CA763F1DF6D7ED9743",
+    "project":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\10bf065773324bba92c6002c282125c5\\professional-smoke.fdmproj",
+    "image":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\10bf065773324bba92c6002c282125c5\\synthetic-edge.bmp",
+    "source_sha256_before":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_sha256_after":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-173853-0041d86d04294d4a8f5ef55b3a458266",
+    "session_id":  1,
+    "process_id":  10052,
+    "controls":  [
+
+                 ],
+    "snapshots":  [
+                      {
+                          "phase":  "99-failure",
+                          "file":  "99-failure.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "9AC2543F0A17AADF847999842CD2DC6C0534643E389BF6313C522DA8D91663FC",
+                          "center_sha256":  "9D90D24D2CBBA9458A94F26814EA41EF80A5BFC7F71F2891DE60A1EA50FFF7BD",
+                          "center_mean":  100.11746821448314,
+                          "center_colors":  118,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+
+                         ],
+    "errors":  [
+                   "Scoped control not found: /professionalMeasurementLabelDecimals",
+                   "Close: Owned EXE still running; no forced termination"
+               ],
+    "process_ids":  [
+                        10052
+                    ],
+    "exits":  [
+
+              ],
+    "project_snapshots":  [
+                              {
+                                  "publication_barrier":  "strictly newer LastWriteTimeUtc, then saved UI, exclusive-read copy",
+                                  "before_sha256":  "78E7E45E05D30CFC9FA4CF7ED7EA661CB936317D3428D074D0E96DF69797060D",
+                                  "file":  "baseline.fdmproj",
+                                  "source_sha256":  "8E4A042CBD08AB053EDE3989544E4065A42956D5CFE0C8DEE6FCBA843F0733E2",
+                                  "before_last_write_utc_ticks":  "639286907329908573",
+                                  "published_last_write_utc_ticks":  "639286907375384151",
+                                  "phase":  "baseline",
+                                  "sha256":  "8E4A042CBD08AB053EDE3989544E4065A42956D5CFE0C8DEE6FCBA843F0733E2"
+                              }
+                          ],
+    "settings":  [
+
+                 ],
+    "images":  [
+
+               ],
+    "csv":  [
+
+            ],
+    "steps":  [
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+                      "root_handle":  7472548,
+                      "pid":  10052,
+                      "utc":  "2026-10-27T09:38:56.4898794Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "pid":  10052,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "utc":  "2026-10-27T09:38:56.6008884Z"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  7472548,
+                      "pid":  10052,
+                      "utc":  "2026-10-27T09:38:57.4377027Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "pid":  10052,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "utc":  "2026-10-27T09:38:57.5363916Z"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "设置",
+                      "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+                      "root_handle":  7472548,
+                      "pid":  10052,
+                      "utc":  "2026-10-27T09:38:57.7000866Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "pid":  10052,
+                      "name":  "设置",
+                      "action":  "owned-post-click-queued",
+                      "utc":  "2026-10-27T09:38:57.8029901Z"
+                  },
+                  {
+                      "handle":  9373036,
+                      "pid":  10052,
+                      "action":  "preferences-dialog-observed"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.SettingsDialog.settingsSidebar.settingsNavigation",
+                      "root_handle":  7472548,
+                      "pid":  10052,
+                      "utc":  "2026-10-27T09:38:58.3955107Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "pid":  10052,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "utc":  "2026-10-27T09:38:58.4946924Z"
+                  }
+              ],
+    "graceful_exit":  false,
+    "exit_code":  null,
+    "process_still_running":  true,
+    "forced_termination":  false,
+    "tables":  [
+
+               ],
+    "failure_stack":  "在 Wait-In、C:\\tmp\\fdm-professional-precision-release-20261027\\scripts\\validation\\probe_professional_precision_frozen.ps1 中: 第 351 行\r\n在 Open-Preferences、C:\\tmp\\fdm-professional-precision-release-20261027\\scripts\\validation\\probe_professional_precision_frozen.ps1 中: 第 407 行\r\n在 \u003cScriptBlock\u003e、C:\\tmp\\fdm-professional-precision-release-20261027\\scripts\\validation\\probe_professional_precision_frozen.ps1 中: 第 558 行",
+    "finished_at":  "2026-10-27T09:39:22.4533143Z"
+}

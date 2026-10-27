@@ -1,0 +1,1022 @@
+{
+    "schema_version":  1,
+    "passed":  true,
+    "started_at":  "2026-10-27T09:42:49.3827649Z",
+    "scope":  "Frozen EXE precision UIA smoke; independent synthetic project and actual PNG/CSV exports; no installation or device accuracy claim",
+    "executable":  "C:\\tmp\\fdm-professional-precision-release-20261027\\dist\\windows\\installer-payload-6f5f8a19047a\\{app}\\FiberDiameterMeasurement.exe",
+    "executable_sha256":  "0D2993101EAA804AE891CFE95C63A855548B523AFD0F02CA763F1DF6D7ED9743",
+    "project":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\b33ae253cfe04bcca9448e689911b27c\\professional-smoke.fdmproj",
+    "image":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\precision-ui-fixtures\\b33ae253cfe04bcca9448e689911b27c\\synthetic-edge.bmp",
+    "source_sha256_before":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_sha256_after":  "5B87A2E7A1436E577C88A88B9DD4D794DDE4F1B62203C4802C4D3939A17C7898",
+    "source_unchanged":  true,
+    "run_directory":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-174249-fc1b64d9fee84ecbaf4a465b987aa05a",
+    "session_id":  1,
+    "process_id":  5364,
+    "controls":  [
+                     {
+                         "phase":  "professional-precision-spin",
+                         "name":  "结果文字小数位",
+                         "process_id":  3764,
+                         "class":  "NoWheelSpinBox",
+                         "automation_id":  "QApplication.SettingsDialog.settingsPages.QScrollArea.qt_scrollarea_viewport.professionalMeasurementSettingsPage.QGroupBox.professionalMeasurementLabelDecimals",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "professional-precision-spin",
+                         "name":  "结果文字小数位",
+                         "process_id":  3764,
+                         "class":  "NoWheelSpinBox",
+                         "automation_id":  "QApplication.SettingsDialog.settingsPages.QScrollArea.qt_scrollarea_viewport.professionalMeasurementSettingsPage.QGroupBox.professionalMeasurementLabelDecimals",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "professional-precision-spin",
+                         "name":  "结果文字小数位",
+                         "process_id":  3764,
+                         "class":  "NoWheelSpinBox",
+                         "automation_id":  "QApplication.SettingsDialog.settingsPages.QScrollArea.qt_scrollarea_viewport.professionalMeasurementSettingsPage.QGroupBox.professionalMeasurementLabelDecimals",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "professional-precision-spin",
+                         "name":  "结果文字小数位",
+                         "process_id":  3764,
+                         "class":  "NoWheelSpinBox",
+                         "automation_id":  "QApplication.SettingsDialog.settingsPages.QScrollArea.qt_scrollarea_viewport.professionalMeasurementSettingsPage.QGroupBox.professionalMeasurementLabelDecimals",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     },
+                     {
+                         "phase":  "professional-precision-spin",
+                         "name":  "结果文字小数位",
+                         "process_id":  5364,
+                         "class":  "NoWheelSpinBox",
+                         "automation_id":  "QApplication.SettingsDialog.settingsPages.QScrollArea.qt_scrollarea_viewport.professionalMeasurementSettingsPage.QGroupBox.professionalMeasurementLabelDecimals",
+                         "control_type":  "ControlType.Spinner",
+                         "patterns":  [
+                                          "InvokePatternIdentifiers.Pattern",
+                                          "ValuePatternIdentifiers.Pattern",
+                                          "RangeValuePatternIdentifiers.Pattern",
+                                          "TextPatternIdentifiers.Pattern"
+                                      ]
+                     }
+                 ],
+    "snapshots":  [
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "55FC1C7DA3A0738AB79D8A63228AF75EBA2BC5C4ECEEEA2BE6D73615FB5F1148",
+                          "height":  711,
+                          "phase":  "02-default-two",
+                          "file":  "02-default-two.png"
+                      },
+                      {
+                          "phase":  "03-canvas-two",
+                          "file":  "03-canvas-two.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "3AA7AE1C09DEB99A3D58DD6F82281A4DFA14154D62CE9571E87D08AF3C203737",
+                          "center_sha256":  "9D90D24D2CBBA9458A94F26814EA41EF80A5BFC7F71F2891DE60A1EA50FFF7BD",
+                          "center_mean":  100.11746821448314,
+                          "center_colors":  118,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "D0982122CD6251F604A650AE3E5CF0C71914EDD86BC5781F0F920DC3BBEB0BD1",
+                          "height":  691,
+                          "phase":  "export-options-2",
+                          "file":  "export-options-2.png"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "B0B9193C8B4A1D02FA58490B3631BBF6836EDD53A80E9AA72635F410FAE23275",
+                          "height":  711,
+                          "phase":  "04-zero-applied",
+                          "file":  "04-zero-applied.png"
+                      },
+                      {
+                          "phase":  "05-canvas-zero",
+                          "file":  "05-canvas-zero.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "A70A6EB124648FA774BA5F12A301F9C3ACCDDB99136620B4CBB2884DE8009261",
+                          "center_sha256":  "9D90D24D2CBBA9458A94F26814EA41EF80A5BFC7F71F2891DE60A1EA50FFF7BD",
+                          "center_mean":  100.11746821448314,
+                          "center_colors":  118,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "D0982122CD6251F604A650AE3E5CF0C71914EDD86BC5781F0F920DC3BBEB0BD1",
+                          "height":  691,
+                          "phase":  "export-options-0",
+                          "file":  "export-options-0.png"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "A957E404D3C153790CFD6526975784F78F6966E6095FB282F2954E19A825AF26",
+                          "height":  711,
+                          "phase":  "06-eight-draft",
+                          "file":  "06-eight-draft.png"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "FE4025D1A48CDD80608133F9A1298E0D83AD9DC3F277159385E8BB90CDB246FC",
+                          "height":  711,
+                          "phase":  "07-restored-default-draft",
+                          "file":  "07-restored-default-draft.png"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "13E0882274B8DEBA2A354B11D2D89AD36C304FEB0D5B79FB9FB7FAF2F7A34F80",
+                          "height":  711,
+                          "phase":  "08-four-applied",
+                          "file":  "08-four-applied.png"
+                      },
+                      {
+                          "phase":  "09-canvas-four",
+                          "file":  "09-canvas-four.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "35462B981CC89AF11160F5EF57547F6A00AD0D07647369C20913F9CF82483B60",
+                          "center_sha256":  "9D90D24D2CBBA9458A94F26814EA41EF80A5BFC7F71F2891DE60A1EA50FFF7BD",
+                          "center_mean":  100.11746821448314,
+                          "center_colors":  118,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "D0982122CD6251F604A650AE3E5CF0C71914EDD86BC5781F0F920DC3BBEB0BD1",
+                          "height":  691,
+                          "phase":  "export-options-4",
+                          "file":  "export-options-4.png"
+                      },
+                      {
+                          "source":  "PID-owned dialog PrintWindow",
+                          "width":  926,
+                          "sha256":  "6B7B2281127F4B8952F18154EF8C89ACF220EE8006E941EB48AF8302895866B4",
+                          "height":  711,
+                          "phase":  "10-reopened-four",
+                          "file":  "10-reopened-four.png"
+                      },
+                      {
+                          "phase":  "11-reopened-canvas",
+                          "file":  "11-reopened-canvas.png",
+                          "width":  1600,
+                          "height":  1000,
+                          "sha256":  "6CF52DCEDE361468B7929FE039BEC67E1D9D585B5E989A262D2CD51B7887000C",
+                          "center_sha256":  "9D90D24D2CBBA9458A94F26814EA41EF80A5BFC7F71F2891DE60A1EA50FFF7BD",
+                          "center_mean":  100.11746821448314,
+                          "center_colors":  118,
+                          "source":  "PID-owned PrintWindow; fixed center ROI"
+                      }
+                  ],
+    "popup_candidates":  [
+
+                         ],
+    "errors":  [
+
+               ],
+    "process_ids":  [
+                        3764,
+                        5364
+                    ],
+    "exits":  [
+                  {
+                      "code":  0,
+                      "pid":  3764
+                  },
+                  {
+                      "code":  0,
+                      "pid":  5364
+                  }
+              ],
+    "project_snapshots":  [
+                              {
+                                  "publication_barrier":  "strictly newer LastWriteTimeUtc, then saved UI, exclusive-read copy",
+                                  "before_sha256":  "6A7F54C084090BE196ADA90F1108B344B5D51E494E36EEA450A5E45236F28694",
+                                  "file":  "baseline.fdmproj",
+                                  "source_sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3",
+                                  "before_last_write_utc_ticks":  "639286909689326717",
+                                  "published_last_write_utc_ticks":  "639286909735826806",
+                                  "phase":  "baseline",
+                                  "sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3"
+                              },
+                              {
+                                  "publication_barrier":  "strictly newer LastWriteTimeUtc, then saved UI, exclusive-read copy",
+                                  "before_sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3",
+                                  "file":  "after-settings.fdmproj",
+                                  "source_sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3",
+                                  "before_last_write_utc_ticks":  "639286909735826806",
+                                  "published_last_write_utc_ticks":  "639286909925938263",
+                                  "phase":  "after-settings",
+                                  "sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3"
+                              },
+                              {
+                                  "publication_barrier":  "strictly newer LastWriteTimeUtc, then saved UI, exclusive-read copy",
+                                  "before_sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3",
+                                  "file":  "reopened.fdmproj",
+                                  "source_sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3",
+                                  "before_last_write_utc_ticks":  "639286909925938263",
+                                  "published_last_write_utc_ticks":  "639286909980614284",
+                                  "phase":  "reopened",
+                                  "sha256":  "AEE1592B141E7DDB2A765C3CC75172C765B6501041231892FF272C0CDA918EF3"
+                              }
+                          ],
+    "settings":  [
+                     {
+                         "phase":  "zero",
+                         "sha256":  "D4DF6FB12DA06C6ACFE555A6ADD313BEDABD1209AC31178903DDF07CCDAF4C1B",
+                         "decimals":  0,
+                         "file":  "settings-zero.json"
+                     },
+                     {
+                         "phase":  "restored",
+                         "sha256":  "D53D2F8827F1D939A4D8FA40B60A6F745BA687D2406E8DE84AC99D5BA307CAC7",
+                         "decimals":  2,
+                         "file":  "settings-restored.json"
+                     },
+                     {
+                         "phase":  "four",
+                         "sha256":  "8E218CC9713B41C256F5B2E38E76D9009A59A7B4F2E20604D8A5CFD98D315DC6",
+                         "decimals":  4,
+                         "file":  "settings-four.json"
+                     }
+                 ],
+    "images":  [
+                   {
+                       "sha256":  "0826244CA8657138B9A7E133F40D784262D01DCB7DF0DD07D6F40AAE5F771807",
+                       "decimals":  2,
+                       "file":  "overlay-2.png"
+                   },
+                   {
+                       "sha256":  "C92E6FAE1402D6012E3BD3AEA961E80A8B617E1637F235CAACC240DADA7C9188",
+                       "decimals":  0,
+                       "file":  "overlay-0.png"
+                   },
+                   {
+                       "sha256":  "B3E6C63A973C365BD3D523317C7F58DA2E586BE29AA2C55457534A77772142EE",
+                       "decimals":  4,
+                       "file":  "overlay-4.png"
+                   }
+               ],
+    "csv":  [
+                {
+                    "phase":  "two",
+                    "sha256":  "1751B04CBA73DD63FB353FC97A38366609B76A774BCFCCAEE043DB419FF75577",
+                    "file":  "professional-two.csv",
+                    "rows":  6
+                },
+                {
+                    "phase":  "four",
+                    "sha256":  "1751B04CBA73DD63FB353FC97A38366609B76A774BCFCCAEE043DB419FF75577",
+                    "file":  "professional-four.csv",
+                    "rows":  6
+                }
+            ],
+    "steps":  [
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:52.3112361Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:52.4306922Z",
+                      "pid":  3764,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:53.4915000Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:53.5806842Z",
+                      "pid":  3764,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "设置",
+                      "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:53.7247287Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:53.8140012Z",
+                      "pid":  3764,
+                      "name":  "设置",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "handle":  3408806,
+                      "pid":  3764,
+                      "action":  "preferences-dialog-observed"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.SettingsDialog.settingsSidebar.settingsNavigation",
+                      "root_handle":  3408806,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:54.3571314Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:54.4556782Z",
+                      "pid":  3764,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  3408806
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "取消",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  3408806,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:55.0284225Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:55.1306613Z",
+                      "pid":  3764,
+                      "name":  "取消",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  3408806
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:56.0262191Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:56.1144488Z",
+                      "pid":  3764,
+                      "name":  "导出",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出测量叠加图",
+                      "id":  "QApplication.QMenu.QAction",
+                      "root_handle":  3474342,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:56.1484868Z",
+                      "root_name":  "Fiber Diameter Measurement"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:56.2389908Z",
+                      "pid":  3764,
+                      "name":  "导出测量叠加图",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  3474342
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.ExportOptionsDialog.QDialogButtonBox.exportOptionsSaveButton",
+                      "root_handle":  3539878,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:56.9327705Z",
+                      "root_name":  "导出选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:57.0223702Z",
+                      "pid":  3764,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  3539878
+                  },
+                  {
+                      "title":  "选择导出文件",
+                      "action":  "waiting-native-save"
+                  },
+                  {
+                      "handle":  6030656,
+                      "title":  "选择导出文件",
+                      "path":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-174249-fc1b64d9fee84ecbaf4a465b987aa05a\\overlay-2.png",
+                      "action":  "native-save-queued",
+                      "pid":  3764
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "OK",
+                      "id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                      "root_handle":  3736486,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:58.0838314Z",
+                      "root_name":  "导出完成"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:58.1760969Z",
+                      "pid":  3764,
+                      "name":  "OK",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  3736486
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出明细",
+                      "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:58.2377446Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:58.3371489Z",
+                      "pid":  3764,
+                      "name":  "导出明细",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "title":  "导出专业测量明细",
+                      "action":  "waiting-native-save"
+                  },
+                  {
+                      "handle":  329246,
+                      "title":  "导出专业测量明细",
+                      "path":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-174249-fc1b64d9fee84ecbaf4a465b987aa05a\\professional-two.csv",
+                      "action":  "native-save-queued",
+                      "pid":  3764
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "设置",
+                      "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:58.9851204Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:59.0835488Z",
+                      "pid":  3764,
+                      "name":  "设置",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "handle":  722346,
+                      "pid":  3764,
+                      "action":  "preferences-dialog-observed"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.SettingsDialog.settingsSidebar.settingsNavigation",
+                      "root_handle":  722346,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:59.6483819Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:59.7380501Z",
+                      "pid":  3764,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  722346
+                  },
+                  {
+                      "value":  0,
+                      "action":  "set-precision"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "应用",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  722346,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:42:59.8329576Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:42:59.9467506Z",
+                      "pid":  3764,
+                      "name":  "应用",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  722346
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "取消",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  722346,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:00.6671664Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:00.7542879Z",
+                      "pid":  3764,
+                      "name":  "取消",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  722346
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:01.5936160Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:01.6843446Z",
+                      "pid":  3764,
+                      "name":  "导出",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出测量叠加图",
+                      "id":  "QApplication.QMenu.QAction",
+                      "root_handle":  787882,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:01.7039907Z",
+                      "root_name":  "Fiber Diameter Measurement"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:01.7962086Z",
+                      "pid":  3764,
+                      "name":  "导出测量叠加图",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  787882
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.ExportOptionsDialog.QDialogButtonBox.exportOptionsSaveButton",
+                      "root_handle":  853418,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:02.5101237Z",
+                      "root_name":  "导出选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:02.5967176Z",
+                      "pid":  3764,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  853418
+                  },
+                  {
+                      "title":  "选择导出文件",
+                      "action":  "waiting-native-save"
+                  },
+                  {
+                      "handle":  394762,
+                      "title":  "选择导出文件",
+                      "path":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-174249-fc1b64d9fee84ecbaf4a465b987aa05a\\overlay-0.png",
+                      "action":  "native-save-queued",
+                      "pid":  3764
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "OK",
+                      "id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                      "root_handle":  1050026,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:03.5739021Z",
+                      "root_name":  "导出完成"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:03.6701169Z",
+                      "pid":  3764,
+                      "name":  "OK",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1050026
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "设置",
+                      "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:03.7294061Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:03.8134735Z",
+                      "pid":  3764,
+                      "name":  "设置",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "handle":  1115562,
+                      "pid":  3764,
+                      "action":  "preferences-dialog-observed"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.SettingsDialog.settingsSidebar.settingsNavigation",
+                      "root_handle":  1115562,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:04.3704070Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:04.4700767Z",
+                      "pid":  3764,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1115562
+                  },
+                  {
+                      "value":  8,
+                      "action":  "set-precision"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "取消",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  1115562,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:05.0248438Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:05.1052342Z",
+                      "pid":  3764,
+                      "name":  "取消",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1115562
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "设置",
+                      "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:05.3743345Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:05.4719998Z",
+                      "pid":  3764,
+                      "name":  "设置",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "handle":  1181098,
+                      "pid":  3764,
+                      "action":  "preferences-dialog-observed"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.SettingsDialog.settingsSidebar.settingsNavigation",
+                      "root_handle":  1181098,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:06.0410874Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:06.1383000Z",
+                      "pid":  3764,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1181098
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "恢复本页默认值",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  1181098,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:06.2013028Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:06.3047127Z",
+                      "pid":  3764,
+                      "name":  "恢复本页默认值",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1181098
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "应用",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  1181098,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:07.1833286Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:07.3094197Z",
+                      "pid":  3764,
+                      "name":  "应用",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1181098
+                  },
+                  {
+                      "value":  4,
+                      "action":  "set-precision"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "应用",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  1181098,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:07.7127599Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:07.7966356Z",
+                      "pid":  3764,
+                      "name":  "应用",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1181098
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "取消",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  1181098,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:08.6535496Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:08.7550170Z",
+                      "pid":  3764,
+                      "name":  "取消",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1181098
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:09.6680859Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:09.7698474Z",
+                      "pid":  3764,
+                      "name":  "导出",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出测量叠加图",
+                      "id":  "QApplication.QMenu.QAction",
+                      "root_handle":  1246634,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:09.7904980Z",
+                      "root_name":  "Fiber Diameter Measurement"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:09.8799090Z",
+                      "pid":  3764,
+                      "name":  "导出测量叠加图",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1246634
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.ExportOptionsDialog.QDialogButtonBox.exportOptionsSaveButton",
+                      "root_handle":  1312170,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:10.6095453Z",
+                      "root_name":  "导出选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:10.7136017Z",
+                      "pid":  3764,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1312170
+                  },
+                  {
+                      "title":  "选择导出文件",
+                      "action":  "waiting-native-save"
+                  },
+                  {
+                      "handle":  3868062,
+                      "title":  "选择导出文件",
+                      "path":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-174249-fc1b64d9fee84ecbaf4a465b987aa05a\\overlay-4.png",
+                      "action":  "native-save-queued",
+                      "pid":  3764
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "OK",
+                      "id":  "QApplication.QMessageBox.qt_msgbox_buttonbox.QPushButton",
+                      "root_handle":  1508778,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:11.5640975Z",
+                      "root_name":  "导出完成"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:11.6589337Z",
+                      "pid":  3764,
+                      "name":  "OK",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  1508778
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "导出明细",
+                      "id":  "QApplication.MainWindow.professionalMeasurementDock.QScrollArea.qt_scrollarea_viewport.ProfessionalPanel.QPushButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:11.7244748Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:11.8209354Z",
+                      "pid":  3764,
+                      "name":  "导出明细",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "title":  "导出专业测量明细",
+                      "action":  "waiting-native-save"
+                  },
+                  {
+                      "handle":  329266,
+                      "title":  "导出专业测量明细",
+                      "path":  "C:\\tmp\\fdm-professional-precision-release-20261027\\build\\frozen-gui\\20261027-174249-fc1b64d9fee84ecbaf4a465b987aa05a\\professional-four.csv",
+                      "action":  "native-save-queued",
+                      "pid":  3764
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  7210388,
+                      "pid":  3764,
+                      "utc":  "2026-10-27T09:43:12.4819428Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:12.5881188Z",
+                      "pid":  3764,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  7210388
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.MainWindow.measurementCommandBar.measurementToolStrip.QWidget.measurementPrimaryRow.ToolStripActionButton",
+                      "root_handle":  8717712,
+                      "pid":  5364,
+                      "utc":  "2026-10-27T09:43:14.7959644Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:14.8967430Z",
+                      "pid":  5364,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  8717712
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "设置",
+                      "id":  "QApplication.MainWindow.mainCommandBar.settingsCommandButton",
+                      "root_handle":  8717712,
+                      "pid":  5364,
+                      "utc":  "2026-10-27T09:43:15.4614390Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:15.5470483Z",
+                      "pid":  5364,
+                      "name":  "设置",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  8717712
+                  },
+                  {
+                      "handle":  4457798,
+                      "pid":  5364,
+                      "action":  "preferences-dialog-observed"
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "专业测量",
+                      "id":  "QApplication.SettingsDialog.settingsSidebar.settingsNavigation",
+                      "root_handle":  4457798,
+                      "pid":  5364,
+                      "utc":  "2026-10-27T09:43:16.0915256Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:16.1885407Z",
+                      "pid":  5364,
+                      "name":  "专业测量",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  4457798
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "取消",
+                      "id":  "QApplication.SettingsDialog.QDialogButtonBox.QPushButton",
+                      "root_handle":  4457798,
+                      "pid":  5364,
+                      "utc":  "2026-10-27T09:43:16.7604568Z",
+                      "root_name":  "首选项"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:16.8466577Z",
+                      "pid":  5364,
+                      "name":  "取消",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  4457798
+                  },
+                  {
+                      "action":  "before-owned-post-click",
+                      "name":  "保存",
+                      "id":  "QApplication.MainWindow.mainCommandBar.QToolButton",
+                      "root_handle":  8717712,
+                      "pid":  5364,
+                      "utc":  "2026-10-27T09:43:17.9515230Z",
+                      "root_name":  "显微测量工作台"
+                  },
+                  {
+                      "utc":  "2026-10-27T09:43:18.0614284Z",
+                      "pid":  5364,
+                      "name":  "保存",
+                      "action":  "owned-post-click-queued",
+                      "root_handle":  8717712
+                  }
+              ],
+    "graceful_exit":  true,
+    "exit_code":  null,
+    "process_still_running":  false,
+    "forced_termination":  false,
+    "tables":  [
+
+               ],
+    "cancel_preserved_zero":  true,
+    "restore_default_draft":  true,
+    "reopened_decimals":  4,
+    "finished_at":  "2026-10-27T09:43:18.4508483Z"
+}

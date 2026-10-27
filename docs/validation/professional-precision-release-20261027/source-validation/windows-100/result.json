@@ -1,0 +1,243 @@
+{
+  "version": "0.4.14",
+  "platform": "windows",
+  "system": "Windows-11-10.0.26300-SP0",
+  "requested_scale": 1.0,
+  "baseline_dpr": 2.0,
+  "passed": true,
+  "checks": [
+    {
+      "theme": "light",
+      "size": [
+        900,
+        640
+      ],
+      "all_precisions_visible": true
+    },
+    {
+      "theme": "light",
+      "size": [
+        720,
+        520
+      ],
+      "all_precisions_visible": true
+    },
+    {
+      "theme": "light",
+      "restore_and_screenshot_key": true,
+      "legacy_preview_visible": true
+    },
+    {
+      "theme": "dark",
+      "size": [
+        900,
+        640
+      ],
+      "all_precisions_visible": true
+    },
+    {
+      "theme": "dark",
+      "size": [
+        720,
+        520
+      ],
+      "all_precisions_visible": true
+    },
+    {
+      "theme": "dark",
+      "restore_and_screenshot_key": true,
+      "legacy_preview_visible": true
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "professional-light-900x640-0.png",
+      "sha256": "fd1b14aa56cbd0c54e426e81587267febfbd9bed0ffa02c64eb09c32b47a775a",
+      "pixels": [
+        900,
+        640
+      ],
+      "window": [
+        900,
+        640
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-light-900x640-2.png",
+      "sha256": "81432c3906ce4038f214913752fe91889504b569b834accc759f93fdb1fba1aa",
+      "pixels": [
+        900,
+        640
+      ],
+      "window": [
+        900,
+        640
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-light-900x640-8.png",
+      "sha256": "2d1570046444efb66e17d96dd00acd2c5fed6079e304c3a40906f6d4001aad69",
+      "pixels": [
+        900,
+        640
+      ],
+      "window": [
+        900,
+        640
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-light-720x520-0.png",
+      "sha256": "638aaf6b053b913bec65690b8b2a54b2cb9b161d6c1676a59dfc2fecd40530ad",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-light-720x520-2.png",
+      "sha256": "f969a76af1bc360faf3e9284b6702f44bf8ebc3761bb2a1d1e564cd299a0e538",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-light-720x520-8.png",
+      "sha256": "9dbad6c066ea90b994f36410582637bfed5c995d7cdf6ab55cb3ce7e5a8dcb50",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "measurement-merged-light.png",
+      "sha256": "4754fadc9b19a6951414742251a2d58fa7dc01bc1320e0f7eddc5071e7c1df7d",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-dark-900x640-0.png",
+      "sha256": "2b4677ffb35f15d74268608788cbc53c5a9de5d22717ef702f73bcd771d730c1",
+      "pixels": [
+        900,
+        640
+      ],
+      "window": [
+        900,
+        640
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-dark-900x640-2.png",
+      "sha256": "4a62014a9ac9c0543d35d1e4e1f985131ebb703e37910c0ae429d91ea59186e5",
+      "pixels": [
+        900,
+        640
+      ],
+      "window": [
+        900,
+        640
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-dark-900x640-8.png",
+      "sha256": "315385781a7147641ce775bd739561ce5af80b118dea03291b03341e53b54444",
+      "pixels": [
+        900,
+        640
+      ],
+      "window": [
+        900,
+        640
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-dark-720x520-0.png",
+      "sha256": "9a993d34f19047e4090a6a1ddf8ae6d164b649df30ffa32beb14113c32c430ad",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-dark-720x520-2.png",
+      "sha256": "a8d3ab1824c52867018cfbf91a9f273759c1590f96b61620704726e645f28630",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "professional-dark-720x520-8.png",
+      "sha256": "4cc99a7a359a583fde5ef79a4db0a7697fe13e1674d8f2032fd2a1316d6b8f13",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    },
+    {
+      "file": "measurement-merged-dark.png",
+      "sha256": "540b20e827ea42e767918d8b07acbe20f8beb59fc5d9f4d563d4e0eea28ce4cf",
+      "pixels": [
+        720,
+        520
+      ],
+      "window": [
+        720,
+        520
+      ],
+      "dpr": 1.0
+    }
+  ],
+  "scope": "Real SettingsDialog source-runtime rendering; no user settings writes or hardware",
+  "source_hashes": {
+    "scripts\\validation\\validate_professional_precision_ui.py": "c1093317188fa969ed9892c7698407c1a13b0257fa9b8355a0020c0d9105672f",
+    "src\\fdm\\settings.py": "73b15202502806abe65f6a77a577e3bc8f8c87f6d978355d74a215105bfc1947",
+    "src\\fdm\\ui\\dialogs.py": "744085a2133829c1da1786c50ab4e9075de70054720c1878cb0009c058a35215",
+    "src\\fdm\\ui\\professional_rendering.py": "726f442b8a8e8a97a364116b5254899a7728ebed5672d2ad4a147563a0aed727"
+  }
+}

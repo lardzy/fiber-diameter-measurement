@@ -1,0 +1,29 @@
+{
+  "exit_code": 0,
+  "ui": [
+    {
+      "scale": 1,
+      "exit_code": 0
+    },
+    {
+      "scale": 1.5,
+      "exit_code": 0
+    },
+    {
+      "scale": 2,
+      "exit_code": 0
+    }
+  ],
+  "initial_failures": [
+    "test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache",
+    "test_full_profile_required_assets_have_complete_authoritative_metadata",
+    "test_runtime_profiles_keep_core_small_and_full_complete"
+  ],
+  "targeted_rerun": [
+    "test_collect_runtime_datas_omits_area_infer_docker_tests_and_pycache",
+    "test_full_profile_required_assets_have_complete_authoritative_metadata",
+    "test_runtime_profiles_keep_core_small_and_full_complete"
+  ],
+  "scope": "All initial regression failures resolved by targeted rerun using pinned missing test assets; initial results retained",
+  "installer_sha256_after": "6f5f8a19047a27ca4ac64f5bb876160d9ed89547c9c00190529684c99359c8c9"
+}

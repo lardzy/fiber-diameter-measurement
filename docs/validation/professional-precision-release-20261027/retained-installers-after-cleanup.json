@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-27T09:51:41.963921+00:00",
+  "files": [
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-measurement-20261027/FDM-0.4.13-professional-measurement-ea3a9c2a985b.exe",
+      "bytes": 399281021,
+      "sha256": "330c059e82e61c4faa4d413e7820e7a78ce0bdc3f32ef840953658ed747c5d0c",
+      "verified": true
+    },
+    {
+      "path": "/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/dist/internal/professional-precision-20261027/FDM-0.4.14-professional-precision-217d9e373421.exe",
+      "bytes": 399303072,
+      "sha256": "6f5f8a19047a27ca4ac64f5bb876160d9ed89547c9c00190529684c99359c8c9",
+      "verified": true
+    }
+  ]
+}

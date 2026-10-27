@@ -1,0 +1,18 @@
+{
+  "previous_qt_environment": {
+    "QT_QPA_PLATFORM": null,
+    "QT_SCALE_FACTOR": null,
+    "QT_SCREEN_SCALE_FACTORS": null,
+    "QT_FONT_DPI": null
+  },
+  "system_dpi": 192,
+  "qt_scale_factor": "0.5",
+  "dpi_recipe": "SetProcessDPIAware; GetDpiForSystem; QT_SCALE_FACTOR=96/dpi",
+  "platform": "windows",
+  "app_font": "Microsoft YaHei UI,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+  "resolved_font_family": "Microsoft YaHei UI",
+  "font_point_size": 9.0,
+  "font_pixel_size": 12,
+  "screen_device_pixel_ratio": 1.0,
+  "screen_logical_dpi": 96.0
+}

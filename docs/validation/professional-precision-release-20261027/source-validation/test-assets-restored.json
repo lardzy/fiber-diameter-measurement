@@ -1,0 +1,42 @@
+{
+  "purpose": "Temporary fixtures for three full-profile tests; installer was already built and remains unchanged",
+  "files": [
+    {
+      "source": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime\\area-models\\b_v1_1.3.pth",
+      "target": "C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_v1_1.3.pth",
+      "bytes": 198942049,
+      "sha256": "8d02316e1fdeacebee09143c20232bacc0c775dc529d6c612375a7d8f5cd65f0"
+    },
+    {
+      "source": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime\\area-models\\b_cv_1.3.pth",
+      "target": "C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cv_1.3.pth",
+      "bytes": 198942049,
+      "sha256": "c0a12a2526d58cb0192133e7847381aabefcc31df75faec6812b80b1880edde1"
+    },
+    {
+      "source": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime\\area-models\\b_c1_1.3.pth",
+      "target": "C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_c1_1.3.pth",
+      "bytes": 198942049,
+      "sha256": "81d49d18b9fe34c690bf2cdf1508f126d80391cdbfbb1ebeb9d5105efee70a94"
+    },
+    {
+      "source": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime\\area-models\\b_cm_1.3.pth",
+      "target": "C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cm_1.3.pth",
+      "bytes": 198942049,
+      "sha256": "7d3b550f6b1bedab56bc4d1ef06d74ac01d7886507f59309936110b8b0a87c4a"
+    },
+    {
+      "source": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime\\area-models\\b_cc_1.3.pth",
+      "target": "C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cc_1.3.pth",
+      "bytes": 198942049,
+      "sha256": "a1dbfac0c399def813652ec81f2794a84885b4679a76240ee3e3b9c25888506f"
+    },
+    {
+      "source": "C:\\Users\\lishuyang\\Downloads\\fiber-diameter-measurement\\runtime\\area-models\\b_cvlm_1.3.pth",
+      "target": "C:\\tmp\\fdm-professional-precision-release-20261027\\runtime\\area-models\\b_cvlm_1.3.pth",
+      "bytes": 198999425,
+      "sha256": "a9e2b45926174f3e9662b524f13a866a7adf049719e24b9455395657ddf3074c"
+    }
+  ],
+  "installer_sha256_before": "6f5f8a19047a27ca4ac64f5bb876160d9ed89547c9c00190529684c99359c8c9"
+}
