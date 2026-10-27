@@ -204,7 +204,17 @@ def test_canvas_scale_pixels_match_frozen_export_after_measurement_refresh(
     import numpy as np
     from fdm.geometry import Line
     from fdm.models import Measurement
-    from test_canvas_overlay_handoff import frame, pixels
+    from test_canvas_overlay_handoff import pixels
+
+    def frame(canvas):
+        # This comparison is against a 1024x768 export, so render into that
+        # same logical-pixel plane. QWidget.grab()/the shared frame helper
+        # return physical pixels (2048x1536 at Windows 200% DPI).
+        image = QImage(canvas.size(), QImage.Format.Format_ARGB32_Premultiplied)
+        image.setDevicePixelRatio(1.0)
+        image.fill(0)
+        canvas.render(image)
+        return image
 
     preview = window.scale_preview
     preview.begin()

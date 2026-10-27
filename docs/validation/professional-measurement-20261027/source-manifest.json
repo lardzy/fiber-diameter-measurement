@@ -1,0 +1,24 @@
+{
+  "baseline_commit": "62f89d284d99eac20a5538fe07085e28d95063f9",
+  "sha256": {
+    "src/fdm/measurement_annotation.py": "3c0e2f5404590502c852d5330c8022968b37abddb465be16eaeb0a1bee152cb5",
+    "src/fdm/metrology.py": "74eb6098ab9465915a454596379b8aaf93a30f1f0db5b4e5524dfb6b16629490",
+    "src/fdm/services/metrology_service.py": "5273435ba211d805991abe6c13563d5e8436ca3214797a9bde6008abcb7f3b3a",
+    "src/fdm/services/metrology_fitting.py": "46d319f698dbcaa81f7e364ca45ddff3a10fd78095782806864b13bd676cee51",
+    "src/fdm/ui/measurement_annotation_layout.py": "b2bcc59e0a1b63f65fc5589ef290915646c2c9eee4ab874c1b225b2ade380fd6",
+    "src/fdm/ui/rendering.py": "8a504cc4c743bb51ed84f665d6861308da0786286eca6e6f5bd2b6b15a11c06b",
+    "src/fdm/ui/canvas.py": "6b9d365bebe900d1a61bf9e7bc2e6b6ac31e403890e02263157d73de9ae8e6b8",
+    "src/fdm/ui/professional_canvas.py": "af3ec81b0bccc5d0142e7d023faeaac1672cbb5e93c667000cd15e2a93670786",
+    "src/fdm/ui/professional_measurement.py": "71160ee4443b23ddb2680ddc2e2d6c433b62206aee6be8960ef3ed924887b152",
+    "src/fdm/ui/professional_rendering.py": "f7f59e8a33b4af4bb0be1346a7fdb885fba48a6ea22630f00502d9f1eeaddf5c",
+    "src/fdm/models.py": "4fa344e82e64fa240959c4a46b3fbe90252efb261e5dfb8a3cdd7219d1ae62b0",
+    "src/fdm/history.py": "644b52194756d769511c100435a60b74e8edf0f9b2c528ce400ca0ea6c4d1b2c",
+    "src/fdm/ui/main_window.py": "eeee07c9ea8e9dc73b269fa0c72edc5e8f952be0f1ef9c09996ecf248673da1b",
+    "src/fdm/ui/digital_slide_canvas.py": "ed8d939dff2bb864633852d2a5d1edeec5751a1ffbbe03998e9e97f1d0cf9365",
+    "src/fdm/ui/measurement_export_preview.py": "a6788bc3c3ff51eb006c190fa17077953e96591af141f37ce94f1bd2492a3f25",
+    "src/fdm/ui/scale_overlay_editor.py": "4966eb631bd82d233a6a2c6bf82691dba9eb0841e562c45f0c45ffb07d9f943d",
+    "src/fdm/services/metrology_source_identity.py": "10e1e6d18e7a0f4ada2207d410240bb6a94688bc3bb16e878f0b1779e1a6df9a",
+    "src/fdm/ui/measurement_results_model.py": "e91d75e57364c4d3a2e20076830b966b4e9e6131faa4dc10a56d1795bb91b10a",
+    "scripts/validate_professional_measurement.py": "17d3ac224ea891eb2595f12754ffe44a72a4bf5ab75eee4564b9980cbc1910d7"
+  }
+}

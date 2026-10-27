@@ -264,9 +264,9 @@ def test_main_window_result_image_draws_only_visible_resolved_constructions(
 def test_digital_slide_construction_export_maps_global_coordinates(
     app: QApplication,
 ) -> None:
-    window = MainWindow()
-    try:
-        with TemporaryDirectory() as tmp_dir:
+    with TemporaryDirectory() as tmp_dir:
+        window = MainWindow()
+        try:
             slide_path = Path(tmp_dir) / "construction-viewport.fdmslide"
             store = DigitalSlideStore.create(
                 slide_path,
@@ -337,7 +337,13 @@ def test_digital_slide_construction_export_maps_global_coordinates(
             )
             assert (visible_rect.left(), visible_rect.top()) == (100.0, 200.0)
             assert (visible_rect.width(), visible_rect.height()) == (20.0, 16.0)
-    finally:
-        window._reset_workspace()
-        window.close()
-        app.processEvents()
+        finally:
+            # Renderers own separate SQLite readers. Stop them before closing
+            # the mounted store, and release both while the directory still
+            # exists; Windows correctly refuses to unlink an open database.
+            for canvas in window._canvases.values():
+                canvas.shutdown()
+            window._close_document_slide_stores()
+            window._reset_workspace()
+            window.close()
+            app.processEvents()

@@ -1,0 +1,282 @@
+{
+  "schema": 1,
+  "system": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "font": "PingFang SC",
+  "scope": "实际 FDM 绘制器生成的合成二维尺寸示例；无设备和真实精度结论",
+  "checks": [
+    {
+      "document": "legacy-chain",
+      "index": 1,
+      "source_points": [
+        [
+          260.0,
+          420.0
+        ],
+        [
+          660.0,
+          420.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "legacy-chain",
+      "index": 2,
+      "source_points": [
+        [
+          660.0,
+          420.0
+        ],
+        [
+          1060.0,
+          420.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "legacy-chain",
+      "index": 3,
+      "source_points": [
+        [
+          1060.0,
+          420.0
+        ],
+        [
+          1460.0,
+          420.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "professional-chain",
+      "index": 1,
+      "source_points": [
+        [
+          260.0,
+          825.0
+        ],
+        [
+          660.0,
+          825.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "professional-chain",
+      "index": 2,
+      "source_points": [
+        [
+          660.0,
+          825.0
+        ],
+        [
+          1060.0,
+          825.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "professional-chain",
+      "index": 3,
+      "source_points": [
+        [
+          1060.0,
+          825.0
+        ],
+        [
+          1460.0,
+          825.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "vertical",
+      "index": 1,
+      "source_points": [
+        [
+          410.0,
+          340.0
+        ],
+        [
+          410.0,
+          520.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "vertical",
+      "index": 2,
+      "source_points": [
+        [
+          410.0,
+          520.0
+        ],
+        [
+          410.0,
+          700.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "vertical",
+      "index": 3,
+      "source_points": [
+        [
+          410.0,
+          700.0
+        ],
+        [
+          410.0,
+          880.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "diagonal",
+      "index": 1,
+      "source_points": [
+        [
+          660.0,
+          800.0
+        ],
+        [
+          760.0,
+          700.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "diagonal",
+      "index": 2,
+      "source_points": [
+        [
+          760.0,
+          700.0
+        ],
+        [
+          860.0,
+          600.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "diagonal",
+      "index": 3,
+      "source_points": [
+        [
+          860.0,
+          600.0
+        ],
+        [
+          960.0,
+          500.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "short-8px",
+      "index": 1,
+      "source_points": [
+        [
+          1400.0,
+          550.0
+        ],
+        [
+          1408.0,
+          550.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "distant-label",
+      "index": 1,
+      "source_points": [
+        [
+          1270.0,
+          870.0
+        ],
+        [
+          1480.0,
+          870.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "radius",
+      "index": 1,
+      "source_points": [
+        [
+          440.0,
+          470.0
+        ],
+        [
+          560.0,
+          470.0
+        ]
+      ],
+      "distinct_witnesses": true
+    },
+    {
+      "document": "horizontal-component",
+      "index": 1,
+      "source_points": [
+        [
+          1020.0,
+          570.0
+        ],
+        [
+          1530.0,
+          570.0
+        ]
+      ],
+      "distinct_witnesses": true
+    }
+  ],
+  "images": [
+    {
+      "file": "01-contiguous-old-and-professional.png",
+      "size": [
+        1760,
+        1000
+      ],
+      "sha256": "7d1dd45f6cf865cfd54262cdd4aaf03a95245fbc5bff0e457a570b03a6934bba"
+    },
+    {
+      "file": "02-orientations-short-and-distant.png",
+      "size": [
+        1760,
+        1100
+      ],
+      "sha256": "de64ebc966f5d8f1b339b7b959294863e782f83dc638ea36a2c30a85109a32e1"
+    },
+    {
+      "file": "03-radius-and-horizontal-component.png",
+      "size": [
+        1760,
+        820
+      ],
+      "sha256": "78ea218f12862710239631b137cdcd034bb7a3065a900611e54ae16c7c0aaf61"
+    }
+  ],
+  "source_sha256": {
+    "scripts/validate_dual_dimensions.py": "c59982a88e6da73234ae38d2d160ec6db636d9fb54631f0e712db92aac8aa809",
+    "src/fdm/measurement_annotation.py": "3c0e2f5404590502c852d5330c8022968b37abddb465be16eaeb0a1bee152cb5",
+    "src/fdm/ui/measurement_annotation_layout.py": "b2bcc59e0a1b63f65fc5589ef290915646c2c9eee4ab874c1b225b2ade380fd6",
+    "src/fdm/ui/rendering.py": "8a504cc4c743bb51ed84f665d6861308da0786286eca6e6f5bd2b6b15a11c06b",
+    "src/fdm/ui/professional_rendering.py": "f7f59e8a33b4af4bb0be1346a7fdb885fba48a6ea22630f00502d9f1eeaddf5c"
+  },
+  "passed": true
+}

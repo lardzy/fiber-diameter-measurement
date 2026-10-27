@@ -96,6 +96,7 @@ from fdm.area_display import (
     clear_area_derived_geometry_cache,
 )
 from fdm.geometry import Line, Point, line_length
+from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.units import DEFAULT_LENGTH_UNIT, millimeters_per_unit
 from fdm.construction_document import make_construction_resolver
 from fdm.construction_geometry import (
@@ -2549,6 +2550,9 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._results_dock)
         self._results_dock.hide()
 
+        from fdm.ui.professional_measurement import ProfessionalWorkspace
+        self.professional_workspace = ProfessionalWorkspace(self)
+
         self.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.setCorner(Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
         self._adaptive_layout = AdaptiveLayoutController(
@@ -3000,6 +3004,7 @@ class MainWindow(QMainWindow):
             (MagicSegmentToolMode.FIBER_QUICK, "快速测径"),
             ("calibration", "标定"),
             ("construction", "辅助几何"),
+            ("professional", "专业测量"),
             ("overlay", "叠加标注"),
         ]:
             action = QAction(label, self)
@@ -3020,6 +3025,7 @@ class MainWindow(QMainWindow):
         self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
         self._mode_actions["construction"].setIcon(themed_icon("manual", color="#58C4C7"))
+        self._mode_actions["professional"].setIcon(themed_icon("calibration", color="#58C4C7"))
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
 
         self.image_processing_workbench_action = QAction(
@@ -3452,6 +3458,7 @@ class MainWindow(QMainWindow):
                 )
 
         analysis_menu = self.menuBar().addMenu("分析")
+        analysis_menu.addAction(self._mode_actions["professional"])
         analysis_menu.addAction(self.contour_comparison_action)
         analysis_menu.addSeparator()
         for tool in (
@@ -3786,6 +3793,7 @@ class MainWindow(QMainWindow):
         strip.addModeAction("calibration", self._mode_actions["calibration"])
         self._construction_tool_button = self._build_construction_tool_button()
         strip.addSplitModeButton("construction", self._construction_tool_button)
+        strip.addModeAction("professional", self._mode_actions["professional"])
         self._overlay_tool_button = self._build_overlay_tool_button()
         strip.setOverlayButton(self._overlay_tool_button)
         self._magic_controls_widget = self._build_magic_segment_controls()
@@ -6121,6 +6129,7 @@ class MainWindow(QMainWindow):
         aliases = {
             self._mode_actions["manual"]: "直径 测径 长度",
             self._mode_actions["snap"]: "直径 测径 磁吸 边缘",
+            self._mode_actions["professional"]: "专业 测量 尺寸 卡尺 角度 半径 圆弧 厚度 引出 标注",
             self._mode_actions["polygon_area"]: "截面面积 圈选",
             self._mode_actions["freehand_area"]: "截面面积 圈选",
             self.export_template_action: "原始记录 报表 导出模板",
@@ -6394,6 +6403,12 @@ class MainWindow(QMainWindow):
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
+        workspace = getattr(self, "professional_workspace", None)
+        if workspace is not None:
+            if mode == "professional":
+                workspace.show()
+            elif previous_mode == "professional":
+                workspace.cancel()
         if mode == MagicSegmentToolMode.STANDARD:
             self._ensure_prompt_segmentation_worker()
             warmup = getattr(self._prompt_seg_worker, "warmupRequested", None)
@@ -12684,6 +12699,7 @@ class MainWindow(QMainWindow):
                             raise ValueError("生成了重复的测量对象 ID")
                         existing_measurement_ids.add(measurement_id)
                         measurement = Measurement(
+                            annotation_layout=MeasurementAnnotationLayout(),
                             id=measurement_id,
                             image_id=document.id,
                             fiber_group_id=group.id,
@@ -20633,6 +20649,7 @@ class MainWindow(QMainWindow):
         self,
         canvas: DocumentCanvas,
     ) -> None:
+        self.professional_workspace.attach(canvas)
         canvas.constructionCreateRequested.connect(
             self._on_canvas_construction_create_requested
         )
@@ -23293,6 +23310,7 @@ class MainWindow(QMainWindow):
                     ),
                 )
                 measurement = Measurement(
+                    annotation_layout=MeasurementAnnotationLayout(),
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id,
@@ -24682,6 +24700,14 @@ class MainWindow(QMainWindow):
         from repopulating a canvas after its tab has already been removed.
         """
 
+        professional = getattr(canvas, "_professional_controller", None)
+        if professional is not None:
+            if professional.workspace.active is professional:
+                professional.workspace.cancel()
+            professional.cancel()
+            from fdm.services.metrology_service import clear_document_cache
+            if canvas._document is not None:
+                clear_document_cache(canvas._document)
         shutdown = getattr(canvas, "shutdown", None)
         if callable(shutdown):
             shutdown()
@@ -24758,7 +24784,14 @@ class MainWindow(QMainWindow):
             document,
             geometry_measurement_ids=geometry_measurement_ids,
         )
+        previous_measurement_ids = {m.id for m in document.measurements}
         mutator()
+        annotation_canvas = self._canvases.get(document.id)
+        if annotation_canvas is not None:
+            for measurement in document.measurements:
+                layout = measurement.annotation_layout
+                if measurement.id not in previous_measurement_ids and layout is not None and layout.offset_px is None:
+                    measurement.annotation_layout = annotation_canvas.resolved_measurement_annotation_layout(measurement)
         if not geometry_measurement_ids:
             document.rebuild_group_memberships()
         after = DocumentHistoryState.capture(
@@ -24950,12 +24983,21 @@ class MainWindow(QMainWindow):
         label: str,
         frozen_group: bool = False,
     ) -> None:
+        if measurement.measurement_kind in {"line", "polyline", "area"} and measurement.annotation_layout is None:
+            measurement.annotation_layout = MeasurementAnnotationLayout()
+        if measurement.measurement_kind == "line" and measurement.annotation_layout is not None and measurement.annotation_layout.offset_px is None:
+            measurement.annotation_layout = replace(measurement.annotation_layout, leader_style="dual")
+        annotation_canvas = self._canvases.get(document.id)
+        if annotation_canvas is not None and measurement.annotation_layout is not None and measurement.annotation_layout.offset_px is None:
+            measurement.recalculate(document.calibration)
+            measurement.annotation_layout = annotation_canvas.resolved_measurement_annotation_layout(measurement)
         self._discard_workspace_composite_redo()
         before_stamp = document.state_stamp
         selection = (
             document.view_state.selected_measurement_id,
             document.selected_overlay_id,
             document.selected_construction_id,
+            document.selected_professional_id,
         )
         index = len(document.measurements)
         document.insert_measurement_incremental(measurement, assign_active_group=not frozen_group)
@@ -25209,6 +25251,7 @@ class MainWindow(QMainWindow):
 
         if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
             measurement = Measurement(
+                annotation_layout=MeasurementAnnotationLayout(),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25225,6 +25268,7 @@ class MainWindow(QMainWindow):
             # paths are prepared lazily without blocking confirmation.
         elif mode == "continuous_manual" and isinstance(payload, dict):
             measurement = Measurement(
+                annotation_layout=MeasurementAnnotationLayout(),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25247,6 +25291,7 @@ class MainWindow(QMainWindow):
             )
         elif mode == "manual" and isinstance(payload, Line):
             measurement = Measurement(
+                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25257,6 +25302,7 @@ class MainWindow(QMainWindow):
             )
         elif mode == "snap" and isinstance(payload, Line) and snap_result is not None:
             measurement = Measurement(
+                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25269,6 +25315,7 @@ class MainWindow(QMainWindow):
             )
         elif mode == "fiber_quick" and isinstance(payload, dict) and isinstance(payload.get("line_px"), Line):
             measurement = Measurement(
+                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -26343,6 +26390,9 @@ class MainWindow(QMainWindow):
         self._schedule_statistics_refresh()
         self._refresh_analysis_results_center()
         self._show_pending_history_budget_notice()
+        workspace = getattr(self, "professional_workspace", None)
+        if workspace is not None:
+            workspace.refresh()
 
     def _show_pending_history_budget_notice(self) -> None:
         history_budget_notice = False
@@ -27227,6 +27277,7 @@ class MainWindow(QMainWindow):
         self._sync_measurement_context()
         document = self.current_document()
         has_document = document is not None
+        self._mode_actions["professional"].setEnabled(has_document and not self._preview_active and not self.project.is_read_only_compatible)
         self.watermark_action.setEnabled(bool(
             document is not None and document.document_kind == "image"
             and not self.project.is_read_only_compatible
@@ -28490,6 +28541,7 @@ class MainWindow(QMainWindow):
                     skipped_count += 1
                     continue
                 measurement = Measurement(
+                    annotation_layout=MeasurementAnnotationLayout(),
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=target_group.id,
@@ -28629,6 +28681,7 @@ class MainWindow(QMainWindow):
 
         def mutate() -> None:
             measurement = Measurement(
+                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=job_meta.get("fiber_group_id"),
@@ -29046,6 +29099,13 @@ class MainWindow(QMainWindow):
                 endpoint_radius=endpoint_radius,
                 show_area_fill=self._show_area_fill,
                 area_geometry_mode=AREA_GEOMETRY_RAW,
+            )
+            from fdm.ui.professional_rendering import draw_professional_measurements
+            export_canvas = self._canvases.get(document.id)
+            draw_professional_measurements(
+                painter, document, image_to_output,
+                focus_index=(render_context.focus_index if render_context is not None and render_context.focus_index is not None
+                             else export_canvas.focus_index() if isinstance(export_canvas, DigitalSlideCanvas) else None),
             )
 
         if include_annotations and (include_measurements or include_scale):
@@ -29474,6 +29534,9 @@ class MainWindow(QMainWindow):
             self._transition_in_progress = False
 
     def _shutdown_background_threads(self):
+        workspace = getattr(self, "professional_workspace", None)
+        if workspace is not None:
+            workspace.cancel()
         results = []
         writer_result = self._stop_digital_slide_writer(cancel=True)
         results.append(writer_result)

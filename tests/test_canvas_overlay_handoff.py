@@ -87,6 +87,21 @@ def pixels(image):
     )
 
 
+def logical_pixel_color(image, x, y):
+    """Sample a logical widget coordinate from its full-resolution raster."""
+    dpr = image.devicePixelRatio()
+    return image.pixelColor(round(x * dpr), round(y * dpr))
+
+
+def logical_region(array, canvas, *, left=0, top=0, right=None, bottom=None):
+    """Keep every physical pixel inside the same logical comparison region."""
+    dpr = canvas.devicePixelRatioF()
+    return array[
+        round(top * dpr):None if bottom is None else round(bottom * dpr),
+        round(left * dpr):None if right is None else round(right * dpr),
+    ]
+
+
 @pytest.fixture
 def scene(monkeypatch, desktop_application, request):
     monkeypatch.setenv("FDM_ENABLE_CANVAS_OVERLAY_CACHE", "1")
@@ -303,13 +318,13 @@ def test_new_body_is_visible_until_precise_handoff_even_after_overview_ready(sce
     fresh = area("new", 280, 110)
     doc.insert_measurement_incremental(fresh, select=False)
     canvas.notify_document_visual_changed(added_measurement_ids=(fresh.id,))
-    assert frame(canvas).pixelColor(300, 140).red() < 250
+    assert logical_pixel_color(frame(canvas), 300, 140).red() < 250
     overview(scene)
     assert fresh.id in canvas._overlay_accepted_ids
-    assert frame(canvas).pixelColor(300, 140).red() < 250
+    assert logical_pixel_color(frame(canvas), 300, 140).red() < 250
     warm(scene)
     assert fresh.id not in canvas._overlay_accepted_ids
-    assert frame(canvas).pixelColor(300, 140).red() < 250
+    assert logical_pixel_color(frame(canvas), 300, 140).red() < 250
 
 
 @pytest.mark.parametrize("kind", ["area", "line"])
@@ -347,12 +362,10 @@ def test_selected_edit_does_not_leave_old_geometry_beneath_new_body(
     canvas.measurementEdited.connect(apply_edit)
     canvas._emit_measurement_edit(doc.id, identity, None)
     assert canvas._overlay_held_gesture is not None
-    old_point = tuple(round(value * dpr) for value in old_point)
-    new_point = tuple(round(value * dpr) for value in new_point)
     pending = frame(canvas)
     assert np.array_equal(pixels(before_release), pixels(pending))
-    assert pending.pixelColor(*old_point) == QColor("white")
-    assert pending.pixelColor(*new_point) != QColor("white")
+    assert logical_pixel_color(pending, *old_point) == QColor("white")
+    assert logical_pixel_color(pending, *new_point) != QColor("white")
     # A second paint uses the existing clean background/body instead of drawing
     # neighbours again while waiting for the exact tile worker.
     with patch.object(
@@ -362,7 +375,7 @@ def test_selected_edit_does_not_leave_old_geometry_beneath_new_body(
     ):
         frame(canvas)
     final = warm(scene)
-    assert final.pixelColor(*old_point) == QColor("white")
+    assert logical_pixel_color(final, *old_point) == QColor("white")
 
 
 def test_property_edit_retains_old_complete_selection_without_raw_repaint(scene):
@@ -426,7 +439,7 @@ def test_switching_document_cannot_reuse_an_old_front(scene):
     canvas.set_document(other, source)
     assert not canvas._overlay_presentation.front
     pool.complete(exact)
-    assert frame(canvas).pixelColor(110, 110) == QColor("white")
+    assert logical_pixel_color(frame(canvas), 110, 110) == QColor("white")
 
 
 def test_global_budget_counts_retained_old_epochs(scene):
@@ -458,8 +471,8 @@ def test_failed_precise_region_uses_current_fallback_without_stale_deleted_objec
     canvas._on_overlay_tile_failed(key, "injected failure")
     overview(scene)
     pending = frame(canvas)
-    assert pending.pixelColor(110, 110) == QColor("white")
-    assert np.array_equal(before[600:], pixels(pending)[600:])
+    assert logical_pixel_color(pending, 110, 110) == QColor("white")
+    assert np.array_equal(logical_region(before, canvas, top=600), logical_region(pixels(pending), canvas, top=600))
     assert not canvas._overlay_presentation.regions
 
 
@@ -504,9 +517,9 @@ def test_digital_slide_edit_keeps_global_coordinates_and_precise_neighbours(scen
     ):
         assert np.array_equal(before, pixels(frame(canvas)))
     after = warm(scene)
-    assert after.pixelColor(110, 110) == QColor("white")
-    assert after.pixelColor(225, 125) != QColor("white")
-    assert np.array_equal(before[600:], pixels(after)[600:])
+    assert logical_pixel_color(after, 110, 110) == QColor("white")
+    assert logical_pixel_color(after, 225, 125) != QColor("white")
+    assert np.array_equal(logical_region(before, canvas, top=600), logical_region(pixels(after), canvas, top=600))
     assert doc.get_measurement("edit").polygon_px[0] == Point(8407, 4211)
 
 
@@ -523,8 +536,8 @@ def test_digital_clean_background_respects_callers_local_clip_and_pixel_version(
         canvas._draw_base_image(painter)
     finally:
         painter.end()
-    assert image.pixelColor(40, 40) == QColor("white")
-    assert image.pixelColor(200, 200) == QColor("magenta")
+    assert logical_pixel_color(image, 40, 40) == QColor("white")
+    assert logical_pixel_color(image, 200, 200) == QColor("magenta")
     signature = canvas._overlay_background_signature()
     replacement = QImage(canvas._render_frame.image)
     replacement.fill(QColor("gray"))
@@ -557,7 +570,7 @@ def test_digital_focus_change_drops_pixel_patch_without_discarding_overlay_geome
     current = frame(canvas)
     # The retained clean patch had white pixels in this gap; it must not paint
     # those old-focus pixels over the new gray field.
-    assert current.pixelColor(225, 130) == QColor("#777777")
+    assert logical_pixel_color(current, 225, 130) == QColor("#777777")
 
 
 def test_cancelled_gesture_is_not_revived_by_a_later_property_edit(scene):
@@ -636,11 +649,12 @@ def test_mixed_append_and_undo_preserve_far_pixels_and_final_draw_order(scene, k
     doc.insert_measurement_incremental(added, select=False)
     canvas.notify_document_visual_changed(added_measurement_ids=(added.id,))
     pending = pixels(frame(canvas))
-    assert np.array_equal(before[550:], pending[550:])
+    assert np.array_equal(logical_region(before, canvas, top=550), logical_region(pending, canvas, top=550))
     final = pixels(warm(scene))
     with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
         direct = pixels(frame(canvas))
-    assert np.array_equal(final[120:240, 220:380], direct[120:240, 220:380])
+    assert np.array_equal(logical_region(final, canvas, left=220, top=120, right=380, bottom=240),
+                          logical_region(direct, canvas, left=220, top=120, right=380, bottom=240))
     doc.remove_measurement_incremental(added.id)
     canvas.notify_document_visual_changed()
     restored = pixels(warm(scene))
@@ -680,7 +694,8 @@ def test_precise_composition_is_reused_without_replaying_mixed_vector_tile(scene
     after = pixels(warm(scene))
     with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
         direct = pixels(frame(canvas))
-    assert np.array_equal(after[50:400, 50:400], direct[50:400, 50:400])
+    assert np.array_equal(logical_region(after, canvas, left=50, top=50, right=400, bottom=400),
+                          logical_region(direct, canvas, left=50, top=50, right=400, bottom=400))
 
 
 def test_precise_edge_tile_keeps_constructions_when_panned_into_view(scene):
@@ -705,7 +720,8 @@ def test_precise_edge_tile_keeps_constructions_when_panned_into_view(scene):
         direct = pixels(frame(canvas))
     # The visible part of a cached edge tile changes, without changing its
     # image-space coordinate. Its underlay must cover the complete tile.
-    assert np.array_equal(cached[170:190, 1030:1200], direct[170:190, 1030:1200])
+    assert np.array_equal(logical_region(cached, canvas, left=1030, top=170, right=1200, bottom=190),
+                          logical_region(direct, canvas, left=1030, top=170, right=1200, bottom=190))
 
 
 def test_evicted_front_falls_back_locally_then_finishes_the_latest_edit(scene):
@@ -716,10 +732,10 @@ def test_evicted_front_falls_back_locally_then_finishes_the_latest_edit(scene):
     exact.discard_display_fronts(retired)
     overview(scene)
     pending = pixels(frame(canvas))
-    assert np.array_equal(before[600:], pending[600:])
+    assert np.array_equal(logical_region(before, canvas, top=600), logical_region(pending, canvas, top=600))
     final = warm(scene)
-    assert final.pixelColor(110, 110) == QColor("white")
-    assert final.pixelColor(225, 125) != QColor("white")
+    assert logical_pixel_color(final, 110, 110) == QColor("white")
+    assert logical_pixel_color(final, 225, 125) != QColor("white")
     assert not canvas._overlay_presentation.regions
     assert exact.stats().bytes <= exact.max_bytes
 
@@ -757,7 +773,7 @@ def test_selected_subtraction_keeps_feedback_until_the_precise_result(scene, too
     assert canvas._overlay_held_gesture is not None
     assert np.array_equal(before, pixels(frame(canvas)))
     final = warm(scene)
-    assert final.pixelColor(110, 110) == QColor("white")
+    assert logical_pixel_color(final, 110, 110) == QColor("white")
     assert doc.get_measurement("edit").exact_area_px < 6500
     assert len(doc.get_measurement("edit").area_rings_px) == 2
 
@@ -788,7 +804,7 @@ def test_removing_last_area_releases_handoff_before_returning_to_direct_renderin
         "draw",
         side_effect=AssertionError("small direct preview allocated a raster"),
     ):
-        assert frame(canvas).pixelColor(950, 180) != QColor("white")
+        assert logical_pixel_color(frame(canvas), 950, 180) != QColor("white")
 
 
 @pytest.mark.parametrize("held_edit", [False, True])
@@ -823,7 +839,7 @@ def test_roi_changes_invalidate_cached_underlays_without_scanning_geometry(
         side_effect=AssertionError("ROI geometry serialized during paint"),
     ):
         changed = frame(canvas)
-    assert before.pixelColor(140, 140) != changed.pixelColor(140, 140)
+    assert logical_pixel_color(before, 140, 140) != logical_pixel_color(changed, 140, 140)
     with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
         direct = frame(canvas)
-    assert changed.pixelColor(140, 140) == direct.pixelColor(140, 140)
+    assert logical_pixel_color(changed, 140, 140) == logical_pixel_color(direct, 140, 140)

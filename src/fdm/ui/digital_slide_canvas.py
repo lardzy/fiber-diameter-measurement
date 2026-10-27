@@ -37,6 +37,7 @@ from fdm.services.digital_slide_store import (
     DigitalSlideManifest,
     DigitalSlideStore,
 )
+from fdm.services.metrology_source_identity import ProfessionalSourceRevisionResult, ProfessionalSourceRevisionWorker
 from fdm.settings import AppSettings, digital_slide_render_cache_directory
 from fdm.ui.canvas import (
     DocumentCanvas,
@@ -110,6 +111,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     boundaryFeedbackChanged = Signal(str)
     _renderFrameReady = Signal(object)
     _renderFrameFailed = Signal(object)
+    _professionalSourceRevisionReady = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -118,6 +120,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._brightness_cache = SlideBrightnessCache()
         self._slide_store: DigitalSlideStore | None = None
         self._slide_manifest: DigitalSlideManifest | None = None
+        self._professional_source_worker: ProfessionalSourceRevisionWorker | None = None
+        self._professional_source_generation = 0
+        self._professional_source_document: ImageDocument | None = None
+        self._professionalSourceRevisionReady.connect(self._on_professional_source_revision)
         self._viewport_origin = Point(0.0, 0.0)
         self._browse_center = Point(0.0, 0.0)
         self._browse_view_restored = False
@@ -228,6 +234,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         source_stat: tuple[int, int] | None = None,
         source_identity: str | Path | None = None,
     ) -> None:
+        self._stop_professional_source_revision()
         self._reset_display_adjustments()
         self._clear_boundary_feedback()
         self._render_source_stat = source_stat
@@ -258,6 +265,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.overviewImageChanged.emit(QImage())
         self._slide_store = store
         self._slide_manifest = store.read_manifest()
+        self._start_professional_source_revision(document, store, self._slide_manifest)
         self._native_frame_ever_ready = False
         document.image_size = (self._slide_manifest.width, self._slide_manifest.height)
         slide_meta = dict(document.metadata.get("digital_slide", {})) if isinstance(document.metadata.get("digital_slide"), dict) else {}
@@ -376,6 +384,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
+        self._stop_professional_source_revision()
         self._reset_display_adjustments()
         self._clear_boundary_feedback()
         self._deferred_slide_document = None
@@ -412,6 +421,49 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._native_frame_ever_ready = False
         self._slide_store = None
         self._slide_manifest = None
+
+    def _stop_professional_source_revision(self) -> None:
+        self._professional_source_generation += 1
+        worker, self._professional_source_worker = self._professional_source_worker, None
+        document, self._professional_source_document = self._professional_source_document, None
+        if document is not None and document.professional_source_revision_pending:
+            document.professional_source_revision_pending = False
+            document.professional_source_revision_error = "切片来源核对已取消，请重新打开后测量"
+        if worker is not None:
+            worker.close()
+
+    def _start_professional_source_revision(self, document, store, manifest) -> None:
+        document.professional_source_revision = None
+        document.professional_source_revision_pending = True
+        document.professional_source_revision_error = None
+        self._professional_source_document = document
+        canvas_ref = ref(self)
+
+        def publish(result):
+            canvas = canvas_ref()
+            if canvas is not None and is_qobject_valid(canvas):
+                try:
+                    canvas._professionalSourceRevisionReady.emit(result)
+                except RuntimeError:
+                    pass  # The widget may be deleted between the guard and emit.
+
+        self._professional_source_worker = ProfessionalSourceRevisionWorker(
+            store.path, manifest, generation=self._professional_source_generation,
+            document_id=document.id, callback=publish,
+        )
+
+    def _on_professional_source_revision(self, result: ProfessionalSourceRevisionResult) -> None:
+        document = self._professional_source_document
+        if (result.generation != self._professional_source_generation or document is None
+                or self._document is not document or result.document_id != document.id):
+            return
+        document.professional_source_revision = result.revision
+        document.professional_source_revision_pending = False
+        document.professional_source_revision_error = result.error
+        controller = getattr(self, "_professional_controller", None)
+        if controller is not None:
+            controller.workspace.refresh()
+        self.update()
 
     def hideEvent(self, event) -> None:
         """Cancel navigation/buffer work when another document tab takes over."""
@@ -2377,6 +2429,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         focus_index = self._normalized_focus_index(focus_index)
         if focus_index == self._focus_index:
             return
+        self._cancel_measurement_annotation_drag()
+        professional = getattr(self, "_professional_controller", None)
+        if professional is not None:
+            professional.workspace.cancel()
         self._focus_direction = 1 if focus_index > self._focus_index else -1
         # Capture the currently painted content before advancing generation.
         # ``_advance_view_generation()`` deliberately clears obsolete current
@@ -3071,6 +3127,30 @@ class DigitalSlideCanvas(DocumentCanvas):
         return candidate
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        professional = getattr(self, "_professional_controller", None)
+        if professional is not None and professional._hit_label(event.position()) and not self._read_only:
+            previous = self._clamp_pointer_to_mounted_viewport
+            self._clamp_pointer_to_mounted_viewport = False
+            try:
+                super().mousePressEvent(event)
+            finally:
+                self._clamp_pointer_to_mounted_viewport = previous
+            return
+        if (
+            self._measurement_annotation_input_enabled()
+            and event.button() in {Qt.MouseButton.LeftButton, Qt.MouseButton.RightButton}
+            and self._measurement_annotation_hit(event.position()) is not None
+        ):
+            # A label owns image coordinates but does not consume source
+            # pixels. Its independently placed text may lie outside the
+            # mounted native work field or in FIT padding.
+            previous = self._clamp_pointer_to_mounted_viewport
+            self._clamp_pointer_to_mounted_viewport = False
+            try:
+                super().mousePressEvent(event)
+            finally:
+                self._clamp_pointer_to_mounted_viewport = previous
+            return
         # A press in FIT padding must remain outside the image so it cannot
         # start a measurement or construction command.
         if (
@@ -3105,6 +3185,15 @@ class DigitalSlideCanvas(DocumentCanvas):
             )
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        professional = getattr(self, "_professional_controller", None)
+        if self._annotation_drag is not None or (professional is not None and professional.drag is not None):
+            previous = self._clamp_pointer_to_mounted_viewport
+            self._clamp_pointer_to_mounted_viewport = False
+            try:
+                super().mouseMoveEvent(event)
+            finally:
+                self._clamp_pointer_to_mounted_viewport = previous
+            return
         if self._panning:
             self._apply_pan_position(event.position())
             return
@@ -3127,6 +3216,15 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._clamp_pointer_to_mounted_viewport = previous
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        professional = getattr(self, "_professional_controller", None)
+        if self._annotation_drag is not None or (professional is not None and professional.drag is not None):
+            previous = self._clamp_pointer_to_mounted_viewport
+            self._clamp_pointer_to_mounted_viewport = False
+            try:
+                super().mouseReleaseEvent(event)
+            finally:
+                self._clamp_pointer_to_mounted_viewport = previous
+            return
         was_panning = bool(self._panning)
         if (
             not was_panning

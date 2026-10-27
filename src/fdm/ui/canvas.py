@@ -191,10 +191,15 @@ from fdm.ui.rendering import (
     draw_preview_scale_anchor,
     measurement_display_intersects_rect,
     measurement_display_image_bounds,
+    measurement_label_image_bounds,
+    measurement_annotation_anchor,
+    resolve_measurement_annotation,
+    draw_measurement_annotation_lines,
     measurement_geometry_cull_padding,
     overlay_annotation_bounds,
     overlay_annotation_handle_points,
 )
+from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.ui.construction_rendering import (
     draw_construction_entities,
     draw_snap_candidate,
@@ -966,6 +971,10 @@ class DocumentCanvas(QWidget):
     objectSelectionChanged = Signal(str, object)
     measurementSelected = Signal(str, object)
     measurementEdited = Signal(str, str, object)
+    measurementAnnotationEdited = Signal(str, str, object)
+    measurementAnnotationsEdited = Signal(str, object)
+    measurementAnnotationPropertiesRequested = Signal(str, str)
+    measurementAnnotationHoverChanged = Signal(str, object)
     pathSessionChanged = Signal(str)
     overlayCreateRequested = Signal(str, object)
     overlaySelected = Signal(str, object)
@@ -994,6 +1003,9 @@ class DocumentCanvas(QWidget):
         self._image: QImage | None = None
         self._watermark_visual_state = None
         self._tool_mode = "select"
+        self._annotation_drag = None
+        self._annotation_preview_revision = 0
+        self._hovered_measurement_annotation_id = None
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._construction_tool_kind = "point"
         self._construction_session: _ConstructionCommandSession | None = None
@@ -1343,6 +1355,12 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def set_document(self, document: ImageDocument, image: QImage) -> None:
+        professional = getattr(self, "_professional_controller", None)
+        if professional is not None:
+            if professional.workspace.active is professional:
+                professional.workspace.cancel()
+            professional.cancel()
+        self._cancel_measurement_annotation_drag()
         self._overlay_binding_serial += 1
         screen_layer_cache.discard(id(self))
         draft_preview_cache.discard(id(self))
@@ -1394,6 +1412,12 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        professional = getattr(self, "_professional_controller", None)
+        if professional is not None:
+            if professional.workspace.active is professional:
+                professional.workspace.cancel()
+            professional.cancel()
+        self._cancel_measurement_annotation_drag()
         draft_preview_cache.discard(id(self))
         screen_layer_cache.discard(id(self))
         self._preview_motion_timer.stop()
@@ -1510,6 +1534,8 @@ class DocumentCanvas(QWidget):
         overlay_kind: str | None = None,
         construction_kind: str | None = None,
     ) -> None:
+        if mode != self._tool_mode:
+            self._cancel_measurement_annotation_drag()
         if self._roi_capture is not None:
             self._clear_roi_capture(restore_tool=False)
         next_overlay_kind = (
@@ -4405,7 +4431,292 @@ class DocumentCanvas(QWidget):
             self._set_active_snap_candidate(None)
         self._update_cursor()
 
+    def _professional_canvas_event(self, method: str, event) -> bool:
+        controller = getattr(self, "_professional_controller", None)
+        callback = getattr(controller, method, None)
+        return bool(callback(event)) if callback is not None else False
+
+    def _measurement_annotation_hit(self, position: QPointF):
+        if self._document is None or self._screen_label_mode == "hidden":
+            return None
+        for measurement in reversed(self._document.measurements):
+            if self._screen_label_mode == "selected" and measurement.id != self._document.view_state.selected_measurement_id:
+                continue
+            if measurement.measurement_kind == "count":
+                continue
+            resolved = resolve_measurement_annotation(measurement, self._document, self._settings, self.image_to_widget)
+            if resolved is not None:
+                rect = resolved.text_rect
+            else:
+                image_rect = measurement_label_image_bounds(measurement, self._document, self._settings, self.image_to_widget)
+                if image_rect is None:
+                    continue
+                rect = QRectF(self.image_to_widget(Point(image_rect.left(), image_rect.top())), self.image_to_widget(Point(image_rect.right(), image_rect.bottom())))
+            if rect.adjusted(-2, -2, 2, 2).contains(position):
+                return measurement, rect
+        return None
+
+    def _refresh_measurement_annotation_preview(self) -> None:
+        self._annotation_preview_revision += 1
+        if self._annotation_drag is None:
+            screen_layer_cache.discard_group((id(self), "precise-front"))
+        self.update()
+
+    def _cancel_measurement_annotation_drag(self) -> None:
+        drag = getattr(self, "_annotation_drag", None)
+        if drag is None:
+            return
+        drag["measurement"].annotation_layout = drag["original"]
+        self._annotation_drag = None
+        screen_layer_cache.discard_group((id(self), "annotation-drag-static"))
+        self._refresh_measurement_annotation_preview()
+        self._update_cursor()
+
+    def _measurement_annotation_input_enabled(self) -> bool:
+        return not (self._read_only or self._temporary_grab_active or self._roi_capture is not None
+                or self._scale_anchor_pick_active or self._tool_mode not in {"select", "manual", "snap"}
+                or self._drawing_polygon_points or self._drawing_freehand_active or self._drawing_line is not None)
+
+    def _annotation_widget_to_image(self, position: QPointF) -> Point:
+        # Annotation placement is not a pixel sampling operation. In virtual
+        # slides it must not inherit the native-work-field pointer clamp.
+        mapped = self._paint_context().widget_to_image_transform.map(position)
+        return Point(mapped.x(), mapped.y())
+
+    def _measurement_annotation_mouse_press(self, event) -> bool:
+        if not self._measurement_annotation_input_enabled():
+            return False
+        if event.button() not in {Qt.MouseButton.LeftButton, Qt.MouseButton.RightButton}:
+            return False
+        hit = self._measurement_annotation_hit(event.position())
+        if hit is None:
+            return False
+        measurement, rect = hit
+        self._set_object_selection(CanvasSelectionRef.measurement(measurement.id))
+        if event.button() == Qt.MouseButton.RightButton:
+            self._measurement_annotation_context_menu(measurement, event.globalPosition().toPoint())
+            return True
+        self._annotation_drag = {
+            "measurement": measurement, "original": getattr(measurement, "annotation_layout", None),
+            "press": QPointF(event.position()), "center": self._annotation_widget_to_image(rect.center()), "moved": False,
+        }
+        # Capture the unchanged layer at press time. Subsequent pointer moves
+        # paint one label instead of replaying hundreds of glyphs and objects.
+        scratch = QImage(1, 1, QImage.Format.Format_ARGB32_Premultiplied)
+        scratch.fill(0)
+        capture = QPainter(scratch)
+        try:
+            self._draw_measurement_annotation_drag_layer(capture)
+        finally:
+            capture.end()
+        self._update_cursor()
+        return True
+
+    def _draw_measurement_annotation_drag_layer(self, painter) -> bool:
+        drag = self._annotation_drag
+        document = self._document
+        if drag is None or document is None:
+            return False
+        measurement = drag["measurement"]
+        if document.get_measurement(measurement.id) is not measurement:
+            self._cancel_measurement_annotation_drag()
+            return False
+        context = self._paint_context()
+        viewport = QRectF(self.rect())
+        bounds = context.widget_to_image_transform.mapRect(viewport)
+        stamp = document.state_stamp
+        version = (
+            id(document), stamp.session_state_id, stamp.calibration_state_id,
+            document.measurement_geometry_revision, len(document.measurements),
+            measurement.id, self._overlay_style_generation, self._canvas_visual_settings_signature,
+            self._screen_label_mode, self._show_area_fill, self._tool_mode,
+            document.view_state.selected_measurement_id, self._overlay_underlay_signature(),
+            tuple((group.id, group.color) for group in document.fiber_groups),
+        )
+
+        def draw_static(target):
+            # Preserve document stacking and translucent fills. Only the
+            # active text/leader is omitted, never its measurement geometry.
+            selected_area = measurement.measurement_kind == "area"
+            draw_measurements(
+                target, document, self.image_to_widget, self._screen_passive_settings,
+                line_width=2.0, endpoint_radius=4.0,
+                selected_measurement_id=None if selected_area else measurement.id,
+                show_area_fill=self._show_area_fill, show_area_handles=False,
+                visible_rect=bounds, area_geometry_mode=AREA_GEOMETRY_RAW,
+                suppressed_label_measurement_ids=frozenset((measurement.id,)),
+                use_sprite_cache=True,
+            )
+            draw_overlay_annotations(
+                target, document, self.image_to_widget, self._settings,
+                selected_overlay_id=document.selected_overlay_id,
+                show_handles=self._tool_mode == "select", render_mode="screen_scale_full_image",
+            )
+
+        cached = screen_layer_cache.draw(
+            painter, owner=(id(self), "annotation-drag-static"), version=version,
+            bounds=bounds, origin=self._overlay_widget_origin(), zoom=self._zoom,
+            dpr=max(1.0, self.devicePixelRatioF()), viewport=viewport, render=draw_static,
+        )
+        if not cached:
+            # Keep the existing bounded-memory fallback at unusually large
+            # raster sizes instead of allocating an unbounded framebuffer.
+            draw_static(painter)
+        if self._screen_label_mode != "hidden":
+            draw_measurement_label_only(painter, document, measurement, self.image_to_widget, self._settings)
+        if measurement.measurement_kind == "area":
+            # Keep selection strokes above the moved leader, just as in the
+            # ordinary composition. The existing geometry-only selected layer
+            # has its own bounded cache and does not depend on label position.
+            self._draw_selected_measurement_active_layer(painter, context)
+        return True
+
+    def _measurement_annotation_mouse_move(self, event) -> bool:
+        drag = self._annotation_drag
+        if drag is None:
+            hit = self._measurement_annotation_hit(event.position()) if self._measurement_annotation_input_enabled() and not self._panning else None
+            identity = hit[0].id if hit is not None else None
+            if identity is None and self._measurement_annotation_input_enabled() and not self._panning:
+                geometry_hit = self._hit_test_measurement(self.widget_to_image(event.position()))
+                measurement = self._document.get_measurement(geometry_hit) if self._document is not None and geometry_hit else None
+                if measurement is not None and measurement.annotation_layout is not None:
+                    identity = measurement.id
+            if identity != self._hovered_measurement_annotation_id:
+                self._hovered_measurement_annotation_id = identity
+                self.measurementAnnotationHoverChanged.emit(self._document.id, identity)
+                self._update_cursor()
+                self.update()
+            return False
+        delta = event.position() - drag["press"]
+        if not drag["moved"] and math.hypot(delta.x(), delta.y()) < 3:
+            return True
+        drag["moved"] = True
+        measurement = drag["measurement"]
+        origin = self._annotation_widget_to_image(drag["press"])
+        current = self._annotation_widget_to_image(event.position())
+        anchor = measurement_annotation_anchor(measurement)
+        offset = Point(drag["center"].x + current.x - origin.x - anchor.x,
+                       drag["center"].y + current.y - origin.y - anchor.y)
+        layout = drag["original"] or MeasurementAnnotationLayout()
+        measurement.annotation_layout = layout.with_manual_offset(offset)
+        self._refresh_measurement_annotation_preview()
+        return True
+
+    def _measurement_annotation_mouse_release(self, event) -> bool:
+        drag = self._annotation_drag
+        if drag is None or event.button() != Qt.MouseButton.LeftButton:
+            return False
+        self._measurement_annotation_mouse_move(event)
+        layout = drag["measurement"].annotation_layout
+        moved = drag["moved"]
+        measurement_id = drag["measurement"].id
+        # Restore the before-state before publishing the one history command.
+        self._cancel_measurement_annotation_drag()
+        if moved and layout != drag["original"] and self._document is not None:
+            self.measurementAnnotationEdited.emit(self._document.id, measurement_id, layout)
+        return True
+
+    def _measurement_annotation_context_menu(self, measurement, position) -> None:
+        layout = getattr(measurement, "annotation_layout", None) or MeasurementAnnotationLayout()
+        menu = QMenu(self)
+        automatic = menu.addAction("恢复自动位置")
+        leader = menu.addAction("显示引出线")
+        leader.setCheckable(True)
+        leader.setChecked(layout.show_leader)
+        single = dual = None
+        if measurement.measurement_kind == "line":
+            styles = menu.addMenu("引出样式")
+            single = styles.addAction("单引出")
+            dual = styles.addAction("双端引出（尺寸线）")
+            for action, style in ((single, "single"), (dual, "dual")):
+                action.setCheckable(True)
+                action.setChecked(layout.leader_style == style)
+        properties = menu.addAction("标注属性…")
+        chosen = menu.exec(position)
+        if self._document is None:
+            return
+        if chosen == automatic:
+            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, layout.with_automatic_position())
+        elif chosen == leader:
+            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, replace(layout, show_leader=leader.isChecked(), revision=layout.revision + 1))
+        elif chosen is not None and chosen in (single, dual):
+            style = "dual" if chosen == dual else "single"
+            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, replace(layout, leader_style=style, revision=layout.revision + 1))
+        elif chosen == properties:
+            self.measurementAnnotationPropertiesRequested.emit(self._document.id, measurement.id)
+
+    def arrange_measurement_annotations(self) -> int:
+        """Upgrade/arrange labels in a single presentation-only history command."""
+        if self._document is None or self._read_only:
+            return 0
+        self._cancel_measurement_annotation_drag()
+        layouts = {
+            measurement.id: (getattr(measurement, "annotation_layout", None) or MeasurementAnnotationLayout()).with_automatic_position()
+            for measurement in self._document.measurements if measurement.measurement_kind != "count"
+        }
+        if layouts:
+            self.measurementAnnotationsEdited.emit(self._document.id, layouts)
+        return len(layouts)
+
+    def resolved_measurement_annotation_layout(self, measurement, layout=None):
+        """Materialize an automatic image-space offset for a history command.
+
+        Call after inserting the new measurement in the document, or before
+        applying a restore/arrange command. No persistent object is modified.
+        """
+        layout = layout or MeasurementAnnotationLayout()
+        if self._document is None or layout.offset_px is not None:
+            return layout
+        original = getattr(measurement, "annotation_layout", None)
+        try:
+            measurement.annotation_layout = layout
+            resolved = resolve_measurement_annotation(
+                measurement, self._document, self._settings, self.image_to_widget,
+                placement_bounds=self._paint_context().image_rect.intersected(QRectF(0, 0, *self._document.image_size)),
+            )
+            if resolved is None:
+                return layout
+            center = self._annotation_widget_to_image(resolved.text_rect.center())
+            anchor = measurement_annotation_anchor(measurement)
+            return replace(layout, offset_px=Point(center.x - anchor.x, center.y - anchor.y))
+        finally:
+            measurement.annotation_layout = original
+
+    def _draw_measurement_annotation_feedback(self, painter) -> None:
+        """Transient selection/hover feedback never enters exported pixels."""
+        if self._document is None or self._screen_label_mode == "hidden":
+            return
+        identity = self._hovered_measurement_annotation_id or self._document.view_state.selected_measurement_id
+        measurement = self._document.get_measurement(identity)
+        if measurement is None:
+            return
+        resolved = resolve_measurement_annotation(measurement, self._document, self._settings, self.image_to_widget)
+        if resolved is None:
+            return
+        painter.save()
+        try:
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor("#ffbf47"), 1.6))
+            painter.drawRoundedRect(resolved.text_rect.adjusted(-2, -2, 2, 2), 3, 3)
+            if self._hovered_measurement_annotation_id == identity:
+                draw_measurement_annotation_lines(painter, resolved, QColor("#ffbf47"), width=1.6)
+                painter.setPen(QPen(QColor("#ffbf47"), 2.4))
+                if measurement.measurement_kind == "line":
+                    line = measurement.effective_line()
+                    painter.drawLine(self.image_to_widget(line.start), self.image_to_widget(line.end))
+                elif measurement.measurement_kind == "polyline":
+                    painter.drawPolyline(QPolygonF([self.image_to_widget(p) for p in measurement.polyline_px]))
+        finally:
+            painter.restore()
+
     def keyPressEvent(self, event) -> None:
+        if self._annotation_drag is not None and event.key() == Qt.Key.Key_Escape:
+            self._cancel_measurement_annotation_drag()
+            event.accept()
+            return
+        if self._professional_canvas_event("key_press", event):
+            event.accept()
+            return
         if event.key() == Qt.Key.Key_Space and not getattr(event, "isAutoRepeat", lambda: False)():
             self.set_temporary_grab_pressed(True)
             event.accept()
@@ -4506,7 +4817,11 @@ class DocumentCanvas(QWidget):
             self._draw_annotations(painter, paint_context)
         finally:
             self._overlay_paint_region = None
+        self._draw_measurement_annotation_feedback(painter)
         self._draw_preview(painter)
+        professional = getattr(self, "_professional_controller", None)
+        if professional is not None:
+            professional.paint(painter)
         scale_preview = getattr(self, "_scale_overlay_preview", None)
         if scale_preview is not None:
             scale_preview.paint(self, painter)
@@ -4576,7 +4891,8 @@ class DocumentCanvas(QWidget):
 
     def hideEvent(self, event) -> None:
         """Stop producers owned by a canvas that is no longer visible."""
-
+        self._cancel_measurement_annotation_drag()
+        self._hovered_measurement_annotation_id = None
         self._end_canvas_pan()
         self._hovered_line_endpoint = None
         self._hovered_construction_id = None
@@ -4714,6 +5030,9 @@ class DocumentCanvas(QWidget):
             return
         self.setFocus(Qt.FocusReason.MouseFocusReason)
         self._last_mouse_pos = event.position()
+        if self._measurement_annotation_mouse_press(event) or self._professional_canvas_event("mouse_press", event):
+            event.accept()
+            return
         if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
             self._begin_canvas_pan(event.button())
             self._update_cursor()
@@ -5089,6 +5408,9 @@ class DocumentCanvas(QWidget):
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._image is None or self._document is None:
             return
+        if self._measurement_annotation_mouse_move(event) or self._professional_canvas_event("mouse_move", event):
+            event.accept()
+            return
         if (
             self._drawing_polygon_points
             or self._drawing_freehand_active
@@ -5445,6 +5767,9 @@ class DocumentCanvas(QWidget):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self._document is None:
+            return
+        if self._measurement_annotation_mouse_release(event) or self._professional_canvas_event("mouse_release", event):
+            event.accept()
             return
         if self._snap_status_timer.isActive():
             self._flush_snap_status()
@@ -5974,6 +6299,7 @@ class DocumentCanvas(QWidget):
             stamp.calibration_state_id,
             self._document.measurement_geometry_revision,
             len(self._document.measurements),
+            self._annotation_preview_revision,
             round(normalized_zoom, 8),
             self._canvas_visual_settings_signature,
         )
@@ -6061,6 +6387,8 @@ class DocumentCanvas(QWidget):
         paint_context: CanvasPaintContext | None = None,
     ) -> None:
         if self._document is None:
+            return
+        if self._draw_measurement_annotation_drag_layer(painter):
             return
         context = paint_context or self._paint_context()
         self._sync_overlay_visual_state()
@@ -6319,6 +6647,12 @@ class DocumentCanvas(QWidget):
 
     def _overlay_cache_enabled(self) -> bool:
         if self._document is None:
+            return False
+        if self._annotation_drag is not None:
+            # Layout-only previews must be shown immediately, never alongside
+            # a worker tile that still contains the previous label. The
+            # synchronous bounded drag layer handles this gesture; ordinary
+            # tiles resume after its single history transaction on release.
             return False
         if os.environ.get("FDM_DISABLE_CANVAS_OVERLAY_CACHE", "").strip() == "1":
             return False
@@ -7325,7 +7659,7 @@ class DocumentCanvas(QWidget):
         for measurement in measurements:
             if measurement.measurement_kind == "count":
                 counts.append(measurement)
-            elif measurement.measurement_kind == "area":
+            elif measurement.measurement_kind == "area" and getattr(measurement, "annotation_layout", None) is None:
                 record(primitives)
                 primitives.clear()
                 command = build_passive_area_overlay_command(
@@ -7497,6 +7831,15 @@ class DocumentCanvas(QWidget):
 
     def _draw_prepared_area_layer(self, painter, measurement, *, selected=False):
         from dataclasses import replace
+
+        if getattr(measurement, "annotation_layout", None) is not None:
+            draw_area_measurement(
+                painter, self._document, measurement, self.image_to_widget, self._screen_passive_settings,
+                line_width=2.0, endpoint_radius=4.0, selected=selected,
+                show_fill=self._show_area_fill and not selected, show_handles=False,
+                use_sprite_cache=True,
+            )
+            return True
 
         command = build_passive_area_overlay_command(
             self._document,
@@ -7802,6 +8145,7 @@ class DocumentCanvas(QWidget):
             stamp.calibration_state_id,
             self._document.measurement_geometry_revision,
             len(self._document.measurements),
+            self._annotation_preview_revision,
         )
         calibration_signature = self._document.calibration_signature()
         # Drawing a hot cached frame must not scan thousands of offscreen
@@ -7890,6 +8234,10 @@ class DocumentCanvas(QWidget):
                     if previous is not None and previous[0] == fingerprint
                     else MeasurementSceneIndex._measurement_bounds(measurement)
                 )
+                if getattr(measurement, "annotation_layout", None) is not None and (previous is None or previous[0] != fingerprint):
+                    display_bounds = measurement_display_image_bounds(measurement, self._document, self._settings, self.image_to_widget)
+                    if display_bounds is not None:
+                        bounds = (display_bounds.left(), display_bounds.top(), display_bounds.right(), display_bounds.bottom())
                 current[measurement.id] = (fingerprint, bounds)
                 if previous is None or previous[0] != fingerprint:
                     changed_ids.add(measurement.id)
@@ -8045,13 +8393,22 @@ class DocumentCanvas(QWidget):
             image_rect.bottom(),
         )
 
-    @staticmethod
     def _measurement_visual_fingerprint(
+        self,
         measurement: Measurement,
         *,
         count_number: int | None = None,
     ) -> tuple[object, ...]:
         appearance = measurement.appearance
+        annotation = getattr(measurement, "annotation_layout", None)
+        annotation_number = None
+        if annotation is not None and annotation.show_identifier and self._document is not None:
+            stamp = (id(self._document), self._document.state_stamp.session_state_id,
+                     self._document.measurement_geometry_revision, len(self._document.measurements))
+            if getattr(self, "_annotation_number_stamp", None) != stamp:
+                self._annotation_numbers = {item.id: index + 1 for index, item in enumerate(self._document.measurements)}
+                self._annotation_number_stamp = stamp
+            annotation_number = self._annotation_numbers.get(measurement.id)
         return (
             id(measurement),
             measurement.geometry_revision,
@@ -8066,6 +8423,8 @@ class DocumentCanvas(QWidget):
             measurement.confidence,
             measurement.status,
             repr(appearance),
+            repr(getattr(measurement, "annotation_layout", None)),
+            annotation_number,
             count_number if measurement.measurement_kind == "count" else None,
         )
 
@@ -10166,6 +10525,7 @@ class DocumentCanvas(QWidget):
             return False
         return self._tool_mode in {
             "manual",
+            "professional",
             "continuous_manual",
             "snap",
             "polygon_area",
@@ -11148,8 +11508,12 @@ class DocumentCanvas(QWidget):
 
     def _update_cursor(self) -> None:
         cursor_shape: Qt.CursorShape | None
-        if self._panning:
+        if self._annotation_drag is not None:
+            cursor_shape = Qt.CursorShape.SizeAllCursor
+        elif self._panning:
             cursor_shape = Qt.CursorShape.ClosedHandCursor
+        elif self._hovered_measurement_annotation_id is not None:
+            cursor_shape = Qt.CursorShape.OpenHandCursor
         elif self._roi_capture is not None:
             cursor_shape = Qt.CursorShape.CrossCursor
         elif self._scale_anchor_pick_active:

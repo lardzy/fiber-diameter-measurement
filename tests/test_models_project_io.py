@@ -381,9 +381,10 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(measurement.area_unit, 123.0)
 
     def test_project_roundtrip(self) -> None:
+        image_path = Path("/tmp/fiber.png").resolve()
         document = ImageDocument(
             id=new_id("image"),
-            path="/tmp/fiber.png",
+            path=str(image_path),
             image_size=(640, 480),
         )
         group = document.ensure_default_group()
@@ -423,7 +424,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.version, "0.1.0")
         self.assertEqual(len(loaded.documents), 1)
         loaded_document = loaded.documents[0]
-        self.assertEqual(loaded_document.path, "/tmp/fiber.png")
+        self.assertEqual(Path(loaded_document.path), image_path)
         self.assertEqual(len(loaded_document.measurements), 1)
         self.assertEqual(len(loaded_document.text_annotations), 1)
         self.assertEqual(loaded_document.text_annotations[0].content, "纤维A")
@@ -906,7 +907,21 @@ class ModelsProjectIOTests(unittest.TestCase):
                 image_size=(10, 10),
             )
 
-            resolution = resolve_document_load_path(document, root / "lisy.fdmproj")
+            expected_sibling = sibling_image.resolve()
+            original_resolve = Path.resolve
+
+            def resolve_local_only(candidate: Path, *args, **kwargs) -> Path:
+                # Windows resolve() can contact a UNC host before exists().
+                # The source is deliberately unavailable in this fallback test.
+                if str(candidate).startswith("\\\\"):
+                    return candidate
+                return original_resolve(candidate, *args, **kwargs)
+
+            with (
+                patch.object(Path, "resolve", resolve_local_only),
+                patch.object(Path, "exists", lambda candidate: candidate == expected_sibling),
+            ):
+                resolution = resolve_document_load_path(document, root / "lisy.fdmproj")
 
         self.assertIsNotNone(resolution)
         self.assertEqual(resolution.path, sibling_image.resolve())
@@ -1676,14 +1691,26 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.documents[0].suppressed_project_group_labels, ["棉", "莱赛尔"])
 
     def test_app_settings_store_runtime_area_paths_relative_to_application_root(self) -> None:
-        runtime_root = application_root() / "runtime"
-        settings = AppSettings(
-            area_weights_dir=str((runtime_root / "area-models").resolve()),
-            area_vendor_root=str((runtime_root / "area-infer" / "vendor" / "yolact").resolve()),
-            area_worker_python=str(Path(sys.executable).resolve()),
-        )
-
-        payload = settings.to_dict()
+        with TemporaryDirectory() as tmp_dir:
+            app_root = Path(tmp_dir).resolve()
+            runtime_root = app_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True)
+            vendor_root.mkdir(parents=True)
+            # Model assets may be intentionally omitted from a test checkout.
+            # Exercise portable paths using real, isolated asset directories.
+            with (
+                patch("fdm.settings.application_root", return_value=app_root),
+                patch("fdm.settings.bundle_resource_root", return_value=app_root),
+                patch("fdm.settings.project_runtime_root", return_value=app_root),
+            ):
+                settings = AppSettings(
+                    area_weights_dir=str(weights_root),
+                    area_vendor_root=str(vendor_root),
+                    area_worker_python=str(Path(sys.executable).resolve()),
+                )
+                payload = settings.to_dict()
 
         self.assertEqual(payload["area_weights_dir"], "runtime/area-models")
         self.assertEqual(payload["area_vendor_root"], "runtime/area-infer/vendor/yolact")

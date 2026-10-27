@@ -165,6 +165,7 @@ class MeasurementResultsModel(QAbstractTableModel):
         self._category_sequence_by_id: dict[str, int] = {}
         self._sequence_totals = {}
         self._category_totals = {}
+        self._hovered_measurement_id: str | None = None
 
     @property
     def document(self) -> ImageDocument | None:
@@ -172,6 +173,8 @@ class MeasurementResultsModel(QAbstractTableModel):
 
     def set_document(self, document: ImageDocument | None) -> None:
         self.beginResetModel()
+        if document is not self._document:
+            self._hovered_measurement_id = None
         self._document = document
         self._measurements = list(document.measurements) if document is not None else []
         self._row_by_id = {
@@ -180,6 +183,15 @@ class MeasurementResultsModel(QAbstractTableModel):
         }
         self._rebuild_sequences()
         self.endResetModel()
+
+    def set_hovered_measurement_id(self, measurement_id: str | None) -> None:
+        if measurement_id == self._hovered_measurement_id:
+            return
+        previous, self._hovered_measurement_id = self._hovered_measurement_id, measurement_id
+        for identity in (previous, measurement_id):
+            row = self._row_by_id.get(identity)
+            if row is not None:
+                self.dataChanged.emit(self.index(row, 0), self.index(row, self.columnCount()-1), [Qt.ItemDataRole.BackgroundRole])
 
     def append_measurement(self, document: ImageDocument, measurement: Measurement) -> bool:
         """Append one already-committed domain measurement without a model reset."""
@@ -226,6 +238,8 @@ class MeasurementResultsModel(QAbstractTableModel):
         if measurement is None or document is None:
             return None
         column = MeasurementResultColumn(index.column())
+        if role == Qt.ItemDataRole.BackgroundRole and measurement.id == self._hovered_measurement_id:
+            return QColor(40, 180, 190, 70)
         group = document.get_group(measurement.fiber_group_id)
         group_display = group.display_name() if group is not None else UNCATEGORIZED_LABEL
         group_filter = (

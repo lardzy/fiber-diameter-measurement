@@ -21,6 +21,8 @@ from fdm.analysis_artifacts import (
     refresh_artifacts_validity,
 )
 from fdm.construction_geometry import ConstructionEntity
+from fdm.measurement_annotation import MeasurementAnnotationLayout
+from fdm.metrology import MeasurementDefinition, MeasurementFeature, parse_professional_state
 from fdm.geometry import (
     Line,
     Point,
@@ -57,6 +59,9 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "analysis-artifacts/v1",
         "analysis-artifacts/v2",
         "construction-geometry/v1",
+        "professional-measurements/v1",
+        "measurement-annotations/v1",
+        "measurement-dual-dimensions/v1",
         "project-rois/v1",
         "image-watermark/v1",
         "image-watermark-datetime/v1",
@@ -654,6 +659,7 @@ class Measurement:
     display_polygon_px: list[Point] = field(default_factory=list, repr=False)
     display_area_rings_px: list[list[Point]] = field(default_factory=list, repr=False)
     display_bounds_px: tuple[float, float, float, float] | None = field(default=None, repr=False)
+    annotation_layout: MeasurementAnnotationLayout | None = None
     _geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     @property
@@ -866,6 +872,8 @@ class Measurement:
         }
         if self.appearance is not None and not self.appearance.is_empty():
             payload["appearance"] = self.appearance.to_dict()
+        if self.annotation_layout is not None:
+            payload["annotation_layout"] = self.annotation_layout.to_dict()
         return payload
 
     @classmethod
@@ -919,6 +927,10 @@ class Measurement:
             created_at=str(payload.get("created_at", utc_now_iso())),
             debug_payload=_json_safe_debug_payload(payload.get("debug_payload", {})),
             appearance=_appearance_from_payload(payload.get("appearance")),
+            annotation_layout=(
+                MeasurementAnnotationLayout.from_dict(payload["annotation_layout"])
+                if payload.get("annotation_layout") is not None else None
+            ),
         )
 
 
@@ -1253,6 +1265,12 @@ class ImageDocument:
     # serialize them into document JSON or measurement/segmentation inputs.
     watermark_assets: dict[str, bytes] = field(default_factory=dict, repr=False, compare=False)
     watermark_asset_error: str | None = field(default=None, repr=False, compare=False)
+    professional_features: list[MeasurementFeature] = field(default_factory=list)
+    professional_measurements: list[MeasurementDefinition] = field(default_factory=list)
+    selected_professional_id: str | None = None
+    professional_source_revision: str | None = field(default=None, init=False, repr=False, compare=False)
+    professional_source_revision_pending: bool = field(default=False, init=False, repr=False, compare=False)
+    professional_source_revision_error: str | None = field(default=None, init=False, repr=False, compare=False)
     _current_state_stamp: DocumentStateStamp = field(
         default_factory=DocumentStateStamp,
         init=False,
@@ -1270,6 +1288,7 @@ class ImageDocument:
     _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
     _construction_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
     _construction_metadata_revision: int = field(default=0, init=False, repr=False, compare=False)
+    _professional_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     def initialize_runtime_state(self) -> None:
         from fdm.history import DocumentHistory
@@ -1295,6 +1314,7 @@ class ImageDocument:
         if self.selected_construction_id is not None:
             self.view_state.selected_measurement_id = None
             self.selected_overlay_id = None
+        self.select_professional(self.selected_professional_id)
         if self._saved_state_stamp is None:
             self._saved_state_stamp = self._current_state_stamp
         if self._saved_calibration_signature is None:
@@ -1454,6 +1474,57 @@ class ImageDocument:
     def mark_measurement_geometry_changed(self) -> None:
         self._measurement_geometry_revision += 1
 
+    @property
+    def professional_geometry_revision(self) -> int:
+        return self._professional_geometry_revision
+
+    def mark_professional_geometry_changed(self) -> None:
+        self._professional_geometry_revision += 1
+
+    def get_professional_feature(self, feature_id: str | None) -> MeasurementFeature | None:
+        return next((item for item in self.professional_features if item.id == feature_id), None)
+
+    def get_professional_measurement(self, measurement_id: str | None) -> MeasurementDefinition | None:
+        return next((item for item in self.professional_measurements if item.id == measurement_id), None)
+
+    def select_professional(self, measurement_id: str | None) -> None:
+        measurement = self.get_professional_measurement(measurement_id)
+        self.selected_professional_id = measurement.id if measurement is not None else None
+        if measurement is not None:
+            self.view_state.selected_measurement_id = None
+            self.selected_overlay_id = None
+            self.selected_construction_id = None
+
+    def apply_professional_state(
+        self,
+        features: Iterable[MeasurementFeature],
+        measurements: Iterable[MeasurementDefinition],
+        *,
+        selected_id: str | None = None,
+        mark_dirty: bool = True,
+    ) -> None:
+        """Atomically validate and replace the independent metrology branch."""
+        parsed_features, parsed_measurements = parse_professional_state({
+            "professional_features": [item.to_dict() for item in features],
+            "professional_measurements": [item.to_dict() for item in measurements],
+        }, self.id)
+        changed = self.professional_features != parsed_features or self.professional_measurements != parsed_measurements
+        # Layout-only editing must not request another fit or change geometry.
+        geometry_changed = self.professional_features != parsed_features or [
+            (item.id, item.kind, item.feature_ids, item.parameters, item.focus_index)
+            for item in self.professional_measurements
+        ] != [
+            (item.id, item.kind, item.feature_ids, item.parameters, item.focus_index)
+            for item in parsed_measurements
+        ]
+        self.professional_features = parsed_features
+        self.professional_measurements = parsed_measurements
+        self.select_professional(selected_id)
+        if geometry_changed:
+            self.mark_professional_geometry_changed()
+        if changed and mark_dirty:
+            self.mark_session_dirty()
+
     def get_construction_entity(
         self,
         construction_id: str | None,
@@ -1485,6 +1556,7 @@ class ImageDocument:
         if entity is not None:
             self.view_state.selected_measurement_id = None
             self.selected_overlay_id = None
+            self.selected_professional_id = None
 
     def add_construction_entity(
         self,
@@ -1606,12 +1678,14 @@ class ImageDocument:
         if measurement_id is not None:
             self.selected_overlay_id = None
             self.selected_construction_id = None
+            self.selected_professional_id = None
 
     def select_overlay_annotation(self, overlay_id: str | None) -> None:
         self.selected_overlay_id = overlay_id
         if overlay_id is not None:
             self.view_state.selected_measurement_id = None
             self.selected_construction_id = None
+            self.selected_professional_id = None
 
     def select_text_annotation(self, text_id: str | None) -> None:
         annotation = self.get_text_annotation(text_id)
@@ -1992,7 +2066,16 @@ class ImageDocument:
             ]
         if self.selected_construction_id is not None:
             payload["selected_construction_id"] = self.selected_construction_id
+        self._append_professional_payload(payload)
         return payload
+
+    def _append_professional_payload(self, payload: dict[str, Any]) -> None:
+        if self.professional_features:
+            payload["professional_features"] = [item.to_dict() for item in self.professional_features]
+        if self.professional_measurements:
+            payload["professional_measurements"] = [item.to_dict() for item in self.professional_measurements]
+        if self.selected_professional_id is not None:
+            payload["selected_professional_id"] = self.selected_professional_id
 
     def calibration_snapshot(self) -> dict[str, Any]:
         calibration_line = self.metadata.get("calibration_line")
@@ -2003,6 +2086,9 @@ class ImageDocument:
 
     def snapshot_state(self) -> dict[str, Any]:
         return {
+            "professional_features": [item.to_dict() for item in self.professional_features],
+            "professional_measurements": [item.to_dict() for item in self.professional_measurements],
+            "selected_professional_id": self.selected_professional_id,
             "watermark": self.watermark.to_dict() if self.watermark else None,
             # Runtime-only compatibility metadata for legacy History.push().
             # Project/sidecar serializers never call snapshot_state().
@@ -2027,6 +2113,7 @@ class ImageDocument:
         }
 
     def restore_snapshot(self, snapshot: dict[str, Any]) -> None:
+        self.professional_features, self.professional_measurements = parse_professional_state(snapshot, self.id)
         self.watermark = WatermarkSpec.from_dict(snapshot.get("watermark"))
         self.calibration = Calibration.from_dict(snapshot["calibration"]) if snapshot.get("calibration") else None
         self.fiber_groups = [
@@ -2078,8 +2165,10 @@ class ImageDocument:
         if self.selected_construction_id is not None:
             self.view_state.selected_measurement_id = None
             self.selected_overlay_id = None
+        self.select_professional(snapshot.get("selected_professional_id"))
         self.mark_measurement_geometry_changed()
         self.mark_construction_geometry_changed()
+        self.mark_professional_geometry_changed()
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
@@ -2255,10 +2344,12 @@ class ImageDocument:
             payload["selected_construction_id"] = self.selected_construction_id
         if self.watermark is not None:
             payload["watermark"] = self.watermark.to_dict()
+        self._append_professional_payload(payload)
         return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ImageDocument":
+        professional_features, professional_measurements = parse_professional_state(payload, str(payload["id"]))
         overlay_payload = payload.get("overlay_annotations")
         construction_payload = payload.get("construction_entities", [])
         if not isinstance(construction_payload, list) or any(
@@ -2368,6 +2459,9 @@ class ImageDocument:
             active_group_id=payload.get("active_group_id"),
             selected_overlay_id=payload.get("selected_overlay_id", payload.get("selected_text_id")),
             construction_entities=construction_entities,
+            professional_features=professional_features,
+            professional_measurements=professional_measurements,
+            selected_professional_id=payload.get("selected_professional_id"),
             selected_construction_id=(
                 str(payload["selected_construction_id"])
                 if payload.get("selected_construction_id")
@@ -2447,6 +2541,18 @@ class ProjectState:
             features.append("live-experiments/v1")
         if any(document.construction_entities for document in self.documents):
             features.append("construction-geometry/v1")
+        if any(document.professional_features or document.professional_measurements for document in self.documents):
+            features.append("professional-measurements/v1")
+        if any(measurement.annotation_layout is not None for document in self.documents for measurement in document.measurements):
+            features.append("measurement-annotations/v1")
+        if any(
+            measurement.annotation_layout is not None
+            and measurement.annotation_layout.leader_style == "dual"
+            for document in self.documents
+            for collection in (document.measurements, document.professional_measurements)
+            for measurement in collection
+        ):
+            features.append("measurement-dual-dimensions/v1")
         if any(document.watermark is not None for document in self.documents):
             features.append("image-watermark/v1")
         if any(

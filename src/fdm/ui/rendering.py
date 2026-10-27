@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence, Set as AbstractSet
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 import math
 
@@ -50,6 +50,9 @@ from fdm.ui.canvas_overlay_cache import (
 from fdm.ui.screen_label_sprite_cache import (
     ScreenLabelSprite,
     screen_label_sprite_cache,
+)
+from fdm.ui.measurement_annotation_layout import (
+    LinkedLabelLayout, choose_automatic_offset, resolve_linked_label, resolve_dual_dimension,
 )
 
 _TEXT_LAYOUT_MAX_ENTRIES = 2048
@@ -169,7 +172,145 @@ def measurement_display_text_with_settings(
             getattr(settings, "measurement_label_decimals", 4) if settings is not None else 4,
         )
     )
-    return format_measurement_label_value(value, unit, decimals)
+    text = format_measurement_label_value(value, unit, decimals)
+    annotation = getattr(measurement, "annotation_layout", None)
+    if annotation is not None and measurement.measurement_kind != "count":
+        metric = {"area": "面积", "polyline": "长度"}.get(measurement.measurement_kind, "直径")
+        if annotation.show_identifier:
+            number = next((i + 1 for i, item in enumerate(document.measurements) if item.id == measurement.id), 1)
+            return f"M{number} · {metric} {text}"
+        return f"{metric} {text}"
+    return text
+
+
+# Auto positions remain relative to the source geometry across zoom/pan and
+# export.  The bounded cache holds no images or document objects.  Explicit
+# layout revisions invalidate only that label, so adding an object cannot
+# rearrange a label the user has already reviewed.
+_AUTOMATIC_ANNOTATION_OFFSETS: OrderedDict[tuple, tuple[Point, float, float]] = OrderedDict()
+
+
+def measurement_annotation_anchor(measurement: Measurement) -> Point:
+    if measurement.measurement_kind == "area":
+        return area_derived_geometry_service.centroid(measurement)
+    return measurement.geometry_center()
+
+
+def resolve_measurement_annotation(
+    measurement: Measurement, document: ImageDocument, settings: AppSettings,
+    image_to_output, *, placement_bounds: QRectF | None = None,
+) -> LinkedLabelLayout | None:
+    annotation = getattr(measurement, "annotation_layout", None)
+    if annotation is None or measurement.measurement_kind == "count" or not _measurement_label_enabled(settings, measurement):
+        return None
+    transform = _image_to_output_transform(image_to_output)
+    scale = _image_to_output_scale(transform)
+    text_scale = measurement_text_scale(settings, scale)
+    font = measurement_label_font(settings, measurement)
+    text = measurement_display_text_with_settings(measurement, document, settings)
+    text_layout = _cached_text_layout(font, text, render_mode="measurement-linked")
+    width, height = (text_layout.width + 12) * text_scale, (text_layout.height + 6) * text_scale
+    anchor = measurement_annotation_anchor(measurement)
+    offset = annotation.offset_px
+    if offset is None:
+        key = (id(document), id(measurement), measurement.id, annotation.revision)
+        cached = _AUTOMATIC_ANNOTATION_OFFSETS.get(key)
+        if cached is None:
+            occupied = []
+            obstacles = []
+            for item in document.measurements:
+                if item.measurement_kind == "count":
+                    continue
+                raw = _measurement_bounds(item)
+                if raw is not None:
+                    left, top, right, bottom = raw
+                    obstacles.append(QRectF(left, top, max(1, right - left), max(1, bottom - top)))
+                other = getattr(item, "annotation_layout", None)
+                if other is None or item is measurement:
+                    continue
+                other_key = (id(document), id(item), item.id, other.revision)
+                saved = _AUTOMATIC_ANNOTATION_OFFSETS.get(other_key)
+                other_offset = other.offset_px if other.offset_px is not None else saved[0] if saved else None
+                if other_offset is not None:
+                    other_anchor = measurement_annotation_anchor(item)
+                    ow, oh = saved[1:] if saved else (width / scale, height / scale)
+                    occupied.append(QRectF(other_anchor.x + other_offset.x - ow / 2, other_anchor.y + other_offset.y - oh / 2, ow, oh))
+            image_width, image_height = document.image_size
+            offset = choose_automatic_offset(
+                anchor, width / scale, height / scale, occupied=occupied, geometry=obstacles,
+                image_rect=placement_bounds if placement_bounds is not None else QRectF(0, 0, image_width, image_height),
+                gap=18 * text_scale / scale,
+            )
+            _AUTOMATIC_ANNOTATION_OFFSETS[key] = (offset, width / scale, height / scale)
+            while len(_AUTOMATIC_ANNOTATION_OFFSETS) > 4096:
+                _AUTOMATIC_ANNOTATION_OFFSETS.popitem(last=False)
+        else:
+            offset = cached[0]
+            _AUTOMATIC_ANNOTATION_OFFSETS.move_to_end(key)
+    if annotation.leader_style == "dual" and measurement.measurement_kind == "line":
+        line = measurement.effective_line()
+        return resolve_dual_dimension(
+            image_to_output(line.start), image_to_output(line.end),
+            image_to_output(Point(anchor.x + offset.x, anchor.y + offset.y)),
+            width, height, show_leader=annotation.show_leader,
+            landing_length=10 * text_scale, arrow_length=7 * text_scale,
+            endpoint_gap=2 * text_scale, witness_overrun=3 * text_scale,
+        )
+    return resolve_linked_label(
+        image_to_output(anchor), image_to_output(Point(anchor.x + offset.x, anchor.y + offset.y)),
+        width, height, show_leader=annotation.show_leader, landing_length=10 * text_scale,
+    )
+
+
+def draw_measurement_annotation_lines(painter, resolved, color, *, width=1.0):
+    """Draw the common witness geometry used by canvas and image export."""
+    if resolved.leader:
+        style = Qt.PenStyle.SolidLine if resolved.witness_lines else Qt.PenStyle.DashLine
+        painter.setPen(QPen(color, width, style))
+        painter.drawPolyline(QPolygonF(resolved.leader))
+    painter.setPen(QPen(color, width, Qt.PenStyle.SolidLine))
+    for segment in (*resolved.witness_lines, *resolved.dimension_lines, *resolved.ticks):
+        painter.drawLine(*segment)
+    painter.setBrush(color)
+    for arrow in resolved.arrowheads:
+        painter.drawPolygon(QPolygonF(arrow))
+    for point in resolved.source_points:
+        painter.drawEllipse(point, max(1.5, width * 1.5), max(1.5, width * 1.5))
+
+
+def draw_linked_measurement_label(
+    painter: QPainter, measurement: Measurement, document: ImageDocument,
+    settings: AppSettings, image_to_output, *, use_sprite_cache: bool | None = None,
+    sprite_device_pixel_ratio: float | None = None,
+) -> None:
+    resolved = resolve_measurement_annotation(measurement, document, settings, image_to_output)
+    if resolved is None or not _is_visible_to_painter(painter, resolved.bounds, padding=3):
+        return
+    scale = measurement_text_scale(settings, _image_to_output_scale(_image_to_output_transform(image_to_output)))
+    color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
+    painter.save()
+    try:
+        draw_measurement_annotation_lines(painter, resolved, color, width=max(1.0, scale))
+        with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
+            rect = QRectF(resolved.text_rect.topLeft() / scale, resolved.text_rect.size() / scale)
+            font = measurement_label_font(settings, measurement)
+            text = measurement_display_text_with_settings(measurement, document, settings)
+            background = QColor(16, 24, 32, 192) if _measurement_label_background_enabled(settings, measurement) else None
+            sprite = _screen_measurement_label_sprite(
+                painter, text=text, font=font, text_color=color, outline_color=None,
+                background_color=background, arrangement_mode="measurement-linked",
+                use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=ratio,
+            )
+            if sprite is not None:
+                _draw_screen_label_sprite(painter, sprite, rect)
+            else:
+                if background is not None:
+                    painter.fillRect(rect, background)
+                _draw_cached_text(painter, _cached_text_layout(font, text, render_mode="measurement-linked"),
+                                  QPointF(rect.left() + 6, rect.top() + 3), color=color, outline=None,
+                                  horizontal_center=rect.center().x())
+    finally:
+        painter.restore()
 
 
 @lru_cache(maxsize=256)
@@ -1032,6 +1173,7 @@ def draw_measurements(
     measurement_sequence: Sequence[Measurement] | None = None,
     count_numbers: Mapping[str, int] | None = None,
     excluded_measurement_ids: AbstractSet[str] | None = None,
+    suppressed_label_measurement_ids: AbstractSet[str] | None = None,
     raw_area_measurement_ids: AbstractSet[str] | None = None,
     proxy_build_budget: AreaProxyBuildBudget | None = None,
     use_sprite_cache: bool | None = None,
@@ -1053,8 +1195,17 @@ def draw_measurements(
         else measurement_sequence
     )
     excluded = excluded_measurement_ids or frozenset()
+    suppressed_labels = suppressed_label_measurement_ids or frozenset()
+    ordinary_settings = settings
+    geometry_only_settings = (
+        replace(settings,
+                length_measurement_label_style=replace(settings.length_measurement_label_style, enabled=False),
+                area_measurement_label_style=replace(settings.area_measurement_label_style, enabled=False))
+        if suppressed_labels else settings
+    )
     raw_area_ids = raw_area_measurement_ids or frozenset()
     for measurement in measurements:
+        settings = geometry_only_settings if measurement.id in suppressed_labels else ordinary_settings
         selected = measurement.id == selected_measurement_id
         if measurement.measurement_kind == "count":
             count_index = (
@@ -1188,6 +1339,7 @@ def draw_measurements(
                     end_point,
                     **label_kwargs,
                 )
+    settings = ordinary_settings
     draw_count_measurements_batch(
         painter,
         document,
@@ -1329,6 +1481,10 @@ def _measurement_label_image_bounds(
     count_number: int | None = None,
     exact_area: bool = False,
 ) -> QRectF | None:
+    linked = resolve_measurement_annotation(measurement, document, settings, image_to_output)
+    if linked is not None:
+        inverse, invertible = _image_to_output_transform(image_to_output).inverted()
+        return inverse.mapRect(linked.bounds.adjusted(-2, -2, 2, 2)) if invertible else None
     origin = image_to_output(Point(0.0, 0.0))
     unit_x = image_to_output(Point(1.0, 0.0))
     unit_y = image_to_output(Point(0.0, 1.0))
@@ -2208,6 +2364,14 @@ def draw_area_measurement_label(
     use_sprite_cache: bool | None = None,
     sprite_device_pixel_ratio: float | None = None,
 ) -> None:
+    if getattr(measurement, "annotation_layout", None) is not None:
+        anchor = measurement_annotation_anchor(measurement)
+        draw_linked_measurement_label(
+            painter, measurement, document, settings,
+            lambda p: center + QPointF((p.x - anchor.x) * image_to_output_scale, (p.y - anchor.y) * image_to_output_scale),
+            use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=sprite_device_pixel_ratio,
+        )
+        return
     scale = measurement_text_scale(settings, image_to_output_scale)
     with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
         _draw_area_measurement_label_unscaled(
@@ -2286,6 +2450,18 @@ def draw_measurement_label(
     line = measurement.effective_line()
     image_length = math.hypot(line.end.x - line.start.x, line.end.y - line.start.y)
     output_length = math.hypot(end_point.x() - start_point.x(), end_point.y() - start_point.y())
+    if getattr(measurement, "annotation_layout", None) is not None:
+        # Reconstruct the uniform view/export transform from the dimension line
+        # so direct callers retain their historical function signature.
+        source = complex(line.end.x - line.start.x, line.end.y - line.start.y)
+        target = complex(end_point.x() - start_point.x(), end_point.y() - start_point.y())
+        ratio = target / source if abs(source) > 1e-9 else complex(1, 0)
+        def mapped(point):
+            delta = complex(point.x - line.start.x, point.y - line.start.y) * ratio
+            return start_point + QPointF(delta.real, delta.imag)
+        draw_linked_measurement_label(painter, measurement, document, settings, mapped,
+                                      use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=sprite_device_pixel_ratio)
+        return
     scale = measurement_text_scale(settings, output_length / image_length if image_length > 1e-9 else 1.0)
     with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
         _draw_measurement_label_unscaled(
@@ -2408,6 +2584,10 @@ def draw_polyline_measurement_label(
     use_sprite_cache: bool | None = None,
     sprite_device_pixel_ratio: float | None = None,
 ) -> None:
+    if getattr(measurement, "annotation_layout", None) is not None:
+        draw_linked_measurement_label(painter, measurement, document, settings, image_to_output,
+                                      use_sprite_cache=use_sprite_cache, sprite_device_pixel_ratio=sprite_device_pixel_ratio)
+        return
     scale = measurement_text_scale(settings, _image_to_output_scale(_image_to_output_transform(image_to_output)))
     with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
         _draw_polyline_measurement_label_unscaled(

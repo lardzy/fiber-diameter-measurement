@@ -10,6 +10,8 @@ from typing import Any, Iterable
 from fdm.construction_geometry import ConstructionEntity
 from fdm.geometry import Line, Point
 from fdm.image_processing_models import DisplayTransform
+from fdm.measurement_annotation import MeasurementAnnotationLayout
+from fdm.metrology import parse_professional_state
 from fdm.models import (
     Calibration,
     DirtyDomain,
@@ -180,6 +182,7 @@ class MeasurementRuntimeState:
     confidence: float
     status: str
     appearance_payload: bytes
+    annotation_payload: bytes = b"null"
 
     @classmethod
     def capture(cls, measurement: Measurement) -> "MeasurementRuntimeState":
@@ -199,6 +202,10 @@ class MeasurementRuntimeState:
                 if measurement.appearance is not None
                 else None
             ),
+            annotation_payload=_json_bytes(
+                measurement.annotation_layout.to_dict()
+                if measurement.annotation_layout is not None else None
+            ),
         )
 
     def restore(self, measurement: Measurement) -> None:
@@ -216,6 +223,11 @@ class MeasurementRuntimeState:
             ObjectAppearanceOverride.from_dict(appearance_payload)
             if isinstance(appearance_payload, dict)
             else None
+        )
+        annotation_payload = _decode_json(self.annotation_payload)
+        measurement.annotation_layout = (
+            MeasurementAnnotationLayout.from_dict(annotation_payload)
+            if annotation_payload is not None else None
         )
 
 
@@ -309,6 +321,8 @@ class DocumentHistoryState:
         compare=False,
         repr=False,
     )
+    professional_payload: bytes = b"{}"
+    selected_professional_id: str | None = field(default=None, compare=False)
 
     @classmethod
     def capture(
@@ -363,6 +377,11 @@ class DocumentHistoryState:
                 document.suppressed_project_group_labels
             ),
             measurement_objects=tuple(document.measurements),
+            professional_payload=_json_bytes({
+                "professional_features": [item.to_dict() for item in document.professional_features],
+                "professional_measurements": [item.to_dict() for item in document.professional_measurements],
+            }),
+            selected_professional_id=document.selected_professional_id,
         )
 
     def detach_measurements(self, measurement_ids: frozenset[str]) -> "DocumentHistoryState":
@@ -397,6 +416,8 @@ class DocumentHistoryState:
                 for measurement in self.measurement_objects
                 if measurement.id not in measurement_ids
             ),
+            professional_payload=self.professional_payload,
+            selected_professional_id=self.selected_professional_id,
         )
 
     @property
@@ -408,7 +429,8 @@ class DocumentHistoryState:
             + len(self.metadata_payload)
             + len(self.display_transform_payload)
             + len(self.watermark_payload)
-            + sum(len(state.appearance_payload) + 128 for state in self.measurement_states)
+            + len(self.professional_payload)
+            + sum(len(state.appearance_payload) + len(state.annotation_payload) + 128 for state in self.measurement_states)
             + sum(len(payload) for _measurement_id, payload in self.geometry_payloads)
             + sum(
                 len(payload)
@@ -464,6 +486,8 @@ class DocumentHistoryState:
             if isinstance(calibration_payload, dict)
             else None
         )
+        professional_features, professional_measurements = parse_professional_state(_decode_json(self.professional_payload), document.id)
+        document.apply_professional_state(professional_features, professional_measurements, selected_id=self.selected_professional_id, mark_dirty=False)
         document.fiber_groups = [
             FiberGroup.from_dict(item, fallback_number=index + 1)
             for index, item in enumerate(_decode_json(self.groups_payload))
@@ -522,6 +546,7 @@ class DocumentHistoryState:
         if document.selected_construction_id is not None:
             document.view_state.selected_measurement_id = None
             document.selected_overlay_id = None
+        document.select_professional(self.selected_professional_id)
         if current_order != self.measurement_order or self.geometry_payloads:
             document.mark_measurement_geometry_changed()
         if construction_changed:
@@ -732,7 +757,7 @@ class MeasurementInsertCommand:
     payload: MeasurementInsertPayload
     measurement_id: str
     index: int
-    previous_selection: tuple[str | None, str | None, str | None]
+    previous_selection: tuple[str | None, ...]
     before_stamp: DocumentStateStamp
     after_stamp: DocumentStateStamp
 
@@ -745,7 +770,8 @@ class MeasurementInsertCommand:
         return frozenset({DirtyDomain.SESSION})
 
     def undo(self, document):
-        measurement_id, overlay_id, construction_id = self.previous_selection
+        measurement_id, overlay_id, construction_id = self.previous_selection[:3]
+        professional_id = self.previous_selection[3] if len(self.previous_selection) > 3 else None
         document.remove_measurement_incremental(
             self.measurement_id,
             mark_dirty=False,
@@ -753,6 +779,7 @@ class MeasurementInsertCommand:
             select_overlay_id=overlay_id,
         )
         document.selected_construction_id = construction_id
+        document.select_professional(professional_id)
         document.restore_state_stamp(self.before_stamp)
 
     def redo(self, document):

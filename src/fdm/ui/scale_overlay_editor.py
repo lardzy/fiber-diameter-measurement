@@ -814,6 +814,24 @@ class ScaleOverlayPreviewController(QObject):
         layout, error = self.current_layout(canvas)
         digital = doc.is_digital_slide()
         if digital:
+            source = canvas.native_viewport_rect()
+            export_frame = QRectF(canvas.image_to_widget(Point(source.left(), source.top())),
+                                  canvas.image_to_widget(Point(source.right(), source.bottom())))
+        elif self.spec.preview_region == "viewport":
+            export_frame = QRectF(canvas.rect())
+        else:
+            export_frame = QRectF(canvas.image_to_widget(Point(0, 0)),
+                                  canvas.image_to_widget(Point(*doc.image_size)))
+        from fdm.ui.measurement_export_preview import clipped_manual_labels
+        clipped = clipped_manual_labels(canvas, export_frame)
+        if clipped:
+            painter.save()
+            painter.setPen(QColor("#E9C46A"))
+            painter.drawText(QRectF(12, max(45, canvas.height() - 52), max(100, canvas.width() - 24), 44),
+                             Qt.TextFlag.TextWordWrap,
+                             "导出范围将裁掉手动标注：" + "、".join(clipped[:8]) + ("…" if len(clipped) > 8 else ""))
+            painter.restore()
+        if digital:
             rect = canvas.native_viewport_rect()
             top_left = canvas.image_to_widget(Point(rect.x(), rect.y()))
             bottom_right = canvas.image_to_widget(Point(rect.right(), rect.bottom()))
