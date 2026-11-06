@@ -315,7 +315,8 @@ def test_offline_export_contains_verified_reference_and_diagnostic_snapshot(work
     complete(dialog)
     with zipfile.ZipFile(output) as archive:
         payload = json.loads(archive.read("diagnostics.json"))
-        assert payload["application_version"] == "0.4.10"
+        from fdm.version import __version__
+        assert payload["application_version"] == __version__
         assert payload["config"]["flat_reference"]["sha256"] == reference["sha256"]
         assert len(archive.namelist()) == 3
     dialog._config["flat_reference"] = dict(reference, sha256="0" * 64)

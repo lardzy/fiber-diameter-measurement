@@ -23,7 +23,9 @@ def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(
         window._app_settings.calibration_presets = [CalibrationPreset("CU 40x", 2, "um")]
         window.show()
         window.resize(1280, 720)
-        window.acquisition_workspace_action.trigger()
+        # This navigation fixture injects frames itself. A delayed no-device
+        # start failure must not retire its synthetic field on slower hosts.
+        window._open_acquisition_workbench(auto_start=False)
         hub = window._acquisition_workbench
         native_handle = window._microview_preview_host.ensure_native_handle()
         assert native_handle

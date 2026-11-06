@@ -1,0 +1,20 @@
+{
+  "guest_directory": "C:\\tmp\\fdm-workspace-alignment-20261029\\e6d32f3d0a",
+  "exit_code": 0,
+  "additional_sources": {
+    "scripts/validation/validate_workflow_redesign.py": "6a10b225a909bd9babc74ba92ea7e6376b8321e35114075d4094bc48b8c3be2c",
+    "tests/test_acquisition_alignment_ui.py": "ff4b448f5e758fb0570a546e93a0925f94119a93a38bb55b2a07e5718286b765",
+    "tests/test_live_display_preferences.py": "2efda10dbb8cf79ba68ef46492fd996316b26da78b5b3fbc5a9930fc1387b746",
+    "tests/test_acquisition_workbench.py": "e7bb6819f9f4348e6503039617f6438caf636b7d080e016b2031ffc5f5bb852d",
+    "native/cu_manual.hpp": "7e0fc70b89915a8ed09f4e678d7619eda77212c8fbd1ea08fa541cd6858f3267",
+    "native/cu_automatic.hpp": "fa948c85dea7801182a7fb2c649bb58d5336139c0451ccb99015fca98f5c43f1",
+    "native/microview_bridge.cpp": "94bc90b044e56c6c182da36e66baf00ee673cd52bf4ea9a314c1c82081dd575d",
+    "native/kernels.cpp": "e75dea6e390057db80a12cdbbce6015dce116596b1ab975e0879e86b4442fa5e",
+    "native/cu_manual.cpp": "1b9d2b07265f8965fa482749c2e06ea5419fa31b2b4c5cf2b524da24a4bb2a95",
+    "native/cu_automatic.cpp": "9c548b80c6c02dcbd66627769aefb0618fc0de6d07074d3dce21335255fb140b"
+  },
+  "qt_scale_factor": 0.5,
+  "actual_dpr": 1.0,
+  "sha256": "cf05e22bfcb831aed9666590c5188749827f425c125a58a8fd227187bd1ece02",
+  "unchanged_product_snapshot_sha256": "2044af388db1fe20d167c81caeed4df8df7fc9154280922ef42ff535a229e179"
+}

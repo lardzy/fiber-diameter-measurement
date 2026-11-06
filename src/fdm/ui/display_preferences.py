@@ -15,9 +15,11 @@ from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import QObject, QPointF, QEvent, QTimer, Signal
+from fdm.ui.acquisition_alignment import ALIGNMENTS, ALIGNMENT_FACTORS, validate_alignment
 
 
 MODES = ("pixel", "fit", "percent", "magnification")
+MAX_ENTERED_PERCENT = 1600.0
 
 
 def _positive(value, label, maximum=100000.0):
@@ -29,12 +31,18 @@ def _positive(value, label, maximum=100000.0):
     return number
 
 
-def _center(value):
+def _center(value, *, allow_outside_image=False):
     if not isinstance(value, (list, tuple)) or len(value) != 2:
         raise ValueError("视图中心必须包含两个坐标")
     result = tuple(float(item) for item in value)
     if not all(math.isfinite(item) for item in result):
         raise ValueError("视图中心必须是有限数值")
+    if allow_outside_image:
+        # A small frame aligned to an edge has its viewport center outside the
+        # image. Limit imported values to a sane Qt-sized coordinate namespace.
+        if any(abs(item) > 16777215 for item in result):
+            raise ValueError("视图中心超出有效范围")
+        return result
     return tuple(max(0.0, min(1.0, item)) for item in result)
 
 
@@ -55,6 +63,15 @@ class AcquisitionDisplayPreferences:
     mode: str = "pixel"
     percent: float = 100.0
     magnification: float = 100.0
+    alignment: str = "free"
+
+    def aligning(self, alignment):
+        return replace(self, alignment=validate_alignment(alignment))
+
+    def at_canvas_percent(self, value):
+        # A fitted small camera ROI can exceed the percentage entry dialog's
+        # limit. A gesture adopts the displayed scale without rounding it.
+        return replace(self, mode="percent", percent=_positive(value, "画面实际比例"))
 
     def selecting(self, mode, value=None):
         if mode not in MODES:
@@ -62,7 +79,7 @@ class AcquisitionDisplayPreferences:
         values = {"mode": mode}
         if mode in ("percent", "magnification") and value is not None:
             values[mode] = _positive(value, "显示比例" if mode == "percent" else "物理倍率",
-                                     1600.0 if mode == "percent" else 100000.0)
+                                     MAX_ENTERED_PERCENT if mode == "percent" else 100000.0)
         return replace(self, **values)
 
 
@@ -92,10 +109,13 @@ class AcquisitionDisplayStore(QObject):
         values = payload.get("display", {})
         if not isinstance(values, dict):
             raise ValueError("显示偏好格式无效")
+        percent = _positive(values.get("percent", 100), "显示比例", MAX_ENTERED_PERCENT)
+        if "canvas_percent" in values:
+            percent = _positive(values["canvas_percent"], "画面实际比例")
         self.preferences = AcquisitionDisplayPreferences(
-            percent=_positive(values.get("percent", 100), "显示比例", 1600),
+            percent=percent,
             magnification=_positive(values.get("magnification", 100), "物理倍率"),
-        ).selecting(values.get("mode", "pixel"))
+        ).selecting(values.get("mode", "pixel")).aligning(values.get("alignment", "free"))
         centers = payload.get("centers", {})
         if not isinstance(centers, dict):
             raise ValueError("视图中心格式无效")
@@ -103,20 +123,29 @@ class AcquisitionDisplayStore(QObject):
             try:
                 source_id, width, height = json.loads(key)
                 if viewport_key(source_id, (width, height)) == key:
-                    self._centers[key] = _center(value)
+                    self._centers[key] = _center(value,
+                        allow_outside_image=payload.get("center_coordinates") == "viewport")
             except (ValueError, TypeError, OverflowError):
                 continue
 
     def _save(self, preferences, centers):
         from fdm.atomic_io import atomic_write_text
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        atomic_write_text(self.path, json.dumps({"version": 1, "display": {
-            "mode": preferences.mode, "percent": preferences.percent,
+        display = {
+            "mode": preferences.mode, "percent": min(preferences.percent, MAX_ENTERED_PERCENT),
             "magnification": preferences.magnification,
-        }, "centers": centers}, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+            "alignment": preferences.alignment,
+        }
+        if preferences.percent > MAX_ENTERED_PERCENT:
+            # Keep the standard field readable by earlier versions.
+            display["canvas_percent"] = preferences.percent
+        atomic_write_text(self.path, json.dumps({"version": 1, "display": display,
+            "center_coordinates": "viewport", "centers": centers}, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
 
     def set_mode(self, mode, value=None):
-        selected = self.preferences.selecting(mode, value)
+        self.set_preferences(self.preferences.selecting(mode, value))
+
+    def set_preferences(self, selected):
         if selected == self.preferences:
             return
         self._save(selected, self._centers)
@@ -126,8 +155,11 @@ class AcquisitionDisplayStore(QObject):
     def center(self, source_id, frame_size):
         return self._centers.get(viewport_key(source_id, frame_size), (0.5, 0.5))
 
-    def set_center(self, source_id, frame_size, center):
-        key, value = viewport_key(source_id, frame_size), _center(center)
+    def set_alignment(self, alignment):
+        self.set_preferences(self.preferences.aligning(alignment))
+
+    def set_center(self, source_id, frame_size, center, *, allow_outside_image=False):
+        key, value = viewport_key(source_id, frame_size), _center(center, allow_outside_image=allow_outside_image)
         if self._centers.get(key) == value:
             return
         centers = dict(self._centers)
@@ -200,6 +232,7 @@ class AcquisitionDisplayBinding(QObject):
         self._screen_window = None
         self._last_message = ""
         self._mount_depth = 0
+        self._user_scroll_pending = set()
         self._apply_timer = QTimer(self)
         self._apply_timer.setSingleShot(True)
         self._apply_timer.timeout.connect(self.apply)
@@ -214,10 +247,14 @@ class AcquisitionDisplayBinding(QObject):
         canvas.installEventFilter(self)
         if scroll_area is not None:
             scroll_area.viewport().installEventFilter(self)
-            scroll_area.horizontalScrollBar().valueChanged.connect(self.capture_center)
-            scroll_area.verticalScrollBar().valueChanged.connect(self.capture_center)
+            for bar in (scroll_area.horizontalScrollBar(), scroll_area.verticalScrollBar()):
+                bar.valueChanged.connect(lambda _value, bar=bar: self._scroll_changed(bar))
+                bar.actionTriggered.connect(lambda _action, bar=bar: self._scroll_intent(bar))
+                bar.sliderMoved.connect(lambda _value, bar=bar: self._scroll_intent(bar))
         else:
             canvas.viewTransformChanged.connect(self.capture_center)
+            canvas.userPanned.connect(self._user_panned)
+            canvas.set_acquisition_alignment(store.preferences.alignment)
         store.changed.connect(self._preferences_changed)
 
     def _preferences_changed(self):
@@ -281,7 +318,8 @@ class AcquisitionDisplayBinding(QObject):
         if self.canvas.zoom_mode() is CanvasZoomMode.FIT:
             self.set_mode("fit")
         else:
-            self.set_mode("percent", self.canvas.view_zoom() * self.canvas.devicePixelRatioF() * 100)
+            self._set_mode_preferences(self.store.preferences.at_canvas_percent(
+                self.canvas.view_zoom() * self.canvas.devicePixelRatioF() * 100))
 
     def _resolve(self, preferences):
         from fdm.ui.live_display import screen_pixel_mm
@@ -291,15 +329,103 @@ class AcquisitionDisplayBinding(QObject):
             calibration=self._calibration_provider(), screen_pixel_mm=mm)
 
     def set_mode(self, mode, value=None):
-        preferences = self.store.preferences.selecting(mode, value)
+        self._set_mode_preferences(self.store.preferences.selecting(mode, value))
+
+    def _set_mode_preferences(self, preferences):
         self.capture_center()
         self._flush_pending_center()
         self._apply_preferences(preferences)
         try:
-            self.store.set_mode(mode, value)
+            self.store.set_preferences(preferences)
         except OSError:
             self._apply_preferences(self.store.preferences)
             raise
+
+    def _validate_display_change(self):
+        if self.scroll_area is not None:
+            self.canvas.validate_display_change()
+
+    def set_alignment(self, alignment):
+        preferences = self.store.preferences.aligning(alignment)
+        self._validate_display_change()
+        # Save the free viewport before an anchor replaces it. Releasing via
+        # the UI retains the currently visible position instead of jumping.
+        self.capture_center(force=alignment == "free")
+        self._flush_pending_center()
+        self._apply_preferences(preferences)
+        try:
+            self.store.set_alignment(alignment)
+        except OSError:
+            self._apply_preferences(self.store.preferences)
+            raise
+
+    def _scroll_intent(self, bar):
+        if self._applying or self._closed:
+            return
+        try:
+            self._validate_display_change()
+        except ValueError as exc:
+            # actionTriggered runs before Qt commits sliderPosition to value.
+            bar.setSliderPosition(bar.value())
+            self._status_callback(str(exc))
+            return
+        self._user_scroll_pending.add(bar)
+        QTimer.singleShot(0, self, lambda: self._user_scroll_pending.discard(bar))
+
+    def _scroll_changed(self, bar):
+        if self._closed or self._applying:
+            return
+        if bar in self._user_scroll_pending:
+            self._user_scroll_pending.discard(bar)
+            self._user_panned()
+        self._applying = True
+        try:
+            # Cancelling a draft emits controller.changed synchronously. It
+            # must not restore the old anchor halfway through this input.
+            self.canvas.display_position_changed()
+        finally:
+            self._applying = False
+        self.capture_center()
+
+    def _user_panned(self):
+        if self._closed or self._applying or self._mount_depth or self._source is None:
+            return
+        self._applying = True
+        saved = False
+        try:
+            self._validate_display_change()
+            # Commit before releasing the canvas anchor. On disk failure the
+            # last confirmed preference remains the visible source of truth.
+            preferences = self.store.preferences.aligning("free")
+            if self.scroll_area is None and preferences.mode == "fit":
+                # A fitted preview becomes a manually positioned view at the
+                # current scale. Commit both changes together so a failed save
+                # cannot leave free positioning paired with automatic fitting.
+                preferences = preferences.at_canvas_percent(
+                    self.canvas.view_zoom() * self.canvas.devicePixelRatioF() * 100)
+            self.store.set_preferences(preferences)
+            if self.scroll_area is None:
+                self.canvas.set_acquisition_alignment("free")
+            else:
+                self.canvas.set_display_alignment("free")
+            # The originating canvas is already in its user-chosen position;
+            # only other pages need the shared preference's deferred apply.
+            self._apply_timer.stop()
+            self._applied_signature = None
+            saved = True
+        except (ValueError, OSError) as exc:
+            self._status_callback(f"画面位置未能保存：{exc}")
+            self._applied_signature = None
+            try:
+                self._apply_preferences(self.store.preferences)
+            except ValueError:
+                # A pending measurement may defer restoration until the
+                # controller's next change; do not recurse into its guard.
+                pass
+        finally:
+            self._applying = False
+        if saved:
+            self.capture_center(force=True)
 
     def apply(self):
         # Canvas setters cancel unfinished gestures and can synchronously emit
@@ -317,28 +443,36 @@ class AcquisitionDisplayBinding(QObject):
         resolved = self._resolve(preferences)
         viewport = self.scroll_area.viewport() if self.scroll_area is not None else self.canvas
         center = self.store.center(*self._source)
+        if self._pending_center is not None and self._pending_center[:2] == self._source:
+            # Preserve the latest gesture while its debounced disk write is
+            # pending, including synchronous controller refreshes.
+            center = self._pending_center[2]
         signature = (preferences, self._source, resolved, self.canvas.devicePixelRatioF(),
                      viewport.size().toTuple(), center)
         if signature == self._applied_signature:
             return
         if resolved.scale is not None and max(self._source[1]) * resolved.scale > 16777215:
             raise ValueError("显示范围过大，请降低比例或倍率。")
+        self._validate_display_change()
         self._applying = True
         try:
             if self.scroll_area is not None:
+                self.canvas.set_display_alignment(preferences.alignment,
+                    center=center if preferences.alignment == "free" else None)
                 current = (self.canvas.display_mode, self.canvas.display_value, self.canvas.screen_pixel_mm)
                 desired = (resolved.mode, resolved.value, resolved.screen_pixel_mm)
                 if current != desired:
                     self.canvas.set_display_mode(*desired)
                 else:
                     self.canvas._update_pixel_extent()
-            elif resolved.mode == "fit":
-                self.canvas.fit_to_view()
             else:
-                # Only the acquisition preview uses physical-pixel semantics.
-                # DocumentCanvas.actual_size and saved measurement views stay intact.
-                self.canvas.set_view_zoom(resolved.scale)
-            self._restore_target = (preferences.mode, center)
+                self.canvas.set_acquisition_alignment(preferences.alignment)
+                if resolved.mode == "fit":
+                    self.canvas.fit_to_view()
+                else:
+                    # Only the acquisition preview uses physical-pixel semantics.
+                    self.canvas.set_view_zoom(resolved.scale)
+            self._restore_target = (preferences.mode, center, preferences.alignment)
             self._applied_signature = signature
             self._restore_timer.start(0)
         except Exception:
@@ -354,7 +488,15 @@ class AcquisitionDisplayBinding(QObject):
             self._applying = False
             return
         try:
-            mode, center = self._restore_target
+            mode, center, alignment = self._restore_target
+            if alignment != "free":
+                if self.scroll_area is not None:
+                    for bar, factor in zip((self.scroll_area.horizontalScrollBar(),
+                            self.scroll_area.verticalScrollBar()), ALIGNMENT_FACTORS[alignment]):
+                        bar.setValue(round(bar.minimum() + (bar.maximum() - bar.minimum()) * factor))
+                else:
+                    self.canvas.set_acquisition_alignment(alignment)
+                return
             if mode == "fit":
                 if self.scroll_area is not None:
                     self.scroll_area.horizontalScrollBar().setValue(0)
@@ -364,18 +506,22 @@ class AcquisitionDisplayBinding(QObject):
             if self.scroll_area is not None:
                 scale, offset = self.canvas._transform()
                 viewport = self.scroll_area.viewport()
-                self.scroll_area.horizontalScrollBar().setValue(round(center[0] * width * scale + offset[0] - viewport.width() / 2))
-                self.scroll_area.verticalScrollBar().setValue(round(center[1] * height * scale + offset[1] - viewport.height() / 2))
+                for bar, value in zip((self.scroll_area.horizontalScrollBar(), self.scroll_area.verticalScrollBar()),
+                        (center[0] * width * scale + offset[0] - viewport.width() / 2,
+                         center[1] * height * scale + offset[1] - viewport.height() / 2)):
+                    bar.setValue(round(max(bar.minimum(), min(bar.maximum(), value))))
             else:
                 from fdm.geometry import Point
                 self.canvas.center_on_image_point(Point(center[0] * width, center[1] * height))
         finally:
             self._applying = False
 
-    def capture_center(self, *_):
+    def capture_center(self, *_, force=False):
         if (self._closed or self._applying or self._mount_depth or self._source is None
-                or self._apply_timer.isActive()
-                or self.store.preferences.mode == "fit" or not self.canvas.isVisible()):
+                or (not force and (self._apply_timer.isActive()
+                    or self.store.preferences.mode == "fit"
+                    or self.store.preferences.alignment != "free"))
+                or not self.canvas.isVisible()):
             # A Resize/Show event schedules restoration before the canvas's
             # resize handler emits viewTransformChanged. Its temporary center
             # belongs to layout, not to a user's pan. In particular, navigation
@@ -399,7 +545,7 @@ class AcquisitionDisplayBinding(QObject):
                 return
             point = self.canvas.widget_to_image(QPointF(self.canvas.width() / 2, self.canvas.height() / 2))
             center = (point.x / width, point.y / height)
-        self._pending_center = (*self._source, _center(center))
+        self._pending_center = (*self._source, _center(center, allow_outside_image=True))
         self._center_timer.start()
 
     def _flush_pending_center(self):
@@ -407,7 +553,7 @@ class AcquisitionDisplayBinding(QObject):
         if self._pending_center is not None:
             pending, self._pending_center = self._pending_center, None
             try:
-                self.store.set_center(*pending)
+                self.store.set_center(*pending, allow_outside_image=True)
             except OSError as exc:
                 self._status_callback(f"显示位置未能保存：{exc}")
 
@@ -446,4 +592,7 @@ class AcquisitionDisplayBinding(QObject):
         self.canvas.removeEventFilter(self)
         if self.scroll_area is not None:
             self.scroll_area.viewport().removeEventFilter(self)
+        else:
+            self.canvas.userPanned.disconnect(self._user_panned)
+            self.canvas.set_acquisition_alignment(None)
         self.store.changed.disconnect(self._preferences_changed)

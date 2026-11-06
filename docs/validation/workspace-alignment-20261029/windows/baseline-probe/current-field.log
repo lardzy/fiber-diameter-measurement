@@ -1,0 +1,103 @@
+FIELD_END ('标定已变化',) {} RECORDS [] STACK   File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\_pytest\python.py", line 166, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\tests\test_acquisition_workbench.py", line 41, in test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler
+    page.ruler_choice.activated.emit(1)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\live_experiment_workspace.py", line 903, in _select_ruler
+    self.controller.set_calibration(value)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 216, in set_calibration
+    self.end_field("标定已变化")
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\probe-field.py", line 8, in traced
+    print("FIELD_END",args,kwargs,"RECORDS",self.current_records,"STACK", "".join(traceback.format_stack(limit=7)))
+
+FIELD_END ("视场检测失败：No module named 'fdm._native._kernels'",) {} RECORDS ['741d920bcdf14f799dc4c1c679e04b6f'] STACK   File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\_pytest\python.py", line 166, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\tests\test_acquisition_workbench.py", line 52, in test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler
+    QApplication.processEvents()
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 834, in poll
+    self._poll_once()
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 859, in _poll_once
+    self.unavailable(f"视场检测失败：{exc}")
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 382, in unavailable
+    self.end_field(reason)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\probe-field.py", line 8, in traced
+    print("FIELD_END",args,kwargs,"RECORDS",self.current_records,"STACK", "".join(traceback.format_stack(limit=7)))
+
+FIELD_END ('试验工作区已关闭',) {'record_end': False} RECORDS [] STACK   File "C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\_pytest\python.py", line 166, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\tests\test_acquisition_workbench.py", line 78, in test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler
+    window.close()
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\main_window.py", line 29735, in closeEvent
+    if not self._close_live_experiment(preserve_snapshot=True):
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\main_window.py", line 3593, in _close_live_experiment
+    if not window.close():
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\live_experiment_workspace.py", line 2118, in closeEvent
+    self.controller.close(record_end=getattr(self, "_close_record_end", True))
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1672, in close
+    self.end_field("试验工作区已关闭", record_end=record_end)
+  File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\probe-field.py", line 8, in traced
+    print("FIELD_END",args,kwargs,"RECORDS",self.current_records,"STACK", "".join(traceback.format_stack(limit=7)))
+
+F
+================================== FAILURES ===================================
+_ test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A0C30C78F0>
+
+    def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(monkeypatch):
+        import numpy as np
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtTest import QTest
+        from fdm.live_experiment.frames import FrameHandle
+        from fdm.live_experiment.controller import CalibrationSnapshot
+        from fdm.models import CalibrationPreset
+        from fdm.ui.live_experiment_workspace import LiveExperimentWorkspace
+        from fdm.ui.acquisition_workbench import AcquisitionWorkbench
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [CalibrationPreset("CU 40x", 2, "um")]
+            window.show()
+            window.resize(1280, 720)
+            # This navigation fixture injects frames itself. A delayed no-device
+            # start failure must not retire its synthetic field on slower hosts.
+            window._open_acquisition_workbench(auto_start=False)
+            hub = window._acquisition_workbench
+            native_handle = window._microview_preview_host.ensure_native_handle()
+            assert native_handle
+            assert not window._center_stack.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            assert not hub.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(1).center())
+            QApplication.processEvents()
+            page = window._live_experiment_workspace
+            frame = FrameHandle.snapshot(np.zeros((576, 768, 3), np.uint8),
+                                         source_id="camera:microview:1", generation=1, live=True)
+            page._receive_frame(frame)
+            page.ruler_choice.setCurrentIndex(1)
+            page.ruler_choice.activated.emit(1)
+            value = page.controller.calibration
+            assert value.x_um == .5 and value.source == "CU 40x"
+            from fdm.live_experiment import default_materials
+            page.session.set_materials(default_materials())
+            record = page.session.add_measurement(20, "wool", field_id=page.controller.field_id)
+            page.controller.current_records.append(record.id)
+            session = page.session
+            QApplication.processEvents()
+            for _ in range(20):
+                window.acquisition_workspace_action.trigger()
+                QApplication.processEvents()
+                assert hub.pages.currentWidget() is page
+>               assert page.controller.current_records == [record.id]
+E               AssertionError: assert [] == ['741d920bcdf...c1c679e04b6f']
+E                 
+E                 Right contains one more item: '741d920bcdf14f799dc4c1c679e04b6f'
+E                 Use -v to get more diff
+
+tests\test_acquisition_workbench.py:54: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_acquisition_workbench.py::test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler
+1 failed in 2.52s

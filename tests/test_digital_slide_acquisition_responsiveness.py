@@ -340,6 +340,50 @@ def test_writer_accepts_one_oversized_frame_without_unbounded_queue(tmp_path):
         store.close()
 
 
+@pytest.mark.parametrize("user_stop", [True, False], ids=["stop_button", "session_ended"])
+def test_slide_page_retains_its_controls_when_preview_stops_and_trial_tabs_obey_capture(workspace, monkeypatch, user_stop):
+    from fdm.ui.workspace import WorkspacePage
+
+    window, _camera = workspace
+    hub = window._acquisition_workbench
+    assert hub.pages.currentWidget() is hub.capture_page
+    with monkeypatch.context() as busy:
+        busy.setattr(window, "_slide_acquisition_active", lambda: True)
+        hub.navigation.setCurrentIndex(1)
+        assert hub.navigation.currentIndex() == 0
+        assert window._digital_slide_mode
+        assert hub.pages.currentWidget() is hub.capture_page
+    window._begin_digital_slide_jog(AXIS_X, DIR_POS)
+    position = dict(window._slide_motion.relative_pos)
+    if user_stop:
+        hub.capture_button.click()
+    else:
+        window._capture_manager.stop_preview()
+    deadline = perf_counter() + 5
+    while window._preview_active and perf_counter() < deadline:
+        QTest.qWait(10)
+    assert not window._preview_active
+    assert window._adaptive_layout.page is WorkspacePage.DIGITAL_SLIDE_ACQUIRE
+    assert window._center_stack.currentWidget() is hub
+    assert window._slide_jog_request is None
+    assert dict(window._slide_motion.relative_pos) == position
+    assert window._project_dock.isVisible() and window._inspector_dock.isVisible()
+    assert not window._digital_slide_start_button.isEnabled()
+    assert all(not button.isEnabled() for button in window._digital_slide_motion_controls)
+    window._begin_digital_slide_jog(AXIS_X, DIR_POS)
+    assert window._slide_jog_request is None
+    with monkeypatch.context() as rejected:
+        rejected.setattr("fdm.ui.live_experiment_workspace.open_live_experiment", lambda *args, **kwargs: None)
+        hub.navigation.setCurrentIndex(1)
+        assert window._adaptive_layout.page is WorkspacePage.DIGITAL_SLIDE_ACQUIRE
+        assert hub.pages.currentWidget() is hub.capture_page and hub.navigation.currentIndex() == 0
+    hub.navigation.setCurrentIndex(1)
+    assert window._adaptive_layout.page is WorkspacePage.CONTENT_TRIAL
+    assert not window._digital_slide_mode
+    assert window._project_dock.isHidden() and window._inspector_dock.isHidden()
+    assert not window._capture_task_bar.isVisible()
+
+
 def test_unviewed_slides_preserve_focus_without_rendering_then_open(workspace, tmp_path):
     window, _camera = workspace
     for index in range(3):
@@ -357,6 +401,9 @@ def test_unviewed_slides_preserve_focus_without_rendering_then_open(workspace, t
     window.stop_live_preview()
     QTest.qWait(200)
     current = window.current_canvas()
+    assert current._renderer is None
+    window._activate_measure_workspace()
+    QTest.qWait(200)
     assert current._deferred_slide_document is None
     assert current._image is not None and current._renderer is not None
     assert current.focus_index() == 1
@@ -502,9 +549,7 @@ def test_published_capture_completes_and_views_without_reopening_share(
 
         # The completion dialog's "view" action must use this existing local
         # document as well, even if the share no longer answers metadata I/O.
-        window.stop_live_preview()
-        window._digital_slide_mode = False
-        window._sync_digital_slide_mode_ui()
+        window._activate_measure_workspace()
         window._focus_digital_slide_path(target)
         deadline = perf_counter() + 5
         while not canvas.pixel_work_enabled() and perf_counter() < deadline:

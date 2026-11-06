@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "position": "left",
+  "visible": false,
+  "left_width": 400,
+  "bottom_height": 250,
+  "floating_geometry": null,
+  "columns": [
+    44,
+    44,
+    104,
+    116,
+    90,
+    46,
+    112,
+    86,
+    78
+  ]
+}

@@ -989,6 +989,7 @@ class DocumentCanvas(QWidget):
     areaEditRejected = Signal(str, str)
     viewZoomChanged = Signal(float)
     viewTransformChanged = Signal(object)
+    userPanned = Signal()
     roiGeometryCommitted = Signal(object)
     constructionCreateRequested = Signal(str, object)
     constructionEdited = Signal(str, str, object)
@@ -1126,6 +1127,9 @@ class DocumentCanvas(QWidget):
         self._magic_segment_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
+        # Opt-in only: ordinary documents and digital slides keep their own
+        # camera semantics. The temporary acquisition preview installs this.
+        self._acquisition_alignment = None
         self._measurement_hit_index: MeasurementSceneIndex | None = None
         self._measurement_hit_index_revision = -1
         self._measurement_display_index: MeasurementSceneIndex | None = None
@@ -1527,6 +1531,26 @@ class DocumentCanvas(QWidget):
     def set_fit_alignment(self, alignment: str) -> None:
         self._fit_alignment = "top_left" if alignment == "top_left" else "center"
         self.update()
+
+    def set_acquisition_alignment(self, alignment: str | None) -> None:
+        from fdm.ui.acquisition_alignment import validate_alignment
+        if alignment is not None:
+            validate_alignment(alignment)
+        self._acquisition_alignment = alignment
+        if self._position_acquisition_alignment():
+            self._persist_view_state()
+            self._publish_view_transform()
+            self.update()
+
+    def _position_acquisition_alignment(self) -> bool:
+        if self._image is None or self._acquisition_alignment in (None, "free"):
+            return False
+        from fdm.ui.acquisition_alignment import aligned_offset
+        position = aligned_offset(self._acquisition_alignment, (self.width(), self.height()),
+            (self._image.width() * self._zoom, self._image.height() * self._zoom),
+            max(1.0, self.devicePixelRatioF()))
+        self._pan = Point(*position)
+        return True
 
     def set_tool_mode(
         self,
@@ -4401,6 +4425,7 @@ class DocumentCanvas(QWidget):
                 (self.width() - target_width) / 2.0,
                 (self.height() - target_height) / 2.0,
             )
+        self._position_acquisition_alignment()
         self._persist_view_state()
         self._publish_view_transform(zoom_changed=True)
         self.update()
@@ -4889,6 +4914,7 @@ class DocumentCanvas(QWidget):
             return
         if old_center is not None:
             self._center_image_point_in_widget(old_center)
+            self._position_acquisition_alignment()
             self._persist_view_state()
         self._publish_view_transform()
         self.update()
@@ -5021,9 +5047,16 @@ class DocumentCanvas(QWidget):
         unsnapped = self._pan_drag_unsnapped or self._pan
         unsnapped = Point(unsnapped.x + delta.x(), unsnapped.y + delta.y())
         self._pan_drag_unsnapped = unsnapped
+        previous_pan = self._pan
         self._pan = self._pan_at_stable_device_phase(unsnapped)
+        # A real input movement, unlike resize/restore/zoom, releases an
+        # acquisition anchor. The binding listens only on its preview canvas.
         if self._zoom_mode is CanvasZoomMode.FIT:
             self._zoom_mode = CanvasZoomMode.CUSTOM
+        if self._pan != previous_pan:
+            # The acquisition binding may restore FIT if saving this gesture
+            # fails, so publish only after updating the local camera mode.
+            self.userPanned.emit()
         self._persist_view_state()
 
     def _overlay_motion_active(self) -> bool:
@@ -6132,6 +6165,7 @@ class DocumentCanvas(QWidget):
             self._pan.x + position.x() - current.x(),
             self._pan.y + position.y() - current.y(),
         )
+        self._position_acquisition_alignment()
         self._persist_view_state()
         self._publish_view_transform(zoom_changed=True)
         self.update()

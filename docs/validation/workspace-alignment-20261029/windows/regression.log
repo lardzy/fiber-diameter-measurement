@@ -1,0 +1,47 @@
+
+=================================== ERRORS ====================================
+___________ ERROR collecting tests/test_acquisition_alignment_ui.py ___________
+tests\test_acquisition_alignment_ui.py:11: in <module>
+    from test_acquisition_second_round import workflow
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\_pytest\assertion\rewrite.py:197: in exec_module
+    exec(co, module.__dict__)
+tests\test_acquisition_second_round.py:16: in <module>
+    _spec.loader.exec_module(workflow)
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+<frozen importlib._bootstrap_external>:1190: in get_data
+    ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-workspace-alignment-20261029\\e6d32f3d0a\\scripts\\validation\\validate_workflow_redesign.py'
+_____________ ERROR collecting tests/test_trial_compact_layout.py _____________
+tests\test_trial_compact_layout.py:8: in <module>
+    from test_acquisition_second_round import workflow
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+C:\Users\lishuyang\Downloads\fiber-diameter-measurement\.venv\Lib\site-packages\_pytest\assertion\rewrite.py:197: in exec_module
+    exec(co, module.__dict__)
+tests\test_acquisition_second_round.py:16: in <module>
+    _spec.loader.exec_module(workflow)
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+<frozen importlib._bootstrap_external>:1190: in get_data
+    ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\tmp\\fdm-workspace-alignment-20261029\\e6d32f3d0a\\scripts\\validation\\validate_workflow_redesign.py'
+=========================== short test summary info ===========================
+ERROR tests/test_acquisition_alignment_ui.py - FileNotFoundError: [Errno 2] N...
+ERROR tests/test_trial_compact_layout.py - FileNotFoundError: [Errno 2] No su...
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!
+2 errors in 6.72s

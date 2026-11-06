@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="6.149" timestamp="2026-10-29T11:34:57.440188+08:00" hostname="B1EA"><testcase classname="tests.test_acquisition_workbench" name="test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler" time="1.550"><failure message="AssertionError: assert [] == ['d8e98980c76...149e0a15a5bf']&#10;  &#10;  Right contains one more item: 'd8e98980c76340cd9eaf149e0a15a5bf'&#10;  Use -v to get more diff">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000023BEEDCC830&gt;
+
+    def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(monkeypatch):
+        import numpy as np
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtTest import QTest
+        from fdm.live_experiment.frames import FrameHandle
+        from fdm.live_experiment.controller import CalibrationSnapshot
+        from fdm.models import CalibrationPreset
+        from fdm.ui.live_experiment_workspace import LiveExperimentWorkspace
+        from fdm.ui.acquisition_workbench import AcquisitionWorkbench
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [CalibrationPreset("CU 40x", 2, "um")]
+            window.show()
+            window.resize(1280, 720)
+            # This navigation fixture injects frames itself. A delayed no-device
+            # start failure must not retire its synthetic field on slower hosts.
+            window._open_acquisition_workbench(auto_start=False)
+            hub = window._acquisition_workbench
+            native_handle = window._microview_preview_host.ensure_native_handle()
+            assert native_handle
+            assert not window._center_stack.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            assert not hub.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(1).center())
+            QApplication.processEvents()
+            page = window._live_experiment_workspace
+            frame = FrameHandle.snapshot(np.zeros((576, 768, 3), np.uint8),
+                                         source_id="camera:microview:1", generation=1, live=True)
+            page._receive_frame(frame)
+            page.ruler_choice.setCurrentIndex(1)
+            page.ruler_choice.activated.emit(1)
+            value = page.controller.calibration
+            assert value.x_um == .5 and value.source == "CU 40x"
+            from fdm.live_experiment import default_materials
+            page.session.set_materials(default_materials())
+            record = page.session.add_measurement(20, "wool", field_id=page.controller.field_id)
+            page.controller.current_records.append(record.id)
+            session = page.session
+            QApplication.processEvents()
+            for _ in range(20):
+                window.acquisition_workspace_action.trigger()
+                QApplication.processEvents()
+                assert hub.pages.currentWidget() is page
+&gt;               assert page.controller.current_records == [record.id]
+E               AssertionError: assert [] == ['d8e98980c76...149e0a15a5bf']
+E                 
+E                 Right contains one more item: 'd8e98980c76340cd9eaf149e0a15a5bf'
+E                 Use -v to get more diff
+
+tests\test_acquisition_workbench.py:54: AssertionError</failure></testcase><testcase classname="tests.test_trial_compact_layout" name="test_categories_have_usable_space_and_export_is_always_reachable[size1-4-light]" time="1.449"><failure message="assert 3 &gt;= 4&#10; +  where 3 = len([&lt;PySide6.QtWidgets.QPushButton(0x23bf345a7b0) at 0x0000023B8851D5C0&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345d8a0) at 0x0000023B8851E080&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345bd70) at 0x0000023B8851D200&gt;])&#10; +    where [&lt;PySide6.QtWidgets.QPushButton(0x23bf345a7b0) at 0x0000023B8851D5C0&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345d8a0) at 0x0000023B8851E080&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345bd70) at 0x0000023B8851D200&gt;] = visible_categories(&lt;fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x23bf3336fb0, name=&quot;acquisitionTrial&quot;) at 0x0000023BAE5E9140&gt;)">tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-106/test_categories_have_usable_sp0')
+theme = 'light', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+&gt;           assert len(visible_categories(page)) &gt;= minimum
+E           assert 3 &gt;= 4
+E            +  where 3 = len([&lt;PySide6.QtWidgets.QPushButton(0x23bf345a7b0) at 0x0000023B8851D5C0&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345d8a0) at 0x0000023B8851E080&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345bd70) at 0x0000023B8851D200&gt;])
+E            +    where [&lt;PySide6.QtWidgets.QPushButton(0x23bf345a7b0) at 0x0000023B8851D5C0&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345d8a0) at 0x0000023B8851E080&gt;, &lt;PySide6.QtWidgets.QPushButton(0x23bf345bd70) at 0x0000023B8851D200&gt;] = visible_categories(&lt;fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x23bf3336fb0, name="acquisitionTrial") at 0x0000023BAE5E9140&gt;)
+
+tests\test_trial_compact_layout.py:47: AssertionError</failure></testcase></testsuite></testsuites>

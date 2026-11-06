@@ -168,6 +168,24 @@ class AcquisitionWorkbench(QWidget):
             binding.flush()
         self.host.stop_live_preview()
 
+    def confirm_leave(self):
+        trial = self.pages.currentWidget()
+        return trial is self.capture_page or trial._confirm_trial_navigation()
+
+    def prepare_leave(self):
+        """Accept trial navigation before changing the main-window layout."""
+        trial = self.pages.currentWidget()
+        if trial is self.capture_page:
+            return True
+        if not self.confirm_leave():
+            return False
+        try:
+            trial.commit_pending_edits()
+        except (ValueError, RuntimeError, OSError) as exc:
+            trial.statusBar().showMessage(str(exc), 8000)
+            return False
+        return self.suspend_trial("已离开采集与试验")
+
     def retire_entry(self):
         """Invalidate delayed starts when an accepted transition retires this entry."""
         self._entered = False
@@ -208,6 +226,10 @@ class AcquisitionWorkbench(QWidget):
             return
         self._switching = True
         try:
+            if index and self.host._digital_slide_mode and self.host._slide_acquisition_active():
+                self.navigation.setCurrentIndex(self._selected)
+                self.host.statusBar().showMessage("请先停止当前数字化切片采集，再切换试验页面。", 5000)
+                return
             if current is not self.capture_page and not current._confirm_trial_navigation():
                 self.navigation.setCurrentIndex(self._selected)
                 return
@@ -245,6 +267,8 @@ class AcquisitionWorkbench(QWidget):
                 # This also covers programmatic/restored navigation, where
                 # QTabBar has not selected the requested tab yet.
                 self.navigation.setCurrentIndex(index)
+                if self.host._digital_slide_mode:
+                    self.host._toggle_digital_slide_mode(False)
                 self.host._sync_workspace_mode()
                 self.pages.setCurrentWidget(trial)
                 self.records.bind(trial)

@@ -211,13 +211,17 @@ def build_trial_view(v):
     for label, mode in (("实际像素", "pixel"), ("当前窗口", "fit"), ("指定倍率…", "magnification"), ("指定比例…", "percent")):
         v.display_choice.addItem(label, mode)
     v.display_choice.activated.connect(v._select_display_mode)
+    from fdm.ui.acquisition_alignment_button import AcquisitionAlignmentButton
+    v.alignment_button = AcquisitionAlignmentButton(root)
+    v.alignment_button.alignmentSelected.connect(v._select_display_alignment)
     v.body_splitter = QSplitter(Qt.Orientation.Horizontal, root)
     v.body_splitter.setChildrenCollapsible(False)
     image_panel = QWidget(v.body_splitter)
     image_layout = QVBoxLayout(image_panel)
     image_layout.setContentsMargins(0, 0, 0, 0)
     image_layout.setSpacing(6)
-    v.view_controls = view_controls(image_panel, v.display_choice, "测量画面")
+    v.view_controls = view_controls(image_panel, v.display_choice, "测量画面",
+                                    alignment_button=v.alignment_button)
     image_layout.addWidget(v.view_controls)
     v.canvas.setMinimumSize(320, 240)
     v.image_scroll = QScrollArea(image_panel)

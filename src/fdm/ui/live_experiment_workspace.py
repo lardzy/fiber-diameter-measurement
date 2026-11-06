@@ -390,8 +390,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             store=acquisition_display_store(host), scroll_area=self.image_scroll,
             calibration_provider=lambda: self.controller.calibration,
             status_callback=lambda text: self.statusBar().showMessage(text, 8000), parent=self)
-        self.display_binding.applied.connect(lambda _: self.display_choice.setCurrentIndex(
-            self.display_choice.findData(self.display_binding.store.preferences.mode)))
+        self.display_binding.applied.connect(self._sync_display_controls)
+        self.display_binding.store.changed.connect(self._sync_display_controls)
+        self._sync_display_controls()
         self._display_busy = False
         self._refresh_ruler_choices()
         from fdm.ui.trial_report_panel import TrialReportPanel
@@ -828,6 +829,19 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self._refresh_ruler_choices()
             self.statusBar().showMessage("标尺库已刷新，请从上方选择当前显微镜使用的标尺。", 6000)
 
+    def _sync_display_controls(self, *_):
+        preferences = self.display_binding.store.preferences
+        self.display_choice.setCurrentIndex(self.display_choice.findData(preferences.mode))
+        self.alignment_button.set_alignment(preferences.alignment)
+
+    def _select_display_alignment(self, alignment):
+        try:
+            self.display_binding.set_alignment(alignment)
+        except (ValueError, OSError) as exc:
+            self.statusBar().showMessage(str(exc), 10000)
+        finally:
+            self._sync_display_controls()
+
     def _select_display_mode(self, index):
         mode = self.display_choice.itemData(index)
         try:
@@ -850,7 +864,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         except (ValueError, OSError) as exc:
             self.statusBar().showMessage(str(exc), 10000)
         finally:
-            self.display_choice.setCurrentIndex(self.display_choice.findData(self.display_binding.store.preferences.mode))
+            self._sync_display_controls()
 
     def _refresh_ruler_choices(self):
         combo = self.ruler_choice
@@ -2067,6 +2081,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if self._view_preferences_timer.isActive():
             self._persist_view_preferences()
         self._view_preferences_timer.stop()
+        self.display_binding.store.changed.disconnect(self._sync_display_controls)
         self.display_binding.close()
         self.settings_dialog.close()
         optical_dialog = getattr(self, "optical_settings_dialog", None)

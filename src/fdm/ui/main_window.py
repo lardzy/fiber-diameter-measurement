@@ -539,7 +539,7 @@ from fdm.ui.widgets import (
     NoWheelSpinBox,
     OverlayToolSplitButton,
 )
-from fdm.ui.workspace import AdaptiveLayoutController, WorkspaceDockWidget, WorkspaceMode
+from fdm.ui.workspace import AdaptiveLayoutController, WorkspaceDockWidget, WorkspaceMode, WorkspacePage
 from fdm.ui.workspace_stack import WorkspaceStack
 
 try:
@@ -2564,6 +2564,7 @@ class MainWindow(QMainWindow):
             parent=self,
         )
         self._adaptive_layout.layoutPreferencesChanged.connect(self._schedule_workspace_layout_save)
+        self.professional_workspace.register_layout(self._adaptive_layout)
         self._inspector_dock.extentChanged.connect(
             lambda _size: self._schedule_inspector_layout_restore()
         )
@@ -5123,6 +5124,7 @@ class MainWindow(QMainWindow):
 
         self._preview_page = QWidget()
         from fdm.ui.acquisition_layout import view_controls, configure_status
+        from fdm.ui.acquisition_alignment_button import AcquisitionAlignmentButton
         preview_layout = QVBoxLayout(self._preview_page)
         preview_layout.setContentsMargins(8, 8, 8, 4)
         preview_layout.setSpacing(6)
@@ -5139,7 +5141,10 @@ class MainWindow(QMainWindow):
                             ("指定百分比…", "percent"), ("指定物理倍率…", "magnification")):
             self._preview_display_choice.addItem(text, value)
         self._preview_display_choice.activated.connect(self._select_preview_display_mode)
-        self._preview_view_controls = view_controls(preview_image_panel, self._preview_display_choice, "实时画面")
+        self._preview_alignment_button = AcquisitionAlignmentButton(self._preview_page)
+        self._preview_alignment_button.alignmentSelected.connect(self._select_preview_alignment)
+        self._preview_view_controls = view_controls(preview_image_panel, self._preview_display_choice, "实时画面",
+                                                   alignment_button=self._preview_alignment_button)
         preview_image_layout.addWidget(self._preview_view_controls)
         self._preview_display_stack = WorkspaceStack()
         self._preview_canvas = DocumentCanvas()
@@ -5154,6 +5159,8 @@ class MainWindow(QMainWindow):
             store=acquisition_display_store(self), calibration_provider=self._preview_calibration_snapshot,
             status_callback=lambda text: getattr(self, "_preview_inline_status", self.statusBar()).showMessage(text, 8000), parent=self)
         self._preview_display_binding.applied.connect(self._sync_preview_display_choice)
+        self._preview_display_binding.store.changed.connect(self._sync_preview_display_choice)
+        self._sync_preview_display_choice()
         self._microview_preview_host = MicroviewPreviewHost()
         self._microview_preview_host.installEventFilter(self)
         self._microview_preview_host.metricsChanged.connect(self._on_preview_host_metrics_changed)
@@ -6138,7 +6145,7 @@ class MainWindow(QMainWindow):
         }
         def visit(menu, path):
             for action in menu.actions():
-                if action.isSeparator() or not action.text():
+                if action.isSeparator() or not action.text() or not action.isVisible():
                     continue
                 if action.menu() is not None:
                     visit(action.menu(), path + [action.text().replace("&", "")])
@@ -6187,7 +6194,7 @@ class MainWindow(QMainWindow):
         if bar is None or not hasattr(self, "tab_widget"):
             return
         document = self.current_document()
-        available = document is not None and not self._preview_active
+        available = document is not None and self._measurement_workspace_active() and not self._preview_active
         entries = [(self.tab_widget.tabText(i), self._document_order[i])
                    for i in range(min(self.tab_widget.count(), len(self._document_order)))]
         if not entries:
@@ -6354,7 +6361,11 @@ class MainWindow(QMainWindow):
         overlay_kind: str | None = None,
         construction_kind: str | None = None,
     ) -> None:
+        if not self._measurement_workspace_active():
+            return
         document = self.current_document()
+        if document is None and mode != "select":
+            return
         if document is not None and document.raster_semantic is RasterSemantic.HEIGHT and is_magic_toolbar_tool_mode(mode):
             self.statusBar().showMessage("高度图不参与普通纤维分析。", 4000)
             return
@@ -6953,7 +6964,7 @@ class MainWindow(QMainWindow):
 
     def _sync_slide_brightness_controls(self) -> None:
         canvas = self.current_canvas()
-        enabled = isinstance(canvas, DigitalSlideCanvas) and not self._preview_active
+        enabled = self._measurement_workspace_active() and isinstance(canvas, DigitalSlideCanvas) and not self._preview_active
         self.digital_slide_brightness_action.setVisible(enabled)
         self.digital_slide_brightness_action.setEnabled(enabled)
         self._slide_brightness_button.setVisible(enabled)
@@ -7035,7 +7046,7 @@ class MainWindow(QMainWindow):
 
     def _open_slide_brightness_popup(self) -> None:
         canvas = self.current_canvas()
-        if not isinstance(canvas, DigitalSlideCanvas) or self._preview_active:
+        if not self._measurement_workspace_active() or not isinstance(canvas, DigitalSlideCanvas) or self._preview_active:
             return
         popup = self._slide_brightness_popup
         if popup is not None and popup.canvas is canvas and popup.isVisible():
@@ -13746,7 +13757,7 @@ class MainWindow(QMainWindow):
             # Always terminate a held navigation gesture, even if focus moved
             # into a dialog/editor after the key press.
             return canvas
-        if self._preview_active:
+        if self._preview_active or not self._measurement_workspace_active():
             return None
         if QApplication.activeModalWidget() is not None or QApplication.activePopupWidget() is not None:
             return None
@@ -13856,6 +13867,7 @@ class MainWindow(QMainWindow):
 
     def _sync_preview_display_choice(self, _resolved=None):
         preferences = self._preview_display_binding.store.preferences
+        self._preview_alignment_button.set_alignment(preferences.alignment)
         self._preview_display_choice.setCurrentIndex(self._preview_display_choice.findData(preferences.mode))
         self._preview_display_choice.setToolTip(
             f"显示方式跨采集页面及重启保留；百分比 {preferences.percent:g}%，物理倍率 {preferences.magnification:g} 倍。")
@@ -13885,6 +13897,14 @@ class MainWindow(QMainWindow):
         except (OSError, ValueError) as exc:
             self.statusBar().showMessage(str(exc), 8000)
         self._sync_preview_display_choice()
+
+    def _select_preview_alignment(self, alignment):
+        try:
+            self._preview_display_binding.set_alignment(alignment)
+        except (OSError, ValueError) as exc:
+            self.statusBar().showMessage(str(exc), 8000)
+        self._sync_preview_display_choice()
+        self._preview_canvas.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _show_active_capture_warning(self) -> None:
         warning = self._capture_manager.active_warning().strip()
@@ -14305,7 +14325,40 @@ class MainWindow(QMainWindow):
         restored = super().restoreState(state, version)
         if restored:
             self._ensure_workbench_toolbar_rows()
+            layout = getattr(self, "_adaptive_layout", None)
+            if layout is not None:
+                layout.enforce_panel_policy()
         return restored
+
+    def _measurement_workspace_active(self) -> bool:
+        return not self._acquisition_workspace_selected and not self._digital_slide_mode
+
+    def _panel_allowed(self, key: str) -> bool:
+        layout = getattr(self, "_adaptive_layout", None)
+        return layout is not None and layout.panel_allowed(key)
+
+    def createPopupMenu(self):
+        menu = super().createPopupMenu()
+        layout = getattr(self, "_adaptive_layout", None)
+        if menu is not None and layout is not None:
+            for key, dock in (("project", self._project_dock), ("inspector", self._inspector_dock),
+                              ("results", self._results_dock),
+                              ("professional", self.professional_workspace.dock)):
+                if not layout.panel_allowed(key):
+                    menu.removeAction(dock.toggleViewAction())
+        return menu
+
+    def _sync_workspace_panel_actions(self) -> None:
+        for key, action, dock in (
+            ("project", self.toggle_project_panel_action, self._project_dock),
+            ("inspector", self.toggle_inspector_panel_action, self._inspector_dock),
+            ("results", self.toggle_results_panel_action, self._results_dock),
+        ):
+            allowed = self._panel_allowed(key)
+            action.setVisible(allowed)
+            action.setEnabled(allowed)
+            action.setText(dock.windowTitle())
+        self._mode_actions["professional"].setVisible(self._panel_allowed("professional"))
 
     def _ensure_workbench_toolbar_rows(self) -> None:
         # Older saved layouts may place the new context bar beside the tools.
@@ -14335,6 +14388,8 @@ class MainWindow(QMainWindow):
                 self._records_section.setVisible(not self._results_dock.isVisible())
 
     def _toggle_project_panel(self, _checked: bool = False) -> None:
+        if not self._panel_allowed("project"):
+            return
         show = not self._project_dock.isVisible()
         self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
@@ -14343,6 +14398,8 @@ class MainWindow(QMainWindow):
         self._on_workspace_dock_visibility_changed(False)
 
     def _toggle_inspector_panel(self, _checked: bool = False) -> None:
+        if not self._panel_allowed("inspector"):
+            return
         show = not self._inspector_dock.isVisible()
         self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
@@ -14351,6 +14408,8 @@ class MainWindow(QMainWindow):
         self._on_workspace_dock_visibility_changed(False)
 
     def _toggle_results_panel(self, _checked: bool = False) -> None:
+        if not self._panel_allowed("results"):
+            return
         show = not self._results_dock.isVisible()
         self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
@@ -14384,7 +14443,7 @@ class MainWindow(QMainWindow):
 
     def _set_workbench_presentation(self, mode: str) -> None:
         self._restore_workbench_presentation()
-        if mode == "standard" or self._preview_active or self.current_document() is None:
+        if mode == "standard" or not self._measurement_workspace_active() or self._preview_active or self.current_document() is None:
             return
         if self._fullscreen_controller.is_active:
             self._fullscreen_controller.exit()
@@ -14393,6 +14452,7 @@ class MainWindow(QMainWindow):
         self._adaptive_layout.begin_presentation_mode()
         self._project_dock.hide()
         self._inspector_dock.hide()
+        self.professional_workspace.dock.hide()
         self._results_dock.setVisible(mode == "review")
         if mode == "review":
             self.resizeDocks([self._results_dock], [max(205, min(260, self.height() // 3))], Qt.Orientation.Vertical)
@@ -14402,14 +14462,20 @@ class MainWindow(QMainWindow):
         self._on_workspace_dock_visibility_changed(False)
         self._focus_current_canvas()
 
-    def _activate_measure_workspace(self, checked: bool = False) -> None:
+    def _activate_measure_workspace(self, checked: bool = False) -> bool:
         del checked
         if self._slide_acquisition_active():
             self.measure_workspace_action.blockSignals(True)
             self.measure_workspace_action.setChecked(False)
             self.measure_workspace_action.blockSignals(False)
             QMessageBox.information(self, "测量分析", "请先停止当前数字化切片采集。")
-            return
+            return False
+        if (self._acquisition_workspace_selected and self._acquisition_workbench is not None
+                and not self._acquisition_workbench.prepare_leave()):
+            self.measure_workspace_action.blockSignals(True)
+            self.measure_workspace_action.setChecked(False)
+            self.measure_workspace_action.blockSignals(False)
+            return False
         if self._digital_slide_mode:
             self._toggle_digital_slide_mode(False)
         self._acquisition_workspace_selected = False
@@ -14423,9 +14489,23 @@ class MainWindow(QMainWindow):
         elif self._preview_active:
             self.stop_live_preview()
         self._sync_workspace_mode()
+        return True
+
+    def _confirm_trial_exit_for_file_open(self) -> bool:
+        hub = self._acquisition_workbench
+        return not self._acquisition_workspace_selected or hub is None or hub.confirm_leave()
+
+    def _prepare_document_open(self) -> bool:
+        """Only open or focus a document after navigation has been accepted."""
+        if not self._measurement_workspace_active() or self._slide_acquisition_active():
+            return self._activate_measure_workspace()
+        if self._preview_active:
+            self.stop_live_preview()
+        return True
 
     def _sync_workspace_mode(self) -> None:
-        if self._digital_slide_mode and self._preview_active:
+        previous_page = self._adaptive_layout.page if self._adaptive_layout is not None else None
+        if self._digital_slide_mode:
             workspace = WorkspaceMode.DIGITAL_SLIDE_ACQUIRE
         elif self._acquisition_workspace_selected:
             workspace = WorkspaceMode.ACQUIRE
@@ -14433,6 +14513,10 @@ class MainWindow(QMainWindow):
             workspace = WorkspaceMode.MEASURE
         hub = self._acquisition_workbench
         in_trial = workspace is WorkspaceMode.ACQUIRE and hub is not None and hub.navigation.currentIndex() != 0
+        page = (WorkspacePage.DIGITAL_SLIDE_ACQUIRE if workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE
+                else WorkspacePage.MEASURE if workspace is WorkspaceMode.MEASURE
+                else {1: WorkspacePage.CONTENT_TRIAL, 2: WorkspacePage.DIAMETER_TRIAL}.get(
+                    hub.navigation.currentIndex() if hub is not None else 0, WorkspacePage.CAPTURE))
         if workspace is not WorkspaceMode.MEASURE:
             self._restore_workbench_presentation()
         if (
@@ -14456,7 +14540,8 @@ class MainWindow(QMainWindow):
         self.measure_workspace_action.setChecked(workspace is WorkspaceMode.MEASURE)
         self.measure_workspace_action.blockSignals(False)
         if self._adaptive_layout is not None:
-            self._adaptive_layout.set_workspace(workspace)
+            self._adaptive_layout.set_page(page)
+        self.professional_workspace.set_workspace_active(page is WorkspacePage.MEASURE)
         if self._measurement_tool_strip is not None:
             self._measurement_tool_strip.setPrimaryToolsVisible(workspace is WorkspaceMode.MEASURE)
             self._measurement_tool_strip.setPreviewContextVisible(False)
@@ -14473,6 +14558,7 @@ class MainWindow(QMainWindow):
             self._digital_slide_right_panel.setVisible(workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
         if self._adaptive_layout is not None:
             self._adaptive_layout.set_embedded_controls(workspace is WorkspaceMode.ACQUIRE)
+        self._sync_workspace_panel_actions()
         if not (self._fullscreen_controller is not None and self._fullscreen_controller.is_active):
             # Full-screen measurement owns its status controls; workspace
             # refresh must not hide the bar underneath its presentation.
@@ -14484,6 +14570,10 @@ class MainWindow(QMainWindow):
         # Navigation, including a stopped camera, owns history routing. Do not
         # infer the active workbench from whether preview pixels are arriving.
         self._update_history_action_states()
+
+        # Camera start/stop must not make the background image editable.
+        if page != previous_page:
+            self._update_action_states()
 
     def _update_acquisition_panel(self) -> None:
         selected = self._selected_capture_device()
@@ -15787,7 +15877,12 @@ class MainWindow(QMainWindow):
             return
         preview_kind = self._preview_kind()
         if self._center_stack is not None and self._preview_page is not None:
-            self._open_acquisition_workbench(auto_start=False)
+            # A direct preview command starts on capture. Entering through the
+            # workbench itself has already restored the user's chosen tab.
+            self._open_acquisition_workbench(
+                trial_index=0 if self._acquisition_workbench is None else None,
+                auto_start=False,
+            )
         self._apply_preview_surface(preview_kind)
         selected = self._selected_capture_device()
         if (preview_kind == "native_embed" or (selected is not None and selected.backend_key == "microview")) and self._microview_preview_host is not None:
@@ -15822,7 +15917,7 @@ class MainWindow(QMainWindow):
             self._sync_live_preview_action()
             return
         if self._digital_slide_mode:
-            self._acquisition_workspace_selected = False
+            self._cancel_digital_slide_jog()
         self.statusBar().showMessage("正在停止采集…", 3000)
         self._capture_manager.request_stop_preview()
 
@@ -15840,9 +15935,9 @@ class MainWindow(QMainWindow):
             self._maybe_hint_signal_optimization()
         if not active:
             self.statusBar().showMessage("采集已停止，试验记录已保留", 3000)
-            self._digital_slide_mode = False
-            self._sync_digital_slide_mode_ui()
+            self._cancel_digital_slide_jog()
             self._clear_preview_surface_state()
+            self._sync_digital_slide_task_state()
             self._clear_prompt_segmentation_cache()
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
@@ -15850,7 +15945,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, self, self._fit_current_digital_slide_after_preview_stop)
 
     def _fit_current_digital_slide_after_preview_stop(self) -> None:
-        if self._preview_active:
+        if self._preview_active or not self._measurement_workspace_active():
             return
         canvas = self._current_digital_slide_canvas()
         if canvas is not None:
@@ -16080,6 +16175,14 @@ class MainWindow(QMainWindow):
             self.start_live_preview()
 
     def _toggle_digital_slide_mode(self, checked: bool) -> None:
+        if checked and self._acquisition_workbench is not None:
+            hub = self._acquisition_workbench
+            hub.select_page(0)
+            if hub.pages.currentWidget() is not hub.capture_page:
+                self._sync_digital_slide_mode_ui()
+                return
+            if self._preview_active and not self._acquisition_workspace_selected:
+                self._open_acquisition_workbench(trial_index=0, auto_start=False)
         if checked and not self._preview_active:
             self.start_live_preview()
             if not self._preview_active:
@@ -16094,8 +16197,6 @@ class MainWindow(QMainWindow):
             return
         if checked and self._preview_analysis_mode != "none":
             self._cancel_preview_analysis_session()
-        if checked and self._acquisition_workbench is not None:
-            self._acquisition_workbench.select_page(0)
         self._digital_slide_mode = bool(checked)
         self._sync_digital_slide_mode_ui()
         if checked:
@@ -16111,12 +16212,12 @@ class MainWindow(QMainWindow):
                 self._preview_canvas.fit_to_view()
             self.statusBar().showMessage("已进入数字化切片模式", 3000)
         else:
-            self._end_digital_slide_jog()
+            self._cancel_digital_slide_jog()
             self.statusBar().showMessage("已退出数字化切片模式", 3000)
         self._update_action_states()
 
     def _sync_digital_slide_mode_ui(self) -> None:
-        active = bool(self._digital_slide_mode and self._preview_active)
+        active = bool(self._digital_slide_mode)
         if self.digital_slide_action is not None:
             self.digital_slide_action.blockSignals(True)
             self.digital_slide_action.setChecked(active)
@@ -17131,7 +17232,7 @@ class MainWindow(QMainWindow):
         for widget in self._digital_slide_locked_controls:
             widget.setEnabled(not active)
         for widget in self._digital_slide_motion_controls:
-            widget.setEnabled(not active)
+            widget.setEnabled(not active and self._preview_active)
         self._sync_digital_slide_range_mode_controls()
         self._sync_digital_slide_storage_quality_visibility()
         self._digital_slide_start_button.setText("采集中" if active else readiness.button_text)
@@ -17428,7 +17529,7 @@ class MainWindow(QMainWindow):
         self._begin_digital_slide_multi_jog([(axis, direction)])
 
     def _begin_digital_slide_multi_jog(self, actions: list[tuple[str, str]]) -> None:
-        if not self._digital_slide_mode or self._slide_acquisition_active():
+        if not self._digital_slide_mode or not self._preview_active or self._slide_acquisition_active():
             return
         self._end_digital_slide_jog()
         normalized_actions = [
@@ -17460,16 +17561,15 @@ class MainWindow(QMainWindow):
 
     def _end_digital_slide_jog(self) -> None:
         request = self._slide_jog_request
-        if request is None:
-            self._slide_jog_single_shot_timer.stop()
-            self._slide_jog_timer.stop()
-            return
-        was_long = bool(request.get("long_active"))
+        self._cancel_digital_slide_jog()
+        if request is not None and not request.get("long_active"):
+            self._perform_digital_slide_jog_actions(request.get("actions", []))
+
+    def _cancel_digital_slide_jog(self) -> None:
+        """Discard a pending jog without interpreting it as a button release."""
         self._slide_jog_single_shot_timer.stop()
         self._slide_jog_timer.stop()
         self._slide_jog_request = None
-        if not was_long:
-            self._perform_digital_slide_jog_actions(request.get("actions", []))
 
     def _perform_digital_slide_jog_actions(self, actions: object) -> None:
         if not isinstance(actions, list):
@@ -18901,12 +19001,8 @@ class MainWindow(QMainWindow):
         box.addButton("关闭", QMessageBox.ButtonRole.RejectRole)
         box.exec()
         if box.clickedButton() == view_button:
-            self.stop_live_preview()
-            self._digital_slide_mode = False
-            self._sync_digital_slide_mode_ui()
-            if self._center_stack is not None:
-                self._center_stack.setCurrentWidget(self.tab_widget)
-            self._focus_digital_slide_path(path)
+            if self._activate_measure_workspace():
+                self._focus_digital_slide_path(path)
 
     def _focus_digital_slide_path(self, path: Path) -> None:
         # The completion dialog targets an already mounted document. Comparing
@@ -19803,9 +19899,8 @@ class MainWindow(QMainWindow):
             sync_sidecar=True, impact=DocumentChangeImpact.CALIBRATION)
 
     def open_images(self) -> None:
-        self.stop_live_preview()
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
-        if not paths:
+        if not paths or not self._prepare_document_open():
             return
         self._open_image_requests(
             [(path, None) for path in paths],
@@ -19813,7 +19908,6 @@ class MainWindow(QMainWindow):
         )
 
     def open_folder(self) -> None:
-        self.stop_live_preview()
         folder = QFileDialog.getExistingDirectory(self, "选择图片文件夹")
         if not folder:
             return
@@ -19824,6 +19918,8 @@ class MainWindow(QMainWindow):
         ]
         if not image_paths:
             QMessageBox.information(self, "打开文件夹", "该文件夹中没有支持的图片。")
+            return
+        if not self._prepare_document_open():
             return
         self._open_image_requests(
             [(str(image_path), None) for image_path in image_paths],
@@ -19921,7 +20017,8 @@ class MainWindow(QMainWindow):
             self._load_project_from_path(project_paths[0])
             return
         if image_paths:
-            self.stop_live_preview()
+            if not self._prepare_document_open():
+                return
             self._open_image_requests(
                 [(str(path), None) for path in image_paths],
                 context_label="拖入图片",
@@ -21201,7 +21298,7 @@ class MainWindow(QMainWindow):
         if smooth_action is None or shift_action is None:
             return
         canvas = self._current_digital_slide_canvas()
-        enabled = canvas is not None and not self._preview_active
+        enabled = self._measurement_workspace_active() and canvas is not None and not self._preview_active
         smooth_checked = (
             canvas.navigation_mode() == "smooth"
             if canvas is not None
@@ -21485,6 +21582,8 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, self, self._focus_current_canvas)
         else:
             self._hide_fullscreen_hint(delete=True)
+        if self._adaptive_layout is not None:
+            self._adaptive_layout.enforce_panel_policy()
         self._update_action_states()
 
     def _show_fullscreen_hint(self) -> None:
@@ -27118,6 +27217,8 @@ class MainWindow(QMainWindow):
         return bool(self._digital_slide_mode and self._preview_active and self._should_handle_group_hotkeys())
 
     def _switch_active_group_by_number(self, number: int) -> bool:
+        if not self._measurement_workspace_active():
+            return False
         document = self.current_document()
         if document is None:
             return False
@@ -27275,10 +27376,10 @@ class MainWindow(QMainWindow):
         self._prune_invalid_workspace_composites()
         self._sync_measurement_context()
         document = self.current_document()
-        has_document = document is not None
-        self._mode_actions["professional"].setEnabled(has_document and not self._preview_active and not self.project.is_read_only_compatible)
+        measurement_active = self._measurement_workspace_active()
+        has_document = document is not None and measurement_active
         self.watermark_action.setEnabled(bool(
-            document is not None and document.document_kind == "image"
+            has_document and document.document_kind == "image"
             and not self.project.is_read_only_compatible
         ))
         self.focus_workspace_action.setEnabled(has_document)
@@ -27289,17 +27390,17 @@ class MainWindow(QMainWindow):
         active_canvas = self.current_canvas()
         # A focus/move reload remains protected by the exact operation guards,
         # but does not flip the disabled palette across the whole workspace.
-        pixel_work_enabled = not isinstance(active_canvas, DigitalSlideCanvas) or not (
+        pixel_work_enabled = has_document and (not isinstance(active_canvas, DigitalSlideCanvas) or not (
             active_canvas.pixel_work_controls_blocked()
             or (
                 document is not None
                 and document.id in self._digital_slide_suspended_tools
             )
-        )
+        ))
         vector_measurement_enabled = (
-            not isinstance(active_canvas, DigitalSlideCanvas)
+            has_document and (not isinstance(active_canvas, DigitalSlideCanvas)
             or active_canvas.vector_measurement_controls_enabled()
-        )
+        ))
         can_pixel_work = has_document and not preview_active and pixel_work_enabled
         selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None
         has_selected_rows = bool(selection_model and selection_model.selectedRows())
@@ -27434,10 +27535,10 @@ class MainWindow(QMainWindow):
         )
         self.fit_action.setEnabled(has_document and not preview_active)
         self.digital_slide_native_fit_action.setEnabled(
-            isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
+            measurement_active and isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
         )
         self.digital_slide_clear_render_cache_action.setEnabled(
-            isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
+            measurement_active and isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
         )
         self._sync_slide_brightness_controls()
         self.actual_size_action.setEnabled(has_document and not preview_active)
@@ -27543,9 +27644,13 @@ class MainWindow(QMainWindow):
                 else pixel_work_enabled
             )
             action.setEnabled(
-                mode == "select"
+                (mode == "select" and measurement_active)
                 or (not preview_active and mode_enabled and not (is_height_image and is_magic_toolbar_tool_mode(mode)))
             )
+        self._mode_actions["professional"].setEnabled(
+            has_document and not preview_active and pixel_work_enabled
+            and not self.project.is_read_only_compatible
+        )
         if self._manual_tool_button is not None:
             self._manual_tool_button.setEnabled(
                 not preview_active and vector_measurement_enabled
@@ -29166,6 +29271,9 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, event) -> None:
         canvas = self.current_canvas()
         if event.key() == Qt.Key.Key_Space:
+            if not self._measurement_workspace_active() and canvas is not self._preview_canvas:
+                super().keyPressEvent(event)
+                return
             if (
                 canvas is not None
                 and not getattr(event, "isAutoRepeat", lambda: False)()
@@ -29198,6 +29306,9 @@ class MainWindow(QMainWindow):
                 self._cancel_preview_analysis_session()
                 event.accept()
                 return
+        if not self._measurement_workspace_active():
+            super().keyPressEvent(event)
+            return
         if self._tool_mode in {"polygon_area", "freehand_area", "continuous_manual"} and event.modifiers() == Qt.KeyboardModifier.NoModifier:
             if self._tool_mode in {"polygon_area", "freehand_area"} and event.key() == Qt.Key.Key_T:
                 self._cycle_area_edit_operation_mode()

@@ -92,7 +92,8 @@ def test_offline_diagnostics_include_metric_definitions_without_dirtying_trial(w
     revision = workspace.session.revision
     workspace._export_assistance_diagnostics()
     payload = json.loads(path.read_text(encoding="utf-8"))
-    assert payload["version"] == "0.4.10"
+    from fdm.version import __version__
+    assert payload["version"] == __version__
     assert payload["performance_schema"]["version"] == 1
     assert "frame_age_ms" in payload["performance_schema"]["metrics"]
     assert payload["performance"]["analysis_ms"]["p95"] is None

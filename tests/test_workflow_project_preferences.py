@@ -59,19 +59,22 @@ def test_measurement_panels_keep_user_visibility_across_hidden_trial_and_restart
     window._project_dock.show()
     window._inspector_dock.show()
     window._results_dock.show()
+    window.professional_workspace.show()
     QApplication.processEvents()
     layout = window._adaptive_layout
     original = dict(layout._wide_visibility)
     assert all(original.values())
     window._open_acquisition_workbench(trial_index=1)
     QApplication.processEvents()
-    assert all(not dock.isVisible() for dock in (window._project_dock, window._inspector_dock, window._results_dock))
+    assert all(not dock.isVisible() for dock in (window._project_dock, window._inspector_dock, window._results_dock,
+                                               window.professional_workspace.dock))
     layout.persist_profiles()
     saved = json.loads(layout._profiles_path().read_text())
     assert saved["workspaces"]["measure"]["visibility"] == original
     window.measure_workspace_action.trigger()
     QApplication.processEvents()
-    assert all(dock.isVisible() for dock in (window._project_dock, window._inspector_dock, window._results_dock))
+    assert all(dock.isVisible() for dock in (window._project_dock, window._inspector_dock, window._results_dock,
+                                           window.professional_workspace.dock))
     # The stored preference, rather than trial's temporary hidden docks, is
     # restored even if Qt's global window snapshot came from a trial page.
     window._open_acquisition_workbench(trial_index=2)

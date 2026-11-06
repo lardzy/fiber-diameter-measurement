@@ -44,6 +44,13 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.addCleanup(window.close)
         return window
 
+    def _open_tool_image(self, window):
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(Qt.GlobalColor.white)
+        document = ImageDocument(id="tools", path="/tmp/tools.png", image_size=(120, 80))
+        document.initialize_runtime_state()
+        window._mount_document(document, image, tooltip=document.path)
+
     def test_first_launch_visibility_ignores_pre_show_transition(self) -> None:
         # Qt 在窗口映射前可能短暂报告 dock 隐藏。这个过渡信号不能被采样成
         # 用户的宽屏偏好，否则 show 后「项目与类别」会继续保持隐藏。
@@ -687,6 +694,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         ):
             with self.subTest(theme=theme_mode):
                 window = self._window(AppSettings(theme_mode=theme_mode))
+                self._open_tool_image(window)
                 window.set_tool_mode("manual")
                 button = window._manual_tool_button
                 self.assertTrue(button.isChecked())
@@ -935,6 +943,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
 
     def test_distribution_inherits_tool_only_when_first_opened(self) -> None:
         window = self._window()
+        self._open_tool_image(window)
         window.resize(1600, 900)
         window.show()
         self.app.processEvents()

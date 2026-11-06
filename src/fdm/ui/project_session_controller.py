@@ -321,6 +321,8 @@ class ProjectSessionHost(Protocol):
         reference: AnalysisAssetReference,
     ) -> Path | None: ...
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool: ...
+    def _confirm_trial_exit_for_file_open(self) -> bool: ...
+    def _prepare_document_open(self) -> bool: ...
     def _merge_legacy_calibration_presets(self, presets: list[object]) -> int: ...
     def _reset_workspace(self) -> None: ...
     def _refresh_preset_combo(self, *, selected_name: str | None = None) -> None: ...
@@ -817,6 +819,7 @@ class ProjectSessionController:
 
     def load_project_from_path(self, path: str | Path) -> ProjectLoadResult:
         host = self._host
+        enter_measurement = getattr(host, "_prepare_document_open", None)
         defer = getattr(host, "_defer_for_project_save", None)
         if callable(defer) and defer(lambda: self.load_project_from_path(path), "切换项目"):
             return ProjectLoadResult(False, path=Path(path), cancelled=True, message="等待后台保存完成后切换项目。")
@@ -836,6 +839,8 @@ class ProjectSessionController:
             except OSError:
                 same_project = False
             if same_project:
+                if enter_measurement is not None and not enter_measurement():
+                    return ProjectLoadResult(False, path=project_path, cancelled=True, message="已保留当前工作区。")
                 message = f"项目已经打开：{project_path}"
                 host._show_status_message(message, 4000)
                 return ProjectLoadResult(
@@ -863,6 +868,9 @@ class ProjectSessionController:
                 cancelled=True,
                 message=reason,
             )
+        confirm_trial = getattr(host, "_confirm_trial_exit_for_file_open", None)
+        if confirm_trial is not None and not confirm_trial():
+            return ProjectLoadResult(False, path=project_path, cancelled=True, message="已保留当前试验。")
         confirm_transition = getattr(host, "_confirm_close_documents_for_transition", None)
         confirmed = (
             confirm_transition(host.project.documents, lambda: self.load_project_from_path(path))
@@ -894,6 +902,8 @@ class ProjectSessionController:
             message = "图片加载任务尚未安全退出，已阻止项目切换。"
             host._show_project_information("打开项目", message)
             return ProjectLoadResult(False, path=project_path, message=message)
+        if enter_measurement is not None and not enter_measurement():
+            return ProjectLoadResult(False, path=project_path, cancelled=True, message="已保留当前工作区。")
         recalculated_area_count = _recalculate_loaded_area_measurements(project)
         missing_paths: list[str] = []
         try:

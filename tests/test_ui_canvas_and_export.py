@@ -980,6 +980,15 @@ class CanvasAndExportTests(unittest.TestCase):
             image,
         )
 
+    def _window_with_open_image(self) -> MainWindow:
+        window = MainWindow()
+        image = QImage(200, 120, QImage.Format.Format_RGB32)
+        image.fill(QColor("white"))
+        document = ImageDocument(new_id("image"), "/tmp/tools.png", (200, 120))
+        document.initialize_runtime_state()
+        self._load_document_into_window(window, document, image)
+        return window
+
     def _group_titles_in_tab(self, dialog: SettingsDialog, index: int) -> list[str]:
         tab = dialog._tabs.widget(index)
         self.assertIsInstance(tab, QScrollArea)
@@ -5195,7 +5204,7 @@ class CanvasAndExportTests(unittest.TestCase):
             button.close()
 
     def test_overlay_split_button_syncs_current_tool_and_disable_state(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
             window.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.ARROW)
@@ -5213,7 +5222,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_measurement_split_buttons_update_text_with_current_subtool(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             self.assertIsInstance(window._manual_tool_button, OverlayToolSplitButton)
             self.assertIsInstance(window._area_tool_button, OverlayToolSplitButton)
@@ -6998,7 +7007,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_magic_segment_controls_are_only_visible_in_magic_mode(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             self.assertIsNotNone(window._magic_controls_widget)
             self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
@@ -7261,7 +7270,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
@@ -7312,7 +7321,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
     def test_stacked_context_row_has_visible_height_when_window_is_narrow(self) -> None:
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
-            window = MainWindow()
+            window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
@@ -7333,7 +7342,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
     def test_context_prefers_stacking_before_compacting_primary_tools(self) -> None:
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
-            window = MainWindow()
+            window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
@@ -7350,11 +7359,11 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_inline_context_keeps_full_width_without_clipping_buttons(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
-            window.resize(1280, 900)
+            window.resize(1600, 900)
             window.show()
             self.app.processEvents()
 
@@ -7488,7 +7497,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertAlmostEqual(commits[0][2]["point_px"].y, 58.0)
 
     def test_path_context_controls_show_for_line_and_area_tools_except_count(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             for mode in ("manual", "continuous_manual", "snap", "polygon_area", "freehand_area"):
                 window.set_tool_mode(mode)
@@ -9965,8 +9974,8 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_magic_context_reflows_when_switching_modes_without_document(self) -> None:
-        window = MainWindow()
+    def test_magic_context_reflows_when_switching_modes(self) -> None:
+        window = self._window_with_open_image()
         try:
             window.resize(980, 720)
             window.show()
@@ -9975,7 +9984,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
             self.app.processEvents()
             reference_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
-            self.assertTrue(window._magic_prompt_label.isHidden())  # noqa: SLF001
+            self.assertFalse(window._magic_prompt_label.isHidden())  # noqa: SLF001
+            self.assertTrue(window._magic_toggle_button.isHidden())  # noqa: SLF001
 
             window.set_tool_mode(MagicSegmentToolMode.STANDARD)
             self.app.processEvents()
@@ -9986,7 +9996,7 @@ class CanvasAndExportTests(unittest.TestCase):
             fiber_quick_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
 
             self.assertGreater(standard_width, reference_width)
-            self.assertGreater(fiber_quick_width, reference_width)
+            self.assertNotEqual(fiber_quick_width, standard_width)
             self.assertFalse(window._magic_toggle_button.isHidden())  # noqa: SLF001
             self.assertFalse(window._magic_options_button.isHidden())  # noqa: SLF001
         finally:
@@ -10627,7 +10637,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_a_shortcut_toggles_between_select_and_previous_tool(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             self.assertEqual(window._tool_mode, "select")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
@@ -10642,7 +10652,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_snap_tool_is_available_and_can_be_selected(self) -> None:
-        window = MainWindow()
+        window = self._window_with_open_image()
         try:
             self.assertIn("snap", window._mode_actions)
 

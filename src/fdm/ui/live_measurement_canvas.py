@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QAbstractScrollArea, QApplication, QWidget
 from fdm.live_experiment.frames import PresentedFrameToken
 from fdm.live_experiment.presentation import category_color
 from fdm.ui.live_measurement_annotations import Annotation, layout_annotations, segment_distance
+from fdm.ui.acquisition_alignment import aligned_offset, validate_alignment
 
 
 class LiveMeasurementCanvas(QWidget):
@@ -36,6 +37,8 @@ class LiveMeasurementCanvas(QWidget):
         self.display_value = 100.0
         self.screen_pixel_mm = None
         self.display_revision = 0
+        self.display_alignment = "free"
+        self._free_display_center = (.5, .5)
         self.cursor_point = None
         self.active_material_id = None
         self.candidate_visible = True
@@ -242,16 +245,63 @@ class LiveMeasurementCanvas(QWidget):
             scale = 1 / dpr
         # Align image edges to device pixels. Actual-pixel mode never resamples
         # merely because the application is running at 125/150/200% DPI.
-        return scale, (round((self.width() - width * scale) * dpr / 2) / dpr,
-                       round((self.height() - height * scale) * dpr / 2) / dpr)
+        if self.display_alignment != "free":
+            offset = aligned_offset(self.display_alignment, (self.width(), self.height()),
+                                    (width * scale, height * scale), dpr)
+        else:
+            # Free centers can preserve the blank-space position after an
+            # anchored view is released. Oversized axes are moved by scrollbars.
+            offset = tuple(round(max(0., min(view - extent, view / 2 - center * extent)) * dpr) / dpr
+                           if view >= extent else round((view - extent) * dpr / 2) / dpr
+                           for view, extent, center in zip((self.width(), self.height()),
+                               (width * scale, height * scale), self._free_display_center))
+        # A QScrollArea translates the child by whole logical pixels. At
+        # fractional DPI that translation may itself land between device
+        # pixels, so preserve the image's phase in the visible viewport.
+        parent = self.parentWidget()
+        while parent is not None:
+            if isinstance(parent, QAbstractScrollArea):
+                origin = self.mapTo(parent.viewport(), self.rect().topLeft())
+                offset = tuple(round((value + start) * dpr) / dpr - start
+                               for value, start in zip(offset, (origin.x(), origin.y())))
+                break
+            parent = parent.parentWidget()
+        return scale, offset
+
+    def validate_display_change(self):
+        if self.controller.pending_classification or self.controller._confirmation:
+            raise ValueError("请先核对待确认测量，再更换显示方式或画面对齐。")
+        if self.controller._jobs:
+            raise ValueError("请先完成或取消当前测量，再更换显示方式或画面对齐。")
+
+    def display_position_changed(self):
+        """Invalidate click tokens as well as the visible overlay on a pan."""
+        self.cancel_pointer_gesture()
+        self.gestureCancelled.emit()
+        self.cursor_point = None
+        self.display_revision += 1
+        self._annotation_cache_key = None
+        self.update()
+
+    def set_display_alignment(self, alignment, *, center=None):
+        validate_alignment(alignment)
+        if alignment == self.display_alignment and (center is None or center == self._free_display_center):
+            return
+        self.validate_display_change()
+        if alignment == "free":
+            if center is not None:
+                self._free_display_center = tuple(center)
+            elif self.frame is not None:
+                scale, offset = self._transform()
+                self._free_display_center = tuple((view / 2 - start) / (extent * scale)
+                    for view, start, extent in zip((self.width(), self.height()), offset, self.frame.size))
+        self.display_alignment = alignment
+        self.display_position_changed()
 
     def set_display_mode(self, mode, value=100.0, screen_pixel_mm=None):
         if mode not in {"pixel", "fit", "percent", "magnification"}:
             raise ValueError("未知显示模式")
-        if self.controller.pending_classification or self.controller._confirmation:
-            raise ValueError("请先核对待确认测量，再更换显示模式。")
-        if self.controller._jobs:
-            raise ValueError("请先完成或取消当前测量，再更换显示模式。")
+        self.validate_display_change()
         if not math.isfinite(value) or value <= 0:
             raise ValueError("显示比例必须大于零。")
         if mode == "magnification" and (not self.controller.calibration or not self.controller.calibration.isotropic

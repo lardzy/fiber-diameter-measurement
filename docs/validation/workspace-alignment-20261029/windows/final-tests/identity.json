@@ -1,0 +1,14 @@
+{
+  "guest_directory": "C:\\tmp\\fdm-workspace-alignment-20261029\\e6d32f3d0a",
+  "exit_code": 1,
+  "additional_sources": {
+    "scripts/validation/validate_workflow_redesign.py": "6a10b225a909bd9babc74ba92ea7e6376b8321e35114075d4094bc48b8c3be2c",
+    "tests/test_acquisition_alignment_ui.py": "ff4b448f5e758fb0570a546e93a0925f94119a93a38bb55b2a07e5718286b765",
+    "tests/test_live_display_preferences.py": "2efda10dbb8cf79ba68ef46492fd996316b26da78b5b3fbc5a9930fc1387b746",
+    "tests/test_acquisition_workbench.py": "e7bb6819f9f4348e6503039617f6438caf636b7d080e016b2031ffc5f5bb852d"
+  },
+  "qt_scale_factor": 0.5,
+  "actual_dpr": 1.0,
+  "sha256": "3c1414e996d13ed5035a7d67e8485e9ec4cd5a30fc3d505bd839babfa6da9ec6",
+  "unchanged_product_snapshot_sha256": "2044af388db1fe20d167c81caeed4df8df7fc9154280922ef42ff535a229e179"
+}

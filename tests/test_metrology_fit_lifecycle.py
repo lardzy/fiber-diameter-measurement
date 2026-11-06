@@ -9,6 +9,7 @@ import pytest
 from fdm.geometry import Point
 from fdm.models import Calibration
 from fdm.ui.professional_measurement import refit_target_snapshot
+from fdm.ui.workspace import WorkspacePage
 
 from test_metrology_workspace import mounted_window, _begin, _click, _distance, _wait_until
 
@@ -156,3 +157,74 @@ def test_refit_snapshot_tracks_every_referenced_feature_not_only_the_first(mount
         [replace(f, points_px=(Point(40, 130), Point(120, 160))) if f.id == changed_id else f for f in document.professional_features],
         document.professional_measurements, mark_dirty=False)
     assert refit_target_snapshot(document, first.id) != before
+
+
+def test_leaving_measurement_cancels_preview_and_return_does_not_revive_it(mounted_window, desktop_application):
+    window, document, workspace, _plane = mounted_window()
+    _saved_caliper(workspace, desktop_application)
+    def persisted_measurement_state():
+        state = document.to_dict()
+        # Dock visibility may resize an auto-fit viewport; image-space data
+        # and persisted measurements must remain byte-for-byte equivalent.
+        state.pop("view_state", None)
+        return state
+    saved = persisted_measurement_state()
+    _preview(workspace, desktop_application)
+    job, result = workspace._preview
+    generation = workspace._workspace_generation
+    window._adaptive_layout.set_page(WorkspacePage.CONTENT_TRIAL)
+    assert workspace._workspace_generation > generation
+    assert workspace.controller() is None
+    assert workspace.active is None and workspace._preview is None and workspace._job is None
+    assert not workspace.panel.confirm.isEnabled()
+    workspace.begin()
+    workspace.confirm_fit()
+    workspace.change(document, "forbidden background edit", lambda: document.professional_measurements.clear())
+    assert persisted_measurement_state() == saved
+    window._adaptive_layout.set_page(WorkspacePage.MEASURE)
+    # Model a callback queued before cancellation, delivered after returning.
+    workspace._fit_finished(job, result)
+    assert workspace._preview is None
+    assert persisted_measurement_state() == saved
+
+
+def test_page_switch_cancels_inflight_worker_without_reviving_on_return(mounted_window, monkeypatch, desktop_application):
+    from fdm.services import metrology_fitting
+    window, document, workspace, _plane = mounted_window()
+    entered, release = Event(), Event()
+    original = metrology_fitting.run_line_caliper
+
+    def delayed(*args, **kwargs):
+        entered.set()
+        if not release.wait(2):
+            raise RuntimeError("test worker gate timed out")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(metrology_fitting, "run_line_caliper", delayed)
+    _begin(workspace, "caliper_line")
+    _click(workspace.controller().canvas, (30, 90))
+    _click(workspace.controller().canvas, (220, 90))
+    try:
+        assert entered.wait(1)
+        job = workspace._job
+        window._adaptive_layout.set_page(WorkspacePage.DIAMETER_TRIAL)
+        assert job["cancel"].is_set()
+        assert workspace._job is None
+        window._adaptive_layout.set_page(WorkspacePage.MEASURE)
+    finally:
+        release.set()
+    for worker in workspace._workers:
+        worker.join(timeout=2)
+    desktop_application.processEvents()
+    assert workspace._preview is None and not document.professional_measurements
+
+
+def test_leaving_measurement_cancels_partial_manual_geometry(mounted_window):
+    window, document, workspace, _plane = mounted_window()
+    _begin(workspace, "distance")
+    controller = workspace.controller()
+    _click(controller.canvas, (30, 90))
+    assert controller.points
+    window._adaptive_layout.set_page(WorkspacePage.CAPTURE)
+    assert not controller.points and controller.key is None
+    assert not document.professional_measurements

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "display": {
+    "mode": "pixel",
+    "percent": 175.0,
+    "magnification": 200.0,
+    "alignment": "bottom_right"
+  },
+  "center_coordinates": "viewport",
+  "centers": {
+    "[\"validation:synthetic-preview\",768,576]": [
+      0.5,
+      0.5
+    ]
+  }
+}

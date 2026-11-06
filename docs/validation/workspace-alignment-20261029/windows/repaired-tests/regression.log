@@ -1,0 +1,300 @@
+.............F.................F........................................ [ 59%]
+F..F......FFFF....................................                       [100%]
+================================== FAILURES ===================================
+_ test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000112AE04DA90>
+
+    def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(monkeypatch):
+        import numpy as np
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtTest import QTest
+        from fdm.live_experiment.frames import FrameHandle
+        from fdm.live_experiment.controller import CalibrationSnapshot
+        from fdm.models import CalibrationPreset
+        from fdm.ui.live_experiment_workspace import LiveExperimentWorkspace
+        from fdm.ui.acquisition_workbench import AcquisitionWorkbench
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [CalibrationPreset("CU 40x", 2, "um")]
+            window.show()
+            window.resize(1280, 720)
+            window.acquisition_workspace_action.trigger()
+            hub = window._acquisition_workbench
+            native_handle = window._microview_preview_host.ensure_native_handle()
+            assert native_handle
+            assert not window._center_stack.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            assert not hub.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(1).center())
+            QApplication.processEvents()
+            page = window._live_experiment_workspace
+            frame = FrameHandle.snapshot(np.zeros((576, 768, 3), np.uint8),
+                                         source_id="camera:microview:1", generation=1, live=True)
+            page._receive_frame(frame)
+            page.ruler_choice.setCurrentIndex(1)
+            page.ruler_choice.activated.emit(1)
+            value = page.controller.calibration
+            assert value.x_um == .5 and value.source == "CU 40x"
+            from fdm.live_experiment import default_materials
+            page.session.set_materials(default_materials())
+            record = page.session.add_measurement(20, "wool", field_id=page.controller.field_id)
+            page.controller.current_records.append(record.id)
+            session = page.session
+            QApplication.processEvents()
+            for _ in range(20):
+                window.acquisition_workspace_action.trigger()
+                QApplication.processEvents()
+                assert hub.pages.currentWidget() is page
+>               assert page.controller.current_records == [record.id]
+E               AssertionError: assert [] == ['5e8a8675e50...ff7972280b78']
+E                 
+E                 Right contains one more item: '5e8a8675e508454390ffff7972280b78'
+E                 Use -v to get more diff
+
+tests\test_acquisition_workbench.py:52: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_____ test_preview_same_source_after_document_clear_reapplies_preferences _____
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-103/test_preview_same_source_after0')
+
+    def test_preview_same_source_after_document_clear_reapplies_preferences(tmp_path):
+        store = AcquisitionDisplayStore(tmp_path / "display.json")
+        canvas = DocumentCanvas()
+        binding = AcquisitionDisplayBinding(canvas, store=store)
+        image = QImage(1600, 1200, QImage.Format.Format_RGB32)
+        image.fill(Qt.GlobalColor.black)
+        try:
+            canvas.resize(640, 480)
+            canvas.show()
+            for index in range(2):
+                with binding.mounting_frame():
+                    canvas.set_document(ImageDocument(id=str(index), path="preview.png",
+                        image_size=(1600, 1200)), image)
+                binding.set_source("camera:test", (1600, 1200))
+                if index == 0:
+                    binding.set_mode("percent", 137)
+                settle()
+>               assert canvas.view_zoom() == pytest.approx(1.37)
+E               assert 0.685 == 1.37 ± 1.4e-06
+E                 
+E                 comparison failed
+E                 Obtained: 0.685
+E                 Expected: 1.37 ± 1.4e-06
+
+tests\test_live_display_preferences.py:278: AssertionError
+____ test_picker_theme_icons_and_narrow_fallback_preserve_accessible_state ____
+
+    def test_picker_theme_icons_and_narrow_fallback_preserve_accessible_state():
+        picker = AcquisitionAlignmentButton()
+        picker.show()
+        try:
+            picker.set_alignment("top_left")
+            palette = picker.palette()
+            palette.setColor(QPalette.ColorRole.ButtonText, QColor("#f3f3f3"))
+            picker.setPalette(palette)
+            for key, _, _ in ALIGNMENT_CHOICES:
+                icon = picker.direction_buttons[key].icon()
+                assert not icon.isNull()
+                assert not icon.pixmap(36, 36).isNull()
+            picker.resize(picker.minimumSizeHint())
+            workflow.settle()
+>           assert picker.toolButtonStyle() == Qt.ToolButtonStyle.ToolButtonIconOnly
+E           assert <ToolButtonStyle.ToolButtonTextBesideIcon: 2> == <ToolButtonStyle.ToolButtonIconOnly: 0>
+E            +  where <ToolButtonStyle.ToolButtonTextBesideIcon: 2> = <built-in method toolButtonStyle of AcquisitionAlignmentButton object at 0x00000112A8774900>()
+E            +    where <built-in method toolButtonStyle of AcquisitionAlignmentButton object at 0x00000112A8774900> = <fdm.ui.acquisition_alignment_button.AcquisitionAlignmentButton(0x112b0eb0900, name="acquisitionAlignment") at 0x00000112A8774900>.toolButtonStyle
+E            +  and   <ToolButtonStyle.ToolButtonIconOnly: 0> = <enum 'ToolButtonStyle'>.ToolButtonIconOnly
+E            +    where <enum 'ToolButtonStyle'> = Qt.ToolButtonStyle
+
+tests\test_acquisition_alignment_ui.py:68: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWindowsWindow::setGeometry: Unable to set geometry 72x78+652+278 (frame: 98x149+639+220) on QWidgetWindow/"acquisitionAlignmentWindow" on "Parallels Vu". Resulting geometry: 236x78+652+278 (frame: 262x149+639+220) margins: 13, 58, 13, 13)
+_ test_trial_alignment_rejection_restores_picker_and_shared_preference[busy] __
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-103/test_trial_alignment_rejection0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000112ADFFEF90>
+failure = 'busy'
+
+    @pytest.mark.parametrize("failure", ["busy", "write_error"])
+    def test_trial_alignment_rejection_restores_picker_and_shared_preference(tmp_path, monkeypatch, failure):
+        with workflow.WorkflowHarness(tmp_path / "profile") as harness:
+            harness.enter()
+            page = harness.select(1)
+            click_direction(page.alignment_button, "center")
+            before = page.display_binding.store.path.read_bytes()
+            with monkeypatch.context() as patcher:
+                if failure == "busy":
+                    patcher.setattr(page.controller, "_confirmation", object())
+                else:
+                    def fail_save(*_):
+                        raise OSError("模拟显示偏好写入失败")
+                    patcher.setattr(page.display_binding.store, "_save", fail_save)
+                click_direction(page.alignment_button, "top")
+                assert page.alignment_button.alignment() == "center"
+                assert page.display_binding.store.preferences.alignment == "center"
+                assert page.alignment_button.direction_buttons["center"].isChecked()
+                assert not page.alignment_button.direction_buttons["top"].isChecked()
+                assert page.statusBar().currentMessage()
+            assert page.display_binding.store.path.read_bytes() == before
+>           harness.assert_clean()
+
+tests\test_acquisition_alignment_ui.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <second_round_workflow.WorkflowHarness object at 0x00000112ADFFFA40>
+
+    def assert_clean(self):
+        assert not self.window.project.live_experiments
+        assert not self.window._project_dirty()
+        assert not self.modal_messages
+>       assert not self.slot_errors, "\n".join(self.slot_errors)
+               ^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Traceback (most recent call last):
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 834, in poll
+E           self._poll_once()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 912, in _poll_once
+E           self._poll_confirmation()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1063, in _poll_confirmation
+E           valid = all(self._valid(intent) for intent, _ in request["intents"])
+E                                                            ~~~~~~~^^^^^^^^^^^
+E       TypeError: 'object' object is not subscriptable
+E       
+E       Traceback (most recent call last):
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 834, in poll
+E           self._poll_once()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 912, in _poll_once
+E           self._poll_confirmation()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1063, in _poll_confirmation
+E           valid = all(self._valid(intent) for intent, _ in request["intents"])
+E                                                            ~~~~~~~^^^^^^^^^^^
+E       TypeError: 'object' object is not subscriptable
+E       
+E       Traceback (most recent call last):
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\live_experiment_workspace.py", line 1596, in _refresh_summary
+E           self._refresh_assistance_state()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\trial_assistance.py", line 329, in _refresh_assistance_state
+E           self._update_assistance_state()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\ui\trial_assistance.py", line 340, in _update_assistance_state
+E           controller.configure_automatic(active=self.isVisible() and bool(frame and frame.live), prepared=prepared)
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1132, in configure_automatic
+E           self.cancel_candidate_submissions()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1471, in cancel_candidate_submissions
+E           if self._confirmation and self._confirmation["kind"] == "automatic":
+E                                     ~~~~~~~~~~~~~~~~~~^^^^^^^^
+E       TypeError: 'object' object is not subscriptable
+E       
+E       Traceback (most recent call last):
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 834, in poll
+E           self._poll_once()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 912, in _poll_once
+E           self._poll_confirmation()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1063, in _poll_confirmation
+E           valid = all(self._valid(intent) for intent, _ in request["intents"])
+E                                                            ~~~~~~~^^^^^^^^^^^
+E       TypeError: 'object' object is not subscriptable
+E       
+E       Traceback (most recent call last):
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 834, in poll
+E           self._poll_once()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 912, in _poll_once
+E           self._poll_confirmation()
+E         File "C:\tmp\fdm-workspace-alignment-20261029\e6d32f3d0a\src\fdm\live_experiment\controller.py", line 1063, in _poll_confirmation
+E           valid = all(self._valid(intent) for intent, _ in request["intents"])
+E                                                            ~~~~~~~^^^^^^^^^^^
+E       TypeError: 'object' object is not subscriptable
+
+scripts\validation\validate_workflow_redesign.py:290: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+QWindowsWindow::setGeometry: Unable to set geometry 2732x1536+14+58 (frame: 2758x1607+1+0) on QWidgetWindow/"MainWindowClassWindow" on "Parallels Vu". Resulting geometry: 2586x1536+14+58 (frame: 2612x1607+1+0) margins: 13, 58, 13, 13 minimum size: 579x341 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1184, y=753)))
+QWindowsWindow::setGeometry: Unable to set geometry 2732x1536+14+58 (frame: 2758x1607+1+0) on QWidgetWindow/"MainWindowClassWindow" on "Parallels Vu". Resulting geometry: 2586x1536+14+58 (frame: 2612x1607+1+0) margins: 13, 58, 13, 13 minimum size: 579x294 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1184, y=659)))
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-light] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-103/test_categories_have_usable_sp4')
+theme = 'light', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x112de585800) at 0x00000112D59222C0>, <PySide6.QtWidgets.QPushButton(0x112de584070) at 0x00000112D78D5A40>, <PySide6.QtWidgets.QPushButton(0x112de586680) at 0x00000112D9A9E180>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x112de585800) at 0x00000112D59222C0>, <PySide6.QtWidgets.QPushButton(0x112de584070) at 0x00000112D78D5A40>, <PySide6.QtWidgets.QPushButton(0x112de586680) at 0x00000112D9A9E180>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x112b0a68740, name="acquisitionTrial") at 0x00000112D79EE240>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-dark] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-103/test_categories_have_usable_sp5')
+theme = 'dark', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x112d7524890) at 0x00000112D80CF3C0>, <PySide6.QtWidgets.QPushButton(0x112d75229c0) at 0x00000112D61CAE80>, <PySide6.QtWidgets.QPushButton(0x112d7522f30) at 0x00000112D80CFA40>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x112d7524890) at 0x00000112D80CF3C0>, <PySide6.QtWidgets.QPushButton(0x112d75229c0) at 0x00000112D61CAE80>, <PySide6.QtWidgets.QPushButton(0x112d7522f30) at 0x00000112D80CFA40>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x112af8a2c60, name="acquisitionTrial") at 0x00000112D9AFF440>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-navy] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-103/test_categories_have_usable_sp6')
+theme = 'navy', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x112dbe6c120) at 0x00000112D81AE600>, <PySide6.QtWidgets.QPushButton(0x112dbe6c4c0) at 0x00000112D8191840>, <PySide6.QtWidgets.QPushButton(0x112dbe6e900) at 0x00000112D80EA280>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x112dbe6c120) at 0x00000112D81AE600>, <PySide6.QtWidgets.QPushButton(0x112dbe6c4c0) at 0x00000112D8191840>, <PySide6.QtWidgets.QPushButton(0x112dbe6e900) at 0x00000112D80EA280>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x112b0a6d690, name="acquisitionTrial") at 0x00000112D9AEA2C0>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-warm] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-103/test_categories_have_usable_sp7')
+theme = 'warm', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x112dbea71b0) at 0x00000112D9C0B680>, <PySide6.QtWidgets.QPushButton(0x112dbea4460) at 0x00000112D9C0BB00>, <PySide6.QtWidgets.QPushButton(0x112dbea4630) at 0x00000112D9C0BD80>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x112dbea71b0) at 0x00000112D9C0B680>, <PySide6.QtWidgets.QPushButton(0x112dbea4460) at 0x00000112D9C0BB00>, <PySide6.QtWidgets.QPushButton(0x112dbea4630) at 0x00000112D9C0BD80>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x112b0a75a30, name="acquisitionTrial") at 0x00000112D9AB3E80>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+=========================== short test summary info ===========================
+FAILED tests/test_acquisition_workbench.py::test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler
+FAILED tests/test_live_display_preferences.py::test_preview_same_source_after_document_clear_reapplies_preferences
+FAILED tests/test_acquisition_alignment_ui.py::test_picker_theme_icons_and_narrow_fallback_preserve_accessible_state
+FAILED tests/test_acquisition_alignment_ui.py::test_trial_alignment_rejection_restores_picker_and_shared_preference[busy]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-light]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-dark]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-navy]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-warm]
+8 failed, 114 passed in 55.29s

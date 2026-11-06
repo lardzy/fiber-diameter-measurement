@@ -1,0 +1,145 @@
+.............F.......................................................... [ 59%]
+..........FFFF....................................                       [100%]
+================================== FAILURES ===================================
+_ test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FFADE6FF50>
+
+    def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(monkeypatch):
+        import numpy as np
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtTest import QTest
+        from fdm.live_experiment.frames import FrameHandle
+        from fdm.live_experiment.controller import CalibrationSnapshot
+        from fdm.models import CalibrationPreset
+        from fdm.ui.live_experiment_workspace import LiveExperimentWorkspace
+        from fdm.ui.acquisition_workbench import AcquisitionWorkbench
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [CalibrationPreset("CU 40x", 2, "um")]
+            window.show()
+            window.resize(1280, 720)
+            # This navigation fixture injects frames itself. A delayed no-device
+            # start failure must not retire its synthetic field on slower hosts.
+            window._open_acquisition_workbench(auto_start=False)
+            hub = window._acquisition_workbench
+            native_handle = window._microview_preview_host.ensure_native_handle()
+            assert native_handle
+            assert not window._center_stack.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            assert not hub.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+            QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(1).center())
+            QApplication.processEvents()
+            page = window._live_experiment_workspace
+            frame = FrameHandle.snapshot(np.zeros((576, 768, 3), np.uint8),
+                                         source_id="camera:microview:1", generation=1, live=True)
+            page._receive_frame(frame)
+            page.ruler_choice.setCurrentIndex(1)
+            page.ruler_choice.activated.emit(1)
+            value = page.controller.calibration
+            assert value.x_um == .5 and value.source == "CU 40x"
+            from fdm.live_experiment import default_materials
+            page.session.set_materials(default_materials())
+            record = page.session.add_measurement(20, "wool", field_id=page.controller.field_id)
+            page.controller.current_records.append(record.id)
+            session = page.session
+            QApplication.processEvents()
+            for _ in range(20):
+                window.acquisition_workspace_action.trigger()
+                QApplication.processEvents()
+                assert hub.pages.currentWidget() is page
+>               assert page.controller.current_records == [record.id]
+E               AssertionError: assert [] == ['761a9123054...7542dd5ddd05']
+E                 
+E                 Right contains one more item: '761a912305444dc89c187542dd5ddd05'
+E                 Use -v to get more diff
+
+tests\test_acquisition_workbench.py:54: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-light] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-104/test_categories_have_usable_sp4')
+theme = 'light', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x1ffe132da20) at 0x000001FFDE43C800>, <PySide6.QtWidgets.QPushButton(0x1ffe132c9d0) at 0x000001FFDC1AA1C0>, <PySide6.QtWidgets.QPushButton(0x1ffe132c630) at 0x000001FFDE316FC0>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x1ffe132da20) at 0x000001FFDE43C800>, <PySide6.QtWidgets.QPushButton(0x1ffe132c9d0) at 0x000001FFDC1AA1C0>, <PySide6.QtWidgets.QPushButton(0x1ffe132c630) at 0x000001FFDE316FC0>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1ffb7064210, name="acquisitionTrial") at 0x000001FFDE3DC140>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-dark] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-104/test_categories_have_usable_sp5')
+theme = 'dark', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x1ffe264e400) at 0x000001FFDE50F240>, <PySide6.QtWidgets.QPushButton(0x1ffe264f0b0) at 0x000001FFDE50F540>, <PySide6.QtWidgets.QPushButton(0x1ffe2650db0) at 0x000001FFAEECE340>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x1ffe264e400) at 0x000001FFDE50F240>, <PySide6.QtWidgets.QPushButton(0x1ffe264f0b0) at 0x000001FFDE50F540>, <PySide6.QtWidgets.QPushButton(0x1ffe2650db0) at 0x000001FFAEECE340>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1ffb6418a00, name="acquisitionTrial") at 0x000001FFDE48E240>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-navy] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-104/test_categories_have_usable_sp6')
+theme = 'navy', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x1ffe16bb510) at 0x000001FFE01503C0>, <PySide6.QtWidgets.QPushButton(0x1ffe16b9810) at 0x000001FFE0150680>, <PySide6.QtWidgets.QPushButton(0x1ffe16bb8b0) at 0x000001FFE0150980>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x1ffe16bb510) at 0x000001FFE01503C0>, <PySide6.QtWidgets.QPushButton(0x1ffe16b9810) at 0x000001FFE0150680>, <PySide6.QtWidgets.QPushButton(0x1ffe16bb8b0) at 0x000001FFE0150980>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1ffb705e6f0, name="acquisitionTrial") at 0x000001FFDE4D1B00>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+_ test_categories_have_usable_space_and_export_is_always_reachable[size1-4-warm] _
+
+tmp_path = WindowsPath('C:/Users/lishuyang/AppData/Local/Temp/pytest-of-lishuyang/pytest-104/test_categories_have_usable_sp7')
+theme = 'warm', size = (1280, 720), minimum = 4
+
+    @pytest.mark.parametrize("theme", ["light", "dark", "navy", "warm"])
+    @pytest.mark.parametrize("size,minimum", [((1600, 900), 6), ((1280, 720), 4)])
+    def test_categories_have_usable_space_and_export_is_always_reachable(tmp_path, theme, size, minimum):
+        # 1280x720 is the logical client budget of a 1600x900 display at 125%.
+        # Actual device-pixel scaling is additionally checked by the visual harness.
+        with workflow.WorkflowHarness(tmp_path / "profile", theme=theme, size=size) as harness:
+            page = prepare_nine_categories(harness)
+>           assert len(visible_categories(page)) >= minimum
+E           assert 3 >= 4
+E            +  where 3 = len([<PySide6.QtWidgets.QPushButton(0x1ffdf45fd30) at 0x000001FFE02199C0>, <PySide6.QtWidgets.QPushButton(0x1ffdf45f420) at 0x000001FFE0219DC0>, <PySide6.QtWidgets.QPushButton(0x1ffdf460d80) at 0x000001FFE01EE800>])
+E            +    where [<PySide6.QtWidgets.QPushButton(0x1ffdf45fd30) at 0x000001FFE02199C0>, <PySide6.QtWidgets.QPushButton(0x1ffdf45f420) at 0x000001FFE0219DC0>, <PySide6.QtWidgets.QPushButton(0x1ffdf460d80) at 0x000001FFE01EE800>] = visible_categories(<fdm.ui.live_experiment_workspace.LiveExperimentWorkspace(0x1ffb6412310, name="acquisitionTrial") at 0x000001FFDE52F0C0>)
+
+tests\test_trial_compact_layout.py:47: AssertionError
+---------------------------- Captured stderr call -----------------------------
+QWidget::paintEngine: Should no longer be called
+=========================== short test summary info ===========================
+FAILED tests/test_acquisition_workbench.py::test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-light]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-dark]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-navy]
+FAILED tests/test_trial_compact_layout.py::test_categories_have_usable_space_and_export_is_always_reachable[size1-4-warm]
+5 failed, 117 passed in 49.17s

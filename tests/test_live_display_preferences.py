@@ -275,7 +275,7 @@ def test_preview_same_source_after_document_clear_reapplies_preferences(tmp_path
             if index == 0:
                 binding.set_mode("percent", 137)
             settle()
-            assert canvas.view_zoom() == pytest.approx(1.37)
+            assert canvas.view_zoom() * canvas.devicePixelRatioF() == pytest.approx(1.37)
             if index == 0:
                 binding.clear_source()
                 canvas.clear_document()
@@ -334,3 +334,384 @@ def test_store_is_shared_per_host_and_separate_from_project(tmp_path):
     host.close()
     host.deleteLater()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+
+@pytest.mark.parametrize("dpr", [1, 1.25, 1.5, 2])
+@pytest.mark.parametrize("size", [(160, 120), (1600, 1200), (1600, 120), (160, 1200)])
+def test_nine_anchors_cover_small_large_and_mixed_axes(tmp_path, trial_factory, dpr, size):
+    from fdm.ui.acquisition_alignment import ALIGNMENT_FACTORS
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store, size=size, dpr=dpr)
+    before_revision = page.session.revision
+    for mode, value in (("pixel", None), ("fit", None), ("percent", 125), ("magnification", 300)):
+        page.binding.set_mode(mode, value)
+        settle()
+        for alignment, factors in ALIGNMENT_FACTORS.items():
+            page.binding.set_alignment(alignment)
+            settle()
+            scale, offset = page.canvas._transform()
+            bars = (page.scroll.horizontalScrollBar(), page.scroll.verticalScrollBar())
+            viewport = page.scroll.viewport()
+            # Content in viewport coordinates must meet the selected edge or
+            # center, regardless of which axes actually need scrollbars.
+            observed = tuple(start - bar.value() for start, bar in zip(offset, bars))
+            expected = tuple((view - extent * scale) * factor for view, extent, factor
+                             in zip((viewport.width(), viewport.height()), size, factors))
+            assert observed == pytest.approx(expected, abs=1 / dpr + 1)
+            assert all(abs(start * dpr - round(start * dpr)) < 1e-6 for start in observed)
+            assert store.preferences.alignment == alignment
+            assert scale * dpr == pytest.approx(1 if mode == "pixel" else 1.25 if mode == "percent"
+                                               else .6 if mode == "magnification" else scale * dpr)
+    assert page.session.revision == before_revision
+    assert page.host.project.extension_state_id == 0
+
+
+def test_alignment_reload_legacy_shared_and_hidden_pages(tmp_path, trial_factory):
+    path = tmp_path / "alignment.json"
+    path.write_text('{"version":1,"display":{"mode":"percent","percent":125}}')
+    store = AcquisitionDisplayStore(path)
+    assert store.preferences.alignment == "free"
+    first = trial_factory(store, size=(160, 120))
+    second = trial_factory(store, size=(160, 120))
+    second.host.hide()
+    first.binding.set_alignment("bottom_right")
+    settle()
+    assert second.canvas.display_alignment == "free"
+    second.host.resize(800, 620)
+    second.host.show()
+    settle()
+    assert second.canvas.display_alignment == "bottom_right"
+    restored = AcquisitionDisplayStore(path)
+    assert restored.preferences.alignment == "bottom_right"
+    assert restored.preferences.mode == "percent"
+    # Same geometry video updates must not reset scroll or display generation.
+    revision = first.canvas.display_revision
+    for _ in range(3):
+        first.canvas.set_frame(first.frame)
+        first.binding.set_source(first.frame.source_id, first.frame.size)
+        settle()
+    assert first.canvas.display_revision == revision
+    first.host.resize(920, 700)
+    settle()
+    scale, offset = first.canvas._transform()
+    assert offset == pytest.approx((first.canvas.width() - 160 * scale,
+                                    first.canvas.height() - 120 * scale), abs=1)
+
+
+def test_only_real_scroll_releases_anchor_and_saves_position(tmp_path, trial_factory):
+    from PySide6.QtWidgets import QAbstractSlider
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store)
+    page.binding.set_alignment("top_left")
+    settle()
+    bar = page.scroll.horizontalScrollBar()
+    # A Qt layout/restore update must not be mistaken for an input gesture.
+    bar.setValue(50)
+    settle()
+    assert store.preferences.alignment == "top_left"
+    assert store.center("camera:test", page.frame.size) == (.5, .5)
+    page.binding.set_alignment("top_left")
+    settle()
+    prior_revision = page.canvas.display_revision
+    bar.triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
+    value = bar.value()
+    settle()
+    assert value > 0 and bar.value() == value
+    assert store.preferences.alignment == "free"
+    assert page.canvas.display_alignment == "free"
+    assert page.canvas.display_revision > prior_revision
+    page.binding.flush()
+    assert store.center("camera:test", page.frame.size) != (.5, .5)
+    assert AcquisitionDisplayStore(store.path).preferences.alignment == "free"
+
+
+@pytest.mark.parametrize("busy", ["_confirmation", "_jobs"])
+def test_busy_alignment_and_scroll_are_rejected_without_mutation(tmp_path, trial_factory, busy):
+    from PySide6.QtWidgets import QAbstractSlider
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store)
+    page.binding.set_alignment("top_left")
+    settle()
+    old = getattr(page.controller, busy)
+    setattr(page.controller, busy, object())
+    try:
+        with pytest.raises(ValueError):
+            page.binding.set_alignment("bottom_right")
+        bar = page.scroll.horizontalScrollBar()
+        before = bar.value()
+        bar.triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
+        settle()
+        assert bar.value() == before
+        assert store.preferences.alignment == "top_left"
+        assert page.canvas.display_alignment == "top_left"
+    finally:
+        setattr(page.controller, busy, old)
+
+
+def test_alignment_cancels_draft_and_changes_presented_generation(tmp_path, trial_factory):
+    page = trial_factory(AcquisitionDisplayStore(tmp_path / "alignment.json"))
+    page.controller.start((40, 40))
+    revision = page.canvas.display_revision
+    page.binding.set_alignment("bottom_right")
+    settle()
+    assert page.controller.draft is None
+    assert page.canvas.display_revision > revision
+    assert page.controller.presented.display_revision == page.canvas.display_revision
+    point = page.controller.presented.image_point(*page.canvas._transform()[1])
+    assert point == pytest.approx((0, 0))
+
+
+@pytest.mark.parametrize("dpr", [1, 1.25, 1.5, 2])
+def test_preview_anchor_zoom_resize_pan_and_same_frame(tmp_path, dpr):
+    from fdm.geometry import Point
+    from fdm.ui.acquisition_alignment import ALIGNMENT_FACTORS
+    from PySide6.QtCore import QPointF
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    canvas = DocumentCanvas()
+    canvas.devicePixelRatioF = lambda: dpr
+    binding = AcquisitionDisplayBinding(canvas, store=store)
+    image = QImage(1000, 800, QImage.Format.Format_RGB32)
+    image.fill(Qt.GlobalColor.black)
+    try:
+        canvas.resize(640, 480)
+        canvas.show()
+        with binding.mounting_frame():
+            canvas.set_document(ImageDocument(id="preview", path="preview.png", image_size=(1000, 800)), image)
+        binding.set_source("camera:a", (1000, 800))
+        settle()
+        for alignment, factors in ALIGNMENT_FACTORS.items():
+            binding.set_alignment(alignment)
+            binding.set_mode("percent", 45)
+            settle()
+            origin = canvas.image_to_widget(Point(0, 0))
+            expected = ((640 - 450 / dpr) * factors[0], (480 - 360 / dpr) * factors[1])
+            assert (origin.x(), origin.y()) == pytest.approx(expected, abs=1 / dpr)
+        binding.set_mode("pixel")
+        canvas.resize(800, 600)
+        settle()
+        assert canvas.view_zoom() * dpr == pytest.approx(1)
+        assert canvas._pan == Point(round((800 - 1000 / dpr) * dpr) / dpr,
+                                    round((600 - 800 / dpr) * dpr) / dpr)
+        # No movement or a subpixel move below the pixel phase does not release.
+        canvas._last_mouse_pos = QPointF(100, 100)
+        canvas._begin_canvas_pan(Qt.MouseButton.MiddleButton)
+        canvas._apply_pan_position(QPointF(100, 100))
+        assert store.preferences.alignment == "bottom_right"
+        canvas._apply_pan_position(QPointF(120, 130))
+        canvas._end_canvas_pan()
+        pan = canvas._pan
+        settle()
+        assert store.preferences.alignment == "free"
+        assert canvas._pan == pan
+        binding.set_source("camera:a", (1000, 800))
+        settle()
+        assert canvas._pan == pan
+    finally:
+        binding.close()
+        canvas.close()
+        canvas.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+
+@pytest.mark.parametrize("size", [(32, 24), (131072, 24)])
+def test_drag_from_fit_keeps_actual_scale_and_center_outside_entry_range(tmp_path, monkeypatch, size):
+    from PySide6.QtCore import QPoint, QPointF
+    from PySide6.QtTest import QTest
+    from fdm.ui.view_transform import CanvasZoomMode
+
+    path = tmp_path / "preview.json"
+    image = QImage(*size, QImage.Format.Format_Grayscale8)
+    image.fill(20)
+    canvases = []
+
+    def mount(view_size):
+        store = AcquisitionDisplayStore(path)
+        canvas = DocumentCanvas()
+        canvas.devicePixelRatioF = lambda: 1.25
+        binding = AcquisitionDisplayBinding(canvas, store=store)
+        canvases.append((canvas, binding))
+        canvas.resize(*view_size)
+        canvas.show()
+        with binding.mounting_frame():
+            canvas.set_document(ImageDocument(id="preview", path="p.png", image_size=size), image)
+        binding.set_source("camera:roi", size)
+        settle()
+        return canvas, binding, store
+
+    def image_center(canvas):
+        point = canvas.widget_to_image(QPointF(canvas.width() / 2, canvas.height() / 2))
+        return point.x, point.y
+
+    def drag(canvas):
+        QTest.mousePress(canvas, Qt.MouseButton.MiddleButton, pos=QPoint(80, 80))
+        QTest.mouseMove(canvas, QPoint(110, 130))
+        QTest.mouseRelease(canvas, Qt.MouseButton.MiddleButton, pos=QPoint(110, 130))
+        settle()
+
+    def fail_save(*_args):
+        raise OSError("test disk full")
+
+    try:
+        canvas, binding, store = mount((640, 480))
+        binding.set_mode("fit")
+        binding.set_alignment("top_left")
+        settle()
+        initial_zoom = canvas.view_zoom()
+        canvas.resize(720, 550)
+        settle()
+        zoom = canvas.view_zoom()
+        assert zoom > initial_zoom
+        assert canvas.zoom_mode() is CanvasZoomMode.FIT
+        percent = zoom * canvas.devicePixelRatioF() * 100
+        assert percent > 1600 or 0 < percent < 1
+        prior = store.preferences
+        prior_center = image_center(canvas)
+        with monkeypatch.context() as patch:
+            patch.setattr(store, "_save", fail_save)
+            drag(canvas)
+            assert store.preferences == prior
+            assert canvas.zoom_mode() is CanvasZoomMode.FIT
+            assert image_center(canvas) == pytest.approx(prior_center)
+        drag(canvas)
+        center = image_center(canvas)
+        assert center != prior_center
+        assert store.preferences.alignment == "free"
+        assert store.preferences.mode == "percent"
+        assert store.preferences.percent == pytest.approx(percent)
+        assert canvas.view_zoom() == pytest.approx(zoom)
+        canvas.resize(760, 565)
+        settle()
+        assert image_center(canvas) == pytest.approx(center)
+        assert canvas.view_zoom() == pytest.approx(zoom)
+        binding.close()
+        canvas.hide()
+        restored, new_binding, new_store = mount((760, 565))
+        assert new_store.preferences == store.preferences
+        assert image_center(restored) == pytest.approx(center)
+        assert restored.view_zoom() == pytest.approx(zoom)
+        # Selecting Fit explicitly uses the new viewport again.
+        new_binding.set_mode("fit")
+        settle()
+        assert restored.zoom_mode() is CanvasZoomMode.FIT
+        assert restored.view_zoom() > zoom
+    finally:
+        for canvas, binding in canvases:
+            binding.close()
+            canvas.close()
+            canvas.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+
+def test_real_trial_controller_reentry_does_not_snap_user_scroll_back(tmp_path, trial_factory):
+    from PySide6.QtWidgets import QAbstractSlider
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store)
+    page.controller.changed.connect(page.binding.apply)
+    page.binding.set_alignment("bottom_right")
+    settle()
+    bar = page.scroll.horizontalScrollBar()
+    maximum = bar.maximum()
+    bar.triggerAction(QAbstractSlider.SliderAction.SliderPageStepSub)
+    value = bar.value()
+    settle()
+    assert value < maximum and bar.value() == value
+    assert store.preferences.alignment == "free"
+    assert page.canvas.display_alignment == "free"
+
+
+@pytest.mark.parametrize("size,axis", [((1600, 120), 0), ((160, 1200), 1)])
+@pytest.mark.parametrize("alignment", ["top_left", "bottom_right"])
+def test_release_keeps_small_axis_position_across_apply_and_restart(tmp_path, trial_factory, size, axis, alignment):
+    from PySide6.QtWidgets import QAbstractSlider
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store, size=size)
+    page.binding.set_alignment(alignment)
+    settle()
+    before = page.canvas._transform()[1][1 - axis]
+    bar = (page.scroll.horizontalScrollBar(), page.scroll.verticalScrollBar())[axis]
+    action = (QAbstractSlider.SliderAction.SliderSingleStepSub if alignment == "bottom_right"
+              else QAbstractSlider.SliderAction.SliderSingleStepAdd)
+    bar.triggerAction(action)
+    settle()
+    assert store.preferences.alignment == "free"
+    page.binding.flush()
+    center = store.center("camera:test", size)
+    assert center[1 - axis] < 0 or center[1 - axis] > 1
+    page.binding.apply()
+    settle()
+    assert page.canvas._transform()[1][1 - axis] == pytest.approx(before, abs=1)
+    reloaded = AcquisitionDisplayStore(store.path)
+    assert reloaded.center("camera:test", size) == center
+    other = trial_factory(reloaded, size=size)
+    assert other.canvas._transform()[1][1 - axis] == pytest.approx(before, abs=1)
+
+
+def test_scroll_disk_failure_keeps_confirmed_anchor(tmp_path, trial_factory, monkeypatch):
+    from PySide6.QtWidgets import QAbstractSlider
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store)
+    page.controller.changed.connect(page.binding.apply)
+    page.binding.set_alignment("bottom_right")
+    settle()
+    def fail(*_args, **_kwargs):
+        raise OSError("test disk full")
+    monkeypatch.setattr(store, "_save", fail)
+    bar = page.scroll.horizontalScrollBar()
+    bar.triggerAction(QAbstractSlider.SliderAction.SliderPageStepSub)
+    settle()
+    assert store.preferences.alignment == page.canvas.display_alignment == "bottom_right"
+    assert bar.value() == bar.maximum()
+    assert any("test disk full" in message for message in page.notices)
+
+
+def test_invalid_large_viewport_centers_are_ignored_on_load(tmp_path):
+    from fdm.ui.display_preferences import viewport_key
+    path = tmp_path / "display.json"
+    key = viewport_key("camera:test", (100, 100))
+    path.write_text(json.dumps({"version": 1, "center_coordinates": "viewport",
+        "centers": {key: [1e300, -1e300]}}))
+    store = AcquisitionDisplayStore(path)
+    assert store.center("camera:test", (100, 100)) == (.5, .5)
+    with pytest.raises(ValueError):
+        store.set_center("camera:test", (100, 100), (1e300, 0), allow_outside_image=True)
+
+
+def test_alignment_survives_source_geometry_and_dpr_change(tmp_path, trial_factory):
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store)
+    page.binding.set_alignment("right")
+    settle()
+    frame = FrameHandle.snapshot(np.zeros((180, 220, 3), np.uint8), source_id="camera:other", live=False)
+    page.controller.receive_frame(frame)
+    page.canvas.set_frame(frame)
+    page.binding.set_source(frame.source_id, frame.size)
+    page.canvas.devicePixelRatioF = lambda: 1.5
+    QApplication.sendEvent(page.canvas, QEvent(QEvent.Type.DevicePixelRatioChange))
+    settle()
+    scale, offset = page.canvas._transform()
+    assert scale * 1.5 == pytest.approx(1)
+    assert offset == pytest.approx((page.canvas.width() - 220 * scale,
+                                   (page.canvas.height() - 180 * scale) / 2), abs=1 / 1.5)
+    assert store.preferences.alignment == "right"
+    assert store.center("camera:other", frame.size) == (.5, .5)
+
+
+def test_drag_position_writes_are_debounced(tmp_path, trial_factory, monkeypatch):
+    from PySide6.QtWidgets import QAbstractSlider
+    store = AcquisitionDisplayStore(tmp_path / "alignment.json")
+    page = trial_factory(store)
+    page.controller.changed.connect(page.binding.apply)
+    page.binding.set_alignment("top_left")
+    settle()
+    writes = []
+    original = store._save
+    def save(*args):
+        writes.append(args)
+        return original(*args)
+    monkeypatch.setattr(store, "_save", save)
+    bar = page.scroll.horizontalScrollBar()
+    for _ in range(10):
+        bar.triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
+    assert len(writes) == 1  # free preference, not ten viewport snapshots
+    page.binding.flush()
+    assert len(writes) == 2

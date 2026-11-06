@@ -44,7 +44,9 @@ class TrialAssistanceMixin:
         # fixed 108px floor can force the whole main window to grow.
         self.display_choice.setMinimumWidth(0)
         self.display_choice.setMaximumWidth(150)
-        self.analyze_button = QToolButton(self.view_controls)
+        from fdm.ui.acquisition_layout import CompactAcquisitionToolButton
+        self.analyze_button = CompactAcquisitionToolButton(self.view_controls)
+        self.analyze_button.setToolTip("全图分析／刷新候选；右侧箭头可选择算法")
         self.analyze_button.setObjectName("trialAnalyze")
         self.analyze_button.setText("全图分析")
         self.analyze_button.setIcon(themed_icon("statistics"))

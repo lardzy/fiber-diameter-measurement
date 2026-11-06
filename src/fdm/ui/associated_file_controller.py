@@ -40,7 +40,8 @@ class AssociatedFileOpenHost(Protocol):
         self,
         intent: TransitionIntent,
     ) -> AcquisitionDisposition | None: ...
-    def stop_live_preview(self) -> None: ...
+    def _prepare_document_open(self) -> bool: ...
+    def _confirm_trial_exit_for_file_open(self) -> bool: ...
     def _confirm_close_documents(self, documents: list[object]) -> bool: ...
     def _reset_workspace(self) -> None: ...
     def _open_image_requests(
@@ -142,8 +143,6 @@ class AssociatedFileOpenController(QObject):
                 failures.append(f"{path.name}: {exc}")
             else:
                 valid_paths.append(path)
-        if focus_document_id is not None:
-            self._host._set_current_document(focus_document_id)
         if failures:
             QMessageBox.warning(
                 self._parent_widget(),
@@ -152,6 +151,8 @@ class AssociatedFileOpenController(QObject):
                 + "\n".join(failures[:10]),
             )
         if not valid_paths:
+            if focus_document_id is not None and self._host._prepare_document_open():
+                self._host._set_current_document(focus_document_id)
             return
 
         disposition = AssociatedSlideDisposition.ADD_TO_CURRENT
@@ -177,6 +178,8 @@ class AssociatedFileOpenController(QObject):
             self._host._show_status_message("操作已取消。", 6000)
             return
         if documents_to_close is not None:
+            if not self._host._confirm_trial_exit_for_file_open():
+                return
             confirm = getattr(self._host, "_confirm_close_documents_for_transition", None)
             confirmed = (
                 confirm(documents_to_close, lambda: self._open_digital_slides(paths, disposition))
@@ -194,8 +197,8 @@ class AssociatedFileOpenController(QObject):
                 reason = str(getattr(transition, "reason", "") or "资源尚未安全退出，已取消打开文件。")
                 self._host._show_status_message(reason, 6000)
                 return
-        else:
-            self._host.stop_live_preview()
+        if not self._host._prepare_document_open():
+            return
 
         if disposition == AssociatedSlideDisposition.STANDALONE_WORKSPACE:
             try:
@@ -207,6 +210,8 @@ class AssociatedFileOpenController(QObject):
                     f"资源尚未安全退出，已取消新建独立工作区。\n\n{exc}",
                 )
                 return
+        elif focus_document_id is not None:
+            self._host._set_current_document(focus_document_id)
 
         self._host._open_image_requests(
             [(str(path), None) for path in valid_paths],

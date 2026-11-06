@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 import json
 
-from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer, Signal
 from PySide6.QtWidgets import QDockWidget, QMainWindow, QWidget
 
 from fdm.settings import WorkspaceLayoutSettings
@@ -15,6 +15,34 @@ class WorkspaceMode(StrEnum):
     MEASURE = "measure"
     ACQUIRE = "acquire"
     DIGITAL_SLIDE_ACQUIRE = "digital_slide_acquire"
+
+
+class WorkspacePage(StrEnum):
+    """Accepted navigation identity, independent of camera running state."""
+
+    MEASURE = "measure"
+    CAPTURE = "capture"
+    CONTENT_TRIAL = "content_trial"
+    DIAMETER_TRIAL = "diameter_trial"
+    DIGITAL_SLIDE_ACQUIRE = "digital_slide_acquire"
+
+
+WORKSPACE_PANEL_SUPPORT = {
+    WorkspacePage.MEASURE: frozenset({"project", "inspector", "results", "professional"}),
+    WorkspacePage.CAPTURE: frozenset(),
+    WorkspacePage.CONTENT_TRIAL: frozenset(),
+    WorkspacePage.DIAMETER_TRIAL: frozenset(),
+    WorkspacePage.DIGITAL_SLIDE_ACQUIRE: frozenset({"project", "inspector"}),
+}
+
+
+def workspace_mode_for_page(page: WorkspacePage | str) -> WorkspaceMode:
+    page = WorkspacePage(page)
+    if page is WorkspacePage.MEASURE:
+        return WorkspaceMode.MEASURE
+    if page is WorkspacePage.DIGITAL_SLIDE_ACQUIRE:
+        return WorkspaceMode.DIGITAL_SLIDE_ACQUIRE
+    return WorkspaceMode.ACQUIRE
 
 
 class WorkspaceDockWidget(QDockWidget):
@@ -46,6 +74,7 @@ class AdaptiveLayoutController(QObject):
     """Apply responsive panel rules without owning business state."""
 
     layoutChanged = Signal(bool)
+    pageChanged = Signal(object)
 
     COMPACT_WIDTH = 1180
     MEDIUM_WIDTH = 1440
@@ -69,7 +98,9 @@ class AdaptiveLayoutController(QObject):
         self._results_dock = results_dock
         self._layout_settings = layout_settings or WorkspaceLayoutSettings()
         self._workspace = WorkspaceMode.MEASURE
+        self._page = WorkspacePage.MEASURE
         self._compact = False
+        self._compact_side_panel = "inspector"
         self._applying = False
         self._layout_apply_pending = False
         self._suppress_extent_capture = False
@@ -83,6 +114,10 @@ class AdaptiveLayoutController(QObject):
             "inspector": True,
             "results": False,
         }
+        self._panels = {
+            "project": project_dock, "inspector": inspector_dock, "results": results_dock,
+        }
+        self._panel_defaults = dict(self._wide_visibility)
         # Becomes True once dock visibility is authoritative: either restored
         # from a saved window state or applied once while the window is shown.
         # Before that, isHidden() on the docks reports the never-shown
@@ -98,6 +133,7 @@ class AdaptiveLayoutController(QObject):
         self._profile_save_timer.timeout.connect(self.persist_profiles)
         self.layoutPreferencesChanged.connect(self._profile_save_timer.start)
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
+            self._watch_panel(dock)
             if isinstance(dock, WorkspaceDockWidget):
                 dock.extentChanged.connect(
                     lambda size, target=dock: self._on_dock_extent_changed(target, size)
@@ -108,6 +144,80 @@ class AdaptiveLayoutController(QObject):
     @property
     def workspace(self) -> WorkspaceMode:
         return self._workspace
+
+    @property
+    def page(self) -> WorkspacePage:
+        return self._page
+
+    def register_panel(self, key: str, dock: QDockWidget, *, default_visible: bool = False) -> None:
+        """Include a later-created dock in persistence and capability checks."""
+        if key in self._panels:
+            if self._panels[key] is dock:
+                return
+            raise ValueError(f"Panel already registered: {key}")
+        if key not in WORKSPACE_PANEL_SUPPORT[WorkspacePage.MEASURE]:
+            raise ValueError(f"Unknown workspace panel: {key}")
+        self._panels[key] = dock
+        self._panel_defaults[key] = bool(default_visible)
+        profile = self._profiles.get(self._workspace.value, {})
+        visibility = profile.get("visibility", {}) if isinstance(profile, dict) else {}
+        self._wide_visibility[key] = bool(visibility.get(key, default_visible)) if isinstance(visibility, dict) else bool(default_visible)
+        self._watch_panel(dock)
+        self.enforce_panel_policy()
+
+    def _watch_panel(self, dock: QDockWidget) -> None:
+        dock.installEventFilter(self)
+        dock.visibilityChanged.connect(self._panel_visibility_changed)
+
+    def panel_allowed(self, key: str) -> bool:
+        return not self._embedded_controls and key in WORKSPACE_PANEL_SUPPORT[self._page]
+
+    def _panel_visibility_changed(self, _visible: bool) -> None:
+        # Also covers QAction.trigger(), restoreState(), and direct dock.show().
+        self.enforce_panel_policy()
+        professional = self._panels.get("professional")
+        if (self.sender() is professional and professional is not None
+                and self._compact and self._visibility_ready and not self._applying
+                and not self.is_presentation_suspended and self.panel_allowed("professional")):
+            # Unlike compact's mutually exclusive legacy sidebars, the user
+            # explicitly opens/closes this tab in either responsive layout.
+            self._wide_visibility["professional"] = not professional.isHidden()
+            self.layoutPreferencesChanged.emit()
+        self.note_visibility_change()
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.Show and watched in self._panels.values():
+            key = next(key for key, dock in self._panels.items() if dock is watched)
+            if not self.panel_allowed(key):
+                watched.hide()
+                return True
+        return super().eventFilter(watched, event)
+
+    def enforce_panel_policy(self) -> None:
+        """Suppress unsupported docks without changing saved user preferences."""
+        was_applying = self._applying
+        self._applying = True
+        try:
+            for key, dock in self._panels.items():
+                allowed = self.panel_allowed(key)
+                action = dock.toggleViewAction()
+                action.setEnabled(allowed)
+                action.setVisible(allowed)
+                if not allowed and not dock.isHidden():
+                    dock.hide()
+        finally:
+            self._applying = was_applying
+
+    def set_panel_visible(self, key: str, visible: bool) -> bool:
+        if not self.panel_allowed(key):
+            self.enforce_panel_policy()
+            return False
+        dock = self._panels[key]
+        self._wide_visibility[key] = bool(visible)
+        dock.setVisible(bool(visible))
+        self.layoutPreferencesChanged.emit()
+        self.layoutChanged.emit(self._compact)
+        return True
 
     @property
     def is_compact(self) -> bool:
@@ -161,22 +271,36 @@ class AdaptiveLayoutController(QObject):
         if reapply_layout:
             self.apply_for_width(self._window.width(), force=True)
             self.restore_preferred_extents()
+        self.enforce_panel_policy()
 
     def set_workspace(self, workspace: WorkspaceMode | str) -> None:
         target_workspace = WorkspaceMode(workspace)
+        self.set_page({WorkspaceMode.MEASURE: WorkspacePage.MEASURE,
+                       WorkspaceMode.ACQUIRE: WorkspacePage.CAPTURE,
+                       WorkspaceMode.DIGITAL_SLIDE_ACQUIRE: WorkspacePage.DIGITAL_SLIDE_ACQUIRE}[target_workspace])
+
+    def set_page(self, page: WorkspacePage | str) -> None:
+        page = WorkspacePage(page)
+        target_workspace = workspace_mode_for_page(page)
+        page_changed = page is not self._page
         workspace_changed = target_workspace is not self._workspace
         if workspace_changed:
             self._remember_profile()
         self._workspace = target_workspace
+        self._page = page
         if workspace_changed:
             self._restore_profile()
+            self._visibility_ready = False
             self._profile_save_timer.start()
+        self.enforce_panel_policy()
+        if page_changed:
+            self.pageChanged.emit(page)
         if self.is_presentation_suspended:
             return
         compact = int(self._window.width()) < self.COMPACT_WIDTH
         # Frame-stream previews resync the workspace for every frame; preserve
         # the user's dock visibility unless the mode or breakpoint changed.
-        if not workspace_changed and compact == self._compact:
+        if not page_changed and compact == self._compact:
             return
         self.apply_for_width(self._window.width(), force=True)
 
@@ -197,13 +321,12 @@ class AdaptiveLayoutController(QObject):
         self._profiles[self._workspace.value] = {
             "visibility": dict(self._wide_visibility),
             "extents": self._layout_settings.to_dict(),
+            "compact_side": self._compact_side_panel,
         }
 
     def _restore_profile(self):
-        default = {
-            "project": self._workspace is not WorkspaceMode.ACQUIRE,
-            "inspector": True, "results": False,
-        }
+        default = dict(self._panel_defaults)
+        default["project"] = self._workspace is not WorkspaceMode.ACQUIRE
         profile = self._profiles.get(self._workspace.value, {})
         if not isinstance(profile, dict):
             profile = {}
@@ -211,6 +334,9 @@ class AdaptiveLayoutController(QObject):
         if not isinstance(visibility, dict):
             visibility = {}
         self._wide_visibility = {key: bool(visibility.get(key, value)) for key, value in default.items()}
+        default_side = "project" if self._workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE else "inspector"
+        side = profile.get("compact_side", default_side)
+        self._compact_side_panel = side if side in {"project", "inspector"} else default_side
         extents = WorkspaceLayoutSettings.from_dict(profile.get("extents", {}))
         for key in ("project_width", "inspector_width", "results_height"):
             setattr(self._layout_settings, key, getattr(extents, key))
@@ -232,6 +358,7 @@ class AdaptiveLayoutController(QObject):
         if self._embedded_controls == bool(enabled):
             return
         self._embedded_controls = bool(enabled)
+        self.enforce_panel_policy()
         self.apply_for_width(self._window.width(), force=True)
 
     def begin_window_resize(self) -> None:
@@ -265,11 +392,7 @@ class AdaptiveLayoutController(QObject):
         self._applying = True
         try:
             if compact and not self._compact and self._window.isVisible() and not self._embedded_controls and self._visibility_ready:
-                self._wide_visibility = {
-                    "project": not self._project_dock.isHidden(),
-                    "inspector": not self._inspector_dock.isHidden(),
-                    "results": not self._results_dock.isHidden(),
-                }
+                self._capture_allowed_visibility()
             self._compact = compact
             if not self._window.isVisible():
                 # 首启时窗口尚未映射，传入宽度可能来自错误的屏幕或在映射时被
@@ -280,21 +403,23 @@ class AdaptiveLayoutController(QObject):
                 self._layout_apply_pending = True
                 return
             if self._embedded_controls:
-                self._project_dock.hide()
-                self._inspector_dock.hide()
-                self._results_dock.hide()
+                for dock in self._panels.values():
+                    dock.hide()
             elif compact:
                 self._results_dock.hide()
-                if self._workspace == WorkspaceMode.DIGITAL_SLIDE_ACQUIRE:
+                if self._compact_side_panel == "project":
                     self._inspector_dock.hide()
                     self._project_dock.show()
                 else:
                     self._project_dock.hide()
                     self._inspector_dock.show()
             else:
-                self._project_dock.setVisible(self._wide_visibility["project"])
-                self._inspector_dock.setVisible(self._wide_visibility["inspector"])
-                self._results_dock.setVisible(self._wide_visibility["results"])
+                for key, dock in self._panels.items():
+                    dock.setVisible(self.panel_allowed(key) and self._wide_visibility[key])
+            if compact and "professional" in self._panels:
+                self._panels["professional"].setVisible(
+                    self.panel_allowed("professional") and self._wide_visibility["professional"])
+            self.enforce_panel_policy()
         finally:
             self._applying = False
         self._layout_apply_pending = False
@@ -306,13 +431,18 @@ class AdaptiveLayoutController(QObject):
         self.layoutChanged.emit(compact)
 
     def toggle_project(self) -> None:
+        if not self.panel_allowed("project"):
+            self.enforce_panel_policy()
+            return
         if self._compact:
             show = not self._project_dock.isVisible()
+            self._compact_side_panel = "project" if show else "inspector"
             self._inspector_dock.hide()
             self._project_dock.setVisible(show)
             if not show:
                 self._inspector_dock.show()
             QTimer.singleShot(0, self, self.restore_preferred_extents)
+            self.layoutPreferencesChanged.emit()
             return
         self._project_dock.setVisible(not self._project_dock.isVisible())
         self._wide_visibility["project"] = self._project_dock.isVisible()
@@ -320,13 +450,18 @@ class AdaptiveLayoutController(QObject):
             QTimer.singleShot(0, self, self.restore_preferred_extents)
 
     def toggle_inspector(self) -> None:
+        if not self.panel_allowed("inspector"):
+            self.enforce_panel_policy()
+            return
         if self._compact:
             show = not self._inspector_dock.isVisible()
+            self._compact_side_panel = "inspector" if show else "project"
             self._project_dock.hide()
             self._inspector_dock.setVisible(show)
             if not show:
                 self._project_dock.show()
             QTimer.singleShot(0, self, self.restore_preferred_extents)
+            self.layoutPreferencesChanged.emit()
             return
         self._inspector_dock.setVisible(not self._inspector_dock.isVisible())
         self._wide_visibility["inspector"] = self._inspector_dock.isVisible()
@@ -334,6 +469,9 @@ class AdaptiveLayoutController(QObject):
             QTimer.singleShot(0, self, self.restore_preferred_extents)
 
     def toggle_results(self) -> None:
+        if not self.panel_allowed("results"):
+            self.enforce_panel_policy()
+            return
         show = not self._results_dock.isVisible()
         self._applying = True
         try:
@@ -357,7 +495,8 @@ class AdaptiveLayoutController(QObject):
         self._layout_settings.records_expanded = defaults.records_expanded
         self._layout_settings.area_recognition_expanded = defaults.area_recognition_expanded
         self._layout_settings.object_properties_expanded = defaults.object_properties_expanded
-        self._wide_visibility = {"project": True, "inspector": True, "results": False}
+        self._wide_visibility = dict(self._panel_defaults)
+        self._compact_side_panel = "project" if self._workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE else "inspector"
         self.apply_for_width(self._window.width(), force=True)
         self.restore_preferred_extents()
         self.layoutPreferencesChanged.emit()
@@ -377,12 +516,10 @@ class AdaptiveLayoutController(QObject):
         self._visibility_ready = True
         if self._workspace.value in self._profiles:
             self._restore_profile()
+            self.enforce_panel_policy()
             return
-        self._wide_visibility = {
-            "project": not self._project_dock.isHidden(),
-            "inspector": not self._inspector_dock.isHidden(),
-            "results": not self._results_dock.isHidden(),
-        }
+        self._capture_allowed_visibility()
+        self.enforce_panel_policy()
 
     def restore_preferred_extents(self) -> None:
         if (
@@ -552,9 +689,10 @@ class AdaptiveLayoutController(QObject):
             or not self._visibility_ready
         ):
             return
-        self._wide_visibility = {
-            "project": not self._project_dock.isHidden(),
-            "inspector": not self._inspector_dock.isHidden(),
-            "results": not self._results_dock.isHidden(),
-        }
+        self._capture_allowed_visibility()
         self.layoutPreferencesChanged.emit()
+
+    def _capture_allowed_visibility(self) -> None:
+        for key, dock in self._panels.items():
+            if self.panel_allowed(key):
+                self._wide_visibility[key] = not dock.isHidden()

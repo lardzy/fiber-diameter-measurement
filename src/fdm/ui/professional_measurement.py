@@ -231,6 +231,7 @@ class ProfessionalWorkspace(QObject):
         super().__init__(window)
         self.window = window
         self.panel = None
+        self._table_viewport = None
         self.active = None
         self._job = None
         self._preview = None
@@ -238,14 +239,21 @@ class ProfessionalWorkspace(QObject):
         self._bound_document = None
         self._workers = []
         self._legacy_viewports = []
+        self._workspace_active = True
+        self._workspace_generation = 0
+        self._registered_layout = None
         self.fitFinished.connect(self._fit_finished)
         self.panel = ProfessionalPanel(self)
+        self._table_viewport = self.panel.table.viewport()
         scroll = QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(self.panel)
         self.dock = QDockWidget("专业测量", window)
         self.dock.setObjectName("professionalMeasurementDock")
         self.dock.setWidget(scroll)
         window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock)
         self.dock.hide()
+        layout = getattr(window, "_adaptive_layout", None)
+        if layout is not None:
+            self.register_layout(layout)
         for pane in (getattr(window, "_inspector_records_pane", None), getattr(window, "_bottom_records_pane", None)):
             if pane is not None:
                 pane.table.setMouseTracking(True)
@@ -253,11 +261,47 @@ class ProfessionalWorkspace(QObject):
                 pane.table.viewport().installEventFilter(self)
                 self._legacy_viewports.append(pane.table.viewport())
 
+    def register_layout(self, layout):
+        if self._registered_layout is layout:
+            return
+        from fdm.ui.workspace import WorkspacePage
+        layout.register_panel("professional", self.dock, default_visible=False)
+        layout.pageChanged.connect(lambda page: self.set_workspace_active(page is WorkspacePage.MEASURE))
+        self._registered_layout = layout
+        self.set_workspace_active(layout.page is WorkspacePage.MEASURE)
+
     def show(self):
+        if not self.workspace_active:
+            return
+        layout = getattr(self.window, "_adaptive_layout", None)
+        if layout is not None:
+            self.register_layout(layout)
         inspector = getattr(self.window, "_inspector_dock", None)
         if inspector is not None:
             self.window.tabifyDockWidget(inspector, self.dock)
-        self.dock.show(); self.dock.raise_(); self.refresh()
+        if layout is not None:
+            layout.set_panel_visible("professional", True)
+        else:
+            self.dock.show()
+        self.dock.raise_(); self.refresh()
+
+    @property
+    def workspace_active(self):
+        layout = getattr(self.window, "_adaptive_layout", None)
+        return self._workspace_active and (layout is None or layout.panel_allowed("professional"))
+
+    def set_workspace_active(self, active: bool):
+        """Retire every unfinished operation before another page can own input."""
+        active = bool(active)
+        if active == self._workspace_active:
+            return
+        self._workspace_generation += 1
+        if not active:
+            self.cancel()
+            self.dock.hide()
+        self._workspace_active = active
+        if active:
+            self.refresh()
 
     def hover(self, identity):
         controller = self.controller()
@@ -273,7 +317,7 @@ class ProfessionalWorkspace(QObject):
                     table.item(row, col).setBackground(color)
 
     def eventFilter(self, obj, event):
-        if self.panel is not None and obj is self.panel.table.viewport() and event.type() == QEvent.Type.Leave:
+        if event.type() == QEvent.Type.Leave and obj is self._table_viewport:
             self.hover(None)
         if obj in self._legacy_viewports and event.type() == QEvent.Type.Leave:
             document = self.window.current_document()
@@ -282,12 +326,16 @@ class ProfessionalWorkspace(QObject):
         return super().eventFilter(obj, event)
 
     def legacy_table_hover(self, index):
+        if not self.workspace_active:
+            return
         document = self.window.current_document()
         if document is not None:
             identity = self.window._records_controller.measurement_id_for_index(index)
             self.legacy_hover(document.id, identity)
 
     def legacy_hover(self, document_id, identity):
+        if not self.workspace_active:
+            return
         document = self.window.current_document()
         if document is None or document.id != document_id:
             return
@@ -306,6 +354,8 @@ class ProfessionalWorkspace(QObject):
         canvas.measurementAnnotationHoverChanged.connect(self.legacy_hover)
 
     def controller(self):
+        if not self.workspace_active:
+            return None
         return getattr(self.window.current_canvas(), "_professional_controller", None)
 
     def message(self, text):
@@ -319,6 +369,8 @@ class ProfessionalWorkspace(QObject):
             self.message("参数已改变；请重新开始取点 / 找边，旧结果不会应用。")
 
     def begin(self):
+        if not self.workspace_active:
+            return
         controller = self.controller()
         if controller is None or controller.canvas._read_only:
             self.message("请先打开图像；数字切片需放大至测量视场并等待加载完成。")
@@ -353,11 +405,12 @@ class ProfessionalWorkspace(QObject):
             self.panel.confirm.setEnabled(False)
 
     def refresh(self):
-        if self.panel is None or self._refreshing:
+        if self.panel is None or self._refreshing or not self.workspace_active:
             return
         self._refreshing = True
         try:
             document = self.window.current_document()
+            self.panel.setEnabled(document is not None)
             if document is not self._bound_document:
                 self.cancel()
                 self._bound_document = document
@@ -425,11 +478,15 @@ class ProfessionalWorkspace(QObject):
         self.refresh()
 
     def change(self, document, label, mutator):
+        if not self.workspace_active:
+            return
         self.window._apply_document_change(document, label=label,
                                             mutator=mutator, impact=DocumentChangeImpact.SESSION)
         self.refresh()
 
     def commit(self, controller, key, features, *, parameters=None, replace_id=None):
+        if not self.workspace_active or controller is not self.controller():
+            return
         document = controller.canvas._document
         from fdm.services.metrology_service import professional_source_unavailable_reason
         reason = professional_source_unavailable_reason(document)
@@ -533,6 +590,8 @@ class ProfessionalWorkspace(QObject):
             self.change(document, "整理测量标注", mutate)
 
     def legacy_properties(self, document_id, identity):
+        if not self.workspace_active:
+            return
         document = self.window.project.get_document(document_id)
         measurement = document.get_measurement(identity) if document else None
         if measurement:
@@ -556,6 +615,8 @@ class ProfessionalWorkspace(QObject):
                 self.legacy_layout_changed(document_id, identity, replace(current, show_leader=leader.isChecked(), show_identifier=number.isChecked(), leader_style=style.currentData()))
 
     def selected(self):
+        if not self.workspace_active:
+            return None, None
         document = self.window.current_document()
         return (document, document.get_professional_measurement(document.selected_professional_id)) if document else (None, None)
 
@@ -621,6 +682,8 @@ class ProfessionalWorkspace(QObject):
             QMessageBox.warning(self.window, "导出失败", str(exc))
 
     def start_caliper(self, controller, key, points, *, replace_id=None):
+        if not self.workspace_active or controller is not self.controller():
+            return
         self.cancel()
         self.active = controller
         controller.key = None; controller.points = list(points); controller.start_focus = controller.focus()
@@ -636,6 +699,7 @@ class ProfessionalWorkspace(QObject):
         options = self.panel.options()
         cancel = Event()
         job = {"cancel": cancel, "controller": controller, "key": key, "points": points,
+               "workspace_generation": self._workspace_generation,
                "source": source_identity(controller.canvas), "scale": calibration_scale(document),
                "calibration": calibration_snapshot(document),
                "options": options, "replace_id": replace_id, "refit_target": target,
@@ -663,7 +727,8 @@ class ProfessionalWorkspace(QObject):
         self._workers.append(thread); thread.start()
 
     def _fit_finished(self, job, result):
-        if self._job is not job or job["cancel"].is_set():
+        if (not self.workspace_active or self._job is not job or job["cancel"].is_set()
+                or job.get("workspace_generation") != self._workspace_generation):
             return
         controller = job["controller"]
         document = controller.canvas._document
@@ -687,9 +752,12 @@ class ProfessionalWorkspace(QObject):
         self.message("拟合预览已完成；请检查搜索区、绿色采用点、红色剔除点后确认。" if result.success else "拟合失败，未生成尺寸：" + result.reason)
 
     def confirm_fit(self):
-        if not self._preview:
+        if not self.workspace_active or not self._preview:
             return
         job, result = self._preview; controller = job["controller"]
+        if job.get("workspace_generation") != self._workspace_generation or controller is not self.controller():
+            self.cancel()
+            return
         from fdm.services.metrology_service import professional_source_unavailable_reason
         reason = professional_source_unavailable_reason(controller.canvas._document)
         if reason:
