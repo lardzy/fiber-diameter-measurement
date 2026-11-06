@@ -1,0 +1,11 @@
+[
+  "tests/test_acquisition_third_round.py",
+  "tests/test_acquisition_workbench.py",
+  "tests/test_live_experiment_sources.py",
+  "tests/test_trial_feedback_history.py",
+  "tests/test_trial_compact_layout.py",
+  "tests/test_trial_records_integration.py",
+  "tests/test_trial_history_shortcuts.py",
+  "tests/test_trial_workflow_redesign.py",
+  "tests/test_project_export_controllers.py"
+]

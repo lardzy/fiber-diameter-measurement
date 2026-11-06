@@ -182,6 +182,9 @@ class LiveExperimentController(QObject):
         self.candidate_metrics = self._performance.samples
         self._closed = False
         self._polling = False
+        # A modal sample change holds unfinished measurements. Accepted records
+        # can still receive completion from the asynchronous evidence writer.
+        self.hold_measurement_results = False
         self._poll_wake_lock = threading.Lock()
         self._poll_wake_pending = False
         self._completionAvailable.connect(self._drain_poll_wake, Qt.ConnectionType.QueuedConnection)
@@ -831,7 +834,10 @@ class LiveExperimentController(QObject):
             return
         self._polling = True
         try:
-            self._poll_once()
+            if self.hold_measurement_results:
+                self._poll_evidence()
+            else:
+                self._poll_once()
         finally:
             self._polling = False
 
@@ -911,13 +917,16 @@ class LiveExperimentController(QObject):
                     self.budget.release(intent.lease)
         self._poll_confirmation()
         self._advance_candidate_queue()
+        self._poll_evidence()
+        self._poll_automatic()
+        self._update_candidate_state()
+        self._schedule_automatic()
+
+    def _poll_evidence(self):
         for entry in self.evidence.poll():
             for record_id in self._evidence_records.pop(entry.get("evidence_id", entry["frame_id"]), []):
                 self.session.set_evidence(record_id, dict(entry))
             self.changed.emit()
-        self._poll_automatic()
-        self._update_candidate_state()
-        self._schedule_automatic()
 
     def _out_of_range(self, intent, result):
         operator = self.session.operators[intent.operator_id]

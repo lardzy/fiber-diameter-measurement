@@ -51,6 +51,7 @@ from fdm.construction_geometry import (
     iter_live_refs,
 )
 from fdm.settings import AppSettings
+from fdm.ui.measurement_batch_properties import MeasurementBatchProperties, inherited_measurement_style
 from fdm.ui.measurement_results_model import format_measurement_mode, format_measurement_status
 from fdm.ui.construction_widgets import construction_kind_label
 from fdm.ui.widgets import (
@@ -104,6 +105,8 @@ class CurrentObjectInspector(QWidget):
         )
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._stack.addWidget(self._empty_label)
+        self.batch_editor = MeasurementBatchProperties(self._stack)
+        self._stack.addWidget(self.batch_editor)
 
         self._editor_page = QWidget(self._stack)
         page_layout = QVBoxLayout(self._editor_page)
@@ -423,12 +426,18 @@ class CurrentObjectInspector(QWidget):
             if math.isfinite(normalized_zoom) and normalized_zoom > 0.0
             else 1.0
         )
+        unique_measurements = tuple(dict.fromkeys(item for item in measurement_ids if item))
+        if document is not None and len(unique_measurements) > 1:
+            selected = set(unique_measurements)
+            records = [item for item in document.measurements if item.id in selected]
+            if len(records) == len(selected):
+                self._object_type, self._object_id = "", ""
+                self.batch_editor.set_selection(document, records, settings)
+                self._stack.setCurrentWidget(self.batch_editor)
+                return
+        self.batch_editor.clear_selection()
         if document is None:
             self._show_empty("当前没有打开的图片。")
-            return
-        unique_measurements = tuple(dict.fromkeys(item for item in measurement_ids if item))
-        if len(unique_measurements) > 1:
-            self._show_empty(f"已选择 {len(unique_measurements)} 个测量对象；批量样式编辑暂未开放。")
             return
         if overlay_id:
             overlay = document.get_overlay_annotation(overlay_id)
@@ -489,31 +498,12 @@ class CurrentObjectInspector(QWidget):
             self._inheritance_label.show()
             self._reset_button.show()
             self._populate_group_combo(measurement.fiber_group_id)
-            group_color = group.color if group is not None else self._settings.default_measurement_color
             is_count = measurement.measurement_kind == "count"
-            label_style = (
-                self._settings.area_measurement_label_style
-                if measurement.measurement_kind == "area"
-                else self._settings.length_measurement_label_style
-            )
+            style = inherited_measurement_style(measurement, self._settings, group.color if group else None)
+            if measurement.appearance is not None:
+                style.update(measurement.appearance.to_dict())
             self._set_appearance_controls(
-                stroke_color=(measurement.appearance.stroke_color if measurement.appearance else None) or group_color,
-                stroke_width=(measurement.appearance.stroke_width if measurement.appearance else None) or 2.0,
-                marker_scale=(measurement.appearance.marker_scale if measurement.appearance else None) or 1.0,
-                text_color=(measurement.appearance.text_color if measurement.appearance else None)
-                or (self._settings.count_number_color if is_count else label_style.color),
-                font_family=(measurement.appearance.font_family if measurement.appearance else None)
-                or (
-                    self._settings.count_number_font_family
-                    if is_count
-                    else label_style.font_family
-                ),
-                font_size=(measurement.appearance.font_size if measurement.appearance else None)
-                or (
-                    self._settings.count_number_font_size
-                    if is_count
-                    else label_style.font_size
-                ),
+                **style,
                 show_stroke=True,
                 show_stroke_width=not is_count,
                 show_marker=is_count,

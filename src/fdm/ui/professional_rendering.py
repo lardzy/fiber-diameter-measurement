@@ -7,14 +7,16 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFontMetricsF, QPainter, QPen, QPolygonF
 
 from fdm.geometry import Point
 from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.metrology import MeasurementPrimitive
-from fdm.ui.measurement_annotation_layout import resolve_dual_dimension, resolve_linked_label
-from fdm.ui.rendering import draw_measurement_annotation_lines
+from fdm.models import format_measurement_label_value
+from fdm.ui.measurement_annotation_layout import readable_angle, resolve_dual_dimension, resolve_linked_label
+from fdm.ui.rendering import (draw_measurement_annotation_lines, measurement_text_scale,
+    _image_to_output_scale, _image_to_output_transform, measurement_label_font)
 
 
 def result_caption(definition, result, index: int, *, decimals: int) -> str:
@@ -26,11 +28,12 @@ def result_caption(definition, result, index: int, *, decimals: int) -> str:
     if metric is None:
         return prefix + "无有效指标"
     symbol = "⌀ " if metric.key == "diameter" else "R " if metric.key == "radius" else ""
-    number = f"{metric.value:.{decimals}f}"
-    # The sign of a rounded zero is not a meaningful measured direction.
-    if number.startswith("-") and float(number) == 0:
-        number = number[1:]
-    return f"{prefix}{metric.label} {symbol}{number} {metric.unit}"
+    value = format_measurement_label_value(metric.value, metric.unit, decimals)
+    layout = definition.annotation_layout
+    name = metric.label + " " if layout is None or layout.show_metric_name else ""
+    if layout is not None and layout.show_symbol is False:
+        symbol = ""
+    return f"{prefix}{name}{symbol}{value}"
 
 
 def presentation_result(document, definition, result):
@@ -69,8 +72,30 @@ def dimension_endpoints(result):
     return lines[0] if len(lines) == 1 else None
 
 
+def professional_text_scale(settings, transform):
+    return measurement_text_scale(settings, _image_to_output_scale(_image_to_output_transform(transform)))
+
+
+def professional_label_layout(definition, result, index, transform, layout, *, decimals, metrics, scale, parallel):
+    text = result_caption(definition, result, index, decimals=decimals)
+    anchor = result.anchor_px
+    offset = layout.offset_px or Point(65, -38)
+    center = transform(Point(anchor.x + offset.x, anchor.y + offset.y))
+    ends = dimension_endpoints(result)
+    angle = readable_angle(transform(ends[0]), transform(ends[1])) if parallel and ends is not None else 0.
+    width, height = (metrics.horizontalAdvance(text) + 14) * scale, (metrics.height() + 8) * scale
+    if layout.leader_style == "dual" and ends is not None:
+        label = resolve_dual_dimension(transform(ends[0]), transform(ends[1]), center,
+            width, height, show_leader=layout.show_leader, angle=angle,
+            landing_length=10 * scale, arrow_length=7 * scale, endpoint_gap=2 * scale, witness_overrun=3 * scale)
+    else:
+        label = resolve_linked_label(transform(anchor), center, width, height, show_leader=layout.show_leader,
+            landing_length=10 * scale, angle=angle)
+    return text, label
+
+
 def draw_professional_measurements(painter: QPainter, document, transform,
-                                  *, label_decimals: int, results: Mapping | None = None,
+                                  *, label_decimals: int, settings=None, results: Mapping | None = None,
                                   focus_index=None, layouts=None, selected_id=None,
                                   hovered_id=None, show_labels=True, selected_labels_only=False,
                                   exclude_label_ids=(), only_measurement_id=None, draw_geometry=True):
@@ -82,6 +107,10 @@ def draw_professional_measurements(painter: QPainter, document, transform,
     hits = {}
     painter.save()
     painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    scale = professional_text_scale(settings, transform) if settings is not None else 1.
+    parallel = settings is not None and settings.length_measurement_label_style.parallel_to_line
+    if settings is not None:
+        painter.setFont(measurement_label_font(settings))
     metrics = QFontMetricsF(painter.font())
     ordered = list(enumerate(document.professional_measurements, 1))
     # Keep an actively edited dimension above the other overlays in both the
@@ -123,24 +152,23 @@ def draw_professional_measurements(painter: QPainter, document, transform,
                 painter.drawEllipse(points[0], 3, 3)
         if not show_labels or definition.id in exclude_label_ids or (selected_labels_only and definition.id != selected_id):
             continue
-        layout = layouts.get(definition.id) or definition.annotation_layout or MeasurementAnnotationLayout()
-        anchor = result.anchor_px
-        offset = layout.offset_px or Point(65, -38)
-        text = result_caption(definition, result, index, decimals=label_decimals)
-        center = transform(Point(anchor.x + offset.x, anchor.y + offset.y))
-        ends = dimension_endpoints(result)
-        if layout.leader_style == "dual" and ends is not None:
-            label = resolve_dual_dimension(transform(ends[0]), transform(ends[1]), center,
-                metrics.horizontalAdvance(text) + 14, metrics.height() + 8, show_leader=layout.show_leader)
-        else:
-            label = resolve_linked_label(transform(anchor), center,
-                metrics.horizontalAdvance(text) + 14, metrics.height() + 8, show_leader=layout.show_leader)
-        draw_measurement_annotation_lines(painter, label, color, width=1.2 if active else 1.0)
+        layout = layouts.get(definition.id) or definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional()
+        text, label = professional_label_layout(definition, result, index, transform, layout,
+            decimals=label_decimals, metrics=metrics, scale=scale, parallel=parallel)
+        draw_measurement_annotation_lines(painter, label, color, width=(1.2 if active else 1.) * scale)
+        painter.save()
+        label.rotate_painter(painter)
+        center = label.paint_rect.center()
+        painter.translate(center)
+        painter.scale(scale, scale)
+        width, height = label.paint_rect.width()/scale, label.paint_rect.height()/scale
+        rect = QRectF(-width/2, -height/2, width, height)
         painter.setPen(QPen(color, 1.5 if active else .7))
         painter.setBrush(QColor(25, 31, 39, 225))
-        painter.drawRoundedRect(label.text_rect, 3, 3)
+        painter.drawRoundedRect(rect, 3, 3)
         painter.setPen(QColor("#ffffff"))
-        painter.drawText(label.text_rect, Qt.AlignmentFlag.AlignCenter, text)
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+        painter.restore()
         hits[definition.id] = label
     painter.restore()
     return hits

@@ -5,8 +5,8 @@ from pathlib import Path
 from threading import Thread
 from uuid import uuid4
 
-from PySide6.QtCore import QEvent, QLineF, QObject, QPointF, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPainterPath, QPalette, QPen
+from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
     QApplication,
     QColorDialog,
@@ -139,17 +139,34 @@ OVERLAY_TEXT_ANCHOR_ITEMS = [
 class _MeasurementStylePreview(QWidget):
     """Small live preview for clean-profile measurement appearance settings."""
 
-    def __init__(self, parent: QWidget | None = None, *, metric: str = "length") -> None:
+    def __init__(self, parent: QWidget, *, settings: AppSettings, metric: str = "length") -> None:
         super().__init__(parent)
         self._metric = "area" if metric == "area" else "length"
+        self.setObjectName("areaMeasurementStylePreview" if metric == "area" else "lengthMeasurementStylePreview")
         self._show_label = True
         self._font = QFont()
         self._label_color = QColor(DEFAULT_MEASUREMENT_LABEL_COLOR)
         self._line_color = QColor("#2A9D8F")
         self._background_enabled = True
         self._decimals = 2
+        self._settings = settings
         self._endpoint_style = MeasurementEndpointStyle.BAR
         self.setMinimumHeight(86)
+        from fdm.geometry import Line, Point
+        from fdm.measurement_annotation import MeasurementAnnotationLayout
+        from fdm.models import Calibration, Measurement
+        # Fixed source coordinates keep the example value stable when the
+        # settings window is resized. Only its viewing transform changes.
+        kind = "area" if self._metric == "area" else "line"
+        self._sample = ImageDocument("style-preview", "", (240, 90),
+            calibration=Calibration("manual", 10, "µm", "预览"))
+        measurement = Measurement("sample", self._sample.id, None, "manual", measurement_kind=kind,
+            line_px=Line(Point(25, 68), Point(200, 40)),
+            polygon_px=[Point(45, 70), Point(84, 46), Point(160, 59)],
+            annotation_layout=MeasurementAnnotationLayout(leader_style="dual" if kind == "line" else "single",
+                                                          offset_px=Point(0, -22)))
+        measurement.recalculate(self._sample.calibration)
+        self._sample.measurements.append(measurement)
 
     def set_preview_style(
         self,
@@ -161,6 +178,8 @@ class _MeasurementStylePreview(QWidget):
         background_enabled: bool,
         decimals: int,
         endpoint_style: str,
+        parallel: bool = False,
+        size_space: str = OverlayTextSizeSpace.IMAGE_PX,
     ) -> None:
         self._show_label = bool(show_label)
         self._font = QFont(font)
@@ -169,67 +188,36 @@ class _MeasurementStylePreview(QWidget):
         self._background_enabled = bool(background_enabled)
         self._decimals = max(0, min(8, int(decimals)))
         self._endpoint_style = str(endpoint_style)
+        style = MeasurementLabelStyleSettings(enabled=self._show_label, font_family=font.family(),
+            font_size=font.pixelSize(), color=label_color, decimals=decimals,
+            parallel_to_line=parallel, background_enabled=background_enabled)
+        self._settings = replace(self._settings, length_measurement_label_style=style,
+            area_measurement_label_style=style, measurement_text_size_space=size_space,
+            default_measurement_color=line_color, measurement_endpoint_style=endpoint_style)
         self.update()
 
     def paintEvent(self, event) -> None:
         del event
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
-        painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
-        painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
-        painter.drawRoundedRect(rect, 6, 6)
+        with QPainter(self) as painter:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+            painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
+            painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
+            painter.drawRoundedRect(rect, 6, 6)
 
-        left = rect.left() + 28
-        right = rect.right() - 28
-        y = rect.center().y() + 10
-        painter.setPen(QPen(self._line_color, 2.5))
-        if self._metric == "area":
-            path = QPainterPath()
-            path.moveTo(QPointF(left + 30, y + 11))
-            path.lineTo(QPointF(left + 52, y - 18))
-            path.lineTo(QPointF(right - 36, y - 12))
-            path.lineTo(QPointF(right - 18, y + 14))
-            path.lineTo(QPointF(left + 30, y + 11))
-            painter.setBrush(QColor(self._line_color.red(), self._line_color.green(), self._line_color.blue(), 48))
-            painter.drawPath(path)
-        else:
-            painter.drawLine(QLineF(left, y, right, y))
-            if self._endpoint_style == MeasurementEndpointStyle.CIRCLE:
-                painter.setBrush(self._line_color)
-                painter.drawEllipse(QRectF(left - 3, y - 3, 6, 6))
-                painter.drawEllipse(QRectF(right - 3, y - 3, 6, 6))
-            elif self._endpoint_style == MeasurementEndpointStyle.BAR:
-                painter.drawLine(QLineF(left, y - 7, left, y + 7))
-                painter.drawLine(QLineF(right, y - 7, right, y + 7))
-            elif self._endpoint_style in {
-                MeasurementEndpointStyle.ARROW_INSIDE,
-                MeasurementEndpointStyle.ARROW_OUTSIDE,
-            }:
-                direction = 1 if self._endpoint_style == MeasurementEndpointStyle.ARROW_INSIDE else -1
-                painter.drawLine(QLineF(left, y, left + 8 * direction, y - 5))
-                painter.drawLine(QLineF(left, y, left + 8 * direction, y + 5))
-                painter.drawLine(QLineF(right, y, right - 8 * direction, y - 5))
-                painter.drawLine(QLineF(right, y, right - 8 * direction, y + 5))
-
-        if not self._show_label:
-            return
-        painter.setFont(self._font)
-        suffix = " μm²" if self._metric == "area" else " μm"
-        text = f"{12.3456:.{self._decimals}f}{suffix}"
-        metrics = QFontMetrics(self._font)
-        text_rect = QRectF(metrics.boundingRect(text)).adjusted(-6, -3, 6, 3)
-        text_rect.moveCenter(QRectF(rect.left(), rect.top(), rect.width(), rect.height() * 0.55).center())
-        if self._background_enabled:
-            painter.fillRect(text_rect, QColor(15, 23, 42, 190))
-        painter.setPen(self._label_color)
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
+            from fdm.ui.rendering import draw_measurements
+            width, height = self._sample.image_size
+            scale = max(.01, min((rect.width() - 16) / width, rect.height() / height))
+            def transform(point):
+                return QPointF(rect.center().x() + (point.x - width/2) * scale,
+                               rect.center().y() + (point.y - height/2) * scale)
+            draw_measurements(painter, self._sample, transform, self._settings, line_width=2., endpoint_radius=3.)
 
 
 class _ProfessionalMeasurementStylePreview(QWidget):
     """Render the same dual-end annotation used by professional canvases."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget, *, settings: AppSettings) -> None:
         super().__init__(parent)
         from fdm.geometry import Point
         from fdm.measurement_annotation import MeasurementAnnotationLayout
@@ -242,9 +230,10 @@ class _ProfessionalMeasurementStylePreview(QWidget):
         self.setObjectName("professionalMeasurementStylePreview")
         self.setAccessibleName("专业测量标注预览")
         self.setMinimumHeight(140)
+        self._settings = settings
         self._document = ImageDocument("professional-settings-preview", "", (400, 150))
         self._document.initialize_runtime_state()
-        start, end = Point(40, 105), Point(306.55098, 105)
+        start, end = Point(40, 115), Point(306.55098, 88)
         feature = MeasurementFeature("preview-feature", self._document.id, "line", (start, end))
         definition = MeasurementDefinition(
             "preview-measurement", self._document.id, "distance", (feature.id,),
@@ -256,9 +245,13 @@ class _ProfessionalMeasurementStylePreview(QWidget):
         self._results = {definition.id: MeasurementResult(
             definition.id, "ready",
             metrics=(MeasurementMetric("distance", "距离", 266.55098, "µm"),),
-            anchor_px=Point((start.x + end.x) / 2, start.y),
+            anchor_px=Point((start.x + end.x) / 2, (start.y + end.y) / 2),
             geometry=(MeasurementPrimitive("line", (start, end)),),
         )}
+
+    def set_display_settings(self, settings):
+        self._settings = settings
+        self.update()
 
     def set_decimals(self, decimals: int) -> None:
         self._decimals = AppSettings._normalize_professional_measurement_label_decimals(decimals)
@@ -268,22 +261,19 @@ class _ProfessionalMeasurementStylePreview(QWidget):
         del event
         from fdm.ui.professional_rendering import draw_professional_measurements
 
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
-        painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
-        painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
-        painter.drawRoundedRect(rect, 6, 6)
-        font = QFont(self.font())
-        font.setPixelSize(13)
-        painter.setFont(font)
-        span = max(1.0, self.width() - 48.0)
-        draw_professional_measurements(
-            painter, self._document,
-            lambda point: QPointF(24 + (point.x - 40) * span / 266.55098,
-                                  self.height() - 24 + point.y - 105),
-            results=self._results, label_decimals=self._decimals,
-        )
+        with QPainter(self) as painter:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+            painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
+            painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
+            painter.drawRoundedRect(rect, 6, 6)
+            scale = max(.01, min((rect.width() - 40) / 300., (rect.height() - 12) / 135.))
+            draw_professional_measurements(
+                painter, self._document,
+                lambda point: QPointF(rect.center().x() + (point.x - 173.27549) * scale,
+                                      rect.center().y() + (point.y - 75) * scale),
+                results=self._results, label_decimals=self._decimals, settings=self._settings,
+            )
 
 
 def _redirect_editor_wheel_to_parent_scroll(widget: QWidget, event) -> None:
@@ -2354,6 +2344,7 @@ class SettingsDialog(QDialog):
             length_measurement_label_style=length_label_style,
             area_measurement_label_style=area_label_style,
             professional_measurement_label_decimals=self._professional_measurement_label_decimals.value(),
+            annotation_style_defaults=self._initial_settings.annotation_style_defaults,
             show_count_numbers=self._show_count_numbers.isChecked(),
             count_number_font_family=self._font_combo_family_value(self._count_number_font),
             count_number_font_size=self._count_number_size.value(),
@@ -2616,7 +2607,13 @@ class SettingsDialog(QDialog):
             background_enabled=self._length_measurement_label_background.isChecked(),
             decimals=self._length_measurement_label_decimals.value(),
             endpoint_style=str(self._endpoint_style_combo.currentData() or MeasurementEndpointStyle.BAR),
+            parallel=self._length_measurement_label_parallel.isChecked(),
+            size_space=self._measurement_text_size_space_combo.currentData(),
         )
+
+        professional = getattr(self, "_professional_measurement_style_preview", None)
+        if professional is not None:
+            professional.set_display_settings(preview._settings)
 
     def _update_area_measurement_style_preview(self, *_args) -> None:
         preview = getattr(self, "_area_measurement_style_preview", None)
@@ -2635,6 +2632,7 @@ class SettingsDialog(QDialog):
             background_enabled=self._area_measurement_label_background.isChecked(),
             decimals=self._area_measurement_label_decimals.value(),
             endpoint_style=str(self._endpoint_style_combo.currentData() or MeasurementEndpointStyle.BAR),
+            size_space=self._measurement_text_size_space_combo.currentData(),
         )
 
     def _update_measurement_style_preview(self, *_args) -> None:
@@ -2649,6 +2647,8 @@ class SettingsDialog(QDialog):
         display_group = QGroupBox("标注与文字显示")
         display_form = QFormLayout(display_group)
         self._measurement_text_size_space_combo = NoWheelComboBox()
+        self._measurement_text_size_space_combo.setObjectName("measurementTextSizeSpace")
+        self._measurement_text_size_space_combo.setAccessibleName("标注文字显示模式")
         for label, value in OverlayTextSizeSpace.DISPLAY_ITEMS:
             self._measurement_text_size_space_combo.addItem(label, value)
         self._measurement_text_size_space_combo.setCurrentIndex(max(
@@ -2656,7 +2656,7 @@ class SettingsDialog(QDialog):
         ))
         display_form.addRow("显示模式", self._measurement_text_size_space_combo)
         display_hint = QLabel(
-            OverlayTextSizeSpace.DISPLAY_HINT + "\n应用于直径、长度、面积结果文字及计数点编号。"
+            OverlayTextSizeSpace.DISPLAY_HINT + "\n应用于直径、长度、面积、专业测量结果文字及计数点编号。"
         )
         display_hint.setWordWrap(True)
         display_form.addRow("", display_hint)
@@ -2683,6 +2683,7 @@ class SettingsDialog(QDialog):
         self._length_measurement_label_decimals.setRange(0, 8)
         self._length_measurement_label_decimals.setValue(length_style.decimals)
         self._length_measurement_label_parallel = QCheckBox("结果文字与测量线平行")
+        self._length_measurement_label_parallel.setObjectName("measurementLabelParallelToLine")
         self._length_measurement_label_parallel.setChecked(length_style.parallel_to_line)
         self._length_measurement_label_background = QCheckBox("显示结果文字浅黑底")
         self._length_measurement_label_background.setChecked(length_style.background_enabled)
@@ -2696,7 +2697,7 @@ class SettingsDialog(QDialog):
         self._default_measurement_color = self._create_color_button(settings.default_measurement_color)
         self._length_measurement_style_preview = _MeasurementStylePreview(
             length_group,
-            metric="length",
+            metric="length", settings=settings,
         )
         length_form.addRow("", self._show_length_measurement_labels)
         length_form.addRow("结果文字字体", self._length_measurement_label_font)
@@ -2730,7 +2731,7 @@ class SettingsDialog(QDialog):
         self._area_measurement_label_background.setChecked(area_style.background_enabled)
         self._area_measurement_style_preview = _MeasurementStylePreview(
             area_group,
-            metric="area",
+            metric="area", settings=settings,
         )
         area_form.addRow("", self._show_area_measurement_labels)
         area_form.addRow("结果文字字体", self._area_measurement_label_font)
@@ -2767,6 +2768,8 @@ class SettingsDialog(QDialog):
         count_form.addRow("编号字号", self._count_number_size)
         count_form.addRow("编号颜色", self._count_number_color)
 
+        self._measurement_text_size_space_combo.currentIndexChanged.connect(self._update_measurement_style_preview)
+        self._length_measurement_label_parallel.toggled.connect(self._update_length_measurement_style_preview)
         self._show_length_measurement_labels.toggled.connect(self._update_length_measurement_style_preview)
         self._length_measurement_label_font.currentFontChanged.connect(self._update_length_measurement_style_preview)
         self._length_measurement_label_size.valueChanged.connect(self._update_length_measurement_style_preview)
@@ -2805,7 +2808,7 @@ class SettingsDialog(QDialog):
         hint = QLabel("仅调整图中标注显示，结果表与数值导出不受影响。\n普通图像、数字切片和导出图上的专业测量标注使用相同设置。")
         hint.setWordWrap(True)
         form.addRow(hint)
-        self._professional_measurement_style_preview = _ProfessionalMeasurementStylePreview(group)
+        self._professional_measurement_style_preview = _ProfessionalMeasurementStylePreview(group, settings=settings)
         self._professional_measurement_style_preview.set_decimals(settings.professional_measurement_label_decimals)
         self._professional_measurement_label_decimals.valueChanged.connect(
             self._professional_measurement_style_preview.set_decimals

@@ -1,0 +1,17 @@
+[
+  "tests/test_measurement_annotations.py",
+  "tests/test_linked_label_style.py",
+  "tests/test_annotation_display_modes.py",
+  "tests/test_digital_slide_annotation_display.py",
+  "tests/test_professional_precision.py",
+  "tests/test_professional_measurement_settings.py",
+  "tests/test_metrology_workspace.py",
+  "tests/test_metrology_presentation.py",
+  "tests/test_metrology_dual_dimensions.py",
+  "tests/test_metrology_persistence.py",
+  "tests/test_metrology_drag_cache.py",
+  "tests/test_metrology_input_routing.py",
+  "tests/test_metrology_legacy_hover.py",
+  "tests/test_canvas_visual_settings_signature.py",
+  "tests/test_settings_dialog_navigation.py"
+]

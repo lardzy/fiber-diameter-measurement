@@ -1,0 +1,10 @@
+[
+  "tests/test_canvas_overlay_handoff.py",
+  "tests/test_canvas_overlay_accuracy_matrix.py",
+  "tests/test_canvas_overlay_state_regressions.py",
+  "tests/test_canvas_progressive_overlay.py",
+  "tests/test_digital_slide_overlay_lifecycle.py",
+  "tests/test_measurement_batch_properties.py",
+  "tests/test_workbench_workflows.py",
+  "tests/test_workspace_panel_integration.py"
+]

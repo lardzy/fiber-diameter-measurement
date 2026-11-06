@@ -25,7 +25,7 @@ def _document_feature(kind, points, key):
     document.initialize_runtime_state()
     feature = MeasurementFeature("feature", document.id, kind, tuple(Point(*p) for p in points))
     definition = MeasurementDefinition("dimension", document.id, kind if kind == "circle" else "distance", (feature.id,),
-                                       annotation_layout=MeasurementAnnotationLayout(metric_key=key))
+                                       annotation_layout=MeasurementAnnotationLayout(metric_key=key, show_symbol=True))
     document.apply_professional_state([feature], [definition], mark_dirty=False)
     return document, definition, evaluate_measurement(document, definition)
 

@@ -6,6 +6,7 @@ import math
 from collections.abc import Sequence
 
 from PySide6.QtCore import QPointF, QRectF
+from PySide6.QtGui import QTransform
 
 from fdm.geometry import Point
 
@@ -22,16 +23,62 @@ class LinkedLabelLayout:
     arrowheads: tuple[tuple[QPointF, ...], ...] = ()
     source_points: tuple[QPointF, ...] = ()
 
+    # text_rect is the axis-aligned envelope, for culling and broad phase.
+    # local_text_rect is the actual box before rotation around its center.
+    angle: float = 0.0
+    local_text_rect: QRectF | None = None
+
+    @property
+    def paint_rect(self) -> QRectF:
+        return self.local_text_rect if self.local_text_rect is not None else self.text_rect
+
+    def contains_text(self, point: QPointF, padding: float = 0.) -> bool:
+        if self.angle:
+            point = rotation_about(self.text_rect.center(), -self.angle).map(point)
+        return self.paint_rect.adjusted(-padding, -padding, padding, padding).contains(point)
+
+    def rotate_painter(self, painter) -> None:
+        if self.angle:
+            painter.setWorldTransform(rotation_about(self.text_rect.center(), self.angle), True)
+
+
+def readable_angle(start: QPointF, end: QPointF) -> float:
+    angle = math.degrees(math.atan2(end.y() - start.y(), end.x() - start.x()))
+    if angle > 90:
+        return angle - 180
+    if angle < -90:
+        return angle + 180
+    return angle
+
+
+def rotation_about(center: QPointF, angle: float) -> QTransform:
+    return QTransform().translate(center.x(), center.y()).rotate(angle).translate(-center.x(), -center.y())
+
+
+def _rotate_layout(label: LinkedLabelLayout, center: QPointF, angle: float) -> LinkedLabelLayout:
+    rotation = rotation_about(center, angle)
+    map_point = rotation.map
+    def map_paths(paths):
+        return tuple(tuple(map_point(p) for p in path) for path in paths)
+    return LinkedLabelLayout(map_point(label.anchor), rotation.mapRect(label.text_rect),
+        tuple(map_point(p) for p in label.leader), rotation.mapRect(label.bounds),
+        map_paths(label.witness_lines), map_paths(label.dimension_lines), map_paths(label.ticks),
+        map_paths(label.arrowheads), tuple(map_point(p) for p in label.source_points), angle, label.text_rect)
+
 
 def resolve_linked_label(
     anchor: QPointF, center: QPointF, width: float, height: float,
-    *, show_leader: bool = True, landing_length: float = 10.0,
+    *, show_leader: bool = True, landing_length: float = 10.0, angle: float = 0.,
 ) -> LinkedLabelLayout:
     """Return exactly the geometry painted, hit-tested and exported.
 
     The horizontal landing joins the near side of the label.  A hidden or
     internally anchored leader does not manufacture an extra hit target.
     """
+    if angle:
+        local_anchor = rotation_about(center, -angle).map(anchor)
+        return _rotate_layout(resolve_linked_label(local_anchor, center, width, height,
+            show_leader=show_leader, landing_length=landing_length), center, angle)
     rect = QRectF(center.x() - width / 2, center.y() - height / 2, width, height)
     leader: tuple[QPointF, ...] = ()
     bounds = QRectF(rect)
@@ -73,7 +120,7 @@ def resolve_dual_dimension(
     start: QPointF, end: QPointF, center: QPointF, width: float, height: float,
     *, show_leader: bool = True, tick_length: float = 8.0,
     landing_length: float = 10.0, arrow_length: float = 7.0,
-    endpoint_gap: float = 2.0, witness_overrun: float = 3.0,
+    endpoint_gap: float = 2.0, witness_overrun: float = 3.0, angle: float = 0.,
 ) -> LinkedLabelLayout:
     """Resolve two endpoint witnesses and one parallel offset dimension.
 
@@ -81,6 +128,12 @@ def resolve_dual_dimension(
     remains attached to its own endpoint; moving the text cannot merge them
     into a common leader target or alter the measured interval.
     """
+    if angle:
+        local = rotation_about(center, -angle)
+        label = resolve_dual_dimension(local.map(start), local.map(end), center, width, height,
+            show_leader=show_leader, tick_length=tick_length, landing_length=landing_length,
+            arrow_length=arrow_length, endpoint_gap=endpoint_gap, witness_overrun=witness_overrun)
+        return _rotate_layout(label, center, angle)
     anchor = (start + end) * .5
     rect = QRectF(center.x() - width / 2, center.y() - height / 2, width, height)
     if not show_leader:

@@ -1,0 +1,29 @@
+{
+  "method": "Inspect raw Windows 125% dark-theme PNG crop from each control, allowing two integer levels per RGB channel.",
+  "issue": "Trial-level widget rules suppressed intended warning and destructive accents.",
+  "buttons": [
+    {
+      "file": "dpi-1.25/dark-content-narrow.png",
+      "crop": [
+        1173,
+        155,
+        1306,
+        202
+      ],
+      "expected": "#FFD185",
+      "matching_pixels": 0
+    },
+    {
+      "file": "dpi-1.25/dark-finish-confirm.png",
+      "crop": [
+        217,
+        177,
+        345,
+        230
+      ],
+      "expected": "#FFAAA5",
+      "matching_pixels": 0
+    }
+  ],
+  "tests": "247 passed; previous screenshot checks tested interactions and clipping, not button palette."
+}

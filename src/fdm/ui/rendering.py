@@ -52,7 +52,7 @@ from fdm.ui.screen_label_sprite_cache import (
     screen_label_sprite_cache,
 )
 from fdm.ui.measurement_annotation_layout import (
-    LinkedLabelLayout, choose_automatic_offset, resolve_linked_label, resolve_dual_dimension,
+    LinkedLabelLayout, choose_automatic_offset, readable_angle, resolve_linked_label, resolve_dual_dimension,
 )
 
 _TEXT_LAYOUT_MAX_ENTRIES = 2048
@@ -176,10 +176,15 @@ def measurement_display_text_with_settings(
     annotation = getattr(measurement, "annotation_layout", None)
     if annotation is not None and measurement.measurement_kind != "count":
         metric = {"area": "面积", "polyline": "长度"}.get(measurement.measurement_kind, "直径")
+        parts = []
         if annotation.show_identifier:
             number = next((i + 1 for i, item in enumerate(document.measurements) if item.id == measurement.id), 1)
-            return f"M{number} · {metric} {text}"
-        return f"{metric} {text}"
+            parts.append(f"M{number} ·")
+        if annotation.show_metric_name:
+            parts.append(metric)
+        if annotation.show_symbol and measurement.measurement_kind == "line":
+            parts.append("⌀")
+        return " ".join([*parts, text])
     return text
 
 
@@ -211,6 +216,13 @@ def resolve_measurement_annotation(
     text_layout = _cached_text_layout(font, text, render_mode="measurement-linked")
     width, height = (text_layout.width + 12) * text_scale, (text_layout.height + 6) * text_scale
     anchor = measurement_annotation_anchor(measurement)
+    angle = 0.
+    if measurement.measurement_kind == "line" and _measurement_label_parallel_to_line(settings, measurement):
+        line = measurement.effective_line()
+        angle = readable_angle(image_to_output(line.start), image_to_output(line.end))
+    radians = math.radians(angle)
+    bounds_width = abs(math.cos(radians)) * width + abs(math.sin(radians)) * height
+    bounds_height = abs(math.sin(radians)) * width + abs(math.cos(radians)) * height
     offset = annotation.offset_px
     if offset is None:
         key = (id(document), id(measurement), measurement.id, annotation.revision)
@@ -237,11 +249,11 @@ def resolve_measurement_annotation(
                     occupied.append(QRectF(other_anchor.x + other_offset.x - ow / 2, other_anchor.y + other_offset.y - oh / 2, ow, oh))
             image_width, image_height = document.image_size
             offset = choose_automatic_offset(
-                anchor, width / scale, height / scale, occupied=occupied, geometry=obstacles,
+                anchor, bounds_width / scale, bounds_height / scale, occupied=occupied, geometry=obstacles,
                 image_rect=placement_bounds if placement_bounds is not None else QRectF(0, 0, image_width, image_height),
                 gap=18 * text_scale / scale,
             )
-            _AUTOMATIC_ANNOTATION_OFFSETS[key] = (offset, width / scale, height / scale)
+            _AUTOMATIC_ANNOTATION_OFFSETS[key] = (offset, bounds_width / scale, bounds_height / scale)
             while len(_AUTOMATIC_ANNOTATION_OFFSETS) > 4096:
                 _AUTOMATIC_ANNOTATION_OFFSETS.popitem(last=False)
         else:
@@ -254,11 +266,11 @@ def resolve_measurement_annotation(
             image_to_output(Point(anchor.x + offset.x, anchor.y + offset.y)),
             width, height, show_leader=annotation.show_leader,
             landing_length=10 * text_scale, arrow_length=7 * text_scale,
-            endpoint_gap=2 * text_scale, witness_overrun=3 * text_scale,
+            endpoint_gap=2 * text_scale, witness_overrun=3 * text_scale, tick_length=8 * text_scale, angle=angle,
         )
     return resolve_linked_label(
         image_to_output(anchor), image_to_output(Point(anchor.x + offset.x, anchor.y + offset.y)),
-        width, height, show_leader=annotation.show_leader, landing_length=10 * text_scale,
+        width, height, show_leader=annotation.show_leader, landing_length=10 * text_scale, angle=angle,
     )
 
 
@@ -291,8 +303,9 @@ def draw_linked_measurement_label(
     painter.save()
     try:
         draw_measurement_annotation_lines(painter, resolved, color, width=max(1.0, scale))
+        resolved.rotate_painter(painter)
         with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
-            rect = QRectF(resolved.text_rect.topLeft() / scale, resolved.text_rect.size() / scale)
+            rect = QRectF(resolved.paint_rect.topLeft() / scale, resolved.paint_rect.size() / scale)
             font = measurement_label_font(settings, measurement)
             text = measurement_display_text_with_settings(measurement, document, settings)
             background = QColor(16, 24, 32, 192) if _measurement_label_background_enabled(settings, measurement) else None

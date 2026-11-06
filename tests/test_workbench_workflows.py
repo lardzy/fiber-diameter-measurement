@@ -137,7 +137,7 @@ def test_selection_summary_reserves_height_for_empty_single_and_multiple(window)
         settle()
         assert (panel.height(), window._statistics_section.y(), window._records_section.y()) == geometry
         assert panel.groupCombo.isVisible()
-        assert panel.groupCombo.isEnabled() == (len(selection) == 1)
+        assert panel.groupCombo.isEnabled() == bool(selection)
     assert Path(document.path).name in panel.sourceLabel.toolTip()
 
 

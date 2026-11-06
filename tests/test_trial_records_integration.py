@@ -165,8 +165,9 @@ def test_position_menu_keeps_navigation_fixed_and_return_preserves_visibility(ha
             Qt.DockWidgetArea.LeftDockWidgetArea if position == "left" else Qt.DockWidgetArea.BottomDockWidgetArea)
     presenter.flush_preferences()
     before = presenter.preferences_path.read_bytes()
-    # Use the explicit exit, then the actual content navigation tab.
-    click(page.return_capture_button)
+    # Leave via the capture tab, then return through the content tab.
+    QTest.mouseClick(harness.hub.navigation, Qt.MouseButton.LeftButton,
+                     pos=harness.hub.navigation.tabRect(0).center())
     assert harness.hub.pages.currentWidget() is harness.hub.capture_page
     assert not presenter.is_open and presenter.dock.isHidden()
     assert not page.records_toggle.isChecked()

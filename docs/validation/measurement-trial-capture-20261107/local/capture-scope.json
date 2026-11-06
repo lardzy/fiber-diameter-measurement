@@ -1,0 +1,9 @@
+[
+  "tests/test_live_snapshot.py",
+  "tests/test_capture_and_cu_scale.py",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_capture_after_closing_last_document_saves_as_new_project",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_live_preview_frame_can_be_captured_as_project_asset_document",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_microview_capture_keeps_active_session",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_save_project_persists_project_asset_images_into_assets_directory",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_manual_and_snap_lines_complete_from_path_context_controls"
+]

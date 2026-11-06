@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import ExitStack
 from dataclasses import dataclass, fields, replace
 from datetime import datetime, timedelta
 from importlib import metadata as importlib_metadata
@@ -19,7 +20,7 @@ import tempfile
 
 import numpy as np
 
-from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QPropertyAnimation, QRect, QRectF, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QPropertyAnimation, QRect, QRectF, QSignalBlocker, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -96,7 +97,6 @@ from fdm.area_display import (
     clear_area_derived_geometry_cache,
 )
 from fdm.geometry import Line, Point, line_length
-from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.units import DEFAULT_LENGTH_UNIT, millimeters_per_unit
 from fdm.construction_document import make_construction_resolver
 from fdm.construction_geometry import (
@@ -462,6 +462,7 @@ from fdm.ui.measurement_results_model import (
     format_measurement_status as _format_measurement_status_label,
 )
 from fdm.ui.measurement_records import MeasurementRecordsController, MeasurementRecordsPane
+from fdm.ui.measurement_batch_properties import common_style_fields, common_value, populate_group_choices
 from fdm.ui.roi_manager import (
     RoiBooleanRequest,
     RoiCreateFromAreaRequest,
@@ -2565,6 +2566,7 @@ class MainWindow(QMainWindow):
         )
         self._adaptive_layout.layoutPreferencesChanged.connect(self._schedule_workspace_layout_save)
         self.professional_workspace.register_layout(self._adaptive_layout)
+        self._adaptive_layout.pageChanged.connect(self._snapshot_controls.page_changed)
         self._inspector_dock.extentChanged.connect(
             lambda _size: self._schedule_inspector_layout_restore()
         )
@@ -5244,6 +5246,7 @@ class MainWindow(QMainWindow):
         self._current_measurement_summary = CurrentMeasurementSummary(inspector_content)
         self._current_measurement_summary.editRequested.connect(self._show_current_object_properties)
         self._current_measurement_summary.groupChangeRequested.connect(self._on_measurement_group_change_requested)
+        self._current_measurement_summary.batchEditRequested.connect(self._edit_selected_measurements)
         inspector_layout.addWidget(self._current_measurement_summary)
 
         self._statistics_panel = MeasurementStatisticsPanel(inspector_content)
@@ -5435,6 +5438,7 @@ class MainWindow(QMainWindow):
         inspector_layout.addWidget(self._area_recognition_section)
 
         self._object_inspector = CurrentObjectInspector(inspector_content)
+        self._object_inspector.batch_editor.editRequested.connect(self._edit_selected_measurements)
         self._object_inspector.appearanceChangeRequested.connect(self._on_object_appearance_change_requested)
         self._object_inspector.measurementGroupChangeRequested.connect(
             self._on_measurement_group_change_requested
@@ -5638,10 +5642,9 @@ class MainWindow(QMainWindow):
             QSizePolicy.Policy.Preferred,
         )
         preview_layout.addWidget(self._acquisition_preview_label)
-        capture_button = QToolButton(preview_box)
-        capture_button.setDefaultAction(self.capture_frame_action)
-        capture_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        preview_layout.addWidget(capture_button)
+        from fdm.ui.live_snapshot import LiveSnapshotControls
+        self._snapshot_controls = LiveSnapshotControls(self, preview_box)
+        preview_layout.addWidget(self._snapshot_controls)
         optimize_button = QToolButton(preview_box)
         optimize_button.setDefaultAction(self.optimize_capture_signal_action)
         optimize_button.setText("优化参数")
@@ -6294,6 +6297,7 @@ class MainWindow(QMainWindow):
     def _sync_current_measurement_summary(self, document, selected_ids) -> None:
         panel = self._current_measurement_summary
         panel.measurement_id = None
+        panel.batch_target = None
         panel.groupCombo.setEnabled(False)
         panel.groupCombo.clear()
         panel.groupCombo.addItem("对象类别", None)
@@ -6302,8 +6306,16 @@ class MainWindow(QMainWindow):
             panel.valueLabel.setText("未选中对象")
             return
         if len(selected_ids) > 1:
+            identities = set(selected_ids)
+            selected = [m for m in document.measurements if m.id in identities]
+            if len(selected) != len(identities):
+                panel.valueLabel.setText("请选择测量对象")
+                return
             panel.valueLabel.setText(f"已选择 {len(selected_ids)} 个对象")
-            panel.sourceLabel.setText("点击属性可批量编辑\n测量记录保留当前选择")
+            panel.sourceLabel.setText("选择类别可批量归类\n点击属性可批量编辑样式")
+            panel.batch_target = (document.id, tuple(sorted(identities)))
+            populate_group_choices(panel.groupCombo, document, common_value(m.fiber_group_id for m in selected))
+            panel.groupCombo.setEnabled(not self.project.is_read_only_compatible and self._measurement_workspace_active())
             return
         measurement = document.get_measurement(selected_ids[0])
         model = self._records_controller.source_model
@@ -12710,7 +12722,7 @@ class MainWindow(QMainWindow):
                             raise ValueError("生成了重复的测量对象 ID")
                         existing_measurement_ids.add(measurement_id)
                         measurement = Measurement(
-                            annotation_layout=MeasurementAnnotationLayout(),
+                            annotation_layout=self._app_settings.new_annotation_layout("area"),
                             id=measurement_id,
                             image_id=document.id,
                             fiber_group_id=group.id,
@@ -16128,32 +16140,7 @@ class MainWindow(QMainWindow):
         return self._capture_manager.request_analysis_frame(request_id)
 
     def capture_current_frame(self) -> None:
-        was_preview_active = self._capture_manager.is_preview_active()
-        selected_device = self._selected_capture_device()
-        stop_before_capture = bool(
-            was_preview_active
-            and selected_device is not None
-            and selected_device.backend_key == "microview"
-            and self._capture_manager.can_capture_still()
-        )
-        if stop_before_capture:
-            self.stop_live_preview()
-        frame: QImage | None
-        try:
-            frame = self._capture_manager.capture_still_frame() if self._capture_manager.can_capture_still() else self._capture_manager.last_frame()
-        except Exception as exc:
-            QMessageBox.warning(self, "采集一张", str(exc))
-            return
-        if frame is None or frame.isNull():
-            diagnostics = self._capture_manager.capture_diagnostics().strip()
-            if diagnostics:
-                QMessageBox.warning(self, "采集一张", f"当前未抓拍到有效图像。\n\n抓拍诊断:\n{diagnostics}")
-            else:
-                QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
-            return
-        if was_preview_active and not stop_before_capture:
-            self.stop_live_preview()
-        self._add_project_asset_image(frame, status_message="已采集当前画面到项目内存")
+        self._snapshot_controls.start()
 
     def optimize_capture_signal(self) -> None:
         selected = self._selected_capture_device()
@@ -20769,7 +20756,11 @@ class MainWindow(QMainWindow):
         raster_plane: RasterPlane | None = None,
         raster_metadata: RasterMetadata | None = None,
         restored_view_state: bool = False,
+        activate: bool = True,
     ) -> None:
+        # The full raster allocation can fail even when its smaller canvas
+        # preview succeeded. Do not publish a document until its pixels exist.
+        authoritative_plane = raster_plane if raster_plane is not None else qimage_to_raster_plane(image)
         if document.history is not None:
             document.history.set_workspace_budget(self._workspace_history_budget)
         canvas = DocumentCanvas()
@@ -20815,7 +20806,6 @@ class MainWindow(QMainWindow):
         self._display_cache_transforms[document.id] = (
             document.display_transform
         )
-        authoritative_plane = raster_plane or qimage_to_raster_plane(image)
         self._rasters[document.id] = authoritative_plane
         if raster_metadata is not None:
             self._raster_metadata[document.id] = raster_metadata
@@ -20831,8 +20821,9 @@ class MainWindow(QMainWindow):
         list_item.setData(Qt.ItemDataRole.UserRole, document.id)
         list_item.setToolTip(tooltip)
         self.image_list.insertItem(insert_index, list_item)
-        self.tab_widget.setCurrentIndex(tab_index)
-        self.image_list.setCurrentRow(tab_index)
+        if activate:
+            self.tab_widget.setCurrentIndex(tab_index)
+            self.image_list.setCurrentRow(tab_index)
         self._apply_open_view_mode(canvas, restored_view_state=restored_view_state)
         self._update_ui_for_current_document()
 
@@ -23408,7 +23399,7 @@ class MainWindow(QMainWindow):
                     ),
                 )
                 measurement = Measurement(
-                    annotation_layout=MeasurementAnnotationLayout(),
+                    annotation_layout=self._app_settings.new_annotation_layout("area"),
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id,
@@ -24572,6 +24563,7 @@ class MainWindow(QMainWindow):
             self.tab_widget.widget(index)
             for index in range(self.tab_widget.count())
         ]
+        self._snapshot_controls.reset()
         self.project = ProjectState.empty()
         self._workspace_composite_undo.clear()
         self._workspace_composite_redo.clear()
@@ -24847,6 +24839,7 @@ class MainWindow(QMainWindow):
         self._close_image_batch_dialog(wait=True)
         self._close_analysis_batch_dialog(wait=True)
         self.project_save_coordinator.reset()
+        self._snapshot_controls.reset()
         self.project = ProjectState.empty()
         self._construction_resolution_cache.clear()
         self._workspace_composite_undo.clear()
@@ -25082,9 +25075,8 @@ class MainWindow(QMainWindow):
         frozen_group: bool = False,
     ) -> None:
         if measurement.measurement_kind in {"line", "polyline", "area"} and measurement.annotation_layout is None:
-            measurement.annotation_layout = MeasurementAnnotationLayout()
-        if measurement.measurement_kind == "line" and measurement.annotation_layout is not None and measurement.annotation_layout.offset_px is None:
-            measurement.annotation_layout = replace(measurement.annotation_layout, leader_style="dual")
+            measurement.annotation_layout = self._app_settings.new_annotation_layout(
+                measurement.measurement_kind, dual_supported=measurement.measurement_kind == "line")
         annotation_canvas = self._canvases.get(document.id)
         if annotation_canvas is not None and measurement.annotation_layout is not None and measurement.annotation_layout.offset_px is None:
             measurement.recalculate(document.calibration)
@@ -25349,7 +25341,7 @@ class MainWindow(QMainWindow):
 
         if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
             measurement = Measurement(
-                annotation_layout=MeasurementAnnotationLayout(),
+                annotation_layout=self._app_settings.new_annotation_layout("area"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25366,7 +25358,7 @@ class MainWindow(QMainWindow):
             # paths are prepared lazily without blocking confirmation.
         elif mode == "continuous_manual" and isinstance(payload, dict):
             measurement = Measurement(
-                annotation_layout=MeasurementAnnotationLayout(),
+                annotation_layout=self._app_settings.new_annotation_layout("polyline"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25389,7 +25381,7 @@ class MainWindow(QMainWindow):
             )
         elif mode == "manual" and isinstance(payload, Line):
             measurement = Measurement(
-                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
+                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25400,7 +25392,7 @@ class MainWindow(QMainWindow):
             )
         elif mode == "snap" and isinstance(payload, Line) and snap_result is not None:
             measurement = Measurement(
-                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
+                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25413,7 +25405,7 @@ class MainWindow(QMainWindow):
             )
         elif mode == "fiber_quick" and isinstance(payload, dict) and isinstance(payload.get("line_px"), Line):
             measurement = Measurement(
-                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
+                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -26157,6 +26149,7 @@ class MainWindow(QMainWindow):
             construction_id=construction_id,
             view_zoom=canvas.view_zoom() if canvas is not None else 1.0,
         )
+        inspector.batch_editor.setEnabled(not self.project.is_read_only_compatible and self._measurement_workspace_active())
         self._sync_current_measurement_summary(document, selected_ids)
         section = self._object_properties_section
         if section is None:
@@ -26566,12 +26559,21 @@ class MainWindow(QMainWindow):
         )
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
+        controller = self._records_controller
+        selected_ids = controller.selected_measurement_ids() if document is controller.document else []
+        primary = document.view_state.selected_measurement_id if document else None
+        preserve_multiple = len(selected_ids) > 1 and primary in selected_ids
         self._table_rebuilding = True
         try:
-            self._records_controller.set_document(document)
+            controller.set_document(document)
+            if preserve_multiple:
+                primary = controller.select_measurement_ids(selected_ids, primary=primary)
+                canvas = self.current_canvas()
+                if canvas is not None:
+                    canvas.set_selected_measurement(primary)
         finally:
             self._table_rebuilding = False
-        if document is not None:
+        if document is not None and not preserve_multiple:
             self._sync_measurement_table_selection(document)
         self._refresh_object_inspector()
 
@@ -27178,6 +27180,43 @@ class MainWindow(QMainWindow):
 
         self._apply_document_change(document, "修改测量分类", mutate)
 
+    def _edit_selected_measurements(self, document_id, ids, patch) -> None:
+        document = self.current_document()
+        if (document is None or document.id != document_id or self.project.is_read_only_compatible
+                or not self._measurement_workspace_active() or self._table_rebuilding):
+            return
+        # Publishing queued measurements can change the table selection. Check
+        # the IDs after that publication, before capturing one batch transaction.
+        self._flush_pending_measurements(document)
+        selected_ids = set(ids)
+        if len(selected_ids) < 2 or selected_ids != set(self._records_controller.selected_measurement_ids()):
+            return
+        records = [m for m in document.measurements if m.id in selected_ids]
+        if (len(records) != len(selected_ids) or not patch
+                or patch.keys() - (common_style_fields(records) | {"fiber_group_id"})):
+            return
+        if patch.get("fiber_group_id") is not None and document.get_group(patch["fiber_group_id"]) is None:
+            return
+        styles = {k: v for k, v in patch.items() if k != "fiber_group_id"}
+        changes = []
+        for record in records:
+            group = patch.get("fiber_group_id", record.fiber_group_id)
+            appearance = record.appearance
+            if styles:
+                updated = (appearance or ObjectAppearanceOverride()).clone(**styles)
+                appearance = None if updated.is_empty() else updated
+            if record.fiber_group_id != group or record.appearance != appearance:
+                changes.append((record, group, appearance))
+        if not changes:
+            return
+
+        def apply():
+            for record, group, appearance in changes:
+                record.fiber_group_id = group
+                record.appearance = appearance
+
+        self._apply_document_change(document, f"批量编辑 {len(changes)} 个测量对象", apply)
+
     def _on_group_selection_changed(self) -> None:
         if self._group_list_rebuilding:
             return
@@ -27634,7 +27673,7 @@ class MainWindow(QMainWindow):
             self.digital_slide_action.setToolTip("进入数字化切片采集工作台")
         can_optimize_signal = capture_feature_available and self._capture_manager.can_optimize_signal()
         analysis_active = self._preview_analysis_mode != "none"
-        self.capture_frame_action.setEnabled(preview_active and self._capture_manager.can_capture_still() and not analysis_active and not self._digital_slide_mode)
+        self.capture_frame_action.setEnabled(self._snapshot_controls.request is None and self._snapshot_controls.available())
         self.optimize_capture_signal_action.setVisible(can_optimize_signal)
         self.optimize_capture_signal_action.setEnabled(can_optimize_signal and not analysis_active and not self._digital_slide_mode)
         for mode, action in self._mode_actions.items():
@@ -28425,7 +28464,7 @@ class MainWindow(QMainWindow):
             self._preview_analysis_dialog.set_status(payload.message)
             self.statusBar().showMessage(payload.message, 2500)
 
-    def _add_project_asset_image(self, image: QImage, *, metadata: dict[str, object] | None = None, status_message: str) -> None:
+    def _add_project_asset_image(self, image: QImage, *, metadata: dict[str, object] | None = None, status_message: str, activate: bool = True) -> ImageDocument:
         document = ImageDocument(
             id=new_id("image"),
             path=self._next_project_capture_relative_path(),
@@ -28438,13 +28477,51 @@ class MainWindow(QMainWindow):
             self._set_document_project_default_calibration(document)
         document.mark_session_saved()
         document.mark_calibration_saved()
-        self._mount_document(
-            document,
-            image,
-            tooltip=self._document_tooltip(document),
-        )
-        self._clear_prompt_segmentation_cache()
-        self.statusBar().showMessage(status_message, 4000)
+        previous_tab = self.tab_widget.currentWidget()
+        previous_item = self.image_list.currentItem()
+        with ExitStack() as signals:
+            if not activate:
+                # Qt selects a first inserted tab even in a hidden measurement
+                # workspace. Keep its selection callbacks out of the capture.
+                signals.enter_context(QSignalBlocker(self.tab_widget))
+                signals.enter_context(QSignalBlocker(self.image_list))
+            try:
+                self._mount_document(document, image, tooltip=self._document_tooltip(document), activate=activate)
+                if activate:
+                    self._clear_prompt_segmentation_cache()
+                self.statusBar().showMessage(status_message, 4000)
+            except Exception:
+                if not activate:
+                    self._rollback_background_capture(document, previous_tab, previous_item)
+                raise
+        return document
+
+    def _rollback_background_capture(self, document, previous_tab, previous_item):
+        """Remove only this newly generated ID; keep other tabs, history and assets."""
+        key = document.id
+        for attr in (self._images, self._rasters, self._raster_metadata, self._display_cache_transforms,
+                     self._canvas_navigators, self._construction_resolution_cache):
+            attr.pop(key, None)
+        if key in self._document_order:
+            self._document_order.remove(key)
+        if document in self.project.documents:
+            self.project.documents.remove(document)
+        canvas = self._canvases.pop(key, None)
+        if canvas is not None:
+            index = self.tab_widget.indexOf(canvas)
+            if index >= 0:
+                self.tab_widget.removeTab(index)
+            self._release_document_canvas(canvas)
+            canvas.deleteLater()
+        for index in range(self.image_list.count()):
+            if self.image_list.item(index).data(Qt.ItemDataRole.UserRole) == key:
+                self.image_list.takeItem(index)
+                break
+        if previous_tab is not None:
+            self.tab_widget.setCurrentWidget(previous_tab)
+        self.image_list.setCurrentItem(previous_item)
+        if document.history is not None:
+            document.history.set_workspace_budget(None)
 
     def _on_preview_analysis_worker_finished(self, payload: object) -> None:
         mode = self._preview_analysis_mode
@@ -28645,7 +28722,7 @@ class MainWindow(QMainWindow):
                     skipped_count += 1
                     continue
                 measurement = Measurement(
-                    annotation_layout=MeasurementAnnotationLayout(),
+                    annotation_layout=self._app_settings.new_annotation_layout("area"),
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=target_group.id,
@@ -28785,7 +28862,7 @@ class MainWindow(QMainWindow):
 
         def mutate() -> None:
             measurement = Measurement(
-                annotation_layout=MeasurementAnnotationLayout(leader_style="dual"),
+                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=job_meta.get("fiber_group_id"),
@@ -29208,7 +29285,7 @@ class MainWindow(QMainWindow):
             export_canvas = self._canvases.get(document.id)
             draw_professional_measurements(
                 painter, document, image_to_output,
-                label_decimals=self._app_settings.professional_measurement_label_decimals,
+                label_decimals=self._app_settings.professional_measurement_label_decimals, settings=self._app_settings,
                 focus_index=(render_context.focus_index if render_context is not None and render_context.focus_index is not None
                              else export_canvas.focus_index() if isinstance(export_canvas, DigitalSlideCanvas) else None),
             )

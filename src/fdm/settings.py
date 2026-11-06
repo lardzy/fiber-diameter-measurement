@@ -10,6 +10,7 @@ import sys
 from uuid import uuid4
 
 from fdm.atomic_io import atomic_write_json
+from fdm.measurement_annotation import ANNOTATION_STYLE_FIELDS, MeasurementAnnotationLayout
 from fdm.models import (
     CalibrationPreset,
     OverlayTextAnchorAlignment,
@@ -749,6 +750,7 @@ class AppSettings:
         default=_MEASUREMENT_LABEL_STYLE_UNSET  # type: ignore[arg-type]
     )
     professional_measurement_label_decimals: int = 2
+    annotation_style_defaults: dict[str, dict] = field(default_factory=dict)
     # Deprecated flat aliases are retained for callers constructing AppSettings
     # directly. The typed styles are canonical once construction completes;
     # persistence and rendering never read later mutations of these aliases.
@@ -922,6 +924,31 @@ class AppSettings:
         self.measurement_label_parallel_to_line = style.parallel_to_line
         self.measurement_label_background_enabled = style.background_enabled
 
+    @staticmethod
+    def _normalized_annotation_styles(data) -> dict[str, dict]:
+        from fdm.metrology import MEASUREMENT_KINDS
+        valid_keys = {"line", "polyline", "area"} | {"professional:" + kind for kind in MEASUREMENT_KINDS}
+        styles = {}
+        if isinstance(data, dict):
+            for key, fields in data.items():
+                if key not in valid_keys or not isinstance(fields, dict):
+                    continue
+                supplied = {k: fields[k] for k in ANNOTATION_STYLE_FIELDS if k in fields}
+                try:
+                    MeasurementAnnotationLayout(**supplied)
+                except (ValueError, TypeError):
+                    continue
+                if supplied:
+                    styles[key] = supplied
+        return styles
+
+    def new_annotation_layout(self, kind: str, *, dual_supported: bool = False) -> MeasurementAnnotationLayout:
+        fields = self.annotation_style_defaults.get(kind, {})
+        layout = MeasurementAnnotationLayout(**{"leader_style": "dual" if dual_supported else "single", **fields})
+        if layout.leader_style == "dual" and not dual_supported:
+            layout = replace(layout, leader_style="single")
+        return layout
+
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
         normalized.workspace_layout = self.workspace_layout.normalized_copy()
@@ -935,6 +962,7 @@ class AppSettings:
         normalized.area_measurement_label_style = (
             self.area_measurement_label_style.normalized_copy()
         )
+        normalized.annotation_style_defaults = self._normalized_annotation_styles(self.annotation_style_defaults)
         normalized.professional_measurement_label_decimals = (
             self._normalize_professional_measurement_label_decimals(
                 self.professional_measurement_label_decimals
@@ -1561,6 +1589,7 @@ class AppSettings:
             "length_measurement_label_style": normalized.length_measurement_label_style.to_dict(),
             "area_measurement_label_style": normalized.area_measurement_label_style.to_dict(),
             "professional_measurement_label_decimals": normalized.professional_measurement_label_decimals,
+            "annotation_style_defaults": normalized.annotation_style_defaults,
             # Keep flat aliases for older application builds. They mirror the
             # length style and are ignored when typed style payloads exist.
             "show_measurement_labels": normalized.show_measurement_labels,
@@ -1746,6 +1775,7 @@ class AppSettings:
             payload.get("area_measurement_label_style"),
             fallback=area_fallback,
         )
+        settings.annotation_style_defaults = cls._normalized_annotation_styles(payload.get("annotation_style_defaults"))
         settings.professional_measurement_label_decimals = (
             cls._normalize_professional_measurement_label_decimals(
                 payload.get("professional_measurement_label_decimals", 2)

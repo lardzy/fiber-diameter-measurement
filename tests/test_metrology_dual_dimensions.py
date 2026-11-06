@@ -41,14 +41,14 @@ def _chain(points):
     return doc
 
 
-def _draw(doc, transform, *, font=None):
+def _draw(doc, transform, *, font=None, settings=None):
     image = QImage(1600, 1200, QImage.Format.Format_ARGB32_Premultiplied)
     image.fill(Qt.GlobalColor.transparent)
     painter = QPainter(image)
     try:
         if font:
             painter.setFont(font)
-        labels = draw_professional_measurements(painter, doc, transform, label_decimals=2)
+        labels = draw_professional_measurements(painter, doc, transform, label_decimals=2, settings=settings)
     finally:
         painter.end()
     return image, labels
@@ -154,7 +154,7 @@ def test_canvas_and_export_painter_receive_identical_dual_layout(mounted_window)
     workspace.edit_layout(controller, first.id, first.annotation_layout.with_manual_offset(Point(10, -50)))
     workspace.edit_layout(controller, second.id, second.annotation_layout.with_manual_offset(Point(-10, 60)))
     _paint(controller)
-    _export, labels = _draw(document, controller.canvas.image_to_widget, font=controller.canvas.font())
+    _export, labels = _draw(document, controller.canvas.image_to_widget, settings=controller.canvas._settings)
     assert labels == controller.label_hits
 
 

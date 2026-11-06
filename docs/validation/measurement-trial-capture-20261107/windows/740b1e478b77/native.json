@@ -1,0 +1,11 @@
+{
+  "api_version": 1,
+  "source_sha256": "d743608532e85f90e11170b87b9ec4fc0661065c866980129eccd23cf62c7b28",
+  "python_abi": "cpython-312",
+  "python_version": "3.12.13",
+  "pybind11_version": "3.0.4",
+  "build_type": "release",
+  "cpp_standard": 201703,
+  "compiler": "MSVC 1944",
+  "binary_sha256": "b4353d831d04738f3ae3d9db97a3ff9e576824358314155138fd34319f5f1d32"
+}

@@ -219,12 +219,14 @@ class FixedLineLabel(QLabel):
 class CurrentMeasurementSummary(QFrame):
     editRequested = Signal()
     groupChangeRequested = Signal(str, object)
+    batchEditRequested = Signal(str, object, object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("currentMeasurementSummary")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.measurement_id: str | None = None
+        self.batch_target = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(4)
@@ -256,7 +258,11 @@ class CurrentMeasurementSummary(QFrame):
         self.groupCombo.setEnabled(False)
 
     def _activate_group(self, index: int) -> None:
-        if self.measurement_id:
+        if index < 0:
+            return
+        if self.batch_target is not None:
+            self.batchEditRequested.emit(*self.batch_target, {"fiber_group_id": self.groupCombo.itemData(index)})
+        elif self.measurement_id:
             self.groupChangeRequested.emit(self.measurement_id, self.groupCombo.itemData(index))
 
 

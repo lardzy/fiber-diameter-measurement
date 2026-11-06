@@ -61,6 +61,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "construction-geometry/v1",
         "professional-measurements/v1",
         "measurement-annotations/v1",
+        "measurement-caption-fields/v1",
         "measurement-dual-dimensions/v1",
         "project-rois/v1",
         "image-watermark/v1",
@@ -242,9 +243,9 @@ def project_slide_root(project_path: str | Path) -> Path:
 def format_measurement_label_value(value: float, unit: str, decimals: int) -> str:
     decimals = max(0, min(8, int(decimals)))
     formatted = f"{value:.{decimals}f}"
-    if not formatted:
-        formatted = "0"
-    return f"{formatted} {unit}"
+    if formatted.startswith("-") and float(formatted) == 0:
+        formatted = formatted[1:]
+    return f"{formatted} {unit}".rstrip()
 
 
 def square_unit(unit: str) -> str:
@@ -2506,6 +2507,17 @@ class ProjectState:
         repr=False,
         compare=False,
     )
+    has_removed_live_trial: bool = field(default=False, init=False, repr=False, compare=False)
+
+    def remove_live_trial(self, session) -> bool:
+        """Detach this sample only. Its exported and evidence files stay on disk."""
+        index = next((i for i, trial in enumerate(self.live_experiments) if trial.id == session.id), None)
+        if index is None or self.live_experiments[index] is not session:
+            return False
+        del self.live_experiments[index]
+        self.has_removed_live_trial = True
+        self.mark_extension_changed()
+        return True
 
     def get_document(self, document_id: str) -> ImageDocument | None:
         for document in self.documents:
@@ -2553,6 +2565,13 @@ class ProjectState:
             for measurement in collection
         ):
             features.append("measurement-dual-dimensions/v1")
+        if any(
+            layout is not None and (not layout.show_metric_name or layout.show_symbol is not None)
+            for document in self.documents
+            for collection in (document.measurements, document.professional_measurements)
+            for layout in (item.annotation_layout for item in collection)
+        ):
+            features.append("measurement-caption-fields/v1")
         if any(document.watermark is not None for document in self.documents):
             features.append("image-watermark/v1")
         if any(

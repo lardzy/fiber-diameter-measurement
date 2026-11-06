@@ -4,9 +4,8 @@ from __future__ import annotations
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QFontMetricsF
 
-from fdm.geometry import Point
-from fdm.ui.measurement_annotation_layout import resolve_linked_label
-from fdm.ui.professional_rendering import presentation_result, result_caption
+from fdm.ui.rendering import measurement_label_font
+from fdm.ui.professional_rendering import presentation_result, professional_label_layout, professional_text_scale
 
 
 def clipped_manual_labels(canvas, frame: QRectF) -> tuple[str, ...]:
@@ -26,7 +25,8 @@ def clipped_manual_labels(canvas, frame: QRectF) -> tuple[str, ...]:
     if professional is not None:
         results = professional.results()
         focus = professional.focus()
-        metrics = QFontMetricsF(canvas.font())
+        metrics = QFontMetricsF(measurement_label_font(canvas._settings))
+        scale = professional_text_scale(canvas._settings, canvas.image_to_widget)
         for index, definition in enumerate(document.professional_measurements, 1):
             layout = definition.annotation_layout
             if layout is None or layout.placement_mode != "manual":
@@ -40,18 +40,9 @@ def clipped_manual_labels(canvas, frame: QRectF) -> tuple[str, ...]:
             # selected-only setting. Compute the current persisted layout so a
             # warning also works before the next screen paint or after edits.
             result = presentation_result(document, definition, result)
-            anchor = result.anchor_px
-            offset = layout.offset_px or Point(65, -38)
-            caption = result_caption(
-                definition, result, index,
-                decimals=canvas._settings.professional_measurement_label_decimals,
-            )
-            resolved = resolve_linked_label(
-                canvas.image_to_widget(anchor),
-                canvas.image_to_widget(Point(anchor.x + offset.x, anchor.y + offset.y)),
-                metrics.horizontalAdvance(caption) + 14, metrics.height() + 8,
-                show_leader=layout.show_leader,
-            )
+            _, resolved = professional_label_layout(definition, result, index, canvas.image_to_widget, layout,
+                decimals=canvas._settings.professional_measurement_label_decimals, metrics=metrics, scale=scale,
+                parallel=canvas._settings.length_measurement_label_style.parallel_to_line)
             if not frame.contains(resolved.text_rect):
                 clipped.append(f"P{index}")
     return tuple(clipped)

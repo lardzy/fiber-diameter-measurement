@@ -801,20 +801,11 @@ class CanvasAndExportTests(unittest.TestCase):
                     window.close_current_document()
 
                 self.assertIsNone(window._project_path)
-                with patch.object(
-                    window._capture_manager,
-                    "is_preview_active",
-                    return_value=False,
-                ), patch.object(
-                    window._capture_manager,
-                    "can_capture_still",
-                    return_value=True,
-                ), patch.object(
-                    window._capture_manager,
-                    "capture_still_frame",
-                    return_value=image.copy(),
-                ):
-                    window.capture_current_frame()
+                from test_live_snapshot import start_stream
+                _, camera = start_stream(window)
+                window.capture_current_frame()
+                camera.publish("#CBD5E1")
+                window._snapshot_controls.view_latest()
 
                 self.assertIsNone(window._project_path)
                 self.assertEqual(len(window.project.documents), 1)
@@ -1584,21 +1575,13 @@ class CanvasAndExportTests(unittest.TestCase):
 
     def test_live_preview_frame_can_be_captured_as_project_asset_document(self) -> None:
         window = MainWindow()
-        preview_frame = QImage(180, 120, QImage.Format.Format_RGB32)
-        preview_frame.fill(QColor("#CCE3DE"))
-
-        window._on_live_preview_state_changed(True)
-        window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
-        window._on_live_preview_frame_ready(preview_frame)
-        window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
-        window._capture_manager.capture_still_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
-        window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
-
+        from test_live_snapshot import start_stream
+        _, camera = start_stream(window)
         self.assertIsNone(window.current_document())
         self.assertIs(window.current_canvas(), window._preview_canvas)
         self.assertTrue(window.capture_frame_action.isEnabled())
-
         window.capture_current_frame()
+        camera.publish("#CCE3DE")
 
         self.assertEqual(len(window.project.documents), 1)
         captured_document = window.project.documents[0]
@@ -1644,24 +1627,13 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNotNone(window._microview_preview_host)
         self.assertEqual(window._microview_preview_host.native_preview_size(), (768, 576))
 
-    def test_native_preview_capture_uses_still_capture_path(self) -> None:
+    def test_microview_capture_keeps_active_session(self) -> None:
+        from test_live_snapshot import start_stream
         window = MainWindow()
-        preview_frame = QImage(96, 72, QImage.Format.Format_RGB32)
-        preview_frame.fill(QColor("#F4D35E"))
-        call_order: list[str] = []
-
-        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
-        window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
-        window._capture_manager.capture_still_frame = lambda: call_order.append("capture") or preview_frame.copy()  # type: ignore[method-assign]
-        window._capture_manager.is_preview_active = lambda: True  # type: ignore[method-assign]
-        window._capture_manager.stop_preview = lambda: call_order.append("stop")  # type: ignore[method-assign]
-        window._capture_manager.selected_device = (  # type: ignore[method-assign]
-            lambda: type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
-        )
-
+        _, camera = start_stream(window, "microview")
         window.capture_current_frame()
-
-        self.assertEqual(call_order, ["stop", "capture"])
+        camera.publish("#F4D35E")
+        self.assertEqual((camera.starts, camera.stops), (1, 0))
         self.assertEqual(len(window.project.documents), 1)
         self.assertEqual(window.project.documents[0].source_type, "project_asset")
 
@@ -3777,10 +3749,7 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         preview_frame = QImage(96, 64, QImage.Format.Format_RGB32)
         preview_frame.fill(QColor("#9AD1D4"))
-        window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
-        window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
-
-        window.capture_current_frame()
+        window._add_project_asset_image(preview_frame, status_message="测试项目内图像")
         captured_document = window.project.documents[0]
 
         with TemporaryDirectory() as tmp_dir:
@@ -7609,13 +7578,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(document.measurements[0].mode, "manual")
 
             window.set_tool_mode("snap")
-            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 50)), button=Qt.MouseButton.LeftButton))
-            canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(120, 80)), button=Qt.MouseButton.LeftButton))
+            # Start a new line outside the preceding draggable result label.
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(130, 100)), button=Qt.MouseButton.LeftButton))
+            canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(220, 130)), button=Qt.MouseButton.LeftButton))
             self.assertTrue(window._path_complete_button.isEnabled())
             with patch.object(window.snap_service, "snap_measurement") as snap_mock:
                 snap_mock.return_value = SnapResult(
-                    original_line=Line(Point(30, 50), Point(120, 80)),
-                    snapped_line=Line(Point(31, 50), Point(121, 80)),
+                    original_line=Line(Point(130, 100), Point(220, 130)),
+                    snapped_line=Line(Point(131, 100), Point(221, 130)),
                     diameter_px=94.9,
                     confidence=0.9,
                     status="snapped",

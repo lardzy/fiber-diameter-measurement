@@ -285,7 +285,7 @@ def test_switching_label_metric_changes_caption_only_and_never_evaluates_geometr
     def forbidden(*_args, **_kwargs):
         raise AssertionError("Changing label metric must not resolve or fit geometry")
     monkeypatch.setattr(metrology_service, "resolve_feature", forbidden)
-    changed = definition.clone(annotation_layout=replace(definition.annotation_layout, metric_key="dx"))
+    changed = definition.clone(annotation_layout=replace(definition.annotation_layout, metric_key="dx", show_metric_name=True))
     doc.apply_professional_state([feature], [changed])
     current = evaluate_document(doc)[definition.id]
     assert current is first
@@ -322,7 +322,8 @@ def test_dual_dimension_feature_is_derived_only_from_dual_layouts_and_roundtrips
 
 
 @pytest.mark.parametrize("branch", ["legacy", "professional"])
-def test_reader_without_dual_dimension_support_cannot_overwrite_source(tmp_path, monkeypatch, branch):
+@pytest.mark.parametrize("required_feature", ["measurement-dual-dimensions/v1", "measurement-caption-fields/v1"])
+def test_reader_without_dimension_feature_cannot_overwrite_source(tmp_path, monkeypatch, branch, required_feature):
     import fdm.models as models
 
     doc = document()
@@ -336,12 +337,12 @@ def test_reader_without_dual_dimension_support_cannot_overwrite_source(tmp_path,
     ProjectIO.save(ProjectState("test", [doc]), path)
     before = path.read_bytes()
     # This reader still supports the original annotation/metrology fields;
-    # only the independently introduced dual endpoint layout is unsupported.
-    monkeypatch.setattr(models, "SUPPORTED_PROJECT_REQUIRED_FEATURES", models.SUPPORTED_PROJECT_REQUIRED_FEATURES - {"measurement-dual-dimensions/v1"})
+    # one independently introduced label feature is unsupported.
+    monkeypatch.setattr(models, "SUPPORTED_PROJECT_REQUIRED_FEATURES", models.SUPPORTED_PROJECT_REQUIRED_FEATURES - {required_feature})
     older_reader = ProjectIO.load(path)
-    assert older_reader.compatibility.unknown_required_features == ("measurement-dual-dimensions/v1",)
+    assert older_reader.compatibility.unknown_required_features == (required_feature,)
     assert older_reader.is_read_only_compatible
-    with pytest.raises(ProjectCompatibilityError, match="measurement-dual-dimensions/v1"):
+    with pytest.raises(ProjectCompatibilityError, match=required_feature):
         ProjectIO.save(older_reader, path)
     assert path.read_bytes() == before
 

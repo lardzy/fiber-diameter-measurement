@@ -1,0 +1,32 @@
+{
+  "baseline": "7cd6b20",
+  "fresh_baseline_failing": [
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_command_bars_are_real_toolbars_and_group_measurement_tools",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_current_object_inspector_updates_measurement_and_overlay_with_history",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_digital_slide_axis_reversal_affects_map_plan_and_manual_jog_semantics",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hover_updates_cursor_for_manual_and_select",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_main_window_menu_structure_separates_tools_view_and_settings",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_object_style_edit_does_not_escalate_to_full_canvas_update",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_select_hover_and_press_targets_unselected_line_endpoint",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_select_hover_respects_overlay_priority_over_unselected_line_endpoint",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_snap_mode_does_not_grab_measurement_handles",
+    "SUBFAILED(temporary_mode='roi') tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_temporary_pointer_modes_clear_endpoint_hover_without_stale_cursor",
+    "SUBFAILED(temporary_mode='scale_anchor') tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_temporary_pointer_modes_clear_endpoint_hover_without_stale_cursor",
+    "SUBFAILED(temporary_mode='space') tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_temporary_pointer_modes_clear_endpoint_hover_without_stale_cursor",
+    "SUBFAILED(tool='manual', zoom=0.5, screen_offset=4.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='manual', zoom=0.5, screen_offset=6.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='manual', zoom=1.0, screen_offset=4.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='manual', zoom=1.0, screen_offset=6.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='manual', zoom=4.0, screen_offset=4.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='manual', zoom=4.0, screen_offset=6.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='select', zoom=0.5, screen_offset=8.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='select', zoom=1.0, screen_offset=8.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool",
+    "SUBFAILED(tool='select', zoom=4.0, screen_offset=8.0) tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_line_endpoint_hit_radii_are_screen_stable_by_tool"
+  ],
+  "initial_joint_summary": "23 failed, 382 passed, 36 subtests passed in 126.71s (0:02:06)",
+  "final_recheck": "2 passed (canvas browse and path controls); 69 passed + 8 subtests in focused batch suites",
+  "differences_repaired": [
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_canvas_browse_selection_refreshes_current_result_and_object_properties",
+    "FAILED tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_manual_and_snap_lines_complete_from_path_context_controls"
+  ]
+}

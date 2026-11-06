@@ -334,6 +334,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.host = host
         self.project_identity = id(host.project)
         self.session = session
+        self._sample_removal_unsaved = False
         self.source = None
         self._source_retiring = False
         self._closed = False
@@ -577,6 +578,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def _confirm_trial_navigation(self):
         controller = self.controller
+        if controller.hold_measurement_results:
+            self.statusBar().showMessage("请先完成或取消当前换样。", 5000)
+            return False
         if not (controller.draft or controller._jobs or controller.pending_classification
                 or controller.has_unaccepted_candidates or controller._confirmation):
             return True
@@ -676,6 +680,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             # callback cannot be relied on to explain retirement failures.
             self.statusBar().showMessage("旧图像来源仍在释放资源，测量已暂停；请稍后再次切换来源或关闭窗口。" + detail)
             return False
+        from fdm.live_experiment.sources import CameraFrameSource
+        if isinstance(self.source, CameraFrameSource):
+            self.source.deleteLater()
         self.source = None
         self._source_retiring = False
         return True
@@ -796,7 +803,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             return False
         if not preserve_field:
             self.controller.unavailable("正在等待采集完整帧…")
-        self.source = CameraFrameSource(manager, *self._source_callbacks())
+        self.source = CameraFrameSource(manager, *self._source_callbacks(), parent=self)
         self.source.start()
         return True
 
@@ -1552,6 +1559,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.controller.accept_candidates(selections, confirmed_out_of_range=confirmed)
 
     def _changed(self):
+        if self._closed and self.session not in self.host.project.live_experiments:
+            # Queued results belonging to a removed sample cannot register it again.
+            return
         state = (self.session.revision, self.session.active_operator_id, self.session.active_direction)
         if id(self.host.project) == self.project_identity and state != self._last_dirty_state:
             registered = any(session is self.session for session in self.host.project.live_experiments)
@@ -1576,8 +1586,13 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def _refresh_persistence_state(self):
         registered = any(session is self.session for session in self.host.project.live_experiments)
-        self.save_button.setEnabled(registered)
-        if not registered:
+        removed = self._sample_removal_unsaved
+        if removed and not self.host._project_dirty():
+            self._sample_removal_unsaved = removed = False
+        self.save_button.setEnabled(registered or removed)
+        if removed and not registered:
+            text = "上一试验已移除 · 保存项目以保留更改"
+        elif not registered:
             text = "尚无需要保存的试验改动"
         elif getattr(self.host, "_project_dirty", lambda: True)() or not getattr(self.host, "_project_path", None):
             text = "试验数据有更改 · 保存项目可保留样品、记录和设置"
@@ -1871,12 +1886,86 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if self._confirm_trial_navigation():
             self._replace_experiment(_new_trial_session(self.session.workspace_options["mode"]))
 
+    def _current_content_trial(self):
+        if (self._closed or self.session.workspace_options["mode"] != "content"
+                or id(self.host.project) != self.project_identity):
+            return False
+        hub = self.host._acquisition_workbench if self.embedded else None
+        return hub is None or (hub.pages.currentWidget() is self and
+                               self.host._acquisition_workspace_selected)
+
+    def _confirm_sample_removal(self):
+        from fdm.ui.live_experiment_view import style_sample_change_button
+
+        dialog = QMessageBox(QMessageBox.Icon.Warning, "结束并换样",
+                             "将移除当前含量试验，并开始空白试验。", parent=self)
+        # Use the Qt buttons so their semantic palette is rendered on every platform.
+        dialog.setOption(QMessageBox.Option.DontUseNativeDialog, True)
+        dialog.setTextFormat(Qt.TextFormat.PlainText)
+        net_count = sum(item.delta for item in self.session.count_adjustments.values())
+        dialog.setInformativeText(
+            f"样品编号：{self.sample_number.text().strip() or '未填编号'}\n"
+            f"样品名称：{self.sample.text().strip() or '未命名样品'}\n"
+            f"实测：{len(self.session.measurements)} 条　补计：{net_count}\n"
+            "当前试验的记录及未入账测量将移除。已导出的报告和原图文件保留。")
+        cancel = dialog.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        remove = dialog.addButton("移除并开始", QMessageBox.ButtonRole.DestructiveRole)
+        remove.setProperty("emphasis", "destructive")
+        style_sample_change_button(remove, QApplication.palette())
+        dialog.setDefaultButton(cancel)
+        dialog.setEscapeButton(cancel)
+        dialog.exec()
+        return dialog.clickedButton() is remove
+
+    def _wait_for_sample_evidence(self):
+        if self.controller.evidence.pending:
+            waiting = QMessageBox(QMessageBox.Icon.Information, "结束并换样",
+                                  "正在完成原图写入…", parent=self)
+            cancel = waiting.addButton("取消换样", QMessageBox.ButtonRole.RejectRole)
+            waiting.setDefaultButton(cancel)
+            waiting.setEscapeButton(cancel)
+            timer = QTimer(waiting)
+            def check():
+                if not self._current_content_trial():
+                    waiting.reject()
+                elif not self.controller.evidence.pending:
+                    waiting.accept()
+            timer.timeout.connect(check)
+            timer.start(60)
+            try:
+                if waiting.exec() != QDialog.DialogCode.Accepted:
+                    return False
+            finally:
+                timer.stop()
+        for record in self.session.measurements.values():
+            evidence = record.evidence or {}
+            if evidence.get("state") in {"failed", "pending"}:
+                reason = evidence.get("error") or "原图尚未写入"
+                self.statusBar().showMessage(f"已保留当前试验；请到记录中处理原图后重试：{reason}", 10000)
+                return False
+        return True
+
+    def _finish_content_trial(self):
+        controller = self.controller
+        if not self._current_content_trial() or controller.hold_measurement_results:
+            return
+        controller.hold_measurement_results = True
+        try:
+            if not self._confirm_sample_removal() or not self._current_content_trial():
+                return
+            if not self._wait_for_sample_evidence() or not self._current_content_trial():
+                return
+            self._replace_experiment(_new_trial_session("content"), remove_current=True)
+        finally:
+            controller.hold_measurement_results = False
+
     def _choose_experiment(self):
         mode = self.session.workspace_options["mode"]
         sessions = [s for s in self.host.project.live_experiments if s.workspace_options["mode"] == mode]
         if self.session not in sessions:
             sessions.append(self.session)
-        choices = [f"{i + 1} · {s.sample_name or s.name}" for i, s in enumerate(sessions)] + ["＋ 新建试验"]
+        create = "＋ 新建并保留当前" if mode == "content" else "＋ 新建试验"
+        choices = [f"{i + 1} · {s.sample_name or s.name}" for i, s in enumerate(sessions)] + [create]
         selected, ok = QInputDialog.getItem(self, "试验", "选择已有试验，或建立独立样品记录", choices, sessions.index(self.session), False)
         if not ok or selected == choices[sessions.index(self.session)]:
             return
@@ -1886,27 +1975,48 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         elif self._confirm_trial_navigation():
             self._replace_experiment(target)
 
-    def _replace_experiment(self, target):
+    def _replace_experiment(self, target, *, remove_current=False):
         mode = target.workspace_options["mode"]
+        project = self.host.project
+        hub = self.host._acquisition_workbench if self.embedded else None
+        # Build the destination and attach to the existing camera session while
+        # the old page and its records can still be retained if either fails.
+        window = LiveExperimentWorkspace(self.host, target, embedded=self.embedded)
+        transferred = False
         self._gallery_rebinding = True
         try:
+            if hub is not None:
+                hub.pages.addWidget(window)
+                manager = self.host._capture_manager
+                if manager.is_preview_active() and not manager.is_stopping():
+                    if not window._start_camera():
+                        raise RuntimeError("无法接续当前相机画面，已保留当前试验。")
+            if remove_current and not self._current_content_trial():
+                return
+            if hub is not None:
+                hub.records.bind(window)
+                hub.apply_sidebar_width()
             if not self.close():
                 return
+            transferred = True
         finally:
             self._gallery_rebinding = False
-        if self.embedded:
-            self.host._acquisition_workbench.pages.removeWidget(self)
-        window = LiveExperimentWorkspace(self.host, target, embedded=self.embedded)
+            if not transferred:
+                if hub is not None:
+                    hub.pages.removeWidget(window)
+                    if hub.records.workspace is not self:
+                        hub.records.bind(self)
+                window.close()
+        if remove_current:
+            window._sample_removal_unsaved = project.remove_live_trial(self.session)
         self.host._live_experiment_workspace = window
         self.host._live_experiment_workspaces[mode] = window
-        if self.embedded:
-            hub = self.host._acquisition_workbench
-            hub.pages.addWidget(window)
+        if hub is not None:
+            hub.pages.removeWidget(self)
             hub.pages.setCurrentWidget(window)
-            hub.records.bind(window)
-            hub.apply_sidebar_width()
-            if self.host._capture_manager.is_preview_active():
-                window._start_camera()
+        if remove_current:
+            window.workflow_tabs.setCurrentIndex(0)
+            window._refresh_persistence_state()
         window.show()
 
     def commit_pending_edits(self):
@@ -1925,7 +2035,8 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
     def _save_project(self):
         self.commit_pending_edits()
         self._changed()
-        if not any(session is self.session for session in self.host.project.live_experiments):
+        if (not any(session is self.session for session in self.host.project.live_experiments)
+                and not self._sample_removal_unsaved):
             self.statusBar().showMessage("尚无需要保存的试验改动；填写样品信息或开始测量后即可保存。", 8000)
             return
         if self.controller.evidence.pending or self.controller._jobs:
@@ -2045,6 +2156,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def prepare_close(self):
         """Quiesce producers and editors without discarding the visible page."""
+        if self.controller.hold_measurement_results and not getattr(self, "_gallery_rebinding", False):
+            self.statusBar().showMessage("请先完成或取消当前换样。", 5000)
+            return False
         if self._statistics_job is not None:
             self._cancel_statistics_rebuild()
             if not self._statistics_job[1].done():

@@ -1,0 +1,14 @@
+[
+  "tests/test_live_snapshot.py",
+  "tests/test_acquisition_third_round.py",
+  "tests/test_measurement_batch_properties.py",
+  "tests/test_linked_label_style.py",
+  "tests/test_measurement_annotations.py",
+  "tests/test_metrology_dual_dimensions.py",
+  "tests/test_professional_precision.py",
+  "tests/test_canvas_overlay_handoff.py",
+  "tests/test_trial_records_integration.py",
+  "tests/test_digital_slide_annotation_display.py",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_canvas_browse_selection_refreshes_current_result_and_object_properties",
+  "tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_manual_and_snap_lines_complete_from_path_context_controls"
+]

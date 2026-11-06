@@ -2,6 +2,21 @@
 /.pytest_cache/
 /build/
 /dist/
+# Generated validation images stay local; keep checks, reports and hashes in Git.
+/docs/validation/**/*.[pP][nN][gG]
+/docs/validation/**/*.[aA][pP][nN][gG]
+/docs/validation/**/*.[jJ][pP][gG]
+/docs/validation/**/*.[jJ][pP][eE][gG]
+/docs/validation/**/*.[gG][iI][fF]
+/docs/validation/**/*.[wW][eE][bB][pP]
+/docs/validation/**/*.[bB][mM][pP]
+/docs/validation/**/*.[tT][iI][fF]
+/docs/validation/**/*.[tT][iI][fF][fF]
+/docs/validation/**/*.[sS][vV][gG]
+/docs/validation/**/*.[iI][cC][oO]
+/docs/validation/**/*.[aA][vV][iI][fF]
+/docs/validation/**/*.[hH][eE][iI][cC]
+/docs/validation/**/*.[jJ][xX][lL]
 *.egg-info/
 .DS_Store
 __pycache__/

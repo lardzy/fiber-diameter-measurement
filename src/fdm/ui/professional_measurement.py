@@ -24,7 +24,9 @@ from fdm.metrology import MeasurementDefinition, MeasurementFeature
 from fdm.models import new_id
 from fdm.services.raster_io import raster_plane_to_numpy, qimage_to_raster_plane
 from fdm.ui.measurement_annotation_layout import choose_automatic_offset
-from fdm.ui.professional_rendering import result_caption, presentation_result, dimension_endpoints
+from fdm.ui.professional_rendering import (presentation_result, dimension_endpoints,
+    professional_label_layout, professional_text_scale)
+from fdm.ui.rendering import measurement_label_font
 
 
 # Each slot is either a live reference selected explicitly or a sequence of
@@ -484,6 +486,18 @@ class ProfessionalWorkspace(QObject):
                                             mutator=mutator, impact=DocumentChangeImpact.SESSION)
         self.refresh()
 
+    @staticmethod
+    def _auto_label_size(canvas, definition, result, index):
+        settings = canvas._settings
+        _, resolved = professional_label_layout(definition, result, index, canvas.image_to_widget,
+            definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional(),
+            decimals=settings.professional_measurement_label_decimals,
+            metrics=QFontMetricsF(measurement_label_font(settings)),
+            scale=professional_text_scale(settings, canvas.image_to_widget),
+            parallel=settings.length_measurement_label_style.parallel_to_line)
+        zoom = max(canvas._zoom, .001)
+        return resolved.text_rect.width() / zoom, resolved.text_rect.height() / zoom
+
     def commit(self, controller, key, features, *, parameters=None, replace_id=None):
         if not self.workspace_active or controller is not self.controller():
             return
@@ -507,20 +521,23 @@ class ProfessionalWorkspace(QObject):
         import copy
         scratch = copy.copy(document); scratch.professional_features = combined
         result = evaluate_measurement(scratch, definition)
+        defaults = controller.canvas._settings.new_annotation_layout("professional:" + key, dual_supported=True)
+        if defaults.metric_key is not None and defaults.metric_key not in {metric.key for metric in result.metrics}:
+            defaults = replace(defaults, metric_key=None)
+        definition = replace(definition, annotation_layout=defaults)
+        result = presentation_result(scratch, definition, result)
+        if dimension_endpoints(result) is None:
+            definition = replace(definition, annotation_layout=replace(defaults, leader_style="single"))
         if result.valid:
             zoom = max(controller.canvas._zoom, .001)
-            fm = QFontMetricsF(controller.canvas.font())
-            caption = result_caption(definition, result, len(document.professional_measurements) + 1,
-                                     decimals=controller.canvas._settings.professional_measurement_label_decimals)
+            width, height = self._auto_label_size(controller.canvas, definition, result, len(document.professional_measurements) + 1)
             occupied = [QRectF(controller.canvas.widget_to_image(label.text_rect.topLeft()).x,
                                controller.canvas.widget_to_image(label.text_rect.topLeft()).y,
                                label.text_rect.width() / zoom, label.text_rect.height() / zoom)
                         for label in controller.label_hits.values()]
-            offset = choose_automatic_offset(result.anchor_px, (fm.horizontalAdvance(caption) + 14) / zoom,
-                (fm.height() + 8) / zoom, occupied=occupied,
+            offset = choose_automatic_offset(result.anchor_px, width, height, occupied=occupied,
                 image_rect=QRectF(0, 0, *document.image_size), gap=18 / zoom)
-            definition = replace(definition, annotation_layout=MeasurementAnnotationLayout(offset_px=offset,
-                leader_style="dual" if dimension_endpoints(result) is not None else "single"))
+            definition = replace(definition, annotation_layout=replace(definition.annotation_layout, offset_px=offset))
         if replace_id:
             original = document.get_professional_measurement(replace_id)
             if original is None:
@@ -543,18 +560,16 @@ class ProfessionalWorkspace(QObject):
     def edit_layout(self, controller, identity, layout):
         document = controller.canvas._document
         if layout.placement_mode == "automatic" and layout.offset_px is None:
-            definition = document.get_professional_measurement(identity)
+            definition = replace(document.get_professional_measurement(identity), annotation_layout=layout)
             result = presentation_result(document, definition, controller.results()[identity])
             zoom = max(controller.canvas._zoom, .001)
-            fm = QFontMetricsF(controller.canvas.font())
-            text = result_caption(definition, result, document.professional_measurements.index(definition) + 1,
-                                  decimals=controller.canvas._settings.professional_measurement_label_decimals)
+            width, height = self._auto_label_size(controller.canvas, definition, result, document.professional_measurements.index(
+                document.get_professional_measurement(identity)) + 1)
             occupied = [QRectF(controller.canvas.widget_to_image(h.text_rect.topLeft()).x,
                                controller.canvas.widget_to_image(h.text_rect.topLeft()).y,
                                h.text_rect.width() / zoom, h.text_rect.height() / zoom)
                         for key, h in controller.label_hits.items() if key != identity]
-            offset = choose_automatic_offset(result.anchor_px, (fm.horizontalAdvance(text) + 14) / zoom,
-                (fm.height() + 8) / zoom, occupied=occupied, image_rect=QRectF(0, 0, *document.image_size), gap=18 / zoom)
+            offset = choose_automatic_offset(result.anchor_px, width, height, occupied=occupied, image_rect=QRectF(0, 0, *document.image_size), gap=18 / zoom)
             layout = replace(layout, offset_px=offset)
         def mutate():
             rows = [replace(d, annotation_layout=layout) if d.id == identity else d for d in document.professional_measurements]
@@ -595,24 +610,93 @@ class ProfessionalWorkspace(QObject):
         document = self.window.project.get_document(document_id)
         measurement = document.get_measurement(identity) if document else None
         if measurement:
-            from PySide6.QtWidgets import QDialog, QDialogButtonBox
-            dialog = QDialog(self.window); dialog.setWindowTitle("标注属性")
-            layout = QVBoxLayout(dialog)
-            leader = QCheckBox("显示虚线引出"); number = QCheckBox("显示测量编号")
-            current = measurement.annotation_layout or MeasurementAnnotationLayout()
-            leader.setChecked(current.show_leader); number.setChecked(current.show_identifier)
-            layout.addWidget(leader); layout.addWidget(number)
-            leader.setText("显示尺寸界线 / 引出线")
-            style = QComboBox()
-            style.addItem("单引出：连接结果与测量位置", "single")
-            style.addItem("双端引出：两端尺寸界线 + 尺寸线", "dual")
-            style.setCurrentIndex(style.findData(current.leader_style))
-            style.setEnabled(measurement.measurement_kind == "line")
-            layout.addWidget(style)
-            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-            buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject); layout.addWidget(buttons)
-            if dialog.exec():
-                self.legacy_layout_changed(document_id, identity, replace(current, show_leader=leader.isChecked(), show_identifier=number.isChecked(), leader_style=style.currentData()))
+            self._annotation_properties(measurement.measurement_kind,
+                measurement.annotation_layout or MeasurementAnnotationLayout(),
+                can_dual=measurement.measurement_kind == "line",
+                can_symbol=measurement.measurement_kind == "line",
+                apply=lambda layout: self.legacy_layout_changed(document_id, identity, layout))
+
+    def professional_properties(self, controller, definition):
+        result = controller.results()[definition.id]
+        def can_dual_for(metric_key):
+            current = replace(definition, annotation_layout=replace(layout, metric_key=metric_key))
+            return dimension_endpoints(presentation_result(controller.canvas._document, current, result)) is not None
+        layout = definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional()
+        self._annotation_properties("professional:" + definition.kind, layout, can_dual=can_dual_for,
+            can_symbol=any(metric.key in {"radius", "diameter"} for metric in result.metrics),
+            apply=lambda changed: self.edit_layout(controller, definition.id, changed), metrics=result.metrics)
+
+    def _annotation_properties(self, kind, current, *, can_dual, can_symbol, apply, metrics=()):
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox
+        dialog = QDialog(self.window)
+        dialog.setWindowTitle("标注属性")
+        dialog.setObjectName("measurementAnnotationProperties")
+        form = QFormLayout(dialog)
+        metric_choice = QComboBox()
+        metric_choice.setObjectName("annotationMetric")
+        metric_choice.setAccessibleName("显示指标")
+        if metrics:
+            metric_choice.addItem("主指标", None)
+            for metric in metrics:
+                metric_choice.addItem(f"{metric.label} ({metric.unit})", metric.key)
+            if current.metric_key is not None and metric_choice.findData(current.metric_key) < 0:
+                metric_choice.addItem("原指标（暂不可用）", current.metric_key)
+            metric_choice.setCurrentIndex(max(0, metric_choice.findData(current.metric_key)))
+            form.addRow("显示指标", metric_choice)
+        leader = QCheckBox("显示尺寸界线 / 引出线")
+        identifier = QCheckBox("显示测量编号")
+        name = QCheckBox("显示指标名称")
+        symbol = QCheckBox("显示直径 / 半径符号")
+        for box, key in ((identifier, "annotationIdentifier"), (name, "annotationMetricName"),
+                         (symbol, "annotationSymbol"), (leader, "annotationLeader")):
+            box.setObjectName(key)
+        symbol.setEnabled(can_symbol)
+        old_symbol = current.show_symbol if current.show_symbol is not None else kind.startswith("professional:")
+        for box, checked in ((identifier, current.show_identifier), (name, current.show_metric_name),
+                             (symbol, old_symbol), (leader, current.show_leader)):
+            box.setChecked(checked)
+            form.addRow(box)
+        style = QComboBox()
+        style.setObjectName("annotationLeaderStyle")
+        style.setAccessibleName("引出样式")
+        style.addItem("单引出", "single")
+        style.addItem("双端尺寸线", "dual")
+        style.setCurrentIndex(style.findData(current.leader_style))
+        def update_style():
+            enabled = can_dual(metric_choice.currentData()) if callable(can_dual) else can_dual
+            style.setEnabled(enabled)
+            style.setToolTip("" if enabled else "当前指标没有唯一的两个端点，使用单引出。")
+        update_style()
+        metric_choice.currentIndexChanged.connect(update_style)
+        form.addRow("引出样式", style)
+        remember = QCheckBox("设为同类默认")
+        remember.setObjectName("annotationRememberForKind")
+        remember.setToolTip("用于之后新建的同类标注，重启后仍有效。")
+        form.addRow(remember)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject); form.addRow(buttons)
+        try:
+            if not dialog.exec():
+                return
+            changed = replace(current, show_leader=leader.isChecked(), show_identifier=identifier.isChecked(),
+                show_metric_name=name.isChecked(),
+                show_symbol=symbol.isChecked() if symbol.isChecked() != old_symbol else current.show_symbol,
+                leader_style=style.currentData(), metric_key=metric_choice.currentData() if metrics else current.metric_key)
+            save_default = remember.isChecked()
+        finally:
+            dialog.deleteLater()
+        if changed != current:
+            apply(replace(changed, revision=current.revision + 1))
+        if save_default:
+            from fdm.settings import AppSettingsIO
+            settings = self.window._app_settings
+            defaults = {**settings.annotation_style_defaults, kind: changed.style_fields()}
+            try:
+                AppSettingsIO.save(replace(settings, annotation_style_defaults=defaults))
+            except OSError as exc:
+                QMessageBox.warning(self.window, "保存同类标注默认值", f"已应用当前标注；无法保存同类默认值：\n{exc}")
+            else:
+                settings.annotation_style_defaults = defaults
 
     def selected(self):
         if not self.workspace_active:
@@ -655,16 +739,13 @@ class ProfessionalWorkspace(QObject):
         results = controller.results(); occupied = []
         rows = []
         zoom = max(controller.canvas._zoom, .001)
-        fm = QFontMetricsF(controller.canvas.font())
         for i, definition in enumerate(document.professional_measurements, 1):
             result = presentation_result(document, definition, results[definition.id])
-            text = result_caption(definition, result, i,
-                                  decimals=controller.canvas._settings.professional_measurement_label_decimals)
-            width, height = (fm.horizontalAdvance(text) + 14) / zoom, (fm.height() + 8) / zoom
+            width, height = self._auto_label_size(controller.canvas, definition, result, i)
             offset = choose_automatic_offset(result.anchor_px, width, height, occupied=occupied,
                 image_rect=QRectF(0, 0, *document.image_size), gap=18 / zoom)
             occupied.append(QRectF(result.anchor_px.x + offset.x - width / 2, result.anchor_px.y + offset.y - height / 2, width, height))
-            previous = definition.annotation_layout or MeasurementAnnotationLayout()
+            previous = definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional()
             rows.append(replace(definition, annotation_layout=replace(previous, placement_mode="automatic", offset_px=offset, revision=previous.revision + 1)))
         self.change(document, "整理专业测量标注", lambda: document.apply_professional_state(document.professional_features, rows, mark_dirty=False))
 

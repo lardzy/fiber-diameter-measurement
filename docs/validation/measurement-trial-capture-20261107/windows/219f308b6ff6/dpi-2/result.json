@@ -1,0 +1,65 @@
+{
+  "version": "0.4.14",
+  "platform": "windows",
+  "expected_dpr": 2.0,
+  "actual_dpr": 2.0,
+  "passed": true,
+  "themes": {
+    "light": {
+      "caption": "10.00 mm",
+      "rotation": -53.13010235415599,
+      "capture_count": 1,
+      "camera_starts": 1,
+      "blank_session": true,
+      "emphasis_pixels": {
+        "start": 11379,
+        "stop": 1880,
+        "grab": 10302,
+        "finish_border": 2127,
+        "remove": 11866,
+        "remove_area": 14288,
+        "cancel_error_pixels": 0
+      }
+    },
+    "dark": {
+      "caption": "10.00 mm",
+      "rotation": -53.13010235415599,
+      "capture_count": 1,
+      "camera_starts": 1,
+      "blank_session": true,
+      "emphasis_pixels": {
+        "start": 11369,
+        "stop": 1888,
+        "grab": 10302,
+        "finish_border": 2128,
+        "remove": 11866,
+        "remove_area": 14288,
+        "cancel_error_pixels": 0
+      }
+    }
+  },
+  "screenshots": {
+    "light-rotation.png": "a405af5081eb3c311735bfb4dd6c487fcd7056bdd7d3b9e8f80c166974993e9c",
+    "light-rotation-canvas.png": "af11fb7f807814ab4bf0bf1a579aa0f3c01fc9496c47dd67d39e3ec4bdc91a50",
+    "light-batch.png": "cde6da5d6e2c70f3cbce5a6f09fec167485be98d62057c728650a544485e1f71",
+    "light-ready.png": "9c0abc3d9b344ef2d3e9ac95f0072c13c4bd2d716a9f01837aa86e80b850eb06",
+    "light-snapshot.png": "8e40d7f17c67c5328b177f88a56aaa93cf84fa96de7ab9c2ce2bc5836b194946",
+    "light-snapshot-narrow.png": "bb1cea9fa440173f80c6dc75de13b9f13f4f988b23687f0c303f63e62e07a9a6",
+    "light-content.png": "26a02e08f7eea8720d119c02850ac7b2c184c544984a5ac10a71c9c7c1dd2dbf",
+    "light-content-narrow.png": "90254efb82a6c2108049ea524586cac3342befad56dd28e4611d41cf9e77625e",
+    "light-finish-confirm.png": "07f05c66c43c2501981e3e95dfcb293e984d9554ada18d6339cfed6d25be1ad8",
+    "light-blank-sample.png": "5dce0dfd7776fb0cfb70487f76f84d4339ca41e2814e645a62a8585c57b06d34",
+    "dark-rotation.png": "e1da6be677d282631a36941058db358fab7185fd6da40257f6af894b7f1512c6",
+    "dark-rotation-canvas.png": "eb6b075ca8b521b59749a90c51222dff5bd85cdea7072c83cec14b6c3f35b0a7",
+    "dark-batch.png": "38e7f9146f18be8f2c8b62c14a8ee68dabcf851d46fdf5b213269ee8af95b93f",
+    "dark-ready.png": "a29066f644fab9bf0bd0a06da58ef98ff276f04ad37e37d363c8a73ae3bc52e1",
+    "dark-snapshot.png": "c149c75bebe4e04facd30e2cc4104f6dd9713afba7f08e474eb01e3629a2600e",
+    "dark-snapshot-narrow.png": "721699cbb1b19f629afbeff7082e5db5114d5d48f4173d7cbc0b0b0b35b6c016",
+    "dark-content.png": "430ae5f8adcb78c79a02832c8b87d1cba0da1327a36cdef5ef68de7e4d020367",
+    "dark-content-narrow.png": "032805a134c7230ce01b9495857fa1228bfec89e101ac856d40fff0c6d67c8c6",
+    "dark-finish-confirm.png": "88724e203deb3eda07aa7fa4da9bc667c60cc886ba1d25b6b67924eaf244ae57",
+    "dark-blank-sample.png": "69651e8c15b3e48fd8b71558bb7966db84c4f08974dd1c833b3774f3b4b5bf06"
+  },
+  "scope": "Qt source runtime; synthetic preview backend, local profile and sample data",
+  "slot_errors": []
+}

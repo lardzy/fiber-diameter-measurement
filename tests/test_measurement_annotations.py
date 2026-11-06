@@ -180,7 +180,7 @@ def test_shared_bounds_and_export_include_remote_label_and_leader(kind):
     painter.end()
     label_crop = image.copy(linked.text_rect.toAlignedRect())
     assert any(bytes(label_crop.constBits()))
-    assert measurement_display_text_with_settings(measurement, document, settings).startswith("M1 · ")
+    assert measurement_display_text_with_settings(measurement, document, settings) == f"{measurement.display_value():.2f} {measurement.display_unit(document.calibration)}"
 
 
 def test_automatic_offset_is_stable_across_zoom_and_new_measurements():
@@ -239,7 +239,8 @@ def test_escape_restores_legacy_label_without_emitting_history():
         canvas.measurementAnnotationEdited.connect(lambda *args: changes.append(args))
         canvas.mousePressEvent(mouse(QEvent.Type.MouseButtonPress, start))
         canvas.mouseMoveEvent(mouse(QEvent.Type.MouseMove, start + QPointF(80, 90)))
-        assert measurement.annotation_layout is not None
+        assert measurement.annotation_layout is None
+        assert canvas._annotation_drag["preview"].annotation_layout is not None
         canvas.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier))
         assert measurement.annotation_layout is None
         assert not changes
@@ -315,6 +316,7 @@ def test_slide_label_drag_does_not_require_mounted_pixels(monkeypatch):
 
 def test_identifier_renumbering_invalidates_remaining_label_cache():
     document, first = make_document()
+    first.annotation_layout = replace(first.annotation_layout, show_identifier=True)
     later = replace(first, id="later", line_px=Line(Point(1600, 200), Point(1700, 200)))
     document.measurements.append(later)
     canvas = DocumentCanvas()
@@ -397,8 +399,13 @@ def test_drag_static_layer_is_reused_and_escape_restores_exact_pixels(kind, lead
         preview = _logical_frame(canvas)
         drag = canvas._annotation_drag
         canvas._annotation_drag = None
-        reference = _logical_frame(canvas)
-        canvas._annotation_drag = drag
+        assert measurement.annotation_layout == drag["original"]
+        measurement.annotation_layout = drag["preview"].annotation_layout
+        try:
+            reference = _logical_frame(canvas)
+        finally:
+            measurement.annotation_layout = drag["original"]
+            canvas._annotation_drag = drag
         import numpy as np
         actual = np.frombuffer(preview.constBits(), np.uint8).astype(np.int16)
         expected = np.frombuffer(reference.constBits(), np.uint8).astype(np.int16)

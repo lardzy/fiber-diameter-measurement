@@ -1,0 +1,13 @@
+qt.qpa.fonts: Populating font family aliases took 19 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost. 
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+history-proof {"kind": "ordinary", "source": "real-main-window", "old": {"x": 0.0, "y": -27.549668874172184}, "new": {"x": 25.342281879194616, "y": -10.797991021823208}, "session_undo_step": 1, "signals": 1, "esc_clean": true}
+.This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+history-proof {"kind": "slide", "source": "real-main-window", "old": {"x": 0.0, "y": -17.52808988764045}, "new": {"x": 15.910112359550595, "y": -7.011235955056179}, "session_undo_step": 1, "signals": 1, "esc_clean": true}
+.
+2 passed in 1.38s

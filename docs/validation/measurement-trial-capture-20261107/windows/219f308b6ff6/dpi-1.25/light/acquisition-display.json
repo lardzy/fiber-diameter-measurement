@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "display": {
+    "mode": "pixel",
+    "percent": 100.0,
+    "magnification": 100.0,
+    "alignment": "free"
+  },
+  "center_coordinates": "viewport",
+  "centers": {
+    "[\"camera:synthetic:source\",480,300]": [
+      0.5005208333333333,
+      0.49833333333333324
+    ]
+  }
+}

@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from PySide6.QtCore import (
     QByteArray,
+    QItemSelection,
     QItemSelectionModel,
     QModelIndex,
     QObject,
@@ -151,6 +152,14 @@ class MeasurementRecordsController(QObject):
             if key not in seen:
                 seen.add(key)
                 labels.append(label)
+        # Keep an existing category filter after its last row is reassigned.
+        # Otherwise rebuilding the table silently selects “全部类别”.
+        if self._group and self._group.casefold() not in seen:
+            names = [UNCATEGORIZED_LABEL, *(group.label.strip() or group.display_name()
+                                           for group in document.fiber_groups)]
+            match = next((name for name in names if name.casefold() == self._group.casefold()), None)
+            if match is not None:
+                labels.append(match)
         return tuple(labels)
 
     def set_filters(
@@ -212,31 +221,36 @@ class MeasurementRecordsController(QObject):
         return str(measurement_id) if measurement_id else None
 
     def select_measurement_id(self, measurement_id: str | None) -> bool:
+        # Canvas clicks explicitly replace table selection, even if the same
+        # row was still selected while the canvas had no active object.
         self.selection_model.clearSelection()
-        source_row = self.source_model.source_row_for_id(measurement_id)
-        if source_row < 0:
-            self.selection_model.setCurrentIndex(
-                QModelIndex(),
-                QItemSelectionModel.SelectionFlag.NoUpdate,
-            )
-            return False
-        source_index = self.source_model.index(
-            source_row,
-            int(MeasurementResultColumn.RESULT_SEQUENCE),
-        )
-        proxy_index = self.proxy_model.mapFromSource(source_index)
-        if not proxy_index.isValid():
-            return False
+        ids = (measurement_id,) if measurement_id is not None else ()
+        return self.select_measurement_ids(ids, primary=measurement_id) is not None
+
+    def select_measurement_ids(self, ids, *, primary=None):
+        """Restore surviving visible records by ID after sorting or rebuilding."""
+        selection = QItemSelection()
+        current = QModelIndex()
+        for identity in ids:
+            row = self.source_model.source_row_for_id(identity)
+            if row < 0:
+                continue
+            source = self.source_model.index(row, int(MeasurementResultColumn.RESULT_SEQUENCE))
+            index = self.proxy_model.mapFromSource(source)
+            if index.isValid():
+                selection.select(index, index)
+                if not current.isValid() or identity == primary:
+                    current = index
         self.selection_model.select(
-            proxy_index,
+            selection,
             QItemSelectionModel.SelectionFlag.ClearAndSelect
             | QItemSelectionModel.SelectionFlag.Rows,
         )
         self.selection_model.setCurrentIndex(
-            proxy_index,
+            current,
             QItemSelectionModel.SelectionFlag.NoUpdate,
         )
-        return True
+        return self.measurement_id_for_index(current)
 
     def _emit_counts(self, *_args) -> None:
         self.countsChanged.emit(

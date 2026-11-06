@@ -843,3 +843,69 @@ def test_roi_changes_invalidate_cached_underlays_without_scanning_geometry(
     with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
         direct = frame(canvas)
     assert logical_pixel_color(changed, 140, 140) == logical_pixel_color(direct, 140, 140)
+
+
+@pytest.mark.parametrize("scene", ["ordinary", "digital"], indirect=True)
+@pytest.mark.parametrize("identity,style", [("line", "dual"), ("line", "single"), ("edit", "single")])
+def test_dragged_label_never_returns_to_previous_tile_front(scene, identity, style):
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QMouseEvent
+    from fdm.measurement_annotation import MeasurementAnnotationLayout
+    from fdm.ui.rendering import resolve_measurement_annotation
+
+    canvas, doc, exact, _, pool, _ = scene
+    canvas.set_read_only(False)
+    measurement = doc.get_measurement(identity)
+    measurement.recalculate(None)
+    measurement.annotation_layout = MeasurementAnnotationLayout(
+        offset_px=Point(-70, 100), leader_style=style,
+    )
+    doc.select_measurement(identity)
+    field = "area_measurement_label_style" if identity == "edit" else "length_measurement_label_style"
+    canvas.set_settings(replace(canvas._settings, **{
+        field: replace(getattr(canvas._settings, field), enabled=True),
+    }))
+    doc.mark_session_dirty()
+    canvas.notify_document_visual_changed()
+    original = pixels(warm(scene))
+    layout = resolve_measurement_annotation(measurement, doc, canvas._settings, canvas.image_to_widget)
+    start = layout.text_rect.center()
+    stop = start + QPointF(35, 150)
+
+    def send(kind, pos, button, buttons):
+        global_pos = canvas.mapToGlobal(pos.toPoint())
+        event = QMouseEvent(kind, pos, QPointF(global_pos), button, buttons, Qt.KeyboardModifier.NoModifier)
+        {QEvent.Type.MouseButtonPress: canvas.mousePressEvent,
+         QEvent.Type.MouseMove: canvas.mouseMoveEvent,
+         QEvent.Type.MouseButtonRelease: canvas.mouseReleaseEvent}[kind](event)
+
+    positions = []
+    def commit(document_id, item_id, layout):
+        assert (document_id, item_id) == (doc.id, identity)
+        positions.append(layout)
+        measurement.annotation_layout = layout
+        doc.mark_session_dirty()
+        canvas.notify_document_visual_changed()
+    canvas.measurementAnnotationEdited.connect(commit)
+    left = Qt.MouseButton.LeftButton
+    send(QEvent.Type.MouseButtonPress, start, left, left)
+    send(QEvent.Type.MouseMove, stop, Qt.MouseButton.NoButton, left)
+    moving = pixels(frame(canvas))
+    send(QEvent.Type.MouseButtonRelease, stop, left, Qt.MouseButton.NoButton)
+    assert len(positions) == 1
+    assert positions[0] == measurement.annotation_layout
+
+    def ink(image, point):
+        roi = logical_region(image, canvas, left=point.x()-15, top=point.y()-6,
+                             right=point.x()+15, bottom=point.y()+6)
+        return (255.0-roi[:, :, :3]).mean()
+    assert ink(original, start) > 40 and ink(original, stop) < 2
+    assert ink(moving, start) < 2 and ink(moving, stop) > 40
+    for _ in range(15):
+        shown = pixels(frame(canvas))
+        assert ink(shown, start) < 2 and ink(shown, stop) > 40
+        if not pool.jobs:
+            break
+        pool.complete(exact, 1)
+    stable = pixels(warm(scene))
+    assert ink(stable, start) < 2 and ink(stable, stop) > 40

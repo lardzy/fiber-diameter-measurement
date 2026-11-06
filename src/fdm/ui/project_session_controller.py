@@ -553,7 +553,10 @@ class ProjectSessionController:
                 commit_editors()
             except ValueError as exc:
                 return ProjectSaveResult(False, message=str(exc))
-        if not self._ordered_persisted_document_sources() and not host.project.live_experiments:
+        # Removing the last sample is a persistable edit, even when the next
+        # untouched sample is still a draft outside the project.
+        if (not self._ordered_persisted_document_sources() and not host.project.live_experiments
+                and not host.project.has_removed_live_trial):
             host._show_project_information("保存项目", "请先打开图片或建立实时试验。")
             return ProjectSaveResult(False, message="当前项目没有文档或试验。")
         target_path = Path(path) if path else host._project_path

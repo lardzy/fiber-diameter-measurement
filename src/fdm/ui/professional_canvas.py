@@ -147,7 +147,7 @@ class ProfessionalCanvasController:
             definition = document.get_professional_measurement(identity)
             if definition is None or (definition.focus_index is not None and definition.focus_index != self.focus()):
                 continue
-            if label.text_rect.contains(pos):
+            if label.contains_text(pos):
                 return identity
         return None
 
@@ -215,7 +215,7 @@ class ProfessionalCanvasController:
                 self.context_menu(identity, event.globalPosition().toPoint()); return True
             self.workspace.select(identity)
             definition = self.canvas._document.get_professional_measurement(identity)
-            layout = definition.annotation_layout or MeasurementAnnotationLayout()
+            layout = definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional()
             result = presentation_result(self.canvas._document, definition, self.results()[identity])
             center = self.canvas.widget_to_image(self.label_hits[identity].text_rect.center())
             initial = Point(center.x-result.anchor_px.x, center.y-result.anchor_px.y)
@@ -318,7 +318,7 @@ class ProfessionalCanvasController:
 
     def context_menu(self, identity, position):
         definition = self.canvas._document.get_professional_measurement(identity)
-        layout = definition.annotation_layout or MeasurementAnnotationLayout()
+        layout = definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional()
         menu = QMenu(self.canvas)
         automatic = menu.addAction("恢复自动位置")
         leader = menu.addAction("显示 / 隐藏引出线")
@@ -328,7 +328,8 @@ class ProfessionalCanvasController:
         single.setCheckable(True); dual.setCheckable(True)
         single.setChecked(layout.leader_style == "single"); dual.setChecked(layout.leader_style == "dual")
         dual.setEnabled(dimension_endpoints(presentation_result(self.canvas._document, definition, self.results()[identity])) is not None)
-        number = menu.addAction("标注属性：显示 / 隐藏编号")
+        properties = menu.addAction("标注属性…")
+        number = menu.addAction("显示 / 隐藏编号")
         supplement = menu.addAction("切换补角") if definition.kind in {"angle", "line_angle"} else None
         metric_menu = menu.addMenu("标注属性：显示指标")
         metric_actions = {}
@@ -344,6 +345,8 @@ class ProfessionalCanvasController:
             self.workspace.edit_layout(self, identity, replace(layout, show_leader=not layout.show_leader))
         elif chosen is single or chosen is dual:
             self.workspace.edit_layout(self, identity, replace(layout, leader_style="dual" if chosen is dual else "single"))
+        elif chosen is properties:
+            self.workspace.professional_properties(self, definition)
         elif chosen is number:
             self.workspace.edit_layout(self, identity, replace(layout, show_identifier=not layout.show_identifier))
         elif chosen in metric_actions:
@@ -381,7 +384,7 @@ class ProfessionalCanvasController:
             results = evaluate_document(scratch)
         mode = getattr(self.canvas, "_screen_label_mode", "all")
         label_decimals = self.canvas._settings.professional_measurement_label_decimals
-        arguments = dict(results=results, focus_index=self.focus(), label_decimals=label_decimals,
+        arguments = dict(results=results, focus_index=self.focus(), label_decimals=label_decimals, settings=self.canvas._settings,
                          selected_id=document.selected_professional_id, hovered_id=self.hovered_id,
                          show_labels=mode != "hidden", selected_labels_only=mode == "selected")
         dpr = self.canvas.devicePixelRatioF()
@@ -391,7 +394,7 @@ class ProfessionalCanvasController:
             origin = self.canvas.image_to_widget(Point(0, 0))
             cache_key = (self._results_key, identity, width, height, dpr, self.canvas._zoom,
                          origin.x(), origin.y(), self.focus(), painter.font().toString(),
-                         document.selected_professional_id, self.hovered_id, mode, label_decimals,
+                         document.selected_professional_id, self.hovered_id, mode, label_decimals, self.canvas._canvas_visual_settings_signature,
                          tuple((d.id, d.annotation_layout) for d in document.professional_measurements))
             if self._drag_layer is None or self._drag_layer_key != cache_key:
                 layer = QImage(width, height, QImage.Format.Format_ARGB32_Premultiplied)

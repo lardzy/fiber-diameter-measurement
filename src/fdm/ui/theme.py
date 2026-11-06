@@ -437,6 +437,15 @@ def build_application_stylesheet() -> str:
             background: palette(highlight); color: palette(highlighted-text);
             border: 1px solid palette(highlight); font-weight: 600;
         }
+        QPushButton[emphasis="stop"], QToolButton[emphasis="stop"] {
+            color: palette(window-text); border: 2px solid @accent;
+        }
+        QPushButton[emphasis="warning"], QToolButton[emphasis="warning"] {
+            color: @warning; border: 1px solid @warning;
+        }
+        QPushButton[emphasis="destructive"] {
+            background: @error; color: palette(window); border: 1px solid @error; font-weight: 600;
+        }
         QPushButton:disabled, QToolButton:disabled {
             color: @disabled; background: palette(window); border-color: palette(mid);
         }

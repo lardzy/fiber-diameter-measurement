@@ -1,0 +1,22 @@
+{
+  "tests": {
+    "annotations": {
+      "passed": 305,
+      "subtests": 21
+    },
+    "canvas": {
+      "passed": 168,
+      "subtests": 0
+    },
+    "trial": {
+      "passed": 135,
+      "subtests": 0
+    },
+    "capture": {
+      "passed": 44,
+      "subtests": 3
+    }
+  },
+  "passed": 652,
+  "subtests": 24
+}

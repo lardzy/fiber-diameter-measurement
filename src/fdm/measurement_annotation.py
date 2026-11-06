@@ -12,15 +12,24 @@ from typing import Any
 from fdm.geometry import Point
 
 
+
+ANNOTATION_STYLE_FIELDS = (
+    "show_leader", "show_identifier", "leader_style", "show_metric_name", "show_symbol", "metric_key",
+)
+
+
 @dataclass(frozen=True, slots=True)
 class MeasurementAnnotationLayout:
     placement_mode: str = "automatic"
     offset_px: Point | None = None
     show_leader: bool = True
-    show_identifier: bool = True
+    show_identifier: bool = False
     revision: int = 1
     metric_key: str | None = None
     leader_style: str = "single"
+    show_metric_name: bool = False
+    # None preserves the v1 convention: professional dimensions used symbols, ordinary lines did not.
+    show_symbol: bool | None = False
 
     def __post_init__(self) -> None:
         if self.placement_mode not in {"automatic", "manual"}:
@@ -35,7 +44,10 @@ class MeasurementAnnotationLayout:
             object.__setattr__(self, "offset_px", Point(float(self.offset_px.x), float(self.offset_px.y)))
         if self.placement_mode == "manual" and self.offset_px is None:
             raise ValueError("Manual annotation requires an image-space offset")
-        if type(self.show_leader) is not bool or type(self.show_identifier) is not bool:
+        flags = (self.show_leader, self.show_identifier, self.show_metric_name)
+        if self.show_symbol is not None:
+            flags += (self.show_symbol,)
+        if not all(type(flag) is bool for flag in flags):
             raise ValueError("Annotation display flags must be boolean")
         if type(self.revision) is not int or self.revision < 1:
             raise ValueError("Annotation revision must be a positive integer")
@@ -46,6 +58,15 @@ class MeasurementAnnotationLayout:
     def with_automatic_position(self) -> MeasurementAnnotationLayout:
         return replace(self, placement_mode="automatic", offset_px=None, revision=self.revision + 1)
 
+    @classmethod
+    def legacy_professional(cls) -> MeasurementAnnotationLayout:
+        """v1 professional definitions with no layout still displayed verbose text."""
+        return cls(show_identifier=True, show_metric_name=True, show_symbol=None)
+
+    def style_fields(self) -> dict[str, Any]:
+        """Only these choices may be shared between new objects."""
+        return {key: getattr(self, key) for key in ANNOTATION_STYLE_FIELDS}
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "placement_mode": self.placement_mode,
@@ -53,6 +74,10 @@ class MeasurementAnnotationLayout:
             "show_leader": self.show_leader,
             "show_identifier": self.show_identifier,
             "revision": self.revision,
+            # A v1 layout omitted both flags and always printed metric names
+            # and supported symbols. Preserve its serialized appearance.
+            **({"show_metric_name": False} if not self.show_metric_name else {}),
+            **({"show_symbol": self.show_symbol} if self.show_symbol is not None else {}),
             "metric_key": self.metric_key,
             "leader_style": self.leader_style,
         }
@@ -69,6 +94,8 @@ class MeasurementAnnotationLayout:
             offset_px=Point.from_dict(raw) if isinstance(raw, dict) else None,
             show_leader=payload.get("show_leader", True),
             show_identifier=payload.get("show_identifier", True),
+            show_metric_name=payload.get("show_metric_name", True),
+            show_symbol=payload.get("show_symbol"),
             revision=payload.get("revision", 1),
             metric_key=payload.get("metric_key"),
             leader_style=payload.get("leader_style", "single"),

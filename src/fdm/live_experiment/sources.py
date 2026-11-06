@@ -7,8 +7,8 @@ from PySide6.QtCore import QObject, QTimer
 
 
 class CameraFrameSource(QObject):
-    def __init__(self, capture_manager, frame_callback, error_callback):
-        super().__init__()
+    def __init__(self, capture_manager, frame_callback, error_callback, *, parent=None):
+        super().__init__(parent)
         self.manager = capture_manager
         self.frame_callback, self.error_callback = frame_callback, error_callback
         self._subscription = None
@@ -18,6 +18,8 @@ class CameraFrameSource(QObject):
         self._watchdog = QTimer(self)
         self._watchdog.setInterval(500)
         self._watchdog.timeout.connect(self._check_arrivals)
+        if parent is not None:
+            parent.destroyed.connect(self.stop)
 
     def start(self):
         if self._active:

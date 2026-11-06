@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 import pytest
+from PySide6.QtCore import QCoreApplication, QEvent, QObject
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
 
@@ -71,6 +72,19 @@ def test_disconnect_and_recovery_rearm_arrival_watchdog(app):
     source.stop()
     source._on_state(CaptureState("faulted", 1, message="late"))
     assert errors[-1] != "late"
+
+
+def test_destroying_trial_releases_subscription_before_late_frames(app):
+    owner = QObject()
+    manager, received, errors = Manager(), [], []
+    source = CameraFrameSource(manager, received.append, errors.append, parent=owner)
+    source.start()
+    manager.frame(1)
+    owner.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert manager.closes == 1 and not manager.subscriptions
+    manager.frame(2)
+    assert len(received) == 1 and not errors
 
 
 def test_subscription_release_does_not_stop_an_existing_camera(app, monkeypatch):

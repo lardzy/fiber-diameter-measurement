@@ -43,7 +43,7 @@ def test_caption_uses_fixed_decimals_and_normalizes_only_rounded_negative_zero(v
     definition = MeasurementDefinition("dimension", "image", "distance", ("feature",))
     metric = MeasurementMetric("distance", "距离", value, "µm")
     result = MeasurementResult(definition.id, "ready", metrics=(metric,))
-    assert result_caption(definition, result, 12, decimals=decimals) == f"P12 · 距离 {number} µm"
+    assert result_caption(definition, result, 12, decimals=decimals) == f"{number} µm"
     assert result.primary is metric and metric.value == value
 
 
@@ -55,7 +55,7 @@ def test_caption_uses_fixed_decimals_and_normalizes_only_rounded_negative_zero(v
 ])
 def test_all_metrics_share_label_precision_without_losing_selected_metric_identity(key, label, unit, symbol):
     definition = MeasurementDefinition("dimension", "image", "distance", ("feature",),
-        annotation_layout=MeasurementAnnotationLayout(show_identifier=False, metric_key=key))
+        annotation_layout=MeasurementAnnotationLayout(show_identifier=False, show_metric_name=True, show_symbol=True, metric_key=key))
     result = MeasurementResult(definition.id, "ready", metrics=(
         MeasurementMetric("distance", "距离", 99.123, "px"),
         MeasurementMetric(key, label, 25, unit),
@@ -66,9 +66,9 @@ def test_all_metrics_share_label_precision_without_losing_selected_metric_identi
 def test_invalid_and_missing_metrics_retain_explanation():
     definition = MeasurementDefinition("dimension", "image", "distance", ("feature",))
     assert result_caption(definition, MeasurementResult(definition.id, "invalid", reason="零长度直线"),
-                          2, decimals=8) == "P2 · 无效：零长度直线"
+                          2, decimals=8) == "无效：零长度直线"
     assert result_caption(definition, MeasurementResult(definition.id, "ready"),
-                          2, decimals=0) == "P2 · 无有效指标"
+                          2, decimals=0) == "无有效指标"
 
 
 @pytest.mark.parametrize("leader_style", ["single", "dual"])
@@ -208,6 +208,13 @@ def _verify_overlay_export_precision(window, document, workspace, tmp_path, monk
     original = controller.canvas._image.copy()
     calls = []
     from fdm.ui import professional_rendering
+    layouts = []
+    resolver = professional_rendering.professional_label_layout
+    def capture_layout(*args, **kwargs):
+        caption, layout = resolver(*args, **kwargs)
+        layouts.append((kwargs["scale"], layout.angle))
+        return caption, layout
+    monkeypatch.setattr(professional_rendering, "professional_label_layout", capture_layout)
     original_caption = professional_rendering.result_caption
 
     def caption(*args, **kwargs):
@@ -218,14 +225,23 @@ def _verify_overlay_export_precision(window, document, workspace, tmp_path, monk
     mode = ExportImageRenderMode.CURRENT_VIEWPORT if context else ExportImageRenderMode.FULL_RESOLUTION
     images = []; raw = []; csv_contents = []; excel_values = []
     for decimals in (2, 8):
-        window._activate_app_settings(replace(window._app_settings, professional_measurement_label_decimals=decimals))
+        size_space = "legacy_output_px" if decimals == 2 else "image_px"
+        window._activate_app_settings(replace(window._app_settings, professional_measurement_label_decimals=decimals,
+            measurement_text_size_space=size_space,
+            length_measurement_label_style=replace(window._app_settings.length_measurement_label_style, parallel_to_line=True)))
+        layouts.clear()
         calls.clear(); _paint(controller)
         assert calls and set(calls) == {decimals}
-        calls.clear()
+        assert layouts and all(angle != 0 for _, angle in layouts)
+        screen_scale, screen_angle = layouts[-1]
+        assert screen_scale == pytest.approx(controller.canvas._zoom if size_space == "image_px" else 1.)
+        calls.clear(); layouts.clear()
         output = tmp_path / f"overlay-{decimals}.png"
         window._render_overlay_image(document, output, include_measurements=True, include_scale=False,
             include_annotations=True, render_mode=mode, render_context=context)
         assert calls and set(calls) == {decimals}
+        assert layouts and layouts[-1][1] == pytest.approx(screen_angle)
+        assert layouts[-1][0] == pytest.approx(1.)  # Full image or original-resolution viewport export.
         images.append(QImage(str(output)))
         raw_output = tmp_path / f"raw-{decimals}.png"
         window._render_overlay_image(document, raw_output, include_measurements=False, include_scale=False,

@@ -121,6 +121,31 @@ class WeightInput(NoWheelDoubleSpinBox):
         return self.locale().toString(value, "f", self.decimals()).rstrip("0").rstrip(self.locale().decimalPoint()) or "0"
 
 
+def style_sample_change_button(button, palette):
+    """Style the actual button, above the sidebar or platform dialog button rules."""
+    from fdm.ui.theme import semantic_colors
+    from PySide6.QtGui import QColor
+
+    colors = semantic_colors(palette)
+    warning = button.property("emphasis") == "warning"
+    background = palette.color(palette.ColorRole.Base).name() if warning else colors.error
+    foreground = colors.warning if warning else palette.color(palette.ColorRole.Window).name()
+    border = colors.warning if warning else colors.error
+    hover = colors.warning_background if warning else colors.error
+    pressed = QColor(hover).darker(110).name()
+    style = f"""
+        QPushButton {{ border: 2px solid {border}; border-radius: 4px;
+                       background: {background}; color: {foreground}; font-weight: 600; }}
+        QPushButton:hover {{ background: {hover}; border-color: {foreground}; }}
+        QPushButton:pressed {{ background: {pressed}; }}
+        QPushButton:focus {{ border: 2px dashed {foreground}; }}
+        QPushButton:disabled {{ color: {colors.disabled}; background: palette(button);
+                                border: 2px solid {colors.border}; }}
+    """
+    if button.styleSheet() != style:
+        button.setStyleSheet(style)
+
+
 def apply_trial_theme(view):
     from fdm.ui.theme import semantic_colors
     palette = QApplication.palette()
@@ -163,6 +188,8 @@ def apply_trial_theme(view):
         if hasattr(view, "evidence_button"):
             from fdm.ui.icons import themed_icon
             view.evidence_button.setIcon(themed_icon("open_images"))
+    if hasattr(view, "finish_trial_button"):
+        style_sample_change_button(view.finish_trial_button, palette)
 
 
 def build_trial_view(v):
@@ -255,9 +282,16 @@ def build_trial_view(v):
     v.sample_details_toggle.setMinimumWidth(72)
     v.sample_summary = v.sample_details_toggle
     header.addWidget(v.sample_details_toggle, 1)
-    v.new_trial_button = button("新建", lambda: v._new_experiment(), header, "add")
-    v.switch_trial_button = button("切换", v._choose_experiment, header, "open_project")
-    v.return_capture_button = button("返回采集", lambda: v._return_to_capture(), header, "acquisition")
+    if v.session.workspace_options["mode"] == "content":
+        v.switch_trial_button = button("切换", v._choose_experiment, header, "open_project")
+        v.switch_trial_button.setToolTip("选择已有含量试验，或保留本次记录并新建试验")
+        v.finish_trial_button = button("结束并换样", v._finish_content_trial, header, "stop_capture")
+        v.finish_trial_button.setProperty("emphasis", "warning")
+        v.finish_trial_button.setToolTip("移除当前含量试验，开始空白试验")
+    else:
+        v.new_trial_button = button("新建", v._new_experiment, header, "add")
+        v.switch_trial_button = button("切换", v._choose_experiment, header, "open_project")
+        v.return_capture_button = button("返回采集", v._return_to_capture, header, "acquisition")
     metadata_layout.addLayout(header)
     # Retain data-binding labels without introducing another title row.
     v.sample_title = QLabel(v.session.sample_name or "新试验", side)

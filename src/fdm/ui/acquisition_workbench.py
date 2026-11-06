@@ -352,7 +352,17 @@ class AcquisitionWorkbench(QWidget):
         label = {"starting": "连接中", "streaming": "采集中", "stopping": "停止中", "faulted": "连接异常"}.get(state, "未启动")
         self.capture_button.setText("停止中…" if stopping else "停止采集" if active else "重试采集" if self._error_message else "开始采集")
         self.capture_button.setEnabled(not stopping)
-        self.device_status.setText((device.name if device else "未选择设备") + " · " + label)
+        emphasis = "stop" if active or stopping else "primary"
+        if self.capture_button.property("emphasis") != emphasis:
+            self.capture_button.setProperty("emphasis", emphasis)
+            self.capture_button.style().unpolish(self.capture_button)
+            self.capture_button.style().polish(self.capture_button)
+        tone = {"streaming": "success", "faulted": "error", "stopping": "warning"}.get(state, "info")
+        if self.device_status.property("statusTone") != tone:
+            self.device_status.setProperty("statusTone", tone)
+            self.device_status.style().unpolish(self.device_status)
+            self.device_status.style().polish(self.device_status)
+        self.device_status.setText(("● " if state == "streaming" else "") + (device.name if device else "未选择设备") + " · " + label)
         self.device_status.setToolTip(self.device_status.text())
         if active and not stopping and not self._error_message:
             self.feedback.hide()
