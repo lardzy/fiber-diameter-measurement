@@ -77,7 +77,8 @@ def test_label_covering_shared_endpoint_leaves_point_input_to_active_tool(tool):
         canvas.set_tool_mode("select")
         canvas.mousePressEvent(mouse(QEvent.Type.MouseButtonPress, end))
         canvas.mouseReleaseEvent(mouse(QEvent.Type.MouseButtonRelease, end))
-        assert requests == [(document.id, measurement.id)]
+        assert canvas._document.view_state.selected_measurement_id == measurement.id
+        assert not requests
     finally:
         canvas.clear_document()
         canvas.close()

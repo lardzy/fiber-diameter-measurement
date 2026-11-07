@@ -15,6 +15,7 @@ import numpy as np
 from PySide6.QtCore import QEvent, QPointF, QRectF, QTimer, Qt, Signal
 from PySide6.QtGui import (
     QColor,
+    QCursor,
     QImage,
     QMouseEvent,
     QPainter,
@@ -1053,6 +1054,7 @@ class DocumentCanvas(QWidget):
         self._drawing_anchor_raw: Point | None = None
         self._drawing_line: Line | None = None
         self._line_commit_on_second_click = False
+        self._extension_press_pos: QPointF | None = None
         self._line_tool_strategy = LineToolStrategy()
         self._continuous_manual_tool_strategy = ContinuousManualToolStrategy()
         self._count_tool_strategy = CountToolStrategy()
@@ -1066,6 +1068,7 @@ class DocumentCanvas(QWidget):
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
         self._hovered_line_endpoint: tuple[str, str] | None = None
+        self._hovered_for_extension = False
 
         self._dragging_area_handle: tuple[str, str, int | None, int | None] | None = None
         self._drag_area_preview_points: list[Point] | None = None
@@ -4653,8 +4656,6 @@ class DocumentCanvas(QWidget):
             if self._annotation_drag is drag and drag["measurement"].annotation_layout == layout:
                 self._annotation_handoff_id = measurement_id
         self._cancel_measurement_annotation_drag()
-        if not moved and self._document is not None and self._document.get_measurement(measurement_id) is drag["measurement"]:
-            self.measurementAnnotationPropertiesRequested.emit(self._document.id, measurement_id)
         return True
 
     def _measurement_annotation_context_menu(self, measurement, position) -> None:
@@ -4741,6 +4742,8 @@ class DocumentCanvas(QWidget):
             painter.restore()
 
     def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Alt:
+            self._refresh_extension_hover(extend=True)
         if self._annotation_drag is not None and event.key() == Qt.Key.Key_Escape:
             self._cancel_measurement_annotation_drag()
             event.accept()
@@ -4820,6 +4823,8 @@ class DocumentCanvas(QWidget):
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Alt:
+            self._refresh_extension_hover(extend=False)
         if event.key() == Qt.Key.Key_Space and not getattr(event, "isAutoRepeat", lambda: False)():
             self.set_temporary_grab_pressed(False)
             event.accept()
@@ -5386,11 +5391,15 @@ class DocumentCanvas(QWidget):
                 return
 
         selected_handle = None
+        extension_anchor = None
         if self._tool_mode == "manual":
-            selected_handle = self._hit_test_selected_endpoint(
-                image_point,
-                tolerance=self._manual_line_endpoint_tolerance(),
-            )
+            if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+                extension_anchor = self._line_endpoint_point(self._manual_extension_endpoint(image_point))
+            else:
+                selected_handle = self._hit_test_selected_endpoint(
+                    image_point,
+                    tolerance=self._manual_line_endpoint_tolerance(),
+                )
         elif self._tool_mode == "select":
             selected_handle = self._hit_test_selected_endpoint(
                 image_point,
@@ -5438,8 +5447,11 @@ class DocumentCanvas(QWidget):
 
         if self._point_in_image(image_point):
             self._set_hovered_line_endpoint(None)
-            anchor = self._anchor_point_for_event(image_point, event.modifiers())
+            anchor = extension_anchor or self._anchor_point_for_event(image_point, event.modifiers())
             self._begin_line_drawing(anchor)
+            if extension_anchor is not None:
+                self._extension_press_pos = event.position()
+                self._set_active_snap_candidate(None)
             self._update_preview_regions(
                 [],
                 [anchor],
@@ -5586,13 +5598,8 @@ class DocumentCanvas(QWidget):
 
         if self._drawing_anchor_raw is not None:
             previous_line = self._drawing_line
-            start, end = self._apply_line_constraints(
-                self._drawing_anchor_raw,
-                image_point,
-                event.modifiers(),
-                snap_anchor=True,
-            )
-            self._drawing_line = Line(start=start, end=end)
+            preview = self._line_drag_preview(self._drawing_anchor_raw, image_point, event.modifiers())
+            self._drawing_line = preview
             if self.document_id is not None:
                 self.pathSessionChanged.emit(self.document_id)
             self._update_preview_regions(
@@ -5601,7 +5608,7 @@ class DocumentCanvas(QWidget):
                     if previous_line is not None
                     else [self._drawing_anchor_raw]
                 ),
-                [start, end],
+                [preview.start, preview.end],
                 padding_screen=18.0,
             )
             return
@@ -5790,8 +5797,9 @@ class DocumentCanvas(QWidget):
         self._update_line_endpoint_hover(
             image_point,
             widget_point=event.position(),
+            extend=bool(event.modifiers() & Qt.KeyboardModifier.AltModifier),
         )
-        if self._object_snap_pointer_enabled():
+        if self._object_snap_pointer_enabled() and not self._hovered_for_extension:
             self._query_object_snap(image_point)
         else:
             self._set_active_snap_candidate(None)
@@ -5913,7 +5921,15 @@ class DocumentCanvas(QWidget):
             if self._line_commit_on_second_click:
                 self.update()
                 return
-            line = self._line_tool_strategy.commit_payload(self._drawing_line)
+            final_line = self._drawing_line
+            if self._extension_press_pos is not None:
+                if self._extension_press_pos == event.position():
+                    final_line = None
+                else:
+                    final_line = self._line_drag_preview(
+                        final_line.start, self.widget_to_image(event.position()), event.modifiers()
+                    )
+            line = self._line_tool_strategy.commit_payload(final_line)
             self._cancel_line_drawing()
             if line is not None:
                 self.lineCommitted.emit(self._document.id, self._tool_mode, line)
@@ -9932,14 +9948,18 @@ class DocumentCanvas(QWidget):
     def _set_hovered_line_endpoint(
         self,
         endpoint: tuple[str, str] | None,
+        *,
+        extend: bool = False,
     ) -> bool:
         if endpoint is not None and self._line_endpoint_point(endpoint) is None:
             endpoint = None
         previous = self._hovered_line_endpoint
-        if previous == endpoint:
+        extend = bool(extend and endpoint is not None)
+        if previous == endpoint and self._hovered_for_extension == extend:
             return False
         previous_bounds = self._line_endpoint_control_bounds(previous)
         self._hovered_line_endpoint = endpoint
+        self._hovered_for_extension = extend
         next_bounds = self._line_endpoint_control_bounds(endpoint)
         # Update both handles independently.  Uniting distant endpoints would
         # turn a hover transition into a repaint spanning the complete line.
@@ -9956,6 +9976,7 @@ class DocumentCanvas(QWidget):
         image_point: Point,
         *,
         widget_point: QPointF | None = None,
+        extend: bool = False,
     ) -> tuple[str, str] | None:
         if (
             self._read_only
@@ -9965,6 +9986,8 @@ class DocumentCanvas(QWidget):
         ):
             return None
         if self._tool_mode == "manual":
+            if extend:
+                return self._manual_extension_endpoint(image_point)
             return self._hit_test_selected_endpoint(
                 image_point,
                 tolerance=self._manual_line_endpoint_tolerance(),
@@ -10008,13 +10031,26 @@ class DocumentCanvas(QWidget):
         image_point: Point,
         *,
         widget_point: QPointF | None = None,
+        extend: bool = False,
     ) -> None:
         self._set_hovered_line_endpoint(
             self._line_endpoint_hover_candidate(
                 image_point,
                 widget_point=widget_point,
-            )
+                extend=extend,
+            ),
+            extend=extend and self._tool_mode == "manual",
         )
+
+    def _refresh_extension_hover(self, *, extend: bool) -> None:
+        if self._tool_mode == "manual" and self.underMouse() and not self._has_pointer_edit_operation():
+            position = QPointF(self.mapFromGlobal(QCursor.pos()))
+            point = self.widget_to_image(position)
+            self._update_line_endpoint_hover(point, widget_point=position, extend=extend)
+            if self._hovered_for_extension:
+                self._set_active_snap_candidate(None)
+            else:
+                self._query_object_snap(point)
 
     def _draw_line_endpoint_controls(self, painter: QPainter) -> None:
         if (
@@ -10126,6 +10162,23 @@ class DocumentCanvas(QWidget):
             if endpoint_distance <= tolerance:
                 return measurement.id, endpoint_name
         return None
+
+    def _manual_extension_endpoint(self, point: Point) -> tuple[str, str] | None:
+        if not self._point_in_image(point):
+            return None
+        tolerance = self._manual_line_endpoint_tolerance()
+        closest = None
+        best_distance = float("inf")
+        for measurement in self._measurement_candidates(point, tolerance=tolerance):
+            if measurement.measurement_kind != "line":
+                continue
+            line = measurement.effective_line()
+            for name, endpoint in (("start", line.start), ("end", line.end)):
+                gap = distance(endpoint, point)
+                if gap <= tolerance and gap < best_distance and self._point_in_image(endpoint):
+                    closest = (measurement.id, name)
+                    best_distance = gap
+        return closest
 
     def _hit_test_selected_area_handle(self, image_point: Point) -> tuple[str, str, int | None, int | None] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:
@@ -10571,6 +10624,13 @@ class DocumentCanvas(QWidget):
             snap_to_pixel=use_ctrl,
         )
 
+    def _line_drag_preview(self, anchor: Point, point: Point, modifiers: Qt.KeyboardModifiers) -> Line:
+        from_endpoint = self._extension_press_pos is not None
+        start, end = self._apply_line_constraints(anchor, point, modifiers, snap_anchor=not from_endpoint)
+        # Existing subpixel endpoints can lie beyond the last integer pixel center.
+        # Constraints apply to the free end; the shared start is already valid.
+        return Line(anchor if from_endpoint else start, end)
+
     def _object_snap_pointer_enabled(self) -> bool:
         if (
             self._document is None
@@ -10898,6 +10958,7 @@ class DocumentCanvas(QWidget):
             self.snapCandidateChanged.emit(self._document.id, self._active_snap_candidate)
 
     def _begin_line_drawing(self, anchor: Point, *, commit_on_second_click: bool = False) -> None:
+        self._extension_press_pos = None
         state = self._line_tool_strategy.begin(anchor, commit_on_second_click=commit_on_second_click)
         self._drawing_anchor_raw = state.anchor_raw
         self._drawing_line = state.preview_line
@@ -10906,6 +10967,7 @@ class DocumentCanvas(QWidget):
             self.pathSessionChanged.emit(self.document_id)
 
     def _cancel_line_drawing(self) -> None:
+        self._extension_press_pos = None
         previous_line = self._drawing_line
         had_line = previous_line is not None
         document_id = self.document_id
@@ -11587,6 +11649,8 @@ class DocumentCanvas(QWidget):
             )
         elif self._temporary_grab_active:
             cursor_shape = Qt.CursorShape.OpenHandCursor
+        elif self._tool_mode == "manual" and self._hovered_for_extension and self._hovered_line_endpoint is not None:
+            cursor_shape = Qt.CursorShape.CrossCursor
         elif (
             self._dragging_handle is not None
             or self._dragging_construction_handle is not None

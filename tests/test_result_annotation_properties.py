@@ -1,9 +1,11 @@
 """Property edits start from real records or professional result-table selections."""
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QMenu
 
 from fdm.geometry import Line, Point
 from fdm.measurement_annotation import MeasurementAnnotationLayout
+from fdm.ui.rendering import resolve_measurement_annotation
 from test_measurement_batch_properties import add_records, select_visible
 from test_metrology_workspace import _distance, mounted_window
 
@@ -15,6 +17,52 @@ def choose(editor, key, value):
             combo.setCurrentIndex(index)
             return
     raise AssertionError(f"Missing {key} option {value}")
+
+
+def test_selection_leaves_inspector_visibility_and_scroll_to_user(mounted_window, desktop_application, monkeypatch):
+    window, doc, _, _ = mounted_window()
+    window.set_tool_mode("select")
+    add_records(window, doc)
+    line = doc.get_measurement("line-b")
+    line.annotation_layout = MeasurementAnnotationLayout.ordinary_near()
+    section = window._object_properties_section
+    editor = window._object_inspector.annotation_editor
+    canvas = window.current_canvas()
+    summary = window._current_measurement_summary
+    window._inspector_dock.raise_()
+    window._records_section.setExpanded(True)
+    desktop_application.processEvents()
+
+    assert not section.isExpanded()
+    select_visible(window, ["line-b", "area-a"])
+    desktop_application.processEvents()
+    assert set(editor.target[2]) == {"line-b", "area-a"}
+    assert not section.isExpanded() and not summary.editButton.isChecked()
+    # A click on the canvas label should select that record, without scrolling to its editor.
+    select_visible(window, ["area-a"])
+    desktop_application.processEvents()
+    scroll = window._inspector_scroll.verticalScrollBar()
+    scroll.setValue(scroll.maximum())
+    previous_scroll = scroll.value()
+    label = resolve_measurement_annotation(line, doc, canvas._settings, canvas.image_to_widget)
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=label.text_rect.center().toPoint())
+    desktop_application.processEvents()
+    assert editor.target[2] == (line.id,)
+    assert not section.isExpanded() and scroll.value() == previous_scroll
+
+    class ChooseProperties(QMenu):
+        def exec(self, *_):
+            return next(action for action in self.actions() if action.text() == "标注属性…")
+
+    monkeypatch.setattr("fdm.ui.canvas.QMenu", ChooseProperties)
+    QTest.mouseClick(canvas, Qt.MouseButton.RightButton, pos=label.text_rect.center().toPoint())
+    desktop_application.processEvents()
+    assert section.isExpanded() and summary.editButton.isChecked()
+    select_visible(window, ["area-a"])
+    assert section.isExpanded() and editor.target[2] == ("area-a",)
+    summary.editButton.click()
+    select_visible(window, ["line-b"])
+    assert not section.isExpanded()
 
 
 def test_ordinary_named_default_reaches_actual_creation_and_restore_only_changes_position(mounted_window):
@@ -83,6 +131,9 @@ def test_professional_multiselection_uses_unique_definition_ids_and_one_undo(mou
     assert set(editor.target[2]) == {one.id, two.id}
     assert len(editor.targets) == 2
     assert editor.default_button.isEnabled()
+    assert not window._object_properties_section.isExpanded()
+    workspace.panel.properties_button.click()
+    assert window._object_properties_section.isExpanded()
     choose(editor, "show_identifier", True)
     choose(editor, "metric_key", "dy")
     count = doc.history.command_count

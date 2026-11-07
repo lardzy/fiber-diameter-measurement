@@ -4270,6 +4270,8 @@ class MainWindow(QMainWindow):
         active_mode = self._tool_mode if self._tool_mode in {mode for mode, _ in self._manual_tool_definitions()} else self._manual_tool_mode
         icon = self._manual_tool_icon(active_mode, active=self._tool_mode in {mode for mode, _ in self._manual_tool_definitions()})
         tooltip = f"手动测量（当前：{self._manual_tool_label(active_mode)}）"
+        if active_mode == "manual":
+            tooltip += "\n按住 Alt（Mac：Option）从已有端点拖出，可接画一条独立线段。"
         if self._manual_tool_button is not None:
             self._manual_tool_button.blockSignals(True)
             self._manual_tool_button.setText(self._manual_tool_label(active_mode))
@@ -5521,7 +5523,6 @@ class MainWindow(QMainWindow):
         pane.delete_category_button.setIcon(themed_icon("delete", color="#F28482"))
         pane.delete_all_button.setIcon(themed_icon("delete", color="#F28482"))
         pane.measurementActivated.connect(self._activate_measurement_id)
-        pane.table.clicked.connect(self._expand_selected_annotation_properties)
         pane.deleteSelectedRequested.connect(
             lambda _measurement_ids: self.delete_selected_measurement()
         )
@@ -26125,11 +26126,6 @@ class MainWindow(QMainWindow):
 
     def _edit_result_annotations(self, target, patch, operation):
         self.professional_workspace.edit_annotation_selection(target, patch, operation)
-
-    def _expand_selected_annotation_properties(self, _index=None):
-        # Keep the table under the pointer so Ctrl/Shift can extend the selection.
-        if self._measurement_workspace_active() and not self._object_inspector.annotation_editor.isHidden():
-            self._object_properties_section.setExpanded(True)
 
     def _show_result_annotation_properties(self):
         self._refresh_object_inspector()

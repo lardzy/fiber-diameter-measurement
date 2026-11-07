@@ -11,7 +11,7 @@ from test_metrology_workspace import mounted_window, _begin, _distance, _mouse, 
 
 @pytest.mark.parametrize("delta", [QPointF(0, 0), QPointF(2.9, 0), QPointF(1.9, 1.9)])
 def test_stationary_or_subthreshold_label_click_never_creates_history(mounted_window, delta):
-    _window, document, workspace, _plane = mounted_window()
+    window, document, workspace, _plane = mounted_window()
     definition = _distance(workspace)
     controller = workspace.controller()
     _paint(controller)
@@ -28,6 +28,7 @@ def test_stationary_or_subthreshold_label_click_never_creates_history(mounted_wi
     assert document.state_stamp == stamp
     assert not document.dirty_flags.session_dirty
     assert document.to_dict() == before
+    assert not window._object_properties_section.isExpanded()
 
 
 def test_drag_returning_to_original_position_does_not_commit(mounted_window):

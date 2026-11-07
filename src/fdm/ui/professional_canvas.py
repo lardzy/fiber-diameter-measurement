@@ -583,14 +583,11 @@ class ProfessionalCanvasController:
             layout = self.preview_layouts.get(identity)
             changed = layout is not None and layout.offset_px is not None and (
                 abs(layout.offset_px.x - initial.x) > 1e-9 or abs(layout.offset_px.y - initial.y) > 1e-9)
-            clicked = not self._drag_moved
             self.drag = None; self.preview_layouts.clear()
             self._drag_press_widget = None; self._drag_moved = False
             self._drag_layer = None; self._drag_layer_key = None; self._drag_layer_hits = {}
             if changed:
                 self.workspace.edit_layout(self, identity, layout)
-            elif clicked:
-                self.workspace.professional_properties(self, self.canvas._document.get_professional_measurement(identity))
             self.canvas.update(); return True
         if self.geometry_drag:
             self.mouse_move(event)

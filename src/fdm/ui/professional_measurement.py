@@ -207,7 +207,6 @@ class ProfessionalPanel(QWidget):
         self.table.verticalHeader().hide()
         self.table.setMinimumHeight(140)
         self.table.itemSelectionChanged.connect(owner.table_selection)
-        self.table.clicked.connect(owner.window._expand_selected_annotation_properties)
         self.table.setMouseTracking(True)
         self.table.itemEntered.connect(lambda item: owner.hover(item.data(Qt.ItemDataRole.UserRole)))
         self.table.viewport().installEventFilter(owner)
