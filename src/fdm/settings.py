@@ -943,8 +943,21 @@ class AppSettings:
         return styles
 
     def new_annotation_layout(self, kind: str, *, dual_supported: bool = False) -> MeasurementAnnotationLayout:
-        fields = self.annotation_style_defaults.get(kind, {})
-        layout = MeasurementAnnotationLayout(**{"leader_style": "dual" if dual_supported else "single", **fields})
+        fields = self.annotation_style_defaults.get(kind)
+        if fields is None and kind == "polyline":
+            fields = {key: value for key, value in self.annotation_style_defaults.get("line", {}).items()
+                      if key not in {"show_symbol", "metric_key"}}
+        fields = fields or {}
+        if kind.startswith("professional:"):
+            base = MeasurementAnnotationLayout(leader_style="dual" if dual_supported else "single")
+            layout = replace(base, **{**fields, "label_position": "external"})
+        else:
+            base = MeasurementAnnotationLayout.ordinary_near()
+            layout = replace(base, **fields)
+            if "label_position" not in fields:
+                # Old preference files did not distinguish locating the text
+                # near its geometry from drawing an external dimension.
+                layout = replace(layout, label_position="near", show_leader=False)
         if layout.leader_style == "dual" and not dual_supported:
             layout = replace(layout, leader_style="single")
         return layout

@@ -30,7 +30,7 @@ from fdm.area_display import (
     area_geometry_raw,
 )
 from fdm.ui.overlay_geometry_snapshot import overlay_geometry_snapshots
-from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
+from fdm.geometry import Line, Point, direction, distance, normal, point_to_segment_distance, polyline_length
 from fdm.models import (
     ImageDocument,
     Measurement,
@@ -195,6 +195,19 @@ def measurement_display_text_with_settings(
 _AUTOMATIC_ANNOTATION_OFFSETS: OrderedDict[tuple, tuple[Point, float, float]] = OrderedDict()
 
 
+def _polyline_halfway(points: list[Point]) -> tuple[Point, Line]:
+    """Return the half-length point and the segment carrying it."""
+    remaining = polyline_length(points) / 2
+    for start, end in zip(points, points[1:]):
+        length = distance(start, end)
+        if length and remaining <= length:
+            t = remaining / length
+            return Point(start.x + (end.x - start.x) * t, start.y + (end.y - start.y) * t), Line(start, end)
+        remaining -= length
+    end = points[-1]
+    return end, Line(end, end)
+
+
 def measurement_annotation_anchor(measurement: Measurement) -> Point:
     if measurement.measurement_kind == "area":
         return area_derived_geometry_service.centroid(measurement)
@@ -215,15 +228,28 @@ def resolve_measurement_annotation(
     text = measurement_display_text_with_settings(measurement, document, settings)
     text_layout = _cached_text_layout(font, text, render_mode="measurement-linked")
     width, height = (text_layout.width + 12) * text_scale, (text_layout.height + 6) * text_scale
+    axis_line = None
+    if measurement.measurement_kind == "line":
+        axis_line = measurement.effective_line()
     anchor = measurement_annotation_anchor(measurement)
+    if measurement.measurement_kind == "polyline" and measurement.polyline_px and annotation.label_position == "near":
+        path_midpoint, axis_line = _polyline_halfway(measurement.polyline_px)
+        if annotation.placement_mode == "automatic":
+            anchor = path_midpoint
     angle = 0.
-    if measurement.measurement_kind == "line" and _measurement_label_parallel_to_line(settings, measurement):
-        line = measurement.effective_line()
-        angle = readable_angle(image_to_output(line.start), image_to_output(line.end))
+    if axis_line is not None and _measurement_label_parallel_to_line(settings, measurement):
+        angle = readable_angle(image_to_output(axis_line.start), image_to_output(axis_line.end))
     radians = math.radians(angle)
     bounds_width = abs(math.cos(radians)) * width + abs(math.sin(radians)) * height
     bounds_height = abs(math.sin(radians)) * width + abs(math.cos(radians)) * height
     offset = annotation.offset_px
+    if annotation.label_position == "near" and annotation.placement_mode == "automatic":
+        if axis_line is not None:
+            nx, ny = normal(direction(axis_line))
+            gap = max(12., text_layout.height * .75) * text_scale / scale
+            offset = Point(nx * gap, ny * gap)
+        else:
+            offset = Point(0., -max(14., text_layout.height * .9) * text_scale / scale)
     if offset is None:
         key = (id(document), id(measurement), measurement.id, annotation.revision)
         cached = _AUTOMATIC_ANNOTATION_OFFSETS.get(key)

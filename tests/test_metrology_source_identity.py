@@ -186,6 +186,6 @@ def test_new_command_is_blocked_until_source_is_verified(pending, error):
     document.professional_source_revision_error = error
     controller = SimpleNamespace(canvas=SimpleNamespace(_document=document, _read_only=False))
     messages = []
-    workspace = SimpleNamespace(controller=lambda: controller, message=messages.append)
+    workspace = SimpleNamespace(workspace_active=True, controller=lambda: controller, message=messages.append)
     ProfessionalWorkspace.begin(workspace)
     assert messages

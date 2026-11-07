@@ -14,7 +14,9 @@ from typing import Any, Iterable
 
 import numpy as np
 
-from fdm.construction_geometry import ConstructionIssue, ResolvedCircle, ResolvedLine, ResolvedPoint
+from dataclasses import replace
+
+from fdm.construction_geometry import ConstructionIssue, LiveFeatureRef, ResolvedCircle, ResolvedLine, ResolvedPoint, SourceObjectKind
 from fdm.geometry import Point
 from fdm.metrology import (
     MeasurementDefinition, MeasurementFeature, MeasurementMetric,
@@ -94,14 +96,118 @@ def professional_source_unavailable_reason(document: Any) -> str | None:
     return None
 
 
-def resolve_feature(document: Any, feature: MeasurementFeature | str) -> ResolvedMeasurementFeature:
-    """Resolve live references, then fit/measure in the physical X/Y plane."""
+_SNAP_NAMES = {"point": "点", "endpoint": "端点", "midpoint": "中点", "center": "圆心",
+               "quadrant": "象限点", "intersection": "交点"}
+
+
+def source_name(document, source_type, identity):
+    if source_type == "construction":
+        entity = document.get_construction_entity(identity)
+        return "辅助对象 " + (entity.name if entity and entity.name else identity)
+    if source_type == "professional":
+        for number, definition in enumerate(document.professional_measurements, 1):
+            if identity in definition.feature_ids:
+                return f"专业测量 P{number}"
+    elif source_type == "measurement":
+        for number, measurement in enumerate(document.measurements, 1):
+            if measurement.id == identity:
+                return f"普通测量 M{number}"
+    return identity
+
+
+def control_point_source_labels(document, feature):
+    if feature.source_ref is not None:
+        ref = feature.source_ref
+        return ("关联 " + source_name(document, ref.object_kind.value, ref.object_id),)
+    if feature.professional_source_id:
+        return ("关联 " + source_name(document, "professional", feature.professional_source_id),)
+    return tuple(f"关联{_SNAP_NAMES[r.snap_kind]} · {source_name(document, r.source_type, r.source_id)}"
+                 if r else "固定坐标" for r in feature.point_refs or (None,) * len(feature.points_px))
+
+
+def professional_landmarks(resolved, scale):
+    """Use the same semantic keys for picking and subsequent re-evaluation."""
+    if not resolved.valid:
+        return {}
+    points = resolved.points_px
+    landmarks = {}
+    if resolved.kind == "point":
+        landmarks["point"] = ("point", points[0])
+    elif resolved.kind in {"line", "polyline", "polygon", "arc"}:
+        for index, point in enumerate(points):
+            landmarks[f"vertex:{index}"] = ("endpoint", point)
+        if resolved.kind != "arc":
+            ends = points[1:] + (points[:1] if resolved.kind == "polygon" else ())
+            for index, (start, end) in enumerate(zip(points, ends)):
+                landmarks[f"midpoint:{index}"] = ("midpoint", _mid(start, end))
+    if resolved.center is not None:
+        center = _pixel(resolved.center, scale)
+        landmarks["circle:center"] = ("center", center)
+        if resolved.kind == "circle":
+            rx, ry = resolved.radius / scale[0], resolved.radius / scale[1]
+            for index, (dx, dy) in enumerate(((rx, 0), (0, ry), (-rx, 0), (0, -ry))):
+                landmarks[f"circle:quadrant:{index}"] = ("quadrant", Point(center.x + dx, center.y + dy))
+    return landmarks
+
+
+def _linked_feature(document, source_id, owner, cache, visiting):
+    source = document.get_professional_feature(source_id)
+    if source is None:
+        raise ValueError("关联的专业特征已删除或不存在")
+    if source.focus_index != owner.focus_index:
+        raise ValueError("关联的专业特征属于其它焦层")
+    resolved = resolve_feature(document, source, _cache=cache, _visiting=visiting)
+    if not resolved.valid:
+        raise ValueError(resolved.error)
+    return resolved
+
+
+def control_points_px(document, feature, cache=None, visiting=frozenset()):
+    if not feature.point_refs:
+        return feature.points_px
+    from fdm.construction_document import make_construction_resolver
+    points = []
+    resolver = None
+    for saved, ref in zip(feature.points_px, feature.point_refs):
+        if ref is None:
+            points.append(saved)
+        elif ref.source_type == "professional":
+            resolved = _linked_feature(document, ref.source_id, feature, cache, visiting)
+            landmark = professional_landmarks(resolved, calibration_scale(document)).get(ref.feature_key)
+            if landmark is None:
+                raise ValueError("关联的专业几何点已失效")
+            points.append(landmark[1])
+        else:
+            if resolver is None:
+                resolver = make_construction_resolver(document)
+            shape = resolver.resolve_feature(LiveFeatureRef(document.id, ref.source_id,
+                                              SourceObjectKind(ref.source_type), ref.feature_key))
+            if not isinstance(shape, ResolvedPoint):
+                raise ValueError(shape.message if isinstance(shape, ConstructionIssue) else "关联点已失效")
+            points.append(shape.point)
+    return tuple(points)
+
+
+def resolve_feature(document: Any, feature: MeasurementFeature | str, *, _cache=None,
+                    _visiting=frozenset()) -> ResolvedMeasurementFeature:
+    """Resolve live dependencies once per evaluation; broken links stay invalid."""
     if isinstance(feature, str):
         candidate = document.get_professional_feature(feature)
         if candidate is None:
             return ResolvedMeasurementFeature(feature, "", (), (), error="来源特征已删除或不存在")
         feature = candidate
-    points_px = tuple(Point(p.x, p.y) for p in feature.points_px)
+    cache = {} if _cache is None else _cache
+    if feature.id in cache:
+        return cache[feature.id]
+    if feature.id in _visiting:
+        return ResolvedMeasurementFeature(feature.id, feature.kind, (), (), error="专业特征存在循环引用")
+    result = _resolve_feature(document, feature, cache, _visiting | {feature.id})
+    cache[feature.id] = result
+    return result
+
+
+def _resolve_feature(document, feature, cache, visiting):
+    points_px = feature.points_px
     scale = calibration_scale(document)
     quality = copy.deepcopy(feature.quality)
     try:
@@ -117,6 +223,13 @@ def resolve_feature(document: Any, feature: MeasurementFeature | str) -> Resolve
             raise ValueError("尚未核对切片来源，请重新打开后测量")
         if feature.source_revision and current_revision and feature.source_revision != current_revision:
             raise ValueError("切片拼接/来源版本已改变，请在当前来源重新拟合")
+        if feature.professional_source_id:
+            source = _linked_feature(document, feature.professional_source_id, feature, cache, visiting)
+            if source.kind != feature.kind:
+                raise ValueError("关联的专业几何类型已改变")
+            return replace(source, feature_id=feature.id)
+        if feature.point_refs:
+            points_px = control_points_px(document, feature, cache, visiting)
         if feature.source_ref is not None:
             from fdm.construction_document import make_construction_resolver
 
@@ -205,6 +318,16 @@ def freeze_feature(document: Any, feature: MeasurementFeature | str) -> Measurem
     resolved = resolve_feature(document, feature)
     if not resolved.valid:
         raise ValueError(resolved.error)
+    if feature.point_refs:
+        return feature.clone(points_px=control_points_px(document, feature), point_refs=())
+    if feature.professional_source_id:
+        points = resolved.points_px
+        if resolved.kind == "circle":
+            scale = calibration_scale(document)
+            points = tuple(_pixel(Point(resolved.center.x + resolved.radius * math.cos(t),
+                                        resolved.center.y + resolved.radius * math.sin(t)), scale)
+                           for t in (0., 2 * math.pi / 3, 4 * math.pi / 3))
+        return feature.clone(points_px=points, professional_source_id=None)
     if feature.source_ref is None:
         return feature.clone()
     parameters = dict(feature.parameters)
@@ -258,6 +381,12 @@ def _foot(point: Point, line: tuple[Point, Point], segment: bool = False) -> Poi
     if segment:
         t = min(1.0, max(0.0, t))
     return _p(_array(a) + t * vector)
+
+
+def projection_foot_px(document, point, line, *, segment=False):
+    scale = calibration_scale(document)
+    foot = _foot(_scaled(point, scale), tuple(_scaled(p, scale) for p in line), segment)
+    return _pixel(foot, scale)
 
 
 def _self_intersects(points: tuple[Point, ...]) -> bool:
@@ -544,7 +673,9 @@ def evaluate_document(document: Any) -> dict[str, MeasurementResult]:
     if cached is not None and cached[0] == key:
         _DOCUMENT_RESULTS.move_to_end(id(document))
         return dict(cached[1])
-    resolved = {feature.id: resolve_feature(document, feature) for feature in document.professional_features}
+    resolved = {}
+    for feature in document.professional_features:
+        resolve_feature(document, feature, _cache=resolved)
     results = {definition.id: evaluate_measurement(document, definition, resolved_features=resolved) for definition in document.professional_measurements}
     _DOCUMENT_RESULTS[id(document)] = (key, results)
     _DOCUMENT_RESULTS.move_to_end(id(document))

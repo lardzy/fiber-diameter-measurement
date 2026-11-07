@@ -60,6 +60,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "analysis-artifacts/v2",
         "construction-geometry/v1",
         "professional-measurements/v1",
+        "professional-source-bindings/v1",
         "measurement-annotations/v1",
         "measurement-caption-fields/v1",
         "measurement-dual-dimensions/v1",
@@ -929,7 +930,7 @@ class Measurement:
             debug_payload=_json_safe_debug_payload(payload.get("debug_payload", {})),
             appearance=_appearance_from_payload(payload.get("appearance")),
             annotation_layout=(
-                MeasurementAnnotationLayout.from_dict(payload["annotation_layout"])
+                MeasurementAnnotationLayout.from_dict(payload["annotation_layout"], ordinary_line=kind == "line")
                 if payload.get("annotation_layout") is not None else None
             ),
         )
@@ -2555,6 +2556,8 @@ class ProjectState:
             features.append("construction-geometry/v1")
         if any(document.professional_features or document.professional_measurements for document in self.documents):
             features.append("professional-measurements/v1")
+        if any(f.point_refs or f.professional_source_id for doc in self.documents for f in doc.professional_features):
+            features.append("professional-source-bindings/v1")
         if any(measurement.annotation_layout is not None for document in self.documents for measurement in document.measurements):
             features.append("measurement-annotations/v1")
         if any(

@@ -3128,7 +3128,8 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         professional = getattr(self, "_professional_controller", None)
-        if professional is not None and professional._hit_label(event.position()) and not self._read_only:
+        if (professional is not None and professional._annotation_input_enabled()
+                and professional._hit_label(event.position())):
             previous = self._clamp_pointer_to_mounted_viewport
             self._clamp_pointer_to_mounted_viewport = False
             try:

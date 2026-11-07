@@ -1792,31 +1792,8 @@ class DocumentCanvas(QWidget):
         accepted_geometry_types: tuple[type, ...] = (),
         widget_point: QPointF | None = None,
     ) -> tuple[LiveFeatureRef, object] | None:
-        if self._document is None:
-            return None
-        tolerance_px = 10.0 / max(self._zoom, 0.001)
-        index = self._ensure_construction_spatial_index()
-        construction_entries = (
-            self._current_construction_pairs(
-                index.query_pairs(image_point, tolerance_px),
-                visible_only=True,
-                snappable_only=True,
-            )
-            if index is not None
-            else ()
-        )
-        candidates = resolved_source_candidates(
-            self._document,
-            image_point,
-            tolerance_px=tolerance_px,
-            require_line=require_line,
-            accepted_geometry_types=accepted_geometry_types,
-            construction_entries=construction_entries,
-            measurements=self._measurement_candidates(
-                image_point,
-                tolerance=tolerance_px,
-            ),
-        )
+        candidates = self._source_candidates_at(image_point, 10.0 / max(self._zoom, 0.001),
+                                                require_line, accepted_geometry_types)
         if not candidates:
             return None
         candidate = self._choose_construction_source_candidate(
@@ -1834,6 +1811,16 @@ class DocumentCanvas(QWidget):
             ),
             candidate.geometry,
         )
+
+    def _source_candidates_at(self, point, tolerance, require_line, accepted_geometry_types):
+        if self._document is None:
+            return ()
+        index = self._ensure_construction_spatial_index()
+        entries = self._current_construction_pairs(index.query_pairs(point, tolerance),
+                        visible_only=True, snappable_only=True) if index is not None else ()
+        return resolved_source_candidates(self._document, point, tolerance_px=tolerance,
+            require_line=require_line, accepted_geometry_types=accepted_geometry_types,
+            construction_entries=entries, measurements=self._measurement_candidates(point, tolerance=tolerance))
 
     def _choose_construction_source_candidate(
         self,
@@ -4469,6 +4456,12 @@ class DocumentCanvas(QWidget):
         callback = getattr(controller, method, None)
         return bool(callback(event)) if callback is not None else False
 
+    def focusNextPrevChild(self, next):
+        controller = getattr(self, "_professional_controller", None)
+        if controller and controller.cycle_candidate(1 if next else -1):
+            return True
+        return super().focusNextPrevChild(next)
+
     def _measurement_annotation_hit(self, position: QPointF):
         if self._document is None or self._screen_label_mode == "hidden":
             return None
@@ -4508,7 +4501,7 @@ class DocumentCanvas(QWidget):
 
     def _measurement_annotation_input_enabled(self) -> bool:
         return not (self._read_only or self._temporary_grab_active or self._roi_capture is not None
-                or self._scale_anchor_pick_active or self._tool_mode not in {"select", "manual", "snap"}
+                or self._scale_anchor_pick_active or self._tool_mode != "select"
                 or self._drawing_polygon_points or self._drawing_freehand_active or self._drawing_line is not None)
 
     def _annotation_widget_to_image(self, position: QPointF) -> Point:
@@ -4637,10 +4630,10 @@ class DocumentCanvas(QWidget):
         measurement = drag["measurement"]
         origin = self._annotation_widget_to_image(drag["press"])
         current = self._annotation_widget_to_image(event.position())
+        layout = drag["original"] or MeasurementAnnotationLayout.ordinary_near()
         anchor = measurement_annotation_anchor(measurement)
         offset = Point(drag["center"].x + current.x - origin.x - anchor.x,
                        drag["center"].y + current.y - origin.y - anchor.y)
-        layout = drag["original"] or MeasurementAnnotationLayout()
         drag["preview"].annotation_layout = layout.with_manual_offset(offset)
         self._refresh_measurement_annotation_preview()
         return True
@@ -4660,34 +4653,20 @@ class DocumentCanvas(QWidget):
             if self._annotation_drag is drag and drag["measurement"].annotation_layout == layout:
                 self._annotation_handoff_id = measurement_id
         self._cancel_measurement_annotation_drag()
+        if not moved and self._document is not None and self._document.get_measurement(measurement_id) is drag["measurement"]:
+            self.measurementAnnotationPropertiesRequested.emit(self._document.id, measurement_id)
         return True
 
     def _measurement_annotation_context_menu(self, measurement, position) -> None:
-        layout = getattr(measurement, "annotation_layout", None) or MeasurementAnnotationLayout()
         menu = QMenu(self)
-        automatic = menu.addAction("恢复自动位置")
-        leader = menu.addAction("显示引出线")
-        leader.setCheckable(True)
-        leader.setChecked(layout.show_leader)
-        single = dual = None
-        if measurement.measurement_kind == "line":
-            styles = menu.addMenu("引出样式")
-            single = styles.addAction("单引出")
-            dual = styles.addAction("双端引出（尺寸线）")
-            for action, style in ((single, "single"), (dual, "dual")):
-                action.setCheckable(True)
-                action.setChecked(layout.leader_style == style)
+        automatic = menu.addAction("恢复贴近位置")
         properties = menu.addAction("标注属性…")
         chosen = menu.exec(position)
         if self._document is None:
             return
         if chosen == automatic:
-            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, layout.with_automatic_position())
-        elif chosen == leader:
-            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, replace(layout, show_leader=leader.isChecked(), revision=layout.revision + 1))
-        elif chosen is not None and chosen in (single, dual):
-            style = "dual" if chosen == dual else "single"
-            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, replace(layout, leader_style=style, revision=layout.revision + 1))
+            layout = measurement.annotation_layout or MeasurementAnnotationLayout.ordinary_near()
+            self.measurementAnnotationEdited.emit(self._document.id, measurement.id, layout.with_near_position())
         elif chosen == properties:
             self.measurementAnnotationPropertiesRequested.emit(self._document.id, measurement.id)
 
@@ -4697,8 +4676,9 @@ class DocumentCanvas(QWidget):
             return 0
         self._cancel_measurement_annotation_drag()
         layouts = {
-            measurement.id: (getattr(measurement, "annotation_layout", None) or MeasurementAnnotationLayout()).with_automatic_position()
+            measurement.id: (measurement.annotation_layout or MeasurementAnnotationLayout.ordinary_near()).with_automatic_position()
             for measurement in self._document.measurements if measurement.measurement_kind != "count"
+            and (measurement.annotation_layout is None or measurement.annotation_layout.placement_mode != "manual")
         }
         if layouts:
             self.measurementAnnotationsEdited.emit(self._document.id, layouts)
@@ -4710,8 +4690,8 @@ class DocumentCanvas(QWidget):
         Call after inserting the new measurement in the document, or before
         applying a restore/arrange command. No persistent object is modified.
         """
-        layout = layout or MeasurementAnnotationLayout()
-        if self._document is None or layout.offset_px is not None:
+        layout = layout or measurement.annotation_layout or MeasurementAnnotationLayout.ordinary_near()
+        if self._document is None or layout.offset_px is not None or layout.label_position == "near":
             return layout
         original = getattr(measurement, "annotation_layout", None)
         try:
@@ -10649,11 +10629,14 @@ class DocumentCanvas(QWidget):
                 for measurement in nearby_measurements
                 if measurement.id not in excluded_measurements
             ]
+        controller = getattr(self, "_professional_controller", None)
+        professional_primitives = controller.snap_primitives(image_point, query_radius) if controller and settings.include_measurements else ()
         candidate = self._object_snap_engine.query(
             image_point,
             image_to_screen=self.image_to_widget,
             constructions=nearby_constructions,
             measurements=nearby_measurements,
+            professional_primitives=professional_primitives,
             contextual_candidates=self._construction_contextual_snap_candidates(
                 image_point
             ),

@@ -1,19 +1,48 @@
 """Image-coordinate professional command state, selection and label dragging."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import math
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QMenu
 
-from fdm.construction_geometry import LiveFeatureRef, SourceObjectKind
+from fdm.construction_geometry import LiveFeatureRef, ResolvedCircle, ResolvedLine, ResolvedPoint, SourceObjectKind
+from fdm.construction_document import clip_line_to_rect
 from fdm.geometry import Point
 from fdm.measurement_annotation import MeasurementAnnotationLayout
-from fdm.metrology import MeasurementFeature
+from fdm.metrology import ControlPointRef, MeasurementFeature
+from fdm.services.metrology_service import (calibration_scale, control_points_px, freeze_feature,
+                                            projection_foot_px, resolve_feature, source_name)
+from fdm.services.object_snap_service import SnapCandidate, SnapKind, professional_snap_primitives
 from fdm.models import new_id
-from fdm.ui.professional_measurement import TOOLS
+from fdm.ui.professional_measurement import SOURCE_TITLES, TOOLS
 from fdm.ui.professional_rendering import dimension_endpoints, draw_professional_measurements, presentation_result
+
+
+@dataclass(frozen=True, slots=True)
+class ObjectPick:
+    source_type: str
+    source_id: str
+    feature_key: str
+    outline: tuple
+    distance: float
+    line: tuple = ()
+
+    @property
+    def identity(self):
+        return self.source_type, self.source_id, self.feature_key
+
+
+def _ellipse_outline(center, rx, ry):
+    return tuple(Point(center.x + rx * math.cos(t), center.y + ry * math.sin(t)) for t in np_angles())
+
+
+def _segment_distance(point, a, b):
+    dx, dy = b.x - a.x, b.y - a.y
+    length = dx * dx + dy * dy
+    t = max(0., min(1., ((point.x-a.x)*dx + (point.y-a.y)*dy) / length)) if length else 0.
+    return math.hypot(point.x - a.x - t*dx, point.y - a.y - t*dy)
 
 
 class ProfessionalCanvasController:
@@ -22,8 +51,18 @@ class ProfessionalCanvasController:
         self.workspace = workspace
         self.key = None
         self.points = []
+        self.point_refs = []
+        self.pointer = None
+        self.choices = ()
+        self.choice = 0
+        self._snap_key = None
+        self._snap_features = {}
+        self._primitive_groups = ()
+        self._outlines = {}
+        self._choice_override = None
         self.features = []
         self.selections = []
+        self.object_slots = set()
         self.slot = 0
         self.start_focus = None
         self.evidence = None
@@ -63,6 +102,9 @@ class ProfessionalCanvasController:
     def cancel(self):
         self.key = None; self.points = []; self.features = []; self.selections = []
         self.slot = 0; self.evidence = None; self.drag = None; self.geometry_drag = None
+        self.point_refs = []
+        self.object_slots.clear()
+        self._clear_pick()
         self._drag_press_widget = None; self._drag_moved = False
         self.preview_layouts.clear(); self.preview_features.clear()
         self._drag_layer = None; self._drag_layer_key = None; self._drag_layer_hits = {}
@@ -76,34 +118,117 @@ class ProfessionalCanvasController:
         self._drag_layer_hits = {}
 
     def begin(self, key, selections):
-        self.cancel(); self.key = key; self.selections = selections; self.start_focus = self.focus()
+        self.cancel(); self.key = key; self.selections = list(selections); self.start_focus = self.focus()
         self._advance_sources()
+
+    def _clear_pick(self):
+        self.pointer = None
+        self.choices = ()
+        self.choice = 0
+        self._choice_override = None
+        self.canvas._set_active_snap_candidate(None)
+
+    def _follow(self):
+        return (not (self.key or "").startswith("caliper_")
+                and self.workspace.panel.follow_sources.isChecked())
+
+    def _feature(self, kind, **fields):
+        document = self.canvas._document
+        from fdm.ui.professional_measurement import slide_revision
+        return MeasurementFeature(new_id("feature"), document.id, kind, focus_index=self.focus(),
+            source_revision=slide_revision(document), parameters={"robust": True,
+            "calibration_at_creation": document.calibration.to_dict() if document.calibration else None}, **fields)
+
+    def _selected_feature(self, kind, source_kind, identity, key="geometry"):
+        if source_kind in {"feature", "professional"}:
+            feature = self._feature(kind, professional_source_id=identity)
+        else:
+            ref = LiveFeatureRef(self.canvas._document.id, identity, SourceObjectKind(source_kind), key)
+            feature = self._feature(kind, source_ref=ref)
+        return feature if self._follow() else freeze_feature(self.canvas._document, feature)
+
+    def set_slot_source(self, index, selection):
+        if not self.key or not 0 <= index < len(self.selections):
+            return
+        if index <= self.slot:
+            self.features = self.features[:index]
+            self.object_slots.intersection_update(range(index))
+            self.slot = index
+            self.points = []; self.point_refs = []
+        self.selections[index] = selection
+        self._clear_pick()
+        self._advance_sources()
+        self.canvas.update()
+
+    def step_back(self):
+        if not self.key:
+            return
+        if self.points:
+            self.points.pop()
+            self.point_refs.pop()
+        elif self.features:
+            previous = self.features.pop()
+            self.slot -= 1
+            was_object = self.slot in self.object_slots
+            self.object_slots.discard(self.slot)
+            self.selections[self.slot] = None
+            self.workspace.panel.sources[self.slot].setCurrentIndex(0)
+            if not was_object:
+                self.points = list(previous.points_px[:-1])
+                refs = previous.point_refs or (None,) * len(previous.points_px)
+                self.point_refs = list(refs[:-1])
+        self._clear_pick()
+        self._advance_sources()
+        self.canvas.update()
+
+    def _step_prompt(self):
+        kind, count = TOOLS[self.key][1][self.slot]
+        if self.key in SOURCE_TITLES:
+            role = SOURCE_TITLES[self.key][self.slot]
+        elif self.key in {"distance", "arc", "angle", "caliper_circle"}:
+            names = {"distance": ("起点", "终点"), "arc": ("起点", "经过点", "终点"),
+                     "angle": ("第一点", "角顶点", "第三点"), "caliper_circle": ("圆心", "半径点")}
+            role = names[self.key][len(self.points)]
+        else:
+            role = {"line": "线", "circle": "圆", "point": "点"}.get(kind, "控制点")
+        if self._whole_kind():
+            instruction = f"选{role}，或在空白处开始取点"
+        elif count < 0:
+            instruction = f"选控制点（已取 {len(self.points)}），Enter 完成"
+        else:
+            instruction = f"选{role}（第 {len(self.points) + 1}/{count} 点）"
+        return f"{TOOLS[self.key][0]} · 第 {self.slot + 1}/{len(self.selections)} 步：{instruction}"
+
+    def _whole_kind(self):
+        if self.points or self.key not in {"point_line_distance", "point_segment_distance", "parallel_distance",
+                "projection", "line_angle", "circle_center_distance", "circle_gap", "point_circle_distance", "coordinates"}:
+            return None
+        if self.key == "projection" and self.slot == 0:
+            return None
+        kind = TOOLS[self.key][1][self.slot][0]
+        return kind if kind in {"circle", "line"} else None
 
     def _advance_sources(self):
         if not self.key:
             return
         slots = TOOLS[self.key][1]
-        document = self.canvas._document
         while self.slot < len(slots):
             selection = self.selections[self.slot]
             if selection is None:
                 break
             source_kind, identity = selection
-            if source_kind == "feature":
-                feature = document.get_professional_feature(identity)
-                if feature is None or feature.focus_index != self.focus():
-                    self.workspace.message("来源特征不存在或属于其他焦层。"); self.cancel(); return
-            else:
-                feature = MeasurementFeature(new_id("feature"), document.id, slots[self.slot][0],
-                    source_ref=LiveFeatureRef(document.id, identity, SourceObjectKind(source_kind)), focus_index=self.focus(),
-                    parameters={"calibration_at_creation": document.calibration.to_dict() if document.calibration else None})
+            try:
+                feature = self._selected_feature(slots[self.slot][0], source_kind, identity)
+            except ValueError as exc:
+                self.selections[self.slot] = None
+                self.workspace.message(str(exc))
+                return
+            self.object_slots.add(self.slot)
             self.features.append(feature); self.slot += 1
         if self.slot >= len(slots):
             self._complete()
         else:
-            count = slots[self.slot][1]
-            self.workspace.message(f"{TOOLS[self.key][0]}：来源 {self.slot + 1}，" +
-                ("连续点选，Enter 完成；Esc 取消。" if count < 0 else f"点选 {count} 个控制点（已取 {len(self.points)}）。"))
+            self.workspace.message(self._step_prompt())
 
     def _point_allowed(self, point):
         document = self.canvas._document
@@ -124,11 +249,9 @@ class ProfessionalCanvasController:
         self._finish_slot(kind)
 
     def _finish_slot(self, kind):
-        document = self.canvas._document
-        self.features.append(MeasurementFeature(new_id("feature"), document.id, kind,
-            tuple(self.points), focus_index=self.focus(), parameters={"robust": True,
-                "calibration_at_creation": document.calibration.to_dict() if document.calibration else None}))
-        self.points = []; self.slot += 1; self._advance_sources()
+        self.features.append(self._feature(kind, points_px=tuple(self.points), point_refs=tuple(self.point_refs)))
+        self.points = []; self.point_refs = []; self._clear_pick()
+        self.slot += 1; self._advance_sources()
 
     def _complete(self):
         key = self.key
@@ -138,6 +261,153 @@ class ProfessionalCanvasController:
         else:
             self.workspace.commit(self, key, self.features,
                 parameters={"supplement": self.workspace.panel.supplement.isChecked()})
+
+    def snap_features(self):
+        document = self.canvas._document
+        if not document or not document.professional_features:
+            self._snap_features = {}; self._primitive_groups = (); self._outlines = {}; self._snap_key = None
+            return self._snap_features
+        results = self.results()
+        excluded = self.geometry_drag[0].id if self.geometry_drag else None
+        key = (self._results_key, self.focus(), excluded)
+        if self._snap_key != key:
+            blocked = {excluded} if excluded else set()
+            if blocked:
+                while True:
+                    dependencies = {f.id for f in document.professional_features if f.professional_dependencies() & blocked}
+                    if dependencies <= blocked:
+                        break
+                    blocked.update(dependencies)
+            committed = {fid for d in document.professional_measurements
+                         if d.focus_index == self.focus() and d.id in results and results[d.id].valid
+                         for fid in d.feature_ids}
+            resolved = {}
+            eligible = {}
+            for feature in document.professional_features:
+                if feature.id in committed and feature.id not in blocked and feature.focus_index == self.focus():
+                    value = resolve_feature(document, feature, _cache=resolved)
+                    if value.valid:
+                        eligible[feature.id] = value
+            scale = calibration_scale(document)
+            self._snap_features = eligible
+            groups = []
+            self._outlines = {}
+            for fid, feature in eligible.items():
+                bounds_points = feature.points_px
+                if feature.kind == "line":
+                    self._outlines[fid] = feature.points_px
+                if feature.center:
+                    center = Point(feature.center.x / scale[0], feature.center.y / scale[1])
+                    rx, ry = feature.radius / scale[0], feature.radius / scale[1]
+                    bounds_points = (Point(center.x-rx, center.y-ry), Point(center.x+rx, center.y+ry))
+                    if feature.kind == "circle":
+                        self._outlines[fid] = _ellipse_outline(center, rx, ry)
+                primitives = tuple(professional_snap_primitives(feature, scale))
+                if primitives:
+                    xs, ys = zip(*((p.x, p.y) for p in bounds_points))
+                    groups.append(((min(xs), min(ys), max(xs), max(ys)), fid, primitives))
+            self._primitive_groups = tuple(groups)
+            self._snap_key = key
+        return self._snap_features
+
+    def _nearby_groups(self, point, tolerance):
+        self.snap_features()
+        for (left, top, right, bottom), fid, primitives in self._primitive_groups:
+            if (left-tolerance <= point.x <= right+tolerance and top-tolerance <= point.y <= bottom+tolerance):
+                yield fid, primitives
+
+    def snap_primitives(self, point, tolerance):
+        return (p for _, group in self._nearby_groups(point, tolerance) for p in group)
+
+    def _objects_at(self, point, kind):
+        canvas = self.canvas
+        settings = canvas._object_snap_engine.settings
+        if not canvas._object_snap_pointer_enabled():
+            return []
+        tolerance = settings.aperture_px / max(canvas._zoom, .001)
+        accepted = (ResolvedLine,) if kind == "line" else (ResolvedCircle,)
+        candidates = canvas._source_candidates_at(point, tolerance, False, accepted)
+        hits = []
+        for candidate in candidates:
+            if candidate.object_kind == "measurement" and not settings.include_measurements:
+                continue
+            shape = candidate.geometry
+            if isinstance(shape, ResolvedLine):
+                extent = (0., 0., *canvas._document.image_size)
+                outline = clip_line_to_rect(shape, extent) or (shape.start, shape.end)
+            else:
+                outline = _ellipse_outline(shape.center, shape.radius, shape.radius)
+            hits.append(ObjectPick(candidate.object_kind, candidate.object_id, candidate.feature, outline,
+                                   candidate.distance_px, (shape.start, shape.end) if isinstance(shape, ResolvedLine) else ()))
+        if settings.include_measurements:
+            for fid, _ in self._nearby_groups(point, tolerance):
+                feature = self._snap_features[fid]
+                if feature.kind == kind:
+                    outline = self._outlines[fid]
+                    distance = min(_segment_distance(point, a, b) for a, b in zip(outline, outline[1:]))
+                    if distance <= tolerance:
+                        hits.append(ObjectPick("professional", fid, "geometry", outline, distance,
+                                               outline if kind == "line" else ()))
+        return sorted(hits, key=lambda h: (h.distance, h.source_type, h.source_id, h.feature_key))
+
+    def _point_reference(self, candidate):
+        if (candidate is None or not self._follow() or candidate.source_type not in
+                {"construction", "measurement", "professional"} or candidate.kind in
+                {SnapKind.NEAREST, SnapKind.TANGENT, SnapKind.PERPENDICULAR}):
+            return None
+        if candidate.source_type != "professional":
+            ref = LiveFeatureRef(self.canvas._document.id, candidate.source_id,
+                                 SourceObjectKind(candidate.source_type), candidate.feature_key)
+            resolved = self.canvas._ensure_construction_preview_resolver().resolve_feature(ref)
+            if not isinstance(resolved, ResolvedPoint) or math.hypot(
+                    resolved.point.x-candidate.point_px.x, resolved.point.y-candidate.point_px.y) > 1e-6:
+                return None
+        return ControlPointRef(candidate.source_type, candidate.source_id, candidate.feature_key, candidate.kind.value)
+
+    def _update_pick(self, point, *, message=True):
+        self.pointer = point
+        whole = self._whole_kind() if self.key else None
+        choices = self._objects_at(point, whole) if whole else []
+        if choices:
+            self.canvas._set_active_snap_candidate(None)
+        else:
+            candidate = self.canvas._query_object_snap(point)
+            if candidate is not None:
+                choices = [candidate] + [c for c in self.canvas._object_snap_engine.last_candidates
+                    if c.identity != candidate.identity and self._point_allowed(c.point_px)]
+        self.choices = tuple(choices)
+        self.choice = next((i for i, c in enumerate(choices) if c.identity == self._choice_override), 0)
+        if self.choice == 0 and (not choices or choices[0].identity != self._choice_override):
+            self._choice_override = None
+        return self._display_choice(message)
+
+    def _display_choice(self, message):
+        candidate = self.choices[self.choice] if self.choices else None
+        text = "固定坐标"
+        if isinstance(candidate, ObjectPick):
+            name = source_name(self.canvas._document, candidate.source_type, candidate.source_id)
+            text = f"{'关联' if self._follow() else '固定几何'} · {name}"
+        elif candidate is not None:
+            self.canvas._set_active_snap_candidate(candidate)
+            ref = self._point_reference(candidate)
+            label = candidate.label
+            if candidate.source_type in {"professional", "construction", "measurement"}:
+                label = f"{source_name(self.canvas._document, candidate.source_type, candidate.source_id)} · {label}"
+            text = f"{'关联' if ref else '固定坐标'} · {label}"
+        if message and self.key:
+            if len(self.choices) > 1:
+                text += f"（Tab 切换 {self.choice+1}/{len(self.choices)}）"
+            self.workspace.message(f"{self._step_prompt()} · {text}")
+        return candidate
+
+    def cycle_candidate(self, step=1):
+        if not self.key or len(self.choices) < 2:
+            return False
+        self.choice = (self.choice + step) % len(self.choices)
+        self._choice_override = self.choices[self.choice].identity
+        self._display_choice(True)
+        self.canvas.update()
+        return True
 
     def _hit_label(self, pos):
         document = self.canvas._document
@@ -177,9 +447,13 @@ class ProfessionalCanvasController:
             return None
         for fid in definition.feature_ids:
             feature = document.get_professional_feature(fid)
-            if feature is None or feature.source_ref or feature.kind.startswith("caliper_"):
+            if feature is None or feature.source_ref or feature.professional_source_id or feature.kind.startswith("caliper_"):
                 continue
-            for index, point in enumerate(feature.points_px):
+            try:
+                points = control_points_px(document, feature)
+            except ValueError:
+                continue
+            for index, point in enumerate(points):
                 widget = self.canvas.image_to_widget(point)
                 if math.hypot(pos.x()-widget.x(), pos.y()-widget.y()) <= 7:
                     return feature, index
@@ -188,7 +462,7 @@ class ProfessionalCanvasController:
     def _annotation_input_enabled(self):
         """Do not let an existing label steal another canvas command's input."""
         canvas = self.canvas
-        if self.key or canvas._document is None or canvas._panning:
+        if self.key or self.workspace.active is self or canvas._document is None or canvas._panning:
             return False
         if canvas._tool_mode != "professional":
             return canvas._measurement_annotation_input_enabled()
@@ -207,6 +481,9 @@ class ProfessionalCanvasController:
         # Space/middle-button navigation retains the canvas's existing behavior.
         if getattr(self.canvas, "_space_pressed", False):
             return False
+        if self.workspace.active is self and self.key is None:
+            # A caliper owns left/right clicks until confirmed or cancelled.
+            return True
         pos = event.position()
         editing = self._annotation_input_enabled()
         identity = self._hit_label(pos) if editing else None
@@ -225,27 +502,38 @@ class ProfessionalCanvasController:
             self._drag_layer_key = None
             return True
         if event.button() != Qt.MouseButton.LeftButton:
-            return False
+            return bool(self.key)
         if not self.key:
             if not editing or self.canvas._tool_mode not in {"select", "professional"}:
-                return False
+                return self.canvas._tool_mode == "professional"
             handle = self._hit_handle(pos)
             if handle:
                 self.geometry_drag = handle; return True
             identity = self._hit_geometry(pos)
             if identity:
                 self.workspace.select(identity); return True
-            return False
+            return self.canvas._tool_mode == "professional"
         if self.focus() != self.start_focus:
             self.workspace.cancel(); self.workspace.message("焦层已改变，未完成测量已取消。"); return True
         point = self.canvas.widget_to_image(pos)
-        candidate = self.canvas._query_object_snap(point)
-        if candidate is not None:
+        candidate = self._update_pick(point, message=False)
+        if isinstance(candidate, SnapCandidate):
             point = candidate.point_px
         if not self._point_allowed(point):
             self.workspace.message("此处原始图像尚不可测量，请等待加载或在有效图像范围内取点。"); return True
-        self.points.append(point)
         kind, count = TOOLS[self.key][1][self.slot]
+        if isinstance(candidate, ObjectPick):
+            try:
+                feature = self._selected_feature(kind, candidate.source_type, candidate.source_id, candidate.feature_key)
+            except ValueError as exc:
+                self.workspace.message(str(exc)); return True
+            self.features.append(feature)
+            self.object_slots.add(self.slot)
+            self.slot += 1; self._clear_pick(); self._advance_sources()
+            self.canvas.update(); return True
+        self.points.append(point)
+        self.point_refs.append(self._point_reference(candidate))
+        self._clear_pick()
         if count > 0 and len(self.points) == count:
             self._finish_slot(kind)
         else:
@@ -253,6 +541,10 @@ class ProfessionalCanvasController:
         self.canvas.update(); return True
 
     def mouse_move(self, event):
+        if self.key and not self.canvas._panning and not getattr(self.canvas, "_space_pressed", False):
+            self._update_pick(self.canvas.widget_to_image(event.position()))
+            self.canvas.update()
+            return True
         if self.drag:
             identity, start, layout, offset = self.drag
             press = self._drag_press_widget or self.canvas.image_to_widget(start)
@@ -267,9 +559,14 @@ class ProfessionalCanvasController:
         if self.geometry_drag:
             feature, index = self.geometry_drag
             point = self.canvas.widget_to_image(event.position())
+            candidate = self._update_pick(point, message=False)
+            if candidate is not None:
+                point = candidate.point_px
             if self._point_allowed(point):
                 points = list(feature.points_px); points[index] = point
-                self.preview_features[feature.id] = replace(feature, points_px=tuple(points))
+                refs = list(feature.point_refs or (None,) * len(points))
+                refs[index] = self._point_reference(candidate)
+                self.preview_features[feature.id] = replace(feature, points_px=tuple(points), point_refs=tuple(refs))
                 self.canvas.update()
             return True
         hovered = (self._hit_label(event.position()) or self._hit_geometry(event.position())) if self._annotation_input_enabled() else None
@@ -278,7 +575,7 @@ class ProfessionalCanvasController:
         return False
 
     def mouse_release(self, event):
-        if event.button() != Qt.MouseButton.LeftButton:
+        if event.button() != Qt.MouseButton.LeftButton or self.canvas._panning:
             return False
         if self.drag:
             self.mouse_move(event)
@@ -286,32 +583,41 @@ class ProfessionalCanvasController:
             layout = self.preview_layouts.get(identity)
             changed = layout is not None and layout.offset_px is not None and (
                 abs(layout.offset_px.x - initial.x) > 1e-9 or abs(layout.offset_px.y - initial.y) > 1e-9)
+            clicked = not self._drag_moved
             self.drag = None; self.preview_layouts.clear()
             self._drag_press_widget = None; self._drag_moved = False
             self._drag_layer = None; self._drag_layer_key = None; self._drag_layer_hits = {}
             if changed:
                 self.workspace.edit_layout(self, identity, layout)
+            elif clicked:
+                self.workspace.professional_properties(self, self.canvas._document.get_professional_measurement(identity))
             self.canvas.update(); return True
         if self.geometry_drag:
             self.mouse_move(event)
             feature, _ = self.geometry_drag
             replacement = self.preview_features.get(feature.id)
             self.geometry_drag = None; self.preview_features.clear()
+            self._clear_pick()
             if replacement and replacement != feature:
                 document = self.canvas._document
                 self.workspace.change(document, "修改专业测量控制点", lambda: document.apply_professional_state(
                     [replacement if f.id == feature.id else f for f in document.professional_features],
                     document.professional_measurements, selected_id=document.selected_professional_id, mark_dirty=False))
             self.canvas.update(); return True
-        return bool(self.key)
+        return bool(self.key or self.canvas._tool_mode == "professional" and not self.canvas._panning
+                    and not getattr(self.canvas, "_space_pressed", False))
 
     def key_press(self, event):
         if self.canvas._document is None:
             return False
         if event.key() == Qt.Key.Key_Escape and (self.key or self.drag or self.geometry_drag or self.evidence or self.workspace.active is self):
-            self.workspace.cancel(); self.canvas.update(); return True
+            self.workspace.cancel_command(); self.canvas.update(); return True
         if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter} and self.key:
             self.finish(); return True
+        if event.key() == Qt.Key.Key_Backspace and self.key:
+            self.step_back(); return True
+        if event.key() in {Qt.Key.Key_Tab, Qt.Key.Key_Backtab} and self.key:
+            return self.cycle_candidate(-1 if event.key() == Qt.Key.Key_Backtab else 1)
         if event.key() in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace} and self.canvas._document.selected_professional_id and self._annotation_input_enabled():
             self.workspace.delete_selected(); return True
         return False
@@ -413,6 +719,37 @@ class ProfessionalCanvasController:
                 layouts=self.preview_layouts, **arguments)
         painter.save()
         painter.setPen(QPen(QColor("#ffce60"), 1.5))
+        if self.key:
+            transform = self.canvas.image_to_widget
+            previous = [resolve_feature(document, f) for f in self.features]
+            for feature in previous:
+                if not feature.valid:
+                    continue
+                points = feature.points_px
+                if feature.center and feature.radius:
+                    sx, sy = calibration_scale(document)
+                    points = _ellipse_outline(Point(feature.center.x/sx, feature.center.y/sy),
+                                              feature.radius/sx, feature.radius/sy)
+                if len(points) > 1:
+                    painter.drawPolyline(QPolygonF([transform(p) for p in points]))
+                else:
+                    painter.drawEllipse(transform(points[0]), 4, 4)
+            choice = self.choices[self.choice] if self.choices else None
+            active_point = choice.point_px if isinstance(choice, SnapCandidate) else self.pointer
+            source_line = ()
+            if isinstance(choice, ObjectPick):
+                painter.drawPolyline(QPolygonF([transform(p) for p in choice.outline]))
+                source_line = choice.line
+            elif self.points and active_point:
+                source_line = (self.points[-1], active_point)
+                painter.drawLine(*[transform(p) for p in source_line])
+            if (len(previous) == 1 and previous[0].valid and source_line and
+                    source_line[0] != source_line[-1] and self.key in {"point_line_distance", "point_segment_distance"}):
+                point = previous[0].points_px[0]
+                foot = projection_foot_px(document, point, source_line, segment=self.key == "point_segment_distance")
+                painter.setPen(QPen(QColor("#48dace"), 1.5, Qt.PenStyle.DashLine))
+                painter.drawLine(transform(point), transform(foot))
+                painter.drawEllipse(transform(foot), 3, 3)
         if self.points:
             points = [self.canvas.image_to_widget(p) for p in self.points]
             if len(points) > 1:
@@ -423,14 +760,19 @@ class ProfessionalCanvasController:
         if selected and selected.focus_index == self.focus():
             for fid in selected.feature_ids:
                 feature = self.preview_features.get(fid) or document.get_professional_feature(fid)
-                if feature is not None and not feature.source_ref and not feature.kind.startswith("caliper_"):
-                    for point in feature.points_px:
+                if (feature is not None and not feature.source_ref and not feature.professional_source_id
+                        and not feature.kind.startswith("caliper_")):
+                    try:
+                        editable_points = control_points_px(document, feature)
+                    except ValueError:
+                        continue
+                    for point in editable_points:
                         p = self.canvas.image_to_widget(point)
                         painter.drawRect(QRectF(p.x()-3, p.y()-3, 6, 6))
                     if feature.kind in {"fit_line", "fit_circle"}:
                         fit = results.get(selected.id).quality.get("features", {}).get(fid, {}).get("evaluated_fit", {})
                         accepted = set(fit.get("accepted_indices", []))
-                        for index, point in enumerate(feature.points_px):
+                        for index, point in enumerate(editable_points):
                             painter.setPen(QPen(QColor("#42e392" if index in accepted else "#ff675f"), 2))
                             painter.drawEllipse(self.canvas.image_to_widget(point), 3, 3)
         evidence = self.evidence

@@ -65,6 +65,27 @@ def _parse_points(payload: Mapping[str, Any]) -> tuple[Point, ...]:
 
 
 @dataclass(frozen=True, slots=True)
+class ControlPointRef:
+    """A named geometric landmark. Cursor projections are saved as fixed points."""
+    source_type: str
+    source_id: str
+    feature_key: str
+    snap_kind: str
+
+    def __post_init__(self):
+        if self.source_type not in {"construction", "measurement", "professional"}:
+            raise ValueError("不支持的控制点来源")
+        _identity(self.source_id, "来源 ID")
+        _identity(self.feature_key, "来源几何特征")
+        if self.snap_kind not in {"point", "endpoint", "midpoint", "center", "quadrant", "intersection"}:
+            raise ValueError("控制点必须引用可追踪的几何特征")
+
+    def to_dict(self):
+        return {"source_type": self.source_type, "source_id": self.source_id,
+                "feature_key": self.feature_key, "snap_kind": self.snap_kind}
+
+
+@dataclass(frozen=True, slots=True)
 class MeasurementFeature:
     id: str
     image_id: str
@@ -75,6 +96,8 @@ class MeasurementFeature:
     focus_index: int | None = None
     source_revision: str | None = None
     quality: dict[str, Any] = field(default_factory=dict)
+    point_refs: tuple[ControlPointRef | None, ...] = ()
+    professional_source_id: str | None = None
 
     def __post_init__(self) -> None:
         _identity(self.id, "特征 ID")
@@ -84,6 +107,15 @@ class MeasurementFeature:
         object.__setattr__(self, "points_px", _points(self.points_px))
         if self.source_ref is not None and not isinstance(self.source_ref, LiveFeatureRef):
             raise TypeError("source_ref 必须是实时辅助几何引用")
+        refs = tuple(self.point_refs)
+        if refs and (len(refs) != len(self.points_px) or
+                     any(r is not None and not isinstance(r, ControlPointRef) for r in refs)):
+            raise ValueError("来源与控制点必须一一对应")
+        object.__setattr__(self, "point_refs", refs if any(refs) else ())
+        if self.professional_source_id is not None:
+            _identity(self.professional_source_id, "专业特征来源")
+        if sum(bool(v) for v in (self.point_refs, self.source_ref, self.professional_source_id)) > 1:
+            raise ValueError("不能混合整对象来源和独立控制点来源")
         object.__setattr__(self, "parameters", _json_dict(self.parameters, "parameters"))
         object.__setattr__(self, "quality", _json_dict(self.quality, "quality"))
         object.__setattr__(self, "focus_index", _focus(self.focus_index))
@@ -93,10 +125,18 @@ class MeasurementFeature:
     def clone(self, **changes: Any) -> "MeasurementFeature":
         return replace(self, **changes)
 
+    def professional_dependencies(self) -> frozenset[str]:
+        sources = {r.source_id for r in self.point_refs if r and r.source_type == "professional"}
+        if self.professional_source_id:
+            sources.add(self.professional_source_id)
+        return frozenset(sources)
+
     def to_dict(self) -> dict[str, Any]:
         return {"id": self.id, "image_id": self.image_id, "kind": self.kind,
                 "points_px": [p.to_dict() for p in self.points_px],
                 "source_ref": self.source_ref.to_dict() if self.source_ref else None,
+                **({"point_refs": [r.to_dict() if r else None for r in self.point_refs]} if self.point_refs else {}),
+                **({"professional_source_id": self.professional_source_id} if self.professional_source_id else {}),
                 "parameters": _json_dict(self.parameters, "parameters"),
                 "focus_index": self.focus_index, "source_revision": self.source_revision,
                 "quality": _json_dict(self.quality, "quality")}
@@ -119,6 +159,8 @@ class MeasurementFeature:
             feature=ref.get("feature", "geometry"))
         return cls(id=payload["id"], image_id=payload["image_id"], kind=payload["kind"],
                    points_px=_parse_points(payload), source_ref=source,
+                   point_refs=tuple(ControlPointRef(**r) if r is not None else None for r in payload.get("point_refs", ())),
+                   professional_source_id=payload.get("professional_source_id"),
                    parameters=payload.get("parameters", {}), focus_index=payload.get("focus_index"),
                    source_revision=payload.get("source_revision"), quality=payload.get("quality", {}))
 

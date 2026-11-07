@@ -14,7 +14,7 @@ from fdm.geometry import Point
 
 
 ANNOTATION_STYLE_FIELDS = (
-    "show_leader", "show_identifier", "leader_style", "show_metric_name", "show_symbol", "metric_key",
+    "label_position", "show_leader", "show_identifier", "leader_style", "show_metric_name", "show_symbol", "metric_key",
 )
 
 
@@ -30,8 +30,12 @@ class MeasurementAnnotationLayout:
     show_metric_name: bool = False
     # None preserves the v1 convention: professional dimensions used symbols, ordinary lines did not.
     show_symbol: bool | None = False
+    # Placement policy is a style. A particular drag offset belongs to one object.
+    label_position: str = "external"
 
     def __post_init__(self) -> None:
+        if self.label_position not in {"near", "external"}:
+            raise ValueError("Unknown measurement label position")
         if self.placement_mode not in {"automatic", "manual"}:
             raise ValueError("Unknown measurement annotation placement mode")
         if self.leader_style not in {"single", "dual"}:
@@ -58,6 +62,13 @@ class MeasurementAnnotationLayout:
     def with_automatic_position(self) -> MeasurementAnnotationLayout:
         return replace(self, placement_mode="automatic", offset_px=None, revision=self.revision + 1)
 
+    def with_near_position(self) -> MeasurementAnnotationLayout:
+        return replace(self.with_automatic_position(), label_position="near", show_leader=False)
+
+    @classmethod
+    def ordinary_near(cls) -> MeasurementAnnotationLayout:
+        return cls(label_position="near", show_leader=False)
+
     @classmethod
     def legacy_professional(cls) -> MeasurementAnnotationLayout:
         """v1 professional definitions with no layout still displayed verbose text."""
@@ -69,6 +80,7 @@ class MeasurementAnnotationLayout:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "label_position": self.label_position,
             "placement_mode": self.placement_mode,
             "offset_px": None if self.offset_px is None else self.offset_px.to_dict(),
             "show_leader": self.show_leader,
@@ -83,13 +95,19 @@ class MeasurementAnnotationLayout:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> MeasurementAnnotationLayout:
+    def from_dict(cls, payload: dict[str, Any], *, ordinary_line: bool = False) -> MeasurementAnnotationLayout:
         if not isinstance(payload, dict):
             raise ValueError("Annotation layout must be an object")
+        if ordinary_line and "label_position" not in payload:
+            # Pre-release line placements were calculated with the external
+            # dimension solver. Keep their captions and discard stale positions.
+            payload = {**payload, "label_position": "near", "placement_mode": "automatic",
+                       "offset_px": None, "show_leader": False, "leader_style": "single"}
         raw = payload.get("offset_px")
         if raw is not None and not isinstance(raw, dict):
             raise ValueError("Annotation offset must be an object or null")
         return cls(
+            label_position=payload.get("label_position", "external"),
             placement_mode=payload.get("placement_mode", "automatic"),
             offset_px=Point.from_dict(raw) if isinstance(raw, dict) else None,
             show_leader=payload.get("show_leader", True),

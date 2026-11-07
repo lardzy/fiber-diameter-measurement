@@ -52,6 +52,7 @@ from fdm.construction_geometry import (
 )
 from fdm.settings import AppSettings
 from fdm.ui.measurement_batch_properties import MeasurementBatchProperties, inherited_measurement_style
+from fdm.ui.result_annotation_properties import AnnotationTarget, ResultAnnotationProperties
 from fdm.ui.measurement_results_model import format_measurement_mode, format_measurement_status
 from fdm.ui.construction_widgets import construction_kind_label
 from fdm.ui.widgets import (
@@ -93,6 +94,8 @@ class CurrentObjectInspector(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(6)
+        self.annotation_editor = ResultAnnotationProperties(self)
+        root.addWidget(self.annotation_editor)
         self._stack = QStackedWidget(self)
         root.addWidget(self._stack)
 
@@ -411,6 +414,8 @@ class CurrentObjectInspector(QWidget):
         *,
         settings: AppSettings,
         measurement_ids: Sequence[str] = (),
+        professional_targets: Sequence[AnnotationTarget] = (),
+        professional_family_label: str = "",
         overlay_id: str | None = None,
         construction_id: str | None = None,
         view_zoom: float = 1.0,
@@ -427,6 +432,20 @@ class CurrentObjectInspector(QWidget):
             else 1.0
         )
         unique_measurements = tuple(dict.fromkeys(item for item in measurement_ids if item))
+        if professional_targets and document is not None:
+            self.annotation_editor.set_selection(document.id, "professional", professional_targets, professional_family_label)
+            self.batch_editor.clear_selection()
+            self._show_empty(f"已选择 {len(professional_targets)} 个专业测量")
+            return
+        records = []
+        if document is not None and not (overlay_id or construction_id):
+            records = [document.get_measurement(identity) for identity in unique_measurements]
+        targets = []
+        if records and all(record and record.measurement_kind in {"line", "polyline", "area"} for record in records):
+            targets = [AnnotationTarget.ordinary(record) for record in records]
+        family_label = {"line": "普通直径线", "polyline": "普通折线", "area": "普通面积"}.get(
+            targets[0].family if targets else "", "")
+        self.annotation_editor.set_selection(document.id if document else None, "ordinary", targets, family_label)
         if document is not None and len(unique_measurements) > 1:
             selected = set(unique_measurements)
             records = [item for item in document.measurements if item.id in selected]

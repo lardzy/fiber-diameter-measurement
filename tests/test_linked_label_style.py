@@ -4,7 +4,6 @@ from dataclasses import replace
 import pytest
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QFontMetricsF
-from PySide6.QtWidgets import QCheckBox, QDialog
 
 from fdm.geometry import Line, Point
 from fdm.measurement_annotation import MeasurementAnnotationLayout
@@ -78,23 +77,18 @@ def test_remember_only_after_explicit_default_and_only_for_same_kind(mounted_win
     window, doc, workspace, _ = mounted_window()
     first = _distance(workspace)
     controller = workspace.controller()
-    def dialog_with(remember):
-        def edit(dialog):
-            boxes = {box.text(): box for box in dialog.findChildren(QCheckBox)}
-            boxes["显示指标名称"].setChecked(True)
-            boxes["显示测量编号"].setChecked(True)
-            boxes["设为同类默认"].setChecked(remember)
-            return QDialog.DialogCode.Accepted
-        return edit
-    monkeypatch.setattr(QDialog, "exec", dialog_with(False))
     workspace.professional_properties(controller, first)
+    editor = window._object_inspector.annotation_editor
+    for key in ("show_metric_name", "show_identifier"):
+        editor._fields[key].setCurrentIndex(1)
+    editor.apply_button.click()
     assert not window._app_settings.annotation_style_defaults
     assert doc.get_professional_measurement(first.id).annotation_layout.show_identifier
     second = _distance(workspace, (70, 60), (90, 90))
     assert not second.annotation_layout.show_identifier
-    before = doc.to_dict()
-    monkeypatch.setattr(QDialog, "exec", dialog_with(True))
     workspace.professional_properties(controller, doc.get_professional_measurement(first.id))
+    before = doc.to_dict()
+    editor.default_button.click()
     assert doc.to_dict() == before  # saving the style alone isn't a project edit
     reloaded = AppSettings.from_dict(window._app_settings.to_dict())
     fields = reloaded.annotation_style_defaults["professional:distance"]
@@ -145,17 +139,15 @@ def test_failed_default_write_preserves_old_preferences_and_current_object_edit(
     from PySide6.QtWidgets import QMessageBox
     window, doc, workspace, _ = mounted_window()
     first = _distance(workspace)
-    def edit(dialog):
-        dialog.findChild(QCheckBox, "annotationMetricName").setChecked(True)
-        dialog.findChild(QCheckBox, "annotationRememberForKind").setChecked(True)
-        return QDialog.DialogCode.Accepted
     messages = []
     def disk_full(*_):
         raise OSError("disk full")
-    monkeypatch.setattr(QDialog, "exec", edit)
     monkeypatch.setattr(AppSettingsIO, "save", disk_full)
     monkeypatch.setattr(QMessageBox, "warning", lambda _w, title, detail: messages.append((title, detail)))
     workspace.professional_properties(workspace.controller(), first)
+    editor = window._object_inspector.annotation_editor
+    editor._fields["show_metric_name"].setCurrentIndex(1)
+    editor.default_button.click()
     assert messages and "disk full" in messages[0][1]
     assert not window._app_settings.annotation_style_defaults
     assert doc.get_professional_measurement(first.id).annotation_layout.show_metric_name

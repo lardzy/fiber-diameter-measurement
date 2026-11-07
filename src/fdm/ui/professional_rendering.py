@@ -14,7 +14,7 @@ from fdm.geometry import Point
 from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.metrology import MeasurementPrimitive
 from fdm.models import format_measurement_label_value
-from fdm.ui.measurement_annotation_layout import readable_angle, resolve_dual_dimension, resolve_linked_label
+from fdm.ui.measurement_annotation_layout import choose_automatic_offset, readable_angle, resolve_dual_dimension, resolve_linked_label
 from fdm.ui.rendering import (draw_measurement_annotation_lines, measurement_text_scale,
     _image_to_output_scale, _image_to_output_transform, measurement_label_font)
 
@@ -92,6 +92,36 @@ def professional_label_layout(definition, result, index, transform, layout, *, d
         label = resolve_linked_label(transform(anchor), center, width, height, show_leader=layout.show_leader,
             landing_length=10 * scale, angle=angle)
     return text, label
+
+
+def professional_label_image_size(settings, definition, result, index, transform):
+    zoom = _image_to_output_scale(_image_to_output_transform(transform))
+    _, label = professional_label_layout(
+        definition, result, index, transform,
+        definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional(),
+        decimals=settings.professional_measurement_label_decimals, metrics=QFontMetricsF(measurement_label_font(settings)),
+        scale=measurement_text_scale(settings, zoom), parallel=settings.length_measurement_label_style.parallel_to_line,
+    )
+    return label.text_rect.width() / zoom, label.text_rect.height() / zoom
+
+
+def place_new_professional_annotation(document, definition, result, settings, index, transform, occupied=()):
+    """Initialize the same supported caption, witness and auto position in the canvas and settings preview."""
+    layout = settings.new_annotation_layout("professional:" + definition.kind, dual_supported=True)
+    if layout.metric_key is not None and layout.metric_key not in {metric.key for metric in result.metrics}:
+        layout = replace(layout, metric_key=None)
+    definition = replace(definition, annotation_layout=layout)
+    presented = presentation_result(document, definition, result)
+    if dimension_endpoints(presented) is None:
+        layout = replace(layout, leader_style="single")
+        definition = replace(definition, annotation_layout=layout)
+    if presented.valid:
+        zoom = _image_to_output_scale(_image_to_output_transform(transform))
+        width, height = professional_label_image_size(settings, definition, presented, index, transform)
+        offset = choose_automatic_offset(presented.anchor_px, width, height, occupied=occupied,
+                                         image_rect=QRectF(0, 0, *document.image_size), gap=18 / zoom)
+        definition = replace(definition, annotation_layout=replace(layout, offset_px=offset))
+    return definition
 
 
 def draw_professional_measurements(painter: QPainter, document, transform,

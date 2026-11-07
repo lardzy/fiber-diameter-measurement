@@ -5438,6 +5438,7 @@ class MainWindow(QMainWindow):
         inspector_layout.addWidget(self._area_recognition_section)
 
         self._object_inspector = CurrentObjectInspector(inspector_content)
+        self._object_inspector.annotation_editor.editRequested.connect(self._edit_result_annotations)
         self._object_inspector.batch_editor.editRequested.connect(self._edit_selected_measurements)
         self._object_inspector.appearanceChangeRequested.connect(self._on_object_appearance_change_requested)
         self._object_inspector.measurementGroupChangeRequested.connect(
@@ -5520,6 +5521,7 @@ class MainWindow(QMainWindow):
         pane.delete_category_button.setIcon(themed_icon("delete", color="#F28482"))
         pane.delete_all_button.setIcon(themed_icon("delete", color="#F28482"))
         pane.measurementActivated.connect(self._activate_measurement_id)
+        pane.table.clicked.connect(self._expand_selected_annotation_properties)
         pane.deleteSelectedRequested.connect(
             lambda _measurement_ids: self.delete_selected_measurement()
         )
@@ -12722,7 +12724,6 @@ class MainWindow(QMainWindow):
                             raise ValueError("生成了重复的测量对象 ID")
                         existing_measurement_ids.add(measurement_id)
                         measurement = Measurement(
-                            annotation_layout=self._app_settings.new_annotation_layout("area"),
                             id=measurement_id,
                             image_id=document.id,
                             fiber_group_id=group.id,
@@ -23399,7 +23400,6 @@ class MainWindow(QMainWindow):
                     ),
                 )
                 measurement = Measurement(
-                    annotation_layout=self._app_settings.new_annotation_layout("area"),
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id,
@@ -24877,12 +24877,9 @@ class MainWindow(QMainWindow):
         )
         previous_measurement_ids = {m.id for m in document.measurements}
         mutator()
-        annotation_canvas = self._canvases.get(document.id)
-        if annotation_canvas is not None:
-            for measurement in document.measurements:
-                layout = measurement.annotation_layout
-                if measurement.id not in previous_measurement_ids and layout is not None and layout.offset_px is None:
-                    measurement.annotation_layout = annotation_canvas.resolved_measurement_annotation_layout(measurement)
+        for measurement in document.measurements:
+            if measurement.id not in previous_measurement_ids:
+                self._initialize_measurement_annotation(document, measurement)
         if not geometry_measurement_ids:
             document.rebuild_group_memberships()
         after = DocumentHistoryState.capture(
@@ -25066,6 +25063,17 @@ class MainWindow(QMainWindow):
             )
         return total_changed
 
+    def _initialize_measurement_annotation(self, document: ImageDocument, measurement: Measurement) -> None:
+        kind = measurement.measurement_kind
+        if kind not in {"line", "polyline", "area"}:
+            return
+        layout = measurement.annotation_layout or self._app_settings.new_annotation_layout(kind, dual_supported=kind == "line")
+        measurement.annotation_layout = layout
+        canvas = self._canvases.get(document.id)
+        if canvas is not None and layout.label_position == "external" and layout.offset_px is None:
+            measurement.recalculate(document.calibration)
+            measurement.annotation_layout = canvas.resolved_measurement_annotation_layout(measurement, layout)
+
     def _append_new_measurement(
         self,
         document: ImageDocument,
@@ -25074,13 +25082,7 @@ class MainWindow(QMainWindow):
         label: str,
         frozen_group: bool = False,
     ) -> None:
-        if measurement.measurement_kind in {"line", "polyline", "area"} and measurement.annotation_layout is None:
-            measurement.annotation_layout = self._app_settings.new_annotation_layout(
-                measurement.measurement_kind, dual_supported=measurement.measurement_kind == "line")
-        annotation_canvas = self._canvases.get(document.id)
-        if annotation_canvas is not None and measurement.annotation_layout is not None and measurement.annotation_layout.offset_px is None:
-            measurement.recalculate(document.calibration)
-            measurement.annotation_layout = annotation_canvas.resolved_measurement_annotation_layout(measurement)
+        self._initialize_measurement_annotation(document, measurement)
         self._discard_workspace_composite_redo()
         before_stamp = document.state_stamp
         selection = (
@@ -25341,7 +25343,6 @@ class MainWindow(QMainWindow):
 
         if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
             measurement = Measurement(
-                annotation_layout=self._app_settings.new_annotation_layout("area"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25358,7 +25359,6 @@ class MainWindow(QMainWindow):
             # paths are prepared lazily without blocking confirmation.
         elif mode == "continuous_manual" and isinstance(payload, dict):
             measurement = Measurement(
-                annotation_layout=self._app_settings.new_annotation_layout("polyline"),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25381,7 +25381,6 @@ class MainWindow(QMainWindow):
             )
         elif mode == "manual" and isinstance(payload, Line):
             measurement = Measurement(
-                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25392,7 +25391,6 @@ class MainWindow(QMainWindow):
             )
         elif mode == "snap" and isinstance(payload, Line) and snap_result is not None:
             measurement = Measurement(
-                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -25405,7 +25403,6 @@ class MainWindow(QMainWindow):
             )
         elif mode == "fiber_quick" and isinstance(payload, dict) and isinstance(payload.get("line_px"), Line):
             measurement = Measurement(
-                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=group.id if group else None,
@@ -26126,6 +26123,23 @@ class MainWindow(QMainWindow):
         )
         self._focus_current_canvas()
 
+    def _edit_result_annotations(self, target, patch, operation):
+        self.professional_workspace.edit_annotation_selection(target, patch, operation)
+
+    def _expand_selected_annotation_properties(self, _index=None):
+        # Keep the table under the pointer so Ctrl/Shift can extend the selection.
+        if self._measurement_workspace_active() and not self._object_inspector.annotation_editor.isHidden():
+            self._object_properties_section.setExpanded(True)
+
+    def _show_result_annotation_properties(self):
+        self._refresh_object_inspector()
+        editor = self._object_inspector.annotation_editor
+        if editor.isHidden() or not self._measurement_workspace_active():
+            return
+        self._show_inspector_section(self._object_properties_section)
+        self._inspector_dock.raise_()
+        QTimer.singleShot(0, editor, lambda: self._inspector_scroll.ensureWidgetVisible(editor, 0, 4))
+
     def _refresh_object_inspector(self) -> None:
         inspector = self._object_inspector
         if inspector is None:
@@ -26141,20 +26155,32 @@ class MainWindow(QMainWindow):
             if document is not None
             else None
         )
+        workspace = getattr(self, "professional_workspace", None)
+        professional_targets, family_label = workspace.inspector_targets(document) if workspace else ((), "")
+        if professional_targets:
+            selected_ids = []
         inspector.set_context(
             document,
             settings=self._app_settings,
             measurement_ids=selected_ids,
+            professional_targets=professional_targets,
+            professional_family_label=family_label,
             overlay_id=overlay_id,
             construction_id=construction_id,
             view_zoom=canvas.view_zoom() if canvas is not None else 1.0,
         )
-        inspector.batch_editor.setEnabled(not self.project.is_read_only_compatible and self._measurement_workspace_active())
+        editable = not self.project.is_read_only_compatible and self._measurement_workspace_active()
+        inspector.batch_editor.setEnabled(editable)
+        inspector.annotation_editor.setEnabled(editable)
         self._sync_current_measurement_summary(document, selected_ids)
         section = self._object_properties_section
         if section is None:
             return
-        if construction_id and document is not None:
+        if professional_targets:
+            section.setSummary(f"已选择 {len(professional_targets)} 个专业测量")
+            self._current_measurement_summary.valueLabel.setText(f"已选择 {len(professional_targets)} 个专业测量")
+            self._current_measurement_summary.sourceLabel.setText("在对象属性中编辑结果标注")
+        elif construction_id and document is not None:
             getter = getattr(document, "get_construction_entity", None)
             entity = getter(construction_id) if callable(getter) else None
             section.setSummary(
@@ -28722,7 +28748,6 @@ class MainWindow(QMainWindow):
                     skipped_count += 1
                     continue
                 measurement = Measurement(
-                    annotation_layout=self._app_settings.new_annotation_layout("area"),
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=target_group.id,
@@ -28862,7 +28887,6 @@ class MainWindow(QMainWindow):
 
         def mutate() -> None:
             measurement = Measurement(
-                annotation_layout=self._app_settings.new_annotation_layout("line", dual_supported=True),
                 id=new_id("meas"),
                 image_id=document.id,
                 fiber_group_id=job_meta.get("fiber_group_id"),

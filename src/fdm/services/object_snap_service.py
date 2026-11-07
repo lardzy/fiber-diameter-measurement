@@ -198,6 +198,23 @@ class _CirclePrimitive:
 
 
 _Primitive = _PointPrimitive | _LinePrimitive | _CirclePrimitive
+
+
+def professional_snap_primitives(resolved, scale):
+    """Only analytical geometry of evaluated features participates in snapping."""
+    from fdm.services.metrology_service import professional_landmarks
+    for key, (kind, point) in professional_landmarks(resolved, scale).items():
+        yield _PointPrimitive(point, SnapKind(kind), "professional", resolved.feature_id, key)
+    if resolved.kind in {"line", "polyline", "polygon"}:
+        points = resolved.points_px
+        ends = points[1:] + (points[:1] if resolved.kind == "polygon" else ())
+        for index, (start, end) in enumerate(zip(points, ends)):
+            yield _LinePrimitive(start, end, "segment", "professional", resolved.feature_id,
+                                 f"segment:{index}", emit_endpoints=False, emit_midpoint=False)
+    elif resolved.kind == "circle" and math.isclose(scale[0], scale[1], rel_tol=1e-12):
+        center = Point(resolved.center.x / scale[0], resolved.center.y / scale[1])
+        yield _CirclePrimitive(center, resolved.radius / scale[0], "professional", resolved.feature_id, "circle")
+
 _ScreenTransform = Callable[[Point], Point | tuple[float, float] | Sequence[float] | object]
 
 
@@ -215,6 +232,7 @@ class ObjectSnapEngine:
     def __init__(self, settings: ObjectSnapSettings | None = None) -> None:
         self.settings = settings or ObjectSnapSettings()
         self._active_candidate: SnapCandidate | None = None
+        self.last_candidates: tuple[SnapCandidate, ...] = ()
 
     @property
     def active_candidate(self) -> SnapCandidate | None:
@@ -227,6 +245,7 @@ class ObjectSnapEngine:
 
     def clear_hysteresis(self) -> None:
         self._active_candidate = None
+        self.last_candidates = ()
 
     def candidates(
         self,
@@ -235,6 +254,7 @@ class ObjectSnapEngine:
         image_to_screen: _ScreenTransform | None = None,
         constructions: Iterable[object] | Mapping[object, object] = (),
         measurements: Iterable[Measurement] = (),
+        professional_primitives: Iterable[_Primitive] = (),
         contextual_candidates: Iterable[SnapCandidate] = (),
     ) -> tuple[SnapCandidate, ...]:
         """Return all candidates inside the configured aperture in rank order."""
@@ -246,6 +266,7 @@ class ObjectSnapEngine:
             image_to_screen=image_to_screen,
             constructions=constructions,
             measurements=measurements,
+            professional_primitives=professional_primitives,
             contextual_candidates=contextual_candidates,
             maximum_distance_px=self.settings.aperture_px,
         )
@@ -257,6 +278,7 @@ class ObjectSnapEngine:
         image_to_screen: _ScreenTransform | None = None,
         constructions: Iterable[object] | Mapping[object, object] = (),
         measurements: Iterable[Measurement] = (),
+        professional_primitives: Iterable[_Primitive] = (),
         contextual_candidates: Iterable[SnapCandidate] = (),
         previous: SnapCandidate | None = None,
     ) -> SnapCandidate | None:
@@ -281,6 +303,7 @@ class ObjectSnapEngine:
             image_to_screen=image_to_screen,
             constructions=constructions,
             measurements=measurements,
+            professional_primitives=professional_primitives,
             contextual_candidates=contextual_candidates,
             maximum_distance_px=maximum_distance,
         )
@@ -290,6 +313,7 @@ class ObjectSnapEngine:
             if candidate.screen_distance_px <= self.settings.aperture_px + 1e-9
         )
         preferred = normal[0] if normal else None
+        self.last_candidates = normal
         if sticky is not None:
             retained = next(
                 (candidate for candidate in expanded if candidate.identity == sticky.identity),
@@ -311,6 +335,7 @@ class ObjectSnapEngine:
         image_to_screen: _ScreenTransform | None,
         constructions: Iterable[object] | Mapping[object, object],
         measurements: Iterable[Measurement],
+        professional_primitives: Iterable[_Primitive],
         contextual_candidates: Iterable[SnapCandidate],
         maximum_distance_px: float,
     ) -> tuple[SnapCandidate, ...]:
@@ -319,6 +344,7 @@ class ObjectSnapEngine:
         primitives = list(_construction_primitives(constructions))
         if self.settings.include_measurements:
             primitives.extend(_measurement_primitives(measurements))
+            primitives.extend(professional_primitives)
 
         candidates: list[SnapCandidate] = []
         for primitive in primitives:

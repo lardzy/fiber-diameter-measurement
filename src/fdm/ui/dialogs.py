@@ -153,7 +153,6 @@ class _MeasurementStylePreview(QWidget):
         self._endpoint_style = MeasurementEndpointStyle.BAR
         self.setMinimumHeight(86)
         from fdm.geometry import Line, Point
-        from fdm.measurement_annotation import MeasurementAnnotationLayout
         from fdm.models import Calibration, Measurement
         # Fixed source coordinates keep the example value stable when the
         # settings window is resized. Only its viewing transform changes.
@@ -163,8 +162,7 @@ class _MeasurementStylePreview(QWidget):
         measurement = Measurement("sample", self._sample.id, None, "manual", measurement_kind=kind,
             line_px=Line(Point(25, 68), Point(200, 40)),
             polygon_px=[Point(45, 70), Point(84, 46), Point(160, 59)],
-            annotation_layout=MeasurementAnnotationLayout(leader_style="dual" if kind == "line" else "single",
-                                                          offset_px=Point(0, -22)))
+            annotation_layout=settings.new_annotation_layout(kind, dual_supported=kind == "line"))
         measurement.recalculate(self._sample.calibration)
         self._sample.measurements.append(measurement)
 
@@ -194,6 +192,10 @@ class _MeasurementStylePreview(QWidget):
         self._settings = replace(self._settings, length_measurement_label_style=style,
             area_measurement_label_style=style, measurement_text_size_space=size_space,
             default_measurement_color=line_color, measurement_endpoint_style=endpoint_style)
+        measurement = self._sample.measurements[0]
+        layout = self._settings.new_annotation_layout(measurement.measurement_kind,
+                                                       dual_supported=measurement.measurement_kind == "line")
+        measurement.annotation_layout = replace(layout, revision=measurement.annotation_layout.revision + 1)
         self.update()
 
     def paintEvent(self, event) -> None:
@@ -215,39 +217,29 @@ class _MeasurementStylePreview(QWidget):
 
 
 class _ProfessionalMeasurementStylePreview(QWidget):
-    """Render the same dual-end annotation used by professional canvases."""
+    """Display a newly measured, calibrated example with the draft preferences."""
 
     def __init__(self, parent: QWidget, *, settings: AppSettings) -> None:
         super().__init__(parent)
         from fdm.geometry import Point
-        from fdm.measurement_annotation import MeasurementAnnotationLayout
-        from fdm.metrology import (
-            MeasurementDefinition, MeasurementFeature, MeasurementMetric,
-            MeasurementPrimitive, MeasurementResult,
-        )
+        from fdm.metrology import MeasurementDefinition, MeasurementFeature
+        from fdm.models import Calibration
+        from fdm.services.metrology_service import evaluate_document
 
         self._decimals = 2
         self.setObjectName("professionalMeasurementStylePreview")
         self.setAccessibleName("专业测量标注预览")
         self.setMinimumHeight(140)
         self._settings = settings
-        self._document = ImageDocument("professional-settings-preview", "", (400, 150))
+        self._document = ImageDocument("professional-settings-preview", "", (400, 150),
+                                      calibration=Calibration("manual", 1, "µm", "预览"))
         self._document.initialize_runtime_state()
-        start, end = Point(40, 115), Point(306.55098, 88)
+        start = Point(68, 115)
+        end = Point(start.x + 266.55098 * .96, start.y - 266.55098 * .28)
         feature = MeasurementFeature("preview-feature", self._document.id, "line", (start, end))
-        definition = MeasurementDefinition(
-            "preview-measurement", self._document.id, "distance", (feature.id,),
-            annotation_layout=MeasurementAnnotationLayout(
-                offset_px=Point(0, -42), leader_style="dual"
-            ),
-        )
-        self._document.apply_professional_state([feature], [definition], mark_dirty=False)
-        self._results = {definition.id: MeasurementResult(
-            definition.id, "ready",
-            metrics=(MeasurementMetric("distance", "距离", 266.55098, "µm"),),
-            anchor_px=Point((start.x + end.x) / 2, (start.y + end.y) / 2),
-            geometry=(MeasurementPrimitive("line", (start, end)),),
-        )}
+        self._definition = MeasurementDefinition("preview-measurement", self._document.id, "distance", (feature.id,))
+        self._document.apply_professional_state([feature], [self._definition], mark_dirty=False)
+        self._results = evaluate_document(self._document)
 
     def set_display_settings(self, settings):
         self._settings = settings
@@ -259,7 +251,7 @@ class _ProfessionalMeasurementStylePreview(QWidget):
 
     def paintEvent(self, event) -> None:
         del event
-        from fdm.ui.professional_rendering import draw_professional_measurements
+        from fdm.ui.professional_rendering import draw_professional_measurements, place_new_professional_annotation
 
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
@@ -267,12 +259,17 @@ class _ProfessionalMeasurementStylePreview(QWidget):
             painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
             painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
             painter.drawRoundedRect(rect, 6, 6)
-            scale = max(.01, min((rect.width() - 40) / 300., (rect.height() - 12) / 135.))
+            width, height = self._document.image_size
+            scale = max(.01, min((rect.width() - 16) / width, (rect.height() - 12) / height))
+            def transform(point):
+                return QPointF(rect.center().x() + (point.x - width / 2) * scale,
+                               rect.center().y() + (point.y - height / 2) * scale)
+            settings = replace(self._settings, professional_measurement_label_decimals=self._decimals)
+            self._document.professional_measurements[0] = place_new_professional_annotation(
+                self._document, self._definition, self._results[self._definition.id], settings, 1, transform)
             draw_professional_measurements(
-                painter, self._document,
-                lambda point: QPointF(rect.center().x() + (point.x - 173.27549) * scale,
-                                      rect.center().y() + (point.y - 75) * scale),
-                results=self._results, label_decimals=self._decimals, settings=self._settings,
+                painter, self._document, transform,
+                results=self._results, label_decimals=self._decimals, settings=settings,
             )
 
 
